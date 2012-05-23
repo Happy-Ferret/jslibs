@@ -137,9 +137,9 @@ DEFINE_FUNCTION( toString ) {
 
 DEFINE_FUNCTION( _serialize ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_TYPE( jl::JsvalIsSerializer(cx, JL_ARG(1)), 1, "Serializer" );
+	JL_DEFINE_FUNCTION_OBJ;
 
 	jl::Serializer *ser;
 	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
@@ -158,9 +158,9 @@ DEFINE_FUNCTION( _serialize ) {
 
 DEFINE_FUNCTION( _unserialize ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_TYPE( jl::JsvalIsUnserializer(cx, JL_ARG(1)), 1, "Unserializer" );
+	JL_DEFINE_FUNCTION_OBJ;
 
 	jl::Unserializer *unser;
 	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));

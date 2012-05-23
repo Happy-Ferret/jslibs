@@ -145,7 +145,7 @@ ALWAYS_INLINE bool IsTexture( JSContext *cx, jsval val ) {
 	JL_IGNORE(cx);
 	//return JL_IsClass(val, JL_CLASS(Texture));
 	//return !js::Valueify(val).isPrimitive() && js::Valueify(val).toObject().getProto()->getJSClass() == JL_CLASS(Texture);
-	return val.isPrimitive() && JL_GetClass(JSVAL_TO_OBJECT(val)) == JL_CLASS(Texture);
+	return !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == JL_CLASS(Texture);
 }
 
 
@@ -430,10 +430,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_ASSERT_ARGC_MIN( 1 );
+
 	TextureStruct *tex;
 	tex = (TextureStruct *)jl_malloc(sizeof(TextureStruct));
 	JL_CHK( tex );
@@ -1093,7 +1094,6 @@ DEFINE_FUNCTION( cutLevels ) { // (TBD) check if this algo is right
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-
 	JL_ASSERT_ARGC_MIN( 2 );
 
 	TextureStruct *tex;
@@ -1231,11 +1231,10 @@ DEFINE_FUNCTION( powLevels ) { //
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
-
-	JL_ASSERT_ARGC_MIN( 1 );
 
 	PTYPE power;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &power) );
@@ -3309,6 +3308,7 @@ DEFINE_FUNCTION( import ) { // (Blob)image, (int)x, (int)y
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(1,4);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(obj);
@@ -3316,7 +3316,6 @@ DEFINE_FUNCTION( import ) { // (Blob)image, (int)x, (int)y
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
-	JL_ASSERT_ARG_IS_OBJECT(1);
 	JSObject *bstr;
 	bstr = JSVAL_TO_OBJECT( JL_ARG(1) );
 	//JL_ASSERT_INSTANCE( bstr, JL_BlobJSClass(cx) ); // (TBD) String object should also work.
@@ -4037,6 +4036,7 @@ DEFINE_FUNCTION( applyColorMatrix ) {
 	// Matrix Operations for Image Processing: http://www.graficaobscura.com/matrix/index.html
 	// Fun with the colormatrix: http://hirntier.blogspot.com/2008/09/fun-with-colormatrix.html
 
+	JL_ASSERT_ARGC(1);
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -4044,8 +4044,6 @@ DEFINE_FUNCTION( applyColorMatrix ) {
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
 
 	JL_ASSERT( tex->channels == 4, E_THISOBJ, E_FORMAT, E_COMMENT("channels") );
-
-	JL_ASSERT_ARGC(1);
 	
 	Matrix44 colorMatrixTmp, *colorMatrix;
 	colorMatrix = &colorMatrixTmp;
@@ -4084,11 +4082,11 @@ DEFINE_FUNCTION( addPerlin2 ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_RANGE(3,4);
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
 //	JL_ASSERT( tex->channels == 4, "Invalid channel count." );
-	JL_ASSERT_ARGC_RANGE(3,4);
 
 	double x,y,z, offset[3], dirX[3], dirY[3], alpha;
 

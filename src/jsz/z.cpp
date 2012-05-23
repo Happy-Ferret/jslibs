@@ -95,10 +95,9 @@ void jsz_free(voidpf, voidpf address) NOTHROW {
 
 DEFINE_CONSTRUCTOR() {
 
+	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
-
-	JL_ASSERT_ARGC_MIN(1);
 
 	Private *pv;
 	pv = (Private*)JS_malloc(cx, sizeof(Private));

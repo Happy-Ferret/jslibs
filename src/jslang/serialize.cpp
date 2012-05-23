@@ -80,11 +80,14 @@ DEFINE_FUNCTION( done ) {
 	jl::Serializer* ser;
 	ser = (jl::Serializer*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(ser);
+
 	void *data;
 	size_t length;
 	JL_CHKM( ser->GetBufferOwnership(&data, &length), E_MODULE, E_INTERNAL ); // "Serializer buffer error."
+	
+	// invalidate the object
 	delete ser;
-	JL_SetPrivate( JL_OBJ, NULL);
+	JL_SetPrivate(JL_OBJ, NULL);
 	//JL_updateMallocCounter(cx, length);
 	JL_CHK( JL_NewBufferGetOwnership(cx, data, length, vp) );
 	return JS_TRUE;
@@ -134,6 +137,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_STRING(1);
+
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	jl::Unserializer *unser;
 	unser = new jl::Unserializer(str.GetStrZOwnership(), str.Length(), OBJECT_TO_JSVAL(JL_OBJ));

@@ -582,6 +582,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( setGamma ) {
 
 	JL_ASSERT_ARGC_MIN(3);
+
 	float r,g,b;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &r) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &g) );
@@ -604,6 +605,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( glSwapBuffers ) {
 
 	JL_ASSERT_ARGC_RANGE(0,1);
+
 	bool async;
 	if ( JL_ARG_ISDEF(1) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &async) );
@@ -635,6 +637,7 @@ DEFINE_FUNCTION( glSetAttribute ) {
 	int attr;
 	int value;
 	JL_ASSERT_ARGC_MIN(2);
+
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &attr) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &value) );
 	if ( SDL_GL_SetAttribute((SDL_GLattr)attr, value) == -1 )
@@ -660,6 +663,7 @@ DEFINE_FUNCTION( glGetAttribute ) {
 	int attr;
 	int value;
 	JL_ASSERT_ARGC_MIN(2);
+
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &attr) );
 	if ( SDL_GL_GetAttribute((SDL_GLattr)attr, &value) == -1 )
 		return ThrowSdlError(cx);
@@ -766,6 +770,7 @@ DEFINE_FUNCTION( setCursor ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
+
 	JSObject *cursorObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	JL_ASSERT_INSTANCE( cursorObj, JL_CLASS(Cursor) );
 	SDL_Cursor *cursor = (SDL_Cursor *)JL_GetPrivate(cursorObj);
@@ -863,6 +868,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( warpMouse ) {
 
 	JL_ASSERT_ARGC_MIN(2);
+
 	Uint16 x, y;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &y) );
@@ -964,6 +970,7 @@ DEFINE_FUNCTION( getKeyState ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
+
 	int key;
 	key = JSVAL_TO_INT( JL_ARG(1) );
 	JL_ASSERT( key > SDLK_FIRST && key < SDLK_LAST, E_ARG, E_NUM(1), E_INVALID );
@@ -984,6 +991,7 @@ DEFINE_FUNCTION( getKeyName ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
+
 	int key;
 	key = JSVAL_TO_INT( JL_ARG(1) );
 	JL_ASSERT( key > SDLK_FIRST && key < SDLK_LAST, E_ARG, E_NUM(1), E_INVALID );

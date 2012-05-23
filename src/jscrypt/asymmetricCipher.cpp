@@ -131,10 +131,10 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 
 	JLData asymmetricCipherName, hashName;
 
+	JL_ASSERT_ARGC_MIN( 3 );
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_ASSERT_ARGC_MIN( 3 );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &asymmetricCipherName) );
 
@@ -341,8 +341,8 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-
 	JL_ASSERT_ARGC_MIN( 1 );
+
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -436,6 +436,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
+
 	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );

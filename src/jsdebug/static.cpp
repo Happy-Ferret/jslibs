@@ -635,6 +635,7 @@ DEFINE_FUNCTION( disableJIT ) {
 DEFINE_FUNCTION( objectGCId ) {
 
 	JL_ASSERT_ARGC(1);
+
 	if ( JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
 		
 		*JL_RVAL = JSVAL_ZERO;
@@ -1044,7 +1045,6 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( evalInStackFrame ) {
 
 	JL_ASSERT_ARGC_MIN( 2 );
-
 	JL_ASSERT_ARG_IS_STRING(1);
 
 	unsigned int frameIndex;

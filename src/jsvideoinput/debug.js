@@ -6,8 +6,12 @@ loadModule('jsio');
 loadModule('jsimage');
 
 loadModule('jsvideoinput');
+exec('..\\common\\tools.js');
 
-var vi = new VideoInput('QuickCam', 1, 1, 60); // try to get the smallest size and the lowest fps
+var vi = new VideoInput('QuickCam'); // try to get the smallest size and the lowest fps
+
+displayImage( vi.next() );
+
 print('full name: '+vi.name, '\n');
 
 vi.onImage = function() {

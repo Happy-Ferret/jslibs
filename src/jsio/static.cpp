@@ -172,6 +172,7 @@ DEFINE_FUNCTION( poll ) {
 
 	JL_ASSERT_ARGC_RANGE( 1, 2 );
 	JL_ASSERT_ARG_IS_ARRAY(1);
+
 	JSObject *fdArrayObj;
 	fdArrayObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
@@ -243,6 +244,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( intervalNow ) {
 
 	JL_ASSERT_ARGC(0);
+
 	// (TBD) Check if it may wrap around in about 12 hours. Is it related to the data type ???
 	JL_CHK( JL_NativeToJsval(cx, PR_IntervalToMilliseconds( PR_IntervalNow() ), JL_RVAL) );
 	return JS_TRUE;
@@ -278,7 +280,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( getEnv ) {
 
 	JLData name;
+	
 	JL_ASSERT_ARGC(1);
+
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &name) );
 	char* value;
 	value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
@@ -309,6 +313,7 @@ doc:
 	not be on the stack, where it can be overwritten
 
 	JL_ASSERT_ARGC_MIN(1);
+
 	const char *name, *value;
 	JL_CHK( JL_JsvalToNative(cx, &JL_ARG(1), &name) );
 	JL_CHK( JL_JsvalToNative(cx, &JL_ARG(2), &value) );
@@ -336,6 +341,7 @@ DEFINE_FUNCTION( getRandomNoise ) {
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_INTEGER(1);
+
 	PRSize rndSize;
 	rndSize = JSVAL_TO_INT( JL_ARG(1) );
 	uint8_t *buf;
@@ -391,6 +397,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( waitSemaphore ) {
 
 	JLData name;
+	
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	PRUintn mode;
@@ -446,6 +453,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( postSemaphore ) {
 
 	JLData name;
+	
 	JL_ASSERT_ARGC_MIN( 1 );
 
 //	const char *name;
@@ -607,7 +615,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( availableSpace ) {
 
 	JLData path;
+	
 	JL_ASSERT_ARGC_MIN( 1 );
+	
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &path) );
 
 	double available;
@@ -663,6 +673,7 @@ DEFINE_FUNCTION( configureSerialPort ) {
 
 	JL_ASSERT_ARGC_RANGE(1,2);
 	JL_ASSERT_ARG_IS_OBJECT(1);
+	
 	JSObject *fileObj;
 	fileObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	JL_ASSERT_INHERITANCE( fileObj, JL_CLASS(File) );

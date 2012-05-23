@@ -54,6 +54,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( randSeed ) {
 
 	JL_ASSERT_ARGC_MIN(1);
+
 	unsigned int seed;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &seed) );
 	init_genrand(seed);
@@ -92,6 +93,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( perlinNoise ) {
 
 	JL_ASSERT_ARGC_RANGE(4,6);
+
 	int n;
 	float a, b, x, y, z;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &a) );
@@ -123,6 +125,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( perlinNoiseReinit ) {
 
 	JL_ASSERT_ARGC_MAX(0);
+
 	InitNoise();
 
 	*JL_RVAL = JSVAL_VOID;
@@ -138,6 +141,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( perlinNoise2 ) {
 
 	JL_ASSERT_ARGC(3);
+
 	double x, y, z;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &y) );

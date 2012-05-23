@@ -16,10 +16,10 @@
 
 
 struct HashPrivate {
-
 	ltc_hash_descriptor *descriptor;
 	hash_state state;
 	unsigned long inputLength;
+	bool isValid;
 };
 
 
@@ -67,10 +67,9 @@ DEFINE_CONSTRUCTOR() {
 
 	JLData hashName;
 
+	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
-
-	JL_ASSERT_ARGC_MIN( 1 );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &hashName) );
 
@@ -91,117 +90,9 @@ DEFINE_CONSTRUCTOR() {
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	pv->inputLength = 0;
+	pv->isValid = true;
 
-	JL_SetPrivate(  obj, pv );
-
-	return JS_TRUE;
-	JL_BAD;
-}
-
-/**doc
-=== Methods ===
-**/
-
-/**doc
-$TOC_MEMBER $INAME
- $VOID $INAME()
-  Resets the hash state.
-**/
-DEFINE_FUNCTION( reset ) {
-
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARGC(0);
-
-	HashPrivate *pv;
-	pv = (HashPrivate *)JL_GetPrivate(obj);
-	JL_ASSERT_THIS_OBJECT_STATE( pv );
-
-	int err;
-	err = pv->descriptor->init(&pv->state); // Initialize the hash state
-	if ( err != CRYPT_OK )
-		return ThrowCryptError(cx, err);
-	pv->inputLength = 0;
-
-	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-/**doc
-$TOC_MEMBER $INAME
- $VOID $INAME( [data = undefined] )
-  Process a block of data though the hash. If _data_ is ommitted or undefined, the function does nothing.
-**/
-DEFINE_FUNCTION( write ) {
-
-	JLData in;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARGC(1);
-
-	HashPrivate *pv;
-	pv = (HashPrivate *)JL_GetPrivate(obj);
-	JL_ASSERT_THIS_OBJECT_STATE( pv );
-
-	if ( JL_ARG_ISDEF(1) ) {
-		
-		JL_ASSERT_ARG_IS_STRING(1);
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &in) );
-
-		unsigned long length = in.Length();
-
-		int err;
-		err = pv->descriptor->process(&pv->state, (const unsigned char *)in.GetConstStr(), length); // Process a block of memory though the hash
-		if ( err != CRYPT_OK )
-			return ThrowCryptError(cx, err);
-
-		pv->inputLength += length;
-	}
-
-	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
-	JL_BAD;
-}
-
-
-/**doc
-$TOC_MEMBER $INAME
- $DATA $INAME()
-  Terminate the hash and get the digest in a binary format.
-  $H example
-  {{{
-  loadModule('jsstd');
-  loadModule('jscrypt');
-  var md5 = new Hash('md5');
-  md5.process('foo');
-  md5.process('bar');
-  print( hexEncode( md5.done(), '\n' ) ); // prints: 3858F62230AC3C915F300C664312C63F
-  }}}
-**/
-DEFINE_FUNCTION( done ) {
-
-	JL_IGNORE(argc);
-
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARGC(0);
-
-	HashPrivate *pv;
-	pv = (HashPrivate *)JL_GetPrivate(obj);
-	JL_ASSERT_THIS_OBJECT_STATE( pv );
-
-	unsigned long outLength;
-	outLength = pv->descriptor->hashsize;
-	uint8_t *out;
-	out = JL_NewBuffer(cx, outLength, JL_RVAL);
-	
-	JL_CHK( out );
-	int err;
-	err = pv->descriptor->done(&pv->state, (unsigned char*)out); // Terminate the hash to get the digest
-	if ( err != CRYPT_OK )
-		return ThrowCryptError(cx, err);
+	JL_SetPrivate(obj, pv);
 
 	return JS_TRUE;
 	JL_BAD;
@@ -260,6 +151,120 @@ DEFINE_CALL() {
 	return JS_TRUE;
 	JL_BAD;
 }
+
+
+/**doc
+=== Methods ===
+**/
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME( [data = undefined] )
+  Process a block of data though the hash. If _data_ is ommitted or undefined, the function does nothing.
+**/
+DEFINE_FUNCTION( write ) {
+
+	JLData in;
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC(1);
+
+	HashPrivate *pv;
+	pv = (HashPrivate *)JL_GetPrivate(obj);
+	JL_ASSERT_THIS_OBJECT_STATE( pv && pv->isValid );
+
+	if ( JL_ARG_ISDEF(1) ) {
+		
+		JL_ASSERT_ARG_IS_STRING(1);
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &in) );
+
+		unsigned long length = in.Length();
+
+		int err;
+		err = pv->descriptor->process(&pv->state, (const unsigned char *)in.GetConstStr(), length); // Process a block of memory though the hash
+		if ( err != CRYPT_OK )
+			return ThrowCryptError(cx, err);
+
+		pv->inputLength += length;
+	}
+
+	*JL_RVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $DATA $INAME()
+  Terminate the hash and get the digest in a binary format.
+  $H example
+  {{{
+  loadModule('jsstd');
+  loadModule('jscrypt');
+  var md5 = new Hash('md5');
+  md5.process('foo');
+  md5.process('bar');
+  print( hexEncode( md5.done(), '\n' ) ); // prints: 3858F62230AC3C915F300C664312C63F
+  }}}
+**/
+DEFINE_FUNCTION( done ) {
+
+	JL_IGNORE(argc);
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC(0);
+
+	HashPrivate *pv;
+	pv = (HashPrivate *)JL_GetPrivate(obj);
+	JL_ASSERT_THIS_OBJECT_STATE( pv && pv->isValid );
+
+	unsigned long outLength;
+	outLength = pv->descriptor->hashsize;
+	uint8_t *out;
+	out = JL_NewBuffer(cx, outLength, JL_RVAL);
+	
+	JL_CHK( out );
+	int err;
+	err = pv->descriptor->done(&pv->state, (unsigned char*)out); // Terminate the hash to get the digest
+	if ( err != CRYPT_OK )
+		return ThrowCryptError(cx, err);
+
+	pv->isValid = false;
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $VOID $INAME()
+  Resets the hash state.
+**/
+DEFINE_FUNCTION( reset ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC(0);
+
+	HashPrivate *pv;
+	pv = (HashPrivate *)JL_GetPrivate(obj);
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
+
+	int err;
+	err = pv->descriptor->init(&pv->state); // Initialize the hash state
+	if ( err != CRYPT_OK )
+		return ThrowCryptError(cx, err);
+	pv->inputLength = 0;
+	pv->isValid = true;
+
+	*JL_RVAL = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 /**doc
 === Properties ===
@@ -423,7 +428,7 @@ CONFIGURE_CLASS
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_ARGC( reset, 0 )
-		FUNCTION_ARGC( write, 1 )
+		FUNCTION_ARGC( write, 1 ) // previously process()
 		FUNCTION_ARGC( done, 0 )
 	END_FUNCTION_SPEC
 

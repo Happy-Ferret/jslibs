@@ -35,10 +35,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JL_ASSERT_ARGC_RANGE(1,2);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
-
-	JL_ASSERT_ARGC_RANGE(1,2);
 
 	ode::dJointGroupID groupId;
 	if ( JL_ARG_ISDEF(2) ) {
@@ -74,8 +73,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( addTorque ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
 	JL_ASSERT_ARGC_MIN(1);
+
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	double torque;

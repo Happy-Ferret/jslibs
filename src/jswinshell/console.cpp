@@ -81,7 +81,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( write ) {
 
 	JLData str;
+
 	JL_ASSERT_ARGC(1);
+
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	if ( hStdout == NULL )
 		return WinThrowError(cx, GetLastError());
@@ -143,6 +145,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( setConsoleMode ) {
 
 	JL_ASSERT_ARGC(1);
+
 	DWORD mode;
 	JL_JsvalToNative(cx, JL_ARG(1), &mode);
 
@@ -298,8 +301,8 @@ DEFINE_FUNCTION( scrollY ) {
 	//see. http://msdn.microsoft.com/en-us/library/ms685113(v=vs.85).aspx
 
 	JL_ASSERT_ARGC(1);
-	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
+	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	SHORT iRows;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &iRows) );
 
@@ -803,6 +806,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( setCursorPosition ) {
 
 	JL_ASSERT_ARGC(2);
+
 	COORD position;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &position.X) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &position.Y) );

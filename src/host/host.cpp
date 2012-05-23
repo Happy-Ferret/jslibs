@@ -535,7 +535,7 @@ DEFINE_FUNCTION( loadModule ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN(1);
 
-	if (unlikely( JL_ARGC < 1 )) {
+	if (unlikely( !JL_ARG_ISDEF(1) )) {
 
 		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
@@ -589,7 +589,7 @@ DEFINE_FUNCTION( loadModule ) {
 		JL_SAFE_BEGIN
 		char errorBuffer[256];
 		JLDynamicLibraryLastErrorMessage( errorBuffer, sizeof(errorBuffer) );
-		JL_WARN( E_OS, E_OPERATION, E_DETAILS, E_STR(errorBuffer) );
+		JL_WARN( E_OS, E_OPERATION, E_DETAILS, E_STR(errorBuffer), E_COMMENT(libFileName) );
 		JL_SAFE_END
 
 		*JL_RVAL = JSVAL_FALSE;

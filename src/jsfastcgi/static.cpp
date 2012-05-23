@@ -196,6 +196,7 @@ DEFINE_FUNCTION( urlEncode ) {
 	JLData srcStr;
 
 	JL_ASSERT_ARGC_MIN( 1 );
+
 	static unsigned char hex[] = "0123456789ABCDEF";
 	const char *src;
 	size_t srcLen;
@@ -236,6 +237,7 @@ DEFINE_FUNCTION( urlDecode ) {
 	JLData srcStr;
 
 	JL_ASSERT_ARGC_MIN( 1 );
+
 	const char *src;
 	size_t srcLen;
 

@@ -362,6 +362,7 @@ JSBool Exit(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rva
 DEFINE_FUNCTION( waitForMessage ) {
 
 	JL_ASSERT_ARGC_MIN(1);
+
 	int32 val;
 	JS_ValueToInt32(cx, argv[0], &val);
 
@@ -500,6 +501,7 @@ DEFINE_FUNCTION( mode ) {
 	if ( argc > 0 ) {
 
 		JL_ASSERT_ARGC_MIN(3);
+
 		int32 bits;
 		JSBool fullscreen;
 

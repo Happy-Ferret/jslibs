@@ -788,6 +788,16 @@ JL_NewObjectWithGivenProtoKey( JSContext *cx, JSProtoKey protoKey, JSObject *par
 */
 
 ALWAYS_INLINE JSObject* FASTCALL
+JL_ConstructObject( JSContext *cx, JSObject *proto, unsigned argc, jsval *argv ) {
+	
+	JSObject *ctor = JL_GetConstructor(cx, proto);
+	if ( ctor == NULL )
+		return NULL;
+	return JS_New(cx, ctor, argc, argv);
+}
+
+
+ALWAYS_INLINE JSObject* FASTCALL
 JL_NewObjectWithGivenProto( JSContext *cx, JSClass *clasp, JSObject *proto, JSObject *parent ) {
 
 	ASSERT_IF( proto != NULL, JL_GetParent(cx, proto) != NULL );

@@ -351,7 +351,6 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval ) {
 				scode = isRef ? *V_ERRORREF(variant) : V_ERROR(variant);
 			else
 				scode = variant->scode;
-			// JL_CHK( JS_ConstructObjectWithArguments(cx, JL_GetStandardClassByKey(cx, JSProto_Error), NULL, NULL, 1, rval) );
 			JL_CHK( WinNewError(cx, scode, rval) );
 			}
 			break;

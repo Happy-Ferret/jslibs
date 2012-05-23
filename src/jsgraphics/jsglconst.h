@@ -1,5 +1,5 @@
-#define GL_CONST(name) { #name, GL_##name },
-#define GL_CONST_EX(name, ext) { #name, GL_##name##_##ext },
+#define GL_CONST(name) CONST_INTEGER(name, GL_##name)
+#define GL_CONST_EX(name, ext) CONST_INTEGER(name, GL_##name##_##ext)
 
 GL_CONST( ACCUM )
 GL_CONST( LOAD )

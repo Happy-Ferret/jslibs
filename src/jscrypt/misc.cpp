@@ -75,6 +75,7 @@ DEFINE_FUNCTION( base64Decode ) {
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
+
 //	const char *in;
 //	size_t inLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
@@ -111,7 +112,6 @@ DEFINE_FUNCTION( hexEncode ) {
 	JLData data;
 
 	JL_ASSERT_ARGC_MIN( 1 );
-
 	JL_ASSERT_ARG_IS_STRING(1);
 
 	const char *in;

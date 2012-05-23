@@ -61,6 +61,7 @@ ADD_DOC(isCallable, "boolean isCallable(value)", "returns true if the value can 
 DEFINE_FUNCTION( isCallable ) {
 
 	JL_ASSERT_ARGC(1);
+
 	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_ValueIsCallable(cx, JL_ARG(1)) );
 	return JS_TRUE;
 	JL_BAD;
@@ -273,6 +274,7 @@ DEFINE_FUNCTION( indexOf ) {
 
 	JLData srcStr, patStr;
 	uint32_t start;
+	
 	JL_ASSERT_ARGC_MIN(2);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &srcStr) );
@@ -366,6 +368,7 @@ DEFINE_FUNCTION( processEvents ) {
 	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, jslangModuleId);
 
 	JL_ASSERT_ARGC_MAX( COUNTOF(mpv->processEventThreadInfo) );
+	
 	ProcessEvent *peList[COUNTOF(mpv->processEventThreadInfo)]; // cache to avoid calling GetHandlePrivate() too often.
 
 	if ( JL_ARGC == 0 ) {

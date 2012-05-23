@@ -324,8 +324,12 @@ function displayTexture( texture ) {
 var textureId;
 function displayImage( image ) {
 
+	loadModule('jsgraphics');
+	loadModule('jssdl');
+
 	setVideoMode( image.width,image.height, 32, OPENGL | RESIZABLE );
 	Ogl.hint(Ogl.PERSPECTIVE_CORRECTION_HINT, Ogl.NICEST);
+	
 	Ogl.viewport(0,0,image.width,image.height);
 
 	if ( !textureId )
@@ -365,7 +369,7 @@ function displayImage( image ) {
 	}
 	
 	while ( !end )
-		processEvents(SDLEvents(listeners));
+		processEvents(sdlEvents(listeners));
 }
 
 

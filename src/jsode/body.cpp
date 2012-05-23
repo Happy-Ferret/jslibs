@@ -101,10 +101,9 @@ $TOC_MEMBER $INAME
 
 DEFINE_CONSTRUCTOR() {
 
+	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
-
-	JL_ASSERT_ARGC_MIN(1);
 
 	ode::dWorldID worldId;
 	JL_CHK( JL_JsvalToWorldID(cx, JL_ARG(1), &worldId) );
@@ -167,6 +166,7 @@ DEFINE_FUNCTION( isConnectedTo ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
+
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( thisBodyID );
 	ode::dBodyID otherBodyId;
@@ -187,11 +187,11 @@ DEFINE_FUNCTION( getGeom ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_MIN(1);
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 
-	JL_ASSERT_ARGC_MIN(1);
 	int index;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &index) );
 	ode::dGeomID geomId;
@@ -213,10 +213,11 @@ DEFINE_FUNCTION( getJoint ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_MIN(1);
+
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 
-	JL_ASSERT_ARGC_MIN(1);
 	int index;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &index) );
 	if ( index < 0 || index >= ode::dBodyGetNumJoints(bodyId) ) {
@@ -247,6 +248,7 @@ DEFINE_FUNCTION( addForce ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
+	
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( thisBodyID );
 	uint32_t length;
@@ -278,6 +280,7 @@ DEFINE_FUNCTION( addTorque ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
+	
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( thisBodyID );
 	ode::dVector3 vector;
@@ -1073,6 +1076,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( areConnected ) {
 
 	JL_ASSERT_ARGC_MIN(2);
+	
 	ode::dBodyID body1, body2;
 	JL_CHK( JL_JsvalToBody(cx, JL_ARG(1), &body1) );
 	JL_CHK( JL_JsvalToBody(cx, JL_ARG(1), &body2) );

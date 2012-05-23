@@ -44,6 +44,7 @@ DEFINE_FUNCTION( extractIcon ) {
 
 	JLData fileName;
 	JL_ASSERT_ARGC_MIN(1);
+
 	UINT iconIndex = 0;
 	if ( argc >= 2 )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &iconIndex) );
@@ -255,6 +256,7 @@ DEFINE_FUNCTION( expandEnvironmentStrings ) {
 
 	JLData src;
 	JL_ASSERT_ARGC_MIN(1);
+
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &src) );
 	TCHAR dst[PATH_MAX];
 	DWORD res = ExpandEnvironmentStrings( src, dst, sizeof(dst) );
@@ -302,6 +304,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( beep ) {
 
 	JL_ASSERT_ARGC_MIN(2);
+
 	unsigned int freq, duration;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &freq) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &duration) );
@@ -389,6 +392,7 @@ DEFINE_FUNCTION( registryGet ) {
 
 	uint8_t *buffer = NULL;
 	JLData pathStr, valueName;
+
 	JL_ASSERT_ARGC_RANGE(1,2);
 	
 	const char *path;
@@ -591,6 +595,7 @@ void FinalizeDirectoryHandle(void *data) {
 DEFINE_FUNCTION( directoryChangesInit ) {
 
 	JLData pathName;
+
 	JL_ASSERT_ARGC_RANGE(2,3);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pathName) );
@@ -852,6 +857,7 @@ DEFINE_FUNCTION( guidToString ) {
 	JLData str;
 
 	JL_ASSERT_ARGC(1);
+
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 
 	JL_ASSERT( str.Length() == sizeof(GUID), E_ARG, E_NUM(1), E_LENGTH, E_NUM(sizeof(GUID)) );

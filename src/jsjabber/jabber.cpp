@@ -261,6 +261,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_ASSERT_ARGC_MIN(2);
+
 	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
 	JL_SetPrivate( obj, pv);
@@ -297,10 +298,11 @@ DEFINE_FUNCTION( connect ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_MIN(1);
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_ASSERT_ARGC_MIN(1);
+
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &serverName) );
 	pv->client->setServer( serverName.GetConstStrZ() );
 	if ( JL_ARG_ISDEF(2) ) {
@@ -398,11 +400,10 @@ DEFINE_FUNCTION( sendMessage ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_MIN(2);
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-
-	JL_ASSERT_ARGC_MIN(2);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &to) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &body) );
@@ -426,9 +427,10 @@ DEFINE_FUNCTION( sendMessage ) {
 /*
 DEFINE_FUNCTION( rosterItem ) {
 
+	JL_ASSERT_ARGC_MIN(1);
+
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_ASSERT_ARGC_MIN(1);
 
 	return JS_TRUE;
 	JL_BAD;

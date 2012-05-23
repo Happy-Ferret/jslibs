@@ -1,3 +1,4 @@
+var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
 loadModule('jsstd');
@@ -6,7 +7,6 @@ loadModule('jssdl');
 loadModule('jsgraphics');
 loadModule('jsprotex');
 loadModule('jsimage');
-loadModule('jsdebug');
 
 
 //halt(); //////////////////////////////////////////////////////////////////////
@@ -126,19 +126,13 @@ var z = 0;
 randSeed(1);
 perlinNoiseReinit();
 
-exec('liveconsole.js');
+//exec('liveconsole.js');
 
 function updateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------------------
 
-	// live coding test
-	live.poll();
-	live.Function(texture);
-
-return;
-
 	// disco effect
 	tmp = new Texture(size, size, 4);
-	tmp.Set(0);
+	tmp.set(0);
 	tmp.addGradiantQuad('#ff0000ff', GREEN, BLUE, BLACK);
 	var tr = new Transformation(null);
 	tr.scale(5);
@@ -146,6 +140,13 @@ return;
 	tmp.applyColorMatrix(tr);
 	texture.setChannel(0, tmp, 0).setChannel(1, tmp, 1).setChannel(2, tmp, 2);
 return;
+
+
+	// live coding test
+	live.poll();
+	live.Function(texture);
+return;
+
 
 
 	// perlin noise

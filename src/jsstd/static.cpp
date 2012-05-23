@@ -70,7 +70,6 @@ DEFINE_FUNCTION( expand ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
-
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &srcStr) );
 
 	mapObj = NULL;
@@ -282,6 +281,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( internString ) {
 	
 	JL_ASSERT_ARGC(1);
+
 	JSString *str;
 	if ( JSVAL_IS_STRING(JL_ARG(1)) )
 		str = JSVAL_TO_STRING(JL_ARG(1));
@@ -316,6 +316,7 @@ DEFINE_FUNCTION( deepFreezeObject ) {
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
+
 	//JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &obj) );
 	*JL_RVAL = JSVAL_VOID;
 	return JS_DeepFreezeObject(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
@@ -447,6 +448,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( setScope ) {
 
 	JL_ASSERT_ARGC(2);
+
 	JSObject *o, *p;
 	JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &o) ); // o = JSVAL_TO_OBJECT(JL_ARG(1));
 	JL_CHK( JS_ValueToObject(cx, JL_ARG(2), &p) ); // p = JSVAL_TO_OBJECT(JL_ARG(2));
@@ -468,6 +470,7 @@ DEFINE_FUNCTION( warning ) {
 
 	JLData str;
 	JL_ASSERT_ARGC(1);
+
 //	const char *message;
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
@@ -744,6 +747,7 @@ DEFINE_FUNCTION( exec ) {
 
 	JLData fileName;
 //	JSObject *scriptObjRoot;
+	
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
@@ -960,7 +964,6 @@ DEFINE_FUNCTION( sandboxEval ) {
 	SandboxContextPrivate pv;
 
 	JL_ASSERT_ARGC_RANGE(1, 3);
-
 
 	JSString *jsstr;
 	jsstr = JS_ValueToString(cx, JL_ARG(1));

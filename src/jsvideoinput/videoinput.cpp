@@ -56,10 +56,9 @@ DEFINE_CONSTRUCTOR() {
 
 	Private *pv = NULL;
 
+	JL_ASSERT_ARGC_RANGE(1,5);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
-
-	JL_ASSERT_ARGC_RANGE(1,5);
 
 	pv = (Private*)jl_malloc(sizeof(Private));
 	JL_ASSERT_ALLOC(pv);
@@ -83,10 +82,8 @@ DEFINE_CONSTRUCTOR() {
 				break;
 			}
 		}
-
 		JL_CHKM( pv->deviceID != -1, E_ARG, E_NUM(1), E_NOTFOUND );
 	}
-
 
 	if ( JL_ARG_ISDEF(4) ) {
 
@@ -94,7 +91,6 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &fps) );
 		vi->setIdealFramerate(pv->deviceID, fps); // vi->VDList[deviceId]->requestedFrameTime;
 	}
-
 	
 	if ( JL_ARG_ISDEF(2) && JL_ARG_ISDEF(3) ) {
 		
@@ -116,12 +112,11 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pv->flipImageRedBlue) );
 	else
 		pv->flipImageRedBlue = true;
-	
 
 	JL_SetPrivate(JL_OBJ, pv);
 
 	//	vi->setVideoSettingCameraPct(deviceId, vi->propBrightness, 100);
-	//	vi->setFormat(deviceId, VI_NTSC_M);
+	// vi->setFormat(deviceId, VI_NTSC_M);
 	return JS_TRUE;
 
 bad:
@@ -137,7 +132,6 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( close ) {
 
 	JL_ASSERT_ARGC(0);
-
 	JL_DEFINE_FUNCTION_OBJ;
 
 	Private *pv;
@@ -225,9 +219,9 @@ static void VIWaitFinalize( void* data ) {
 
 DEFINE_FUNCTION( events ) {
 	
-	JL_ASSERT_ARGC(0);
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC(0);
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(JL_OBJ);
@@ -434,6 +428,15 @@ DEFINE_PROPERTY_GETTER( version ) {
 }
 
 
+DEFINE_ITERATOR_OBJECT() {
+
+	JL_CHKM( !keysonly, E_NAME("for...in"), E_NOTSUPPORTED );
+	return obj;
+bad:
+	return NULL;
+}
+
+
 CONFIGURE_CLASS // This section containt the declaration and the configuration of the class
 
 	REVISION(jl::SvnRevToInt("$Revision: 3533 $"))
@@ -441,6 +444,7 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
+	HAS_ITERATOR_OBJECT
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( events )

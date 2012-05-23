@@ -53,11 +53,12 @@ $TOC_MEMBER $INAME
 
 DEFINE_FUNCTION( translate ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-
 	ode::dBodyID bodyID;
 	ode::dMass mass;
+
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN(1);
+
 	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
 	real translation[3];
 //	JL_CHK( FloatArrayToVector(cx, 3, &argv[0], translation) );
@@ -79,11 +80,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( adjust ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-
 	ode::dBodyID bodyID;
 	ode::dMass mass;
+
+	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN(1);
+
 	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
 	double newMass;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &newMass) );
@@ -124,12 +126,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( setBoxTotal ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-
 	ode::dMass mass;
-	JL_ASSERT_ARGC_MIN(2);
-// get mass object
 	ode::dBodyID bodyID;
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_ARGC_MIN(2);
+
 	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
 // arg 0
 	double totalMass;

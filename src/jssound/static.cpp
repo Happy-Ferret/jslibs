@@ -90,6 +90,7 @@ DEFINE_FUNCTION( decodeOggVorbis ) {
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
+
 	JSObject *streamObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
 	StreamReadInfo pv; // = { cx, StreamObj };
@@ -284,8 +285,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( decodeSound ) {
 
 	JL_ASSERT_ARGC_MIN( 1 );
-
 	JL_ASSERT_ARG_IS_OBJECT(1);
+
 	JSObject *streamObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
 	StreamReadInfo pv;// = { cx, streamObj };

@@ -23,6 +23,8 @@ BEGIN_CLASS( OalBuffer )
 
 DEFINE_FINALIZE() {
 
+	JL_IGNORE(fop);
+
 	ALuint bid = (ALuint) JL_GetPrivate(obj);
 	if ( bid )
 		alDeleteBuffers(1, &bid);
@@ -39,10 +41,9 @@ DEFINE_CONSTRUCTOR() {
 	JLData data;
 
 	JL_ASSERT_CONSTRUCTING();
-	JL_DEFINE_CONSTRUCTOR_OBJ;
-
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
+	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	int bits, rate, channels, frames;
 	data = JL_GetByteAudioObject(cx, JL_ARG(1), &bits,  &channels, &frames, &rate);

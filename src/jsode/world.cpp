@@ -285,10 +285,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JL_ASSERT_ARGC(0);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
-	JL_ASSERT_ARGC(0);
-
 
 	WorldPrivate *pv = (WorldPrivate*)JS_malloc(cx, sizeof(WorldPrivate));
 	JL_CHK( pv );
@@ -299,15 +298,16 @@ DEFINE_CONSTRUCTOR() {
 	pv->worldId = ode::dWorldCreate();
 	pv->contactGroupId = ode::dJointGroupCreate(0); // see nearCallback()
 
-	JSObject *spaceObject = JS_ConstructObject(cx, JL_CLASS(Space), /*JL_CLASS_PROTOTYPE(cx, Space),*/ NULL); // no arguments = create a topmost space object
+	JSObject *spaceObject = JL_ConstructObject(cx, JL_CLASS_PROTOTYPE(cx, Space), 0, NULL); // no arguments = create a topmost space object
 	JL_CHK( spaceObject );
+
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_WORLD_SPACE, OBJECT_TO_JSVAL(spaceObject)) );
 	pv->spaceId = (ode::dSpaceID)JL_GetPrivate(spaceObject);
 
+	JSObject *surfaceParametersObject = JL_ConstructObject(cx, JL_CLASS_PROTOTYPE(cx, SurfaceParameters), 0, NULL);
+	JL_CHK( surfaceParametersObject );
 
-	JSObject *surfaceParameters = JS_ConstructObject(cx, JL_CLASS(SurfaceParameters), /*JL_CLASS_PROTOTYPE(cx, SurfaceParameters),*/ NULL);
-	JL_CHK( surfaceParameters );
-	JL_CHK( JL_SetReservedSlot( obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, OBJECT_TO_JSVAL(surfaceParameters)) );
+	JL_CHK( JL_SetReservedSlot( obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, OBJECT_TO_JSVAL(surfaceParametersObject)) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -347,8 +347,10 @@ DEFINE_FUNCTION( collide ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_RANGE(0,2);
 	JL_ASSERT_INSTANCE(obj, JL_CLASS(World));
+
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	
 	*JL_RVAL = JSVAL_VOID;
 
 	ode::dJointGroupEmpty(pv->contactGroupId); // contactGroupId will be reused at the next step!
@@ -435,9 +437,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( step ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_INSTANCE(JL_OBJ, JL_CLASS(World));
+
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ode::dReal stepSize;
@@ -463,10 +465,11 @@ DEFINE_FUNCTION( scaleImpulse ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_MIN(1);
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_ASSERT_ARGC_MIN(1);
+
 	ode::dVector3 force;
 	uint32_t len;
 	JL_CHK( JsvalToODERealVector(cx, JL_ARG(1), force, COUNTOF(force), &len) );

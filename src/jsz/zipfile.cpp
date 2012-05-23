@@ -187,7 +187,6 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_ASSERT_CONSTRUCTING();
 	JL_ASSERT_ARGC(1);
-
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_FILENAME, JL_ARG(1)) );
@@ -227,10 +226,10 @@ DEFINE_FUNCTION( open ) {
 
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC(1);
 
 	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_ASSERT_ARGC(1);
 
 	JL_CHK( JL_ReservedSlotToNative(cx, obj, SLOT_FILENAME, &filename) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &mode) );
@@ -268,11 +267,11 @@ DEFINE_FUNCTION( close ) {
 
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC(0);
 
 	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
-	JL_ASSERT_ARGC(0);
 
 	if ( pv->uf ) {
 
@@ -327,10 +326,11 @@ DEFINE_FUNCTION( select ) {
 
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC(1);
+
 	Private *pv = (Private *)JL_GetPrivate(obj);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_ASSERT_ARGC(1);
 
 	*JL_RVAL = JSVAL_VOID;
 
@@ -388,11 +388,11 @@ DEFINE_FUNCTION( goFirst ) {
 
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC(0);
 
 	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
-	JL_ASSERT_ARGC(0);
 	JL_ASSERT( pv->uf, E_THISOPERATION, E_NOTSUPPORTED );
 
 	if ( pv->inZipOpened ) {
@@ -419,11 +419,11 @@ DEFINE_FUNCTION( goNext ) {
 
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC(0);
 
 	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
-	JL_ASSERT_ARGC(0);
 	JL_ASSERT( pv->uf, E_THISOPERATION, E_NOTSUPPORTED );
 
 	*JL_RVAL = JSVAL_VOID;
@@ -462,11 +462,11 @@ DEFINE_FUNCTION( goTo ) {
 
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC(1);
 
 	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
-	JL_ASSERT_ARGC(1);
 	JL_ASSERT( pv->uf, E_THISOPERATION, E_NOTSUPPORTED );
 
 	*JL_RVAL = JSVAL_VOID;
@@ -513,11 +513,11 @@ DEFINE_FUNCTION( read ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC_RANGE(0, 1);
 
 	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ASSERT( pv && !pv->uf == !!pv->zf );
-	JL_ASSERT_ARGC_RANGE(0, 1);
 
 	//if ( pv->eol ) {
 
@@ -577,10 +577,11 @@ DEFINE_FUNCTION( write ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC(1);
+
 	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
-	JL_ASSERT_ARGC(1);
 
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
 

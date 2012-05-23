@@ -52,10 +52,9 @@ DEFINE_CONSTRUCTOR() {
 
 	JLData prngName;
 
+	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
-
-	JL_ASSERT_ARGC_MIN( 1 );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &prngName) );
 

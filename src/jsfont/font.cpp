@@ -68,10 +68,9 @@ DEFINE_CONSTRUCTOR() {
 
 	JLData filePathName;
 
+	JL_ASSERT_ARGC_RANGE(1, 2);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
-
-	JL_ASSERT_ARGC_RANGE(1, 2);
 
 //	ModulePrivate *mpv = (ModulePrivate*)GetModulePrivate(cx, _moduleId);
 

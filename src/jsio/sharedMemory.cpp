@@ -131,10 +131,10 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JLData name;
-	JL_ASSERT_CONSTRUCTING();
-	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_ASSERT_ARGC_MIN( 2 );
+	JL_ASSERT_CONSTRUCTING();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	size_t size;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &size) );
@@ -218,8 +218,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( write ) {
 
 	JLData data;
-	JL_DEFINE_FUNCTION_OBJ;
+	
 	JL_ASSERT_ARGC_MIN( 1 );
+	JL_DEFINE_FUNCTION_OBJ;
 
 	ClassPrivate *pv;
 	pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
@@ -306,8 +307,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( clear ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN( 1 );
+	JL_DEFINE_FUNCTION_OBJ;
 
 	ClassPrivate *pv;
 	pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);

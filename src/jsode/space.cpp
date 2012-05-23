@@ -74,7 +74,7 @@ DEFINE_FINALIZE() {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( parentSpace )
+ $INAME( [parentSpace] )
 **/
 DEFINE_CONSTRUCTOR() {
 
@@ -82,7 +82,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	ode::dSpaceID parentSpace;
-	if ( argc >= 1 )
+
+	if ( JL_ARG_ISDEF(1) )
 		JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), &parentSpace) );
 	else
 		parentSpace = 0;

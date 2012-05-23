@@ -144,7 +144,6 @@ DEFINE_FUNCTION( bind ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-
 	JL_ASSERT_ARGC_MIN( 1 ); // need port number (at least)
 
 	PRFileDesc *fd;
@@ -312,6 +311,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( connect ) {
 
 	JLData host;
+	
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(2);
@@ -393,9 +393,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( sendTo ) {
 
 	JLData host, str;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-
 	JL_ASSERT_ARGC_MIN( 3 );
 
 	PRFileDesc *fd;
@@ -589,6 +589,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( transmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
 	JLData headers;
+	
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(1,3);
@@ -1059,6 +1060,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( getHostsByName ) {
 
 	JLData host;
+	
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	char netdbBuf[PR_NETDB_BUF_SIZE];
@@ -1130,6 +1132,7 @@ DEFINE_FUNCTION( getHostsByAddr ) {
 
 	jsval tmp;
 	JLData addr;
+	
 	JL_ASSERT_ARGC( 1 );
 
 	//const char *addr; // MAX_IP_STRING_LENGTH

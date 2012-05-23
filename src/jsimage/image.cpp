@@ -87,6 +87,7 @@ DEFINE_FUNCTION( trim ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_MIN(1);
+
 	int vect[4];
 	//IntArrayToVector(cx, 4, &argv[0], vect);
 	uint32_t length;

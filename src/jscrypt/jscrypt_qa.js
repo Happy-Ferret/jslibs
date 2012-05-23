@@ -10,15 +10,15 @@
 /// MD5 digest [p]
 
 	var md5 = new Hash('md5');
-	md5.process('foobarxxx');
+	md5.write('foobarxxx');
 	QA.ASSERT_STR( md5.done(), "\b\t\xAA\xC0\x10\xB1G\xA8\xC71'}*\x80\x07\xBF", 'digest integrity' );
 
 
 /// MD5 digest + undefined [p]
 
 	var md5 = new Hash('md5');
-	md5.process('foobarxxx');
-	md5.process(undefined);
+	md5.write('foobarxxx');
+	md5.write(undefined);
 	QA.ASSERT_STR( md5.done(), "\b\t\xAA\xC0\x10\xB1G\xA8\xC71'}*\x80\x07\xBF", 'digest integrity' );
 
 
@@ -149,3 +149,11 @@
 	var encryptedText = cr.encrypt("secret text");
 	var cr = new Cipher("CFB", "cast5", "my  key of  16B ", IV);
 	var IV;
+
+/// hash validity check
+
+	var md5 = new Hash('md5');
+
+	md5.write('e');
+	QA.ASSERTOP( function() md5.done(), 'ex', undefined );
+	QA.ASSERTOP( function() md5.done(), 'ex', Error );

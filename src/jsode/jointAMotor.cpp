@@ -36,16 +36,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JL_ASSERT_ARGC_RANGE(1,2);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
-
-	JL_ASSERT_ARGC_RANGE(1,2);
 
 	ode::dJointGroupID groupId;
 	if ( JL_ARG_ISDEF(2) ) {
 
-	JL_ASSERT_ARG_IS_OBJECT(2);
-	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
+		JL_ASSERT_ARG_IS_OBJECT(2);
+		JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
 		groupId = (ode::dJointGroupID)JL_GetPrivate(JSVAL_TO_OBJECT(JL_ARG(2)));
 	} else {
 
@@ -177,8 +176,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( setAngle ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
 	JL_ASSERT_ARGC(2);
+
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	

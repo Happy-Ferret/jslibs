@@ -1,3 +1,4 @@
+var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
 loadModule('jsstd');
@@ -8,6 +9,14 @@ loadModule('jsprotex');
 loadModule('jstrimesh');
 loadModule('jssdl');
 loadModule('jsgraphics');
+
+
+
+loadModule('jsvideoinput');
+exec('..\\common\\tools.js');
+var vi = new VideoInput('QuickCam'); // try to get the smallest size and the lowest fps
+displayImage( vi.next() );
+throw 0;
 
 try {
 

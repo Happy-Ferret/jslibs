@@ -46,11 +46,11 @@ DEFINE_CONSTRUCTOR() {
 
 	jsval trimeshVal;
 
+	JL_ASSERT_ARGC_RANGE(1, 3);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_ASSERT_ARGC_RANGE(1, 3);
-	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	ode::dSpaceID space;
 	if ( JL_ARG_ISDEF(2) ) { // place it in a space ?

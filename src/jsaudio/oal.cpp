@@ -165,6 +165,7 @@ DEFINE_FUNCTION( dopplerFactor ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
+
 	float value;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );
 	alDopplerFactor( value );
@@ -188,6 +189,7 @@ DEFINE_FUNCTION( dopplerVelocity ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
+
 	float value;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );
 	alDopplerVelocity( value );
@@ -211,6 +213,7 @@ DEFINE_FUNCTION( speedOfSound ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
+
 	float value;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );
 	alSpeedOfSound( value );
@@ -233,6 +236,7 @@ DEFINE_FUNCTION( distanceModel ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
+
 	unsigned int distanceModel;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &distanceModel) );
 	alDistanceModel( distanceModel );
@@ -255,6 +259,7 @@ DEFINE_FUNCTION( enable ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
+
 	alEnable( JSVAL_TO_INT(JL_ARG(1)) );
 
 	*JL_RVAL = JSVAL_VOID;
@@ -275,6 +280,7 @@ DEFINE_FUNCTION( disable ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
+
 	alDisable( JSVAL_TO_INT(JL_ARG(1)) );
 
 	*JL_RVAL = JSVAL_VOID;
@@ -295,6 +301,7 @@ DEFINE_FUNCTION( isEnabled ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
+
 	*JL_RVAL = BOOLEAN_TO_JSVAL( alIsEnabled( JSVAL_TO_INT(JL_ARG(1)) ) );
 
 	return JS_TRUE;
@@ -316,6 +323,7 @@ DEFINE_FUNCTION( getString ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
+
 	const ALchar* str = alGetString(JSVAL_TO_INT(JL_ARG(1)));
 	if ( str == NULL ) {
 
@@ -345,6 +353,7 @@ DEFINE_FUNCTION( getBoolean ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
+
 	ALboolean params;
 	alGetBooleanv(JSVAL_TO_INT(JL_ARG(1)), &params);
 	*JL_RVAL = BOOLEAN_TO_JSVAL(params);
@@ -554,8 +563,6 @@ DEFINE_FUNCTION( source ) {
 
 	JL_ASSERT_ARGC_MIN(3);
 	JL_ASSERT_ARG_IS_NUMBER(1);
-
-	JL_ASSERT_ARG_IS_NUMBER(1);
 	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	ALuint sid;
@@ -692,6 +699,7 @@ DEFINE_FUNCTION( deleteSource ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
+
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alDeleteSources(1, &sid);
@@ -717,6 +725,7 @@ DEFINE_FUNCTION( sourceQueueBuffers ) {
 
 	JL_ASSERT_ARGC_MIN(2);
 	JL_ASSERT_ARG_IS_NUMBER(1);
+
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	*JL_RVAL = JSVAL_VOID;
@@ -754,6 +763,7 @@ DEFINE_FUNCTION( sourceUnqueueBuffers ) {
 
 	JL_ASSERT_ARGC_MIN(2);
 	JL_ASSERT_ARG_IS_NUMBER(1);
+
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	*JL_RVAL = JSVAL_VOID;
@@ -924,6 +934,7 @@ DEFINE_FUNCTION( deleteBuffer ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
+
 	ALuint bufferId;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &bufferId ) );
 //	alBufferData(bufferId, 0, NULL, 0, 0);
@@ -946,6 +957,7 @@ DEFINE_FUNCTION( playSource ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
+
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alSourcePlay(sid);
@@ -967,6 +979,7 @@ DEFINE_FUNCTION( stopSource ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
+
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alSourceStop(sid);
@@ -988,6 +1001,7 @@ DEFINE_FUNCTION( pauseSource ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
+
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alSourcePause(sid);
@@ -1009,6 +1023,7 @@ DEFINE_FUNCTION( rewindSource ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
+
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alSourceRewind(sid);

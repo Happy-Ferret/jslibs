@@ -566,6 +566,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( getMatrix ) {
 
 	JL_ASSERT_ARGC(1);
+
 	float tmp[16], *m = tmp;
 
 	JL_ASSERT_ARG_IS_OBJECT(1);

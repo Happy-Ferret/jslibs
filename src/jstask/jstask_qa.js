@@ -48,9 +48,7 @@ loadModule('jsio');
 	loadModule('jstask');
 	var myTaskFct = function() {
 
-		var loadModule = host.loadModule;
-		loadModule('jsio');
-		new File(); // unsafe issue
+		host.loadModule();
 	}
 	var myTask = new Task(myTaskFct);
 	myTask.request();
@@ -59,7 +57,7 @@ loadModule('jsio');
 
 /// task result iteration using StopIteration
 
-	var t = new Task(function(i) {
+	var t = new Task(function(i,j) {
 
 		if ( i === StopIteration )
 			throw StopIteration;
@@ -82,6 +80,7 @@ loadModule('jsio');
 /// memory leak 4
 
 	var myTaskFct = function() {
+		
 		new (host.loadModule('jssqlite').Database)().exec('123');
 	}
 	var myTask = new Task(myTaskFct);

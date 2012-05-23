@@ -152,10 +152,11 @@ DEFINE_FUNCTION( pointDepth ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INHERITANCE();
+	JL_ASSERT_ARG_IS_ARRAY(1);
 
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( geomId );
-	JL_ASSERT_ARG_IS_ARRAY(1);
+
 	ode::dReal depth, point[3];
 	uint32_t len;
 	JL_CHK( JsvalToODERealVector(cx, JL_ARG(1), point, 3, &len) );

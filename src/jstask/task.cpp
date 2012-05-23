@@ -345,11 +345,10 @@ DEFINE_CONSTRUCTOR() {
 
 	TaskPrivate *pv = NULL; // keep on top
 
-	JL_ASSERT_CONSTRUCTING();
-	JL_DEFINE_CONSTRUCTOR_OBJ;
-
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_CALLABLE(1); // (TBD) replace with IsFunction...
+	JL_ASSERT_CONSTRUCTING();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	pv = new TaskPrivate;
 	JL_CHK( pv );
@@ -475,9 +474,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( close ) {
 
-	JL_ASSERT_ARGC(0);
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_ARGC(0);
 
 	if ( JL_GetPrivate(JL_OBJ) != NULL ) {
 
@@ -789,7 +788,6 @@ JSBool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS
 DEFINE_FUNCTION( events ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-
 	JL_ASSERT_ARGC(0);
 	JL_ASSERT_THIS_INSTANCE();
 
