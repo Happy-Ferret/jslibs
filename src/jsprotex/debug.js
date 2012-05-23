@@ -110,7 +110,7 @@ function noiseChannel( tex, channel ) {
 ////
 
 
-var size = 64;
+var size = 128;
 var texture = new Texture(size, size, 3);
 
 //	var myImage = DecodeJpegImage( new File('301_0185.jpg').Open('r') );
@@ -129,6 +129,14 @@ perlinNoiseReinit();
 //exec('liveconsole.js');
 
 function updateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------------------
+
+
+	// ???
+	randSeed(1);
+	texture.set(0); // clears the texture
+	texture.addCracks( 1000, 10, 0.1, 1, function(v) { return randReal() } );
+return;
+
 
 	// disco effect
 	tmp = new Texture(size, size, 4);
@@ -216,12 +224,6 @@ return;
 */
 return;
 
-
-	// ???
-	randSeed(1);
-	texture.Set(0); // clears the texture
-	texture.addCracks( 1000, 10, 0.1, 1, function(v) { return randReal() } );
-return;
 
 
 	// gozilla's skin

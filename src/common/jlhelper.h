@@ -3325,18 +3325,20 @@ ALWAYS_INLINE JLData FASTCALL
 JL_GetByteImageObject( JSContext *cx, jsval &val, T *width, T *height, U *channels ) {
 
 	JLData data;
-	JL_ASSERT_IS_OBJECT(val, "image");
+	//JL_ASSERT_IS_OBJECT(val, "image");
+	JL_CHK( JSVAL_IS_OBJECT(val) );
 
 	JSObject *imageObj;
-
 	imageObj = JSVAL_TO_OBJECT(val);
 	JL_CHK( JL_PropertyToNative(cx, imageObj, JLID(cx, data), &data) );
 	JL_CHK( JL_PropertyToNative(cx, imageObj, JLID(cx, width), width) );
 	JL_CHK( JL_PropertyToNative(cx, imageObj, JLID(cx, height), height) );
 	JL_CHK( JL_PropertyToNative(cx, imageObj, JLID(cx, channels), channels) );
 
-	JL_ASSERT( width >= 0 && height >= 0 && channels > 0, E_STR("image"), E_FORMAT );
-	JL_ASSERT( data.IsSet() && jl::SafeCast<int>(data.Length()) ==(int)(*width * *height * *channels * 1), E_DATASIZE, E_INVALID );
+//	JL_ASSERT( width >= 0 && height >= 0 && channels > 0, E_STR("image"), E_FORMAT );
+//	JL_ASSERT( data.IsSet() && jl::SafeCast<int>(data.Length()) == (int)(*width * *height * *channels * 1), E_DATASIZE, E_INVALID );
+	JL_CHK( width >= 0 && height >= 0 && channels > 0 );
+	JL_CHK( data.IsSet() && jl::SafeCast<int>(data.Length()) == (int)(*width * *height * *channels * 1) );
 	return data;
 bad:
 	return JLData();
@@ -3400,10 +3402,10 @@ ALWAYS_INLINE JLData FASTCALL
 JL_GetByteAudioObject( JSContext *cx, jsval &val, T *bits, U *channels, V *frames, W *rate ) {
 
 	JLData data;
-	JL_ASSERT_IS_OBJECT(val, "audio");
+	//JL_ASSERT_IS_OBJECT(val, "audio");
+	JL_CHK( JSVAL_IS_OBJECT(val) );
 
 	JSObject *audioObj;
-
 	audioObj = JSVAL_TO_OBJECT(val);
 	JL_CHK( JL_PropertyToNative(cx, audioObj, JLID(cx, data), &data) );
 	JL_CHK( JL_PropertyToNative(cx, audioObj, JLID(cx, bits), bits) );
@@ -3411,8 +3413,10 @@ JL_GetByteAudioObject( JSContext *cx, jsval &val, T *bits, U *channels, V *frame
 	JL_CHK( JL_PropertyToNative(cx, audioObj, JLID(cx, frames), frames) );
 	JL_CHK( JL_PropertyToNative(cx, audioObj, JLID(cx, rate), rate) );
  
-	JL_ASSERT( *bits > 0 && (*bits % 8) == 0 && *rate > 0 && *channels > 0 && *frames >= 0, E_STR("audio"), E_FORMAT );
-	JL_ASSERT( data.IsSet() && data.Length() == (size_t)( (*bits/8) * *channels * *frames ), E_DATASIZE, E_INVALID );
+	//JL_ASSERT( *bits > 0 && (*bits % 8) == 0 && *rate > 0 && *channels > 0 && *frames >= 0, E_STR("audio"), E_FORMAT );
+	//JL_ASSERT( data.IsSet() && data.Length() == (size_t)( (*bits/8) * *channels * *frames ), E_DATASIZE, E_INVALID );
+	JL_CHK( *bits > 0 && (*bits % 8) == 0 && *rate > 0 && *channels > 0 && *frames >= 0 );
+	JL_CHK( data.IsSet() && data.Length() == (size_t)( (*bits/8) * *channels * *frames ) );
 	return data;
 bad:
 	return JLData();

@@ -249,7 +249,6 @@ JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, P
 		JLData colorStr;
 		const char *color;
 		size_t length;
-//		JL_CHK( JL_JsvalToStringAndLength(cx, &value, &color, &length) );
 		JL_CHK( JL_JsvalToNative(cx, value, &colorStr) );
 		length = colorStr.Length();
 		color = colorStr.GetConstStr();
@@ -279,7 +278,7 @@ JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, P
 
 		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, value, level, levelMaxLength, &length) );
-		JL_ASSERT( length < levelMaxLength, E_ARRAYLENGTH, E_MAX, E_NUM(levelMaxLength) ); // JL_ASSERT( length >= levelMaxLength, "Array too small." );
+		JL_ASSERT( length <= levelMaxLength, E_ARRAYLENGTH, E_MAX, E_NUM(levelMaxLength) ); // JL_ASSERT( length >= levelMaxLength, "Array too small." );
 		return JS_TRUE;
 	}
 
@@ -472,13 +471,16 @@ DEFINE_CONSTRUCTOR() {
 
 	{
 		int i, tsize, sWidth, sHeight, sChannels;
-		JLData data = JL_GetByteImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels);
-		tsize = data.Length();
-		const uint8_t *buffer = (const uint8_t*)data.GetConstStr();
-		JL_CHK( TextureInit(tex, sWidth, sHeight, sChannels) );
-		for ( i = 0; i < tsize; ++i )
-			tex->cbuffer[i] = (PTYPE)buffer[i] / (PTYPE)255.f; // map [0 -> 255] to [0.0 -> 1.0]
-		return JS_TRUE;
+		JLData data = JL_GetByteImageObject(cx, *arg1, &sWidth, &sHeight, &sChannels);
+		if ( data.IsSet() ) {
+
+			tsize = data.Length();
+			const uint8_t *buffer = (const uint8_t*)data.GetConstStr();
+			JL_CHK( TextureInit(tex, sWidth, sHeight, sChannels) );
+			for ( i = 0; i < tsize; ++i )
+				tex->cbuffer[i] = (PTYPE)buffer[i] / (PTYPE)255.f; // map [0 -> 255] to [0.0 -> 1.0]
+			return JS_TRUE;
+		}
 	}
 
 	JL_ERR( E_ARG, E_INVALID );
@@ -1502,13 +1504,16 @@ DEFINE_FUNCTION( set ) {
 
 	{
 		int i, tsize, sWidth, sHeight, sChannels;
-		JLData data = JL_GetByteImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels);
-		tsize = data.Length();
-		const uint8_t *buffer = (const uint8_t*)data.GetConstStr();
-		for ( i = 0; i < tsize; i++ )
-			tex->cbuffer[i] = (PTYPE)buffer[i] / PTYPE(255); // map [0 -> 255] to [0.0 -> 1.0]
-		JL_SetPrivate( obj, tex);
-		return JS_TRUE;
+		JLData data = JL_GetByteImageObject(cx, *arg1, &sWidth, &sHeight, &sChannels);
+		if ( data.IsSet() ) {
+
+			tsize = data.Length();
+			const uint8_t *buffer = (const uint8_t*)data.GetConstStr();
+			for ( i = 0; i < tsize; i++ )
+				tex->cbuffer[i] = (PTYPE)buffer[i] / PTYPE(255); // map [0 -> 255] to [0.0 -> 1.0]
+			JL_SetPrivate( obj, tex);
+			return JS_TRUE;
+		}
 	}
 
 	PTYPE pixel[PMAXCHANNELS];
