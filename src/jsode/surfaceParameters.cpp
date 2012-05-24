@@ -44,7 +44,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( pv );
 	pv->mu = dInfinity;
 	pv->mode = 0;
-	JL_SetPrivate( obj, pv);
+	
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
 	JL_BAD;
 }

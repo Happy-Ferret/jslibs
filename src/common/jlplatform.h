@@ -90,6 +90,18 @@
 #endif // __GNUC__
 
 
+#ifndef IN
+	#define IN
+#endif
+
+#ifndef OUT
+	#define OUT
+#endif
+
+#ifndef OPTIONAL
+	#define OPTIONAL
+#endif
+
 
 #if defined(_DEBUG)
 	#if !defined(DEBUG)

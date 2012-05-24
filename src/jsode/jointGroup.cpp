@@ -34,7 +34,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	ode::dJointGroupID groupId = ode::dJointGroupCreate(0);
-	JL_SetPrivate( obj, groupId);
+	
+	JL_SetPrivate(obj, groupId);
 	return JS_TRUE;
 	JL_BAD;
 }

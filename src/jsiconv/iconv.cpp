@@ -73,6 +73,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	Private *pv = NULL;
 	JLData tocode, fromcode;
 
 	JL_ASSERT_ARGC_RANGE(2, 4);
@@ -83,9 +84,9 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &tocode) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &fromcode) );
 
-	Private *pv;
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK(pv);
+	pv->cd = NULL;
 
 	pv->remainderLen = 0;
 	pv->cd = iconv_open(tocode, fromcode);
@@ -110,9 +111,18 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	pv->invalidChar = '?';
-	JL_SetPrivate( obj, pv);
+
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( pv ) {
+
+		if ( pv->cd )
+			iconv_close(pv->cd);
+		JS_free(cx, pv);
+	}
+	return JS_FALSE;
 }
 
 

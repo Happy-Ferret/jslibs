@@ -32,6 +32,7 @@ DEFINE_FINALIZE() {
 		return;
 	if ( alcGetCurrentContext() )
 		alDeleteAuxiliaryEffectSlots(1, &pv->effectSlot);
+	JS_freeop(fop, pv);
 }
 
 
@@ -41,17 +42,27 @@ $TOC_MEMBER $INAME
   Creates a new effect slot object.
 **/
 DEFINE_CONSTRUCTOR() {
+	
+	Private *pv = NULL;
 
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	
-	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
 	alGenAuxiliaryEffectSlots(1, &pv->effectSlot);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_SetPrivate( obj, pv);
+
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( pv ) {
+
+		alDeleteAuxiliaryEffectSlots(1, &pv->effectSlot);
+		JS_free(cx, pv);
+	}
+	return JS_FALSE;
 }
 
 DEFINE_FUNCTION( valueOf ) {

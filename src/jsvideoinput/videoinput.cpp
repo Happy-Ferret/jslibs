@@ -62,6 +62,7 @@ DEFINE_CONSTRUCTOR() {
 
 	pv = (Private*)jl_malloc(sizeof(Private));
 	JL_ASSERT_ALLOC(pv);
+	pv->deviceID = -1;
 
 	int numDevices = videoInput::listDevices(true);
 
@@ -73,7 +74,6 @@ DEFINE_CONSTRUCTOR() {
 	
 		JLData requiredDeviceName;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &requiredDeviceName) );
-		pv->deviceID = -1;
 		for ( int i = 0; i < numDevices; i++ ) {
 
 			if ( strstr(videoInput::getDeviceName(i), requiredDeviceName) != NULL ) {
@@ -113,14 +113,19 @@ DEFINE_CONSTRUCTOR() {
 	else
 		pv->flipImageRedBlue = true;
 
-	JL_SetPrivate(JL_OBJ, pv);
-
 	//	vi->setVideoSettingCameraPct(deviceId, vi->propBrightness, 100);
 	// vi->setFormat(deviceId, VI_NTSC_M);
+
+	JL_SetPrivate(JL_OBJ, pv);
 	return JS_TRUE;
 
 bad:
-	jl_free(pv);
+	if ( pv ) {
+
+		if ( pv->deviceID != -1 )
+			vi->stopDevice(pv->deviceID);
+		jl_free(pv);
+	}
 	return JS_FALSE;
 }
 

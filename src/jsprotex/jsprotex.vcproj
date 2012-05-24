@@ -242,6 +242,10 @@
 			>
 		</File>
 		<File
+			RelativePath=".\jsprotex_qa.js"
+			>
+		</File>
+		<File
 			RelativePath=".\readme.txt"
 			>
 		</File>

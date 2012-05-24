@@ -74,13 +74,13 @@ ALWAYS_INLINE bool SerializerIsEmpty( const SerializedData *ser ) {
 
 
 
-struct TaskPrivate : jl::CppAllocators {
+struct TaskPrivate : public jl::CppAllocators {
 
 	JLMutexHandler mutex;
 	JLThreadHandler threadHandle;
 	bool end;
 
-	SerializedData * serializedCode;
+	SerializedData *serializedCode;
 
 	JLSemaphoreHandler requestSem;
 	jl::Queue requestList;
@@ -309,6 +309,7 @@ ASSERT( false );
 	}
 
 good:
+
 bad:
 
 	// These queues must be destroyed before cx because SerializedData * *ser hold a reference to the context that created the value.
@@ -355,9 +356,10 @@ DEFINE_CONSTRUCTOR() {
 	JL_updateMallocCounter(cx, sizeof(TaskPrivate));
 
 	pv->mutex = 0;
-	pv->requestSem = 0;
-	pv->responseSem = 0;
 	pv->threadHandle = 0;
+	pv->requestSem = 0;
+	pv->responseEvent = 0;
+	pv->responseSem = 0;
 
 	JLThreadPriorityType priority;
 	if ( JL_ARG_ISDEF(2) ) {
@@ -378,8 +380,6 @@ DEFINE_CONSTRUCTOR() {
 				JL_ASSERT_ARG_VAL_RANGE( p, -1, 1, 2 );
 		}
 	}
-
-	JL_SetPrivate( obj, pv);
 
 	pv->mutex = JLMutexCreate();
 	JL_CHKM( JLMutexOk(pv->mutex), E_THISOBJ, E_CREATE ); // "Unable to create the mutex."
@@ -408,6 +408,7 @@ DEFINE_CONSTRUCTOR() {
 
 	//JL_updateMallocCounter(cx, ???); 400KB ?
 
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
 
 bad:
@@ -424,10 +425,10 @@ bad:
 		if ( pv->mutex != 0 )
 			JLMutexFree(&pv->mutex);
 		delete pv;
-//		JL_SetPrivate( obj, NULL);
 	}
 	return JS_FALSE;
 }
+
 
 static void FASTCALL
 CloseTask(JSObject *obj) {

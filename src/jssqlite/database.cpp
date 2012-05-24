@@ -282,7 +282,6 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	DatabasePrivate *pv = NULL;
-
 	JLData fileName;
 
 	JL_ASSERT_CONSTRUCTING();
@@ -305,6 +304,7 @@ DEFINE_CONSTRUCTOR() {
 
 	pv = (DatabasePrivate*)JS_malloc(cx, sizeof(DatabasePrivate));
 	JL_CHK(pv);
+	pv->db = NULL;
 
 	if ( sqlite3_open_v2(fileName, &pv->db, flags, NULL) != SQLITE_OK )
 		JL_CHK( SqliteThrowError(cx, pv->db) );
@@ -316,10 +316,15 @@ DEFINE_CONSTRUCTOR() {
 	jl::StackInit(&pv->stmtList);
 	jl::StackInit(&pv->blobList);
 
-	JL_SetPrivate( obj, pv);
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
+
 bad:
-	jl_free(pv); // jl_free(NULL) is legal
+	if ( pv ) {
+
+		sqlite3_close(pv->db);
+		jl_free(pv); // jl_free(NULL) is legal
+	}
 	return JS_FALSE;
 }
 

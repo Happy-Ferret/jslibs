@@ -48,6 +48,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	SDL_Cursor *cursor = NULL;
 	JLData data;
 
 	JL_ASSERT_ARGC_MIN(1);
@@ -101,18 +102,22 @@ DEFINE_CONSTRUCTOR() {
 		hotY = 0;
 		
 
-	SDL_Cursor *cursor = SDL_CreateCursor(cursorImage, cursorMask, sWidth, sHeight, hotX, hotY);
+	cursor = SDL_CreateCursor(cursorImage, cursorMask, sWidth, sHeight, hotX, hotY);
 	if ( cursor == NULL ) {
 
 		jl_free(cursorImage);
 		return ThrowSdlError(cx);
 	}
 
-	JL_SetPrivate( obj, cursor);
-
 	jl_free(cursorImage);
+
+	JL_SetPrivate(obj, cursor);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( cursor )
+		SDL_FreeCursor(cursor);
+	return JS_FALSE;
 }
 
 

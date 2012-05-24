@@ -28,18 +28,16 @@ BEGIN_CLASS( OalEffect )
 DEFINE_FINALIZE() {
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
-	if ( pv ) {
+	if ( !pv )
+		return;
 
-		if ( alcGetCurrentContext() ) {
+	if ( alcGetCurrentContext() )
+		alDeleteEffects(1, &pv->effect);
 
-			alDeleteEffects(1, &pv->effect);
-		}
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+		return;
 
-		if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
-			return;
-
-		JS_freeop(fop, pv);
-	}
+	JS_freeop(fop, pv);
 }
 
 
@@ -51,17 +49,26 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	Private *pv = NULL;
+
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
 	alGenEffects(1, &pv->effect);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_SetPrivate( obj, pv);
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( pv ) {
+
+		alDeleteEffects(1, &pv->effect);
+		JS_free(cx, pv);
+	}
+	return JS_FALSE;
 }
 
 

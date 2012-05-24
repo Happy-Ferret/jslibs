@@ -56,7 +56,8 @@ DEFINE_CONSTRUCTOR() {
 	ode::dJointID jointId = ode::dJointCreateAMotor(worldId, groupId);
 	ode::dJointSetData(jointId, obj);
 	ode::dJointSetFeedback(jointId, NULL);
-	JL_SetPrivate( obj, jointId);
+
+	JL_SetPrivate(obj, jointId);
 	return JS_TRUE;
 	JL_BAD;
 }

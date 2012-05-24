@@ -103,18 +103,28 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	Private *pv = NULL;
+
 	JL_ASSERT_ARGC(0);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
 	pv->handle = rsvg_handle_new();
 	JL_ASSERT( pv->handle != NULL, E_THISOBJ, E_CREATE ); // "Unable to create rsvg handler."
 	cairo_matrix_init_identity(&pv->transformation);
-	JL_SetPrivate( obj, pv);
+	
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( pv ) {
+
+		g_object_unref(pv->handle);
+		JS_free(cx, pv);
+	}
+	return JS_FALSE;
 }
 
 

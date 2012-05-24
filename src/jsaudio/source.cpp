@@ -114,25 +114,25 @@ DEFINE_TRACER() {
 DEFINE_FINALIZE() {
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
-	if ( pv ) {
+	if ( !pv )
+		return;
 
-		if ( alcGetCurrentContext() ) {
+	if ( alcGetCurrentContext() ) {
 
-//			alAuxiliaryEffectSloti(pv->effectSlot, AL_EFFECTSLOT_EFFECT, AL_EFFECT_NULL);
-			alDeleteAuxiliaryEffectSlots(1, &pv->effectSlot);
-			alDeleteSources(1, &pv->sid);
-		}
-
-		if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
-			return;
-
-		while ( !QueueIsEmpty(pv->queue) ) {
-
-			jsval *pItem = (jsval*)QueuePop(pv->queue);
-			JS_freeop(fop, pItem);
-		}
-		QueueDestruct(pv->queue);
+		// alAuxiliaryEffectSloti(pv->effectSlot, AL_EFFECTSLOT_EFFECT, AL_EFFECT_NULL);
+		alDeleteAuxiliaryEffectSlots(1, &pv->effectSlot);
+		alDeleteSources(1, &pv->sid);
 	}
+
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+		return;
+
+	while ( !QueueIsEmpty(pv->queue) ) {
+
+		jsval *pItem = (jsval*)QueuePop(pv->queue);
+		JS_freeop(fop, pItem);
+	}
+	QueueDestruct(pv->queue);
 }
 
 /**doc
@@ -142,10 +142,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	Private *pv = NULL;
+
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
 
 	pv->queue = jl::QueueConstruct();
@@ -153,9 +155,16 @@ DEFINE_CONSTRUCTOR() {
 	alGenSources(1, &pv->sid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_SetPrivate( obj, pv);
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( pv ) {
+
+		alDeleteSources(1, &pv->sid);
+		JS_free(cx, pv);
+	}
+	return JS_FALSE;
 }
 
 

@@ -2805,7 +2805,7 @@ JL_ArrayBufferToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, 
 // supports Array-like objects and typedArray
 template <class T>
 ALWAYS_INLINE JSBool FASTCALL
-JL_JsvalToNativeVector( JSContext * RESTRICT cx, jsval & RESTRICT val, T * RESTRICT vector, unsigned maxLength, unsigned *actualLength ) {
+JL_JsvalToNativeVector( JSContext * RESTRICT cx, jsval & RESTRICT val, T * RESTRICT vector, IN unsigned maxLength, OUT unsigned *actualLength ) {
 
 	jsval tmp;
 

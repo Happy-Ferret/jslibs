@@ -255,6 +255,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	Private *pv = NULL;
 	JLData jid, password;
 
 	JL_ASSERT_CONSTRUCTING();
@@ -262,9 +263,10 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_ASSERT_ARGC_MIN(2);
 
-	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
-	JL_SetPrivate( obj, pv);
+	pv->handlers = NULL;
+	pv->client = NULL;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &jid) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &password) );
 	pv->handlers = new Handlers(obj);
@@ -273,8 +275,18 @@ DEFINE_CONSTRUCTOR() {
 	pv->client->registerConnectionListener( pv->handlers );
 	pv->client->rosterManager()->registerRosterListener( pv->handlers, true );
 	pv->client->registerMessageHandler( pv->handlers );
+
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( pv ) { 
+	
+		delete pv->client;
+		delete pv->handlers;
+		JS_free(cx, pv);
+	}
+	return JS_FALSE;
 }
 
 /**doc

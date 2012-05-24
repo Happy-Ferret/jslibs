@@ -57,9 +57,10 @@ DEFINE_CONSTRUCTOR() {
 
 
 	ode::dGeomID geomId = ode::dCreateConvex(space, NULL, 0, NULL, 0, NULL);
-	JL_SetPrivate( obj, geomId);
 	JL_CHK( SetupReadMatrix(cx, obj) );
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
+
+	JL_SetPrivate(obj, geomId);
 	return JS_TRUE;
 	JL_BAD;
 }

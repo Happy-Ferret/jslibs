@@ -95,7 +95,7 @@ DEFINE_CONSTRUCTOR() {
 
 	//ode::dHashSpaceSetLevels(spaceId, -3, 10);
 
-	JL_SetPrivate( obj, spaceId);
+	JL_SetPrivate(obj, spaceId);
 	return JS_TRUE;
 	JL_BAD;
 }

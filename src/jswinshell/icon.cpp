@@ -36,6 +36,8 @@ $TOC_MEMBER $INAME
 
 DEFINE_CONSTRUCTOR() {
 
+	HICON *phIcon = NULL;
+
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
@@ -111,13 +113,23 @@ DEFINE_CONSTRUCTOR() {
 	
 	// FYI. How do I get the dimensions of a cursor or icon? (http://blogs.msdn.com/b/oldnewthing/archive/2010/10/20/10078140.aspx)
 
-	HICON *phIcon = (HICON*)JS_malloc(cx, sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
+	phIcon = (HICON*)JS_malloc(cx, sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
 	JL_CHK( phIcon );
 	*phIcon = hIcon;
-	JL_SetPrivate( obj, phIcon);
+
+	JL_SetPrivate(obj, phIcon);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( phIcon ) {
+
+		if ( *phIcon != NULL )
+			DestroyIcon(*phIcon);
+		JS_free(cx, phIcon);
+	}
+	return JS_FALSE;
 }
+
 
 DEFINE_FINALIZE() {
 
@@ -127,8 +139,10 @@ DEFINE_FINALIZE() {
 
 	if ( *phIcon != NULL )
 		DestroyIcon(*phIcon);
+
 	JS_freeop(fop, phIcon);
 }
+
 
 CONFIGURE_CLASS
 

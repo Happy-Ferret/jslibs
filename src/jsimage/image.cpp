@@ -63,6 +63,7 @@ DEFINE_CONSTRUCTOR() {
 	JSObject *functionObject;
 	functionObject = JS_GetFunctionObject(allocFunction);
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_FUNCTION_ALLOC, OBJECT_TO_JSVAL(functionObject)) );
+
 	return JS_TRUE;
 	JL_BAD;
 }

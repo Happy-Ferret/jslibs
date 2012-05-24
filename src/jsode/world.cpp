@@ -285,13 +285,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	WorldPrivate *pv = NULL;
+
 	JL_ASSERT_ARGC(0);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	WorldPrivate *pv = (WorldPrivate*)JS_malloc(cx, sizeof(WorldPrivate));
+	pv = (WorldPrivate*)JS_malloc(cx, sizeof(WorldPrivate));
 	JL_CHK( pv );
-	JL_SetPrivate( obj, pv);
 	
 //	pv->stepTmpCx = NULL;
 
@@ -309,8 +310,11 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, OBJECT_TO_JSVAL(surfaceParametersObject)) );
 
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	JS_free(cx, pv);
+	return JS_FALSE;
 }
 
 /**doc

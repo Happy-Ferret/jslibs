@@ -48,9 +48,10 @@ DEFINE_CONSTRUCTOR() {
 		space = 0;
 	}
 	ode::dGeomID geomId = ode::dCreatePlane(space, 0,0,1,0); // default lengths are 1
-	JL_SetPrivate( obj, geomId);
 	JL_CHK( SetupReadMatrix(cx, obj) );
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
+
+	JL_SetPrivate(obj, geomId);
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -43,6 +43,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	PRFileDesc *fd = NULL;
+
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
@@ -51,8 +53,6 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &descType) );
 	else
 		descType = PR_DESC_SOCKET_TCP; // default
-
-	PRFileDesc *fd;
 
 	if ( descType == PR_DESC_SOCKET_TCP )
 		fd = PR_NewTCPSocket();
@@ -64,10 +64,15 @@ DEFINE_CONSTRUCTOR() {
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 
-	JL_SetPrivate(  obj, fd );
 	JL_CHK( ReserveStreamReadInterface(cx, obj) );
+
+	JL_SetPrivate(obj, fd);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( fd )
+		PR_Close(fd);
+	return JS_FALSE;
 }
 
 /**doc

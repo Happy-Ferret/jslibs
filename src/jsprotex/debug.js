@@ -1,5 +1,6 @@
 var loadModule = host.loadModule;
-// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
+ //loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsprotex'); throw 0; // -inlineOnly
 
 loadModule('jsstd');
 loadModule('jsio');
@@ -7,7 +8,6 @@ loadModule('jssdl');
 loadModule('jsgraphics');
 loadModule('jsprotex');
 loadModule('jsimage');
-
 
 //halt(); //////////////////////////////////////////////////////////////////////
 
@@ -110,7 +110,7 @@ function noiseChannel( tex, channel ) {
 ////
 
 
-var size = 128;
+var size = 256;
 var texture = new Texture(size, size, 3);
 
 //	var myImage = DecodeJpegImage( new File('301_0185.jpg').Open('r') );
@@ -130,6 +130,56 @@ perlinNoiseReinit();
 
 function updateTexture(imageIndex) { // <<<<<<<<<<<<<<<<<-----------------------------------
 
+
+
+
+	// disco effect 2
+	var t = cloud(size, 0.2);
+	grayToRGB( t );
+	t.addGradiantQuad(BLUE, GREEN, RED, YELLOW);
+	t.mirrorLevels( 0.5 );
+	t.mult(2);
+	t.cutLevels(0.6, 0.8);
+	t.colorize( BLACK, RED, 0 );
+	t.colorize( WHITE, BLUE, 0 );
+	texture.set(t);
+return;
+
+	// dilate test
+	var mx = texture.width/2, my = texture.height/2;
+	texture.set(0).setPixel(mx-mx/2, my, [1,0,0]).setPixel(mx, my, [0,0.7,0]).setPixel(mx+mx/2, my, [0,0,1]).boxBlur(mx/2,mx/2, 5);
+	
+	texture.dilate(5);
+	texture.normalizeLevels();
+return;
+
+
+	// gozilla's skin
+	randSeed(1);
+	var bump = cloud( size, 0.6 );
+	bump.normals();
+	texture.set(1);
+	texture.light( bump, [-1, -1, 0.5], 0, [0.4, 0.6, 0.0], 0.2, 0.7, 10 );
+
+return;
+
+	// perlin noise
+	texture.set(0.5);
+	texture.addPerlin2(z,0,0, 32, 1);
+	texture.addPerlin2(z,0,0, 16, 0.5);
+	texture.addPerlin2(z,0,0, 8, 0.25);
+	texture.addPerlin2(z,0,0, 4, 0.125);
+	texture.setChannel(1, texture, 0);
+	texture.setChannel(2, texture, 0);
+	z += 1;
+return;
+
+
+	// perlin noise
+	texture.set(0);
+	texture.addGradiantQuad(RED, GREEN, BLUE, WHITE);
+	texture.addPerlin2([z/20,0,0], [10,0,0], [0,10,0], 2);
+return;
 
 	// ???
 	randSeed(1);
@@ -157,16 +207,10 @@ return;
 
 
 
-	// perlin noise
-	texture.Set(0);
-	texture.addGradiantQuad(RED, GREEN, BLUE, WHITE);
-return;
-
-	texture.addPerlin2([z/20,0,0], [10,0,0], [0,10,0], 2);
 
 function fractalCubeFace(px, py, pz,  x1, y1, z1,  x2, y2, z2) {
 
-	var face = new Texture(128,128,1).Set(0);
+	var face = new Texture(128,128,1).set(0);
 	for ( var scale = 2; scale <= 32; scale *= 2 )
 		face.addPerlin2([px*scale, py*scale, pz*scale], [x1*scale, y1*scale, z1*scale], [x2*scale, y2*scale, z2*scale], 1/scale);
 	return face;
@@ -184,34 +228,13 @@ function fractalCubeFace(px, py, pz,  x1, y1, z1,  x2, y2, z2) {
 return;
 
 
-	// perlin noise
-	texture.Set(0.5);
-	texture.addPerlin2(z,0,0, 32, 1);
-	texture.addPerlin2(z,0,0, 16, 0.5);
-	texture.addPerlin2(z,0,0, 8, 0.25);
-	texture.addPerlin2(z,0,0, 4, 0.125);
-	texture.setChannel(1, texture, 0);
-	texture.setChannel(2, texture, 0);
-	z += 1;
-return;
-
-
-	// dilate test
-	var mx = texture.width/2, my = texture.height/2;
-	texture.Set(0).setPixel(mx-mx/2, my, [1,0,0]).setPixel(mx, my, [0,0.7,0]).setPixel(mx+mx/2, my, [0,0,1]).boxBlur(mx/2,mx/2, 5);
-	
-	texture.dilate(5);
-	texture.normalizeLevels();
-return;
-
-
 
 	// ???
 	var bump = new Texture(texture.width, texture.height, 3).cells(8, 0).add( new Texture(size, size, 3).cells(8, 1).oppositeLevels() ); // broken floor
 	bump.normals();
 
 	var t = new Texture(size, size, 3);
-	t.Set(1);
+	t.set(1);
 	t.Light( bump, [-1, -1, 0.5], [1,1,1], 0.5, 1 );
 
 	
@@ -226,33 +249,12 @@ return;
 
 
 
-	// gozilla's skin
-	randSeed(1);
-	var bump = cloud( size, 0.6 );
-	bump.normals();
-	texture.Set(1);
-	texture.Light( bump, [-1, -1, 0.5], 0, [0.4, 0.6, 0.0], 0.2, 0.7, 10 );
-return;
 
 
-
-
-
-	// disco effect 2
-	var t = cloud(size, 0.2);
-	grayToRGB( t );
-	t.addGradiantQuad(BLUE, GREEN, RED, YELLOW);
-	t.mirrorLevels( 0.5 );
-	t.mult(2);
-	t.cutLevels(0.6, 0.8);
-	t.colorize( BLACK, RED, 0 );
-	t.colorize( WHITE, BLUE, 0 );
-	texture.Set(t);
-return;
 
 
 	// the sun
-	texture.Set(0);
+	texture.set(0);
 	texture.forEachPixel(function(pixel, x, y) {
 		
 		var val = perlinNoise(1.5, 0.75, 5, x/4, y/4, z/16);
@@ -267,12 +269,12 @@ return;
 
 	// gaussian like fast blur
 	var mx = texture.width/2, my = texture.height/2;
-	texture.Set(0).setPixel(mx-mx/2, my, [1,0,0]).setPixel(mx, my, [0,1,0]).setPixel(mx+mx/2, my, [0,0,1]).boxBlur(mx/2,mx/2, 5).normalizeLevels();
+	texture.set(0).setPixel(mx-mx/2, my, [1,0,0]).setPixel(mx, my, [0,1,0]).setPixel(mx+mx/2, my, [0,0,1]).boxBlur(mx/2,mx/2, 5).normalizeLevels();
 return;
 
 
 	// movable perlin texture
-	texture.Set(1);
+	texture.set(1);
 	var mx = texture.width, my = texture.height;
 	for ( var y = 0; y < my; y++ )
 		for ( var x = 0; x < mx; x++ ) {
@@ -287,12 +289,12 @@ return;
 
 	// smooth colored noise
 	randSeed(1);
-	texture.Set(0).addNoise(1).boxBlur(7,7, 3).normalizeLevels();
+	texture.set(0).addNoise(1).boxBlur(7,7, 3).normalizeLevels();
 return;
 
 
 	// smoke effect
-	texture.Set(1);
+	texture.set(1);
 	texture.forEachPixel(function(pixel, x, y) {
 		
 		var ry = (y/texture.height);
@@ -307,7 +309,7 @@ return;
 
 
 	// nice clouds effect
-	texture.Set(1);
+	texture.set(1);
 	texture.forEachPixel(function(pixel, x, y) {
 
 		var dis = perlinNoise(2.1, 0.5, 6, x-z/2, y);
@@ -319,7 +321,7 @@ return;
 return;
 
 	// binary stream
-	texture.Set(0);
+	texture.set(0);
 	texture.forEachPixel(function(pixel, x, y) {
 
 		var val = perlinNoise2(x+z, y/3, 0);
@@ -329,7 +331,7 @@ return;
 return;
 
 	// strange effect
-	texture.Set(0);
+	texture.set(0);
 	texture.forEachPixel(function(pixel, x, y) {
 
 		var dx= perlinNoise2(y*f, (x+z)*f, 0);
@@ -426,7 +428,7 @@ return;
 return;
 	
 	
-//	t.Set(GRAY);
+//	t.set(GRAY);
 	t.addGradiantLinear(curveHalfSine, curveOne);
 	
 	var bump = new Texture(size, size, 1);
@@ -439,7 +441,7 @@ return;
 //	t.Resize(256,256);
 //	t.AddNoise(0.1);
 
-//	t.Set(BLUE);
+//	t.set(BLUE);
 	
 //	t.Blend(t,RED);
 	
@@ -468,7 +470,7 @@ return;
 //	t.AddNoise(0.5);
 	
 	t.addGradiantQuad(BLUE, GREEN, RED, YELLOW);
-//	t.Set( YELLOW )
+//	t.set( YELLOW )
 
 	t.colorize(BLUE, WHITE);
 	
@@ -635,38 +637,38 @@ return;
 	//texture.Rect(0,0,100,100,1,0,0,1);
 	//texture.Shift(-50,-10);
 
-	//texture.SetValue(0,0,0,1);
-	//texture.SetNoise(1234);
-	//texture.Pixels(10000,1234);
-	//texture.Cells(10,0,1);
+	//texture.setValue(0,0,0,1);
+	//texture.setNoise(1234);
+	//texture.pixels(10000,1234);
+	//texture.cells(10,0,1);
 
-	//texture.Contrast(2.5);
+	//texture.contrast(2.5);
 
-	//texture.Resize(256,256,true);
+	//texture.resize(256,256,true);
 
-	//texture.Convolution([0,-1,0, -1,4,-1 ,0,-1,0]); // laplacian 4
+	//texture.convolution([0,-1,0, -1,4,-1 ,0,-1,0]); // laplacian 4
 
-	//texture.Convolution([0,0,0, 0,0,0 ,0,0,1]); // shift
+	//texture.convolution([0,0,0, 0,0,0 ,0,0,1]); // shift
 
-	//texture.Convolution([-1,0,0, 0,0,0 ,0,0,1]); // emboss
-	//texture.Convolution([0,-1,0, -1,5,-1, 0,-1,0]); // crystals
-	//texture.Convolution([1,1,1, -2,-2,-2, 1,1,1]);
-	//texture.Convolution([1,1,1, 1,1,1, 1,1,1]);
-	//texture.Normalize();
-	//texture.MultValue(20,20,20,20);
+	//texture.convolution([-1,0,0, 0,0,0 ,0,0,1]); // emboss
+	//texture.convolution([0,-1,0, -1,5,-1, 0,-1,0]); // crystals
+	//texture.convolution([1,1,1, -2,-2,-2, 1,1,1]);
+	//texture.convolution([1,1,1, 1,1,1, 1,1,1]);
+	//texture.normalize();
+	//texture.multValue(20,20,20,20);
 
-	//texture.Displace(new Texture(512,512).SetNoise(true, 1), 32);
+	//texture.displace(new Texture(512,512).SetNoise(true, 1), 32);
 
 
 	//var texture2 = new Texture(256,256);
-	//texture2.SetValue(1,0,0,1);
-	//texture.PasteAt( texture2, 300, 300, true );
+	//texture2.setValue(1,0,0,1);
+	//texture.pasteAt( texture2, 300, 300, true );
 
-	//texture.MultValue(3,2,2,1);
-	//texture.Clamp(0.5, 1, false);
-	//texture.Normalize();
-	//texture.Aliasing(10);
-	//texture.Invert();
+	//texture.multValue(3,2,2,1);
+	//texture.clamp(0.5, 1, false);
+	//texture.normalize();
+	//texture.aliasing(10);
+	//texture.invert();
 }
 
 

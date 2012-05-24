@@ -126,6 +126,8 @@ f3d.draw('Hello World');
 **/
 DEFINE_CONSTRUCTOR() {
 
+	Private *pv = NULL;
+
 	JL_ASSERT_ARGC_RANGE( 2, 3 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	JL_ASSERT_CONSTRUCTING();
@@ -145,10 +147,9 @@ DEFINE_CONSTRUCTOR() {
 	else
 		size = currentSize;
 
-	Private *pv = (Private*)jl_calloc(1, sizeof(Private));
+	pv = (Private*)jl_calloc(1, sizeof(Private));
 	JL_ASSERT_ALLOC(pv);
 	JL_updateMallocCounter(cx, sizeof(Private));
-	JL_SetPrivate( obj, pv);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &pv->style) );
 	switch ( pv->style ) {
@@ -191,7 +192,19 @@ DEFINE_CONSTRUCTOR() {
 //	pv->face->setCompileMode(OGLFT::Face::COMPILE);
 
 	return JL_SetReservedSlot( obj, OGLFT_SLOT_FONT, JL_ARG(1)); // GC protection
-	JL_BAD;
+
+	JL_SetPrivate(obj, pv);
+	return JS_TRUE;
+
+bad:
+	if ( pv ) {
+
+		// (TBD) delete poly->colorTess() ? see finalize
+		if ( pv->face )
+			delete pv->face; // static_cast<OGLFT::Polygonal*>(pv->face);
+		jl_free(pv);
+	}
+	return JS_FALSE;
 }
 
 //DEFINE_FUNCTION( call ) {

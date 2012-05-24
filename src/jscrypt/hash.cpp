@@ -65,6 +65,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	HashPrivate *pv = NULL;
 	JLData hashName;
 
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -77,7 +78,6 @@ DEFINE_CONSTRUCTOR() {
 	hashIndex = find_hash(hashName);
 	JL_ASSERT( hashIndex != -1, E_STR("hash"), E_NAME(hashName), E_NOTFOUND );
 
-	HashPrivate *pv;
 	pv = (HashPrivate*)jl_malloc(sizeof(HashPrivate));
 	JL_CHK( pv );
 
@@ -93,9 +93,11 @@ DEFINE_CONSTRUCTOR() {
 	pv->isValid = true;
 
 	JL_SetPrivate(obj, pv);
-
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	jl_free(pv);
+	return JS_FALSE;
 }
 
 

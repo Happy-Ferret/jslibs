@@ -62,6 +62,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	MemoryMappedPrivate *pv = NULL;
+
 	JL_ASSERT_CONSTRUCTING();
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -76,9 +78,10 @@ DEFINE_CONSTRUCTOR() {
 	fd = (PRFileDesc*)JL_GetPrivate(fdObj);
 	JL_ASSERT_OBJECT_STATE( fd, JL_CLASS_NAME(File) );
 
-	MemoryMappedPrivate *pv;
 	pv = (MemoryMappedPrivate*)JS_malloc(cx, sizeof(MemoryMappedPrivate));
 	JL_CHK( pv );
+	pv->addr = NULL;
+	pv->fmap = NULL;
 
 	pv->offset = 0;
 	pv->size = PR_Available(fd);
@@ -111,12 +114,21 @@ DEFINE_CONSTRUCTOR() {
 	pv->addr = PR_MemMap(pv->fmap, 0, pv->size);
 	if ( pv->addr == NULL )
 		return ThrowIoError(cx);
-	JL_SetPrivate( obj, pv);
 
 	JL_CHK( SetBufferGetInterface(cx, obj, MemoryMappedBufferGet) );
 
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	if ( pv ) {
+
+		if ( pv->addr )
+			PR_MemUnmap(pv->addr, pv->size);
+		if ( pv->fmap )
+			PR_CloseFileMap(pv->fmap);
+		JS_free(cx, pv);
+	}
+	return JS_FALSE;
 }
 
 /**doc
@@ -130,7 +142,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( file ) {
 
-	JL_IGNORE( id );
+	JL_IGNORE(id, cx);
 
 	JL_CHK( JL_GetReservedSlot( obj, MEMORYMAPPED_SLOT_FILE, vp) );
 	return JS_TRUE;

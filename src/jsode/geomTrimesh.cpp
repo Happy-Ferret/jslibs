@@ -85,10 +85,10 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_TRIMESH_TRIMESH, trimeshVal) );
 
-	JL_SetPrivate( obj, geomId);
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 	JL_CHK( SetupReadMatrix(cx, obj) );
 
+	JL_SetPrivate(obj, geomId);
 	return JS_TRUE;
 	JL_BAD;
 }

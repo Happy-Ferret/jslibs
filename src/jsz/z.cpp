@@ -95,15 +95,15 @@ void jsz_free(voidpf, voidpf address) NOTHROW {
 
 DEFINE_CONSTRUCTOR() {
 
+	Private *pv = NULL;
+
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	Private *pv;
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK(pv);
 
-	JL_SetPrivate( obj, pv);
 	pv->stream.state = Z_NULL; // mendatory
 	pv->stream.zalloc = jsz_alloc;
 	pv->stream.zfree = jsz_free;
@@ -120,8 +120,22 @@ DEFINE_CONSTRUCTOR() {
 		pv->level = Z_DEFAULT_COMPRESSION; // default value
 	}
 
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( pv ) {
+	
+		if ( pv->stream.state != Z_NULL ) {
+
+			if ( pv->method == DEFLATE )
+				deflateEnd(&pv->stream);
+			else
+				inflateEnd(&pv->stream);
+		}
+		JS_free(cx, pv);
+	}
+	return JS_FALSE;
 }
 
 /**doc

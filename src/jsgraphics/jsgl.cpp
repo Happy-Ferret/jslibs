@@ -5713,9 +5713,9 @@ DEFINE_FUNCTION( drawImage ) {
 	} else {
 
 		type = GL_UNSIGNED_BYTE;
-		JLData jldata = JL_GetByteImageObject(cx, JL_ARG(1), &width, &height, &channels);
-		data = jldata.GetConstStr();
-		JL_ASSERT( jl::SafeCast<int>(jldata.Length()) == width * height * channels * 1, E_ARG, E_NUM(1), E_FORMAT );
+		JLData image = JL_GetByteImageObject(cx, JL_ARG(1), &width, &height, &channels);
+		JL_ASSERT( jl::SafeCast<int>(image.Length()) == width * height * channels * 1, E_ARG, E_NUM(1), E_FORMAT );
+		data = image.GetConstStr();
 	}
 
 	if ( JL_ARG_ISDEF(2) ) {

@@ -130,6 +130,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	ClassPrivate *pv = NULL;
 	JLData name;
 
 	JL_ASSERT_ARGC_MIN( 2 );
@@ -172,7 +173,6 @@ DEFINE_CONSTRUCTOR() {
 	mem = PR_AttachSharedMemory(shm, 0);
 	JL_CHKB( mem != NULL, bad_ioerror ); // PR_SHM_READONLY
 
-	ClassPrivate *pv;
 	pv = (ClassPrivate*)jl_malloc(sizeof(ClassPrivate));
 	JL_CHK( pv );
 
@@ -195,14 +195,17 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	JL_CHKB( PR_PostSemaphore( accessSem ) == PR_SUCCESS, bad_ioerror );
-	JL_SetPrivate( obj, pv);
 	JL_CHK( SetBufferGetInterface(cx, obj, SharedMemoryBufferGet) );
 
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
 
 bad_ioerror:
 	ThrowIoError(cx);
-	JL_BAD;
+
+bad:
+	jl_free(pv);
+	return JS_FALSE;
 }
 
 

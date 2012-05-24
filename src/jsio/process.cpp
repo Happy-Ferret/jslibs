@@ -168,7 +168,6 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	JL_CHKB( process != NULL, bad_throw );
-	JL_SetPrivate( obj, (void*)process);
 
 	if ( stdioRedirect ) {
 
@@ -188,10 +187,12 @@ DEFINE_CONSTRUCTOR() {
 		JL_SetPrivate(  fdErrObj, stderr_parent );
 	}
 
+	JL_SetPrivate(obj, process);
 	return JS_TRUE;
 
 bad_throw:
 	ThrowIoError(cx);
+
 bad:
 	if ( psattr != NULL )
 		PR_DestroyProcessAttr(psattr);

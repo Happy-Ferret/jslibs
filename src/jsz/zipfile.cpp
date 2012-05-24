@@ -185,24 +185,39 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	Private *pv = NULL;
+
 	JL_ASSERT_CONSTRUCTING();
 	JL_ASSERT_ARGC(1);
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_FILENAME, JL_ARG(1)) );
 
-	Private *pv = (Private *)jl_calloc(sizeof(Private), 1);
+	pv = (Private*)jl_calloc(sizeof(Private), 1);
 	JL_ASSERT_ALLOC(pv);
+	pv->uf = NULL;
+	pv->zf = NULL;
+
 	JL_updateMallocCounter(cx, sizeof(Private));
 	JL_ASSERT( !pv->uf && !pv->zf );
 	JL_ASSERT( !pv->inZipOpened );
-	JL_SetPrivate(obj, pv);
 
 	//JL_CHK( ReserveStreamReadInterface(cx, obj) );
 	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( pv ) {
+
+		if ( pv->zf )
+			zipClose(pv->zf, NULL);
+		if ( pv->uf )
+			unzClose(pv->uf);
+		jl_free(pv);
+	}
+	return JS_FALSE;
 }
 
 

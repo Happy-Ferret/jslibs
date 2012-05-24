@@ -151,9 +151,8 @@ $TOC_MEMBER $INAME
 // mode, cipher, key, IV
 DEFINE_CONSTRUCTOR() {
 	
-	JLData modeName, cipherName, key, IV, optarg;
-
 	CipherPrivate *pv = NULL; // see. bad label
+	JLData modeName, cipherName, key, IV, optarg;
 
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
@@ -284,7 +283,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( err != CRYPT_OK )
 		JL_CHK( ThrowCryptError(cx, err) );
 
-	JL_SetPrivate(  obj, pv );
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
 
 bad:

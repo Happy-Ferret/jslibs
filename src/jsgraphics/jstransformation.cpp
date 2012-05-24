@@ -101,13 +101,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	TransformationPrivate *pv = NULL;
+
 	JL_ASSERT_ARGC_RANGE(0,16);
 //	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	TransformationPrivate *pv = (TransformationPrivate *)JS_malloc(cx, sizeof(TransformationPrivate));
+	pv = (TransformationPrivate *)JS_malloc(cx, sizeof(TransformationPrivate));
 	JL_CHK(pv);
-	JL_SetPrivate( JL_OBJ, pv);
+	
+	pv->mat = NULL; // see bad:
 
 	pv->mat = PoolIsEmpty(&matrixPool) ? Matrix44Alloc() : (Matrix44*)jl::PoolPop(&matrixPool);
 	JL_ASSERT_ALLOC(pv->mat);
@@ -145,8 +148,17 @@ DEFINE_CONSTRUCTOR() {
 	// else uninitialized matrix
 
 	JL_CHK( SetMatrix44GetInterface(cx, obj, GetMatrix) );
+
+	JL_SetPrivate(JL_OBJ, pv);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( pv ) {
+		
+		Matrix44Free(pv->mat);
+		JS_free(cx, pv);
+	}
+	return JS_FALSE;
 }
 
 

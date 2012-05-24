@@ -116,8 +116,9 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT( bodyId != NULL, E_LIB, E_NAME("ODE"), E_SEP, E_STR(JL_THIS_CLASS_NAME), E_CREATE );
 	
 	JL_CHK( SetMatrix44GetInterface(cx, obj, BodyReadMatrix) );
-	JL_SetPrivate( obj, bodyId);
 	ode::dBodySetData(bodyId, obj);
+
+	JL_SetPrivate(obj, bodyId);
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -30,18 +30,16 @@ BEGIN_CLASS( OalFilter )
 DEFINE_FINALIZE() {
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
-	if ( pv ) {
+	if ( !pv )
+		return;
 
-		if ( alcGetCurrentContext() ) {
+	if ( alcGetCurrentContext() )
+		alDeleteFilters(1, &pv->filter);
 
-			alDeleteFilters(1, &pv->filter);
-		}
+	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+		return;
 
-		if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
-			return;
-
-		JS_freeop(fop, pv);
-	}
+	JS_freeop(fop, pv);
 }
 
 /**doc
@@ -51,18 +49,27 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	Private *pv = NULL;
+
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
 
 	alGenFilters(1, &pv->filter);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_SetPrivate( obj, pv);
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( pv ) {
+
+		alDeleteFilters(1, &pv->filter);
+		JS_free(cx, pv);
+	}
+	return JS_FALSE;
 }
 
 

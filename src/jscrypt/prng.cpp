@@ -50,6 +50,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	PrngPrivate *pv = NULL;
 	JLData prngName;
 
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -63,7 +64,6 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT( prngIndex != -1, E_STR("PRNG"), E_NAME(prngName), E_NOTFOUND );
 
 
-	PrngPrivate *pv;
 	pv = (PrngPrivate*)jl_malloc(sizeof(PrngPrivate));
 	JL_CHK( pv );
 
@@ -77,9 +77,12 @@ DEFINE_CONSTRUCTOR() {
 	err = pv->prng.ready( &pv->state );
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx,err);
-	JL_SetPrivate(  obj, pv );
+
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	jl_free(pv);
+	return JS_FALSE;
 }
 
 /**doc

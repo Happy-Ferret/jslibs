@@ -57,6 +57,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	ClassPrivate *pv = NULL;
 	JLData name;
 
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -76,7 +77,6 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &name) );
 	JL_ASSERT( name.Length() < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
 
-
 	bool isCreation;
 	isCreation = true;
 	PRSem *semaphore;
@@ -90,7 +90,6 @@ DEFINE_CONSTRUCTOR() {
 		isCreation = false;
 	}
 
-	ClassPrivate *pv;
 	pv = (ClassPrivate*)JS_malloc(cx, sizeof(ClassPrivate));
 	JL_CHK( pv );
 
@@ -101,10 +100,12 @@ DEFINE_CONSTRUCTOR() {
 	pv->semaphore = semaphore;
 	pv->owner = isCreation;
 
-	JL_SetPrivate( JL_OBJ, pv);
-
+	JL_SetPrivate(JL_OBJ, pv);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	JS_free(cx, pv);
+	return JS_FALSE;
 }
 
 /**doc

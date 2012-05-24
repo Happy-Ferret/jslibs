@@ -41,18 +41,24 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
+	VstMidiEvent *pv = NULL;
+
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_CHK( JL_SetReservedSlot( obj, 0, JSVAL_TRUE) );
-	VstMidiEvent *pv = (VstMidiEvent*)JS_malloc(cx, sizeof(VstMidiEvent));
+	pv = (VstMidiEvent*)JS_malloc(cx, sizeof(VstMidiEvent));
 	JL_CHK( pv );
 
 	pv->byteSize = sizeof(VstMidiEvent);
 	pv->type = kVstMidiType;
-	JL_SetPrivate( obj, pv);
+
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	JS_free(cx, pv);
+	return JS_FALSE;
 }
 
 

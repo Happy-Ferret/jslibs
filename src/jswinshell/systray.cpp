@@ -41,8 +41,7 @@ Shell_NotifyIconA_retry(DWORD dwMessage, PNOTIFYICONDATAA lpData) {
 	return status;
 }
 
-struct Private {
-	
+struct Private : public jl::CppAllocators {
 	NOTIFYICONDATA nid;
 	HANDLE thread;
 	HANDLE event;
@@ -387,15 +386,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	Private *pv = NULL;
+
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	//Private *pv = (Private*)jl_malloc(sizeof(Private));
 
-	Private *pv = new Private();
+	pv = new Private();
 	JL_ASSERT_ALLOC( pv );
 	JL_updateMallocCounter(cx, sizeof(Private));
-	JL_SetPrivate( obj, pv);
 
 	InitializeCriticalSection(&pv->cs);
 
@@ -408,8 +408,11 @@ DEFINE_CONSTRUCTOR() {
 	SetThreadPriority(pv->thread, THREAD_PRIORITY_ABOVE_NORMAL);
 	WaitForSingleObject(pv->event, INFINITE); // first pulse
 
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	delete pv;
+	return JS_FALSE;
 }
 
 void

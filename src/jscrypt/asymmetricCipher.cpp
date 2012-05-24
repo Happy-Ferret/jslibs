@@ -129,6 +129,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersion] )
 
+	AsymmetricCipherPrivate *pv = NULL;
 	JLData asymmetricCipherName, hashName;
 
 	JL_ASSERT_ARGC_MIN( 3 );
@@ -152,7 +153,6 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 	else
 		JL_ERR( E_ARG, E_NUM(1), E_INVALID, E_SEP, E_NAME(asymmetricCipherName), E_NOTSUPPORTED );
 
-	AsymmetricCipherPrivate *pv;
 	pv = (AsymmetricCipherPrivate *)jl_malloc(sizeof(AsymmetricCipherPrivate));
 	JL_CHK( pv );
 
@@ -201,9 +201,12 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 	}
 
 	pv->hasKey = false;
-	JL_SetPrivate(  obj, pv );
+
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	jl_free(pv);
+	return JS_FALSE;
 }
 
 /**doc

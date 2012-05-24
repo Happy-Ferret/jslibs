@@ -193,15 +193,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	Private *pv = NULL;
+
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-
-	Private *pv = (Private*)JS_malloc(cx, sizeof(Private));
+	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
-	JL_SetPrivate( obj, pv);
+	pv->sfDescriptor = NULL;
 
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_INPUT_STREAM, JL_ARG(1) ) );
 	pv->streamObject = JSVAL_TO_OBJECT(JL_ARG(1));
@@ -232,8 +233,18 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	pv->cx = NULL; // see definition
+
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( pv ) {
+
+		if ( pv->sfDescriptor )
+			sf_close(pv->sfDescriptor);
+		jl_free(pv);
+	}
+	return JS_FALSE;
 }
 
 /**doc

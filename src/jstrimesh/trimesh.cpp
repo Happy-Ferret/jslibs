@@ -63,17 +63,21 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 
 DEFINE_CONSTRUCTOR() {
 
+	Surface *pv = NULL;
+
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	Surface *pv;
 	pv = (Surface*)JS_malloc(cx, sizeof(Surface));
 	JL_CHK( pv );
 	memset(pv, 0, sizeof(Surface));
 
-	JL_SetPrivate( obj, pv);
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	JS_free(cx, pv);
+	return JS_FALSE;
 }
 
 

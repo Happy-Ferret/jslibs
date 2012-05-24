@@ -25,7 +25,7 @@ DEFINE_FINALIZE() {
 
 	JL_IGNORE(fop);
 
-	ALuint bid = (ALuint) JL_GetPrivate(obj);
+	ALuint bid = (ALuint)JL_GetPrivate(obj);
 	if ( bid )
 		alDeleteBuffers(1, &bid);
 }
@@ -38,6 +38,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	ALuint bid = 0; // The OpenAL sound buffer ID
 	JLData data;
 
 	JL_ASSERT_CONSTRUCTING();
@@ -60,7 +61,7 @@ DEFINE_CONSTRUCTOR() {
 			JL_ERR( E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(1, 2) );
 	}
 
-	ALuint bid; // The OpenAL sound buffer ID
+	S_ASSERT(sizeof(ALuint) == sizeof(void*));
 
 	alGenBuffers(1, &bid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -68,9 +69,13 @@ DEFINE_CONSTRUCTOR() {
 	alBufferData(bid, format, data.GetConstStr(), (ALsizei)data.Length(), rate); // Upload sound data to buffer
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_SetPrivate( obj, (void*)bid);
+	JL_SetPrivate(obj, (void*)bid);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( bid != 0 )
+		alDeleteBuffers(1, &bid);
+	return JS_TRUE;
 }
 
 

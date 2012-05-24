@@ -1,5 +1,11 @@
 loadModule('jsz');
 
+/// bad constructor 1 [p]
+	new Z();
+
+/// bad constructor 2 [p]
+	Z();
+
 /// empty operation [p]
 
 		var deflate = new Z(Z.DEFLATE);

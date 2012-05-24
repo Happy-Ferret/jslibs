@@ -65,7 +65,6 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JsfontPrivate *pv = NULL;
-
 	JLData filePathName;
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
@@ -94,7 +93,7 @@ DEFINE_CONSTRUCTOR() {
 	// see. FT_Open_Face
 	JL_ASSERT_ALLOC(pv->face);
 
-	JL_SetPrivate( obj, pv);
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
 
 bad:

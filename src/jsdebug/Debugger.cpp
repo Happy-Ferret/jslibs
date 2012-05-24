@@ -370,18 +370,20 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	DebuggerPrivate *pv = NULL;
+
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	DebuggerPrivate *pv;
 	pv = (DebuggerPrivate*)JS_malloc(cx, sizeof(DebuggerPrivate));
 	JL_CHK( pv );
 	memset(pv, 0, sizeof(DebuggerPrivate));
 
-	JL_SetPrivate( obj, pv);
-
+	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	JS_free(cx, pv);
+	return JS_FALSE;
 }
 
 

@@ -37,15 +37,21 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_IGNORE(argc);
 
+	jl::Serializer *ser = NULL;
+
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	jl::Serializer *ser;
 	ser = new jl::Serializer(OBJECT_TO_JSVAL(JL_OBJ));
 	JL_ASSERT_ALLOC(ser);
-	JL_SetPrivate( JL_OBJ, ser);
 	ser->Write(cx, JL_THIS_CLASS_REVISION);
+
+	JL_SetPrivate(JL_OBJ, ser);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( ser )
+		delete ser;
+	return JS_FALSE;
 }
 
 /**doc
@@ -133,21 +139,26 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
+	jl::Unserializer *unser = NULL;
 	JLData str;
+
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_STRING(1);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-	jl::Unserializer *unser;
 	unser = new jl::Unserializer(str.GetStrZOwnership(), str.Length(), OBJECT_TO_JSVAL(JL_OBJ));
 	JL_ASSERT_ALLOC(unser);
-	JL_SetPrivate( JL_OBJ, unser);
 	jl::SourceId_t srcId;
 	JL_CHK( unser->Read(cx, srcId) );
 	JL_ASSERT( srcId == JL_THIS_CLASS_REVISION, E_ARG, E_NUM(1), E_VERSION, E_COMMENT("serialized data") );
+
+	JL_SetPrivate(JL_OBJ, unser);
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	if ( unser )
+		delete unser;
+	return JS_FALSE;
 }
 
 /**doc

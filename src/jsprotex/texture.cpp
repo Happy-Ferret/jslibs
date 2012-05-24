@@ -26,12 +26,10 @@
 #include "vector3.h"
 #include "vector4.h"
 #include "matrix44.h"
-#include "matrix55.h"
 
 
 DECLARE_CLASS( Texture )
 
-//#pragma warning(disable : 4244) // warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
 
 EXTERN_C double genrand_real1(void); // mt19937ar-cok.c
 #define PRAND (PTYPE(genrand_real1()))
@@ -81,7 +79,24 @@ double PerlinNoise2(double x, double y, double z);
 #define PUNZNORM(p) ( (PUNNORM(p) + PTYPE(1) ) / PTYPE(2))
 
 
-ALWAYS_INLINE JSBool TextureInit( TextureStruct *tex, unsigned int width, unsigned int height, unsigned int channels ) {
+#define COLOR_NAME_COMPONENT_COUNT (4)
+#define COLOR_NAME_COMPONENT_VALUE_MAX (255)
+
+struct ColorName {
+	const char *name;
+	uint8_t component[COLOR_NAME_COMPONENT_COUNT];
+};
+
+const ColorName colorNameList[] = {
+#define DEF(name, r, g, b) {name, r, g, b, 255},
+#include "colors.h"
+{0}
+#undef DEF
+};
+
+
+ALWAYS_INLINE JSBool FASTCALL
+TextureInit( TextureStruct *tex, unsigned int width, unsigned int height, unsigned int channels ) {
 
 	tex->cbufferSize = width * height * channels * sizeof(PTYPE);
 	tex->cbuffer = (PTYPE*)jl_malloc(tex->cbufferSize);
@@ -92,7 +107,8 @@ ALWAYS_INLINE JSBool TextureInit( TextureStruct *tex, unsigned int width, unsign
 	return JS_TRUE;
 }
 
-ALWAYS_INLINE JSBool TextureResizeBackBuffer( TextureStruct *tex, size_t newSize ) {
+ALWAYS_INLINE JSBool FASTCALL
+TextureResizeBackBuffer( TextureStruct *tex, size_t newSize ) {
 	
 	if ( tex->cbackBuffer != NULL && tex->cbackBufferSize == newSize )
 		return JS_TRUE;
@@ -104,12 +120,14 @@ ALWAYS_INLINE JSBool TextureResizeBackBuffer( TextureStruct *tex, size_t newSize
 	return JS_TRUE;
 }
 
-ALWAYS_INLINE JSBool TextureSetupBackBuffer( TextureStruct *tex ) {
+ALWAYS_INLINE JSBool FASTCALL
+TextureSetupBackBuffer( TextureStruct *tex ) {
 
 	return TextureResizeBackBuffer(tex, tex->cbufferSize);
 }
 
-ALWAYS_INLINE void TextureSwapBuffers( TextureStruct *tex ) {
+ALWAYS_INLINE void FASTCALL
+TextureSwapBuffers( TextureStruct *tex ) {
 
 	PTYPE *tmpBuffer = tex->cbuffer;
 	tex->cbuffer = tex->cbackBuffer;
@@ -120,7 +138,8 @@ ALWAYS_INLINE void TextureSwapBuffers( TextureStruct *tex ) {
 	tex->cbackBufferSize = tmpBufferSize;
 }
 
-ALWAYS_INLINE void TextureFreeBuffers( TextureStruct *tex ) {
+ALWAYS_INLINE void FASTCALL
+TextureFreeBuffers( TextureStruct *tex ) {
 
 	if ( tex->cbackBuffer != NULL ) {
 
@@ -135,23 +154,23 @@ ALWAYS_INLINE void TextureFreeBuffers( TextureStruct *tex ) {
 	}
 }
 
-ALWAYS_INLINE bool TextureSameFormat( TextureStruct *t1, TextureStruct *t2 ) {
+ALWAYS_INLINE bool FASTCALL
+TextureSameFormat( TextureStruct *t1, TextureStruct *t2 ) {
 
 	return t1->width == t2->width && t1->height == t2->height && t1->channels == t2->channels;
 }
 
-ALWAYS_INLINE bool IsTexture( JSContext *cx, jsval val ) {
+ALWAYS_INLINE bool FASTCALL
+IsTexture( JSContext *cx, jsval val ) {
 	
 	JL_IGNORE(cx);
-	//return JL_IsClass(val, JL_CLASS(Texture));
-	//return !js::Valueify(val).isPrimitive() && js::Valueify(val).toObject().getProto()->getJSClass() == JL_CLASS(Texture);
 	return !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == JL_CLASS(Texture);
 }
 
 
-ALWAYS_INLINE JSBool ValueToTexture( JSContext* cx, jsval value, TextureStruct **tex ) {
+ALWAYS_INLINE JSBool FASTCALL
+ValueToTexture( JSContext* cx, jsval value, TextureStruct **tex ) {
 
-	//JL_ASSERT( IsTexture(cx, value), "Invalid texture." );
 	JL_ASSERT( IsTexture(cx, value), E_VALUE, E_TYPE, E_NAME(JL_CLASS_NAME(Texture)) );
 	*tex = (TextureStruct*)JL_GetPrivate(JSVAL_TO_OBJECT( value ));
 	JL_ASSERT_OBJECT_STATE(tex, JL_GetClassName(JSVAL_TO_OBJECT(value)) );
@@ -160,16 +179,28 @@ ALWAYS_INLINE JSBool ValueToTexture( JSContext* cx, jsval value, TextureStruct *
 }
 
 
-ALWAYS_INLINE float Length2D( float a, float b ) {
+ALWAYS_INLINE float FASTCALL
+Length2D( float a, float b ) {
 
 	return sqrtf(a*a + b*b);
 }
 
-enum DesaturateMode { desaturateLightness, desaturateSum, desaturateAverage };
+enum DesaturateMode {
+	desaturateLightness,
+	desaturateSum,
+	desaturateAverage
+};
 
-enum BorderMode { borderClamp, borderWrap, borderMirror, borderValue, borderZero };
+enum BorderMode {
+	borderClamp,
+	borderWrap,
+	borderMirror,
+	borderValue,
+	borderZero
+};
 
-ALWAYS_INLINE unsigned int Wrap( int value, int limit ) {
+ALWAYS_INLINE unsigned int FASTCALL
+Wrap( int value, int limit ) {
 
 	if ( value >= limit )
 		return value % limit;
@@ -178,7 +209,8 @@ ALWAYS_INLINE unsigned int Wrap( int value, int limit ) {
 	return value;
 }
 
-ALWAYS_INLINE unsigned int Mirror( int value, int limit ) { // (TBD) manage if value == 2*limit (use modulo)
+ALWAYS_INLINE unsigned int FASTCALL
+Mirror( int value, int limit ) { // (TBD) manage if value == 2*limit (use modulo)
 	
 	if ( value >= limit )
 		return 2 * limit - value - 2;
@@ -187,7 +219,8 @@ ALWAYS_INLINE unsigned int Mirror( int value, int limit ) { // (TBD) manage if v
 	return value;
 }
 
-ALWAYS_INLINE PTYPE* PosByMode( const TextureStruct *tex, int x, int y, BorderMode mode ) {
+ALWAYS_INLINE PTYPE* FASTCALL
+PosByMode( const TextureStruct *tex, int x, int y, BorderMode mode ) {
 
 	switch ( mode ) {
 		case borderClamp:
@@ -222,7 +255,8 @@ ALWAYS_INLINE PTYPE* PosByMode( const TextureStruct *tex, int x, int y, BorderMo
 }
 
 
-ALWAYS_INLINE JSBool JL_JsvalToBorderMode( JSContext* cx, jsval val, BorderMode *mode ) {
+ALWAYS_INLINE JSBool FASTCALL
+JL_JsvalToBorderMode( JSContext* cx, jsval val, BorderMode *mode ) {
 	
 	if ( val != JSVAL_VOID )
 		return JL_JsvalToNative(cx, val, (int*)mode);
@@ -230,8 +264,10 @@ ALWAYS_INLINE JSBool JL_JsvalToBorderMode( JSContext* cx, jsval val, BorderMode 
 	return JS_TRUE;
 }
 
-// levels: number | array | string ('#8800AAFF')
-JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, PTYPE *level ) {
+
+// levels: number | array | string ('#8800AAFF' | 'DarkMagenta')
+JSBool FASTCALL
+InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, PTYPE *level ) {
 	
 	unsigned int i;
 
@@ -253,8 +289,9 @@ JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, P
 		length = colorStr.Length();
 		color = colorStr.GetConstStr();
 
-		if ( *color++ == '#' && (length-1) / 2 >= levelMaxLength ) {
-
+		if ( *color == '#' && (length-1) / 2 >= levelMaxLength ) {
+			
+			++color;
 			unsigned char val;
 			val = 0;
 			for ( i = 0; i < levelMaxLength; i++ ) {
@@ -268,9 +305,26 @@ JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, P
 				else if ( *color >= 'A' && *color <= 'F' ) val |= *color - 'A' + 10;
 				else if ( *color >= 'a' && *color <= 'f' ) val |= *color - 'a' + 10;
 				color++;
-				level[i] = PMAX * val / 255;
+				level[i] = PMAX * val / 255.f;
 			}
 			return JS_TRUE;
+		}
+
+		// color names
+		// (TBD) optimization through a hash table (or a js object using a lazy property definition)
+		for ( const ColorName *n = colorNameList; n->name; ++n ) {
+
+			if ( strnicmp(n->name, color, length) == 0 ) {
+
+				for ( unsigned int i = 0; i < levelMaxLength; ++i ) {
+
+					level[i] = i < COLOR_NAME_COMPONENT_COUNT ? n->component[i]/PTYPE(COLOR_NAME_COMPONENT_VALUE_MAX) : 0;
+				}
+//				int i = JL_MIN(levelMaxLength, COLOR_NAME_COMPONENT_COUNT);
+//				while ( i-- )
+//					level[i] = n->component[i]/(float)COLOR_NAME_COMPONENT_VALUE_MAX;
+				return JS_TRUE;
+			}
 		}
 	}
 
@@ -278,7 +332,7 @@ JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, P
 
 		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, value, level, levelMaxLength, &length) );
-		JL_ASSERT( length <= levelMaxLength, E_ARRAYLENGTH, E_MAX, E_NUM(levelMaxLength) ); // JL_ASSERT( length >= levelMaxLength, "Array too small." );
+		JL_ASSERT( length >= levelMaxLength, E_ARRAYLENGTH, E_MIN, E_NUM(levelMaxLength) );
 		return JS_TRUE;
 	}
 
@@ -288,7 +342,8 @@ JSBool InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, P
 
 
 // curve: number | function | array | blob
-JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *curve ) { // length is the curve resolution
+JSBool FASTCALL
+InitCurveData( IN JSContext* cx, IN jsval value, IN size_t length, OUT float *curve ) { // length is the curve resolution
 	
 	size_t i;
 
@@ -360,6 +415,9 @@ JSBool InitCurveData( JSContext* cx, jsval value, size_t length, float *curve ) 
 	JL_BAD;
 }
 
+
+
+
 /**doc
 $SET pval pixel component intensity value
 **/
@@ -399,8 +457,8 @@ DEFINE_FINALIZE() {
 
 	TextureFreeBuffers(tex);
 	JS_freeop(fop, tex);
-//	JL_SetPrivate( obj, NULL);
 }
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -429,49 +487,51 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_ASSERT_ARGC_MIN( 1 );
+	TextureStruct *tex = NULL;
+
+	JL_ASSERT_ARGC_RANGE(1,3);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
+	tex = (TextureStruct*)JS_malloc(cx, sizeof(TextureStruct));
+	JL_CHK(tex);
+	tex->cbackBuffer = NULL;
+	tex->cbuffer = NULL;
 
-	TextureStruct *tex;
-	tex = (TextureStruct *)jl_malloc(sizeof(TextureStruct));
-	JL_CHK( tex );
-	JL_SetPrivate( obj, tex);
 	JL_CHK( SetBufferGetInterface(cx, obj, NativeInterfaceBufferGet) );
-
-	jsval *arg1;
-	arg1 = &JL_ARG(1); // optimization
 
 	if ( JL_ARGC >= 3 ) {
 
-		int width, height, channels;
-		JL_CHK( JL_JsvalToNative(cx, *arg1, &width) );
+		unsigned int width, height, channels;
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &width) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &height) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &channels) );
 
 		JL_ASSERT( width > 0, E_ARG, E_NUM(1), E_MIN, E_NUM(1) );
 		JL_ASSERT( height > 0, E_ARG, E_NUM(2), E_MIN, E_NUM(1) );
-		JL_ASSERT( channels > 0, E_ARG, E_NUM(3), E_RANGE, E_INTERVAL_NUM(1, PMAXCHANNELS) );
+		JL_ASSERT_ARG_VAL_RANGE(channels, 1, PMAXCHANNELS, 1);
 
 		JL_CHK( TextureInit(tex, width, height, channels) );
 
+		JL_SetPrivate(obj, tex);
 		return JS_TRUE;
 	}
 
-	if ( IsTexture(cx, *arg1) ) { // copy constructor
+	if ( IsTexture(cx, JL_ARG(1)) ) { // copy constructor
 
-		TextureStruct *srcTex = (TextureStruct *)JL_GetPrivate(JSVAL_TO_OBJECT(*arg1));
-		JL_ASSERT_OBJECT_STATE(srcTex, JL_GetClassName(JSVAL_TO_OBJECT(*arg1)) );
+		TextureStruct *srcTex = (TextureStruct *)JL_GetPrivate(JSVAL_TO_OBJECT(JL_ARG(1)));
+		JL_ASSERT_OBJECT_STATE(srcTex, JL_GetClassName(JSVAL_TO_OBJECT(JL_ARG(1))) );
 
 		JL_CHK( TextureInit(tex, srcTex->width, srcTex->height, srcTex->channels) );
 		jl::memcpy( tex->cbuffer, srcTex->cbuffer, srcTex->width * srcTex->height * srcTex->channels * sizeof(PTYPE) );
+
+		JL_SetPrivate(obj, tex);
 		return JS_TRUE;
 	}
 
 	{
 		int i, tsize, sWidth, sHeight, sChannels;
-		JLData data = JL_GetByteImageObject(cx, *arg1, &sWidth, &sHeight, &sChannels);
+		JLData data = JL_GetByteImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels);
 		if ( data.IsSet() ) {
 
 			tsize = data.Length();
@@ -479,12 +539,20 @@ DEFINE_CONSTRUCTOR() {
 			JL_CHK( TextureInit(tex, sWidth, sHeight, sChannels) );
 			for ( i = 0; i < tsize; ++i )
 				tex->cbuffer[i] = (PTYPE)buffer[i] / (PTYPE)255.f; // map [0 -> 255] to [0.0 -> 1.0]
+
+			JL_SetPrivate(obj, tex);
 			return JS_TRUE;
 		}
 	}
 
 	JL_ERR( E_ARG, E_INVALID );
-	JL_BAD;
+
+bad:
+	if ( tex ) {
+		TextureFreeBuffers(tex);
+		JS_free(cx, tex);
+	}
+	return JS_FALSE;
 }
 
 /**doc
@@ -498,6 +566,8 @@ $TOC_MEMBER $INAME
   This is not mandatory but may be useful to free memory before the GC did.
 **/
 DEFINE_FUNCTION( free ) {
+
+	JL_IGNORE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -534,7 +604,7 @@ DEFINE_FUNCTION( swap ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	JSObject *texObj;
@@ -670,6 +740,8 @@ DEFINE_FUNCTION( toHLS ) { // (TBD) test it
 
 	// see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimpcolorspace.c?view=markup
 
+	JL_IGNORE(argc);
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -729,7 +801,8 @@ DEFINE_FUNCTION( toHLS ) { // (TBD) test it
 }
 
 // (TBD) PTYPE
-inline float HLSToRGB_hue( float n1, float n2, float hue) { // helper function for the HLS->RGB conversion
+ALWAYS_INLINE float FASTCALL
+HLSToRGB_hue( float n1, float n2, float hue) { // helper function for the HLS->RGB conversion
 
 	if (hue > 1) hue -= 1;
 	if (hue < 0) hue += 1;
@@ -747,6 +820,8 @@ $TOC_MEMBER $INAME
 // (TBD) PTYPE
 DEFINE_FUNCTION( toRGB ) { // (TBD) test it
 	// see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimpcolorspace.c?view=markup
+
+	JL_IGNORE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1013,6 +1088,8 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION( normalizeLevels ) {
 
+	JL_IGNORE(argc);
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -1187,6 +1264,8 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION( invertLevels ) { // level = 1 / level
 
+	JL_IGNORE(argc);
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -1208,6 +1287,8 @@ $TOC_MEMBER $INAME
 **/
 // PTYPE ok
 DEFINE_FUNCTION( oppositeLevels ) { // level = -level
+
+	JL_IGNORE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1484,45 +1565,37 @@ DEFINE_FUNCTION( set ) {
 	size = tex->width * tex->height * channels;
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
-	jsval *arg1;
-	arg1 = &JL_ARG(1);
-
-//	if ( JSVAL_IS_NUMBER(*arg1) || JL_IsArray(cx, *arg1) || JSVAL_IS_STRING(*arg1) ) {
-//	}
-
-	if ( IsTexture(cx, *arg1) ) {
+	if ( IsTexture(cx, JL_ARG(1)) ) {
 
 		TextureStruct *tex1;
-		JL_CHK( ValueToTexture(cx, *arg1, &tex1) );
+		JL_CHK( ValueToTexture(cx, JL_ARG(1), &tex1) );
 		
 		JL_ASSERT( TextureSameFormat(tex, tex1), E_STR("Texture"), E_FORMAT );
-
-		for ( i = 0; i < size; i++ )
-			tex->cbuffer[i] = tex1->cbuffer[i];
+		memcpy(tex->cbuffer, tex1->cbuffer, size * sizeof(PTYPE));
 		return JS_TRUE;
 	}
 
 	{
 		int i, tsize, sWidth, sHeight, sChannels;
-		JLData data = JL_GetByteImageObject(cx, *arg1, &sWidth, &sHeight, &sChannels);
+		JLData data = JL_GetByteImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels);
 		if ( data.IsSet() ) {
 
 			tsize = data.Length();
 			const uint8_t *buffer = (const uint8_t*)data.GetConstStr();
 			for ( i = 0; i < tsize; i++ )
 				tex->cbuffer[i] = (PTYPE)buffer[i] / PTYPE(255); // map [0 -> 255] to [0.0 -> 1.0]
-			JL_SetPrivate( obj, tex);
 			return JS_TRUE;
 		}
 	}
 
 	PTYPE pixel[PMAXCHANNELS];
-	JL_CHK( InitLevelData(cx, *arg1, channels, pixel) );
+	JL_CHK( InitLevelData(cx, JL_ARG(1), channels, pixel) );
 	unsigned int c;
 	size = tex->width * tex->height;
 	for ( c = 0; c < channels; c++ )
 		for ( i = 0; i < size; i++ )
 			tex->cbuffer[i*channels+c] = pixel[c];
+
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1555,13 +1628,11 @@ DEFINE_FUNCTION( add ) {
 		factor = 1.;
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	jsval *arg1;
-	arg1 = &JL_ARG(1);
 
-	if ( JSVAL_IS_NUMBER(*arg1) ) {
+	if ( JSVAL_IS_NUMBER(JL_ARG(1)) ) {
 
 		PTYPE value;
-		JL_CHK( JL_JsvalToNative(cx, *arg1, &value) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );
 		size = tex->width * tex->height * tex->channels;
 		value *= factor;
 		for ( i = 0; i < size; i++ )
@@ -1569,10 +1640,10 @@ DEFINE_FUNCTION( add ) {
 		return JS_TRUE;
 	}
 
-	if ( IsTexture(cx, *arg1) ) {
+	if ( IsTexture(cx, JL_ARG(1)) ) {
 
 		TextureStruct *tex1;
-		JL_CHK( ValueToTexture(cx, *arg1, &tex1) );
+		JL_CHK( ValueToTexture(cx, JL_ARG(1), &tex1) );
 		JL_ASSERT( tex1->width == tex->width && tex1->height == tex->height && ( tex1->channels == 1 || tex1->channels == channels), E_ARG, E_NUM(1), E_FORMAT );
 
 		size = tex->width * tex->height * channels;
@@ -1596,10 +1667,10 @@ DEFINE_FUNCTION( add ) {
 		return JS_TRUE;
 	}
 
-	if ( JL_ValueIsArrayLike(cx, *arg1) ) {
+	if ( JL_ValueIsArrayLike(cx, JL_ARG(1)) ) {
 
 		PTYPE *pos, level, pixel[PMAXCHANNELS];
-		JL_CHK( InitLevelData(cx, *arg1, channels, pixel) );
+		JL_CHK( InitLevelData(cx, JL_ARG(1), channels, pixel) );
 		size = tex->width * tex->height;
 		for ( c = 0; c < channels; c++ ) {
 
@@ -1640,23 +1711,21 @@ DEFINE_FUNCTION( mult ) {
 	channels = tex->channels;
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	jsval *arg1;
-	arg1 = &JL_ARG(1);
 
-	if ( JSVAL_IS_NUMBER(*arg1) ) {
+	if ( JSVAL_IS_NUMBER(JL_ARG(1)) ) {
 
 		PTYPE value;
-		JL_CHK( JL_JsvalToNative(cx, *arg1, &value) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );
 		size = tex->width * tex->height * tex->channels;
 		for ( i = 0; i < size; i++ )
 			tex->cbuffer[i] *= value;
 		return JS_TRUE;
 	}
 
-	if ( IsTexture(cx, *arg1) ) {
+	if ( IsTexture(cx, JL_ARG(1)) ) {
 
 		TextureStruct *tex1;
-		JL_CHK( ValueToTexture(cx, *arg1, &tex1) );
+		JL_CHK( ValueToTexture(cx, JL_ARG(1), &tex1) );
 		JL_ASSERT( tex1->width == tex->width && tex1->height == tex->height && ( tex1->channels == 1 || tex1->channels == channels), E_ARG, E_NUM(1), E_FORMAT );
 
 		if ( tex1->channels == 1 ) {
@@ -1683,10 +1752,10 @@ DEFINE_FUNCTION( mult ) {
 		return JS_TRUE;
 	}
 
-	if ( JL_ValueIsArrayLike(cx, *arg1) ) {
+	if ( JL_ValueIsArrayLike(cx, JL_ARG(1)) ) {
 
 		PTYPE *pos, level, pixel[PMAXCHANNELS];
-		JL_CHK( InitLevelData(cx, *arg1, channels, pixel) );
+		JL_CHK( InitLevelData(cx, JL_ARG(1), channels, pixel) );
 		size = tex->width * tex->height;
 		for ( c = 0; c < channels; c++ ) {
 
@@ -2629,6 +2698,8 @@ $TOC_MEMBER $INAME
   Converts each pixel into a vector, normalize this vector, then store the vector as a pixel.
 **/
 DEFINE_FUNCTION( normalizeVectors ) {
+
+	JL_IGNORE(argc);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -4384,6 +4455,8 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION( getBorderLevelRange ) {
 
+	JL_IGNORE(argc);
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -4479,6 +4552,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( width ) {
 
+	JL_IGNORE(id);
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(obj);
@@ -4495,6 +4570,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( height ) {
 
+	JL_IGNORE(id);
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(obj);
@@ -4510,6 +4587,8 @@ $TOC_MEMBER $INAME
   Number of channels of the texture.
 **/
 DEFINE_PROPERTY_GETTER( channels ) {
+
+	JL_IGNORE(id);
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -4539,6 +4618,8 @@ DEFINE_PROPERTY_GETTER( channels ) {
 #ifdef _DEBUG
 //static JSBool _Test(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
 DEFINE_FUNCTION( test ) {
+
+	JL_IGNORE(argc, cx);
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;

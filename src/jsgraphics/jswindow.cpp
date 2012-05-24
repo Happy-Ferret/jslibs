@@ -249,10 +249,8 @@ DEFINE_CONSTRUCTOR() {
 // http://nehe.gamedev.net/data/lessons/lesson.asp?lesson=01
 //	AdjustWindowRectEx(&WindowRect, dwStyle, FALSE, dwExStyle);
 
-	HWND hWnd = CreateWindow( (LPSTR)rc, NULL,    WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
-	                          CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,    (HWND)NULL, (HMENU)NULL, hInst, (LPVOID)NULL);
+	HWND hWnd = CreateWindow( (LPSTR)rc, NULL, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, (HWND)NULL, (HMENU)NULL, hInst, (LPVOID)NULL);
 	JL_ASSERT( hWnd != NULL, "Unable to CreateWindow." );
-	JL_SetPrivate( obj, hWnd);
 
 	CxObj *cxobj = (CxObj*)jl_malloc(sizeof(CxObj));
 	JL_ASSERT_ALLOC( cxobj );
@@ -263,6 +261,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_SAFE(SetLastError(0));
 	LONG prevWindowLong = SetWindowLong(hWnd, GWL_USERDATA, (LONG)cxobj );
 	JL_ASSERT( prevWindowLong != 0 || (err=GetLastError()) == 0, "Unable to SetWindowLong. (error %d)", err );
+
+	JL_SetPrivate(obj, hWnd);
 	return JS_TRUE;
 }
 
