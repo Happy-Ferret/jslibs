@@ -8,10 +8,7 @@ var loadModule = host.loadModule;
 loadModule('jsstd');
 loadModule('jsio');
 
-var f = new File();
-
-print( f.name );
-
+var s = new Semaphore('test');
 
 
 throw 0;

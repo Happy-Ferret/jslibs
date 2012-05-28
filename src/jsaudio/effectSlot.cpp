@@ -50,8 +50,10 @@ DEFINE_CONSTRUCTOR() {
 	
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
+	pv->effectSlot = 0;
 	alGenAuxiliaryEffectSlots(1, &pv->effectSlot);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
+	ASSERT( pv->effectSlot ); // ensure that 0 is not a valid id, else change bad: behavior
 
 	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
@@ -59,7 +61,8 @@ DEFINE_CONSTRUCTOR() {
 bad:
 	if ( pv ) {
 
-		alDeleteAuxiliaryEffectSlots(1, &pv->effectSlot);
+		if ( pv->effectSlot )
+			alDeleteAuxiliaryEffectSlots(1, &pv->effectSlot);
 		JS_free(cx, pv);
 	}
 	return JS_FALSE;

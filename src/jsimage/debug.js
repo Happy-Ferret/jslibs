@@ -1,12 +1,25 @@
 var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
-
 loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsimage'); throw 0;
+
 
 loadModule('jsstd');
 loadModule('jsimage');
 loadModule('jsio');
 
+
+
+throw 0;
+
+	var image = decodeJpegImage(new File('./Patern_test.jpg').open(File.RDONLY));
+	
+	var png = encodePngImage(image, 0);
+
+	var png = encodePngImage(image, 9);
+	
+
+
+throw 0;
 
 	var image = { width:0, height:0, channels:1, data:'' };
 

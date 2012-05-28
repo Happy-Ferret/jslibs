@@ -168,16 +168,16 @@ loadModule('jsio');
 
 
 /// loadModule function [p]
-		
-		var id = loadModule('jsstd');
-		QA.ASSERTOP( loadModule('jsstd'), '===', id, 'reloading the same module' );
-		QA.ASSERTOP( loadModule('azyegyiazgiazygc'), '===', false, 'loading inexisting module' );
-		QA.ASSERTOP( loadModule(undefined), '===', false, 'loading inexisting module' );
-		QA.ASSERTOP( loadModule(0), '===', false, 'loading inexisting module' );
-		QA.ASSERTOP( loadModule(0.0), '===', false, 'loading inexisting module' );
-		QA.ASSERTOP( loadModule(''), '===', false, 'loading inexisting module' );
-		QA.ASSERTOP( loadModule(NaN), '===', false, 'loading inexisting module' );
-		//QA.ASSERT_EXCEPTION(function() loadModule(), RangeError, 'call loadModule() without arguments');
+	
+	loadModule('jsstd');
+	QA.ASSERTOP( loadModule('jsstd'), '===', null, 'reloading the same module' );
+	QA.ASSERTOP( loadModule('azyegyiazgiazygc'), '===', false, 'loading inexisting module' );
+	QA.ASSERTOP( function() loadModule(), 'ex', RangeError, 'loadModule without argument' );
+	QA.ASSERTOP( loadModule(undefined), '===', false, 'loading inexisting module' );
+	QA.ASSERTOP( loadModule(0), '===', false, 'loading inexisting module' );
+	QA.ASSERTOP( loadModule(0.0), '===', false, 'loading inexisting module' );
+	QA.ASSERTOP( loadModule(''), '===', false, 'loading inexisting module' );
+	QA.ASSERTOP( loadModule(NaN), '===', false, 'loading inexisting module' );
 
 
 

@@ -101,6 +101,8 @@ $TOC_MEMBER $INAME
 
 DEFINE_CONSTRUCTOR() {
 
+	ode::dBodyID bodyId = NULL;
+
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
@@ -112,15 +114,19 @@ DEFINE_CONSTRUCTOR() {
 //	JL_ASSERT_ALLOC( bodypv );
 //	bodypv->obj
 
-	ode::dBodyID bodyId = ode::dBodyCreate(worldId);
+	bodyId = ode::dBodyCreate(worldId);
 	JL_ASSERT( bodyId != NULL, E_LIB, E_NAME("ODE"), E_SEP, E_STR(JL_THIS_CLASS_NAME), E_CREATE );
 	
 	JL_CHK( SetMatrix44GetInterface(cx, obj, BodyReadMatrix) );
 	ode::dBodySetData(bodyId, obj);
 
+	S_ASSERT( sizeof(bodyId) == sizeof(void*) );
 	JL_SetPrivate(obj, bodyId);
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	if ( bodyId )
+		ode::dBodyDestroy(bodyId);
+	return JS_FALSE;
 }
 
 

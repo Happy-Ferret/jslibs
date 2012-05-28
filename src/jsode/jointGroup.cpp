@@ -29,15 +29,23 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	ode::dJointGroupID groupId = NULL;
+
 	JL_ASSERT_ARGC(0);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	ode::dJointGroupID groupId = ode::dJointGroupCreate(0);
-	
+	groupId = ode::dJointGroupCreate(0);
+	JL_ASSERT( groupId, E_STR(JL_THIS_CLASS_NAME), E_CREATE );
+
 	JL_SetPrivate(obj, groupId);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( groupId )
+		ode::dJointGroupDestroy(groupId);
+	return JS_FALSE;
+
 }
 
 /**doc

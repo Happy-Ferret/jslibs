@@ -531,7 +531,9 @@ DEFINE_CONSTRUCTOR() {
 
 	{
 		int i, tsize, sWidth, sHeight, sChannels;
-		JLData data = JL_GetByteImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels);
+		ImageDataType dataType;
+		JLData data = JL_GetImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels, &dataType);
+		JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 		if ( data.IsSet() ) {
 
 			tsize = data.Length();
@@ -549,6 +551,7 @@ DEFINE_CONSTRUCTOR() {
 
 bad:
 	if ( tex ) {
+
 		TextureFreeBuffers(tex);
 		JS_free(cx, tex);
 	}
@@ -1577,7 +1580,9 @@ DEFINE_FUNCTION( set ) {
 
 	{
 		int i, tsize, sWidth, sHeight, sChannels;
-		JLData data = JL_GetByteImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels);
+		ImageDataType dataType;
+		JLData data = JL_GetImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels, &dataType);
+		JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 		if ( data.IsSet() ) {
 
 			tsize = data.Length();
@@ -3331,7 +3336,7 @@ DEFINE_FUNCTION( export ) { // (int)x, (int)y, (int)width, (int)height. Returns 
 
 	bufferLength = dWidth * dHeight * sChannels;
 	//buffer = (uint8_t*)jl_malloc(bufferLength +1);
-	buffer = JL_NewByteImageObject(cx, dWidth, dHeight, sChannels, JL_RVAL);
+	buffer = JL_NewImageObject(cx, dWidth, dHeight, sChannels, TYPE_UINT8, JL_RVAL);
 	JL_CHK( buffer );
 
 	unsigned int c, x, y, posDst, posSrc;
@@ -3409,11 +3414,14 @@ DEFINE_FUNCTION( import ) { // (Blob)image, (int)x, (int)y
 
 	int dWidth, dHeight, dChannels;
 	int sWidth, sHeight, sChannels;
+	ImageDataType dataType;
+
 	dWidth = tex->width;
 	dHeight = tex->height;
 	dChannels = tex->channels;
 
-	data = JL_GetByteImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels);
+	data = JL_GetImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels, &dataType);
+	JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 	const uint8_t *buffer = (const uint8_t*)data.GetConstStr();
 
 	if ( dWidth == sWidth && dHeight == sHeight && dChannels == sChannels && px == 0 && py == 0 ) { // optimization

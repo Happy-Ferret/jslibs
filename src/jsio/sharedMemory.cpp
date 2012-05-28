@@ -131,9 +131,11 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	ClassPrivate *pv = NULL;
+	PRSem *accessSem = NULL;
+	PRSharedMemory *shm = NULL;
 	JLData name;
 
-	JL_ASSERT_ARGC_MIN( 2 );
+	JL_ASSERT_ARGC_RANGE(2, 3);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
@@ -141,9 +143,10 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &size) );
 
 	unsigned int mode;
-	mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( JL_ARG_ISDEF(3) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &mode) );
+	else
+		mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &name) );
 
@@ -153,7 +156,6 @@ DEFINE_CONSTRUCTOR() {
 
 	bool isCreation;
 	isCreation = true;
-	PRSem *accessSem;
 	accessSem = PR_OpenSemaphore(semName, PR_SEM_EXCL | PR_SEM_CREATE, mode, 1); // fail if already exists
 
 	if ( accessSem == NULL ) {
@@ -165,7 +167,6 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_CHKB( PR_WaitSemaphore( accessSem ) == PR_SUCCESS, bad_ioerror );
 
-	PRSharedMemory *shm;
 	shm = PR_OpenSharedMemory( name, size + sizeof(MemHeader), PR_SHM_CREATE, mode );
 	JL_CHKB( shm != NULL, bad_ioerror ); // PR_SHM_READONLY
 
@@ -204,7 +205,13 @@ bad_ioerror:
 	ThrowIoError(cx);
 
 bad:
-	jl_free(pv);
+	if ( pv ) {
+		if ( accessSem )
+			PR_CloseSemaphore(accessSem);
+		if ( shm )
+			PR_CloseSharedMemory(shm);
+		jl_free(pv);
+	}
 	return JS_FALSE;
 }
 

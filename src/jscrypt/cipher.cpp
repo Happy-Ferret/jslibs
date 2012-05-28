@@ -196,8 +196,8 @@ DEFINE_CONSTRUCTOR() {
 
 	pv = (CipherPrivate*)jl_malloc(sizeof(CipherPrivate));
 	JL_CHK( pv );
+	pv->symmetric_XXX = NULL; // see. bad: label
 
-	pv->symmetric_XXX = NULL; // see. bad label
 	pv->mode = mode;
 
 	int cipherIndex;

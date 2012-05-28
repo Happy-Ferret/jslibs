@@ -62,7 +62,7 @@ DEFINE_CONSTRUCTOR() {
 
 	pv = (Private*)jl_malloc(sizeof(Private));
 	JL_ASSERT_ALLOC(pv);
-	pv->deviceID = -1;
+	pv->deviceID = -1; // invalid device
 
 	int numDevices = videoInput::listDevices(true);
 
@@ -273,7 +273,7 @@ DEFINE_FUNCTION( next ) {
 		return JS_ThrowStopIteration(cx);
 
 	uint8_t *data;
-	data = JL_NewByteImageObject(cx, width, height, dataSize / (width * height), JL_RVAL);
+	data = JL_NewImageObject(cx, width, height, dataSize / (width * height), TYPE_UINT8, JL_RVAL);
 	JL_CHK( data );
 
 	bool status = vi->getPixels(pv->deviceID, data, pv->flipImageRedBlue, pv->flipImageY); // blocking function

@@ -525,21 +525,15 @@ DEFINE_FUNCTION( stdin ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME()
+ $OBJ | null $INAME()
 **/
 DEFINE_FUNCTION( loadModule ) {
 
-	JLData str;
 	JLLibraryHandler module = JLDynamicLibraryNullHandler;
+	JLData str;
 
 	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN(1);
-
-	if (unlikely( !JL_ARG_ISDEF(1) )) {
-
-		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
-	}
+	JL_ASSERT_ARGC(1);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 
@@ -595,13 +589,16 @@ DEFINE_FUNCTION( loadModule ) {
 		*JL_RVAL = JSVAL_FALSE;
 		return JS_TRUE;
 	}
-	for ( jl::QueueCell *it = jl::QueueBegin(&hpv->moduleList); it; it = jl::QueueNext(it) )
+
+	for ( jl::QueueCell *it = jl::QueueBegin(&hpv->moduleList); it; it = jl::QueueNext(it) ) {
+
 		if ( (JLLibraryHandler)jl::QueueGetData(it) == module ) {
 
 			JLDynamicLibraryClose(&module);
-			*JL_RVAL = JSVAL_VOID; // already loaded
+			*JL_RVAL = JSVAL_NULL; // already loaded
 			return JS_TRUE;
 		}
+	}
 
 	uint32_t uid;
 	uid = JLDynamicLibraryId(module); // module unique ID

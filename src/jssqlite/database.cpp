@@ -322,8 +322,9 @@ DEFINE_CONSTRUCTOR() {
 bad:
 	if ( pv ) {
 
-		sqlite3_close(pv->db);
-		jl_free(pv); // jl_free(NULL) is legal
+		if ( pv->db )
+			sqlite3_close(pv->db);
+		JS_free(cx, pv);
 	}
 	return JS_FALSE;
 }

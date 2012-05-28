@@ -97,7 +97,7 @@ DEFINE_CONSTRUCTOR() {
 
 	Private *pv = NULL;
 
-	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARGC_RANGE(1,2);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
@@ -109,6 +109,7 @@ DEFINE_CONSTRUCTOR() {
 	pv->stream.zfree = jsz_free;
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pv->method) );
+	JL_ASSERT_ARG_VAL_RANGE(pv->method, INFLATE, DEFLATE, 1);
 
 	if ( JL_ARG_ISDEF(2) ) {
 

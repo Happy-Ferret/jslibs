@@ -132,7 +132,7 @@ DEFINE_FINALIZE() {
 		jsval *pItem = (jsval*)QueuePop(pv->queue);
 		JS_freeop(fop, pItem);
 	}
-	QueueDestruct(pv->queue);
+	jl::QueueDestruct(pv->queue);
 }
 
 /**doc
@@ -149,11 +149,11 @@ DEFINE_CONSTRUCTOR() {
 
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
-
 	pv->queue = jl::QueueConstruct();
-
+	pv->sid = 0;
 	alGenSources(1, &pv->sid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
+	ASSERT( pv->sid ); // ensure that 0 is not a valid id, else change bad: behavior
 
 	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
@@ -161,7 +161,10 @@ DEFINE_CONSTRUCTOR() {
 bad:
 	if ( pv ) {
 
-		alDeleteSources(1, &pv->sid);
+		if ( pv->sid )
+			alDeleteSources(1, &pv->sid);
+		if ( pv->queue )
+			jl::QueueDestruct(pv->queue);
 		JS_free(cx, pv);
 	}
 	return JS_FALSE;

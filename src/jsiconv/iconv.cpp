@@ -80,7 +80,6 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &tocode) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &fromcode) );
 

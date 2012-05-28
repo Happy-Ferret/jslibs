@@ -56,9 +56,10 @@ DEFINE_CONSTRUCTOR() {
 
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
-
+	pv->filter = 0;
 	alGenFilters(1, &pv->filter);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
+	ASSERT( pv->filter ); // ensure that 0 is not a valid id, else change bad: behavior
 
 	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
@@ -66,7 +67,8 @@ DEFINE_CONSTRUCTOR() {
 bad:
 	if ( pv ) {
 
-		alDeleteFilters(1, &pv->filter);
+		if ( pv->filter )
+			alDeleteFilters(1, &pv->filter);
 		JS_free(cx, pv);
 	}
 	return JS_FALSE;

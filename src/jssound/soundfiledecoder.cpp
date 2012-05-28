@@ -202,7 +202,7 @@ DEFINE_CONSTRUCTOR() {
 
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
-	pv->sfDescriptor = NULL;
+	pv->sfDescriptor = NULL; // see bad:
 
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_INPUT_STREAM, JL_ARG(1) ) );
 	pv->streamObject = JSVAL_TO_OBJECT(JL_ARG(1));

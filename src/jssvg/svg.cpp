@@ -44,7 +44,9 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 		if ( JSVAL_IS_OBJECT( image ) ) {
 
 			int sWidth, sHeight, sChannels;
-			JLData data = JL_GetByteImageObject(cx, image, &sWidth, &sHeight, &sChannels);
+			ImageDataType dataType;
+			JLData data = JL_GetImageObject(cx, image, &sWidth, &sHeight, &sChannels, &dataType);
+			JL_ASSERT( dataType == TYPE_UINT8, E_DATATYPE, E_INVALID );
 			JL_ASSERT( sChannels == 3 || sChannels == 4, E_PROP, E_NAME("channels"), E_RANGE, E_INTERVAL_NUM(3, 4), E_COMMENT(name) ); // "Unsupported image format for %s.", name
 
 			*pixbuf = gdk_pixbuf_new_from_data((const guchar *)data.GetConstStr(), GDK_COLORSPACE_RGB, sChannels == 4, 8, sWidth, sHeight, sWidth*sChannels, NULL, NULL);
@@ -369,7 +371,7 @@ DEFINE_FUNCTION( renderImage ) { // using cairo
 	int height = cairo_image_surface_get_height(surface);
 	void *buffer = cairo_image_surface_get_data(surface);
 
-	uint8_t *image = JL_NewByteImageObject(cx, width, height, channels, JL_RVAL);
+	uint8_t *image = JL_NewImageObject(cx, width, height, channels, TYPE_UINT8, JL_RVAL);
 	JL_CHK( image );
 
 	size_t pixelCount = width * height;

@@ -78,6 +78,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	ode::dSpaceID spaceId = NULL;
+
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
@@ -88,7 +90,7 @@ DEFINE_CONSTRUCTOR() {
 	else
 		parentSpace = 0;
 
-	ode::dSpaceID spaceId = ode::dHashSpaceCreate(parentSpace); // dSimpleSpaceCreate / dHashSpaceCreate / dQuadTreeSpaceCreate
+	spaceId = ode::dHashSpaceCreate(parentSpace); // dSimpleSpaceCreate / dHashSpaceCreate / dQuadTreeSpaceCreate
 	
 	// doc:  If the clean-up mode is 1, then the contained geoms will be destroyed when the space is destroyed. If the clean-up mode is 0 this does not happen. The default clean-up mode for new spaces is 1.
 	ode::dSpaceSetCleanup(spaceId, 0);
@@ -97,7 +99,12 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_SetPrivate(obj, spaceId);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( spaceId )
+		ode::dSpaceDestroy(spaceId);
+	return JS_FALSE;
+
 }
 
 

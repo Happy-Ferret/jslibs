@@ -74,7 +74,8 @@ loadModule('jsimage');
 
 /// jpeg encode an unsupported image
 
-	var image = { width:0, height:0, channels:3, data:'' };
+	var TYPE_UINT8 = 1;
+	var image = { width:0, height:0, channels:3, type:TYPE_UINT8, data:'' };
 	
 	QA.ASSERTOP( function() encodeJpegImage(image, 100), 'ex', InternalError );
 
@@ -87,7 +88,8 @@ loadModule('jsimage');
 
 /// jpeg encode the smallest image
 
-	var image = { width:1, height:1, channels:1, data:'X' };
+	var TYPE_UINT8 = 1;
+	var image = { width:1, height:1, channels:1, type:TYPE_UINT8, data:'X' };
 	encodeJpegImage(image, 0);
 
 

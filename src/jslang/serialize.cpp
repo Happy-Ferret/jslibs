@@ -35,10 +35,9 @@ DEFINE_FINALIZE() {
 
 DEFINE_CONSTRUCTOR() {
 
-	JL_IGNORE(argc);
-
 	jl::Serializer *ser = NULL;
 
+	JL_ASSERT_ARGC(0);
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	ser = new jl::Serializer(OBJECT_TO_JSVAL(JL_OBJ));

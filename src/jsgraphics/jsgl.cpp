@@ -5713,8 +5713,10 @@ DEFINE_FUNCTION( drawImage ) {
 	} else {
 
 		type = GL_UNSIGNED_BYTE;
-		JLData image = JL_GetByteImageObject(cx, JL_ARG(1), &width, &height, &channels);
+		ImageDataType dataType;
+		JLData image = JL_GetImageObject(cx, JL_ARG(1), &width, &height, &channels, &dataType);
 		JL_ASSERT( jl::SafeCast<int>(image.Length()) == width * height * channels * 1, E_ARG, E_NUM(1), E_FORMAT );
+		JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 		data = image.GetConstStr();
 	}
 
@@ -5819,7 +5821,7 @@ DEFINE_FUNCTION( readImage ) {
 	int lineLength = width * channels;
 	int length = lineLength * height;
 	ASSERT( length > 0 ); //, "Invalid image size." );
-	uint8_t *data = JL_NewByteImageObject(cx, width, height, channels, JL_RVAL);
+	uint8_t *data = JL_NewImageObject(cx, width, height, channels, TYPE_UINT8, JL_RVAL);
 	JL_CHK( data );
 
 /*
@@ -6249,7 +6251,9 @@ DEFINE_FUNCTION( defineTextureImage ) {
 	} else {
 
 		type = GL_UNSIGNED_BYTE;
-		JLData jldata = JL_GetByteImageObject(cx, JL_ARG(3), &width, &height, &channels);
+		ImageDataType dataType;
+		JLData jldata = JL_GetImageObject(cx, JL_ARG(3), &width, &height, &channels, &dataType);
+		JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(3), E_DATATYPE, E_INVALID );
 		data = jldata.GetConstStr();
 	}
 

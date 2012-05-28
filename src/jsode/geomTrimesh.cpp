@@ -44,6 +44,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	ode::dGeomID geomId = NULL;
 	jsval trimeshVal;
 
 	JL_ASSERT_ARGC_RANGE(1, 3);
@@ -81,7 +82,9 @@ DEFINE_CONSTRUCTOR() {
 			ode::dGeomTriMeshDataPreprocess(triMeshDataID);
 	}
 
-	ode::dGeomID geomId = ode::dCreateTriMesh(space, triMeshDataID, NULL, NULL, NULL);
+	geomId = ode::dCreateTriMesh(space, triMeshDataID, NULL, NULL, NULL);
+	JL_ASSERT( geomId, E_STR(JL_THIS_CLASS_NAME), E_CREATE );
+
 
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_TRIMESH_TRIMESH, trimeshVal) );
 
@@ -90,7 +93,11 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_SetPrivate(obj, geomId);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( geomId )
+		ode::dGeomDestroy(geomId);
+	return JS_FALSE;
 }
 
 /**doc

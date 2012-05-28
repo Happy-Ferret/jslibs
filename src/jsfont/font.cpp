@@ -86,6 +86,7 @@ DEFINE_CONSTRUCTOR() {
 
 	pv = (JsfontPrivate*)jl_malloc(sizeof(JsfontPrivate));
 	JL_ASSERT_ALLOC( pv );
+	pv->face = NULL;
 	JL_updateMallocCounter(cx, sizeof(JsfontPrivate));
 
 	FTCHK( FT_New_Face( mpv->ftLibrary, filePathName, faceIndex, &pv->face ) );
@@ -97,7 +98,12 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 
 bad:
-	jl_free(pv);
+	if ( pv ) {
+
+		if ( pv->face )
+			FT_Done_Face(pv->face);
+		jl_free(pv);
+	}
 	return JS_FALSE;
 }
 
@@ -230,7 +236,7 @@ DEFINE_FUNCTION( drawChar ) {
 	bufLength = width * height * 1; // 1 channel
 
 	uint8_t *buf;
-	buf = JL_NewByteImageObject(cx, width, height, 1, JL_RVAL);
+	buf = JL_NewImageObject(cx, width, height, 1, TYPE_UINT8, JL_RVAL);
 	JL_CHK( buf );
 	jl::memcpy(buf, pv->face->glyph->bitmap.buffer, bufLength);
 
@@ -408,7 +414,7 @@ DEFINE_FUNCTION( drawString ) {
 		// allocates the resulting image buffer
 		size_t bufLength = width * height * 1; // 1 channel
 
-		uint8_t *buf = JL_NewByteImageObject(cx, width, height, 1, JL_RVAL);
+		uint8_t *buf = JL_NewImageObject(cx, width, height, 1, TYPE_UINT8, JL_RVAL);
 		JL_CHK( buf );
 		memset(buf, 0, bufLength);
 

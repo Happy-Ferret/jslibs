@@ -65,6 +65,7 @@ DEFINE_CONSTRUCTOR() {
 
 	alGenBuffers(1, &bid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
+	ASSERT( bid ); // ensure that 0 is not a valid id, else change bad: behavior
 
 	alBufferData(bid, format, data.GetConstStr(), (ALsizei)data.Length(), rate); // Upload sound data to buffer
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -73,9 +74,9 @@ DEFINE_CONSTRUCTOR() {
 	return JS_TRUE;
 
 bad:
-	if ( bid != 0 )
+	if ( bid )
 		alDeleteBuffers(1, &bid);
-	return JS_TRUE;
+	return JS_FALSE;
 }
 
 

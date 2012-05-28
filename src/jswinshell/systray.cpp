@@ -395,13 +395,14 @@ DEFINE_CONSTRUCTOR() {
 
 	pv = new Private();
 	JL_ASSERT_ALLOC( pv );
+	pv->event = NULL;
+	pv->thread = NULL;
 	JL_updateMallocCounter(cx, sizeof(Private));
 
 	InitializeCriticalSection(&pv->cs);
 
 	jl::QueueInitialize(&pv->msgQueue);
 //	jl::QueueInitialize(&pv->popupMenuRoots);
-
 
 	pv->event = CreateEvent(NULL, FALSE, FALSE, NULL);
 	pv->thread = CreateThread(NULL, 0, SystrayThread, pv, 0, NULL);
@@ -410,8 +411,16 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
+
 bad:
-	delete pv;
+	if ( pv ) {
+
+		if ( pv->thread )
+			CloseHandle(pv->thread);
+		if ( pv->event )
+			CloseHandle(pv->event);
+		delete pv;
+	}
 	return JS_FALSE;
 }
 

@@ -57,7 +57,9 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	
 	int sWidth, sHeight, sChannels;
-	data = JL_GetByteImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels);
+	ImageDataType dataType;
+	data = JL_GetImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels, &dataType);
+	JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 	const uint8_t *sBuffer = (const unsigned char*)data.GetConstStr();
 
 	JL_ASSERT( sWidth % 8 == 0, E_ARG, E_NUM(1), E_FORMAT ); // "The cursor width must be a multiple of 8."

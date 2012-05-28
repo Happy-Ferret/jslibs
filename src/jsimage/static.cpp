@@ -220,7 +220,7 @@ DEFINE_FUNCTION( decodeJpegImage ) {
 
 	length = height * bytePerRow;
 	JOCTET * data;
-	data = (JOCTET *)JL_NewByteImageObject(cx, width, height, channels, JL_RVAL);
+	data = (JOCTET *)JL_NewImageObject(cx, width, height, channels, TYPE_UINT8, JL_RVAL);
 	JL_CHK( data );
 
 	// cinfo->rec_outbuf_height : recomanded scanline height ( 1, 2 or 4 )
@@ -352,7 +352,9 @@ DEFINE_FUNCTION( encodeJpegImage ) {
 	const JSAMPLE *sImageData;
 
 	{
-	JLData buffer = JL_GetByteImageObject(cx, JL_ARG(1), &cinfo.image_width, &cinfo.image_height, &cinfo.input_components); // source
+	ImageDataType dataType;
+	JLData buffer = JL_GetImageObject(cx, JL_ARG(1), &cinfo.image_width, &cinfo.image_height, &cinfo.input_components, &dataType); // source
+	JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 	ASSERT( buffer.IsSet() );
 	sImageData = (const JSAMPLE*)buffer.GetConstStr();
 	}
@@ -549,7 +551,7 @@ DEFINE_FUNCTION( decodePngImage ) {
 	int length;
 	length = height * bytePerRow;
 	png_bytep data;
-	data = (png_bytep)JL_NewByteImageObject(cx, width, height, channels, JL_RVAL);
+	data = (png_bytep)JL_NewImageObject(cx, width, height, channels, TYPE_UINT8, JL_RVAL);
 	JL_CHK( data );
 
 	// int number_of_passes = png_set_interlace_handling(desc.png);
@@ -613,7 +615,9 @@ DEFINE_FUNCTION( encodePngImage ) {
 
 
 	int sWidth, sHeight, sChannels;
-	buffer = JL_GetByteImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels); // source
+	ImageDataType dataType;
+	buffer = JL_GetImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels, &dataType); // source
+	JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 
 	desc.buffer = JL_DataBufferAlloc(cx, sWidth * sHeight * sChannels + 1024); // destination
 	JL_ASSERT_ALLOC( desc.buffer );

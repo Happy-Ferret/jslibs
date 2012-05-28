@@ -37,17 +37,22 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	ode::dSurfaceParameters *pv = NULL;
+
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	ode::dSurfaceParameters *pv = (ode::dSurfaceParameters*)JS_malloc(cx, sizeof(ode::dSurfaceParameters));
+	pv = (ode::dSurfaceParameters*)JS_malloc(cx, sizeof(ode::dSurfaceParameters));
 	JL_CHK( pv );
 	pv->mu = dInfinity;
 	pv->mode = 0;
 	
 	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	JS_free(cx, pv);
+	return JS_FALSE;
 }
 
 #define SETBIT(value, mask, polarity) ((value) = (polarity) ? (value) | (mask) : (value) & ~(mask) )
@@ -154,6 +159,8 @@ DEFINE_PROPERTY_GETTER( surface ) {
 }
 
 DEFINE_PROPERTY_SETTER( surface ) {
+
+	JL_IGNORE( strict );
 
 	ode::dSurfaceParameters *surface = (ode::dSurfaceParameters*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(surface); // (TBD) check if NULL is meaningful for joints !

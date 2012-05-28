@@ -24,7 +24,7 @@ BEGIN_CLASS( Semaphore )
 
 
 struct ClassPrivate {
-	char name[PATH_MAX +1];
+	char name[PATH_MAX];
 	PRSem *semaphore;
 	bool owner;
 };
@@ -65,46 +65,46 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	PRUintn count;
-	count = 0;
 	if ( JL_ARG_ISDEF(2) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &count) );
+	else
+		count = 0;
 
 	PRUintn mode;
-	mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( JL_ARG_ISDEF(3) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &mode) );
+	else
+		mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &name) );
 	JL_ASSERT( name.Length() < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
 
-	bool isCreation;
-	isCreation = true;
-	PRSem *semaphore;
-	semaphore = PR_OpenSemaphore(name, PR_SEM_EXCL | PR_SEM_CREATE, mode, count); // fail if already exists
-
-	if ( semaphore == NULL ) {
-
-		semaphore = PR_OpenSemaphore(name, 0, 0, 0); // If PR_SEM_CREATE is not specified, the third and fourth arguments are ignored.
-		if ( semaphore == NULL )
-			return ThrowIoError(cx);
-		isCreation = false;
-	}
-
 	pv = (ClassPrivate*)JS_malloc(cx, sizeof(ClassPrivate));
 	JL_CHK( pv );
+	pv->semaphore = NULL;
 
-//	strcpy( pv->name, name ); // (TBD) use jl::memcpy instead ?
+	pv->owner = true;
+	pv->semaphore = PR_OpenSemaphore(name, PR_SEM_EXCL | PR_SEM_CREATE, mode, count); // fail if already exists
+	if ( pv->semaphore == NULL ) {
+
+		pv->semaphore = PR_OpenSemaphore(name, 0, 0, 0); // If PR_SEM_CREATE is not specified, the third and fourth arguments are ignored.
+		if ( pv->semaphore == NULL )
+			return ThrowIoError(cx);
+		pv->owner = false;
+	}
+
 	jl::memcpy(pv->name, name.GetConstStr(), name.Length());
 	pv->name[name.Length()] = '\0';
-
-	pv->semaphore = semaphore;
-	pv->owner = isCreation;
 
 	JL_SetPrivate(JL_OBJ, pv);
 	return JS_TRUE;
 
 bad:
-	JS_free(cx, pv);
+	if ( pv ) {
+		if ( pv->semaphore )
+			PR_CloseSemaphore(pv->semaphore);
+		JS_free(cx, pv);
+	}
 	return JS_FALSE;
 }
 

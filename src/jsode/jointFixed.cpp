@@ -34,6 +34,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	ode::dJointID jointId = NULL;
+
 	JL_ASSERT_ARGC_RANGE(1,2);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
@@ -51,13 +53,19 @@ DEFINE_CONSTRUCTOR() {
 	
 	ode::dWorldID worldId;
 	JL_CHK( JL_JsvalToWorldID( cx, JL_ARG(1), &worldId) );
-	ode::dJointID jointId = ode::dJointCreateFixed(worldId, groupId); // The joint group ID is 0 to allocate the joint normally.
+	jointId = ode::dJointCreateFixed(worldId, groupId); // The joint group ID is 0 to allocate the joint normally.
+	JL_ASSERT( jointId, E_STR(JL_THIS_CLASS_NAME), E_CREATE );
+
 	ode::dJointSetData(jointId, obj);
 	ode::dJointSetFeedback(jointId, NULL);
 	
 	JL_SetPrivate(obj, jointId);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( jointId )
+		ode::dJointDestroy(jointId);
+	return JS_FALSE;
 }
 
 /**doc

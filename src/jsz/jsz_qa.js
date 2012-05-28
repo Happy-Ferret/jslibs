@@ -1,10 +1,9 @@
 loadModule('jsz');
 
-/// bad constructor 1 [p]
-	new Z();
-
-/// bad constructor 2 [p]
-	Z();
+/// bad constructor [p]
+	QA.ASSERTOP( function() new Z(), 'ex', RangeError );
+	QA.ASSERTOP( function() Z(), 'ex', RangeError );
+	QA.ASSERTOP( function() new Z(9), 'ex', RangeError );
 
 /// empty operation [p]
 

@@ -458,6 +458,7 @@ enum {
 	JLID_SPEC( position ),
 	JLID_SPEC( available ),
 	JLID_SPEC( data ),
+	JLID_SPEC( type ),
 
 	LAST_JSID // see HostPrivate::ids[]
 };
@@ -3272,9 +3273,20 @@ JL_ChangeBufferLength( JSContext *cx, jsval *vp, size_t nbytes ) {
 ///////////////////////////////////////////////////////////////////////////////
 // Generic Image object
 
+enum ImageDataType {
+    TYPE_INT8    = js::ArrayBufferView::TYPE_INT8,
+    TYPE_UINT8   = js::ArrayBufferView::TYPE_UINT8,
+    TYPE_INT16   = js::ArrayBufferView::TYPE_INT16,
+    TYPE_UINT16  = js::ArrayBufferView::TYPE_UINT16,
+    TYPE_INT32   = js::ArrayBufferView::TYPE_INT32,
+    TYPE_UINT32  = js::ArrayBufferView::TYPE_UINT32,
+    TYPE_FLOAT32 = js::ArrayBufferView::TYPE_FLOAT32,
+    TYPE_FLOAT64 = js::ArrayBufferView::TYPE_FLOAT64
+};
+
 template <class T, class U>
 ALWAYS_INLINE uint8_t* FASTCALL
-JL_NewByteImageObject( JSContext *cx, T width, T height, U channels, jsval *vp ) {
+JL_NewImageObject( IN JSContext *cx, IN T width, IN T height, IN U channels, IN ImageDataType dataType, OUT jsval *vp ) {
 
 	ASSERT( width >= 0 && height >= 0 && channels > 0 );
 
@@ -3291,6 +3303,7 @@ JL_NewByteImageObject( JSContext *cx, T width, T height, U channels, jsval *vp )
 	JL_CHK( JL_NativeToProperty(cx, imageObj, JLID(cx, width), width) );
 	JL_CHK( JL_NativeToProperty(cx, imageObj, JLID(cx, height), height) );
 	JL_CHK( JL_NativeToProperty(cx, imageObj, JLID(cx, channels), channels) );
+	JL_CHK( JL_NativeToProperty(cx, imageObj, JLID(cx, type), dataType) );
 	return data;
 bad:
 	return NULL;
@@ -3298,7 +3311,7 @@ bad:
 
 template <class T, class U>
 ALWAYS_INLINE JSBool FASTCALL
-JL_NewByteImageObjectOwner( JSContext *cx, uint8_t* buffer, T width, T height, U channels, jsval *vp ) {
+JL_NewImageObjectOwner( IN JSContext *cx, IN uint8_t* buffer, IN T width, IN T height, IN U channels, IN ImageDataType dataType, OUT jsval *vp ) {
 
 	ASSERT_IF( buffer == NULL, width * height * channels == 0 );
 	ASSERT_IF( buffer != NULL, width > 0 && height > 0 && channels > 0 );
@@ -3315,6 +3328,7 @@ JL_NewByteImageObjectOwner( JSContext *cx, uint8_t* buffer, T width, T height, U
 	JL_CHK( JL_NativeToProperty(cx, imageObj, JLID(cx, width), width) );
 	JL_CHK( JL_NativeToProperty(cx, imageObj, JLID(cx, height), height) );
 	JL_CHK( JL_NativeToProperty(cx, imageObj, JLID(cx, channels), channels) );
+	JL_CHK( JL_NativeToProperty(cx, imageObj, JLID(cx, type), dataType) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -3322,7 +3336,7 @@ JL_NewByteImageObjectOwner( JSContext *cx, uint8_t* buffer, T width, T height, U
 
 template <class T, class U>
 ALWAYS_INLINE JLData FASTCALL
-JL_GetByteImageObject( JSContext *cx, jsval &val, T *width, T *height, U *channels ) {
+JL_GetImageObject( IN JSContext *cx, IN jsval &val, OUT T *width, OUT T *height, OUT U *channels, OUT ImageDataType *dataType ) {
 
 	JLData data;
 	//JL_ASSERT_IS_OBJECT(val, "image");
@@ -3334,6 +3348,9 @@ JL_GetByteImageObject( JSContext *cx, jsval &val, T *width, T *height, U *channe
 	JL_CHK( JL_PropertyToNative(cx, imageObj, JLID(cx, width), width) );
 	JL_CHK( JL_PropertyToNative(cx, imageObj, JLID(cx, height), height) );
 	JL_CHK( JL_PropertyToNative(cx, imageObj, JLID(cx, channels), channels) );
+	int tmp;
+	JL_CHK( JL_PropertyToNative(cx, imageObj, JLID(cx, type), &tmp) );
+	*dataType = (ImageDataType)tmp;
 
 //	JL_ASSERT( width >= 0 && height >= 0 && channels > 0, E_STR("image"), E_FORMAT );
 //	JL_ASSERT( data.IsSet() && jl::SafeCast<int>(data.Length()) == (int)(*width * *height * *channels * 1), E_DATASIZE, E_INVALID );

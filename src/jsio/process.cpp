@@ -61,6 +61,7 @@ DEFINE_CONSTRUCTOR() {
 	JLData path;
 	JLData currentDir;
 	PRProcessAttr *psattr = NULL;
+	PRProcess *process = NULL;
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT( !JL_ARG_ISDEF(2) || JL_ValueIsArrayLike(cx, JL_ARG(2)), E_ARG, E_NUM(2), E_TYPE, E_TY_ARRAY );
@@ -136,7 +137,6 @@ DEFINE_CONSTRUCTOR() {
 
 	// cf. bug 113095 -  PR_CreateProcess reports success even when it fails to create the process. (https://bugzilla.mozilla.org/show_bug.cgi?id=113095)
 	// workaround: check the rights and execution flag before runiong the file
-	PRProcess *process;
 	process = PR_CreateProcess(processArgv[0], (char *const *)processArgv, NULL, psattr);
 
 	//printf("***[%p - %s - %d]\n", processArgv[0], processArgv[0], processArgv[0][0]);
@@ -196,6 +196,8 @@ bad_throw:
 bad:
 	if ( psattr != NULL )
 		PR_DestroyProcessAttr(psattr);
+	if ( process)
+		PR_DetachProcess(process); 
 	return JS_FALSE;
 }
 

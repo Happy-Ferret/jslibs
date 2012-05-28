@@ -24,6 +24,8 @@ BEGIN_CLASS( GeomBox )
 
 DEFINE_FINALIZE() {
 
+	JL_IGNORE(fop);
+
 	FinalizeGeom(obj);
 }
 
@@ -34,6 +36,8 @@ $TOC_MEMBER $INAME
   TBD
 **/
 DEFINE_CONSTRUCTOR() {
+
+	ode::dGeomID geomId = NULL;
 
 	JL_ASSERT_ARGC_RANGE(0, 1);
 	JL_ASSERT_CONSTRUCTING();
@@ -48,13 +52,19 @@ DEFINE_CONSTRUCTOR() {
 
 		space = 0;
 	}
-	ode::dGeomID geomId = ode::dCreateBox(space, 1.0f,1.0f,1.0f); // default lengths are 1
+
+	geomId = ode::dCreateBox(space, 1.0f,1.0f,1.0f); // default lengths are 1
+	JL_ASSERT( geomId, E_STR(JL_THIS_CLASS_NAME), E_CREATE );
+
 	JL_CHK( SetupReadMatrix(cx, obj) );
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 
 	JL_SetPrivate(obj, geomId);
 	return JS_TRUE;
-	JL_BAD;
+bad:
+	if ( geomId )
+		ode::dGeomDestroy(geomId);
+	return JS_FALSE;
 }
 
 
@@ -68,6 +78,8 @@ $TOC_MEMBER $INAME
   Is the x, y, z size of the box.
 **/
 DEFINE_PROPERTY_SETTER( lengths ) {
+
+	JL_IGNORE(strict, id);
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
@@ -83,6 +95,8 @@ DEFINE_PROPERTY_SETTER( lengths ) {
 }
 
 DEFINE_PROPERTY_GETTER( lengths ) {
+
+	JL_IGNORE(id);
 
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );

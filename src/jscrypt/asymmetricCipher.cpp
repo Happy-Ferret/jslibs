@@ -204,6 +204,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 
 	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
+
 bad:
 	jl_free(pv);
 	return JS_FALSE;

@@ -36,6 +36,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	ode::dGeomID geomId = NULL;
+
 	JL_ASSERT_ARGC_RANGE(0, 1);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
@@ -56,13 +58,19 @@ DEFINE_CONSTRUCTOR() {
 //           followed by that amount of indices to "points" in counter clockwise order
 
 
-	ode::dGeomID geomId = ode::dCreateConvex(space, NULL, 0, NULL, 0, NULL);
+	ode::dCreateConvex(space, NULL, 0, NULL, 0, NULL);
+	JL_ASSERT( geomId, E_STR(JL_THIS_CLASS_NAME), E_CREATE );
+
 	JL_CHK( SetupReadMatrix(cx, obj) );
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 
 	JL_SetPrivate(obj, geomId);
 	return JS_TRUE;
-	JL_BAD;
+
+bad:
+	if ( geomId )
+		ode::dGeomDestroy(geomId);
+	return JS_FALSE;
 }
 
 

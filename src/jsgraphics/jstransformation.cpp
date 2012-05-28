@@ -109,7 +109,6 @@ DEFINE_CONSTRUCTOR() {
 
 	pv = (TransformationPrivate *)JS_malloc(cx, sizeof(TransformationPrivate));
 	JL_CHK(pv);
-	
 	pv->mat = NULL; // see bad:
 
 	pv->mat = PoolIsEmpty(&matrixPool) ? Matrix44Alloc() : (Matrix44*)jl::PoolPop(&matrixPool);
@@ -155,7 +154,8 @@ DEFINE_CONSTRUCTOR() {
 bad:
 	if ( pv ) {
 		
-		Matrix44Free(pv->mat);
+		if ( pv->mat )
+			Matrix44Free(pv->mat);
 		JS_free(cx, pv);
 	}
 	return JS_FALSE;
