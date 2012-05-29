@@ -8,6 +8,42 @@ var loadModule = host.loadModule;
 loadModule('jsstd');
 loadModule('jsio');
 
+
+	function createSocketPair() {
+
+		var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
+		var cl = new Socket(); cl.connect('127.0.0.1', 9999);
+		processEvents( Descriptor.events([rdv]), timeoutEvents(1000) );
+		var sv = rdv.accept(); rdv.close();
+		return [cl, sv];
+	}
+
+	[
+	function s1(data) {
+
+		var [c, s] = createSocketPair();
+		c.nonblocking = false;
+		s.linger = 500; // http://msdn.microsoft.com/en-us/library/windows/desktop/ms738547(v=vs.85).aspx
+		s.write(data);
+		s.close();
+		return c;
+	}
+	].forEach( function(fdm) {
+
+		var c = fdm('abcde');
+		sleep(600);
+		print( stringify(c), '==', 'abcde', '\n' );
+		sleep(600);
+		print( stringify(c), '==', 'abcde', '\n' );
+	} );
+
+
+
+
+
+
+throw 0;
+
 var s = new Semaphore('test');
 
 

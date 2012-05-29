@@ -408,7 +408,7 @@ JL_END_NAMESPACE
 #define DEFINE_RESOLVE() static JSBool Resolve(JSContext *cx, JSObject *obj, jsid id)
 
 #define HAS_NEW_RESOLVE cs.clasp.flags |= JSCLASS_NEW_RESOLVE; JSNewResolveOp tmp = NewResolve; cs.clasp.resolve = (JSResolveOp)tmp;
-#define HAS_NEW_RESOLVE_GETS_START cs.clasp.flags |= JSCLASS_NEW_RESOLVE_GETS_START; JSNewResolveOp tmp = NewResolve; cs.clasp.resolve = (JSResolveOp)tmp;
+//#define HAS_NEW_RESOLVE_GETS_START cs.clasp.flags |= JSCLASS_NEW_RESOLVE_GETS_START; JSNewResolveOp tmp = NewResolve; cs.clasp.resolve = (JSResolveOp)tmp;
 #define DEFINE_NEW_RESOLVE() static JSBool NewResolve(JSContext *cx, JSObject *obj, jsid id, unsigned flags, JSObject **objp)
 
 #define HAS_ENUMERATE cs.clasp.enumerate = Enumerate;

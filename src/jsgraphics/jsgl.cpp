@@ -5683,7 +5683,7 @@ DEFINE_FUNCTION( unProject ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $VOID $INAME( $UNDEF, texture [, internalformat] )
+ $VOID $INAME( texture [, internalformat] )
   $H OpenGL API
    glDrawPixels
 **/
@@ -5715,8 +5715,9 @@ DEFINE_FUNCTION( drawImage ) {
 		type = GL_UNSIGNED_BYTE;
 		ImageDataType dataType;
 		JLData image = JL_GetImageObject(cx, JL_ARG(1), &width, &height, &channels, &dataType);
-		JL_ASSERT( jl::SafeCast<int>(image.Length()) == width * height * channels * 1, E_ARG, E_NUM(1), E_FORMAT );
+		JL_ASSERT( image.IsSet(), E_ARG, E_NUM(1), E_INVALID );
 		JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
+		JL_ASSERT( jl::SafeCast<int>(image.Length()) == width * height * channels * 1, E_ARG, E_NUM(1), E_FORMAT );
 		data = image.GetConstStr();
 	}
 
@@ -6253,6 +6254,7 @@ DEFINE_FUNCTION( defineTextureImage ) {
 		type = GL_UNSIGNED_BYTE;
 		ImageDataType dataType;
 		JLData jldata = JL_GetImageObject(cx, JL_ARG(3), &width, &height, &channels, &dataType);
+		JL_ASSERT( jldata.IsSet(), E_ARG, E_NUM(3), E_INVALID );
 		JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(3), E_DATATYPE, E_INVALID );
 		data = jldata.GetConstStr();
 	}

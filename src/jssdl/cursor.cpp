@@ -59,6 +59,7 @@ DEFINE_CONSTRUCTOR() {
 	int sWidth, sHeight, sChannels;
 	ImageDataType dataType;
 	data = JL_GetImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels, &dataType);
+	JL_ASSERT( data.IsSet(), E_ARG, E_NUM(1), E_INVALID );
 	JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 	const uint8_t *sBuffer = (const unsigned char*)data.GetConstStr();
 

@@ -77,7 +77,7 @@ loadModule('jsio');
 
 
 
-/// memory leak 4
+/// memory leak 4 [d]
 
 	var myTaskFct = function() {
 		
@@ -88,7 +88,7 @@ loadModule('jsio');
 	myTask.response();
 
 
-/// memory leak 3
+/// memory leak 3 [d]
 
 	var myTaskFct = function() {
 

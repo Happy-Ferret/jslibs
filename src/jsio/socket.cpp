@@ -922,15 +922,12 @@ DEFINE_PROPERTY_GETTER( Option ) {
 			*vp = BOOLEAN_TO_JSVAL( sod.value.keep_alive == PR_TRUE );
 			break;
 		case PR_SockOpt_RecvBufferSize:
-//			*vp = INT_TO_JSVAL(sod.value.recv_buffer_size);
 			JL_CHK( JL_NativeToJsval(cx, sod.value.recv_buffer_size, vp) );
 			break;
 		case PR_SockOpt_SendBufferSize:
-//			*vp = INT_TO_JSVAL((int)sod.value.send_buffer_size);
 			JL_CHK( JL_NativeToJsval(cx, sod.value.send_buffer_size, vp) );
 			break;
 		case PR_SockOpt_MaxSegment:
-//			*vp = INT_TO_JSVAL(sod.value.max_segment);
 			JL_CHK( JL_NativeToJsval(cx, sod.value.max_segment, vp) );
 			break;
 		case PR_SockOpt_Nonblocking:
@@ -1238,7 +1235,6 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
-// PR SocketOption
 		PROPERTY_SWITCH( linger, Option )
 		PROPERTY_SWITCH( noDelay, Option )
 		PROPERTY_SWITCH( reuseAddr, Option )

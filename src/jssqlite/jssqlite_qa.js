@@ -14,7 +14,7 @@ loadModule('jssqlite');
 	}
 
 
-/// crash / deadlock [p]
+/// crash / deadlock [p d]
 
 	loadModule('jstask');
 	var myTaskFct = function() {

@@ -354,8 +354,8 @@ DEFINE_FUNCTION( encodeJpegImage ) {
 	{
 	ImageDataType dataType;
 	JLData buffer = JL_GetImageObject(cx, JL_ARG(1), &cinfo.image_width, &cinfo.image_height, &cinfo.input_components, &dataType); // source
+	JL_ASSERT( buffer.IsSet(), E_ARG, E_NUM(1), E_INVALID );
 	JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
-	ASSERT( buffer.IsSet() );
 	sImageData = (const JSAMPLE*)buffer.GetConstStr();
 	}
 
@@ -617,6 +617,7 @@ DEFINE_FUNCTION( encodePngImage ) {
 	int sWidth, sHeight, sChannels;
 	ImageDataType dataType;
 	buffer = JL_GetImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels, &dataType); // source
+	JL_ASSERT( buffer.IsSet(), E_ARG, E_NUM(1), E_INVALID );
 	JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 
 	desc.buffer = JL_DataBufferAlloc(cx, sWidth * sHeight * sChannels + 1024); // destination

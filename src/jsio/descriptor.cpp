@@ -128,7 +128,8 @@ BEGIN_CLASS( Descriptor )
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME()
-  Close the descriptor.
+  Close the descriptor.  
+  Using this function on a socket may cause an abortive shutdown (as opposed to a gracefully shutdown).
 **/
 DEFINE_FUNCTION( close ) {
 

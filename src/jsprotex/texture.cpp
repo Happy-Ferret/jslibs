@@ -533,9 +533,9 @@ DEFINE_CONSTRUCTOR() {
 		int i, tsize, sWidth, sHeight, sChannels;
 		ImageDataType dataType;
 		JLData data = JL_GetImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels, &dataType);
-		JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 		if ( data.IsSet() ) {
 
+			JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 			tsize = data.Length();
 			const uint8_t *buffer = (const uint8_t*)data.GetConstStr();
 			JL_CHK( TextureInit(tex, sWidth, sHeight, sChannels) );
@@ -1582,9 +1582,9 @@ DEFINE_FUNCTION( set ) {
 		int i, tsize, sWidth, sHeight, sChannels;
 		ImageDataType dataType;
 		JLData data = JL_GetImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels, &dataType);
-		JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 		if ( data.IsSet() ) {
 
+			JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 			tsize = data.Length();
 			const uint8_t *buffer = (const uint8_t*)data.GetConstStr();
 			for ( i = 0; i < tsize; i++ )
@@ -3421,6 +3421,7 @@ DEFINE_FUNCTION( import ) { // (Blob)image, (int)x, (int)y
 	dChannels = tex->channels;
 
 	data = JL_GetImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels, &dataType);
+	JL_ASSERT( data.IsSet(), E_ARG, E_NUM(1), E_INVALID );
 	JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 	const uint8_t *buffer = (const uint8_t*)data.GetConstStr();
 

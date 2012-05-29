@@ -489,6 +489,7 @@ DEFINE_PROPERTY_SETTER( icon ) {
 	int sWidth, sHeight, sChannels;
 	ImageDataType dataType;
 	data = JL_GetImageObject(cx, image, &sWidth, &sHeight, &sChannels, &dataType);
+	JL_ASSERT( data.IsSet(), E_ARG, E_INVALID );
 	JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_DATATYPE, E_INVALID );
 	JL_ASSERT( sChannels == 3 || sChannels == 4, E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(3, 4) );
 

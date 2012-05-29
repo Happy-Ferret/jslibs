@@ -46,6 +46,7 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 			int sWidth, sHeight, sChannels;
 			ImageDataType dataType;
 			JLData data = JL_GetImageObject(cx, image, &sWidth, &sHeight, &sChannels, &dataType);
+			JL_ASSERT( data.IsSet(), E_STR("image"), E_ARG, E_INVALID );
 			JL_ASSERT( dataType == TYPE_UINT8, E_DATATYPE, E_INVALID );
 			JL_ASSERT( sChannels == 3 || sChannels == 4, E_PROP, E_NAME("channels"), E_RANGE, E_INTERVAL_NUM(3, 4), E_COMMENT(name) ); // "Unsupported image format for %s.", name
 
