@@ -848,6 +848,19 @@ loadModule('jsdebug');
 	file.delete();
 
 
+/// timeout property
+
+	var cl = new Socket();
+
+	QA.ASSERTOP( 'timeout', '!in', cl.__proto__ );
+
+	QA.ASSERT( cl.timeout, undefined );
+	cl.timeout = 0;
+	QA.ASSERT( cl.timeout, 0 );
+	cl.timeout = 1000;
+	QA.ASSERT( cl.timeout, 1000 );
+
+
 /// complete jsio tests
 
 	/* for local tests
@@ -930,6 +943,15 @@ loadModule('jsdebug');
 		var [c, s] = createSocketPair();
 		c.nonblocking = false;
 		s.linger = 100; // triggers PR_CONNECT_RESET_ERROR that both returns |undefined|
+		s.write('');
+		s.close();
+		return c;
+	},
+	function linger1000() {
+
+		var [c, s] = createSocketPair();
+		c.nonblocking = false;
+		s.linger = 1000;
 		s.write('');
 		s.close();
 		return c;
@@ -1065,8 +1087,9 @@ loadModule('jsdebug');
 	function s1(data) {
 
 		var [c, s] = createSocketPair();
+		c.timeout = 100;
 		c.nonblocking = false;
-		s.linger = 500; // http://msdn.microsoft.com/en-us/library/windows/desktop/ms738547(v=vs.85).aspx
+		s.linger = 1000; // http://msdn.microsoft.com/en-us/library/windows/desktop/ms738547(v=vs.85).aspx
 		s.write(data);
 		s.close();
 		return c;
@@ -1075,7 +1098,7 @@ loadModule('jsdebug');
 
 		var name = fdm.name;
 		var c = fdm('abcde');
-		QA.ASSERTOP( stringify(c), '==', 'abcde', name );
+		QA.ASSERTOP( c.read(), '==', 'abcde', name );
 	} );
 
 	//

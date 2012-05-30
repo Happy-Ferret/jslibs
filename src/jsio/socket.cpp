@@ -328,17 +328,6 @@ DEFINE_FUNCTION( connect ) {
 	PRUint16 port;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &port) );
 
-/*
-	PRIntervalTime connectTimeout;
-	if ( JL_ARG_ISDEF(3) ) {
-
-		PRUint32 timeoutInMilliseconds;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &timeoutInMilliseconds) );
-		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
-	} else
-		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
-*/
-
 //	const char *host;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &host) );
 
@@ -769,6 +758,8 @@ $TOC_MEMBER linger
  $INT *linger*
   The time in milliseconds to linger on close if data present.
   A value of zero means no linger.
+  $H beware
+   linger values below 1000 may not be taken into account.
 
 $TOC_MEMBER noDelay
  $BOOL *noDelay*
@@ -832,13 +823,14 @@ DEFINE_PROPERTY_SETTER( Option ) {
 
 	switch ( sod.option ) {
 		case PR_SockOpt_Linger: { // http://developer.mozilla.org/en/docs/PRLinger
-				unsigned int timeout;
+				PRUint32 timeout;
 				JL_CHK( JL_JsvalToNative(cx, *vp, &timeout) );
-//				JS_ValueToECMAUint32( cx, *vp, &timeout );
 				if ( timeout > 0 ) {
+
 					sod.value.linger.polarity = PR_TRUE;
 					sod.value.linger.linger = PR_MillisecondsToInterval(timeout);
 				} else {
+
 					sod.value.linger.polarity = PR_FALSE;
 				}
 			} break;

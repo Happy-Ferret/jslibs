@@ -8,8 +8,32 @@ var loadModule = host.loadModule;
 loadModule('jsstd');
 loadModule('jsio');
 
+Descriptor.prototype.timeout = 123;
 
-	function createSocketPair() {
+
+	var cl = new Socket();
+	print( uneval(Object.getOwnPropertyDescriptor(Descriptor.prototype, 'timeout')), '\n' );
+	print( cl.timeout, '\n' );
+	cl.timeout = 123;
+
+	print( uneval(Object.getOwnPropertyDescriptor(Descriptor.prototype, 'timeout')), '\n' );
+	print( cl.timeout, '\n' );
+	print( Socket.prototype.timeout, '\n' );
+
+
+throw 0;
+
+	var cl = new Socket();
+	print( cl.timeout, '\n' );
+	cl.timeout = 0;
+	print( cl.timeout, '\n' );
+	cl.timeout = 1000;
+	print( cl.timeout, '\n' );
+
+
+throw 0;
+
+	var createSocketPair = function() {
 
 		var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
 		var cl = new Socket(); cl.connect('127.0.0.1', 9999);
@@ -22,8 +46,13 @@ loadModule('jsio');
 	function s1(data) {
 
 		var [c, s] = createSocketPair();
+
+		c.timeout = 100;
+		c.timeout = 200;
+
+
 		c.nonblocking = false;
-		s.linger = 500; // http://msdn.microsoft.com/en-us/library/windows/desktop/ms738547(v=vs.85).aspx
+		s.linger = 1000;
 		s.write(data);
 		s.close();
 		return c;
@@ -31,10 +60,8 @@ loadModule('jsio');
 	].forEach( function(fdm) {
 
 		var c = fdm('abcde');
-		sleep(600);
-		print( stringify(c), '==', 'abcde', '\n' );
-		sleep(600);
-		print( stringify(c), '==', 'abcde', '\n' );
+		sleep(2000)
+		print( c.read(), '\n' );
 	} );
 
 
@@ -78,7 +105,7 @@ throw 0;
 print( directorySeparator );
 throw 0;
 
-function createSocketPair() {
+var createSocketPair = function() {
 
 	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
 	var cl = new Socket(); cl.connect('127.0.0.1', 9999);

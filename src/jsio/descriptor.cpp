@@ -81,7 +81,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 				return ThrowIoError(cx);
 		}
 	}
-	
+
 	*amount = res;
 	return JS_TRUE;
 	JL_BAD;
@@ -128,7 +128,7 @@ BEGIN_CLASS( Descriptor )
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME()
-  Close the descriptor.  
+  Close the descriptor.
   Using this function on a socket may cause an abortive shutdown (as opposed to a gracefully shutdown).
 **/
 DEFINE_FUNCTION( close ) {
@@ -188,7 +188,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 
 		PRInt32 res = PR_Read(fd, BufferNewChunk(&buf, currentReadLength), currentReadLength); // like recv() with PR_INTERVAL_NO_TIMEOUT
 		if (likely( res > 0 )) { // doc: a positive number indicates the number of bytes actually read in.
-			
+
 			BufferConfirm(&buf, res);
 			if ( res < currentReadLength )
 				break;
@@ -304,7 +304,7 @@ DEFINE_FUNCTION( read ) {
 		}
 
 		if ( available == 0 ) {
-			
+
 			amount = 1; // don't use 0 to avoid |res == amount == 0| case and wrongly return empty instead of undefined
 		} else
 		if ( available == -1 ) { // API not available
@@ -312,7 +312,7 @@ DEFINE_FUNCTION( read ) {
 			ASSERT( PR_GetError() == PR_NOT_IMPLEMENTED_ERROR ); // (TBD) else handle errors properly
 			amount = 4096;
 		} else {
-			
+
 			amount = (uint32_t)available;
 		}
 	}
@@ -369,7 +369,7 @@ DEFINE_FUNCTION( read ) {
 	}
 
 	if ( (uint32_t)res == amount ) { // also handle |res == amount == 0|
-		
+
 		return JS_TRUE;
 	}
 
@@ -471,12 +471,12 @@ DEFINE_FUNCTION( write ) {
 
 		JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
 	} else if ( sentAmount == 0 ) { // nothing has been sent
-		
+
 		if ( JSVAL_IS_STRING( JL_ARG(1) ) ) { // optimization (string are immutable)
-			
+
 			*JL_RVAL = JL_ARG(1);
 		} else {
-			
+
 			JL_CHK( str.GetArrayBuffer(cx, JL_RVAL) );
 		}
 	} else { // return unsent data
@@ -718,10 +718,10 @@ static JSBool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject 
 
 	upe->pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * (1 + fdCount)); // pollDesc[0] is the event fd
 	JL_ASSERT_ALLOC( upe->pollDesc );
-	
+
 	upe->descVal = (jsval*)jl_malloc(sizeof(jsval) * (fdCount));
 	JL_ASSERT_ALLOC( upe->descVal );
-	
+
 	JL_updateMallocCounter(cx, (sizeof(PRPollDesc) + sizeof(jsval)) * fdCount); // approximately (pollDesc + descVal)
 
 	JsioPrivate *mpv;
@@ -808,7 +808,7 @@ bad:
 
 
 static void IOWaitFinalize( void* ) {
-	
+
 //	IOProcessEvent *upe = (IOProcessEvent*)data;
 }
 
@@ -824,7 +824,7 @@ DEFINE_FUNCTION( events ) {
 	upe->pe.startWait = IOStartWait;
 	upe->pe.cancelWait = IOCancelWait;
 	upe->pe.endWait = IOEndWait;
-	
+
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(1)) );
 
 	return JS_TRUE;
@@ -939,14 +939,14 @@ DEFINE_PROPERTY_SETTER( timeout ) {
 	JL_ASSERT_THIS_INHERITANCE();
 
 	if ( !JSVAL_IS_VOID( *vp ) ) {
-		
+
 		PRIntervalTime timeout;
 		if ( *vp == JSVAL_ZERO ) {
-		
+
 			timeout = PR_INTERVAL_NO_WAIT;
 		} else
 		if ( JL_ValueIsPInfinity(cx, *vp) ) {
-			
+
 			timeout = PR_INTERVAL_NO_TIMEOUT;
 		} else {
 
