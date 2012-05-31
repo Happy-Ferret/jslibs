@@ -8,8 +8,41 @@ var loadModule = host.loadModule;
 loadModule('jsstd');
 loadModule('jsio');
 
-Descriptor.prototype.timeout = 123;
+	function createSocketPair() {
 
+		var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
+		var cl = new Socket(); cl.connect('127.0.0.1', 9999);
+		processEvents( Descriptor.events([rdv]), timeoutEvents(1000) );
+		var sv = rdv.accept(); rdv.close();
+		return [cl, sv];
+	}
+
+	function s1(data) {
+
+		var [c, s] = createSocketPair();
+		c.nonblocking = false;
+		s.nonblocking = false;
+		s.linger = 1000; // http://msdn.microsoft.com/en-us/library/windows/desktop/ms738547(v=vs.85).aspx
+		s.write(data);
+		s.close();
+		return c;
+	}
+
+	var c = s1('abcde');
+	sleep(100);
+	print( c.read(), '==', 'abcde' );
+
+
+throw 0;
+
+
+
+	var cl = new Socket();
+	print( cl.__proto__.__proto__.timeout );
+
+throw 0;
+
+	Descriptor.prototype.timeout = 123;
 
 	var cl = new Socket();
 	print( uneval(Object.getOwnPropertyDescriptor(Descriptor.prototype, 'timeout')), '\n' );
@@ -33,43 +66,8 @@ throw 0;
 
 throw 0;
 
-	var createSocketPair = function() {
-
-		var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
-		var cl = new Socket(); cl.connect('127.0.0.1', 9999);
-		processEvents( Descriptor.events([rdv]), timeoutEvents(1000) );
-		var sv = rdv.accept(); rdv.close();
-		return [cl, sv];
-	}
-
-	[
-	function s1(data) {
-
-		var [c, s] = createSocketPair();
-
-		c.timeout = 100;
-		c.timeout = 200;
 
 
-		c.nonblocking = false;
-		s.linger = 1000;
-		s.write(data);
-		s.close();
-		return c;
-	}
-	].forEach( function(fdm) {
-
-		var c = fdm('abcde');
-		sleep(2000)
-		print( c.read(), '\n' );
-	} );
-
-
-
-
-
-
-throw 0;
 
 var s = new Semaphore('test');
 

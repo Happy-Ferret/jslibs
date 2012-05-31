@@ -848,19 +848,6 @@ loadModule('jsdebug');
 	file.delete();
 
 
-/// timeout property
-
-	var cl = new Socket();
-
-	QA.ASSERTOP( 'timeout', '!in', cl.__proto__ );
-
-	QA.ASSERT( cl.timeout, undefined );
-	cl.timeout = 0;
-	QA.ASSERT( cl.timeout, 0 );
-	cl.timeout = 1000;
-	QA.ASSERT( cl.timeout, 1000 );
-
-
 /// complete jsio tests
 
 	/* for local tests
@@ -1082,25 +1069,6 @@ loadModule('jsdebug');
 		QA.ASSERTOP( stringify(fd.read(4)), '==', 'bcde', name );
 	} );
 
-
-	[
-	function s1(data) {
-
-		var [c, s] = createSocketPair();
-		c.timeout = 100;
-		c.nonblocking = false;
-		s.linger = 1000; // http://msdn.microsoft.com/en-us/library/windows/desktop/ms738547(v=vs.85).aspx
-		s.write(data);
-		s.close();
-		return c;
-	}
-	].forEach( function(fdm) {
-
-		var name = fdm.name;
-		var c = fdm('abcde');
-		QA.ASSERTOP( c.read(), '==', 'abcde', name );
-	} );
-
 	//
 
 	var [c, s] = createSocketPair();
@@ -1109,3 +1077,57 @@ loadModule('jsdebug');
 	s.close();
 	QA.ASSERTOP( stringify(c), '==', '123', 'basic c-s test' );
 
+
+
+/// linger test
+
+	function createSocketPair() {
+
+		var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
+		var cl = new Socket(); cl.connect('127.0.0.1', 9999);
+		processEvents( Descriptor.events([rdv]), timeoutEvents(1000) );
+		var sv = rdv.accept(); rdv.close();
+		return [cl, sv];
+	}
+
+	function s1(data) {
+
+		var [c, s] = createSocketPair();
+		c.nonblocking = false;
+		s.nonblocking = false;
+		s.linger = 1000; // http://msdn.microsoft.com/en-us/library/windows/desktop/ms738547(v=vs.85).aspx
+		s.write(data);
+		s.close();
+		return c;
+	}
+
+	var c = s1('abcde');
+	sleep(100);
+	QA.ASSERTOP( c.read(), '==', 'abcde' );
+	
+
+/// timeout property
+
+	var cl = new Socket();
+
+	QA.ASSERTOP( Descriptor.prototype, 'hasown', 'timeout' );
+	QA.ASSERTOP( cl.__proto__.__proto__, 'hasown', 'timeout' );
+	QA.ASSERTOP( cl.__proto__, '!hasown', 'timeout' );
+	QA.ASSERTOP( Socket.prototype, '!hasown', 'timeout' );
+
+	QA.ASSERTOP( cl, '!hasown', 'timeout' );
+
+	QA.ASSERTOP( cl.__proto__.__proto__.timeout, '==', undefined );
+	QA.ASSERTOP( cl.timeout, '==', undefined );
+
+	cl.timeout = 1000;
+
+	QA.ASSERTOP( Descriptor.prototype, 'hasown', 'timeout' );
+	QA.ASSERTOP( cl.__proto__.__proto__, 'hasown', 'timeout' );
+	QA.ASSERTOP( cl.__proto__, '!hasown', 'timeout' );
+	QA.ASSERTOP( Socket.prototype, '!hasown', 'timeout' );
+
+	QA.ASSERTOP( cl, 'hasown', 'timeout' );
+
+	QA.ASSERTOP( cl.__proto__.__proto__.timeout, '==', undefined );
+	QA.ASSERTOP( cl.timeout, '==', 1000 );

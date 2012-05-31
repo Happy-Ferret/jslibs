@@ -72,6 +72,8 @@ function testOp( left, op, right ) {
 		case '<=': res = (left <= right); break;
 		case 'has': res = (right in left); break;
 		case '!has': res = (!(right in left)); break;
+		case 'hasown': res = left.hasOwnProperty(right); break;
+		case '!hasown': res = !left.hasOwnProperty(right); break;
 		case 'in': res = (left in right); break;
 		case '!in': res = (!(left in right)); break;
 		case 'instanceof': res = (left instanceof right); break;
