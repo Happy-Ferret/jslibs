@@ -1103,7 +1103,7 @@ loadModule('jsdebug');
 
 	var c = s1('abcde');
 	sleep(100);
-	QA.ASSERTOP( c.read(), '==', 'abcde' );
+	QA.ASSERTOP( stringify(c.read()), '==', 'abcde' );
 	
 
 /// timeout property

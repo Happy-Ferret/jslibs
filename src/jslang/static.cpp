@@ -969,6 +969,7 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 
+
 //	JSBool st = JS_IsInt8Array(obj, cx);
 
 /*

@@ -5712,12 +5712,37 @@ DEFINE_FUNCTION( drawImage ) {
 		type = GL_FLOAT;
 	} else {
 
-		type = GL_UNSIGNED_BYTE;
 		ImageDataType dataType;
 		JLData image = JL_GetImageObject(cx, JL_ARG(1), &width, &height, &channels, &dataType);
 		JL_ASSERT( image.IsSet(), E_ARG, E_NUM(1), E_INVALID );
-		JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
-		JL_ASSERT( jl::SafeCast<int>(image.Length()) == width * height * channels * 1, E_ARG, E_NUM(1), E_FORMAT );
+		switch ( dataType ) {
+			case TYPE_INT8:
+				type = GL_BYTE;
+				break;
+			case TYPE_UINT8:
+				type = GL_UNSIGNED_BYTE;
+				break;
+			case TYPE_INT16:
+				type = GL_SHORT;
+				break;
+			case TYPE_UINT16:
+				type = GL_UNSIGNED_SHORT;
+				break;
+			case TYPE_INT32:
+				type = GL_INT;
+				break;
+			case TYPE_UINT32:
+				type = GL_UNSIGNED_INT;
+				break;
+			case TYPE_FLOAT32:
+				type = GL_FLOAT;
+				break;
+			case TYPE_FLOAT64:
+				type = GL_DOUBLE;
+				break;
+			default:
+				JL_ERR( E_ARG, E_NUM(1), E_FORMAT );
+		}
 		data = image.GetConstStr();
 	}
 
@@ -6158,6 +6183,7 @@ DEFINE_FUNCTION( createTextureBuffer ) {
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( target, internalformat | $UNDEF, texture )
+ $VOID $INAME( target, internalformat | $UNDEF, genericImage )
  $VOID $INAME( target, internalformat | $UNDEF, typedArray, width, height, channels )
   $H arguments
    $ARG GLenum target
@@ -6169,14 +6195,6 @@ $TOC_MEMBER $INAME
    glPixelStorei, glTexImage2D
 **/
 // (TBD) manage compression: http://www.opengl.org/registry/specs/ARB/texture_compression.txt
-
-/*
-JSBool TextureHelper(JSObject *obj, int *width, int *height, int *channels, const void *data) {
-
-	return JS_TRUE;
-}
-*/
-
 DEFINE_FUNCTION( defineTextureImage ) {
 
 	JLData dataStr;
@@ -6248,16 +6266,43 @@ DEFINE_FUNCTION( defineTextureImage ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &height) );
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &channels) );
 
-		JL_ASSERT( width*height*channels == (int)JS_GetTypedArrayByteLength(tObj, cx), E_DATASIZE, E_INVALID );
+		JL_ASSERT( width * height * channels == (int)JS_GetTypedArrayByteLength(tObj, cx), E_DATASIZE, E_INVALID );
 	} else {
 
-		type = GL_UNSIGNED_BYTE;
 		ImageDataType dataType;
-		JLData jldata = JL_GetImageObject(cx, JL_ARG(3), &width, &height, &channels, &dataType);
-		JL_ASSERT( jldata.IsSet(), E_ARG, E_NUM(3), E_INVALID );
-		JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(3), E_DATATYPE, E_INVALID );
-		data = jldata.GetConstStr();
+		JLData jlImage = JL_GetImageObject(cx, JL_ARG(3), &width, &height, &channels, &dataType);
+		JL_ASSERT( jlImage.IsSet(), E_ARG, E_NUM(3), E_INVALID );
+		switch ( dataType ) {
+			case TYPE_INT8:
+				type = GL_BYTE;
+				break;
+			case TYPE_UINT8:
+				type = GL_UNSIGNED_BYTE;
+				break;
+			case TYPE_INT16:
+				type = GL_SHORT;
+				break;
+			case TYPE_UINT16:
+				type = GL_UNSIGNED_SHORT;
+				break;
+			case TYPE_INT32:
+				type = GL_INT;
+				break;
+			case TYPE_UINT32:
+				type = GL_UNSIGNED_INT;
+				break;
+			case TYPE_FLOAT32:
+				type = GL_FLOAT;
+				break;
+			case TYPE_FLOAT64:
+				type = GL_DOUBLE;
+				break;
+			default:
+				JL_ERR( E_ARG, E_NUM(3), E_FORMAT );
+		}
+		data = jlImage.GetConstStr();
 	}
+
 
 	if ( JL_ARG_ISDEF(2) ) {
 

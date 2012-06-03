@@ -72,6 +72,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( randInt ) {
 
+	JL_IGNORE( argc );
+
 	return JL_NativeToJsval(cx, genrand_int32(), JL_RVAL);
 }
 
@@ -82,6 +84,8 @@ $TOC_MEMBER $INAME
   Generates a random number on `[ 0 , 1 ]` real interval.
 **/
 DEFINE_FUNCTION( randReal ) {
+
+	JL_IGNORE( argc );
 
 	return JL_NativeToJsval(cx, genrand_real1(), JL_RVAL);
 }
@@ -152,6 +156,8 @@ DEFINE_FUNCTION( perlinNoise2 ) {
 
 
 DEFINE_INIT() {
+
+	JL_IGNORE( obj, proto, sc, cx );
 
 	InitNoise();
 	return JS_TRUE;

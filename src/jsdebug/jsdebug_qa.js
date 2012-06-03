@@ -1,18 +1,8 @@
 loadModule('jsdebug');
 
-
 /// list all properties of the global object  []
 
 	propertiesList( global );
-
-
-/// test OBJ_SCOPE in JS_PropertyIterator [p]
-
-//	PropertiesList([]); // see bug 688571 - JS_PropertyIterator is broken
-//	PropertiesList({}); // ... bug 688571
-	propertiesList({ a:123 });
-	propertiesList(new String());
-	propertiesList(propertiesList);
 
 
 /// gcMallocBytes test [d]

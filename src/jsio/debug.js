@@ -2,43 +2,12 @@ var loadModule = host.loadModule;
 
  //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
  //loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask -rep 1 jsio -stopAfterNIssues 1'); halt();
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio'); throw 0;
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio'); throw 0;
 
 //loadModule('jstask');
 loadModule('jsstd');
 loadModule('jsio');
 
-	function createSocketPair() {
-
-		var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
-		var cl = new Socket(); cl.connect('127.0.0.1', 9999);
-		processEvents( Descriptor.events([rdv]), timeoutEvents(1000) );
-		var sv = rdv.accept(); rdv.close();
-		return [cl, sv];
-	}
-
-	function s1(data) {
-
-		var [c, s] = createSocketPair();
-		c.nonblocking = false;
-		s.nonblocking = false;
-		s.linger = 1000; // http://msdn.microsoft.com/en-us/library/windows/desktop/ms738547(v=vs.85).aspx
-		s.write(data);
-		s.close();
-		return c;
-	}
-
-	var c = s1('abcde');
-	sleep(100);
-	print( c.read(), '==', 'abcde' );
-
-
-throw 0;
-
-
-
-	var cl = new Socket();
-	print( cl.__proto__.__proto__.timeout );
 
 throw 0;
 
