@@ -3,8 +3,24 @@ var loadModule = host.loadModule;
 
 loadModule('jsstd');
 
+print(privateMemoryUsage, '\n');
+//collectGarbage();
+print(privateMemoryUsage, '\n');
 
-print( CPUID );
+host.stdin();
+
+throw 0;
+
+loadModule('jsstd');
+
+print( processTime, '\n' );
+sleep(1000);
+print( processTime, '\n' );
+var d1 = Date.now(); while ( Date.now() - d1 < 1000 );
+print( processTime, '\n' );
+
+
+
 
 throw 0;
 

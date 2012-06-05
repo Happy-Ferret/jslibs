@@ -518,6 +518,7 @@ LL(const wchar_t *s) {
 //static inline void JL_IGNORE(T) {};
 //#define JL_IGNORE(x) x __attribute__((unused))
 //#define JL_IGNORE(x) ((x) = (x))
+// see UNREFERENCED_PARAMETER in winNT.h
 #define JL_IGNORE(...) \
 	((void)(__VA_ARGS__))
 
@@ -1849,26 +1850,42 @@ JL_END_NAMESPACE
 // system errors
 //
 
+#if defined(XP_WIN)
+	typedef DWORD JLSystemErrorCode;
+#elif defined(XP_UNIX)
+	typedef int JLSystemErrorCode;
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
+
+
 INLINE NEVER_INLINE void NOALIAS FASTCALL
-JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
+JLSysetmErrorMessage( char *message, size_t maxLength, JLSystemErrorCode errorCode, const char *moduleName ) {
 
  #if defined(XP_WIN)
-	DWORD errorCode = ::GetLastError();
-	LPVOID lpMsgBuf;
-	DWORD result = ::FormatMessage( // FormatMessageW
-		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK,
-		NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL );
-	if ( result != 0 ) {
+	
+	LPCVOID source;
+	DWORD flags;
 
-		strncpy(message, (char*)lpMsgBuf, maxLength-1);
-		LocalFree(lpMsgBuf);
-		message[maxLength-1] = '\0';
+	if ( moduleName == NULL ) {
+		
+		flags = FORMAT_MESSAGE_FROM_SYSTEM;
+		source = NULL;
 	} else {
+	
+		flags = FORMAT_MESSAGE_FROM_HMODULE;
+		source = ::LoadLibrary(moduleName);
+	}
+
+	DWORD chars = ::FormatMessage(FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK | flags, source, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), message, maxLength, NULL);
+	if ( chars == 0 ) {
 
 		*message = '\0';
 	}
+
  #elif defined(XP_UNIX)
-	const char *msgBuf = strerror(errno); // wcserror
+	
+	const char *msgBuf = strerror(errorCode); // wcserror
 	if ( msgBuf != NULL ) {
 
 		strncpy(message, msgBuf, maxLength-1);
@@ -1877,9 +1894,32 @@ JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
 
 		*message = '\0';
 	}
+
  #else
+
 	#error NOT IMPLEMENTED YET	// (TBD)
+
  #endif
+}
+
+
+INLINE NEVER_INLINE void NOALIAS FASTCALL
+JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
+
+ #if defined(XP_WIN)
+	
+	JLSysetmErrorMessage(message, maxLength, ::GetLastError(), NULL);
+
+ #elif defined(XP_UNIX)
+	
+	JLSysetmErrorMessage(message, maxLength, errno, NULL);
+
+ #else
+
+	#error NOT IMPLEMENTED YET	// (TBD)
+
+ #endif
+	
 }
 
 

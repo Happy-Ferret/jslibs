@@ -2995,7 +2995,7 @@ JL_JsvalToJsid( JSContext * RESTRICT cx, jsval val, jsid * RESTRICT id ) {
 	if ( JSVAL_IS_STRING( val ) ) {
 
 		*id = JL_StringToJsid(cx, JSVAL_TO_STRING( val ));
-		ASSERT( JSID_IS_STRING( *id ) );
+		ASSERT( JSID_IS_STRING( *id ) || JSID_IS_INT( *id ) ); // see AtomToId()
 	} else
 	if ( JSVAL_IS_INT( val ) && INT_FITS_IN_JSID( JSVAL_TO_INT( val ) ) ) {
 
@@ -3540,7 +3540,17 @@ JL_MaybeRealloc( size_t requested, size_t received ) {
 
 
 INLINE NEVER_INLINE JSBool FASTCALL
-JL_ThrowOSError(JSContext *cx) {
+JL_ThrowOSErrorCode( JSContext *cx, JLSystemErrorCode errorCode, const char *moduleName ) {
+
+	char errMsg[1024];
+	JLSysetmErrorMessage(errMsg, sizeof(errMsg), errorCode, moduleName);
+	JL_ERR( E_OS, E_DETAILS, E_STR(errMsg) );
+	JL_BAD;
+}
+
+
+INLINE NEVER_INLINE JSBool FASTCALL
+JL_ThrowOSError( JSContext *cx ) {
 
 	char errMsg[1024];
 	JLLastSysetmErrorMessage(errMsg, sizeof(errMsg));
@@ -3550,7 +3560,7 @@ JL_ThrowOSError(JSContext *cx) {
 
 
 ALWAYS_INLINE JSContext* FASTCALL
-JL_GetFirstContext(JSRuntime *rt) {
+JL_GetFirstContext( JSRuntime *rt ) {
 
 	JSContext *cx = NULL;
 	ASSERT( rt != NULL );
@@ -3574,7 +3584,7 @@ JL_InheritFrom( JSContext *cx, JSObject *obj, const JSClass *clasp ) {
 
 
 ALWAYS_INLINE JSBool FASTCALL
-JL_CallFunctionId(JSContext *cx, JSObject *obj, jsid id, unsigned argc, jsval *argv, jsval *rval) {
+JL_CallFunctionId( JSContext *cx, JSObject *obj, jsid id, unsigned argc, jsval *argv, jsval *rval ) {
 
 	jsval tmp;
 	return JS_GetMethodById(cx, obj, id, NULL, &tmp) && JS_CallFunctionValue(cx, obj, tmp, argc, argv, rval);

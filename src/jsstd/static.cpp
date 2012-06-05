@@ -18,6 +18,19 @@
 
 #include <jsvalserializer.h>
 
+
+#ifdef XP_WIN
+#include <Psapi.h>
+
+	#pragma comment(lib,"Psapi.lib") // need for currentMemoryUsage()
+	#include <Psapi.h>
+	#pragma comment(lib,"pdh.lib") // need for performance counters usage
+	#include <pdh.h>
+	#include <PDHMsg.h>
+
+#endif // XP_WIN
+
+
 DECLARE_CLASS( OperationLimit )
 
 
@@ -1206,12 +1219,317 @@ bad:
 }
 
 
+#ifdef XP_UNIX
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+struct LinuxProcInfo {
+	int pid; // %d
+	char comm[400]; // %s
+	char state; // %c
+	int ppid; // %d
+	int pgrp; // %d
+	int session; // %d
+	int tty; // %d
+	int tpgid; // %d
+	unsigned int flags; // %u
+	unsigned int minflt; // %u
+	unsigned int cminflt; // %u
+	unsigned int majflt; // %u
+	unsigned int cmajflt; // %u
+	int utime; // %d
+	int stime; // %d
+	int cutime; // %d
+	int cstime; // %d
+	int counter; // %d
+	int priority; // %d
+	unsigned int timeout; // %u
+	unsigned int itrealvalue; // %u
+	int starttime; // %d
+	unsigned int vsize; // %u
+	unsigned int rss; // %u
+	unsigned int rlim; // %u
+	unsigned int startcode; // %u
+	unsigned int endcode; // %u
+	unsigned int startstack; // %u
+	unsigned int kstkesp; // %u
+	unsigned int kstkeip; // %u
+	int signal; // %d
+	int blocked; // %d
+	int sigignore; // %d
+	int sigcatch; // %d
+	unsigned int wchan; // %u
+};
+
+bool GetProcInfo( pid_t pid, LinuxProcInfo *pinfo ) {
+
+	char path[128];
+	char data[512];
+	snprintf(path, sizeof(path), "/proc/%d/stat", pid);
+	int fd = open(path, O_RDONLY);
+	//lseek(fd,0,SEEK_SET);
+	int rd = read(fd, data, sizeof(data));
+	close(fd);
+	data[rd] = '\0';
+
+	sscanf(data, "%d %s %c %d %d %d %d %d %u %u %u %u %u %d %d %d %d %d %d %u %u %d %u %u %u %u %u %u %u %u %d %d %d %d %u",
+		&pinfo->pid, // %d
+		pinfo->comm, // %s
+		&pinfo->state, // %c
+		&pinfo->ppid, // %d
+		&pinfo->pgrp, // %d
+		&pinfo->session, // %d
+		&pinfo->tty, // %d
+		&pinfo->tpgid, // %d
+		&pinfo->flags, // %u
+		&pinfo->minflt, // %u
+		&pinfo->cminflt, // %u
+		&pinfo->majflt, // %u
+		&pinfo->cmajflt, // %u
+		&pinfo->utime, // %d
+		&pinfo->stime, // %d
+		&pinfo->cutime, // %d
+		&pinfo->cstime, // %d
+		&pinfo->counter, // %d
+		&pinfo->priority, // %d
+		&pinfo->timeout, // %u
+		&pinfo->itrealvalue, // %u
+		&pinfo->starttime, // %d
+		&pinfo->vsize, // %u
+		&pinfo->rss, // %u
+		&pinfo->rlim, // %u
+		&pinfo->startcode, // %u
+		&pinfo->endcode, // %u
+		&pinfo->startstack, // %u
+		&pinfo->kstkesp, // %u
+		&pinfo->kstkeip, // %u
+		&pinfo->signal, // %d
+		&pinfo->blocked, // %d
+		&pinfo->sigignore, // %d
+		&pinfo->sigcatch, // %d
+		&pinfo->wchan // %u
+	);
+	return true;
+}
+
+#endif // XP_UNIX
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
+ $INAME
+  TBD
+**/
+DEFINE_PROPERTY_GETTER( currentMemoryUsage ) {
+
+	JL_IGNORE( id, obj );
+
+	uint32_t bytes;
+
+#if defined(XP_WIN)
+
+	PROCESS_MEMORY_COUNTERS_EX pmc;
+	BOOL status = ::GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
+	if ( !status )
+		return JL_ThrowOSError(cx);
+	bytes = pmc.WorkingSetSize; // same value as "windows task manager" "mem usage"
+
+#elif defined(XP_UNIX)
+
+	// VmRSS in /proc/self/status
+
+	LinuxProcInfo pinfo;
+	GetProcInfo(getpid(), &pinfo);
+	bytes = pinfo.vsize;
+
+#else
+
+	JL_WARN( E_API, E_NOTIMPLEMENTED );
+
+#endif
+
+	JL_CHK( JL_NewNumberValue(cx, bytes, vp) );
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
+ $INAME
+  TBD
+**/
+DEFINE_PROPERTY_GETTER( peakMemoryUsage ) {
+
+	JL_IGNORE( id, obj );
+
+#if defined(XP_WIN)
+
+/*
+	DWORD  dwMin, dwMax;
+	HANDLE hProcess;
+	hProcess = GetCurrentProcess();
+	if (!GetProcessWorkingSetSize(hProcess, &dwMin, &dwMax))
+		JL_REPORT_ERROR("GetProcessWorkingSetSize failed (%d)\n", GetLastError());
+//	printf("Minimum working set: %lu Kbytes\n", dwMin/1024);
+//	printf("Maximum working set: %lu Kbytes\n", dwMax/1024);
+	bytes = dwMax;
+	//cf. GetProcessWorkingSetSizeEx
+*/
+
+	PROCESS_MEMORY_COUNTERS_EX pmc;
+	BOOL status = ::GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
+	if ( !status )
+		return JL_ThrowOSError(cx);
+
+	JL_CHK( JL_NewNumberValue(cx, pmc.PeakWorkingSetSize, vp) ); // same value as "windows task manager" "peak mem usage"
+	return JS_TRUE;
+#else
+
+	// see:
+	// 1/ max rss field in  /proc/self/status
+	// 2/ getrusage
+
+	JL_WARN( E_API, E_NOTIMPLEMENTED );
+
+#endif
+
+	*vp = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
+ $INAME
+  TBD
+**/
+
+int Compare( const void * Val1, const void * Val2 )
+{
+    if ( *(PDWORD)Val1 == *(PDWORD)Val2 )
+    return 0;
+
+    return *(PDWORD)Val1 > *(PDWORD)Val2 ? 1 : -1;
+}
+
+DEFINE_PROPERTY_GETTER( privateMemoryUsage ) {
+
+	JL_IGNORE( id, obj );
+
+#if defined(XP_WIN)
+
+/*
+	// see also. http://www.codeproject.com/KB/cpp/XPWSPrivate.aspx (Calculate Memory (Working Set - Private) Programmatically in Windows XP/2000)
+
+	PROCESS_MEMORY_COUNTERS_EX pmc;
+	BOOL status = ::GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
+	if ( !status )
+		return JL_ThrowOSError(cx);
+	// doc:
+	//   pmc.PrivateUsage
+	//     The current amount of memory that cannot be shared with other processes, in bytes. Private bytes include memory that is committed and marked MEM_PRIVATE,
+	//     data that is not mapped, and executable pages that have been written to.
+	//   pmc.WorkingSetSize
+	//     same value as "windows task manager" "mem usage"
+	return JL_NewNumberValue(cx, pmc.PrivateUsage, vp);
+*/
+
+/* source: http://www.codeproject.com/Articles/87529/Calculate-Memory-Working-Set-Private-Programmatica
+*/
+	DWORD dWorkingSetPages[1024 * 128]; // hold the working set information get from QueryWorkingSet()
+	DWORD dPageSize = 0x1000;
+
+	DWORD dSharedPages = 0;
+	DWORD dPrivatePages = 0; 
+	DWORD dPageTablePages = 0;
+
+	HANDLE hProcess = OpenProcess( PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, GetCurrentProcessId() );
+	if ( !hProcess )
+		goto bad;
+
+	__try {
+
+		if ( !QueryWorkingSet(hProcess, dWorkingSetPages, sizeof(dWorkingSetPages)) )
+			__leave;
+
+		DWORD dPages = dWorkingSetPages[0];
+		qsort(&dWorkingSetPages[1], dPages, sizeof(DWORD), Compare);
+
+		for ( DWORD i = 1; i <= dPages; i++ ) {
+
+			DWORD dCurrentPageStatus = 0; 
+			DWORD dCurrentPageAddress;
+			DWORD dNextPageAddress;
+			DWORD dNextPageFlags;
+			DWORD dPageAddress = dWorkingSetPages[i] & 0xFFFFF000;
+			DWORD dPageFlags = dWorkingSetPages[i] & 0x00000FFF;
+
+			while ( i <= dPages ) { // iterate all pages
+
+				dCurrentPageStatus++;
+
+				if ( i == dPages ) // if last page
+					break;
+
+				dCurrentPageAddress = dWorkingSetPages[i] & 0xFFFFF000;
+				dNextPageAddress = dWorkingSetPages[i+1] & 0xFFFFF000;
+				dNextPageFlags = dWorkingSetPages[i+1] & 0x00000FFF;
+
+				// decide whether iterate further or exit (this is non-contiguous page or have different flags) 
+				if ( (dNextPageAddress == (dCurrentPageAddress + dPageSize)) && (dNextPageFlags == dPageFlags) )
+					++i;
+				else
+					break;
+			}
+
+			if ( (dPageAddress < 0xC0000000) || (dPageAddress > 0xE0000000) ) {
+	            
+				if ( dPageFlags & 0x100 ) // this is shared one
+					dSharedPages += dCurrentPageStatus;
+				else // private one
+					dPrivatePages += dCurrentPageStatus;
+			} else {
+	        
+				dPageTablePages += dCurrentPageStatus; // page table region
+			}
+		} 
+		return JL_NewNumberValue(cx, (dPages - dSharedPages) * dPageSize, vp);
+	} __finally {
+
+		CloseHandle( hProcess );
+	}
+
+#else
+
+
+	// get VmSize in /proc/self/status
+
+	JL_WARN( E_API, E_NOTIMPLEMENTED );
+
+	*vp = JSVAL_VOID;
+	return JS_TRUE;
+
+#endif
+	JL_BAD;
+}
+
+
+
+
 /**doc
 === Static properties ===
 **/
 
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
  $ARRAY $INAME $READONLY
@@ -1237,6 +1555,7 @@ DEFINE_PROPERTY_GETTER( currentFilename ) {
 }
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
  $ARRAY $INAME $READONLY
@@ -1257,13 +1576,113 @@ DEFINE_PROPERTY_GETTER( currentLineNumber ) {
 }
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
+ $INAME $READONLY
+  Is the amount of CPU time (milliseconds) that the process has executed.
+**/
+DEFINE_PROPERTY_GETTER( processTime ) {
+
+	JL_IGNORE( id, obj );
+
+#if defined(XP_WIN)
+
+	FILETIME creationTime, exitTime, kernelTime, userTime;
+	BOOL status = ::GetProcessTimes(GetCurrentProcess(), &creationTime, &exitTime, &kernelTime, &userTime);
+	if ( !status )
+		return JL_ThrowOSError(cx);
+
+	ULARGE_INTEGER user;
+    ULARGE_INTEGER kernel;
+    kernel.LowPart  = kernelTime.dwLowDateTime;
+    kernel.HighPart = kernelTime.dwHighDateTime;
+    user.LowPart  = userTime.dwLowDateTime;
+    user.HighPart = userTime.dwHighDateTime;
+	return JL_NativeToJsval(cx, (kernel.QuadPart + user.QuadPart) / (double)10000, vp);
+
+#else
+
+	// see "CPU currently used by current process:" in http://stackoverflow.com/questions/63166/how-to-determine-cpu-and-memory-consumption-from-inside-a-process
+	// /proc/cpuinfo
+	// times()
+
+	JL_WARN( E_API, E_NOTIMPLEMENTED );
+
+#endif
+
+	*vp = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
+ $INAME $READONLY
+  Is the current CPU usage in percent.
+**/
+DEFINE_PROPERTY_GETTER( cpuLoad ) {
+
+	JL_IGNORE( id, obj );
+
+#if defined(XP_WIN)
+
+  static PDH_STATUS status;
+  static PDH_FMT_COUNTERVALUE value;
+  static HQUERY query;
+  static HCOUNTER counter;
+  static DWORD ret;
+  static bool notInit = true;
+
+	if ( notInit ) {
+
+		status = PdhOpenQuery(NULL, NULL, &query);
+		if ( status != ERROR_SUCCESS )
+			return JL_ThrowOSErrorCode(cx, status, "pdh.dll");
+		status = PdhAddCounter(query, TEXT("\\Processor(_Total)\\% Processor Time"), NULL, &counter); // A total of ALL CPU's in the system
+		if ( status != ERROR_SUCCESS )
+			return JL_ThrowOSErrorCode(cx, status, "pdh.dll");
+		status = PdhCollectQueryData(query); // No error checking here
+		if ( status != ERROR_SUCCESS )
+			return JL_ThrowOSErrorCode(cx, status, "pdh.dll");
+		notInit = false;
+	}
+
+	status = PdhCollectQueryData(query);
+	if ( status != ERROR_SUCCESS )
+		return JL_ThrowOSErrorCode(cx, status, "pdh.dll");
+
+	status = PdhGetFormattedCounterValue(counter, PDH_FMT_DOUBLE, &ret, &value);
+	if ( status != ERROR_SUCCESS && status != PDH_CALC_NEGATIVE_DENOMINATOR )
+		return JL_ThrowOSErrorCode(cx, status, "pdh.dll");
+
+	return JL_NativeToJsval(cx, value.doubleValue, vp);
+
+#else
+
+	// see:
+	// 1/ in http://stackoverflow.com/questions/63166/how-to-determine-cpu-and-memory-consumption-from-inside-a-process
+	// 2/ sysconf(_SC_NPROCESSORS_ONLN)
+
+
+	JL_WARN( E_API, E_NOTIMPLEMENTED );
+
+#endif
+
+	*vp = JSVAL_VOID;
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
  $INT $INAME
 **/
-DEFINE_PROPERTY_GETTER( CPUID ) {
+DEFINE_PROPERTY_GETTER( cpuId ) {
 
 	JL_IGNORE(id, obj);
 
@@ -1409,7 +1828,13 @@ CONFIGURE_STATIC
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_GETTER( currentFilename )
 		PROPERTY_GETTER( currentLineNumber )
-		PROPERTY_GETTER( CPUID )
+		PROPERTY_GETTER( currentMemoryUsage )
+		PROPERTY_GETTER( peakMemoryUsage )
+		PROPERTY_GETTER( privateMemoryUsage )
+		PROPERTY_GETTER( processTime )
+		PROPERTY_GETTER( cpuLoad )
+		PROPERTY_GETTER( cpuId )
+
 #ifdef _DEBUG
 //		PROPERTY( jsstdPropTest )
 #endif // _DEBUG
