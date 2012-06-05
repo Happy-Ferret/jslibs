@@ -6,37 +6,45 @@ loadModule('jsstd');
 loadModule('jswinshell');
 loadModule('jssvg');
 
-
-//Console.setConsoleMode( Console.ENABLE_LINE_INPUT );
-
-print( Console.read(), '\n' );
-
-
-throw 0; //////////////////////////////////////////////////////////////////////
-
-
-
-//jswinshelltest();
-
-
 var s = new Systray();
 s.icon = new Icon( 0 );
 
-s.onmousedown = function( button ) {
+var i = 0;
+s.onmousemove = function( button ) {
 
-	//s.popupMenu( [{label:'test', popup:['Force']}] );
-	s.popupMenu([ { label:'aaa', popup:[ '1','2','3','4','5' ] } ]);
+/*
+	s.popupMenu([
+		'peakMemoryUsage: '+(peakMemoryUsage/(1024*1024)).toFixed(0) + 'MB',
+		'privateMemoryUsage: '+(privateMemoryUsage/(1024*1024)).toFixed(0) + 'MB',
+		'processTime: '+processTime + 'ms'
+	]);
+*/
+
+	//s.popupBalloon( {infoTitle:'123', icon:'info', info:'2452345'} );
+
+	s.text =
+		'peakMemoryUsage: '+(peakMemoryUsage/(1024*1024)).toFixed(0) + 'MB\n' +
+		'privateMemoryUsage: '+(privateMemoryUsage/(1024*1024)).toFixed(0) + 'MB\n'+
+		'processTime: '+processTime + 'ms\n'+
+		i++;
 }
 
-s.oncommand = function( id, button ) {
+s.onmouseenter = function() {
 
-	print( s.oncommand, ' ', id );
+	print('enter');
+}
+
+s.onmouseleave = function() {
+
+	print('leave');
 }
 
 var ev = s.events();
+while ( !host.endSignal ) {
 
-while ( !host.endSignal )
+	print('.');
 	processEvents( ev, host.endSignalEvents() )
+}
 
 
 throw 0; //////////////////////////////////////////////////////////////////////

@@ -24,7 +24,10 @@ DECLARE_CLASS( Icon )
 
 #define MSG_TRAY_CALLBACK (WM_USER + 1) // This message has two meanings: tray message + forward
 #define MSG_POPUP_MENU (WM_USER + 2)
+#define MSG_TIMEOUT (WM_USER + 3)
 
+#define MOUSE_LEAVE_POLL_TIMER 1
+#define MOUSE_LEAVE_POLL_TIMER_TIMEOUT 1000
 
 BOOL FASTCALL
 Shell_NotifyIconA_retry(DWORD dwMessage, PNOTIFYICONDATAA lpData) {
@@ -47,12 +50,13 @@ struct Private : public jl::CppAllocators {
 	HANDLE event;
 	jl::Queue msgQueue;
 	CRITICAL_SECTION cs; // protects msgQueue
-//	jl::Queue popupMenuRoots;
 	jl::Stack<jsval> popupMenuRoots;
+	int lastMouseX, lastMouseY;
+//	bool mouseIn;
 };
 
 
-typedef struct MSGInfo {
+struct MSGInfo {
 	HWND hwnd;
 	UINT message;
 	WPARAM wParam;
@@ -60,10 +64,10 @@ typedef struct MSGInfo {
 	BOOL lButton, rButton, mButton;
 	BOOL shiftKey, controlKey, altKey;
 	int mouseX, mouseY;
-} MSGInfo;
+};
 
 
-void AddPopupMenuRoot(JSContext *cx, JSObject *obj, jsval value) {
+void AddPopupMenuRoot(JSContext *, JSObject *obj, jsval value) {
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	*++pv->popupMenuRoots = value;
@@ -84,7 +88,7 @@ BOOL CALLBACK FindTrayWnd(HWND hwnd, LPARAM lParam) {
 	if (strcmp(szClassName, "TrayNotifyWnd") == 0) {
 
 		*(HWND*)lParam = hwnd;
-      return FALSE;
+		return FALSE;
 	}
 	return TRUE;
 }
@@ -126,7 +130,7 @@ HWND GetTrayNotifyWnd() {
 BOOL FindOutPositionOfIconDirectly(const HWND a_hWndOwner, const int a_iButtonID, RECT *a_rcIcon) {
 
 	HWND hWndTray = GetTrayNotifyWnd();
-   if (hWndTray == NULL)
+	if (hWndTray == NULL)
 		return FALSE;
 	DWORD dwTrayProcessID = (DWORD)-1;
 	GetWindowThreadProcessId(hWndTray, &dwTrayProcessID);
@@ -220,20 +224,35 @@ void ForwardMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	msg->controlKey = GetAsyncKeyState(VK_CONTROL) > 0; // (TBD) check !!
 	msg->altKey     = GetAsyncKeyState(VK_MENU)    > 0; // (TBD) check !!
 
-	if ( message == MSG_TRAY_CALLBACK ) {
-
-		POINT pt;
-		GetCursorPos(&pt);
-		msg->mouseX = pt.x;
-		msg->mouseY = pt.y;
-	} else {
-
-		msg->mouseX = -1;
-		msg->mouseY = -1;
-	}
-
 	Private *pv = (Private*)GetWindowLongPtr(hWnd, GWL_USERDATA);
 	ASSERT( pv != NULL );
+
+	POINT pos;
+
+	switch ( message ) {
+		case MSG_TIMEOUT :
+			GetCursorPos(&pos);
+			if ( pv->lastMouseX != -1 && pv->lastMouseY != -1 && pos.x != pv->lastMouseX && pos.y != pv->lastMouseY ) {
+
+				msg->message = MSG_TRAY_CALLBACK;
+				msg->lParam = WM_MOUSELEAVE;
+				pv->lastMouseX = -1;
+				pv->lastMouseY = -1;
+			}
+			break;
+		case MSG_TRAY_CALLBACK:
+
+//			if ( pv->lastMouseX == -1 && pv->lastMouseY == -1 )
+//				ForwardMessage(hWnd, MSG_TRAY_CALLBACK, 0, WM_MOUSEHOVER);
+
+			GetCursorPos(&pos);
+			pv->lastMouseX = msg->mouseX = pos.x;
+			pv->lastMouseY = msg->mouseY = pos.y;
+			break;
+		debault:
+			msg->mouseX = -1;
+			msg->mouseY = -1;
+	}
 
 	EnterCriticalSection(&pv->cs);
 	jl::QueuePush(&pv->msgQueue, msg);
@@ -262,12 +281,20 @@ BOOL FreeMenu( HMENU menu ) {
 }
 
 
+VOID CALLBACK TimerProc(HWND hWnd, UINT, UINT_PTR, DWORD) {
+	
+	PostMessage(hWnd, MSG_TIMEOUT, 0, 0);
+}
+
+
 LRESULT CALLBACK SystrayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 //	char dbg[65535];  sprintf(dbg, "message:%x wParam:%x\n", message, wParam);  OutputDebugString(dbg);
 
 	switch ( message ) {
-
+		case MSG_TIMEOUT:
+			ForwardMessage(hWnd, message, wParam, lParam);
+			break;
 		case MSG_POPUP_MENU: {
 
 			POINT pos;
@@ -284,10 +311,9 @@ LRESULT CALLBACK SystrayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 		case WM_CHAR:
 		case WM_SETFOCUS:
 		case WM_KILLFOCUS:
-		case WM_COMMAND: {
+		case WM_COMMAND:
 			ForwardMessage(hWnd, message, wParam, lParam);
 			break;
-		}
 		case WM_SYSCOMMAND: // avoid any system command (including Alt-F4) from systray icon.
 
 			switch ( wParam ) {
@@ -295,29 +321,24 @@ LRESULT CALLBACK SystrayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 					break;
 				case SC_SCREENSAVE: // not detected !
 				case SC_MONITORPOWER:
-
 					ForwardMessage(hWnd, message, wParam, lParam);
 					return DefWindowProc(hWnd, message, wParam, lParam);
 			}
 			break;
-
 		case WM_DESTROY:
 			PostQuitMessage(wParam);
 			break;
-
 //		case WM_QUERYENDSESSION:
 		case WM_ENDSESSION: // test with: http://code.google.com/p/sendmessage/downloads/detail?name=SendMessage-1.0.1.exe&can=2&q=
 			ForwardMessage(hWnd, message, wParam, lParam);
 			 // doc: The application need not call the DestroyWindow or PostQuitMessage function when the session is ending.
 			 // doc: The system does not send any messages to gracefully close your app (such as WM_CLOSE, WM_DESTROY, or WM_QUIT). You must do it yourself. 
 			return DefWindowProc(hWnd, message, wParam, lParam);
-
 		case WM_CLOSE: // test with: taskkill /IM jswinhost.exe
 			ForwardMessage(hWnd, message, wParam, lParam);
 			DestroyMenu(GetMenu(hWnd)); // (TBD) needed ?
 			// DestroyWindow(hWnd);
 			return DefWindowProc(hWnd, message, wParam, lParam); // doc: By default, the DefWindowProc function calls the DestroyWindow function to destroy the window.
-
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam); // We do not want to handle this message so pass back to Windows to handle it in a default way
 	}
@@ -350,6 +371,11 @@ DWORD WINAPI SystrayThread( LPVOID lpParam ) {
 	BOOL status = Shell_NotifyIconA_retry(NIM_ADD, &pv->nid);
 	ASSERT( status );
 
+	UINT_PTR timerId = SetTimer(pv->nid.hWnd, MOUSE_LEAVE_POLL_TIMER, MOUSE_LEAVE_POLL_TIMER_TIMEOUT, TimerProc);
+	ASSERT( timerId );
+
+	//	BOOL tmp = KillTimer(pv->nid.hWnd, MOUSE_LEAVE_POLL_TIMER);
+
 	PulseEvent(pv->event); // first pulse
 
 	BOOL st;
@@ -361,6 +387,7 @@ DWORD WINAPI SystrayThread( LPVOID lpParam ) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
+
 
 	status = Shell_NotifyIconA_retry(NIM_DELETE, &pv->nid);
 	ASSERT( status ); // JL_ASSERT( status == TRUE, "Unable to delete notification icon.");
@@ -397,6 +424,10 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ALLOC( pv );
 	pv->event = NULL;
 	pv->thread = NULL;
+//	pv->mouseIn = false;
+	pv->lastMouseX = -1;
+	pv->lastMouseY = -1;
+
 	JL_updateMallocCounter(cx, sizeof(Private));
 
 	InitializeCriticalSection(&pv->cs);
@@ -474,6 +505,8 @@ $TOC_MEMBER $INAME
   Close the Systray.
 **/
 DEFINE_FUNCTION( close ) {
+
+	JL_IGNORE( argc );
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -564,6 +597,17 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 
 		case MSG_TRAY_CALLBACK:
 			switch ( lParam ) {
+
+				case WM_MOUSEHOVER:
+					JL_CHK( JS_GetProperty(cx, obj, "onmouseenter", &functionVal) );
+					if ( JL_ValueIsCallable(cx, functionVal) )
+						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval ) );
+					break;
+				case WM_MOUSELEAVE:
+					JL_CHK( JS_GetProperty(cx, obj, "onmouseleave", &functionVal) );
+					if ( JL_ValueIsCallable(cx, functionVal) )
+						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval ) );
+					break;
 				case WM_MOUSEMOVE:
 					JL_CHK( JS_GetProperty(cx, obj, "onmousemove", &functionVal) );
 					if ( JL_ValueIsCallable(cx, functionVal) )
@@ -606,6 +650,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( processEvents ) {
 
+	JL_IGNORE( argc );
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -642,7 +688,7 @@ struct SystrayUserProcessEvent {
 
 S_ASSERT( offsetof(SystrayUserProcessEvent, pe) == 0 );
 
-static JSBool SystrayPrepareWait( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ) {
+static JSBool SystrayPrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
 	
 	return JS_TRUE;
 }
@@ -665,6 +711,8 @@ bool SystrayCancelWait( volatile ProcessEvent *pe ) {
 }
 
 JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+
+	JL_IGNORE( obj );
 
 	SystrayUserProcessEvent *upe = (SystrayUserProcessEvent*)pe;
 
@@ -732,6 +780,8 @@ $TOC_MEMBER $INAME
   Puts the systray into the foreground. Keyboard input is directed to the systray.
 **/
 DEFINE_FUNCTION( focus ) {
+
+	JL_IGNORE( argc );
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1228,6 +1278,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( icon ) {
 
+	JL_IGNORE( strict );
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	HICON hIcon;
@@ -1268,6 +1320,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( visible ) {
 
+	JL_IGNORE( strict, id );
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
@@ -1290,6 +1344,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( text ) {
 
+	JL_IGNORE( strict, id );
+
 	JLData tipText;
 
 	JL_ASSERT_THIS_INSTANCE();
@@ -1311,6 +1367,8 @@ DEFINE_PROPERTY_SETTER( text ) {
 }
 
 DEFINE_PROPERTY_GETTER( text ) {
+
+	JL_IGNORE( id );
 
 	JL_ASSERT_THIS_INSTANCE();
 
