@@ -24,10 +24,7 @@ DECLARE_CLASS( Icon )
 
 #define MSG_TRAY_CALLBACK (WM_USER + 1) // This message has two meanings: tray message + forward
 #define MSG_POPUP_MENU (WM_USER + 2)
-#define MSG_TIMEOUT (WM_USER + 3)
 
-#define MOUSE_LEAVE_POLL_TIMER 1
-#define MOUSE_LEAVE_POLL_TIMER_TIMEOUT 1000
 
 BOOL FASTCALL
 Shell_NotifyIconA_retry(DWORD dwMessage, PNOTIFYICONDATAA lpData) {
@@ -51,32 +48,29 @@ struct Private : public jl::CppAllocators {
 	jl::Queue msgQueue;
 	CRITICAL_SECTION cs; // protects msgQueue
 	jl::Stack<jsval> popupMenuRoots;
-	int lastMouseX, lastMouseY;
-//	bool mouseIn;
+	POINT lastMousePos;
+	bool mouseIn;
 };
 
 
 struct MSGInfo {
-	HWND hwnd;
 	UINT message;
 	WPARAM wParam;
 	LPARAM lParam;
 	BOOL lButton, rButton, mButton;
 	BOOL shiftKey, controlKey, altKey;
-	int mouseX, mouseY;
+	POINT mousePos;
 };
 
 
-void AddPopupMenuRoot(JSContext *, JSObject *obj, jsval value) {
+void AddPopupMenuRoot(Private *pv, jsval value) {
 
-	Private *pv = (Private*)JL_GetPrivate(obj);
-	*++pv->popupMenuRoots = value;
+	*++(pv->popupMenuRoots) = value;
 }
 
-void FreePopupMenuRoots(JSObject *obj) {
+void FreePopupMenuRoots(Private *pv) {
 
-	Private *pv = (Private*)JL_GetPrivate(obj);
-	pv->popupMenuRoots.Clear();
+	(pv->popupMenuRoots).Clear();
 }
 
 
@@ -205,17 +199,17 @@ HBITMAP MenuItemBitmapFromIcon(HICON hIcon) {
 }
 
 
-void ForwardMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+void 
+ForwardMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
 	MSGInfo *msg = (MSGInfo*)jl_malloc(sizeof(MSGInfo));
 	ASSERT( msg != NULL );
-	// BOOL swapButtons = GetSystemMetrics(SM_SWAPBUTTON); // (TBD) use it
 
-	msg->hwnd = hWnd;
 	msg->message = message;
 	msg->wParam = wParam;
 	msg->lParam = lParam;
 
+	// BOOL swapButtons = GetSystemMetrics(SM_SWAPBUTTON); // (TBD) use it ?
 	msg->lButton = GetAsyncKeyState(VK_LBUTTON) > 0; // (TBD) check !!
 	msg->rButton = GetAsyncKeyState(VK_RBUTTON) > 0; // (TBD) check !!
 	msg->mButton = GetAsyncKeyState(VK_MBUTTON) > 0; // (TBD) check !!
@@ -227,31 +221,14 @@ void ForwardMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	Private *pv = (Private*)GetWindowLongPtr(hWnd, GWL_USERDATA);
 	ASSERT( pv != NULL );
 
-	POINT pos;
+	if ( message == MSG_TRAY_CALLBACK ) {
 
-	switch ( message ) {
-		case MSG_TIMEOUT :
-			GetCursorPos(&pos);
-			if ( pv->lastMouseX != -1 && pv->lastMouseY != -1 && pos.x != pv->lastMouseX && pos.y != pv->lastMouseY ) {
+		GetCursorPos(&msg->mousePos);
+	} else {
 
-				msg->message = MSG_TRAY_CALLBACK;
-				msg->lParam = WM_MOUSELEAVE;
-				pv->lastMouseX = -1;
-				pv->lastMouseY = -1;
-			}
-			break;
-		case MSG_TRAY_CALLBACK:
-
-//			if ( pv->lastMouseX == -1 && pv->lastMouseY == -1 )
-//				ForwardMessage(hWnd, MSG_TRAY_CALLBACK, 0, WM_MOUSEHOVER);
-
-			GetCursorPos(&pos);
-			pv->lastMouseX = msg->mouseX = pos.x;
-			pv->lastMouseY = msg->mouseY = pos.y;
-			break;
-		debault:
-			msg->mouseX = -1;
-			msg->mouseY = -1;
+		// n/a
+		msg->mousePos.x = -1;
+		msg->mousePos.y = -1;
 	}
 
 	EnterCriticalSection(&pv->cs);
@@ -262,7 +239,8 @@ void ForwardMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 }
 
 
-BOOL FreeMenu( HMENU menu ) {
+BOOL 
+FreeMenu( HMENU menu ) {
 
 	for ( int i = GetMenuItemCount(menu); i > 0; i-- ) {
 
@@ -281,20 +259,12 @@ BOOL FreeMenu( HMENU menu ) {
 }
 
 
-VOID CALLBACK TimerProc(HWND hWnd, UINT, UINT_PTR, DWORD) {
-	
-	PostMessage(hWnd, MSG_TIMEOUT, 0, 0);
-}
+LRESULT CALLBACK 
+SystrayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
-
-LRESULT CALLBACK SystrayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-
-//	char dbg[65535];  sprintf(dbg, "message:%x wParam:%x\n", message, wParam);  OutputDebugString(dbg);
+	// char dbg[65535];  sprintf(dbg, "message:%x wParam:%x lParam:%x\n", message, wParam, lParam);  OutputDebugString(dbg);
 
 	switch ( message ) {
-		case MSG_TIMEOUT:
-			ForwardMessage(hWnd, message, wParam, lParam);
-			break;
 		case MSG_POPUP_MENU: {
 
 			POINT pos;
@@ -305,15 +275,47 @@ LRESULT CALLBACK SystrayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			FreeMenu(GetMenu(hWnd)); // free menu data and menu items
 			break;
 		}
+		case WM_TIMER: {
+			
+			Private *pv = (Private*)GetWindowLongPtr(hWnd, GWL_USERDATA);
+			ASSERT( pv != NULL );
+			ASSERT( pv->mouseIn == true );
+
+			POINT pos;
+			GetCursorPos(&pos);
+			if ( pos.x != pv->lastMousePos.x && pos.y != pv->lastMousePos.y ) {
+
+				BOOL st = KillTimer(hWnd, 1);
+				ASSERT( st );
+				pv->mouseIn = false;
+				ForwardMessage(hWnd, MSG_TRAY_CALLBACK, 0, WM_MOUSELEAVE);
+			}
+			break;
+		}
 		case MSG_TRAY_CALLBACK:
 		case WM_KEYDOWN:
 		case WM_KEYUP:
 		case WM_CHAR:
 		case WM_SETFOCUS:
 		case WM_KILLFOCUS:
-		case WM_COMMAND:
+		case WM_COMMAND: {
+
+			Private *pv = (Private*)GetWindowLongPtr(hWnd, GWL_USERDATA);
+			ASSERT( pv != NULL );
+
+			if ( !pv->mouseIn ) {
+
+				UINT_PTR timerId = SetTimer(pv->nid.hWnd, 1, 100, NULL);
+				ASSERT( timerId );
+				pv->mouseIn = true;
+				ForwardMessage(hWnd, MSG_TRAY_CALLBACK, 0, WM_MOUSEHOVER);
+			} else {
+				
+				GetCursorPos(&pv->lastMousePos);
+			}
 			ForwardMessage(hWnd, message, wParam, lParam);
 			break;
+		}
 		case WM_SYSCOMMAND: // avoid any system command (including Alt-F4) from systray icon.
 
 			switch ( wParam ) {
@@ -347,7 +349,8 @@ LRESULT CALLBACK SystrayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 
 
-DWORD WINAPI SystrayThread( LPVOID lpParam ) {
+DWORD WINAPI 
+SystrayThread( LPVOID lpParam ) {
 
 	Private *pv = (Private*)lpParam;
 
@@ -371,11 +374,6 @@ DWORD WINAPI SystrayThread( LPVOID lpParam ) {
 	BOOL status = Shell_NotifyIconA_retry(NIM_ADD, &pv->nid);
 	ASSERT( status );
 
-	UINT_PTR timerId = SetTimer(pv->nid.hWnd, MOUSE_LEAVE_POLL_TIMER, MOUSE_LEAVE_POLL_TIMER_TIMEOUT, TimerProc);
-	ASSERT( timerId );
-
-	//	BOOL tmp = KillTimer(pv->nid.hWnd, MOUSE_LEAVE_POLL_TIMER);
-
 	PulseEvent(pv->event); // first pulse
 
 	BOOL st;
@@ -388,13 +386,15 @@ DWORD WINAPI SystrayThread( LPVOID lpParam ) {
 		DispatchMessage(&msg);
 	}
 
-
 	status = Shell_NotifyIconA_retry(NIM_DELETE, &pv->nid);
 	ASSERT( status ); // JL_ASSERT( status == TRUE, "Unable to delete notification icon.");
 
 	pv->nid.hWnd = NULL; // see finalizer
 
-	// (TBD) call DestroyWindow() ???
+
+	// doc: Before calling UnregisterClass, an application must destroy all windows created with the specified class.
+	st = UnregisterClass(SYSTRAY_WINDOW_CLASS_NAME, hInst);
+	ASSERT( st );
 
 	return msg.wParam;
 }
@@ -424,9 +424,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ALLOC( pv );
 	pv->event = NULL;
 	pv->thread = NULL;
-//	pv->mouseIn = false;
-	pv->lastMouseX = -1;
-	pv->lastMouseY = -1;
+	pv->mouseIn = false;
 
 	JL_updateMallocCounter(cx, sizeof(Private));
 
@@ -455,25 +453,20 @@ bad:
 	return JS_FALSE;
 }
 
-void
-CloseSystray(JSRuntime *rt, JSObject *obj) {
 
-	Private *pv = (Private*)JL_GetPrivate(obj);
-	if ( !pv )
-		return;
+void
+CloseSystray(JSRuntime *rt, Private *pv) {
+
+	ASSERT(pv);
 
 	if ( pv->nid.hWnd != NULL ) { // pv->nid.hWnd may have already been closed.
 
-		LRESULT res = SendMessage( pv->nid.hWnd, WM_CLOSE, 0, 0 ); // PostMessage
-		// (TBD) send to log !
-
-		JL_IGNORE(res);
+		PostMessage(pv->nid.hWnd, WM_CLOSE, 0, 0); // SendMessage ?
 	}
 
 	WaitForSingleObject(pv->thread, INFINITE);
 	CloseHandle(pv->thread); // doc: The thread object remains in the system until the thread has terminated and all handles to it have been closed through a call to CloseHandle.
 	CloseHandle(pv->event);
-	DeleteCriticalSection(&pv->cs);
 	
 	if ( !JL_GetHostPrivate(rt)->canSkipCleanup ) { // do not cleanup in unsafe mode ?
 
@@ -481,17 +474,19 @@ CloseSystray(JSRuntime *rt, JSObject *obj) {
 			jl_free(jl::QueuePop(&pv->msgQueue));
 	}
 
-	FreePopupMenuRoots(obj);
+	DeleteCriticalSection(&pv->cs);
+	FreePopupMenuRoots(pv);
 
-	//jl_free(pv);
 	delete pv;
 }
 
+
 DEFINE_FINALIZE() {
 
-//	if ( obj == JL_CLASS_PROTOTYPE(cx, Systray) )
-//		return;
-	CloseSystray(fop->runtime(), obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
+	if ( !pv )
+		return;
+	CloseSystray(fop->runtime(), pv);
 }
 
 
@@ -511,8 +506,9 @@ DEFINE_FUNCTION( close ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	CloseSystray(JL_GetRuntime(cx), obj);
+	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_SetPrivate(obj, NULL);
+	CloseSystray(JL_GetRuntime(cx), pv);
 	
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -520,14 +516,11 @@ DEFINE_FUNCTION( close ) {
 }
 
 
-JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, jsval *rval ) {
+JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, const MSGInfo *trayMsg, jsval *rval ) {
 
 	UINT message = trayMsg->message;
 	LPARAM lParam = trayMsg->lParam;
 	WPARAM wParam = trayMsg->wParam;
-	int mButton = trayMsg->lButton ? 1 : trayMsg->rButton ? 2 : 0;
-	int mouseX = trayMsg->mouseX;
-	int mouseY = trayMsg->mouseY;
 
 	jsval functionVal;
 
@@ -573,22 +566,27 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 				jsval key;
 				S_ASSERT( sizeof(jsid) == sizeof(wParam) );
 				JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) );
+				int mButton = trayMsg->lButton ? 1 : trayMsg->rButton ? 2 : 0;
 				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, key, INT_TO_JSVAL( mButton ) ) );
-				FreePopupMenuRoots(obj);
+				Private *pv = (Private*)JL_GetPrivate(obj);
+				if ( pv )
+					FreePopupMenuRoots(pv);
 			}
 			break;
 
 		case WM_SYSCOMMAND: // avoid any system command (including Alt-F4) from systray icon.
+
 			switch ( wParam ) {
+				
 				case SC_SCREENSAVE:
 				case SC_MONITORPOWER:
-
 					JL_CHK( JS_GetProperty(cx, obj, "onidle", &functionVal) );
 					if ( JL_ValueIsCallable(cx, functionVal) ) {
 
 						jsval key;
 						S_ASSERT( sizeof(jsid) == sizeof(wParam) );
 						JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) );
+						int mButton = trayMsg->lButton ? 1 : trayMsg->rButton ? 2 : 0;
 						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, key, INT_TO_JSVAL( mButton ) ) );
 					}
 				break;
@@ -596,23 +594,27 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 			break;
 
 		case MSG_TRAY_CALLBACK:
+
 			switch ( lParam ) {
 
 				case WM_MOUSEHOVER:
 					JL_CHK( JS_GetProperty(cx, obj, "onmouseenter", &functionVal) );
 					if ( JL_ValueIsCallable(cx, functionVal) )
-						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval ) );
+						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, JSVAL_TRUE ) );
 					break;
+
 				case WM_MOUSELEAVE:
 					JL_CHK( JS_GetProperty(cx, obj, "onmouseleave", &functionVal) );
 					if ( JL_ValueIsCallable(cx, functionVal) )
-						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval ) );
+						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, JSVAL_FALSE ) );
 					break;
+
 				case WM_MOUSEMOVE:
 					JL_CHK( JS_GetProperty(cx, obj, "onmousemove", &functionVal) );
 					if ( JL_ValueIsCallable(cx, functionVal) )
-						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, INT_TO_JSVAL( mouseX ), INT_TO_JSVAL( mouseY ) ) );
+						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, INT_TO_JSVAL( trayMsg->mousePos.x ), INT_TO_JSVAL( trayMsg->mousePos.y ) ) );
 					break;
+
 				case WM_LBUTTONDOWN:
 				case WM_MBUTTONDOWN:
 				case WM_RBUTTONDOWN:
@@ -620,6 +622,7 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 					if ( JL_ValueIsCallable(cx, functionVal) )
 						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, INT_TO_JSVAL( lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE ) );
 					break;
+
 				case WM_LBUTTONUP:
 				case WM_MBUTTONUP:
 				case WM_RBUTTONUP:
@@ -627,6 +630,7 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, MSGInfo *trayMsg, js
 					if ( JL_ValueIsCallable(cx, functionVal) )
 						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, INT_TO_JSVAL( lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE ) );
 					break;
+
 				case WM_LBUTTONDBLCLK:
 				case WM_MBUTTONDBLCLK:
 				case WM_RBUTTONDBLCLK:
@@ -679,10 +683,9 @@ $TOC_MEMBER $INAME
 **/
 
 struct SystrayUserProcessEvent {
-	
 	ProcessEvent pe;
-	Private *systrayPrivate;
 	HANDLE cancelEvent;
+	HANDLE systrayEvent;
 	JSObject *systrayObj;
 };
 
@@ -696,8 +699,7 @@ static JSBool SystrayPrepareWait( volatile ProcessEvent *, JSContext *, JSObject
 void SystrayStartWait( volatile ProcessEvent *pe ) {
 
 	SystrayUserProcessEvent *upe = (SystrayUserProcessEvent*)pe;
-
-	HANDLE events[] = { upe->systrayPrivate->event, upe->cancelEvent };
+	HANDLE events[] = { upe->systrayEvent, upe->cancelEvent };
 	DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
 	ASSERT( status != WAIT_FAILED );
 }
@@ -705,7 +707,6 @@ void SystrayStartWait( volatile ProcessEvent *pe ) {
 bool SystrayCancelWait( volatile ProcessEvent *pe ) {
 
 	SystrayUserProcessEvent *upe = (SystrayUserProcessEvent*)pe;
-
 	SetEvent(upe->cancelEvent);
 	return true;
 }
@@ -715,11 +716,16 @@ JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 	JL_IGNORE( obj );
 
 	SystrayUserProcessEvent *upe = (SystrayUserProcessEvent*)pe;
+	Private *pv = (Private*)JL_GetPrivate(upe->systrayObj);
+	
+	if ( pv == NULL ) { // maybe Systray::close() has been called in between
 
-	Private *pv = upe->systrayPrivate;
+		return JS_TRUE;
+	}
 
 	*hasEvent = !jl::QueueIsEmpty(&pv->msgQueue);
 
+	JSBool ok;
 	jsval rval;
 	MSGInfo *trayMsg;
 	while ( !jl::QueueIsEmpty(&pv->msgQueue) ) {
@@ -727,14 +733,13 @@ JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 		EnterCriticalSection(&pv->cs);
 		trayMsg = (MSGInfo*)jl::QueueShift(&pv->msgQueue);
 		LeaveCriticalSection(&pv->cs);
-		if ( ProcessSystrayMessage(cx, upe->systrayObj, trayMsg, &rval) != JS_TRUE ) {
-			
-			jl_free(trayMsg);
-			JL_CHK( false );
-		}
+		ok = ProcessSystrayMessage(cx, upe->systrayObj, trayMsg, &rval);
 		jl_free(trayMsg);
-	}	
+		JL_CHK( ok );
 
+		if ( JL_GetPrivate(upe->systrayObj) == NULL ) // maybe Systray::close() has been called in between
+			break;
+	}	
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -742,8 +747,8 @@ JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 void SystrayWaitFinalize( void* pe ) {
 
 	SystrayUserProcessEvent *upe = (SystrayUserProcessEvent*)pe;
-
 	CloseHandle(upe->cancelEvent);
+	CloseHandle(upe->systrayEvent);
 }
 
 DEFINE_FUNCTION( events ) {
@@ -762,12 +767,18 @@ DEFINE_FUNCTION( events ) {
 	upe->pe.cancelWait = SystrayCancelWait;
 	upe->pe.endWait = SystrayEndWait;
 
-	upe->systrayPrivate = pv;
-
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(obj)) ); // GC protection
 	upe->systrayObj = obj;
 
 	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset
+	if ( upe->cancelEvent == NULL )
+		JL_CHK( JL_ThrowOSError(cx) );
+
+	// need to dup. the handle because the original one may be closed in Systray::close()
+	HANDLE currentProcess = GetCurrentProcess();
+	BOOL st = DuplicateHandle(currentProcess, pv->event, currentProcess, &upe->systrayEvent, 0, FALSE, DUPLICATE_SAME_ACCESS);
+	if ( !st )
+		JL_CHK( JL_ThrowOSError(cx) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -973,7 +984,7 @@ JSBool FillMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 			if ( cmdid == JSVAL_VOID )
 				cmdid = label;
 
-			AddPopupMenuRoot(cx, systrayObj, item);
+			AddPopupMenuRoot((Private*)JL_GetPrivate(systrayObj), item);
 
 			jsid id;
 			JL_CHK( JL_JsvalToJsid(cx, item, &id) );
@@ -1063,7 +1074,7 @@ DEFINE_FUNCTION( popupMenu ) {
 //	ASSERT( st );
 	
 	// there is no way to detect the menu popup has been closed. Here we free previous items.
-	FreePopupMenuRoots(obj);
+	FreePopupMenuRoots(pv);
 	JL_CHK( FillMenu(cx, obj, JSVAL_TO_OBJECT( JL_ARG(1) ), &hMenu) );
 
 	st = PostMessage(pv->nid.hWnd, MSG_POPUP_MENU, 0, 0);
@@ -1435,7 +1446,6 @@ CONFIGURE_CLASS
 
 	REVISION(jl::SvnRevToInt("$Revision$"))
 	HAS_PRIVATE
-	HAS_RESERVED_SLOTS(1)
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE

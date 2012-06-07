@@ -2,9 +2,26 @@ var loadModule = host.loadModule;
 
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
-loadModule('jsstd');
 loadModule('jswinshell');
-
 host.stderr = messageBox;
 
-throw "test"
+loadModule('jsstd');
+//loadModule('jssvg');
+
+var s = new Systray();
+s.icon = new Icon( 0 );
+
+s.onmouseenter = function() {
+
+	s.text =
+		'peakMemoryUsage: '+(peakMemoryUsage/(1024*1024)).toFixed(0) + 'MB\n' +
+		'privateMemoryUsage: '+(privateMemoryUsage/(1024*1024)).toFixed(0) + 'MB\n'+
+		'processTime: '+processTime.toFixed(0) + 'ms\n';
+}
+
+s.onmousedown = function()
+
+var ev = s.events();
+while ( !host.endSignal )
+	processEvents( ev, host.endSignalEvents() );
+

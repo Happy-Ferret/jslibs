@@ -77,14 +77,17 @@ static volatile int32_t gEndSignalState = 0;
 static JLCondHandler gEndSignalCond;
 static JLMutexHandler gEndSignalLock;
 
-JSBool EndSignalGetter(JSContext *, JSObject *, jsid, jsval *vp) {
+JSBool
+EndSignalGetter( JSContext *cx, JSObject *, jsid, jsval *vp ) {
 
-	//return JL_NativeToJsval(cx, (int)gEndSignalState, vp);
-	*vp = INT_TO_JSVAL(gEndSignalState);
+	JL_CHK( JL_NativeToJsval(cx, (int32_t)gEndSignalState, vp) );
+
 	return JS_TRUE;
+	JL_BAD;
 }
 
-JSBool EndSignalSetter(JSContext *cx, JSObject *, jsid, JSBool, jsval *vp) {
+JSBool
+EndSignalSetter( JSContext *cx, JSObject *, jsid, JSBool, jsval *vp ) {
 
 	int tmp;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &tmp) );
@@ -101,7 +104,8 @@ JSBool EndSignalSetter(JSContext *cx, JSObject *, jsid, JSBool, jsval *vp) {
 
 #if defined(XP_WIN)
 
-BOOL WINAPI Interrupt(DWORD CtrlType) {
+BOOL WINAPI
+Interrupt( DWORD CtrlType ) {
 
 // see. http://msdn2.microsoft.com/en-us/library/ms683242.aspx
 //	if (CtrlType == CTRL_LOGOFF_EVENT || CtrlType == CTRL_SHUTDOWN_EVENT) // CTRL_C_EVENT, CTRL_BREAK_EVENT, CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, CTRL_SHUTDOWN_EVENT
@@ -109,19 +113,41 @@ BOOL WINAPI Interrupt(DWORD CtrlType) {
 
 	//JL_IGNORE(CtrlType);
 	JLMutexAcquire(gEndSignalLock);
-	gEndSignalState = (CtrlType == CTRL_C_EVENT ? 1 : 2);
+	switch ( CtrlType ) {
+		case CTRL_C_EVENT:
+		case CTRL_BREAK_EVENT:
+		case CTRL_CLOSE_EVENT:
+			gEndSignalState = 1;
+			break;
+		case CTRL_LOGOFF_EVENT:
+		case CTRL_SHUTDOWN_EVENT:
+			gEndSignalState = 2;
+			break;
+		default:
+			ASSERT(false);
+	}
 	JLCondBroadcast(gEndSignalCond);
 	JLMutexRelease(gEndSignalLock);
-
 	return TRUE;
 }
 
 #elif defined(XP_UNIX)
 
-void Interrupt(int CtrlType) {
+void
+Interrupt( int CtrlType ) {
 
 	JLMutexAcquire(gEndSignalLock);
-	gEndSignalState = 1;
+	switch ( CtrlType ) {
+		case SIGINT:
+		case SIGTERM:
+			gEndSignalState = 1;
+			break;
+		case SIGKILL:
+			gEndSignalState = 2;
+			break;
+		default:
+			ASSERT(false);
+	}
 	JLCondBroadcast(gEndSignalCond);
 	JLMutexRelease(gEndSignalLock);
 }
@@ -136,7 +162,6 @@ void Interrupt(int CtrlType) {
 struct EndSignalProcessEvent {
 	
 	ProcessEvent pe;
-
 	bool cancel;
 	jsval callbackFunction;
 	JSObject *callbackFunctionThis;
@@ -144,7 +169,8 @@ struct EndSignalProcessEvent {
 
 S_ASSERT( offsetof(EndSignalProcessEvent, pe) == 0 );
 
-static JSBool EndSignalPrepareWait( volatile ProcessEvent *pe, JSContext *, JSObject * ) {
+static JSBool
+EndSignalPrepareWait( volatile ProcessEvent *pe, JSContext *, JSObject * ) {
 	
 	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
 
@@ -152,7 +178,8 @@ static JSBool EndSignalPrepareWait( volatile ProcessEvent *pe, JSContext *, JSOb
 	return JS_TRUE;
 }
 
-static void EndSignalStartWait( volatile ProcessEvent *pe ) {
+static void
+EndSignalStartWait( volatile ProcessEvent *pe ) {
 
 	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
 
@@ -162,7 +189,8 @@ static void EndSignalStartWait( volatile ProcessEvent *pe ) {
 	JLMutexRelease(gEndSignalLock);
 }
 
-static bool EndSignalCancelWait( volatile ProcessEvent *pe ) {
+static bool
+EndSignalCancelWait( volatile ProcessEvent *pe ) {
 
 	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
 
@@ -174,7 +202,8 @@ static bool EndSignalCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-static JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
+static JSBool
+EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
 
 	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
 
@@ -193,7 +222,8 @@ static JSBool EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSCon
 	JL_BAD;
 }
 
-JSBool EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
+JSBool
+EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
 
 	JL_ASSERT_ARGC_RANGE(0, 1);
 
@@ -226,21 +256,24 @@ static int stdin_fileno = -1;
 static int stdout_fileno = -1;
 static int stderr_fileno = -1;
 
-int HostStdin( void *, char *buffer, size_t bufferLength ) {
+int
+HostStdin( void *, char *buffer, size_t bufferLength ) {
 
 	if (unlikely( stdin_fileno == -1 ))
 		stdin_fileno = fileno(stdin);
 	return read(stdin_fileno, (void*)buffer, bufferLength);
 }
 
-int HostStdout( void *, const char *buffer, size_t length ) {
+int
+HostStdout( void *, const char *buffer, size_t length ) {
 
 	if (unlikely( stdout_fileno == -1 ))
 		stdout_fileno = fileno(stdout);
 	return write(stdout_fileno, buffer, length);
 }
 
-int HostStderr( void *, const char *buffer, size_t length ) {
+int
+HostStderr( void *, const char *buffer, size_t length ) {
 
 	if (unlikely( stderr_fileno == -1 ))
 		stderr_fileno = fileno(stderr);
@@ -533,10 +566,12 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 	gEndSignalLock = JLMutexCreate();
 
 #if defined(XP_WIN)
-	JL_CHKM( SetConsoleCtrlHandler(Interrupt, TRUE) != 0, E_HOST, E_INTERNAL ); // "Unable to set the Ctrl-C handler."
+	JL_CHKM( SetProcessShutdownParameters(0x100, SHUTDOWN_NORETRY), E_HOST, E_INTERNAL );
+	JL_CHKM( SetConsoleCtrlHandler(Interrupt, TRUE) != 0, E_HOST, E_INTERNAL );
 #elif defined(XP_UNIX)
 	signal(SIGINT, Interrupt);
 	signal(SIGTERM, Interrupt);
+	signal(SIGKILL, Interrupt);
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
@@ -699,6 +734,7 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 #elif defined(XP_UNIX)
 	signal(SIGINT, SIG_DFL);
 	signal(SIGTERM, SIG_DFL);
+	signal(SIGKILL, SIG_DFL);
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif

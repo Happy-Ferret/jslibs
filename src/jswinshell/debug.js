@@ -9,42 +9,35 @@ loadModule('jssvg');
 var s = new Systray();
 s.icon = new Icon( 0 );
 
-var i = 0;
-s.onmousemove = function( button ) {
-
-/*
-	s.popupMenu([
-		'peakMemoryUsage: '+(peakMemoryUsage/(1024*1024)).toFixed(0) + 'MB',
-		'privateMemoryUsage: '+(privateMemoryUsage/(1024*1024)).toFixed(0) + 'MB',
-		'processTime: '+processTime + 'ms'
-	]);
-*/
-
-	//s.popupBalloon( {infoTitle:'123', icon:'info', info:'2452345'} );
-
-	s.text =
-		'peakMemoryUsage: '+(peakMemoryUsage/(1024*1024)).toFixed(0) + 'MB\n' +
-		'privateMemoryUsage: '+(privateMemoryUsage/(1024*1024)).toFixed(0) + 'MB\n'+
-		'processTime: '+processTime + 'ms\n'+
-		i++;
+s.onmouseleave = function() {
+	print('leave ');
 }
-
 s.onmouseenter = function() {
 
-	print('enter');
+	print('enter ');
+	this.text =
+		'peakMemoryUsage: '+(peakMemoryUsage/(1024*1024)).toFixed(0) + 'MB\n' +
+		'privateMemoryUsage: '+(privateMemoryUsage/(1024*1024)).toFixed(0) + 'MB\n'+
+		'processTime: '+processTime.toFixed(0) + 'ms\n';
 }
 
-s.onmouseleave = function() {
+s.onmouseup = function(button) {
 
-	print('leave');
+	this.popupMenu(['Quit']);
+}
+
+s.oncommand = function(name) {
+
+	if ( name == 'Quit' ) {
+		
+		this.close();
+		throw 0;
+	}
 }
 
 var ev = s.events();
-while ( !host.endSignal ) {
-
-	print('.');
+while ( !host.endSignal )
 	processEvents( ev, host.endSignalEvents() )
-}
 
 
 throw 0; //////////////////////////////////////////////////////////////////////

@@ -191,10 +191,9 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int ) {
 	JS_ShutDown();
 
 	CloseHandle( instanceCheckMutex ); //ReleaseMutex
-
 	return 0;
-bad:
 
+bad:
 	if ( cx ) {
 
 		disabledFree = true;

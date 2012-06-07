@@ -3604,8 +3604,9 @@ JL_CallFunctionId( JSContext *cx, JSObject *obj, jsid id, unsigned argc, jsval *
 // JL_CallFunctionVA (cx, obj, functionValue, rval, ... )
 
 ALWAYS_INLINE JSBool FASTCALL
-JL_CallFunctionVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, jsval &functionValue, jsval *rval ) {
+JL_CallFunctionVA( JSContext *cx, JSObject *obj, jsval &functionValue, jsval *rval ) {
 
+	ASSERT( JL_ValueIsCallable(cx, functionValue) );
 	return JS_CallFunctionValue(cx, obj, functionValue, 0, NULL, rval);
 }
 
