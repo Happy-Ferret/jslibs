@@ -9,12 +9,8 @@ loadModule('jssvg');
 var s = new Systray();
 s.icon = new Icon( 0 );
 
-s.onmouseleave = function() {
-	print('leave ');
-}
 s.onmouseenter = function() {
 
-	print('enter ');
 	this.text =
 		'peakMemoryUsage: '+(peakMemoryUsage/(1024*1024)).toFixed(0) + 'MB\n' +
 		'privateMemoryUsage: '+(privateMemoryUsage/(1024*1024)).toFixed(0) + 'MB\n'+
@@ -28,11 +24,8 @@ s.onmouseup = function(button) {
 
 s.oncommand = function(name) {
 
-	if ( name == 'Quit' ) {
-		
-		this.close();
+	if ( name == 'Quit' )
 		throw 0;
-	}
 }
 
 var ev = s.events();

@@ -44,7 +44,7 @@ Shell_NotifyIconA_retry(DWORD dwMessage, PNOTIFYICONDATAA lpData) {
 struct Private : public jl::CppAllocators {
 	NOTIFYICONDATA nid;
 	HANDLE thread;
-	HANDLE event;
+	HANDLE systrayEvent;
 	jl::Queue msgQueue;
 	CRITICAL_SECTION cs; // protects msgQueue
 	jl::Stack<jsval> popupMenuRoots;
@@ -235,7 +235,7 @@ ForwardMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	jl::QueuePush(&pv->msgQueue, msg);
 	LeaveCriticalSection(&pv->cs);
 
-	PulseEvent(pv->event);
+	PulseEvent(pv->systrayEvent);
 }
 
 
@@ -293,29 +293,34 @@ SystrayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			break;
 		}
 		case MSG_TRAY_CALLBACK:
+
+			if ( lParam == WM_MOUSEMOVE ) {
+
+				Private *pv = (Private*)GetWindowLongPtr(hWnd, GWL_USERDATA);
+				ASSERT( pv != NULL );
+				if ( pv->mouseIn ) {
+
+					GetCursorPos(&pv->lastMousePos);
+				} else {
+
+					UINT_PTR timerId = SetTimer(pv->nid.hWnd, 1, 100, NULL);
+					ASSERT( timerId );
+					pv->mouseIn = true;
+					ForwardMessage(hWnd, MSG_TRAY_CALLBACK, 0, WM_MOUSEHOVER);
+				}
+			}
+			ForwardMessage(hWnd, message, wParam, lParam);
+			break;
+
 		case WM_KEYDOWN:
 		case WM_KEYUP:
 		case WM_CHAR:
 		case WM_SETFOCUS:
 		case WM_KILLFOCUS:
-		case WM_COMMAND: {
-
-			Private *pv = (Private*)GetWindowLongPtr(hWnd, GWL_USERDATA);
-			ASSERT( pv != NULL );
-
-			if ( !pv->mouseIn ) {
-
-				UINT_PTR timerId = SetTimer(pv->nid.hWnd, 1, 100, NULL);
-				ASSERT( timerId );
-				pv->mouseIn = true;
-				ForwardMessage(hWnd, MSG_TRAY_CALLBACK, 0, WM_MOUSEHOVER);
-			} else {
-				
-				GetCursorPos(&pv->lastMousePos);
-			}
+		case WM_COMMAND:
 			ForwardMessage(hWnd, message, wParam, lParam);
 			break;
-		}
+
 		case WM_SYSCOMMAND: // avoid any system command (including Alt-F4) from systray icon.
 
 			switch ( wParam ) {
@@ -327,20 +332,24 @@ SystrayWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 					return DefWindowProc(hWnd, message, wParam, lParam);
 			}
 			break;
+
 		case WM_DESTROY:
 			PostQuitMessage(wParam);
 			break;
+
 //		case WM_QUERYENDSESSION:
 		case WM_ENDSESSION: // test with: http://code.google.com/p/sendmessage/downloads/detail?name=SendMessage-1.0.1.exe&can=2&q=
 			ForwardMessage(hWnd, message, wParam, lParam);
 			 // doc: The application need not call the DestroyWindow or PostQuitMessage function when the session is ending.
 			 // doc: The system does not send any messages to gracefully close your app (such as WM_CLOSE, WM_DESTROY, or WM_QUIT). You must do it yourself. 
 			return DefWindowProc(hWnd, message, wParam, lParam);
+
 		case WM_CLOSE: // test with: taskkill /IM jswinhost.exe
 			ForwardMessage(hWnd, message, wParam, lParam);
 			DestroyMenu(GetMenu(hWnd)); // (TBD) needed ?
 			// DestroyWindow(hWnd);
 			return DefWindowProc(hWnd, message, wParam, lParam); // doc: By default, the DefWindowProc function calls the DestroyWindow function to destroy the window.
+
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam); // We do not want to handle this message so pass back to Windows to handle it in a default way
 	}
@@ -374,7 +383,7 @@ SystrayThread( LPVOID lpParam ) {
 	BOOL status = Shell_NotifyIconA_retry(NIM_ADD, &pv->nid);
 	ASSERT( status );
 
-	PulseEvent(pv->event); // first pulse
+	PulseEvent(pv->systrayEvent); // first pulse
 
 	BOOL st;
 	MSG msg;
@@ -385,16 +394,15 @@ SystrayThread( LPVOID lpParam ) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
-
+	
 	status = Shell_NotifyIconA_retry(NIM_DELETE, &pv->nid);
 	ASSERT( status ); // JL_ASSERT( status == TRUE, "Unable to delete notification icon.");
 
 	pv->nid.hWnd = NULL; // see finalizer
 
-
 	// doc: Before calling UnregisterClass, an application must destroy all windows created with the specified class.
 	st = UnregisterClass(SYSTRAY_WINDOW_CLASS_NAME, hInst);
-	ASSERT( st );
+	ASSERT( st || GetLastError() == ERROR_CLASS_HAS_WINDOWS );
 
 	return msg.wParam;
 }
@@ -422,21 +430,17 @@ DEFINE_CONSTRUCTOR() {
 
 	pv = new Private();
 	JL_ASSERT_ALLOC( pv );
-	pv->event = NULL;
-	pv->thread = NULL;
-	pv->mouseIn = false;
-
 	JL_updateMallocCounter(cx, sizeof(Private));
 
 	InitializeCriticalSection(&pv->cs);
-
 	jl::QueueInitialize(&pv->msgQueue);
 //	jl::QueueInitialize(&pv->popupMenuRoots);
 
-	pv->event = CreateEvent(NULL, FALSE, FALSE, NULL);
+	pv->mouseIn = false;
+	pv->systrayEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	pv->thread = CreateThread(NULL, 0, SystrayThread, pv, 0, NULL);
 	SetThreadPriority(pv->thread, THREAD_PRIORITY_ABOVE_NORMAL);
-	WaitForSingleObject(pv->event, INFINITE); // first pulse
+	WaitForSingleObject(pv->systrayEvent, INFINITE); // first pulse
 
 	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
@@ -446,8 +450,8 @@ bad:
 
 		if ( pv->thread )
 			CloseHandle(pv->thread);
-		if ( pv->event )
-			CloseHandle(pv->event);
+		if ( pv->systrayEvent )
+			CloseHandle(pv->systrayEvent);
 		delete pv;
 	}
 	return JS_FALSE;
@@ -466,7 +470,7 @@ CloseSystray(JSRuntime *rt, Private *pv) {
 
 	WaitForSingleObject(pv->thread, INFINITE);
 	CloseHandle(pv->thread); // doc: The thread object remains in the system until the thread has terminated and all handles to it have been closed through a call to CloseHandle.
-	CloseHandle(pv->event);
+	CloseHandle(pv->systrayEvent);
 	
 	if ( !JL_GetHostPrivate(rt)->canSkipCleanup ) { // do not cleanup in unsafe mode ?
 
@@ -776,7 +780,7 @@ DEFINE_FUNCTION( events ) {
 
 	// need to dup. the handle because the original one may be closed in Systray::close()
 	HANDLE currentProcess = GetCurrentProcess();
-	BOOL st = DuplicateHandle(currentProcess, pv->event, currentProcess, &upe->systrayEvent, 0, FALSE, DUPLICATE_SAME_ACCESS);
+	BOOL st = DuplicateHandle(currentProcess, pv->systrayEvent, currentProcess, &upe->systrayEvent, 0, FALSE, DUPLICATE_SAME_ACCESS);
 	if ( !st )
 		JL_CHK( JL_ThrowOSError(cx) );
 
