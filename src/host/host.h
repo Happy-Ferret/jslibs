@@ -32,6 +32,4 @@ JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput std
 JSBool DestroyHost( JSContext *cx, bool skipCleanup );
 
 bool InitializeMemoryManager( jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memalign_t *memalign, jl_realloc_t *realloc, jl_msize_t *msize, jl_free_t *free );
-void MemoryManagerEnableGCEvent( JSContext *cx );
-void MemoryManagerDisableGCEvent( JSContext *cx );
 bool FinalizeMemoryManager( bool freeQueue, jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memalign_t *memalign, jl_realloc_t *realloc, jl_msize_t *msize, jl_free_t *free );

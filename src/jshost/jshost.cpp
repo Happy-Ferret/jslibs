@@ -290,7 +290,7 @@ HostStderr( void *, const char *buffer, size_t length ) {
 
 
 // Helps to detect memory leaks (alloc/free balance)
-#define DBG_ALLOC 1
+//#define DBG_ALLOC 1
 
 
 #ifdef DBG_ALLOC
@@ -455,11 +455,11 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 
 	static const bool useJslibsMemoryManager =
 #ifdef DBG_ALLOC
-	false;
+	false
 #else
-	unsafeMode;
+	unsafeMode
 #endif // DBG_ALLOC
-
+;
 
 #if defined(XP_WIN) && defined(DEBUG) && defined(REPORT_MEMORY_LEAKS)
 	if ( debug ) {
@@ -543,9 +543,6 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 	if ( debug )
 		JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_METHODJIT | JSOPTION_METHODJIT_ALWAYS | JSOPTION_TYPE_INFERENCE));
 #endif // DEBUG	
-
-	if ( useJslibsMemoryManager )
-		MemoryManagerEnableGCEvent(cx);
 
 	HostPrivate *hpv;
 	hpv = JL_GetHostPrivate(cx);
@@ -719,7 +716,6 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 	if ( useJslibsMemoryManager ) {
 	
 		disabledFree = true;
-		MemoryManagerDisableGCEvent(cx);
 		FinalizeMemoryManager(!disabledFree, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
 	}
 

@@ -9,9 +9,20 @@ var loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
 
 
+loadModule('jsstd');
 
-while ( !host.endSignal )
-	processEvents( host.endSignalEvents() )
+var tmp;
+var h = timeoutEvents(1000);
+while ( !host.endSignal ) {
+
+	processEvents( host.endSignalEvents(), h );
+	!function() {
+		
+		new ArrayBuffer(1000000);
+		collectGarbage();
+	}();
+	print('.');
+}
 
 host.stdout( 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' );
 

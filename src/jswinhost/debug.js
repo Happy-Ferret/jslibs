@@ -3,7 +3,7 @@ var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
 loadModule('jswinshell');
-host.stderr = messageBox;
+//host.stderr = messageBox;
 
 loadModule('jsstd');
 //loadModule('jssvg');
@@ -13,15 +13,25 @@ s.icon = new Icon( 0 );
 
 s.onmouseenter = function() {
 
-	s.text =
+	this.text =
 		'peakMemoryUsage: '+(peakMemoryUsage/(1024*1024)).toFixed(0) + 'MB\n' +
 		'privateMemoryUsage: '+(privateMemoryUsage/(1024*1024)).toFixed(0) + 'MB\n'+
 		'processTime: '+processTime.toFixed(0) + 'ms\n';
 }
 
-s.onmousedown = function()
+s.onmouseup = function(button) {
+
+	this.popupMenu(['Quit']);
+}
+
+s.oncommand = function(name) {
+
+	if ( name == 'Quit' )
+		throw 0;
+}
 
 var ev = s.events();
-while ( !host.endSignal )
-	processEvents( ev, host.endSignalEvents() );
+for (;;) {
 
+	processEvents(ev);
+}

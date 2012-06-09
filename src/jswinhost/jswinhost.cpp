@@ -125,8 +125,6 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int ) {
 	cx = CreateHost((uint32_t)-1, (uint32_t)-1, 30000); // 30 seconds
 	JL_CHK( cx != NULL );
 
-	MemoryManagerEnableGCEvent(cx);
-
 	HostPrivate *hpv = JL_GetHostPrivate(cx);
 
 	// custom memory allocators are transfered to the modules through the HostPrivate structure:
@@ -182,7 +180,6 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int ) {
 			JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
 
 	disabledFree = true;
-	MemoryManagerDisableGCEvent(cx);
 	FinalizeMemoryManager(!disabledFree, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
 
 	JS_SetGCCallback(JL_GetRuntime(cx), NULL);

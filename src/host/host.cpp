@@ -673,7 +673,8 @@ END_CLASS
 
 
 // default: CreateHost(-1, -1, 0);
-JSContext* CreateHost( uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInterval ) {
+JSContext*
+CreateHost( uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInterval ) {
 
 	JSRuntime *rt = JS_NewRuntime(maxAlloc); // JSGC_MAX_MALLOC_BYTES
 	JL_CHK( rt );
@@ -756,7 +757,8 @@ bad:
 	QA.ASSERTOP( host._buildDate, '>', +new Date(2012, 3 -1, 1) );
 	QA.ASSERTOP( host._buildDate, '<=', Date.now() - new Date().getTimezoneOffset() * 60 * 1000 );
 **/
-JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, HostOutput stdErr, void* userPrivateData ) { // init the host for jslibs usage (modules, errors, ...)
+JSBool
+InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, HostOutput stdErr, void* userPrivateData ) { // init the host for jslibs usage (modules, errors, ...)
 
 	ASSERT( !JS_CStringsAreUTF8() );
 
@@ -813,7 +815,8 @@ bad:
 }
 
 
-JSBool DestroyHost( JSContext *cx, bool skipCleanup ) {
+JSBool
+DestroyHost( JSContext *cx, bool skipCleanup ) {
 
 	JSRuntime *rt = JL_GetRuntime(cx);
 
@@ -909,8 +912,6 @@ bad:
 // the "load" increase by one each time the thread loop without freeing the whole memory chunk list. When MAX_LOAD is reached, memory is freed synchronously.
 #define MAX_LOAD 7
 
-#define WAIT_HEAD_FILLING 50
-
 // memory chunks bigger than BIG_ALLOC are freed synchronously.
 #define BIG_ALLOC 8192
 
@@ -983,6 +984,8 @@ JslibsMsize( void *ptr ) {
 	return base_msize(ptr);
 }
 
+bool canTriggerFreeThread = false;
+
 void 
 JslibsFree( void *ptr ) {
 	
@@ -1000,6 +1003,14 @@ JslibsFree( void *ptr ) {
 	*(void**)ptr = head;
 	head = ptr;
 	JLAtomicIncrement(&headLength);
+
+	if ( canTriggerFreeThread ) {
+		
+		canTriggerFreeThread = false;
+		threadAction = MemThreadProcess;
+		ASSERT( JLSemaphoreOk(memoryFreeThreadSem) );
+		JLSemaphoreRelease(memoryFreeThreadSem);
+	}
 }
 
 
@@ -1023,50 +1034,31 @@ FreeHead() {
 
 // the thread proc
 JLThreadFuncDecl
-MemoryFreeThreadProc( void *threadArg ) {
-
-	JL_IGNORE( threadArg );
+MemoryFreeThreadProc( void * ) {
 
 	for (;;) {
 
-		if ( JLSemaphoreAcquire(memoryFreeThreadSem, WAIT_HEAD_FILLING) == JLOK ) {
+		canTriggerFreeThread = true;
+		if ( JLSemaphoreAcquire(memoryFreeThreadSem, JLINFINITE) == JLOK ) {
 			switch ( threadAction ) {
 				case MemThreadExit:
-					JLThreadExit(0);
+					goto end;
 				case MemThreadProcess:
-					;
+					break;
 			}
 		}
+
+		Sleep(5);
 
 		for ( load = 1; headLength; load++ )
 			FreeHead();
 	}
+end:
+	canTriggerFreeThread = false;
 	JLThreadExit(0);
 	return 0;
 }
 
-
-// GC callback that triggers the thread
-
-void NewGCCallback(JSRuntime *, JSGCStatus status) {
-
-	if ( status == JSGC_END ) {
-
-		threadAction = MemThreadProcess;
-		JLSemaphoreRelease(memoryFreeThreadSem);
-	}
-}
-
-// (TBD) manage nested GCCallbacks
-void MemoryManagerEnableGCEvent( JSContext *cx ) {
-
-	JS_SetGCCallback(JL_GetRuntime(cx), NewGCCallback);
-}
-
-void MemoryManagerDisableGCEvent( JSContext *cx ) {
-
-	JS_SetGCCallback(JL_GetRuntime(cx), NULL);
-}
 
 
 // initialisation and cleanup functions
@@ -1089,9 +1081,9 @@ bool InitializeMemoryManager( jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memal
 	load = 0;
 	headLength = 0;
 	head = NULL;
-	JslibsFree(JslibsMalloc(0)); // make head non-NULL
 	memoryFreeThreadSem = JLSemaphoreCreate(0);
 	memoryFreeThread = JLThreadStart(MemoryFreeThreadProc, NULL);
+	JslibsFree(JslibsMalloc(0)); // make head non-NULL
 //	JLThreadPriority(memoryFreeThread, JL_THREAD_PRIORITY_LOW);
 	return true;
 }
