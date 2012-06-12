@@ -6,6 +6,75 @@ loadModule('jsstd');
 loadModule('jswinshell');
 loadModule('jssvg');
 
+
+
+var loadModule = host.loadModule;
+
+// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
+
+loadModule('jswinshell');
+
+loadModule('jsstd');
+//loadModule('jssvg');
+
+var s = new Systray();
+s.icon = new Icon( 0 );
+
+s.onmouseenter = function() {
+
+	this.text =
+		'peakMemoryUsage: '+(peakMemoryUsage/(1024*1024)).toFixed(0) + 'MB\n' +
+		'privateMemoryUsage: '+(privateMemoryUsage/(1024*1024)).toFixed(0) + 'MB\n'+
+		'processTime: '+processTime.toFixed(0) + 'ms\n';
+}
+
+s.onmouseup = function(button) {
+
+	this.popupMenu([
+		{label:'Quit', id:'quit'},
+		null,
+		{label:'run with window', id:'run', checked:registryGet('HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', host.name) != undefined
+	}]);
+}
+
+s.oncommand = function(item) {
+
+	switch ( item.id ) {
+		case 'run':
+			registrySet('HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', host.name, item.checked ? undefined : (host.path+'\\'+host.name));
+			break;
+		case 'quit':
+			throw 0;
+	}
+}
+
+var ev = s.events();
+for (;;) {
+
+	processEvents(ev);
+}
+
+
+
+throw 0;
+
+//registrySet('HKEY_CURRENT_USER\\Software\\7-Zip\\xxx', '',  123);
+//print( uneval(registryGet('HKEY_CURRENT_USER\\Software\\7-Zip\\xxx', '')), '\n' );
+
+//registrySet('HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', host.name, host.path+'\\'+host.name);
+
+//registrySet('HKEY_CURRENT_USER\\Software\\7-Zip\\xxx', undefined, undefined);
+
+
+
+
+//print( registrySet('HKEY_CURRENT_USER\\Software\\7-Zip\\xxx\\', undefined), '\n' );
+//print( registryGet('HKEY_CURRENT_USER\\Software\\7-Zip\\xxx\\'), '\n' );
+
+
+throw 0; //////////////////////////////////////////////////////////////////////
+
+
 var s = new Systray();
 s.icon = new Icon( 0 );
 

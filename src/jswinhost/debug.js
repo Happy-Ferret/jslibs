@@ -3,7 +3,7 @@ var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
 loadModule('jswinshell');
-//host.stderr = messageBox;
+host.stderr = messageBox;
 
 loadModule('jsstd');
 //loadModule('jssvg');
@@ -21,7 +21,11 @@ s.onmouseenter = function() {
 
 s.onmouseup = function(button) {
 
-	this.popupMenu(['Quit']);
+	//	registrySet('HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', host.name, host.path+'\\'+host.name);
+
+	var hasRun = registryGet('HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', host.name) == (host.path+'\\'+host.name);
+
+	this.popupMenu(['Quit', {label:'run with window', checked:hasRun}]);
 }
 
 s.oncommand = function(name) {

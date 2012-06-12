@@ -367,6 +367,159 @@ bad:
 }
 
 
+
+HKEY
+ParseRootKey(IN const char *path, OUT size_t *length) {
+
+	if ( !strncmp(path, "HKEY_CURRENT_USER", 17) ) {
+		*length = 17;
+		return HKEY_CURRENT_USER;
+	} else
+	if ( !strncmp(path, "HKCU", 4) ) {
+		*length = 4;
+		return HKEY_CURRENT_USER;
+	} else
+	if ( !strncmp(path, "HKEY_LOCAL_MACHINE", 18) ) {
+		*length = 18;
+		return HKEY_LOCAL_MACHINE;
+	} else
+	if ( !strncmp(path, "HKLM", 4) ) {
+		*length = 4;
+		return HKEY_LOCAL_MACHINE;
+	} else
+	if ( !strncmp(path, "HKEY_CLASSES_ROOT", 17) ) {
+		*length = 17;
+		return HKEY_CLASSES_ROOT;
+	} else
+	if ( !strncmp(path, "HKCR", 4) ) {
+		*length = 4;
+		return HKEY_CLASSES_ROOT;
+	} else
+	if ( !strncmp(path, "HKEY_CURRENT_CONFIG", 19) ) {
+		*length = 19;
+		return HKEY_CURRENT_CONFIG;
+	} else
+	if ( !strncmp(path, "HKCC", 4) ) {
+		*length = 4;
+		return HKEY_CURRENT_CONFIG;
+	} else
+	if ( !strncmp(path, "HKEY_USERS", 10) ) {
+		*length = 10;
+		return HKEY_USERS;
+	} else
+	if ( !strncmp(path, "HKU", 3) ) {
+		*length = 3;
+		return HKEY_USERS;
+	} else
+	if ( !strncmp(path, "HKEY_PERFORMANCE_DATA", 21) ) {
+		*length = 21;
+		return HKEY_PERFORMANCE_DATA;
+	} else
+	if ( !strncmp(path, "HKPD", 4) ) {
+		*length = 4;
+		return HKEY_PERFORMANCE_DATA;
+	} else
+	if ( !strncmp(path, "HKEY_DYN_DATA", 13) ) {
+		*length = 13;
+		return HKEY_DYN_DATA;
+	} else
+	if ( !strncmp(path, "HKDD", 4) ) {
+		*length = 4;
+		return HKEY_DYN_DATA;
+	} else {
+		
+		return NULL;
+	}
+}
+
+DEFINE_FUNCTION( registrySet ) {
+	
+	jsval value;
+	JLData subKeyStr, valueNameStr;
+	const char *subKey;
+
+	JL_ASSERT_ARGC(3);
+	
+	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &subKeyStr) );
+	subKey = subKeyStr.GetConstStrZ();
+
+	size_t length;
+	HKEY rootHKey = ParseRootKey(subKey, &length);
+	JL_ASSERT( subKey != NULL, E_ARG, E_NUM(1), E_INVALID, E_COMMENT("root key") );
+	subKey += length;
+	if ( subKey[0] == '\\' )
+		subKey += 1;
+
+	LONG st;
+
+	value = JL_ARG(3);
+
+	if ( JSVAL_IS_VOID(JL_ARG(2)) ) {
+
+		if ( JSVAL_IS_VOID(value) ) {
+
+			st = RegDeleteKey(rootHKey, subKey);
+			if ( st != ERROR_SUCCESS )
+				return WinThrowError(cx, st);
+		}
+	} else {
+
+		HKEY hKey;
+		st = RegCreateKeyEx(rootHKey, subKey, 0, NULL, 0, KEY_WRITE, NULL, &hKey, NULL); // http://msdn.microsoft.com/en-us/library/windows/desktop/ms724844(v=vs.85).aspx
+		if ( st != ERROR_SUCCESS )
+			return WinThrowError(cx, st);
+
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &valueNameStr) );
+
+		if ( JSVAL_IS_VOID(value) ) {
+			
+			st = RegDeleteValue(hKey, valueNameStr);
+		} else
+		if ( JSVAL_IS_NULL(value) ) {
+
+			st = RegSetValueEx(hKey, valueNameStr, 0, REG_NONE, NULL, 0);
+		} else
+		if ( JSVAL_IS_INT(value) ) {
+
+			DWORD num;
+			JL_CHK( JL_JsvalToNative(cx, value, &num) );
+			st = RegSetValueEx(hKey, valueNameStr, 0, REG_DWORD, (LPBYTE)&num, sizeof(DWORD));
+		} else
+		if ( JSVAL_IS_DOUBLE(value) ) {
+
+			uint64_t num;
+			JL_CHK( JL_JsvalToNative(cx, value, &num) );
+			st = RegSetValueEx(hKey, valueNameStr, 0, REG_QWORD, (LPBYTE)&num, sizeof(uint64_t));
+		} else
+		if ( JSVAL_IS_STRING(value) ) {
+
+			JLData tmp;
+			JL_CHK( JL_JsvalToNative(cx, value, &tmp) );
+			// doc: When writing a string to the registry, you must specify the length of the string, including the terminating null character (\0).
+			st = RegSetValueEx(hKey, valueNameStr, 0, REG_SZ, (LPBYTE)tmp.GetConstStrZ(), tmp.Length() + 1);
+		} else
+		if ( JL_ValueIsData(cx, value) ) {
+
+			JLData tmp;
+			JL_CHK( JL_JsvalToNative(cx, value, &tmp) );
+			st = RegSetValueEx(hKey, valueNameStr, 0, REG_BINARY, (LPBYTE)tmp.GetConstStr(), tmp.Length());
+		}
+
+		if ( st != ERROR_SUCCESS )
+			return WinThrowError(cx, st);
+
+		st = RegCloseKey(hKey);
+		if ( st != ERROR_SUCCESS )
+			return WinThrowError(cx, st);
+	}
+
+	*JL_RVAL = JSVAL_VOID;
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 /**doc
 $TOC_MEMBER $INAME
  $VOID $INAME( path [, valueName] )
@@ -399,73 +552,20 @@ DEFINE_FUNCTION( registryGet ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pathStr) );
 	path = pathStr.GetConstStrZ();
 
-	HKEY rootHKey;
-	if ( !strncmp(path, "HKEY_CURRENT_USER", 17) ) {
-		rootHKey = HKEY_CURRENT_USER;
-		path += 17;
-	} else
-	if ( !strncmp(path, "HKCU", 4) ) {
-		rootHKey = HKEY_CURRENT_USER;
-		path += 4;
-	} else
-	if ( !strncmp(path, "HKEY_LOCAL_MACHINE", 18) ) {
-		rootHKey = HKEY_LOCAL_MACHINE;
-		path += 18;
-	} else
-	if ( !strncmp(path, "HKLM", 4) ) {
-		rootHKey = HKEY_LOCAL_MACHINE;
-		path += 4;
-	} else
-	if ( !strncmp(path, "HKEY_CLASSES_ROOT", 17) ) {
-		rootHKey = HKEY_CLASSES_ROOT;
-		path += 17;
-	} else
-	if ( !strncmp(path, "HKCR", 4) ) {
-		rootHKey = HKEY_CLASSES_ROOT;
-		path += 4;
-	} else
-	if ( !strncmp(path, "HKEY_CURRENT_CONFIG", 19) ) {
-		rootHKey = HKEY_CURRENT_CONFIG;
-		path += 19;
-	} else
-	if ( !strncmp(path, "HKCC", 4) ) {
-		rootHKey = HKEY_CURRENT_CONFIG;
-		path += 4;
-	} else
-	if ( !strncmp(path, "HKEY_USERS", 10) ) {
-		rootHKey = HKEY_USERS;
-		path += 10;
-	} else
-	if ( !strncmp(path, "HKU", 3) ) {
-		rootHKey = HKEY_USERS;
-		path += 3;
-	} else
-	if ( !strncmp(path, "HKEY_PERFORMANCE_DATA", 21) ) {
-		rootHKey = HKEY_PERFORMANCE_DATA;
-		path += 21;
-	} else
-	if ( !strncmp(path, "HKPD", 4) ) {
-		rootHKey = HKEY_PERFORMANCE_DATA;
-		path += 4;
-	} else
-	if ( !strncmp(path, "HKEY_DYN_DATA", 13) ) {
-		rootHKey = HKEY_DYN_DATA;
-		path += 13;
-	} else
-	if ( !strncmp(path, "HKDD", 4) ) {
-		rootHKey = HKEY_DYN_DATA;
-		path += 4;
-	} else
-		JL_ERR( E_ARG, E_NUM(1), E_INVALID, E_COMMENT("root key") );
+	size_t length;
+	HKEY rootHKey = ParseRootKey(path, &length);
+	JL_ASSERT( rootHKey != NULL, E_ARG, E_NUM(1), E_INVALID, E_COMMENT("root key") );
+	path += length;
 
 	if ( path[0] == '\\' )
 		path++;
 
 	HKEY hKey;
-	LONG error;
-	error = RegOpenKeyEx(rootHKey, path, 0, KEY_READ, &hKey); // http://msdn.microsoft.com/en-us/library/ms724897%28VS.85%29.aspx
-	if ( error != ERROR_SUCCESS )
-		return WinThrowError(cx, error);
+	LONG st;
+
+	st = RegOpenKeyEx(rootHKey, path, 0, KEY_READ, &hKey); // http://msdn.microsoft.com/en-us/library/ms724897%28VS.85%29.aspx
+	if ( st != ERROR_SUCCESS )
+		return WinThrowError(cx, st);
 
 	if ( (argc == 1) || (argc >= 2 && JL_ARG(2) == JSVAL_VOID) ) {
 
@@ -480,19 +580,19 @@ DEFINE_FUNCTION( registryGet ) {
 
 			nameLength = sizeof(name);
 			if ( argc == 1 ) // enum keys
-				error = RegEnumKeyEx(hKey, index, name, &nameLength, NULL, NULL, NULL, NULL);
+				st = RegEnumKeyEx(hKey, index, name, &nameLength, NULL, NULL, NULL, NULL);
 			else
-				error = RegEnumValue(hKey, index, name, &nameLength, NULL, NULL, NULL, NULL); // doc. http://msdn.microsoft.com/en-us/library/ms724865(VS.85).aspx
+				st = RegEnumValue(hKey, index, name, &nameLength, NULL, NULL, NULL, NULL); // doc. http://msdn.microsoft.com/en-us/library/ms724865(VS.85).aspx
 
-			if ( error != ERROR_SUCCESS )
+			if ( st != ERROR_SUCCESS )
 				break;
 			jsval strName;
 			JL_CHK( JL_NativeToJsval(cx, name, nameLength, &strName) );
 			JL_CHK( JL_SetElement(cx, arrObj, index, &strName) );
 			index++;
 		}
-		if ( error != ERROR_NO_MORE_ITEMS )
-			return WinThrowError(cx, error);
+		if ( st != ERROR_NO_MORE_ITEMS )
+			return WinThrowError(cx, st);
 
 		RegCloseKey(hKey);
 		return JS_TRUE;
@@ -503,20 +603,28 @@ DEFINE_FUNCTION( registryGet ) {
 	DWORD type, size;
 
 	// doc. http://msdn.microsoft.com/en-us/library/ms724911(VS.85).aspx
-	error = RegQueryValueEx(hKey, valueName, NULL, &type, NULL, &size);
-	if ( error != ERROR_SUCCESS ) {
+	st = RegQueryValueEx(hKey, valueName, NULL, &type, NULL, &size);
+
+	if ( st == ERROR_FILE_NOT_FOUND ) {
+		
+		*JL_RVAL = JSVAL_VOID;
+		RegCloseKey(hKey);
+		return JS_TRUE;
+	}
+
+	if ( st != ERROR_SUCCESS ) {
 
 		RegCloseKey(hKey);
-		return WinThrowError(cx, error);
+		return WinThrowError(cx, st);
 	}
 
 	buffer = JL_DataBufferAlloc(cx, size);
-	error = RegQueryValueEx(hKey, valueName, NULL, NULL, buffer, &size);
+	st = RegQueryValueEx(hKey, valueName, NULL, NULL, buffer, &size);
 
 	// doc. http://msdn.microsoft.com/en-us/library/ms724884(VS.85).aspx
 	switch (type) {
 		case REG_NONE:
-			*JL_RVAL = JSVAL_VOID;
+			*JL_RVAL = JSVAL_NULL;
 			JL_DataBufferFree(cx, buffer);
 			break;
 		case REG_BINARY:
@@ -1244,6 +1352,7 @@ CONFIGURE_STATIC
 		FUNCTION( fileOpenDialog )
 		FUNCTION( messageBeep )
 		FUNCTION( beep )
+		FUNCTION( registrySet )
 		FUNCTION( registryGet )
 		FUNCTION( createComObject )
 

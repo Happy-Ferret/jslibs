@@ -1733,6 +1733,22 @@ public:
 	
 	// char
 
+	ALWAYS_INLINE char* GetStr() {
+
+		if ( !Mutate(true, false, false) )
+			return NULL;
+		ASSERT( !_w );
+		return (char*)_buf;
+	}
+
+	ALWAYS_INLINE char* GetStrZ() {
+
+		if ( !Mutate(false, true, false) )
+			return NULL;
+		ASSERT( !_w && _nt );
+		return (char*)_buf;
+	}
+
 	ALWAYS_INLINE const char* GetConstStr() {
 
 		if ( !Mutate(false, false, false) )
