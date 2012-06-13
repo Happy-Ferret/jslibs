@@ -2625,6 +2625,9 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	ALWAYS_INLINE JLThreadHandler JLThreadStart( JLThreadRoutine threadRoutine, void *pv ) {
 
 	#if defined(XP_WIN)
+
+		// _beginthread // _endthread
+
 		// The new thread handle is created with the THREAD_ALL_ACCESS access right.
 		// If a security descriptor is not provided when the thread is created, a default security descriptor is constructed for the new thread using the primary token of the process that is creating the thread.
 		// When a caller attempts to access the thread with the OpenThread function, the effective token of the caller is evaluated against this security descriptor to grant or deny access.

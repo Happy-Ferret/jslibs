@@ -66,8 +66,13 @@ JSBool jslangModuleRelease(JSContext *cx) {
 		if ( ti->thread != 0 ) {
 
 			ti->isEnd = true;
+			ASSERT( ti->startSem );
 			JLSemaphoreRelease(ti->startSem);
 			JLThreadWait(ti->thread, NULL);
+		}
+
+		if ( ti->startSem != 0 ) {
+
 			JLSemaphoreFree(&ti->startSem);
 		}
 	}

@@ -70,10 +70,10 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int ) {
 
 	JSContext *cx = NULL;
 
-	errno_t err;
-	CHAR moduleName[PATH_MAX], scriptName[PATH_MAX], mutexName[PATH_MAX];
+	CHAR moduleName[PATH_MAX];
+	CHAR tmp[PATH_MAX];
 	DWORD moduleNameLen = GetModuleFileName(hInstance, moduleName, sizeof(moduleName));
-	HOST_MAIN_ASSERT( moduleNameLen > 0, "Invalid module filename." );
+	HOST_MAIN_ASSERT( moduleNameLen > 0 && moduleNameLen < PATH_MAX && moduleName[moduleNameLen] == '\0', "Invalid module filename." );
 
 	//doc: If you need to detect whether another instance already exists, create a uniquely named mutex using the CreateMutex function. 
 	//CreateMutex will succeed even if the mutex already exists, but the function will return ERROR_ALREADY_EXISTS. 
@@ -81,16 +81,17 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int ) {
 
 	// (TBD) use file index as mutexName. note: If the file is on an NTFS volume, you can get a unique 64 bit identifier for it with GetFileInformationByHandle.  The 64 bit identifier is the "file index". 
 	
+
+	// handle host.isFirstInstance property
 	bool isFirstInstance;
-	err = strncpy_s(mutexName, sizeof(mutexName), moduleName, moduleNameLen);
-	HOST_MAIN_ASSERT( err == 0, "Buffer overflow." );
+	memcpy(tmp, moduleName, moduleNameLen+1);
 	
 	// normalize the mutex name
 	char *pos;
-	while ( (pos = strchr(mutexName, '\\')) != 0 )
+	while ( (pos = strchr(tmp, PATH_SEPARATOR)) != 0 )
 		*pos = '/';
 	SetLastError(0);
-	HANDLE instanceCheckMutex = ::CreateMutex(NULL, TRUE, mutexName); // see Global\\ and Local\\ prefixes for mutex name.
+	HANDLE instanceCheckMutex = ::CreateMutex(NULL, TRUE, tmp); // see Global\\ and Local\\ prefixes for mutex name.
 	switch ( GetLastError() ) {
 		case ERROR_SUCCESS:
 			isFirstInstance = true;
@@ -137,27 +138,19 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int ) {
 
 
 	JL_CHK( InitHost(cx, true, NULL, NULL, HostStderr, NULL) );
-	CHAR moduleFileName[PATH_MAX];
-	strcpy(moduleFileName, moduleName);
-	char *name = strrchr(moduleFileName, '\\');
-	JL_CHK( name );
-	*name = '\0';
-	name++;
-
-
-	err = strncpy_s(scriptName, sizeof(scriptName), moduleName, moduleNameLen);
-	JL_ASSERT( err == 0, E_LIB, E_INTERNAL );
-//	DWORD scriptNameLen = GetModuleFileName(hInstance, scriptName, sizeof(scriptName));
-	char *dotPos = strrchr(scriptName, '.');
-	JL_CHK( dotPos );
-	*dotPos = '\0';
-	err = strcat_s(scriptName, sizeof(scriptName), ".js");
-	JL_ASSERT( err == 0, E_LIB, E_INTERNAL );
 
 	JSObject *hostObj = JL_GetHostPrivate(cx)->hostObject;
 
-	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, path), moduleFileName) );
+
+	// construct host.path and host.name properties
+	memcpy(tmp, moduleName, moduleNameLen+1);
+	char *name = strrchr(tmp, PATH_SEPARATOR);
+	JL_CHK( name );
+	name += 1;
 	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, name), name) );
+	*name = '\0';
+	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, path), tmp) );
+
 	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, isFirstInstance), isFirstInstance) );
 
 	jsval arguments;
@@ -175,7 +168,13 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int ) {
 		JS_SetOptions(cx, prevOpt);
 	}
 
-	if ( ExecuteScriptFileName(cx, scriptName, false, &rval) != JS_TRUE )
+	// construct script name
+	memcpy(tmp, moduleName, moduleNameLen+1);
+	char *dotPos = strrchr(tmp, '.');
+	JL_CHK( dotPos );
+	strcpy(dotPos+1, "js");
+
+	if ( ExecuteScriptFileName(cx, tmp, false, &rval) != JS_TRUE )
 		if ( JL_IsExceptionPending(cx) )
 			JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
 

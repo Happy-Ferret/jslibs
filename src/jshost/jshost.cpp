@@ -599,26 +599,25 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 
+	JSObject *hostObj;
+	hostObj = JL_GetHostPrivate(cx)->hostObject;
 
 	char *hostName;
 	const char *hostPath;
 	hostName = strrchr( hostFullPath, PATH_SEPARATOR );
 	if ( hostName != NULL ) {
 
-		*hostName = '\0';
 		hostName++;
+		JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, name), hostName) );
+
+		*hostName = '\0';
 		hostPath = hostFullPath;
+		JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, path), hostPath) );
 	} else {
 
-		hostPath = ".";
-		hostName = hostFullPath;
+		JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, path), "." PATH_SEPARATOR_STRING) );
+		JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, name), hostName) );
 	}
-
-	JSObject *hostObj;
-	hostObj = JL_GetHostPrivate(cx)->hostObject;
-
-	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, path), hostPath) );
-	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, name), hostName) );
 
 	JL_CHK( JL_NativeVectorToJsval(cx, argumentVector, argc - (argumentVector-argv), &arguments) );
 	JL_CHK( JS_SetPropertyById(cx, hostObj, JLID(cx, arguments), &arguments) );

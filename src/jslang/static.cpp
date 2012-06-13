@@ -361,6 +361,7 @@ JLThreadFuncDecl ProcessEventThread( void *data ) {
 	return 0;
 }
 
+static size_t dbgCount = 0;
 
 DEFINE_FUNCTION( processEvents ) {
 
@@ -400,16 +401,27 @@ DEFINE_FUNCTION( processEvents ) {
 	for ( i = 0; i < argc; ++i ) {
 
 		ProcessEventThreadInfo *ti = &mpv->processEventThreadInfo[i];
-		if ( ti->thread == 0 ) { // create the thread stuff, see jl_cmalloc in jslangModuleInit()
+
+		if ( ti->startSem == 0 ) {
 
 			ti->startSem = JLSemaphoreCreate(0);
 			ASSERT( JLSemaphoreOk(ti->startSem) );
+		}
+		
+		if ( ti->thread == 0 ) { // create the thread stuff, see jl_cmalloc in jslangModuleInit()
+
 			ti->thread = JLThreadStart(ProcessEventThread, ti);
+
+			if ( !JLThreadOk(ti->thread) )
+				return JL_ThrowOSError(cx);
+			dbgCount++;
+
 			ASSERT( JLThreadOk(ti->thread) );
 			JLThreadPriority(ti->thread, JL_THREAD_PRIORITY_HIGHEST);
 			ti->signalEventSem = mpv->processEventSignalEventSem;
 			ti->isEnd = false;
 		}
+
 		ASSERT( ti->peSlot == NULL );
 		ASSERT( ti->isEnd == false );
 
@@ -424,17 +436,17 @@ DEFINE_FUNCTION( processEvents ) {
 	// cancel other waits
 	for ( i = 0; i < argc; ++i ) {
 
-		volatile ProcessEvent *peSlot = mpv->processEventThreadInfo[i].peSlot; // avoids to mutex ti->mpSlot access.
+		volatile ProcessEvent *peSlot = mpv->processEventThreadInfo[i].peSlot; // avoids to mutex ti->peSlot access.
 		if ( peSlot != NULL ) { // see ProcessEventThread(). if peSlot is null this mean that peSlot->startWait() has returned.
 
-			if ( !peSlot->cancelWait(peSlot) ) { // if the thread cannot be gracefully canceled then kill it.
+			if ( !peSlot->cancelWait(peSlot) ) { // if the thread cannot be gracefully canceled then kill it. However, keep the signalEventSem semaphore.
 
 				ProcessEventThreadInfo *ti = &mpv->processEventThreadInfo[i];
 				ti->peSlot = NULL;
 				JLSemaphoreRelease(ti->signalEventSem); // see ProcessEventThread()
 				JLThreadCancel(ti->thread);
 				JLThreadWait(ti->thread, NULL); // (TBD) needed ?
-				JLSemaphoreFree(&ti->startSem);
+				//JLSemaphoreFree(&ti->startSem);
 				JLThreadFree(&ti->thread);
 				ti->thread = 0; // mean that "the thread is free/unused" (see thread creation place)
 			}

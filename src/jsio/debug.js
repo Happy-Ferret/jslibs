@@ -2,12 +2,20 @@ var loadModule = host.loadModule;
 
  //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
  //loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask -rep 1 jsio -stopAfterNIssues 1'); halt();
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio'); throw 0;
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio'); throw 0;
 
 //loadModule('jstask');
 loadModule('jsstd');
 loadModule('jsio');
 
+var s = new Semaphore('test_sem');
+s.post();
+
+while ( !host.endSignal ) {
+
+	var t = timeCounter();
+	processEvents(s.events(function() { print('SEM!\n') }), timeoutEvents(1));
+}
 
 throw 0;
 

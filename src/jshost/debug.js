@@ -8,9 +8,28 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
 
+loadModule('jsstd');
 
+print( host.path );
+
+throw 0;
 
 loadModule('jsstd');
+loadModule('jsio');
+
+var s = new Semaphore('test_sem');
+s.post();
+
+while ( !host.endSignal ) {
+
+	var t = timeCounter();
+	processEvents(s.events(function() { print('SEM!\n') }), timeoutEvents(5));
+}
+
+
+
+throw 0;
+
 
 var tmp;
 var h = timeoutEvents(1000);

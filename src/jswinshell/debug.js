@@ -17,6 +17,8 @@ loadModule('jswinshell');
 loadModule('jsstd');
 //loadModule('jssvg');
 
+const RUN_KEY = 'HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run';
+
 var s = new Systray();
 s.icon = new Icon( 0 );
 
@@ -33,7 +35,7 @@ s.onmouseup = function(button) {
 	this.popupMenu([
 		{label:'Quit', id:'quit'},
 		null,
-		{label:'run with window', id:'run', checked:registryGet('HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', host.name) != undefined
+		{label:'run with window', id:'run', checked:registryGet(RUN_KEY, host.name) != undefined
 	}]);
 }
 
@@ -41,7 +43,7 @@ s.oncommand = function(item) {
 
 	switch ( item.id ) {
 		case 'run':
-			registrySet('HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', host.name, item.checked ? undefined : (host.path+'\\'+host.name));
+			registrySet(RUN_KEY, host.name, item.checked ? undefined : (host.path+'\\'+host.name));
 			break;
 		case 'quit':
 			throw 0;

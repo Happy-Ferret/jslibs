@@ -13,6 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
+#include "../jslang/handlePub.h"
 
 
 /**doc
@@ -199,6 +200,105 @@ DEFINE_FUNCTION( post ) {
 **/
 
 
+
+
+struct SemProcessEvent {
+
+	ProcessEvent pe;
+
+	PRSem *sem;
+	bool hasEvent;
+	jsval callbackFunction;
+	JSObject *callbackFunctionThis;
+};
+
+S_ASSERT( offsetof(SemProcessEvent, pe) == 0 );
+
+static JSBool SemPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject *obj ) {
+
+	SemProcessEvent *upe = (SemProcessEvent*)pe;
+	return JS_TRUE;
+}
+
+
+static void SemStartWait( volatile ProcessEvent *pe ) {
+
+	SemProcessEvent *upe = (SemProcessEvent*)pe;
+
+	upe->hasEvent = false;
+	PRStatus st = PR_WaitSemaphore(upe->sem);
+	ASSERT( st == PR_SUCCESS );
+	upe->hasEvent = true;
+}
+
+
+static bool SemCancelWait( volatile ProcessEvent *pe ) {
+
+	return false;
+}
+
+
+static JSBool SemEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+
+	SemProcessEvent *upe = (SemProcessEvent*)pe;
+	*hasEvent = upe->hasEvent;
+	
+	if ( !*hasEvent )
+		return JS_TRUE;
+
+	if ( JSVAL_IS_VOID( upe->callbackFunction ) )
+		return JS_TRUE;
+
+	jsval rval;
+	JL_CHK( JS_CallFunctionValue(cx, upe->callbackFunctionThis, upe->callbackFunction, 0, NULL, &rval) );
+
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+static void SemWaitFinalize( void* ) {
+}
+
+
+DEFINE_FUNCTION( events ) {
+
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_THIS_INHERITANCE();
+	JL_ASSERT_ARGC_RANGE(0, 1);
+
+	SemProcessEvent *upe;
+	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, SemWaitFinalize, JL_RVAL) );
+	upe->pe.prepareWait = SemPrepareWait;
+	upe->pe.startWait = SemStartWait;
+	upe->pe.cancelWait = SemCancelWait;
+	upe->pe.endWait = SemEndWait;
+
+	ClassPrivate *pv;
+	pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
+
+	upe->sem = pv->semaphore;
+
+	if ( JL_ARG_ISDEF(1) ) {
+
+		JL_ASSERT_ARG_IS_CALLABLE(1);
+
+		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(JL_OBJ)) ); // GC protection only
+		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_ARG(1)) ); // GC protection only
+
+		upe->callbackFunctionThis = JL_OBJ; // store "this" object.
+		upe->callbackFunction = JL_ARG(1);
+	} else {
+	
+		upe->callbackFunction = JSVAL_VOID;
+	}
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
 CONFIGURE_CLASS
 
 	REVISION(jl::SvnRevToInt("$Revision: 3533 $"))
@@ -209,6 +309,7 @@ CONFIGURE_CLASS
 	BEGIN_FUNCTION_SPEC
 		FUNCTION( wait )
 		FUNCTION( post )
+		FUNCTION_ARGC( events, 1 )
 	END_FUNCTION_SPEC
 
 	BEGIN_CONST
