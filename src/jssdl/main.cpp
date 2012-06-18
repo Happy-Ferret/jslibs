@@ -219,7 +219,7 @@ int SwapBuffersThread( void * ) {
 
 	for (;;) {
 
-		JLSemaphoreAcquire(swapBuffersSem, JLINFINITE);
+		JLSemaphoreAcquire(swapBuffersSem);
 		if ( swapBufferEndThread )
 			break;
 
@@ -408,11 +408,11 @@ void StartVideo() {
 	swapBuffersSem = JLSemaphoreCreate(0);
 	swapBuffersThreadHandler = SDL_CreateThread(SwapBuffersThread, NULL); // http://www.libsdl.org/intro.en/usingthreads.html
 	ASSERT( swapBuffersThreadHandler != NULL ); // return ThrowSdlError(cx);
-	JLSemaphoreAcquire(threadReadySem, JLINFINITE);
+	JLSemaphoreAcquire(threadReadySem);
 
 	videoThreadHandler = SDL_CreateThread(VideoThread, NULL); // http://www.libsdl.org/intro.en/usingthreads.html
 	ASSERT( videoThreadHandler != NULL ); // return ThrowSdlError(cx);
-	JLSemaphoreAcquire(threadReadySem, JLINFINITE);
+	JLSemaphoreAcquire(threadReadySem);
 
 	JLSemaphoreFree(&threadReadySem);
 }

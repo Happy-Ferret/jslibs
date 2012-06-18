@@ -174,7 +174,7 @@ TheTask(JSContext *cx, TaskPrivate *pv) {
 
 	for (;;) {
 
-		JL_CHK( JLSemaphoreAcquire(pv->requestSem, JLINFINITE) ); // -1 // wait for a request
+		JL_CHK( JLSemaphoreAcquire(pv->requestSem) ); // -1 // wait for a request
 
 		JLMutexAcquire(pv->mutex); // --
 		if ( pv->end ) { // manage the end of the thread
@@ -443,7 +443,7 @@ CloseTask(JSObject *obj) {
 
 	JLSemaphoreRelease(pv->requestSem); // +1 // unlock the thread an let it manage the "end"
 
-	JLThreadWait(pv->threadHandle, NULL); // wait for the end of the thread
+	JLThreadWait(pv->threadHandle); // wait for the end of the thread
 	JLThreadFree(&pv->threadHandle);
 
 	JLSemaphoreFree(&pv->requestSem);
@@ -573,7 +573,7 @@ DEFINE_FUNCTION( response ) {
 
 	ASSERT( pv );
 
-	JL_CHK( JLSemaphoreAcquire(pv->responseSem, JLINFINITE) ); // -1 // wait for a response
+	JL_CHK( JLSemaphoreAcquire(pv->responseSem) ); // -1 // wait for a response
 
 	JLMutexAcquire(pv->mutex); // --
 

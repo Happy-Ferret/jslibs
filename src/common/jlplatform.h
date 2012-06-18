@@ -2075,7 +2075,7 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 
 	// msTimeout = JLINFINITE : no timeout
 	// returns true on a sucessfuly semaphore locked.
-	INLINE int JLSemaphoreAcquire( JLSemaphoreHandler semaphore, int msTimeout ) {
+	INLINE int JLSemaphoreAcquire( JLSemaphoreHandler semaphore, int msTimeout = JLINFINITE ) {
 
 		ASSERT( JLSemaphoreOk(semaphore) );
 	#if defined(XP_WIN)
@@ -2597,7 +2597,9 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		#define JL_THREAD_PRIORITY_HIGHEST THREAD_PRIORITY_HIGHEST
 		typedef HANDLE JLThreadHandler;
 		typedef int JLThreadPriorityType;
+//		#define JLThreadFuncDecl unsigned __stdcall
 		#define JLThreadFuncDecl DWORD WINAPI
+//		typedef unsigned (__stdcall *JLThreadRoutine)(void *);
 		typedef PTHREAD_START_ROUTINE JLThreadRoutine;
 	#elif defined(XP_UNIX)
 		#define JL_THREAD_PRIORITY_LOWEST 32
@@ -2622,16 +2624,14 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	}
 
 
-	ALWAYS_INLINE JLThreadHandler JLThreadStart( JLThreadRoutine threadRoutine, void *pv ) {
+	ALWAYS_INLINE JLThreadHandler JLThreadStart( JLThreadRoutine threadRoutine, void *pv = NULL ) {
 
 	#if defined(XP_WIN)
-
-		// _beginthread // _endthread
-
 		// The new thread handle is created with the THREAD_ALL_ACCESS access right.
 		// If a security descriptor is not provided when the thread is created, a default security descriptor is constructed for the new thread using the primary token of the process that is creating the thread.
 		// When a caller attempts to access the thread with the OpenThread function, the effective token of the caller is evaluated against this security descriptor to grant or deny access.
 		return CreateThread(NULL, 0, threadRoutine, pv, 0, NULL);
+//		return (JLThreadHandler)_beginthreadex(NULL, 0, threadRoutine, pv, 0, NULL);
 	#elif defined(XP_UNIX)
 		pthread_t *thread = (pthread_t*)malloc(sizeof(pthread_t));
 		if ( thread == NULL )
@@ -2651,13 +2651,19 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#endif
 	}
 
+
 	ALWAYS_INLINE bool JLThreadIsActive( JLThreadHandler thread ) { // (TBD) how to manage errors ?
 
 		ASSERT( JLThreadOk(thread) );
 	#if defined(XP_WIN)
-		DWORD status = WaitForSingleObject(thread, 0);
-		ASSERT( status != WAIT_FAILED );
-		return status == WAIT_TIMEOUT; // else != WAIT_OBJECT_0 ?
+		DWORD status;
+//		status = WaitForSingleObject(thread, 0);
+//		ASSERT( status != WAIT_FAILED );
+//		return status == WAIT_TIMEOUT; // else != WAIT_OBJECT_0 ?
+		DWORD exitValue;
+		status = GetExitCodeThread(thread, &exitValue);
+		ASSERT( status != FALSE );
+		return exitValue == STILL_ACTIVE;
 	#elif defined(XP_UNIX)
 		int policy;
 		struct sched_param param;
@@ -2693,7 +2699,9 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	ALWAYS_INLINE void JLThreadExit( unsigned int exitValue ) {
 
 	#if defined(XP_WIN)
+		ASSERT( exitValue != STILL_ACTIVE ); // see JLThreadIsActive(), doc: GetExitCodeProcess function (http://msdn.microsoft.com/en-us/library/windows/desktop/ms683189(v=vs.85).aspx)
 		ExitThread(exitValue);
+//		_endthreadex(exitValue); // doc: _endthreadex does not close the thread handle.
 	#elif defined(XP_UNIX)
 		pthread_exit((void*)exitValue);
 	#else
@@ -2706,7 +2714,9 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 		ASSERT( JLThreadOk(thread) );
 	#if defined(XP_WIN)
-		BOOL st = TerminateThread(thread, 0); // doc. The handle must have the THREAD_TERMINATE access right. ... Use the GetExitCodeThread function to retrieve a thread's exit value.
+		// yes, using TerminateThread can lead to memory leaks and worse.
+		// doc. The handle must have the THREAD_TERMINATE access right. ... Use the GetExitCodeThread function to retrieve a thread's exit value.
+		BOOL st = TerminateThread(thread, 0);
 		ASSERT( st != 0 );
 	#elif defined(XP_UNIX)
 		int st = pthread_cancel(*thread);
@@ -2742,13 +2752,13 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	}
 
 
-	ALWAYS_INLINE void JLThreadWait( JLThreadHandler thread, unsigned int *exitValue ) {
+	ALWAYS_INLINE void JLThreadWait( JLThreadHandler thread, unsigned int *exitValue = NULL ) {
 
 		ASSERT( JLThreadOk(thread) );
 	#if defined(XP_WIN)
 		BOOL st = WaitForSingleObject(thread, INFINITE);
 		ASSERT( st == WAIT_OBJECT_0 );
-		if ( exitValue )
+		if ( exitValue != NULL )
 			GetExitCodeThread(thread, (DWORD*)exitValue);
 	#elif defined(XP_UNIX)
 		int st = pthread_join(*thread, (void**)exitValue); // doc. The thread exit status returned by pthread_join() on a canceled thread is PTHREAD_CANCELED. pthread_join shall not return an error code of [EINTR].

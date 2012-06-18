@@ -9,12 +9,6 @@ var loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
 
 loadModule('jsstd');
-
-print( host.path );
-
-throw 0;
-
-loadModule('jsstd');
 loadModule('jsio');
 
 var s = new Semaphore('test_sem');
@@ -23,7 +17,7 @@ s.post();
 while ( !host.endSignal ) {
 
 	var t = timeCounter();
-	processEvents(s.events(function() { print('SEM!\n') }), timeoutEvents(5));
+	processEvents(s.events(function() { print('SEM!\n') }), timeoutEvents(1));
 }
 
 

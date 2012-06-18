@@ -8,6 +8,29 @@ var loadModule = host.loadModule;
 loadModule('jsstd');
 loadModule('jsio');
 
+var sockdata=''; 
+try
+{ 
+ var FQfilename = 'debug.js'
+ var file = new File(FQfilename); 
+ print(file.exist+'\n');
+ if (file.exist) 
+ { 
+ file.open(File.RDONLY); 
+ sockdata = file.read(); 
+ file.close(); 
+ } 
+} 
+catch(ex) 
+{ 
+ throw new Error('Unknown exception:' + ex); 
+} 
+
+
+print((typeof sockdata)+' '+sockdata);
+
+throw 0;
+
 var s = new Semaphore('test_sem');
 s.post();
 

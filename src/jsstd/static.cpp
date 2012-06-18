@@ -1046,7 +1046,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 	JS_LeaveCrossCompartmentCall(ccc);
 
 	JLSemaphoreRelease(pv.semEnd);
-	JLThreadWait(sandboxWatchDogThread, NULL);
+	JLThreadWait(sandboxWatchDogThread);
 	JLThreadFree(&sandboxWatchDogThread);
 	JLSemaphoreFree(&pv.semEnd);
 
@@ -1126,7 +1126,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 
 	JLSemaphoreRelease(pv.semEnd);
 
-	JLThreadWait(sandboxWatchDogThread, NULL);
+	JLThreadWait(sandboxWatchDogThread);
 	JLThreadFree(&sandboxWatchDogThread);
 	JLSemaphoreFree(&pv.semEnd);
 

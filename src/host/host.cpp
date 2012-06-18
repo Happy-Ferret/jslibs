@@ -832,7 +832,7 @@ DestroyHost( JSContext *cx, bool skipCleanup ) {
 
 		// beware: it is important to destroy the watchDogThread BEFORE destroying the cx or hpv !!!
 		JLSemaphoreRelease(hpv->watchDogSemEnd);
-		JLThreadWait(hpv->watchDogThread, NULL);
+		JLThreadWait(hpv->watchDogThread);
 		JLThreadFree(&hpv->watchDogThread);
 		JLSemaphoreFree(&hpv->watchDogSemEnd);
 	}
@@ -1039,7 +1039,7 @@ MemoryFreeThreadProc( void * ) {
 	for (;;) {
 
 		canTriggerFreeThread = true;
-		if ( JLSemaphoreAcquire(memoryFreeThreadSem, JLINFINITE) == JLOK ) {
+		if ( JLSemaphoreAcquire(memoryFreeThreadSem) == JLOK ) {
 			switch ( threadAction ) {
 				case MemThreadExit:
 					goto end;
@@ -1082,7 +1082,7 @@ bool InitializeMemoryManager( jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memal
 	headLength = 0;
 	head = NULL;
 	memoryFreeThreadSem = JLSemaphoreCreate(0);
-	memoryFreeThread = JLThreadStart(MemoryFreeThreadProc, NULL);
+	memoryFreeThread = JLThreadStart(MemoryFreeThreadProc);
 	JslibsFree(JslibsMalloc(0)); // make head non-NULL
 //	JLThreadPriority(memoryFreeThread, JL_THREAD_PRIORITY_LOW);
 	return true;
@@ -1101,7 +1101,7 @@ bool FinalizeMemoryManager( bool freeQueue, jl_malloc_t *malloc, jl_calloc_t *ca
 	threadAction = MemThreadExit;
 	JLSemaphoreRelease(memoryFreeThreadSem);
 	// beware: Never use JLThreadCancel on a thread that call free().
-	JLThreadWait(memoryFreeThread, NULL);
+	JLThreadWait(memoryFreeThread);
 	JLThreadFree(&memoryFreeThread);
 	JLSemaphoreFree(&memoryFreeThreadSem);
 

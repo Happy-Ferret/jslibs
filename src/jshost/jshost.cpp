@@ -583,7 +583,7 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 	}
 
 
-	char hostFullPath[PATH_MAX +1];
+	char hostFullPath[PATH_MAX];
 
 #if defined(XP_WIN)
 // get hostpath and hostname
@@ -599,25 +599,22 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 
+	char *hostName;
+	hostName = strrchr(hostFullPath, PATH_SEPARATOR);
+	JL_CHK( hostName != NULL );
+	hostName += 1;
+	int hostPathLength;
+	hostPathLength = hostName-hostFullPath;
+
+	char hostPath[PATH_MAX];
+	strncpy(hostPath, hostFullPath, hostPathLength);
+	hostPath[hostPathLength] = '\0';
+
 	JSObject *hostObj;
 	hostObj = JL_GetHostPrivate(cx)->hostObject;
 
-	char *hostName;
-	const char *hostPath;
-	hostName = strrchr( hostFullPath, PATH_SEPARATOR );
-	if ( hostName != NULL ) {
-
-		hostName++;
-		JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, name), hostName) );
-
-		*hostName = '\0';
-		hostPath = hostFullPath;
-		JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, path), hostPath) );
-	} else {
-
-		JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, path), "." PATH_SEPARATOR_STRING) );
-		JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, name), hostName) );
-	}
+	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, name), hostName) );
+	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, path), hostPath) );
 
 	JL_CHK( JL_NativeVectorToJsval(cx, argumentVector, argc - (argumentVector-argv), &arguments) );
 	JL_CHK( JS_SetPropertyById(cx, hostObj, JLID(cx, arguments), &arguments) );
@@ -653,10 +650,8 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 
 	if ( useFileBootstrapScript ) {
 
-		char bootstrapFilename[PATH_MAX +1];
-		strcpy(bootstrapFilename, hostPath);
-		strcat(bootstrapFilename, PATH_SEPARATOR_STRING);
-		strcat(bootstrapFilename, hostName);
+		char bootstrapFilename[PATH_MAX];
+		strcpy(bootstrapFilename, hostFullPath);
 		strcat(bootstrapFilename, ".js");
 		JL_CHK( ExecuteScriptFileName(cx, bootstrapFilename, compileOnly, &rval) );
 	}

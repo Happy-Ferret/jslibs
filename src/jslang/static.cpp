@@ -346,7 +346,7 @@ JLThreadFuncDecl ProcessEventThread( void *data ) {
 	int st;
 	for (;;) {
 
-		st = JLSemaphoreAcquire(ti->startSem, JLINFINITE);
+		st = JLSemaphoreAcquire(ti->startSem);
 		ASSERT(st);
 		if ( ti->isEnd )
 			break;
@@ -357,11 +357,8 @@ JLThreadFuncDecl ProcessEventThread( void *data ) {
 		ti->peSlot = NULL;
 		JLSemaphoreRelease(ti->signalEventSem);
 	}
-	JLThreadExit(0);
 	return 0;
 }
-
-static size_t dbgCount = 0;
 
 DEFINE_FUNCTION( processEvents ) {
 
@@ -414,7 +411,6 @@ DEFINE_FUNCTION( processEvents ) {
 
 			if ( !JLThreadOk(ti->thread) )
 				return JL_ThrowOSError(cx);
-			dbgCount++;
 
 			ASSERT( JLThreadOk(ti->thread) );
 			JLThreadPriority(ti->thread, JL_THREAD_PRIORITY_HIGHEST);
@@ -430,7 +426,7 @@ DEFINE_FUNCTION( processEvents ) {
 	}
 
 	// wait !
-	JLSemaphoreAcquire(mpv->processEventSignalEventSem, JLINFINITE); // wait for an event (timeout can also be managed here)
+	JLSemaphoreAcquire(mpv->processEventSignalEventSem); // wait for an event (timeout can also be managed here)
 	JLSemaphoreRelease(mpv->processEventSignalEventSem);
 
 	// cancel other waits
@@ -439,14 +435,13 @@ DEFINE_FUNCTION( processEvents ) {
 		volatile ProcessEvent *peSlot = mpv->processEventThreadInfo[i].peSlot; // avoids to mutex ti->peSlot access.
 		if ( peSlot != NULL ) { // see ProcessEventThread(). if peSlot is null this mean that peSlot->startWait() has returned.
 
-			if ( !peSlot->cancelWait(peSlot) ) { // if the thread cannot be gracefully canceled then kill it. However, keep the signalEventSem semaphore.
+			if ( !peSlot->cancelWait(peSlot) ) { // if the thread cannot be gracefully canceled then kill it. However, keep the signalEventSem semaphore (no JLSemaphoreFree(&ti->startSem)).
 
 				ProcessEventThreadInfo *ti = &mpv->processEventThreadInfo[i];
 				ti->peSlot = NULL;
 				JLSemaphoreRelease(ti->signalEventSem); // see ProcessEventThread()
 				JLThreadCancel(ti->thread);
-				JLThreadWait(ti->thread, NULL); // (TBD) needed ?
-				//JLSemaphoreFree(&ti->startSem);
+				JLThreadWait(ti->thread); // (TBD) needed ?
 				JLThreadFree(&ti->thread);
 				ti->thread = 0; // mean that "the thread is free/unused" (see thread creation place)
 			}
@@ -455,7 +450,7 @@ DEFINE_FUNCTION( processEvents ) {
 
 	for ( i = 0; i < argc; ++i ) {
 
-		st = JLSemaphoreAcquire(mpv->processEventSignalEventSem, JLINFINITE);
+		st = JLSemaphoreAcquire(mpv->processEventSignalEventSem);
 		ASSERT( st );
 	}
 
@@ -479,8 +474,8 @@ DEFINE_FUNCTION( processEvents ) {
 			JS_ClearPendingException(cx);
 		}
 
-		if ( pe->endWait(pe, &hasEvent, cx, JSVAL_TO_OBJECT(JL_ARGV[i])) != JS_TRUE ) //
-			ok = JS_FALSE;
+		if ( pe->endWait(pe, &hasEvent, cx, JSVAL_TO_OBJECT(JL_ARGV[i])) != JS_TRUE )
+			ok = JS_FALSE; // report errors later
 
 		if ( exState )
 			JS_RestoreExceptionState(cx, exState);
@@ -488,7 +483,7 @@ DEFINE_FUNCTION( processEvents ) {
 		if ( hasEvent )
 			eventsMask |= 1 << i;
 
-//		JL_CHK( HandleClose(cx, JL_ARGV[i]) ); // (TBD) recycle items instead of closing them
+//		JL_CHK( HandleClose(cx, JL_ARGV[i]) ); // (TBD) recycle items instead of closing them ?
 	}
 
 #ifdef DEBUG
@@ -1133,7 +1128,7 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( join, 2 )
 		FUNCTION_ARGC( indexOf, 3 )
 
-		FUNCTION_ARGC( processEvents, 4 ) // (4 is just a guess)
+		FUNCTION_ARGC( processEvents, 8 ) // (8 is just a guess)
 		FUNCTION_ARGC( timeoutEvents, 2 )
 
 		#ifdef HAS_JL_API_TESTS
