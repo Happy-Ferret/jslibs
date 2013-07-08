@@ -1,16 +1,13 @@
 --- 
-+++ src/js/src/jsutil.cpp	2012-03-25 18:05:51 +0200
-@@ -57,6 +57,13 @@
++++ src/js/src/jsutil.cpp	2013-06-24 17:47:24 +0200
+@@ -304,3 +304,10 @@
+ }
  
- using namespace js;
- 
+ #endif /* JS_BASIC_STATS */
++
 +#ifdef HAS_JL_ALLOCATORS
 +JS_PUBLIC_DATA(js_jl_malloc_t) js_jl_malloc = malloc;
 +JS_PUBLIC_DATA(js_jl_calloc_t) js_jl_calloc = calloc;
 +JS_PUBLIC_DATA(js_jl_realloc_t) js_jl_realloc = realloc;
 +JS_PUBLIC_DATA(js_jl_free_t) js_jl_free = free;
 +#endif
-+
- #ifdef DEBUG
- /* For JS_OOM_POSSIBLY_FAIL in jsutil.h. */
- JS_PUBLIC_DATA(uint32_t) OOM_maxAllocations = UINT32_MAX;
