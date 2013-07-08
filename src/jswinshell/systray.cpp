@@ -836,7 +836,7 @@ JSBool FillMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 		IFDEBUG( popupMenu = NULL ); // avoid "potentially uninitialized local variable" warning
 
 		jsval item;
-		JL_CHK( JL_GetElement(cx, menuObj, i, &item) );
+		JL_CHK( JL_GetElement(cx, menuObj, i, item) );
 
 		JL_CHK( NormalizeMenuInfo(cx, menuObj, INT_TO_JSVAL(i), &item) );
 
@@ -855,12 +855,14 @@ JSBool FillMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 			jsval key, value;
 			JSIdArray *list = JS_Enumerate(cx, itemObj);
 			JL_CHK( list );
-			for ( int j = 0; j < list->length; ++j ) {
+			int length = JS_IdArrayLength(cx, list);
+			for ( int j = 0; j < length; ++j ) {
 
 				JLData keyStr;
-			
-				JL_CHK( JS_IdToValue(cx, list->vector[j], &key) );
-				JL_CHK( JS_GetPropertyById(cx, itemObj, list->vector[j], &value) );
+				
+				jsid itemId = JS_IdArrayGet(cx, list, j);
+				JL_CHK( JS_IdToValue(cx, itemId, &key) );
+				JL_CHK( JS_GetPropertyById(cx, itemObj, itemId, &value) );
 				
 				JL_CHK( JL_JsvalToNative(cx, key, &keyStr) );
 
@@ -1224,12 +1226,12 @@ DEFINE_FUNCTION( position ) {
 	jsval v[] = { INT_TO_JSVAL(r.left), INT_TO_JSVAL(r.top) };
 
 	JSObject *point;
-	if ( argc >= 1 && JSVAL_IS_OBJECT(JL_ARG(1)) && !JSVAL_IS_NULL(JL_ARG(1)) ) { // reuse
+	if ( argc >= 1 && !JL_ARG(1).isPrimitive() ) { // reuse
 
 		point = JSVAL_TO_OBJECT(JL_ARG(1)); // (TBD) check this
 
-		JL_CHK( JL_SetElement(cx, point, 0, &v[0]) );
-		JL_CHK( JL_SetElement(cx, point, 1, &v[1]) );
+		JL_CHK( JL_SetElement(cx, point, 0, v[0]) );
+		JL_CHK( JL_SetElement(cx, point, 1, v[1]) );
 	} else {
 
 		point = JS_NewArrayObject(cx, 2, v);
@@ -1261,14 +1263,14 @@ DEFINE_FUNCTION( rect ) {
 	jsval v[] = { INT_TO_JSVAL(rect.left), INT_TO_JSVAL(rect.top), INT_TO_JSVAL(rect.right-rect.left), INT_TO_JSVAL(rect.bottom-rect.top) };
 
 	JSObject *point;
-	if ( argc >= 1 && JSVAL_IS_OBJECT(JL_ARG(1)) && !JSVAL_IS_NULL(JL_ARG(1)) ) { // reuse
+	if ( argc >= 1 && !JL_ARG(1).isPrimitive() ) { // reuse
 
 		point = JSVAL_TO_OBJECT(JL_ARG(1)); // (TBD) check this
 
-		JL_CHK( JL_SetElement(cx, point, 0, &v[0]) );
-		JL_CHK( JL_SetElement(cx, point, 1, &v[1]) );
-		JL_CHK( JL_SetElement(cx, point, 2, &v[2]) );
-		JL_CHK( JL_SetElement(cx, point, 3, &v[3]) );
+		JL_CHK( JL_SetElement(cx, point, 0, v[0]) );
+		JL_CHK( JL_SetElement(cx, point, 1, v[1]) );
+		JL_CHK( JL_SetElement(cx, point, 2, v[2]) );
+		JL_CHK( JL_SetElement(cx, point, 3, v[3]) );
 	} else {
 
 		point = JS_NewArrayObject(cx, 4, v);
@@ -1298,14 +1300,14 @@ DEFINE_PROPERTY_SETTER( icon ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	HICON hIcon;
-	if ( JSVAL_IS_OBJECT(*vp) && !JSVAL_IS_NULL( *vp ) ) {
+	if ( !vp.isPrimitive() ) {
 
-		JSObject *iconObj = JSVAL_TO_OBJECT(*vp);
+		JSObject *iconObj = vp.toObjectOrNull();
 		JL_ASSERT_INSTANCE( iconObj, JL_CLASS(Icon) );
 		HICON *phIcon = (HICON*)JL_GetPrivate(iconObj);
 		JL_ASSERT_OBJECT_STATE( phIcon, JL_CLASS_NAME(Icon) );
 		hIcon = *phIcon;
-	} else if ( JSVAL_IS_NULL( *vp ) || JSVAL_IS_VOID( *vp ) ) {
+	} else if ( vp.isNullOrUndefined() ) {
 
 		hIcon = NULL;
 	} else {
@@ -1343,7 +1345,7 @@ DEFINE_PROPERTY_SETTER( visible ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	JSBool state;
-	JL_CHK( JS_ValueToBoolean(cx, *vp, &state ) );
+	JL_CHK( JS_ValueToBoolean(cx, vp, &state ) );
 	
 	BOOL status = Shell_NotifyIconA_retry( state == JS_TRUE ? NIM_ADD : NIM_DELETE, &pv->nid);
 	JL_ASSERT( status == TRUE, E_THISOBJ, E_INTERNAL );
@@ -1367,7 +1369,7 @@ DEFINE_PROPERTY_SETTER( text ) {
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_CHK( JL_JsvalToNative(cx, *vp, &tipText) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &tipText) );
 	size_t len = JL_MIN(sizeof(pv->nid.szTip)-1, tipText.Length());
 	jl::memcpy(pv->nid.szTip, tipText.GetConstStr(), tipText.Length());
 	pv->nid.szTip[len] = '\0';
@@ -1390,7 +1392,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	if ( pv->nid.uFlags & NIF_TIP )
-		*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, pv->nid.szTip) );
+		vp.setString( JS_NewStringCopyZ(cx, pv->nid.szTip) );
 	return JS_TRUE;
 	JL_BAD;
 }

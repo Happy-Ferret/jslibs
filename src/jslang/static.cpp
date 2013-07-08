@@ -128,7 +128,7 @@ DEFINE_FUNCTION( stringify ) {
 
 			if ( toArrayBuffer ) {
 
-				JL_CHK( JL_NewBufferGetOwnership(cx, buf.GetDataOwnership(), buf.Length(), JL_RVAL) );
+				JL_CHK( JL_NewBufferGetOwnership(cx, buf.GetDataOwnership(), buf.Length(), *JL_RVAL) );
 			} else {
 
 				JSString *jsstr = JS_NewStringCopyN(cx, buf.GetData(), buf.Length());
@@ -143,7 +143,7 @@ DEFINE_FUNCTION( stringify ) {
 
 	// fallback:
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-	JL_CHK( toArrayBuffer ? str.GetArrayBuffer(cx, JL_RVAL) : str.GetJSString(cx, JL_RVAL) );
+	JL_CHK( toArrayBuffer ? str.GetArrayBuffer(cx, *JL_RVAL) : str.GetJSString(cx, *JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -203,7 +203,7 @@ DEFINE_FUNCTION( join ) {
 		JL_CHK( JS_GetArrayLength(cx, argObj, &arrayLen) );
 		for ( unsigned i = 0; i < arrayLen; ++i ) {
 
-			JL_CHK( JL_GetElement(cx, argObj, i, &val) );
+			JL_CHK( JL_GetElement(cx, argObj, i, val) );
 			JL_CHK( JL_JsvalToNative(cx, val, &*++strList) );
 			length += strList->Length();
 			avr.append(val);
@@ -231,7 +231,7 @@ DEFINE_FUNCTION( join ) {
 
 	if ( toArrayBuffer ) {
 		
-		uint8_t *buf = JL_NewBuffer(cx, length, JL_RVAL);
+		uint8_t *buf = JL_NewBuffer(cx, length, *JL_RVAL);
 		JL_CHK( buf );
 		buf += length;
 		while ( strList ) {
@@ -855,7 +855,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	
 	jsval v;
 	void *tmp = ptr;
-	JL_CHK( JL_NativeToJsval(cx, tmp, &v) );
+	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
 	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
 	TEST( tmp == ptr );
 	}
@@ -865,7 +865,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	
 	jsval v;
 	void *tmp = ptr;
-	JL_CHK( JL_NativeToJsval(cx, tmp, &v) );
+	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
 	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
 	TEST( tmp == ptr );
 	}
@@ -875,7 +875,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	
 	jsval v;
 	void *tmp = ptr;
-	JL_CHK( JL_NativeToJsval(cx, tmp, &v) );
+	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
 	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
 	TEST( tmp == ptr );
 	}
@@ -885,7 +885,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	
 	jsval v;
 	void *tmp = ptr;
-	JL_CHK( JL_NativeToJsval(cx, tmp, &v) );
+	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
 	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
 	TEST( tmp == ptr );
 	}
@@ -895,7 +895,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	
 	jsval v;
 	void *tmp = ptr;
-	JL_CHK( JL_NativeToJsval(cx, tmp, &v) );
+	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
 	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
 	TEST( tmp == ptr );
 	}
@@ -905,7 +905,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	
 	jsval v;
 	void *tmp = ptr;
-	JL_CHK( JL_NativeToJsval(cx, tmp, &v) );
+	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
 	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
 	TEST( tmp == ptr );
 	}

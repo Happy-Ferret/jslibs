@@ -43,7 +43,7 @@ GetTimeoutInterval(JSContext *cx, JSObject *obj, PRIntervalTime *timeout, PRInte
 	JL_IGNORE(cx);
 
 	jsval timeoutValue;
-	JL_CHK( JL_GetReservedSlot(obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, &timeoutValue) );
+	JL_CHK( JL_GetReservedSlot(obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, timeoutValue) );
 	
 	if ( JSVAL_IS_VOID( timeoutValue ) ) {
 		

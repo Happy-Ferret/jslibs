@@ -25,9 +25,11 @@ BEGIN_CLASS( WinError )
 
 DEFINE_PROPERTY_GETTER( code ) {
 
+	JL_IGNORE(id);
+
 	jsval hi, lo;
-	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_HI, &hi );
-	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_LO, &lo );
+	JL_GetReservedSlot( obj, SLOT_WIN_ERROR_CODE_HI, hi );
+	JL_GetReservedSlot( obj, SLOT_WIN_ERROR_CODE_LO, lo );
 	JL_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
 	JL_CHK( JL_NewNumberValue(cx, (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi)), vp) );
 	return JS_TRUE;
@@ -48,12 +50,14 @@ const char *ErrorToConstName( DWORD err ) {
 
 DEFINE_PROPERTY_GETTER( const ) {
 
+	JL_IGNORE(id);
+
 	jsval hi, lo;
-	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_HI, &hi );
-	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_LO, &lo );
+	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_HI, hi );
+	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_LO, lo );
 	JL_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
 
-	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, ErrorToConstName( (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi)) )) );
+	vp.setString( JS_NewStringCopyZ(cx, ErrorToConstName( (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi)) )) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -61,9 +65,11 @@ DEFINE_PROPERTY_GETTER( const ) {
 
 DEFINE_PROPERTY_GETTER( text ) {
 
+	JL_IGNORE(id);
+
 	jsval hi, lo;
-	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_HI, &hi );
-	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_LO, &lo );
+	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_HI, hi );
+	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_LO, lo );
 	JL_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
 	DWORD err = (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi));
 
@@ -78,7 +84,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 		((char*)lpvMessageBuffer)[res] = '\0';
 	}
 
-	*vp = STRING_TO_JSVAL(JS_NewStringCopyN( cx, (char*)lpvMessageBuffer, res+1 )); // doc: If the function succeeds, the return value is the number of TCHARs stored in the output buffer, excluding the terminating null character.
+	vp.setString(JS_NewStringCopyN( cx, (char*)lpvMessageBuffer, res+1 )); // doc: If the function succeeds, the return value is the number of TCHARs stored in the output buffer, excluding the terminating null character.
 	LocalFree(lpvMessageBuffer);
 	return JS_TRUE;
 	JL_BAD;
@@ -88,7 +94,13 @@ DEFINE_PROPERTY_GETTER( text ) {
 DEFINE_FUNCTION( toString ) {
 
 	JL_DEFINE_FUNCTION_OBJ;
-	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
+
+	JS::RootedObject rtobj(cx, obj);
+	JS::RootedId rtid(cx, JSID_EMPTY);
+	JS::MutableHandleValue hval(JL_RVAL);
+	
+	return _textGetter(cx, rtobj, rtid, hval);
+
 }
 
 
@@ -105,9 +117,9 @@ DEFINE_FUNCTION( _serialize ) {
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, lineNumber), JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_HI, JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_HI, *JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_LO, JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_LO, *JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 
 	return JS_TRUE;

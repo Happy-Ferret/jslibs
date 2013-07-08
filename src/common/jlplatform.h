@@ -346,30 +346,8 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 
 //	#include <direct.h> // function declarations for directory handling/creation
 	#include <process.h> // threads, ...
-
-	typedef INT8  int8_t;
-	typedef INT16 int16_t;
-	typedef INT32 int32_t;
-	typedef INT64 int64_t;
-
-	typedef UINT8 uint8_t;
-	typedef UINT16 uint16_t;
-	typedef UINT32 uint32_t;
-	typedef UINT64 uint64_t;
-
-	#define INT8_MIN     ((int8_t)_I8_MIN)
-	#define INT8_MAX     _I8_MAX
-	#define INT16_MIN    ((int16_t)_I16_MIN)
-	#define INT16_MAX    _I16_MAX
-	#define INT32_MIN    ((int32_t)_I32_MIN)
-	#define INT32_MAX    _I32_MAX
-	#define INT64_MIN    ((int64_t)_I64_MIN)
-	#define INT64_MAX    _I64_MAX
-	#define UINT8_MAX    _UI8_MAX
-	#define UINT16_MAX   _UI16_MAX
-	#define UINT32_MAX   _UI32_MAX
-	#define UINT64_MAX   _UI64_MAX
-
+	#define __STDC_LIMIT_MACROS
+	#include <stdint.h>
 	typedef float float32_t;
 	typedef double float64_t;
 

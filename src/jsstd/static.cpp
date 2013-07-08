@@ -147,7 +147,7 @@ DEFINE_FUNCTION( expand ) {
 				} else
 				if ( mapFct ) {
 
-					JL_CHK( JL_NativeToJsval(cx, key, keyEnd - key, &value) );
+					JL_CHK( JL_NativeToJsval(cx, key, keyEnd - key, value) );
 					JL_CHK( JS_CallFunctionValue(cx, obj, *mapFct, 1, &value, &value) );
 				} else {
 
@@ -270,12 +270,12 @@ DEFINE_FUNCTION( switchCase ) {
 	unsigned i;
 	for ( i = 0; i < caseArrayLength; ++i ) {
 	
-		JL_CHK( JL_GetElement(cx, caseArray, i, JL_RVAL) );
+		JL_CHK( JL_GetElement(cx, caseArray, i, *JL_RVAL) );
 		
 		JSBool same;
 		JL_CHK( JS_SameValue(cx, JL_ARG(1), *JL_RVAL, &same) );
 		if ( same )
-			return JL_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(3)), i, JL_RVAL);
+			return JL_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(3)), i, *JL_RVAL);
 	}
 
 	*JL_RVAL = argc >= 4 ? JL_ARG(4) : JSVAL_VOID;
@@ -350,7 +350,7 @@ DEFINE_FUNCTION( countProperties ) {
 
 	JSIdArray *arr;
 	arr = JS_Enumerate(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
-	*JL_RVAL = INT_TO_JSVAL(arr->length);
+	*JL_RVAL = INT_TO_JSVAL(JS_IdArrayLength(cx, arr));
 	JS_DestroyIdArray(cx, arr);
 
 	return JS_TRUE;
@@ -388,8 +388,8 @@ DEFINE_FUNCTION( clearObject ) {
 	list = JS_Enumerate(cx, argObj); // JS_NewPropertyIterator, JS_NextProperty ?
 	JL_CHK(list);
 
-	for ( int i = 0; i < list->length; ++i )
-		JL_CHK( JS_DeletePropertyById(cx, argObj, list->vector[i]) );
+	for ( int i = 0; i < JS_IdArrayLength(cx, list); ++i )
+		JL_CHK( JS_DeletePropertyById(cx, argObj, JS_IdArrayGet(cx, list, i)) );
 	JS_DestroyIdArray(cx, list);
 
 	*JL_RVAL = JSVAL_VOID;
@@ -550,7 +550,7 @@ DEFINE_FUNCTION( collectGarbage ) {
 	size_t gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES);
 	JS_GC(JL_GetRuntime(cx));
 	gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES) - gcBytesDiff;
-	return JL_NativeToJsval(cx, gcBytesDiff, JL_RVAL);
+	return JL_NativeToJsval(cx, gcBytesDiff, *JL_RVAL);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -567,7 +567,7 @@ DEFINE_FUNCTION( maybeCollectGarbage ) {
 	size_t gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES);
 	JS_MaybeGC( cx );
 	gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES) - gcBytesDiff;
-	return JL_NativeToJsval(cx, gcBytesDiff, JL_RVAL);
+	return JL_NativeToJsval(cx, gcBytesDiff, *JL_RVAL);
 }
 
 
@@ -628,7 +628,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( timeCounter ) {
 
 	JL_IGNORE(argc);
-	return JL_NativeToJsval(cx, jl::AccurateTimeCounter(), JL_RVAL);
+	return JL_NativeToJsval(cx, jl::AccurateTimeCounter(), *JL_RVAL);
 }
 
 
@@ -854,7 +854,7 @@ BEGIN_CLASS( OperationLimit )
 DEFINE_HAS_INSTANCE() {
 
 	JL_IGNORE(obj, cx);
-	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_GetClass(JSVAL_TO_OBJECT(*v)) == JL_THIS_CLASS;
+	*bp = !JSVAL_IS_PRIMITIVE(vp) && JL_GetClass(JSVAL_TO_OBJECT(vp)) == JL_THIS_CLASS;
 	return JS_TRUE;
 }
 
@@ -868,7 +868,7 @@ END_CLASS
 
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
 static JSBool
-sandbox_resolve(JSContext *cx, JSObject *obj, jsid id, unsigned flags, JSObject **objp) {
+sandbox_resolve(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, unsigned flags, JS::MutableHandleObject objp) {
 
 	JSBool resolved;
 	if ( (flags & JSRESOLVE_ASSIGNING) == 0 ) {
@@ -892,18 +892,18 @@ sandbox_resolve(JSContext *cx, JSObject *obj, jsid id, unsigned flags, JSObject 
 
 		if ( resolved ) {
 
-			*objp = obj;
+			objp.set(obj);
 			return JS_TRUE;
 		}
 	}
-	*objp = NULL;
+	objp.set(NULL);
 	return JS_TRUE;
 }
 
 static JSClass sandbox_class = {
     "Sandbox",
     JSCLASS_NEW_RESOLVE | JSCLASS_GLOBAL_FLAGS,
-    JS_PropertyStub,   JS_PropertyStub,
+    JS_PropertyStub,   JS_DeletePropertyStub,
     JS_PropertyStub,   JS_StrictPropertyStub,
     JS_EnumerateStub, (JSResolveOp)sandbox_resolve,
     JS_ConvertStub,    NULL,
@@ -927,13 +927,14 @@ JSBool SandboxMaxOperationCallback(JSContext *cx) {
 		JSOperationCallback tmp = JS_SetOperationCallback(cx, NULL);
 		const ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), JL_CLASS_NAME(OperationLimit));
 		ASSERT( cpc );
-		JSCrossCompartmentCall *ccc;
-		ccc = JS_EnterCrossCompartmentCall(cx, cpc->proto);
-		JL_CHK( ccc );
+		JSCompartment *oldCompartment;
+
+		oldCompartment = JS_EnterCompartment(cx, cpc->proto);
+		JL_CHK( oldCompartment );
 		JSObject *branchLimitExceptionObj;
 		branchLimitExceptionObj = JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
 		JS_SetPendingException(cx, OBJECT_TO_JSVAL( branchLimitExceptionObj ));
-		JS_LeaveCrossCompartmentCall(ccc);
+		JS_LeaveCompartment(cx, oldCompartment);
 		JL_CHK( branchLimitExceptionObj );
 		JS_SetOperationCallback(cx, tmp);
 		JL_BAD;
@@ -964,7 +965,7 @@ JSBool SandboxQueryFunction(JSContext *cx, unsigned argc, jsval *vp) {
 	} else {
 
 		JSObject *obj = JS_THIS_OBJECT(cx, vp);
-		ASSERT( obj != NULL );
+		JL_CHK( obj );
 		JL_CHK( JS_CallFunctionValue(cx, obj, pv->queryFunctionValue, JL_ARGC, JL_ARGV, JL_RVAL) );
 		JL_CHKM( JSVAL_IS_PRIMITIVE(*JL_RVAL), E_RETURNVALUE, E_TYPE, E_TY_PRIMITIVE );
 	}
@@ -1018,11 +1019,11 @@ DEFINE_FUNCTION( sandboxEval ) {
 	JS_SetContextPrivate(cx, &pv);
 
 	JSObject *globalObj;
-	globalObj = JS_NewCompartmentAndGlobalObject(cx, &sandbox_class, NULL);
+	globalObj = JS_NewGlobalObject(cx, &sandbox_class, NULL);
 
-	JSCrossCompartmentCall *ccc;
-	ccc = JS_EnterCrossCompartmentCall(cx, globalObj);
-	JL_CHK( ccc );
+	JSCompartment *oldCompartment;
+	oldCompartment = JS_EnterCompartment(cx, globalObj);
+	JL_CHK( oldCompartment );
 
 	if ( pv.queryFunctionValue != JSVAL_VOID ) {
 
@@ -1043,7 +1044,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 
 	JS_SetNativeStackQuota(JL_GetRuntime(cx), 0); // (TBD) any way to restore the previous value ?
 
-	JS_LeaveCrossCompartmentCall(ccc);
+	JS_LeaveCompartment(cx, oldCompartment);
 
 	JLSemaphoreRelease(pv.semEnd);
 	JLThreadWait(sandboxWatchDogThread);
@@ -1197,7 +1198,7 @@ DEFINE_FUNCTION( isStatementValid ) {
 	//size_t length;
 	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-	JL_CHK( JL_NativeToJsval(cx, JS_BufferIsCompilableUnit(cx, JS_FALSE, obj, str.GetConstStr(), str.Length()) == JS_TRUE, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, JS_BufferIsCompilableUnit(cx, obj, str.GetConstStr(), str.Length()) == JS_TRUE, *JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1399,7 +1400,7 @@ DEFINE_PROPERTY_GETTER( peakMemoryUsage ) {
 
 #endif
 
-	*vp = JSVAL_VOID;
+	vp.setUndefined();
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1611,7 +1612,7 @@ DEFINE_PROPERTY_GETTER( processTime ) {
 
 #endif
 
-	*vp = JSVAL_VOID;
+	vp.setUndefined();
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1671,7 +1672,7 @@ DEFINE_PROPERTY_GETTER( cpuLoad ) {
 
 #endif
 
-	*vp = JSVAL_VOID;
+	vp.setUndefined();
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1686,7 +1687,7 @@ DEFINE_PROPERTY_GETTER( cpuId ) {
 
 	JL_IGNORE(id, obj);
 
-	if ( !JSVAL_IS_VOID(*vp) )
+	if ( !vp.isUndefined() )
 		return JS_TRUE;
 
 	jl::CpuInfo_t info;

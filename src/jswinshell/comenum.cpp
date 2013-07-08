@@ -52,7 +52,7 @@ DEFINE_FUNCTION( next ) {
 	if ( hr != S_OK ) // The number of elements returned is less than 1.
 		JL_CHK( JS_ThrowStopIteration(cx) );
 
-	JL_CHK( VariantToJsval(cx, result, JL_RVAL) ); // loose variant ownership
+	JL_CHK( VariantToJsval(cx, result, *JL_RVAL) ); // loose variant ownership
 	return JS_TRUE;
 
 bad:

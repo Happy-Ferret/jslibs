@@ -453,7 +453,7 @@ DEFINE_FUNCTION( sendTo ) {
 
 	if ( sentAmount < str.Length() ) { // return unsent data
 
-		JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
+		JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, *JL_RVAL) );
 	} else if ( sentAmount == 0 ) { // nothing has been sent
 
 		if ( JSVAL_IS_STRING( JL_ARG(3) ) ) {
@@ -461,11 +461,11 @@ DEFINE_FUNCTION( sendTo ) {
 			*JL_RVAL = JL_ARG(3);
 		} else {
 
-			JL_CHK( str.GetArrayBuffer(cx, JL_RVAL) );
+			JL_CHK( str.GetArrayBuffer(cx, *JL_RVAL) );
 		}
 	} else { // nothing remains
 
-		JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
+		JL_CHK( JL_NewEmptyBuffer(cx, *JL_RVAL) );
 	}
 
 	if ( JL_GetClass(obj) != JL_THIS_CLASS )
@@ -530,27 +530,27 @@ DEFINE_FUNCTION( recvFrom ) {
 
 	JL_CHKB( PR_NetAddrToString(&addr, peerName, sizeof(peerName)) == PR_SUCCESS, bad_ex ); // Converts a character string to a network address.
 
-	JL_CHK( JL_NativeToJsval(cx, peerName, &tmp) );
-	JL_CHK( JL_SetElement(cx, arrayObject, 1, &tmp) );
+	JL_CHK( JL_NativeToJsval(cx, peerName, tmp) );
+	JL_CHK( JL_SetElement(cx, arrayObject, 1, tmp) );
 
 	PRUint16 port;
 	port = PR_NetAddrInetPort(&addr);
 
-	JL_CHK( JL_NativeToJsval(cx, port, &tmp) );
-	JL_CHK( JL_SetElement(cx, arrayObject, 2, &tmp) );
+	JL_CHK( JL_NativeToJsval(cx, port, tmp) );
+	JL_CHK( JL_SetElement(cx, arrayObject, 2, tmp) );
 
 	if (likely( res > 0 )) {
 
 		// (TBD) maybeRealloc ?
-		JL_CHK( JL_NewBufferGetOwnership(cx, buffer, res, &tmp) );
-		JL_CHK( JL_SetElement(cx, arrayObject, 0, &tmp) );
+		JL_CHK( JL_NewBufferGetOwnership(cx, buffer, res, tmp) );
+		JL_CHK( JL_SetElement(cx, arrayObject, 0, tmp) );
 		return JS_TRUE;
 	} else
 	if ( res == 0 ) {
 
 		JL_DataBufferFree(cx, buffer);
 		tmp = JSVAL_VOID;
-		JL_CHK( JL_SetElement(cx, arrayObject, 0, &tmp) );
+		JL_CHK( JL_SetElement(cx, arrayObject, 0, tmp) );
 	}
 
 	return JS_TRUE;
@@ -640,7 +640,7 @@ DEFINE_FUNCTION( transmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 		return ThrowIoError(cx);
 
 	//JL_CHK( JL_NewNumberValue(cx, bytes, JL_RVAL) );
-	JL_CHK( JL_NativeToJsval(cx, bytes, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, bytes, *JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -691,18 +691,18 @@ DEFINE_PROPERTY_GETTER( connectContinue ) {
 
 	if ( PR_ConnectContinue(fd, desc.out_flags) == PR_SUCCESS ) { // If the nonblocking connect has successfully completed, PR_ConnectContinue returns PR_SUCCESS
 
-		*vp = JSVAL_TRUE; // We are connected.
+		vp.setBoolean(true); // We are connected.
 		return JS_TRUE;
 	}
 
 	if ( PR_GetError() == PR_IN_PROGRESS_ERROR ) {
 
-		*vp = JSVAL_VOID; // Operation is still in progress
+		vp.setUndefined(); // Operation is still in progress
 		return JS_TRUE;
 	}
 	// else, the nonblocking connect has failed with this error code.
 	// (TBD) check for PR_CONNECT_REFUSED_ERROR error ?
-	*vp = JSVAL_FALSE; // Connection refused, ...
+	vp.setBoolean(false); // Connection refused, ...
 
 	return JS_TRUE;
 	JL_BAD;
@@ -742,12 +742,12 @@ DEFINE_PROPERTY_GETTER( connectionClosed ) {
 			return ThrowIoError(cx);
 		if ( available == 0 ) {
 
-			*vp = JSVAL_TRUE; // socket is closed
+			vp.setBoolean(true); // socket is closed
 			return JS_TRUE;
 		}
 	}
 
-	*vp = JSVAL_FALSE;
+	vp.setBoolean(false);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -824,7 +824,7 @@ DEFINE_PROPERTY_SETTER( Option ) {
 	switch ( sod.option ) {
 		case PR_SockOpt_Linger: { // http://developer.mozilla.org/en/docs/PRLinger
 				PRUint32 timeout;
-				JL_CHK( JL_JsvalToNative(cx, *vp, &timeout) );
+				JL_CHK( JL_JsvalToNative(cx, vp, &timeout) );
 				if ( timeout > 0 ) {
 
 					sod.value.linger.polarity = PR_TRUE;
@@ -836,47 +836,47 @@ DEFINE_PROPERTY_SETTER( Option ) {
 			} break;
 		case PR_SockOpt_NoDelay: {
 			JSBool boolValue;
-			JS_ValueToBoolean( cx, *vp, &boolValue );
+			JL_CHK( JS_ValueToBoolean( cx, vp, &boolValue ) );
 			sod.value.no_delay = ( boolValue == JS_TRUE );
 		} break;
 		case PR_SockOpt_Reuseaddr: {
 			JSBool boolValue;
-			JS_ValueToBoolean( cx, *vp, &boolValue );
+			JL_CHK( JS_ValueToBoolean( cx, vp, &boolValue ) );
 			sod.value.reuse_addr = ( boolValue == JS_TRUE );
 		} break;
 		case PR_SockOpt_Keepalive: {
 			JSBool boolValue;
-			JS_ValueToBoolean( cx, *vp, &boolValue );
+			JL_CHK( JS_ValueToBoolean( cx, vp, &boolValue ) );
 			sod.value.keep_alive = ( boolValue == JS_TRUE );
 		} break;
 		case PR_SockOpt_RecvBufferSize: {
 			uint32_t size;
-			JS_ValueToECMAUint32( cx, *vp, &size );
+			JL_CHK( JS_ValueToECMAUint32( cx, vp, &size ) );
 			sod.value.recv_buffer_size = size;
 		} break;
 		case PR_SockOpt_SendBufferSize: {
 			uint32_t size;
-			JS_ValueToECMAUint32( cx, *vp, &size );
+			JL_CHK( JS_ValueToECMAUint32( cx, vp, &size ) );
 			sod.value.send_buffer_size = size;
 		} break;
 		case PR_SockOpt_MaxSegment: {
 			uint32_t size;
-			JS_ValueToECMAUint32( cx, *vp, &size );
+			JL_CHK( JS_ValueToECMAUint32( cx, vp, &size ) );
 			sod.value.max_segment = size;
 		} break;
 		case PR_SockOpt_Nonblocking: {
 			JSBool boolValue;
-			JS_ValueToBoolean( cx, *vp, &boolValue );
+			JL_CHK( JS_ValueToBoolean( cx, vp, &boolValue ) );
 			sod.value.non_blocking = ( boolValue == JS_TRUE );
 		} break;
 		case PR_SockOpt_Broadcast: {
 			JSBool boolValue;
-			JS_ValueToBoolean( cx, *vp, &boolValue );
+			JL_CHK( JS_ValueToBoolean( cx, vp, &boolValue ) );
 			sod.value.broadcast = ( boolValue == JS_TRUE );
 		} break;
 		case PR_SockOpt_McastLoopback: {
 			JSBool boolValue;
-			JS_ValueToBoolean( cx, *vp, &boolValue );
+			JL_CHK( JS_ValueToBoolean( cx, vp, &boolValue ) );
 			sod.value.mcast_loopback = ( boolValue == JS_TRUE );
 		} break;
 		default:;
@@ -902,16 +902,16 @@ DEFINE_PROPERTY_GETTER( Option ) {
 			if ( sod.value.linger.polarity == PR_TRUE )
 				JL_CHK( JL_NativeToJsval( cx, PR_IntervalToMilliseconds(sod.value.linger.linger), vp ) );
 			else
-				*vp = JSVAL_ZERO;
+				vp.setInt32(0);
 			break;
 		case PR_SockOpt_NoDelay:
-			*vp = BOOLEAN_TO_JSVAL( sod.value.no_delay == PR_TRUE );
+			vp.setBoolean( sod.value.no_delay == PR_TRUE );
 			break;
 		case PR_SockOpt_Reuseaddr:
-			*vp = BOOLEAN_TO_JSVAL( sod.value.reuse_addr == PR_TRUE );
+			vp.setBoolean( sod.value.reuse_addr == PR_TRUE );
 			break;
 		case PR_SockOpt_Keepalive:
-			*vp = BOOLEAN_TO_JSVAL( sod.value.keep_alive == PR_TRUE );
+			vp.setBoolean( sod.value.keep_alive == PR_TRUE );
 			break;
 		case PR_SockOpt_RecvBufferSize:
 			JL_CHK( JL_NativeToJsval(cx, sod.value.recv_buffer_size, vp) );
@@ -923,13 +923,13 @@ DEFINE_PROPERTY_GETTER( Option ) {
 			JL_CHK( JL_NativeToJsval(cx, sod.value.max_segment, vp) );
 			break;
 		case PR_SockOpt_Nonblocking:
-			*vp = BOOLEAN_TO_JSVAL( sod.value.non_blocking == PR_TRUE );
+			vp.setBoolean( sod.value.non_blocking == PR_TRUE );
 			break;
 		case PR_SockOpt_Broadcast:
-			*vp = BOOLEAN_TO_JSVAL( sod.value.broadcast == PR_TRUE );
+			vp.setBoolean( sod.value.broadcast == PR_TRUE );
 			break;
 		case PR_SockOpt_McastLoopback:
-			*vp = BOOLEAN_TO_JSVAL( sod.value.mcast_loopback == PR_TRUE );
+			vp.setBoolean( sod.value.mcast_loopback == PR_TRUE );
 			break;
 		default:;
 	}
@@ -955,7 +955,7 @@ DEFINE_PROPERTY_GETTER( peerName ) {
 		
 		if ( PR_GetError() == PR_NOT_CONNECTED_ERROR ) {
 
-			*vp = JSVAL_VOID;
+			vp.setUndefined();
 			return JS_TRUE;
 		}
 		return ThrowIoError(cx);
@@ -963,7 +963,7 @@ DEFINE_PROPERTY_GETTER( peerName ) {
 	char buf[MAX_IP_STRING_LENGTH + 1];
 	if ( PR_NetAddrToString(&peerAddr, buf, sizeof(buf)) != PR_SUCCESS )
 		return ThrowIoError(cx);
-	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ( cx, buf ) );
+	vp.setString( JS_NewStringCopyZ( cx, buf ) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -985,12 +985,12 @@ DEFINE_PROPERTY_GETTER( peerPort ) {
 
 		if ( PR_GetError() == PR_NOT_CONNECTED_ERROR ) {
 
-			*vp = JSVAL_VOID;
+			vp.setUndefined();
 			return JS_TRUE;
 		}
 		return ThrowIoError(cx);
 	}
-	*vp = INT_TO_JSVAL( PR_ntohs(PR_NetAddrInetPort(&peerAddr)) );
+	vp.setInt32( PR_ntohs(PR_NetAddrInetPort(&peerAddr)) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1013,7 +1013,7 @@ DEFINE_PROPERTY_GETTER( sockName ) {
 	char buf[MAX_IP_STRING_LENGTH + 1];
 	if ( PR_NetAddrToString( &sockAddr, buf, sizeof(buf) ) != PR_SUCCESS )
 		return ThrowIoError(cx);
-	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ( cx, buf ) );
+	vp.setString( JS_NewStringCopyZ( cx, buf ) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1033,7 +1033,7 @@ DEFINE_PROPERTY_GETTER( sockPort ) {
 	PRNetAddr sockAddr;
 	if ( PR_GetSockName( fd, &sockAddr ) != PR_SUCCESS )
 		return ThrowIoError(cx);
-	*vp = INT_TO_JSVAL( PR_ntohs(PR_NetAddrInetPort(&sockAddr)) );
+	vp.setInt32( PR_ntohs(PR_NetAddrInetPort(&sockAddr)) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -1089,10 +1089,10 @@ DEFINE_FUNCTION( getHostsByName ) {
 		JL_CHKB( hostIndex != -1, bad_throw );
 		JL_CHKB( PR_NetAddrToString(&addr, addrStr, sizeof(addrStr)) == PR_SUCCESS, bad_throw ); // memory leak
 		jsval tmp;
-		JL_CHK( JL_NativeToJsval(cx, addrStr, &tmp) );
+		JL_CHK( JL_NativeToJsval(cx, addrStr, tmp) );
 		
 		//JL_CHK( JS_DefineElement(cx, addrJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
-		JL_CHK( JL_SetElement(cx, addrJsObj, index++, &tmp) );
+		JL_CHK( JL_SetElement(cx, addrJsObj, index++, tmp) );
 	}
 	return JS_TRUE;
 
@@ -1150,18 +1150,18 @@ DEFINE_FUNCTION( getHostsByAddr ) {
 	int index;
 	index = 0;
 
-	JL_CHK( JL_NativeToJsval(cx, hostent.h_name, &tmp) );
+	JL_CHK( JL_NativeToJsval(cx, hostent.h_name, tmp) );
 	//JL_CHK( JS_DefineElement(cx, hostJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
-	JL_CHK( JL_SetElement(cx, hostJsObj, index++, &tmp) );
+	JL_CHK( JL_SetElement(cx, hostJsObj, index++, tmp) );
 	
 	if ( hostent.h_aliases == NULL )
 		return JS_TRUE;
 
 	for ( int i = 0; hostent.h_aliases[i]; ++i ) {
 
-		JL_CHK( JL_NativeToJsval(cx, hostent.h_aliases[i], &tmp) );
+		JL_CHK( JL_NativeToJsval(cx, hostent.h_aliases[i], tmp) );
 		//JL_CHK( JS_DefineElement(cx, hostJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
-		JL_CHK( JL_SetElement(cx, hostJsObj, index++, &tmp) );
+		JL_CHK( JL_SetElement(cx, hostJsObj, index++, tmp) );
 	}
 
 	return JS_TRUE;

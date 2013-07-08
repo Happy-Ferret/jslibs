@@ -49,13 +49,6 @@ extern JS_FRIEND_API(JSBool)
 js_CloseIterator(JSContext *cx, JSObject *iterObj);
 */
 
-// only defined as JS_FRIEND_API in js/src/js/src/jsobj.h
-
-extern JS_FRIEND_API(JSBool)
-js_GetClassPrototype(JSContext *cx, JSObject *scope, JSProtoKey protoKey,
-                     JSObject **protop, js::Class *clasp = NULL);
-
-
 // only defined as JS_FRIEND_API in js/src/js/src/jsdate.h
 
 extern JS_FRIEND_API(int)

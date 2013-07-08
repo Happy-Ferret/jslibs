@@ -295,7 +295,7 @@ DEFINE_FUNCTION( read ) {
 
 	uint8_t *data;
 	//data = (char*)jl_malloc(dataLength +1);
-	data = JL_NewBuffer(cx, dataLength, JL_RVAL);
+	data = JL_NewBuffer(cx, dataLength, *JL_RVAL);
 	JL_CHK( data );
 
 	memmove( data, (char *)pv->mem + sizeof(MemHeader) + offset, dataLength );
@@ -378,7 +378,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	if ( JSVAL_IS_VOID( *vp ) ) {
+	if ( JSVAL_IS_VOID( vp ) ) {
 
 		JL_CHK( Lock(cx, pv) );
 		MemHeader *mh = (MemHeader*)pv->mem;
@@ -391,7 +391,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 //		const char *data;
 //		size_t dataLength;
 //		JL_CHK( JL_JsvalToStringAndLength(cx, vp, &data, &dataLength) );
-		JL_CHK( JL_JsvalToNative(cx, *vp, &data) );
+		JL_CHK( JL_JsvalToNative(cx, vp, &data) );
 
 		JL_ASSERT( sizeof(MemHeader) + data.Length() <= pv->size, E_DATASIZE, E_MAX, E_NUM(pv->size - sizeof(MemHeader)) ); //JL_ASSERT( sizeof(MemHeader) + data.Length() <= pv->size, "SharedMemory too small to hold the given data." );
 
@@ -425,7 +425,7 @@ DEFINE_PROPERTY_GETTER( content ) {
 	dataLength = mh->currentDataLength;
 	uint8_t *data;
 	//data = (char*)jl_malloc(dataLength +1);
-	data = JL_NewBuffer(cx, dataLength, JL_RVAL);
+	data = JL_NewBuffer(cx, dataLength, vp);
 	JL_CHK( data );
 
 	memmove( data, (char *)pv->mem + sizeof(MemHeader), dataLength );

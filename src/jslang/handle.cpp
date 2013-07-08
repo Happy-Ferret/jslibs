@@ -54,7 +54,7 @@ DEFINE_FUNCTION( toString ) {
 			str[11] = ht[0];
 		} else {
 
-			*((JL_HANDLE_TYPE*)str + 8) = pv->handleType;
+			*((JL_HANDLE_TYPE*)(str + 8)) = pv->handleType;
 		}
 
 		if ( str[ 8] == '\0' )  str[ 8] = ' ';

@@ -603,9 +603,11 @@ $TOC_MEMBER $INAME
   Get or set the title of the console window.
 **/
 DEFINE_PROPERTY_SETTER( title ) {
+	
+	JL_IGNORE(strict, id, obj);
 
 	JLData str;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &str) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &str) );
 	SetConsoleTitle(str);
 	return JS_TRUE;
 	JL_BAD;
@@ -613,11 +615,13 @@ DEFINE_PROPERTY_SETTER( title ) {
 
 DEFINE_PROPERTY_GETTER( title ) {
 
+	JL_IGNORE(id, obj);
+
 	char buffer[2048];
 	DWORD res = GetConsoleTitle(buffer, sizeof(buffer));
 	if ( res == 0 )
 		return JL_ThrowOSError(cx);
-	*vp = STRING_TO_JSVAL(JS_NewStringCopyN(cx, buffer, res));
+	vp.setString(JS_NewStringCopyN(cx, buffer, res));
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -630,13 +634,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( width ) {
 
+	JL_IGNORE(strict, id, obj);
+
 	BOOL res;
 	CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	res = GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	JL_CHK( JL_JsvalToNative(cx, *vp, &csbiInfo.srWindow.Right) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &csbiInfo.srWindow.Right) );
 	csbiInfo.srWindow.Right += csbiInfo.srWindow.Left - 1;
 
 	// GetLargestConsoleWindowSize
@@ -650,13 +656,15 @@ DEFINE_PROPERTY_SETTER( width ) {
 
 DEFINE_PROPERTY_GETTER( width ) {
 
+	JL_IGNORE(id, obj);
+
 	BOOL res;
 	CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	res = GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	*vp = INT_TO_JSVAL(csbiInfo.srWindow.Right - csbiInfo.srWindow.Left + 1);
+	vp.setInt32(csbiInfo.srWindow.Right - csbiInfo.srWindow.Left + 1);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -669,13 +677,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( height ) {
 
+	JL_IGNORE(strict, id, obj);
+
 	BOOL res;
 	CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	res = GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	JL_CHK( JL_JsvalToNative(cx, *vp, &csbiInfo.srWindow.Bottom) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &csbiInfo.srWindow.Bottom) );
 	csbiInfo.srWindow.Bottom += csbiInfo.srWindow.Top - 1;
 	res = SetConsoleWindowInfo(hStdout, TRUE, &csbiInfo.srWindow);
 	if ( res == 0 )
@@ -686,13 +696,15 @@ DEFINE_PROPERTY_SETTER( height ) {
 
 DEFINE_PROPERTY_GETTER( height ) {
 
+	JL_IGNORE(id, obj);
+
 	BOOL res;
 	CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	res = GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	*vp = INT_TO_JSVAL(csbiInfo.srWindow.Bottom - csbiInfo.srWindow.Top + 1 );
+	vp.setInt32(csbiInfo.srWindow.Bottom - csbiInfo.srWindow.Top + 1 );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -705,9 +717,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( textAttribute ) {
 
+	JL_IGNORE(strict, id, obj);
+
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	WORD attributes;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &attributes) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &attributes) );
 	BOOL res = SetConsoleTextAttribute(hStdout, attributes);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
@@ -717,12 +731,14 @@ DEFINE_PROPERTY_SETTER( textAttribute ) {
 
 DEFINE_PROPERTY_GETTER( textAttribute ) {
 
+	JL_IGNORE(id, obj);
+
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	CONSOLE_SCREEN_BUFFER_INFO consoleScreenBufferInfo;
 	BOOL res = GetConsoleScreenBufferInfo(hStdout, &consoleScreenBufferInfo);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	*vp = INT_TO_JSVAL(consoleScreenBufferInfo.wAttributes);
+	vp.setInt32(consoleScreenBufferInfo.wAttributes);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -734,18 +750,22 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( cursorPositionX ) {
 
+	JL_IGNORE(id, obj);
+
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	CONSOLE_SCREEN_BUFFER_INFO consoleScreenBufferInfo;
 	BOOL res = GetConsoleScreenBufferInfo(hStdout, &consoleScreenBufferInfo);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	*vp = INT_TO_JSVAL(consoleScreenBufferInfo.dwCursorPosition.X - consoleScreenBufferInfo.srWindow.Left);
+	vp.setInt32(consoleScreenBufferInfo.dwCursorPosition.X - consoleScreenBufferInfo.srWindow.Left);
 	return JS_TRUE;
 	JL_BAD;
 }
 
 
 DEFINE_PROPERTY_SETTER( cursorPositionX ) {
+
+	JL_IGNORE(strict, id, obj);
 
 	BOOL res;
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -754,7 +774,7 @@ DEFINE_PROPERTY_SETTER( cursorPositionX ) {
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
 	SHORT x;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &x) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &x) );
 	consoleScreenBufferInfo.dwCursorPosition.X = consoleScreenBufferInfo.srWindow.Left + JL_MINMAX(x, 0, consoleScreenBufferInfo.srWindow.Right - consoleScreenBufferInfo.srWindow.Left);
 	res = SetConsoleCursorPosition(hStdout, consoleScreenBufferInfo.dwCursorPosition);
 	if ( res == 0 )
@@ -770,17 +790,21 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( cursorPositionY ) {
 
+	JL_IGNORE(id, obj);
+
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	CONSOLE_SCREEN_BUFFER_INFO consoleScreenBufferInfo;
 	BOOL res = GetConsoleScreenBufferInfo(hStdout, &consoleScreenBufferInfo);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	*vp = INT_TO_JSVAL(consoleScreenBufferInfo.dwCursorPosition.Y - consoleScreenBufferInfo.srWindow.Top);
+	vp.setInt32(consoleScreenBufferInfo.dwCursorPosition.Y - consoleScreenBufferInfo.srWindow.Top);
 	return JS_TRUE;
 	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( cursorPositionY ) {
+
+	JL_IGNORE(id, obj, strict);
 
 	BOOL res;
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -789,7 +813,7 @@ DEFINE_PROPERTY_SETTER( cursorPositionY ) {
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
 	SHORT y;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &y) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &y) );
 	consoleScreenBufferInfo.dwCursorPosition.Y = consoleScreenBufferInfo.srWindow.Top + JL_MINMAX(y, 0, consoleScreenBufferInfo.srWindow.Bottom - consoleScreenBufferInfo.srWindow.Top);
 	res = SetConsoleCursorPosition(hStdout, consoleScreenBufferInfo.dwCursorPosition);
 	if ( res == 0 )
@@ -838,18 +862,22 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( cursorSize ) {
 
+	JL_IGNORE(id, obj);
+
 	BOOL res;
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	CONSOLE_CURSOR_INFO cursorInfo;
 	res = GetConsoleCursorInfo(hStdout, &cursorInfo);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	*vp = INT_TO_JSVAL( cursorInfo.bVisible == TRUE ? cursorInfo.dwSize : 0 );
+	vp.setInt32( cursorInfo.bVisible == TRUE ? cursorInfo.dwSize : 0 );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 DEFINE_PROPERTY_SETTER( cursorSize ) {
+
+	JL_IGNORE(strict, id, obj);
 
 	BOOL res;
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -858,7 +886,7 @@ DEFINE_PROPERTY_SETTER( cursorSize ) {
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
 	DWORD size;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &size) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &size) );
 	if ( size == 0 ) {
 
 		cursorInfo.bVisible = FALSE;

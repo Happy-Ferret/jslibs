@@ -94,7 +94,7 @@ DEFINE_FUNCTION( done ) {
 	delete ser;
 	JL_SetPrivate(JL_OBJ, NULL);
 	//JL_updateMallocCounter(cx, length);
-	JL_CHK( JL_NewBufferGetOwnership(cx, data, length, vp) );
+	JL_CHK( JL_NewBufferGetOwnership(cx, data, length, *vp) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -192,7 +192,7 @@ DEFINE_PROPERTY_GETTER( eof ) {
 	jl::Unserializer *unser;
 	unser = static_cast<jl::Unserializer*>(JL_GetPrivate(JL_OBJ));
 	JL_ASSERT_THIS_OBJECT_STATE(unser);
-	*vp = BOOLEAN_TO_JSVAL(!unser->IsEmpty());
+	vp.setBoolean(!unser->IsEmpty());
 	return JS_TRUE;
 	JL_BAD;
 }

@@ -7,7 +7,7 @@ print(privateMemoryUsage, '\n');
 //collectGarbage();
 print(privateMemoryUsage, '\n');
 
-host.stdin();
+//host.stdin();
 
 throw 0;
 

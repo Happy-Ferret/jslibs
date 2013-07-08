@@ -211,7 +211,7 @@ DEFINE_FUNCTION( poll ) {
 		js::AutoArrayRooter tvr(cx, propsCount, props);
 		for ( i = 0; i < propsCount; ++i ) {
 
-			JL_CHK( JL_GetElement(cx, fdArrayObj, i, &props[i]) );
+			JL_CHK( JL_GetElement(cx, fdArrayObj, i, props[i]) );
 			JL_CHK( InitPollDesc(cx, props[i], &pollDesc[i]) );
 		}
 
@@ -246,7 +246,7 @@ DEFINE_FUNCTION( intervalNow ) {
 	JL_ASSERT_ARGC(0);
 
 	// (TBD) Check if it may wrap around in about 12 hours. Is it related to the data type ???
-	JL_CHK( JL_NativeToJsval(cx, PR_IntervalToMilliseconds( PR_IntervalNow() ), JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, PR_IntervalToMilliseconds( PR_IntervalNow() ), *JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -292,7 +292,7 @@ DEFINE_FUNCTION( getEnv ) {
 		*JL_RVAL = JSVAL_VOID;
 	} else {
 
-		JL_CHK( JL_NativeToJsval(cx, value, JL_RVAL) );
+		JL_CHK( JL_NativeToJsval(cx, value, *JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -345,7 +345,7 @@ DEFINE_FUNCTION( getRandomNoise ) {
 	PRSize rndSize;
 	rndSize = JSVAL_TO_INT( JL_ARG(1) );
 	uint8_t *buf;
-	buf = JL_NewBuffer(cx, rndSize, JL_RVAL);
+	buf = JL_NewBuffer(cx, rndSize, *JL_RVAL);
 	JL_CHK( buf );
 	PRSize size;
 	size = PR_GetRandomNoise(buf, rndSize);
@@ -907,7 +907,7 @@ DEFINE_PROPERTY_GETTER( processPriority ) {
 			IFDEBUG( priorityValue = 0 );
 			ASSERT(false);
 	}
-	*vp = INT_TO_JSVAL( priorityValue );
+	vp.setInt32(priorityValue);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -917,7 +917,7 @@ DEFINE_PROPERTY_SETTER( processPriority ) {
 	JL_IGNORE( strict, id, obj );
 
 	int priorityValue;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &priorityValue) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &priorityValue) );
 	PRThreadPriority priority;
 	switch ( priorityValue ) {
 		case -1:
@@ -966,7 +966,7 @@ DEFINE_PROPERTY_GETTER( currentDirectory ) {
 #endif // XP_WIN
 	JSString *str = JS_NewStringCopyZ(cx, buf);
 	JL_CHK( str );
-	*vp = STRING_TO_JSVAL( str );
+	vp.setString(str);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -976,7 +976,7 @@ DEFINE_PROPERTY_SETTER( currentDirectory ) {
 	JL_IGNORE( id, obj, strict );
 
 	JLData dir;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &dir ) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &dir ) );
 #ifdef XP_WIN
 //	_chdir(dir);
 	::SetCurrentDirectory(dir);

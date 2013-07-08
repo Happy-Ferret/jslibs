@@ -160,7 +160,7 @@ DEFINE_PROPERTY_SETTER( offset ) {
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_CHK( JL_JsvalToNative(cx, *vp, &pv->offset) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &pv->offset) );
 	return JS_TRUE;
 	JL_BAD;
 }

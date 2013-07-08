@@ -79,7 +79,7 @@ DEFINE_FUNCTION( open ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	jsval jsvalDirectoryName;
-	JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
+	JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, jsvalDirectoryName );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
 //	const char *directoryName;
 //	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
@@ -185,7 +185,7 @@ DEFINE_FUNCTION( make ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	jsval jsvalDirectoryName;
-	JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
+	JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, jsvalDirectoryName );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
 	
 //	const char *directoryName;
@@ -217,7 +217,7 @@ DEFINE_FUNCTION( remove ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	jsval jsvalDirectoryName;
-	JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName );
+	JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, jsvalDirectoryName );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
 
@@ -255,7 +255,7 @@ DEFINE_PROPERTY_GETTER( exist ) {
 	JLData str;
 
 	jsval jsvalDirectoryName;
-	JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName ) );
+	JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, jsvalDirectoryName ) );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
 
@@ -266,7 +266,7 @@ DEFINE_PROPERTY_GETTER( exist ) {
 		
 		if ( PR_GetError() == PR_FILE_NOT_FOUND_ERROR ) {
 		
-			*vp = JSVAL_FALSE;
+			vp.setBoolean(false);
 			return JS_TRUE;
 		} else {
 
@@ -276,7 +276,7 @@ DEFINE_PROPERTY_GETTER( exist ) {
 
 		if ( PR_CloseDir(dd) != PR_SUCCESS )
 			return ThrowIoError(cx);
-		*vp = JSVAL_TRUE;
+		vp.setBoolean(true);
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -430,8 +430,8 @@ DEFINE_FUNCTION( list ) {
 		}
 
 		jsval tmp;
-		JL_CHK( JL_NativeToJsval(cx, entryName, entryNameLength, &tmp) );
-		JL_CHK( JL_SetElement(cx, addrJsObj, index, &tmp) );
+		JL_CHK( JL_NativeToJsval(cx, entryName, entryNameLength, tmp) );
+		JL_CHK( JL_SetElement(cx, addrJsObj, index, tmp) );
 	}
 
 	JL_CHKB( PR_CloseDir(dd) == PR_SUCCESS, bad_throw);

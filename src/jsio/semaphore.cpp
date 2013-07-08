@@ -239,7 +239,7 @@ static bool SemCancelWait( volatile ProcessEvent *pe ) {
 
 
 static JSBool SemEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
-
+		
 	SemProcessEvent *upe = (SemProcessEvent*)pe;
 	*hasEvent = upe->hasEvent;
 	

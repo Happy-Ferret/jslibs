@@ -205,15 +205,18 @@ public:
 
 		JSObject *obj = sop;
 		jsval name, value;
+		
 		JSIdArray *idArray = JS_Enumerate(cx, obj); // Get an array of the all *own* enumerable properties of a given object.
+		int len = JS_IdArrayLength(cx, idArray);
 		JL_CHK( idArray );
-		JL_CHK( Write(cx, idArray->length) );
-		for ( int i = 0; i < idArray->length; ++i ) {
+		JL_CHK( Write(cx, len) );
+		for ( int i = 0; i < len; ++i ) {
 
-			JL_CHK( JS_IdToValue(cx, idArray->vector[i], &name) );
+			jsid item = JS_IdArrayGet(cx, idArray, i);
+			JL_CHK( JS_IdToValue(cx, item, &name) );
 			JSString *jsstr = JSVAL_IS_STRING(name) ? JSVAL_TO_STRING(name) : JS_ValueToString(cx, name);
 			JL_CHK( jsstr );
-			JL_CHK( JS_GetPropertyById(cx, obj, idArray->vector[i], &value) );
+			JL_CHK( JS_GetPropertyById(cx, obj, item, &value) );
 			JL_CHK( Write(cx, jsstr) );
 			JL_CHK( Write(cx, value) );
 		}
@@ -255,7 +258,7 @@ public:
 		JL_CHK( Write(cx, reservedSlotsCount) );
 		for ( uint32_t i = 0; i < reservedSlotsCount; ++i ) {
 
-			JL_CHK( JL_GetReservedSlot( obj, i, &value) );
+			JL_CHK( JL_GetReservedSlot( obj, i, value) );
 			JL_CHK( Write(cx, value) );
 		}
 		return JS_TRUE;
@@ -293,7 +296,7 @@ public:
 				JL_CHK( Write(cx, JLSTDouble) );
 				JL_CHK( Write(cx, JSVAL_TO_DOUBLE(val)) );
 			} else
-				if ( val.isMagic(JS_ARRAY_HOLE) ) {
+				if ( val.isMagic(JS_ELEMENTS_HOLE) ) {
 
 				JL_CHK( Write(cx, JLSTHole) );
 			} else
@@ -312,21 +315,21 @@ public:
 		JSObject *obj;
 		obj = JSVAL_TO_OBJECT(val);
 
-		if ( JS_IsArrayBufferObject(obj, cx) ) {
+		if ( JS_IsArrayBufferObject(obj) ) {
 
-			uint32_t length = JS_GetArrayBufferByteLength(obj, cx);
-			uint8_t *data = length ? JS_GetArrayBufferData(obj, cx) : NULL;
+			uint32_t length = JS_GetArrayBufferByteLength(obj);
+			uint8_t *data = length ? JS_GetArrayBufferData(obj) : NULL;
 			JL_CHK( Write(cx, JLSTArrayBuffer) );
 			JL_CHK( Write(cx, SerializerConstBufferInfo(data, length)) );
 			return JS_TRUE;
 		}
 
-		if ( JS_IsTypedArrayObject(obj, cx) ) {
+		if ( JS_IsTypedArrayObject(obj) ) {
 
-			uint32_t length = JS_GetTypedArrayByteLength(obj, cx);
-			void *data = length ? JS_GetArrayBufferViewData(obj, cx) : NULL;
+			uint32_t length = JS_GetTypedArrayByteLength(obj);
+			void *data = length ? JS_GetArrayBufferViewData(obj) : NULL;
 			JL_CHK( Write(cx, JLSTTypedArray) );
-			JL_CHK( Write(cx, JS_GetTypedArrayType(obj, cx)) );
+			JL_CHK( Write(cx, JS_GetArrayBufferViewType(obj)) );
 			JL_CHK( Write(cx, SerializerConstBufferInfo(data, length)) );
 			return JS_TRUE;
 		}
@@ -342,12 +345,12 @@ public:
 			jsval tmp;
 			for ( int i = 0; i < jl::SafeCast<int>(length); ++i ) {
 
-				JL_CHK( JL_GetElement(cx, obj, i, &tmp) );
+				JL_CHK( JL_GetElement(cx, obj, i, tmp) );
 				if ( JSVAL_IS_VOID(tmp) ) {
 
 					JL_CHK( JS_HasElement(cx, obj, i, &found) );
 					if ( !found )
-						tmp.setMagic(JS_ARRAY_HOLE);
+						tmp.setMagic(JS_ELEMENTS_HOLE);
 				}
 				JL_CHK( Write(cx, tmp) );
 			}
@@ -372,7 +375,7 @@ public:
 		}
 
 
-		JL_CHK( JS_GetMethodById(cx, obj, JLID(cx, _serialize), NULL, &serializeFctVal) ); // JL_CHK( JS_GetProperty(cx, obj, "_serialize", &serializeFctVal) );
+		JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, _serialize), &serializeFctVal) ); // JL_CHK( JS_GetProperty(cx, obj, "_serialize", &serializeFctVal) );
 		if ( !JSVAL_IS_VOID( serializeFctVal ) ) {
 
 			jsval argv[2];
@@ -387,7 +390,7 @@ public:
 
 				JL_CHK( Write(cx, JLSTSerializableScriptObject) );
 				jsval unserializeFctVal;
-				JL_CHK( JS_GetMethodById(cx, obj, JLID(cx, _unserialize), NULL, &unserializeFctVal) );
+				JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, _unserialize), &unserializeFctVal) );
 				JL_ASSERT( JL_ValueIsCallable(cx, unserializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_unserialize"), E_DEFINED );
 				JL_CHK( Write(cx, unserializeFctVal) );
 			}
@@ -655,7 +658,7 @@ public:
 			}
 			case JLSTHole: {
 
-				val.setMagic(JS_ARRAY_HOLE);
+				val.setMagic(JS_ELEMENTS_HOLE);
 				break;
 			}
 			case JLSTNull: {
@@ -684,8 +687,8 @@ public:
 				for ( unsigned i = 0; i < length; ++i ) {
 
 					JL_CHK( Read(cx, tmp) );
-					if ( !tmp.isMagic(JS_ARRAY_HOLE) ) // if ( !JL_JSVAL_IS_ARRAY_HOLE(*avr.jsval_addr()) )
-						JL_CHK( JL_SetElement(cx, arr, i, &tmp) );
+					if ( !tmp.isMagic(JS_ELEMENTS_HOLE) ) // if ( !JL_JSVAL_IS_ARRAY_HOLE(*avr.jsval_addr()) )
+						JL_CHK( JL_SetElement(cx, arr, i, tmp) );
 				}
 				break;
 			}
@@ -793,14 +796,14 @@ public:
 				JL_CHK( ok );
 
 
-				JL_ASSERT( JSVAL_IS_OBJECT(val), E_STR("unserializer"), E_RETURNVALUE, E_TYPE, E_TY_OBJECT );
+				JL_ASSERT( val.isObject(), E_STR("unserializer"), E_RETURNVALUE, E_TYPE, E_TY_OBJECT );
 				break;
 			}
 			case JLSTArrayBuffer: {
 
 				SerializerConstBufferInfo data;
 				JL_CHK( Read(cx, data) );
-				JL_CHK( JL_NewBufferCopyN(cx, data.Data(), data.Length(), &val) );
+				JL_CHK( JL_NewBufferCopyN(cx, data.Data(), data.Length(), val) );
 				break;
 			}
 			case JLSTTypedArray: {
@@ -810,7 +813,7 @@ public:
 				JSArrayBufferViewType type;
 				JL_CHK( Read(cx, type) );
 				JL_CHK( Read(cx, data) );
-				JL_CHK( JL_NewBufferCopyN(cx, data.Data(), data.Length(), &val) );
+				JL_CHK( JL_NewBufferCopyN(cx, data.Data(), data.Length(), val) );
 
 				JSObject *typedArray;
 				switch ( type ) {
@@ -857,7 +860,7 @@ public:
 
 				// js_GetClassPrototype
 				JL_CHK( JS_GetUCProperty(cx, JL_GetGlobal(cx), (const jschar *)constructorName.Data(), constructorName.Length() / 2, &constructor) );
-				JL_ASSERT( JSVAL_IS_OBJECT(constructor), E_TY_ERROR, E_NOTCONSTRUCT );
+				JL_ASSERT( constructor.isObject(), E_TY_ERROR, E_NOTCONSTRUCT );
 
 				//JSClass *cl = JL_GetErrorJSClassJSClassByProtoKey(cx, JSProto_Error, JL_GetGlobal(cx));
 				//JSObject *errorObj = JS_NewObjectForConstructor(cx, &constructor);

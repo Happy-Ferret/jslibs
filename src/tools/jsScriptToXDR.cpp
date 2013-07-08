@@ -144,18 +144,19 @@ int main(int argc, char* argv[]) {
 	remove(argv[2]);
 	
 	JSClass global_class = {
-		 "global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
+		 "global", JSCLASS_GLOBAL_FLAGS,
+		 JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
 		 JS_EnumerateStub, JS_ResolveStub
 	};
 
-	JSRuntime *rt = JS_NewRuntime(0);
+	JSRuntime *rt = JS_NewRuntime(0, JS_NO_HELPER_THREADS);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
 	JSContext *cx = JS_NewContext(rt, 8192L);
 	JS_SetOptions(cx, JS_GetOptions(cx));
 	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
 	JS_SetErrorReporter(cx, my_ErrorReporter);
-	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class, NULL);
 	JS_InitStandardClasses(cx, globalObject);
 
 	//JSScript *script = JS_CompileFile(cx, JL_GetGlobal(cx), argv[1]);
@@ -177,7 +178,7 @@ int main(int argc, char* argv[]) {
 	printf("Empty source give empty destination: %s\n", allowEmptyDest ? "true" : "false");
 
 	// do not use JSOPTION_COMPILE_N_GO option (see https://bugzilla.mozilla.org/show_bug.cgi?id=494363)
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_STRICT ); /*JSOPTION_JIT |*/ 
+	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX); /*JSOPTION_JIT |*/ 
 
 	printf("Script name: %s\n", argc >= 4 ? argv[4] : "(NULL)" );
 	printf("Compiling file %s\n", argv[1]);

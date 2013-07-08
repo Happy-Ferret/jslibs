@@ -84,7 +84,7 @@ DEFINE_CONSTRUCTOR() {
 
 			JLData tmp;
 			jsval propVal;
-			JL_CHK( JL_GetElement(cx, argObj, i -1, &propVal) ); // -1 because 0 is reserved to argv[0]
+			JL_CHK( JL_GetElement(cx, argObj, i -1, propVal) ); // -1 because 0 is reserved to argv[0]
 			JL_CHK( JL_JsvalToNative(cx, propVal, &tmp) ); // warning: GC on the returned buffer !
 			processArgv[i] = tmp.GetStrZOwnership();
 		}
@@ -229,7 +229,7 @@ DEFINE_FUNCTION( wait ) {
 	PRInt32 exitValue;
 	JL_CHK( PR_WaitProcess(process, &exitValue) == PR_SUCCESS );
 	JL_SetPrivate( obj, NULL);
-	JL_CHK( JL_NativeToJsval(cx, exitValue, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, exitValue, *JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }

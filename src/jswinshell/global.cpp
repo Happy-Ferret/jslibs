@@ -353,7 +353,7 @@ DEFINE_FUNCTION( createComObject ) {
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
 //	pdisp->AddRef();
-	JL_CHK( NewComDispatch(cx, pdisp, JL_RVAL) );
+	JL_CHK( NewComDispatch(cx, pdisp, *JL_RVAL) );
 	pdisp->Release();
 	punk->Release();
 	return JS_TRUE;
@@ -587,8 +587,8 @@ DEFINE_FUNCTION( registryGet ) {
 			if ( st != ERROR_SUCCESS )
 				break;
 			jsval strName;
-			JL_CHK( JL_NativeToJsval(cx, name, nameLength, &strName) );
-			JL_CHK( JL_SetElement(cx, arrObj, index, &strName) );
+			JL_CHK( JL_NativeToJsval(cx, name, nameLength, strName) );
+			JL_CHK( JL_SetElement(cx, arrObj, index, strName) );
 			index++;
 		}
 		if ( st != ERROR_NO_MORE_ITEMS )
@@ -628,14 +628,14 @@ DEFINE_FUNCTION( registryGet ) {
 			JL_DataBufferFree(cx, buffer);
 			break;
 		case REG_BINARY:
-			JL_CHK( JL_NewBufferGetOwnership(cx, buffer, size, JL_RVAL) );
+			JL_CHK( JL_NewBufferGetOwnership(cx, buffer, size, *JL_RVAL) );
 			break;
 		case REG_DWORD:
-			JL_CHK( JL_NativeToJsval(cx, *(DWORD*)buffer, JL_RVAL) );
+			JL_CHK( JL_NativeToJsval(cx, *(DWORD*)buffer, *JL_RVAL) );
 			JL_DataBufferFree(cx, buffer);
 			break;
 		case REG_QWORD:
-			JL_CHK( JL_NativeToJsval(cx, (double)*(DWORD64*)buffer, JL_RVAL) );
+			JL_CHK( JL_NativeToJsval(cx, (double)*(DWORD64*)buffer, *JL_RVAL) );
 			break;
 		case REG_LINK: {
 			JSString *jsstr = JL_NewUCString(cx, (jschar*)buffer, size/2);
@@ -647,7 +647,7 @@ DEFINE_FUNCTION( registryGet ) {
 		case REG_MULTI_SZ:
 		case REG_SZ: {
 			//JSString *jsstr = JL_NewString(cx, (char*)buffer, size-1); // note: ((char*)buffer)[size] already == '\0'
-			JL_CHK( JLData((char*)buffer, true, size-1).GetJSString(cx, JL_RVAL) );
+			JL_CHK( JLData((char*)buffer, true, size-1).GetJSString(cx, *JL_RVAL) );
 			break;
 		}
 	}
@@ -807,7 +807,7 @@ DEFINE_FUNCTION( directoryChangesLookup ) {
 		JSObject *elt = JS_NewArrayObject(cx, COUNTOF(eltContent), eltContent);
 		JL_CHK( elt );
 		tmp = OBJECT_TO_JSVAL( elt );
-		JL_CHK( JL_SetElement(cx, arrObj, index, &tmp) );
+		JL_CHK( JL_SetElement(cx, arrObj, index, tmp) );
 		index++;
 
 		if ( pFileNotify->NextEntryOffset )
@@ -977,7 +977,7 @@ DEFINE_FUNCTION( guidToString ) {
 	ASSERT( len == 39 );
 	ASSERT( szGuid[38] == 0 );
 
-	JL_CHK( JL_NativeToJsval(cx, szGuid, 38, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, szGuid, 38, *JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -1002,7 +1002,7 @@ DEFINE_PROPERTY_GETTER( clipboard ) {
 
 	if ( IsClipboardFormatAvailable(CF_TEXT) == 0 ) {
 
-		*vp = JSVAL_NULL;
+		vp.setNull();
 	} else {
 
 		HANDLE hglb = GetClipboardData(CF_TEXT);
@@ -1014,7 +1014,7 @@ DEFINE_PROPERTY_GETTER( clipboard ) {
 			return JL_ThrowOSError(cx);
 		JSString *str = JS_NewStringCopyZ(cx, lptstr);
 		JL_ASSERT_ALLOC( str );
-		*vp = STRING_TO_JSVAL(str);
+		vp.setString(str);
 		GlobalUnlock(hglb);
 		CloseClipboard();
 	}
@@ -1037,14 +1037,14 @@ DEFINE_PROPERTY_SETTER( clipboard ) {
 		return JL_ThrowOSError(cx);
 
 
-	if ( !JSVAL_IS_VOID( *vp ) ) {
+	if ( !vp.isNullOrUndefined() ) {
 
 		JLData str;
 
 		res = OpenClipboard(NULL);
 		if ( res == 0 )
 			return JL_ThrowOSError(cx);
-		JL_CHK( JL_JsvalToNative(cx, *vp, &str) );
+		JL_CHK( JL_JsvalToNative(cx, vp, &str) );
 		HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, str.Length() + 1);
 		JL_ASSERT_ALLOC( hglbCopy );
 		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
@@ -1072,7 +1072,7 @@ DEFINE_PROPERTY_GETTER( systemCodepage ) {
 
 	JL_IGNORE( id, obj, cx );
 
-	*vp = INT_TO_JSVAL(GetACP());
+	vp.setInt32(GetACP());
 	return JS_TRUE;
 }
 
@@ -1085,7 +1085,7 @@ DEFINE_PROPERTY_GETTER( consoleCodepage ) {
 
 	JL_IGNORE( id, obj, cx );
 
-	*vp = INT_TO_JSVAL(GetOEMCP());
+	vp.setInt32(GetOEMCP());
 	return JS_TRUE;
 }
 
@@ -1119,7 +1119,7 @@ DEFINE_PROPERTY_SETTER( numlockState ) {
 	JL_IGNORE( strict, id, obj );
 
 	bool state;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &state) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &state) );
 	SetKeyState(VK_NUMLOCK, state);
 	return JS_TRUE;
 	JL_BAD;
@@ -1141,7 +1141,7 @@ DEFINE_PROPERTY_SETTER( capslockState ) {
 	JL_IGNORE( strict, id, obj );
 
 	bool state;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &state) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &state) );
 	SetKeyState(VK_CAPITAL, state);
 	return JS_TRUE;
 	JL_BAD;
@@ -1164,7 +1164,7 @@ DEFINE_PROPERTY_SETTER( scrolllockState ) {
 	JL_IGNORE( strict, id, obj );
 
 	bool state;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &state) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &state) );
 	SetKeyState(VK_SCROLL, state);
 	return JS_TRUE;
 	JL_BAD;
@@ -1184,7 +1184,7 @@ DEFINE_PROPERTY_GETTER( lastInputTime ) {
 	lastInputInfo.cbSize = sizeof(LASTINPUTINFO);
 	if ( ::GetLastInputInfo(&lastInputInfo) == FALSE )
 		return WinThrowError(cx, GetLastError());
-	return JL_NativeToJsval(cx, ::GetTickCount() - lastInputInfo.dwTime, JL_RVAL);
+	return JL_NativeToJsval(cx, ::GetTickCount() - lastInputInfo.dwTime, vp);
 }
 
 
@@ -1321,7 +1321,7 @@ DEFINE_PROPERTY_GETTER( folderPath ) {
 	TCHAR path[PATH_MAX];
 	if ( SUCCEEDED( SHGetFolderPath(NULL, JSID_TO_INT(id), NULL, 0, path) ) ) // |CSIDL_FLAG_CREATE
 		return JL_NativeToJsval(cx, path, vp);
-	*vp = JSVAL_VOID;
+	vp.setUndefined();
 	return JS_TRUE;
 }
 

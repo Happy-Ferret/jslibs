@@ -29,10 +29,10 @@ DECLARE_CLASS( ComDispatch )
 DECLARE_CLASS( ComObject )
 
 
-JSBool JL_JsvalToVariant( JSContext *cx, jsval *value, VARIANT *variant );
-JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval *rval );
+JSBool JsvalToVariant( JSContext *cx, jsval IN &value, OUT VARIANT *variant );
+JSBool VariantToJsval( JSContext *cx, IN VARIANT *variant, OUT jsval &rval );
 
-JSBool NewComVariant( JSContext *cx, VARIANT *variant, jsval *rval );
-JSBool NewComVariantCopy( JSContext *cx, VARIANT *variant, jsval *rval );
-JSBool NewComDispatch( JSContext *cx, IDispatch *pdisp, jsval *rval );
-JSBool NewComEnum( JSContext *cx, IEnumVARIANT *enumv, jsval *rval );
+JSBool NewComVariant( JSContext *cx, VARIANT *variant, OUT jsval &rval );
+JSBool NewComVariantCopy( JSContext *cx, VARIANT *variant, OUT jsval &rval );
+JSBool NewComDispatch( JSContext *cx, IDispatch *pdisp, OUT jsval &rval );
+JSBool NewComEnum( JSContext *cx, IEnumVARIANT *enumv, OUT jsval &rval );

@@ -94,7 +94,7 @@ DEFINE_CONSTRUCTOR() {
 		char tempFileName[PATH_MAX];
 		bool st = JLTemporaryFilename(tempFileName);
 		JL_ASSERT( st, E_OS, E_INTERNAL );
-		JL_CHK( JL_NativeToJsval(cx, (const char *)tempFileName, &filename) );
+		JL_CHK( JL_NativeToJsval(cx, (const char *)tempFileName, filename) );
 	} else {
 		
 		filename = JL_ARG(1);
@@ -170,7 +170,7 @@ DEFINE_FUNCTION( open ) {
 		mode = DEFAULT_ACCESS_RIGHTS;
 	}
 
-	JL_CHK( JL_GetReservedSlot( obj, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
+	JL_CHK( JL_GetReservedSlot( obj, SLOT_JSIO_FILE_NAME, jsvalFileName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalFileName) );
 //	const char *fileName;
 //	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) );
@@ -260,7 +260,7 @@ DEFINE_FUNCTION( delete ) {
 	fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT( !fd, E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
 
-	JL_GetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
+	JL_GetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, jsvalFileName );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalFileName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &str) );
 	if ( PR_Delete(str.GetConstStrZ()) != PR_SUCCESS )
@@ -317,7 +317,7 @@ DEFINE_FUNCTION( move ) {
 	fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT( !fd, E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
 
-	JL_GetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, &jsvalFileName );
+	JL_GetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, jsvalFileName );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalFileName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) ); // warning: GC on the returned buffer !
 
@@ -372,10 +372,10 @@ DEFINE_PROPERTY_SETTER( position ) {
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT( fd, E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_CLOSED );
 
-	JL_ASSERT_IS_INTEGER_NUMBER(*vp, "");
+	JL_ASSERT_IS_INTEGER_NUMBER(vp, "");
 	PRInt64 offset;
 	double doubleOffset;
-	JL_CHK( JL_JsvalToNative( cx, *vp, &doubleOffset ) );
+	JL_CHK( JL_JsvalToNative( cx, vp, &doubleOffset ) );
 	offset = (PRInt64)doubleOffset;
 	PRInt64 ret;
 	ret = PR_Seek64( fd, offset, PR_SEEK_SET );
@@ -418,7 +418,7 @@ DEFINE_PROPERTY_GETTER( content ) {
 	JLData fileName;
 
 	JL_ASSERT( !JL_GetPrivate(obj), E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
-	JL_CHK( JL_GetReservedSlot( obj, SLOT_JSIO_FILE_NAME, &jsvalFileName) ); // (TBD) add somthing like J_SCHK instead
+	JL_CHK( JL_GetReservedSlot( obj, SLOT_JSIO_FILE_NAME, jsvalFileName) ); // (TBD) add somthing like J_SCHK instead
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalFileName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) );
 
@@ -439,7 +439,7 @@ DEFINE_PROPERTY_GETTER( content ) {
 		PRErrorCode err = PR_GetError();
 		if ( err == PR_FILE_NOT_FOUND_ERROR ) {
 
-			*vp = JSVAL_VOID;
+			vp.setUndefined();
 			return JS_TRUE;
 		}
 		return ThrowIoErrorArg(cx, err, PR_GetOSError());
@@ -506,12 +506,12 @@ DEFINE_PROPERTY_SETTER( content ) {
 	JLData fileName, buf;
 	jsval jsvalFileName;
 
-	JL_CHK( JL_GetReservedSlot( obj, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
+	JL_CHK( JL_GetReservedSlot( obj, SLOT_JSIO_FILE_NAME, jsvalFileName) );
 	JL_ASSERT( !JL_GetPrivate(obj), E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalFileName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) );
 
-	if ( JSVAL_IS_VOID( *vp ) ) {
+	if ( JSVAL_IS_VOID( vp ) ) {
 
 		if ( PR_Delete(fileName) != PR_SUCCESS ) {
 
@@ -530,7 +530,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 
-	JL_CHK( JL_JsvalToNative(cx, *vp, &buf) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &buf) );
 	PRInt32 bytesSent;
 
 	ASSERT( buf.Length() <= PR_INT32_MAX );
@@ -577,16 +577,16 @@ DEFINE_PROPERTY_SETTER( name ) {
 	fd = (PRFileDesc *)JL_GetPrivate( obj );
 
 	JL_ASSERT( !fd, E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
-	JL_ASSERT( !JSVAL_IS_VOID(*vp), E_VALUE, E_DEFINED );
+	JL_ASSERT( !JSVAL_IS_VOID(vp), E_VALUE, E_DEFINED );
 
-	JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
+	JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, jsvalFileName ) );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalFileName) );
 
 	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fromFileName) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, *vp, &toFileName) ); // warning: GC on the returned buffer !
+	JL_CHK( JL_JsvalToNative(cx, vp, &toFileName) ); // warning: GC on the returned buffer !
 	if ( PR_Rename(fromFileName, toFileName) != PR_SUCCESS ) // if status == PR_FILE_EXISTS_ERROR ...
 		return ThrowIoError(cx);
-	JL_CHK( JL_SetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, *vp ) );
+	JL_CHK( JL_SetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, vp ) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -603,7 +603,7 @@ DEFINE_PROPERTY_GETTER( exist ) {
 
 	JLData fileName;
 	jsval jsvalFileName;
-	JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
+	JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, jsvalFileName ) );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalFileName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) );
 	return JL_NativeToJsval(cx, PR_Access( fileName, PR_ACCESS_EXISTS ) == PR_SUCCESS, vp);
@@ -622,7 +622,7 @@ DEFINE_PROPERTY_GETTER( hasWriteAccess ) {
 
 	JLData fileName;
 	jsval jsvalFileName;
-	JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
+	JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, jsvalFileName ) );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalFileName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) );
 	return JL_NativeToJsval(cx, PR_Access( fileName, PR_ACCESS_WRITE_OK ) == PR_SUCCESS, vp);
@@ -641,7 +641,7 @@ DEFINE_PROPERTY_GETTER( hasReadAccess ) {
 
 	JLData fileName;
 	jsval jsvalFileName;
-	JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
+	JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, jsvalFileName ) );
 	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalFileName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) );
 	return JL_NativeToJsval(cx, PR_Access( fileName, PR_ACCESS_READ_OK ) == PR_SUCCESS, vp);
@@ -683,7 +683,7 @@ DEFINE_PROPERTY_GETTER( info ) {
 
 		JLData fileName;
 		jsval jsvalFileName;
-		JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, &jsvalFileName ) );
+		JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, jsvalFileName ) );
 		JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalFileName) );
 		JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) );
 		status = PR_GetFileInfo( fileName, &fileInfo );
@@ -696,13 +696,13 @@ DEFINE_PROPERTY_GETTER( info ) {
 		return ThrowIoError(cx);
 
 	JSObject *fileInfoObj;
-	if ( JSVAL_IS_OBJECT(*vp) ) {
+	if ( vp.isObject() ) {
 
-		fileInfoObj = JSVAL_TO_OBJECT(*vp);
+		fileInfoObj = &vp.toObject();
 	} else {
 
 		fileInfoObj = JL_NewObj(cx);
-		*vp = OBJECT_TO_JSVAL( fileInfoObj );
+		vp.setObject( *fileInfoObj );
 	}
 
 	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "type", fileInfo.type) );
@@ -778,14 +778,14 @@ DEFINE_PROPERTY( standard ) {
 
 	JL_IGNORE( obj );
 
-	if ( JSVAL_IS_VOID( *vp ) ) {
+	if ( JSVAL_IS_VOID( vp ) ) {
 
 		int i;
 		//JS_ValueToInt32( cx, id, &i );
 		i = JSID_TO_INT(id);
 
 		JSObject *obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_CLASS_PROTOTYPE(cx, File), NULL ); // no need to use classDescriptor as proto.
-		*vp = OBJECT_TO_JSVAL( obj );
+		vp.setObject( *obj );
 
 		PRFileDesc *fd = PR_GetSpecialFD((PRSpecialFD)i); // beware: cast !
 		if ( fd == NULL )

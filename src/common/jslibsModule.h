@@ -18,8 +18,8 @@
 
 extern uint32_t _moduleId;
 
-typedef struct JSContext JSContext;
-typedef struct JSObject JSObject;
+struct JSContext;
+class JSObject;
 
 typedef JSBool (*ModuleInitFunction)(JSContext *, JSObject *, uint32_t id);
 typedef JSBool (*ModuleReleaseFunction)(JSContext *);

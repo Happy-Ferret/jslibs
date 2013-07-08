@@ -1,7 +1,7 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual C++ Express 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsapi-tests", "jsapi-tests.vcproj", "{2D7053B7-7DDA-4F7D-9E5C-556DE0E6163E}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsapi-tests", "jsapi-tests.vcxproj", "{2D7053B7-7DDA-4F7D-9E5C-556DE0E6163E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

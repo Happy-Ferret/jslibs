@@ -168,7 +168,7 @@ SetHandleSlot( JSContext *cx, jsval handleVal, uint32_t slotIndex, jsval value )
 
 
 INLINE JSBool
-GetHandleSlot( JSContext *cx, jsval handleVal, uint32_t slotIndex, jsval *value ) {
+GetHandleSlot( JSContext *cx, jsval handleVal, uint32_t slotIndex, jsval &value ) {
 
 	ASSERT( slotIndex < JL_HANDLE_PUBLIC_SLOT_COUNT );
 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");

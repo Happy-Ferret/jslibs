@@ -19,6 +19,7 @@
 #include "host.h"
 #include "../jslang/jslang.h"
 
+
 /*
 JSErrorFormatString jlErrorFormatString[] = {
 #define JLMSG_DEF(name, exception, format, count) { format, count, exception },
@@ -178,7 +179,7 @@ void StderrWrite(JSContext *cx, const char *message, size_t length) {
 	JSErrorReporter prevErrorReporter = JS_SetErrorReporter(cx, JL_IS_SAFE ? ErrorReporterBasic : NULL);
 
 	jsval rval, text;
-	JL_CHKB( JL_NativeToJsval(cx, message, length, &text), bad1 ); // beware out of memory case !
+	JL_CHKB( JL_NativeToJsval(cx, message, length, text), bad1 ); // beware out of memory case !
 	JL_CHKB( JS_CallFunctionValue(cx, globalObject, fct, 1, &text, &rval), bad1 );
 
 	JS_SetErrorReporter(cx, prevErrorReporter);
@@ -382,7 +383,7 @@ JLThreadFuncDecl WatchDogThreadProc(void *threadArg) {
 // note: global_class is a global variable, but this is not an issue even if several runtimes share the same JSClass.
 static JSClass global_class = {
 	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS,
-	JS_PropertyStub, JS_PropertyStub,
+	JS_PropertyStub, JS_DeletePropertyStub,
 	JS_PropertyStub, JS_StrictPropertyStub,
 	JS_EnumerateStub, JS_ResolveStub,
 	JS_ConvertStub
@@ -438,7 +439,7 @@ DEFINE_PROPERTY_SETTER( incrementalGarbageCollector ) {
 	JL_IGNORE( strict, id, obj );
 
 	bool incGc;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &incGc) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &incGc) );
 	JS_SetGCParameter(JL_GetRuntime(cx), JSGC_MODE, incGc ? JSGC_MODE_INCREMENTAL : JSGC_MODE_GLOBAL);
 	return JS_TRUE;
 	JL_BAD;
@@ -676,7 +677,7 @@ END_CLASS
 JSContext*
 CreateHost( uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInterval ) {
 
-	JSRuntime *rt = JS_NewRuntime(maxAlloc); // JSGC_MAX_MALLOC_BYTES
+	JSRuntime *rt = JS_NewRuntime(maxAlloc, JS_NO_HELPER_THREADS); // JSGC_MAX_MALLOC_BYTES
 	JL_CHK( rt );
 
 	//JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc); // Number of JS_malloc bytes before last ditch GC.
@@ -709,10 +710,10 @@ CreateHost( uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInterval ) {
 	// JSOPTION_ANONFUNFIX: https://bugzilla.mozilla.org/show_bug.cgi?id=376052 
 	// JS_SetOptions doc: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_SetOptions
 	ASSERT( JS_GetOptions(cx) == 0 );
-	JS_SetOptions(cx, JSOPTION_ATLINE | JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE); // beware: avoid using JSOPTION_COMPILE_N_GO here.
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_TYPE_INFERENCE); // beware: avoid using JSOPTION_COMPILE_N_GO here.
 
 	JSObject *globalObject;
-	globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	globalObject =  JS_NewGlobalObject(cx, &global_class, NULL);
 	JL_CHK( globalObject ); // "unable to create the global object." );
 
 	//	doc: As a side effect, JS_InitStandardClasses establishes obj as the global object for cx, if one is not already established.
@@ -760,8 +761,6 @@ bad:
 JSBool
 InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, HostOutput stdErr, void* userPrivateData ) { // init the host for jslibs usage (modules, errors, ...)
 
-	ASSERT( !JS_CStringsAreUTF8() );
-
 	_unsafeMode = unsafeMode;
 	HostPrivate *hpv = JL_GetHostPrivate(cx);
 	if ( hpv == NULL ) { // in the case of CreateHost has not been called (because the caller wants to create and manage its own JS runtime)
@@ -779,7 +778,7 @@ InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, Ho
 	hpv->unsafeMode = unsafeMode;
 
 	if ( unsafeMode )
-		JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_STRICT | JSOPTION_RELIMIT));
+		JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_STRICT_MODE));
 
 	hpv->report = Report;
 
@@ -795,7 +794,7 @@ InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, Ho
 	//JSObject *newObject = JS_NewObject(cx, NULL, NULL, NULL);
 	//hpv->objectClass = JL_GetClass(newObject);
 	//hpv->objectProto = JL_GetPrototype(cx, newObject);
-	JL_CHK( js_GetClassPrototype(cx, globalObject, JSProto_Object, &hpv->objectProto, NULL) );
+	JL_CHK( JL_GetClassPrototype(cx, globalObject, JSProto_Object, &hpv->objectProto) );
 	hpv->objectClass = JL_GetClass(hpv->objectProto);
 	ASSERT( hpv->objectClass );
 	ASSERT( hpv->objectProto );

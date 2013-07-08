@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="DBG|Win32">
+      <Configuration>DBG</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="OPT|Win32">
+      <Configuration>OPT</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{D3BA293E-8AAC-4EE9-8171-56FE198FB40B}</ProjectGuid>
+    <RootNamespace>resources</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">$(SolutionDir)$(Platform)_$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">$(Platform)_$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">$(SolutionDir)$(Platform)_$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">$(Platform)_$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="embeddedBootstrapScript.js">
+      <Command Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">set PATH=%PATH%;$(SolutionDir)..\..\libs\js\$(IntDir)dist\bin
+"$(IntDir)jsScriptToXDR.exe" "%(FullPath)" "%(FullPath).xdr" true bootstrap
+"$(IntDir)fileToCRes.exe" "%(FullPath).xdr" "%(FullPath).xdr.cres"
+</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">%(FullPath).xdr;%(FullPath).xdr.cres;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">set PATH=%PATH%;$(SolutionDir)..\..\libs\js\$(IntDir)dist\bin
+"$(IntDir)jsScriptToXDR.exe" "%(FullPath)" "%(FullPath).xdr" true bootstrap
+"$(IntDir)fileToCRes.exe" "%(FullPath).xdr" "%(FullPath).xdr.cres"
+</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">%(FullPath).xdr;%(FullPath).xdr.cres;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">Build custom bootstrap</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">Build custom bootstrap</Message>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\tools\fileToCRes.vcxproj">
+      <Project>{7993efa2-8340-46db-9781-936e28989a6d}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <ProjectReference Include="..\tools\jsScriptToXDR.vcxproj">
+      <Project>{85ec7e4d-7386-41f5-bfc7-15e6ff3dac2a}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

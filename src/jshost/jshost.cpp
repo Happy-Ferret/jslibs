@@ -78,7 +78,9 @@ static JLCondHandler gEndSignalCond;
 static JLMutexHandler gEndSignalLock;
 
 JSBool
-EndSignalGetter( JSContext *cx, JSObject *, jsid, jsval *vp ) {
+EndSignalGetter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp) {
+
+	JL_IGNORE(id, obj);
 
 	JL_CHK( JL_NativeToJsval(cx, (int32_t)gEndSignalState, vp) );
 
@@ -87,10 +89,12 @@ EndSignalGetter( JSContext *cx, JSObject *, jsid, jsval *vp ) {
 }
 
 JSBool
-EndSignalSetter( JSContext *cx, JSObject *, jsid, JSBool, jsval *vp ) {
+EndSignalSetter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JSBool strict, JS::MutableHandle<JS::Value> vp) {
+
+	JL_IGNORE(strict, id, obj);
 
 	int tmp;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &tmp) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &tmp) );
 
 	JLMutexAcquire(gEndSignalLock);
 	gEndSignalState = tmp;
@@ -541,7 +545,7 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 
 #ifdef DEBUG	
 	if ( debug )
-		JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_METHODJIT | JSOPTION_METHODJIT_ALWAYS | JSOPTION_TYPE_INFERENCE));
+		JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_TYPE_INFERENCE));
 #endif // DEBUG	
 
 	HostPrivate *hpv;
@@ -555,7 +559,7 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 	hpv->alloc.msize = jl_msize;
 	hpv->alloc.free = jl_free;
 
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_STRICT | JSOPTION_RELIMIT | (warningsToErrors ? JSOPTION_WERROR : 0) ); // default, may be disabled in InitHost()
+	JS_SetOptions(cx, JS_GetOptions(cx) | (warningsToErrors ? JSOPTION_WERROR : 0) ); // default, may be disabled in InitHost()
 
 	JL_CHKM( InitHost(cx, unsafeMode, HostStdin, HostStdout, HostStderr, NULL), E_HOST, E_INIT ); // "Unable to initialize the host."
 

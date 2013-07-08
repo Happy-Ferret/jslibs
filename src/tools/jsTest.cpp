@@ -162,8 +162,9 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 }
 
 JSClass global_class = {
-	 "global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
-    JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub
+	"global", JSCLASS_GLOBAL_FLAGS,
+	JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub
 };
 
 JSBool Print(JSContext *cx, unsigned argc, jsval *vp) {
@@ -178,10 +179,10 @@ JSBool Print(JSContext *cx, unsigned argc, jsval *vp) {
 
 int main_bz726429(int argc, char* argv[]) {
 
-JSRuntime *rt = JS_NewRuntime(0);
+JSRuntime *rt = JS_NewRuntime(0, JS_NO_HELPER_THREADS);
 JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
 JSContext *cx = JS_NewContext(rt, 8192L);
-JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+JSObject *globalObject = JS_NewGlobalObject(cx, &global_class, NULL);
 JS_InitStandardClasses(cx, globalObject);
 
 JSString *jsstr = JS_ValueToString(cx, INT_TO_JSVAL(10));
@@ -204,7 +205,7 @@ bad:
 
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
 static JSBool
-sandbox_resolve(JSContext *cx, JSObject *obj, jsid id, unsigned flags, JSObject **objp) {
+sandbox_resolve(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, unsigned flags, JS::MutableHandleObject objp) {
 
 	JSBool resolved;
 	if ( (flags & JSRESOLVE_ASSIGNING) == 0 ) {
@@ -225,11 +226,11 @@ sandbox_resolve(JSContext *cx, JSObject *obj, jsid id, unsigned flags, JSObject 
 
 		if ( resolved ) {
 
-			*objp = obj;
+			objp.set(obj);
 			return JS_TRUE;
 		}
 	}
-	*objp = NULL;
+	objp.set(NULL);
 	return JS_TRUE;
 }
 
@@ -237,7 +238,7 @@ sandbox_resolve(JSContext *cx, JSObject *obj, jsid id, unsigned flags, JSObject 
 static JSClass sandbox_class = {
     "Sandbox",
     JSCLASS_NEW_RESOLVE | JSCLASS_GLOBAL_FLAGS,
-    JS_PropertyStub,   JS_PropertyStub,
+    JS_PropertyStub,   JS_DeletePropertyStub,
     JS_PropertyStub,   JS_StrictPropertyStub,
     JS_EnumerateStub, (JSResolveOp)sandbox_resolve,
     JS_ConvertStub,    NULL,
@@ -247,7 +248,7 @@ static JSClass sandbox_class = {
 
 JSBool Sandbox(JSContext *cx, unsigned argc, jsval *vp) {
 
-	JSObject *obj = JS_NewCompartmentAndGlobalObject(cx, &sandbox_class, NULL);
+	JSObject *obj = JS_NewGlobalObject(cx, &sandbox_class, NULL);
     JL_CHK( JS_WrapObject(cx, &obj) );
 	JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
 	return JS_TRUE;
@@ -262,14 +263,14 @@ int main_test_Debugger(int argc, char* argv[]) {
 
 	_unsafeMode = false;
 
-    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
 	JSContext *cx = JS_NewContext(rt, 8192L);
 	JS_SetErrorReporter(cx, ErrorReporter);
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE );
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_TYPE_INFERENCE );
 
-	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class, NULL);
 	JS_InitStandardClasses(cx, globalObject);
 
 	jsval rval;
@@ -307,14 +308,14 @@ int main_testconstructor(int argc, char* argv[]) {
 
 	_unsafeMode = false;
 
-    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+	JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
 	JSContext *cx = JS_NewContext(rt, 8192L);
 	JS_SetErrorReporter(cx, ErrorReporter);
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE );
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_TYPE_INFERENCE );
 
-	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class, NULL);
 	JS_InitStandardClasses(cx, globalObject);
 
 	jsval rval;
@@ -368,14 +369,14 @@ int main_depstring(int argc, char* argv[]) {
 
 	_unsafeMode = false;
 
-    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+	JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
 	JSContext *cx = JS_NewContext(rt, 8192L);
 	JS_SetErrorReporter(cx, ErrorReporter);
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE );
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_TYPE_INFERENCE );
 
-	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class, NULL);
 	JS_InitStandardClasses(cx, globalObject);
 
 
@@ -386,7 +387,7 @@ int main_depstring(int argc, char* argv[]) {
 
 	JS_AddObjectRoot(cx, &ab);
 
-	char *data = (char*)JS_GetArrayBufferData(ab, cx);
+	char *data = (char*)JS_GetArrayBufferData(ab);
 
 	wcscpy((jschar*)data, str);
 
@@ -416,14 +417,14 @@ int main_arraylike(int argc, char* argv[]) {
 
 	_unsafeMode = false;
 
-    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+	JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
 	JSContext *cx = JS_NewContext(rt, 8192L);
 	JS_SetErrorReporter(cx, ErrorReporter);
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE );
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_TYPE_INFERENCE );
 
-	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class, NULL);
 	JS_InitStandardClasses(cx, globalObject);
 
 
@@ -461,14 +462,14 @@ int _stdcall func2(JSContext *cx, JSObject *obj, int i)
 
 __declspec(noinline) int main_fastcall(int argc, char* argv[]) {
 
-    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
 	JSContext *cx = JS_NewContext(rt, 8192L);
 	JS_SetErrorReporter(cx, ErrorReporter);
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE );
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_TYPE_INFERENCE );
 
-	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class, NULL);
 	JS_InitStandardClasses(cx, globalObject);
 
 
@@ -503,14 +504,14 @@ __declspec(noinline) int main_fastcall(int argc, char* argv[]) {
 int main_NewObjectWithGivenProto_NewObject(int argc, char* argv[]) {
 
 
-    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
 	JSContext *cx = JS_NewContext(rt, 8192L);
 	JS_SetErrorReporter(cx, ErrorReporter);
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE );
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_TYPE_INFERENCE );
 
-	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class, NULL);
 	JS_InitStandardClasses(cx, globalObject);
 
 	
@@ -559,17 +560,16 @@ bool test_perf(jsval &val) {
 }
 
 
-
 int main_PerfTest(int argc, char* argv[]) {
 
-    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
 	JSContext *cx = JS_NewContext(rt, 8192L);
 	JS_SetErrorReporter(cx, ErrorReporter);
-	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_XML | JSOPTION_RELIMIT | JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE );
+	JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_TYPE_INFERENCE );
 
-	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class, NULL);
 	JS_InitStandardClasses(cx, globalObject);
 
 
@@ -577,7 +577,8 @@ int main_PerfTest(int argc, char* argv[]) {
 
 	bool b = NOIL(test_perf)(v);
 	
-
+	//class JSString * JS_ValueToString(struct JSContext *,class JS::Value) => ?JS_ValueToString@@YAPAVJSString@@PAUJSContext@@VValue@JS@@@Z
+	//JS_ValueToString
 
 	return 0;
 }
@@ -734,9 +735,9 @@ int main_test_call(int argc, char* argv[]) {
 	void *xdrData;
 
 	{
-    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
 	JSContext *cx = JS_NewContext(rt, 8192L);
-	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class, NULL);
 	JS_InitStandardClasses(cx, globalObject);
 
 	char *scriptText = "(function() { return 123 })";
@@ -756,13 +757,15 @@ int main_test_call(int argc, char* argv[]) {
 	}
 
 	{
-    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
 	JSContext *cx = JS_NewContext(rt, 8192L);
-	JSObject *globalObject = JS_NewCompartmentAndGlobalObject(cx, &global_class, NULL);
+	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class, NULL);
 	JS_InitStandardClasses(cx, globalObject);
 
 	JSObject *fctObj = JS_DecodeInterpretedFunction(cx, xdrData, xdrLength, NULL, NULL);
-	JS::AutoObjectRooter tvr(cx, fctObj);
+	
+	//JS::AutoObjectRooter tvr(cx, fctObj);
+	JS::Rooted<JSObject*> tmpRt(cx, fctObj);
 
 	jsval rval;
 	JS_CallFunctionValue(cx, globalObject, OBJECT_TO_JSVAL(fctObj), 0, NULL, &rval); // <- crash here

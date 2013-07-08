@@ -96,7 +96,7 @@ void FinalizeDescriptor(JSFreeOp *, JSObject *obj) {
 		return;
 
 	jsval imported;
-	JL_CHK( JL_GetReservedSlot( obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, &imported) );
+	JL_CHK( JL_GetReservedSlot( obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, imported) );
 	if ( imported == JSVAL_TRUE ) // Descriptor was inported, then do not close it
 		return;
 
@@ -319,7 +319,7 @@ DEFINE_FUNCTION( read ) {
 
 
 	uint8_t *buf;
-	buf = JL_NewBuffer(cx, amount, JL_RVAL);
+	buf = JL_NewBuffer(cx, amount, *JL_RVAL);
 	JL_ASSERT_ALLOC( buf );
 
 	//PRIntervalTime timeout;
@@ -359,7 +359,7 @@ DEFINE_FUNCTION( read ) {
 				//  the host or remote network interface is disabled, or the remote host uses a hard close (see setsockopt for more information on the SO_LINGER option on the remote socket).
 				//  This error may also result if a connection was broken due to keep-alive activity detecting a failure while one or more operations are in progress.
 				//  Operations that were in progress fail with WSAENETRESET. Subsequent operations fail with WSAECONNRESET.
-				JL_CHK( JL_FreeBuffer(cx, JL_RVAL) );
+				JL_CHK( JL_FreeBuffer(cx, *JL_RVAL) );
 				*JL_RVAL = JSVAL_VOID;
 				return JS_TRUE;
 
@@ -375,7 +375,7 @@ DEFINE_FUNCTION( read ) {
 
 	if ( res == 0 ) { // doc: 0 means end of file is reached or the network connection is closed.
 
-		JL_CHK( JL_FreeBuffer(cx, JL_RVAL) );
+		JL_CHK( JL_FreeBuffer(cx, *JL_RVAL) );
 		*JL_RVAL = JSVAL_VOID;
 		return JS_TRUE;
 	}
@@ -469,7 +469,7 @@ DEFINE_FUNCTION( write ) {
 
 	if (likely( sentAmount == str.Length() )) { // nothing remains
 
-		JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
+		JL_CHK( JL_NewEmptyBuffer(cx, *JL_RVAL) );
 	} else if ( sentAmount == 0 ) { // nothing has been sent
 
 		if ( JSVAL_IS_STRING( JL_ARG(1) ) ) { // optimization (string are immutable)
@@ -477,11 +477,11 @@ DEFINE_FUNCTION( write ) {
 			*JL_RVAL = JL_ARG(1);
 		} else {
 
-			JL_CHK( str.GetArrayBuffer(cx, JL_RVAL) );
+			JL_CHK( str.GetArrayBuffer(cx, *JL_RVAL) );
 		}
 	} else { // return unsent data
 
-		JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
+		JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, *JL_RVAL) );
 	}
 
 	return JS_TRUE;
@@ -564,7 +564,7 @@ DEFINE_PROPERTY_GETTER( type ) {
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd ); //	JL_ASSERT_THIS_INSTANCE();
-	*vp = INT_TO_JSVAL( (int)PR_GetDescType(fd) );
+	vp.setInt32( (int32_t)PR_GetDescType(fd) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -585,7 +585,7 @@ DEFINE_PROPERTY_GETTER( closed ) {
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate( obj );
-	*vp = BOOLEAN_TO_JSVAL( fd == NULL );
+	vp.setBoolean( fd == NULL );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -712,7 +712,7 @@ static JSBool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject 
 	JSObject *fdArrayObj;
 	unsigned fdCount;
 
-	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 0, &fdArrayVal) );
+	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 0, fdArrayVal) );
 	fdArrayObj = JSVAL_TO_OBJECT(fdArrayVal);
 	JL_CHK( JS_GetArrayLength(cx, fdArrayObj, &fdCount) );
 
@@ -749,8 +749,8 @@ static JSBool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject 
 	for ( unsigned int i = 0; i < fdCount; ++i ) {
 
 		descriptor = &upe->descVal[i]; // get the slot addr
-		JL_CHK( JL_GetElement(cx, fdArrayObj, i, descriptor) ); // read the item
-		JL_CHK( JL_SetElement(cx, rootedValues, i, descriptor) ); // root the item
+		JL_CHK( JL_GetElement(cx, fdArrayObj, i, *descriptor) ); // read the item
+		JL_CHK( JL_SetElement(cx, rootedValues, i, *descriptor) ); // root the item
 		JL_CHK( InitPollDesc(cx, *descriptor, &upe->pollDesc[1 + i]) ); // upe->pollDesc[0] is reserved for mpv->peCancel
 	}
 
@@ -938,26 +938,26 @@ DEFINE_PROPERTY_SETTER( timeout ) {
 	JL_IGNORE(id, strict);
 	JL_ASSERT_THIS_INHERITANCE();
 
-	if ( !JSVAL_IS_VOID( *vp ) ) {
+	if ( !JSVAL_IS_VOID( vp ) ) {
 
 		PRIntervalTime timeout;
-		if ( *vp == JSVAL_ZERO ) {
+		if ( (JS::Value)vp == JSVAL_ZERO ) {
 
 			timeout = PR_INTERVAL_NO_WAIT;
 		} else
-		if ( JL_ValueIsPInfinity(cx, *vp) ) {
+		if ( JL_ValueIsPInfinity(cx, vp) ) {
 
 			timeout = PR_INTERVAL_NO_TIMEOUT;
 		} else {
 
 			PRUint32 milli;
-			JL_CHK( JL_JsvalToNative(cx, *vp, &milli) );
+			JL_CHK( JL_JsvalToNative(cx, vp, &milli) );
 			timeout = PR_MillisecondsToInterval(milli);
 		}
 		JL_CHK( JL_NativeToJsval(cx, timeout, vp) );
 	}
 
-	JL_CHK( JL_SetReservedSlot( obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, *vp) );
+	JL_CHK( JL_SetReservedSlot( obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, vp) );
 	JL_CHK( jl::StoreProperty(cx, obj, id, vp, false) );
 	return JS_TRUE;
 	JL_BAD;

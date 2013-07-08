@@ -25,7 +25,7 @@ typedef int32_t SourceId_t;
 
 struct ConstValueSpec {
 	const char *name;
-	jsval val;
+	JS::Value val;
 };
 
 
@@ -49,7 +49,7 @@ struct ClassSpec {
 // if removeGetterAndSetter is false, it is up to the caller to filter calls using: if ( *vp != JSVAL_VOID ) return JS_TRUE;
 // if removeGetterAndSetter is true, the value is stored for r/w getter or setter will never be called again.
 ALWAYS_INLINE JSBool FASTCALL
-StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsval *vp, bool removeGetterAndSetter ) {
+StoreProperty( JSContext *cx, JSObject *obj, jsid id, const JS::Value &vp, bool removeGetterAndSetter ) {
 
 	unsigned int attrs;
 	JSBool found;
@@ -67,7 +67,7 @@ StoreProperty( JSContext *cx, JSObject *obj, jsid id, const jsval *vp, bool remo
 		getter = NULL;
 		setter = NULL;
 	}
-	return JS_DefinePropertyById(cx, obj, id, *vp, getter, setter, attrs);
+	return JS_DefinePropertyById(cx, obj, id, vp, getter, setter, attrs);
 	JL_BAD;
 }
 
@@ -80,9 +80,9 @@ DefineClassProperties(JSContext *cx, JSObject *obj, JSPropertySpec *ps) {
 	for ( ; ps->name; ++ps ) {
 
 		if ( ps->tinyid == jl::pv::NOTINYID )
-			JL_CHK( JS_DefineProperty(cx, obj, ps->name, JSVAL_VOID, ps->getter, ps->setter, ps->flags) );
+			JL_CHK( JS_DefineProperty(cx, obj, ps->name, JSVAL_VOID, ps->getter.op, ps->setter.op, ps->flags) );
 		else
-			JL_CHK( JS_DefinePropertyWithTinyId(cx, obj, ps->name, ps->tinyid, JSVAL_VOID, ps->getter, ps->setter, ps->flags) );
+			JL_CHK( JS_DefinePropertyWithTinyId(cx, obj, ps->name, ps->tinyid, JSVAL_VOID, ps->getter.op, ps->setter.op, ps->flags) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -93,7 +93,7 @@ ALWAYS_INLINE JSBool FASTCALL
 DefineFunctions(JSContext *cx, JSObject *obj, JSFunctionSpec *fs) {
 
 	for ( ; fs->name; fs++ )
-		JL_CHK( JS_DefineFunction(cx, obj, fs->name, fs->call, fs->nargs, fs->flags) );
+		JL_CHK( JS_DefineFunction(cx, obj, fs->name, fs->call.op, fs->nargs, fs->flags) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -206,14 +206,14 @@ InitClass( JSContext *cx, JSObject *obj, ClassSpec *cs ) {
 }
 
 INLINE JSBool
-InvalidConstructor(JSContext *cx, unsigned, jsval *) {
+InvalidConstructor(JSContext *cx, unsigned, JS::Value *) {
 
 	JL_ERR( E_CLASS, E_NOTCONSTRUCT );
 	JL_BAD;
 }
 
 INLINE JSBool
-DefaultInstanceof(JSContext *cx, JSObject *obj, const jsval *v, JSBool *bp) {
+DefaultInstanceof(JSContext *cx, JSObject *obj, const JS::Value *v, JSBool *bp) {
 
 	// *bp = !JSVAL_IS_PRIMITIVE(*v) && js::GetObjectJSClass(JSVAL_TO_OBJECT(*v)) == js::GetObjectJSClass(obj); // incomplete
 
@@ -279,7 +279,7 @@ JL_END_NAMESPACE
 			static jl::ClassSpec cs; \
 			cs.clasp.name = className; \
 			cs.clasp.addProperty = JS_PropertyStub; \
-			cs.clasp.delProperty = JS_PropertyStub; \
+			cs.clasp.delProperty = JS_DeletePropertyStub; \
 			cs.clasp.getProperty = JS_PropertyStub; \
 			cs.clasp.setProperty = JS_StrictPropertyStub; \
 			cs.clasp.enumerate = JS_EnumerateStub; \
@@ -349,13 +349,13 @@ JL_END_NAMESPACE
 #define FUNCTION_ALIAS(alias, existingName) JS_FN( #alias, _##existingName, 0, FUNCTION_DEFAULT_FLAGS ),
 
 // doc: JSPROP_SHARED - https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
-#define PROPERTY(name) { #name, jl::pv::NOTINYID, JSPROP_PERMANENT|JSPROP_SHARED, _##name##Getter, _##name##Setter },
-#define PROPERTY_GETTER(name) { #name, jl::pv::NOTINYID, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##name##Getter, NULL },
-#define PROPERTY_SETTER(name) { #name, jl::pv::NOTINYID, JSPROP_PERMANENT|JSPROP_SHARED, NULL, _##name##Setter },
-#define PROPERTY_SWITCH(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, _##function##Getter, _##function##Setter }, // Used to define multiple properties with only one pair of getter/setter functions (an enum has to be defiend with less than 256 items !)
-#define PROPERTY_SWITCH_GETTER(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, _##function##Getter, NULL },
-#define PROPERTY_CREATE(name,id,flags,getter,setter) { #name, id, flags, _##getter, _##setter },
-#define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, NULL, NULL },
+#define PROPERTY(name) { #name, jl::pv::NOTINYID, JSPROP_PERMANENT|JSPROP_SHARED, JSOP_WRAPPER(_##name##Getter), JSOP_WRAPPER(_##name##Setter) },
+#define PROPERTY_GETTER(name) { #name, jl::pv::NOTINYID, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, JSOP_WRAPPER(_##name##Getter), JSOP_NULLWRAPPER },
+#define PROPERTY_SETTER(name) { #name, jl::pv::NOTINYID, JSPROP_PERMANENT|JSPROP_SHARED, JSOP_NULLWRAPPER, JSOP_WRAPPER(_##name##Setter) },
+#define PROPERTY_SWITCH(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, JSOP_WRAPPER(_##function##Getter), JSOP_WRAPPER(_##function##Setter) }, // Used to define multiple properties with only one pair of getter/setter functions (an enum has to be defiend with less than 256 items !)
+#define PROPERTY_SWITCH_GETTER(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, JSOP_WRAPPER(_##function##Getter), JSOP_NULLWRAPPER },
+#define PROPERTY_CREATE(name,id,flags,getter,setter) { #name, id, flags, JSOP_WRAPPER(_##getter), JSOP_WRAPPER(_##setter) },
+#define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, JSOP_NULLWRAPPER, JSOP_NULLWRAPPER },
 
 // configuration
 #define FROZEN_PROTOTYPE cs.clasp.flags |= JSCLASS_FREEZE_PROTO;
@@ -378,7 +378,7 @@ JL_END_NAMESPACE
 	ASSERT(cs.constructor == NULL); \
 	cs.constructor = Constructor;
 
-#define DEFINE_CONSTRUCTOR() static JSBool Constructor(JSContext *cx, unsigned argc, jsval *vp)
+#define DEFINE_CONSTRUCTOR() static JSBool Constructor(JSContext *cx, unsigned argc, JS::Value *vp)
 
 // throw an error if one tries to construct it
 #define IS_UNCONSTRUCTIBLE \
@@ -395,14 +395,14 @@ JL_END_NAMESPACE
 #define DEFINE_FINALIZE() static void Finalize(JSFreeOp *fop, JSObject *obj)
 
 #define HAS_OBJECT_CONSTRUCTOR cs.clasp.construct = ObjectConstructor;
-#define DEFINE_OBJECT_CONSTRUCTOR() static JSBool ObjectConstructor(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval)
+#define DEFINE_OBJECT_CONSTRUCTOR() static JSBool ObjectConstructor(JSContext *cx, JSObject *obj, unsigned argc, JS::Value *argv, JS::Value *rval)
 
 #define HAS_CALL cs.clasp.call = Call;
-#define DEFINE_CALL() static JSBool Call(JSContext *cx, unsigned argc, jsval *vp)
+#define DEFINE_CALL() static JSBool Call(JSContext *cx, unsigned argc, JS::Value *vp)
 // see also JL_DEFINE_CALL_FUNCTION_OBJ
 
 #define HAS_CONVERT cs.clasp.convert = Convert;
-#define DEFINE_CONVERT() static JSBool Convert(JSContext *cx, JSObject *obj, JSType type, jsval *vp)
+#define DEFINE_CONVERT() static JSBool Convert(JSContext *cx, JSObject *obj, JSType type, JS::Value *vp)
 
 #define HAS_RESOLVE cs.clasp.resolve = Resolve;
 #define DEFINE_RESOLVE() static JSBool Resolve(JSContext *cx, JSObject *obj, jsid id)
@@ -418,10 +418,10 @@ JL_END_NAMESPACE
 #define DEFINE_TRACER() static void Tracer(JSTracer *trc, JSObject *obj)
 
 #define HAS_HAS_INSTANCE cs.clasp.hasInstance = HasInstance;
-#define DEFINE_HAS_INSTANCE() static JSBool HasInstance(JSContext *cx, JSObject *obj, const jsval *v, JSBool *bp)
+#define DEFINE_HAS_INSTANCE() static JSBool HasInstance(JSContext *cx, JS::Handle<JSObject*> obj, JS::MutableHandle<JS::Value> vp, JSBool *bp)
 
 #define HAS_EQUALITY_OP js::Valueify(&cs.clasp)->ext.equality = EqualityOp;
-#define DEFINE_EQUALITY_OP() static JSBool EqualityOp(JSContext *cx, JSObject *obj, const jsval *v, JSBool *bp)
+#define DEFINE_EQUALITY_OP() static JSBool EqualityOp(JSContext *cx, JSObject *obj, const JS::Value *v, JSBool *bp)
 
 #define HAS_WRAPPED_OBJECT js::Valueify(&cs.clasp)->ext.wrappedObject = WrappedObject;
 #define DEFINE_WRAPPED_OBJECT() static JSObject* WrappedObject(JSContext *cx, JSObject *obj)
@@ -430,25 +430,25 @@ JL_END_NAMESPACE
 #define DEFINE_INIT() static JSBool Init(JSContext *cx, jl::ClassSpec *sc, JSObject *proto, JSObject *obj)
 
 #define HAS_ADD_PROPERTY cs.clasp.addProperty = AddProperty;
-#define DEFINE_ADD_PROPERTY() static JSBool AddProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
+#define DEFINE_ADD_PROPERTY() static JSBool AddProperty(JSContext *cx, JSObject *obj, jsid id, JS::Value *vp)
 
 #define HAS_DEL_PROPERTY cs.clasp.delProperty = DelProperty;
-#define DEFINE_DEL_PROPERTY() static JSBool DelProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
+#define DEFINE_DEL_PROPERTY() static JSBool DelProperty(JSContext *cx, JSObject *obj, jsid id, JS::Value *vp)
 
 #define HAS_GET_PROPERTY cs.clasp.getProperty = GetProperty;
-#define DEFINE_GET_PROPERTY() static JSBool GetProperty(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
+#define DEFINE_GET_PROPERTY() static JSBool GetProperty(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp)
 
 #define HAS_SET_PROPERTY cs.clasp.setProperty = SetProperty;
-#define DEFINE_SET_PROPERTY() static JSBool SetProperty(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsval *vp)
+#define DEFINE_SET_PROPERTY() static JSBool SetProperty(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JSBool strict, JS::MutableHandle<JS::Value> vp)
 
 #define HAS_GET_OBJECT_OPS cs.clasp.getObjectOps = GetObjectOps;
 #define DEFINE_GET_OBJECT_OPS() static JSObjectOps* GetObjectOps(JSContext *cx, JSClass *clasp)
 
 #define HAS_CHECK_ACCESS cs.clasp.checkAccess = CheckAccess;
-#define DEFINE_CHECK_ACCESS() static JSBool CheckAccess(JSContext *cx, JSObject *obj, jsid id, JSAccessMode mode, jsval *vp)
+#define DEFINE_CHECK_ACCESS() static JSBool CheckAccess(JSContext *cx, JSObject *obj, jsid id, JSAccessMode mode, JS::Value *vp)
 
 #define HAS_ITERATOR_OBJECT js::Valueify(&cs.clasp)->ext.iteratorObject = IteratorObject;
-#define DEFINE_ITERATOR_OBJECT() static JSObject* IteratorObject(JSContext *cx, JSObject *obj, JSBool keysonly)
+#define DEFINE_ITERATOR_OBJECT() static JSObject* IteratorObject(JSContext *cx, JS::HandleObject obj, JSBool keysonly)
 
 
 // ops
@@ -462,13 +462,13 @@ JL_END_NAMESPACE
 
 // definition
 
-#define DEFINE_FUNCTION(name) static JSBool _##name(JSContext *cx, unsigned argc, jsval *vp)
+#define DEFINE_FUNCTION(name) static JSBool _##name(JSContext *cx, unsigned argc, JS::Value *vp)
 
-#define DEFINE_FUNCTION_NARG(name, nargs) const static uint16_t _##name##_nargs = nargs; static JSBool _##name(JSContext *cx, unsigned argc, jsval *vp)
+#define DEFINE_FUNCTION_NARG(name, nargs) const static uint16_t _##name##_nargs = nargs; static JSBool _##name(JSContext *cx, unsigned argc, JS::Value *vp)
 
-#define DEFINE_PROPERTY(name) static JSBool _##name(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
-#define DEFINE_PROPERTY_GETTER(name) static JSBool _##name##Getter(JSContext *cx, JSObject *obj, jsid id, jsval *vp)
-#define DEFINE_PROPERTY_SETTER(name) static JSBool _##name##Setter(JSContext *cx, JSObject *obj, jsid id, JSBool strict, jsval *vp)
+#define DEFINE_PROPERTY(name) static JSBool _##name(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleValue vp)
+#define DEFINE_PROPERTY_GETTER(name) static JSBool _##name##Getter(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleValue vp)
+#define DEFINE_PROPERTY_SETTER(name) static JSBool _##name##Setter(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JSBool strict, JS::MutableHandleValue vp)
 
 
 // documentation

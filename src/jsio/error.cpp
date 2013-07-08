@@ -18,7 +18,7 @@
 
 /**doc fileIndex:bottom **/
 
-const char *ConstString( int errorCode ) {
+const char * ConstString( int errorCode ) {
 
 	switch ( errorCode ) {
 		case PR_OUT_OF_MEMORY_ERROR: return "PR_OUT_OF_MEMORY_ERROR";
@@ -139,14 +139,14 @@ DEFINE_PROPERTY_GETTER( const ) {
 	JL_IGNORE( id );
 
 	JL_CHK( JL_GetReservedSlot( obj, 0, vp) );
-	if ( JSVAL_IS_VOID(*vp) )
+	if ( JSVAL_IS_VOID(vp) )
 		return JS_TRUE;
 	int errorCode;
-	errorCode = JSVAL_TO_INT(*vp);
+	errorCode = JSVAL_TO_INT(vp);
 	JSString *str;
 	str = JS_NewStringCopyZ( cx, ConstString(errorCode) );
 	JL_CHK( str );
-	*vp = STRING_TO_JSVAL( str );
+	vp.setString( str );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -164,6 +164,20 @@ DEFINE_PROPERTY_GETTER( os ) {
 }
 
 
+JSBool GetErrorText(JSContext *cx, JSObject *obj, OUT JS::Value &rval) {
+
+	JL_CHK( JL_GetReservedSlot(obj, 0, rval) );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
+	if ( rval.isUndefined() )
+		return JS_TRUE;
+	PRErrorCode errorCode;
+	errorCode = rval.toInt32();
+	JSString *str;
+	str = JS_NewStringCopyZ( cx, PR_ErrorToString(errorCode, PR_LANGUAGE_EN) );
+	rval.setString(str);
+	return JS_TRUE;
+	JL_BAD;
+}
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -173,16 +187,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 
 	JL_IGNORE( id );
 
-	JL_CHK( JL_GetReservedSlot( obj, 0, vp) );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
-	if ( JSVAL_IS_VOID(*vp) )
-		return JS_TRUE;
-	PRErrorCode errorCode;
-	errorCode = JSVAL_TO_INT(*vp);
-	JSString *str;
-	str = JS_NewStringCopyZ( cx, PR_ErrorToString( errorCode, PR_LANGUAGE_EN ) );
-	*vp = STRING_TO_JSVAL( str );
-	return JS_TRUE;
-	JL_BAD;
+	return GetErrorText(cx, obj, *vp.address());
 }
 
 DEFINE_FUNCTION( toString ) {
@@ -190,7 +195,8 @@ DEFINE_FUNCTION( toString ) {
 	JL_IGNORE( argc );
 
 	JL_DEFINE_FUNCTION_OBJ;
-	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
+	return GetErrorText(cx, obj, *JL_RVAL);
+	JL_BAD;
 }
 
 
@@ -207,9 +213,9 @@ DEFINE_FUNCTION( _serialize ) {
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, lineNumber), JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot( JL_OBJ, 0, JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, 0, *JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot( JL_OBJ, 1, JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, 1, *JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 
 	return JS_TRUE;
