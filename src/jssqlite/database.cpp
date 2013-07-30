@@ -56,6 +56,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( close ) {
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
@@ -65,7 +66,7 @@ DEFINE_FUNCTION( close ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	jsval v;
-	JL_CHK( JL_GetReservedSlot(obj, SLOT_DATABASE, &v) );
+	JL_CHK( JL_GetReservedSlot(obj, SLOT_DATABASE, v) );
 	DatabasePrivate *dbpv;
 	dbpv = (DatabasePrivate*)JL_GetPrivate(JSVAL_TO_OBJECT(v));
 	JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(JSVAL_TO_OBJECT(v)) );
@@ -90,6 +91,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(0, 1);
@@ -111,7 +113,7 @@ DEFINE_FUNCTION( read ) {
 
 		if ( amount == 0 && available > 0 ) { // not EOF
 
-			JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
+			JL_CHK( JL_NewEmptyBuffer(cx, *JL_RVAL) );
 			return JS_TRUE;
 		}
 
@@ -128,7 +130,7 @@ DEFINE_FUNCTION( read ) {
 	}
 
 	uint8_t *buffer;
-	buffer = JL_NewBuffer(cx, amount, JL_RVAL);
+	buffer = JL_NewBuffer(cx, amount, *JL_RVAL);
 	JL_CHK( buffer );
 
 	int st = sqlite3_blob_read(pv->pBlob, buffer, amount, pv->position);
@@ -150,6 +152,7 @@ DEFINE_FUNCTION( write ) {
 
 	JLData data;
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
@@ -210,7 +213,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 	pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JL_CHK( JL_JsvalToNative(cx, *vp, &pv->position) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &pv->position) );
 
 	pv->position = JL_MINMAX(pv->position, 0, sqlite3_blob_bytes(pv->pBlob));
 
@@ -284,7 +287,10 @@ DEFINE_CONSTRUCTOR() {
 	DatabasePrivate *pv = NULL;
 	JLData fileName;
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_CONSTRUCTING();
+
+	{
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	//	int isThreadSafe = sqlite3_threadsafe();
@@ -318,6 +324,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_SetPrivate(obj, pv);
 	return JS_TRUE;
+	}
 
 bad:
 	if ( pv ) {
@@ -403,6 +410,7 @@ DEFINE_FUNCTION( close ) {
 
 	DatabasePrivate *pv = NULL;
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -456,6 +464,7 @@ DEFINE_FUNCTION( openBlobStream ) {
 	int flags;
 	BlobStream::Private *blobStreamPv = NULL;
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(3, 4);
@@ -559,6 +568,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( query ) {
 
 	JLData sql;
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
@@ -636,7 +646,8 @@ DEFINE_FUNCTION( exec ) {
 
 	sqlite3_stmt *pStmt = NULL;
 	// see sqlite3_exec()
-
+	
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -682,7 +693,7 @@ DEFINE_FUNCTION( exec ) {
 
 		case SQLITE_ROW:
 			//JL_CHK( SqliteColumnToJsval(cx, pStmt, 0, rval) );
-			JL_CHK( SqliteToJsval(cx, sqlite3_column_value(pStmt, 0), JL_RVAL) );
+			JL_CHK( SqliteToJsval(cx, sqlite3_column_value(pStmt, 0), *JL_RVAL) );
 			break;
 		case SQLITE_DONE: // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
 			*JL_RVAL = JSVAL_VOID;
@@ -753,7 +764,7 @@ DEFINE_PROPERTY_GETTER( changes ) {
 	// This function returns the number of database rows that were changed (or inserted or deleted) by the most recently completed INSERT, UPDATE, or DELETE statement.
 	// Only changes that are directly specified by the INSERT, UPDATE, or DELETE statement are counted. Auxiliary changes caused by triggers are not counted. Use the sqlite3_total_changes() function to find the total number of changes including changes caused by triggers.
 	//JL_NewNumberValue( cx, sqlite3_changes(db), vp );
-	*vp = INT_TO_JSVAL( sqlite3_changes(pv->db) ); // sqlite3_total_changes
+	vp.setInt32( sqlite3_changes(pv->db) ); // sqlite3_total_changes
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -770,8 +781,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( version ) {
 
-	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, sqlite3_libversion()));
-  return jl::StoreProperty(cx, obj, id, vp, true);
+	vp.setString(JS_NewStringCopyZ(cx, sqlite3_libversion()));
+	return jl::StoreProperty(cx, obj, id, vp, true);
 }
 
 /**doc
@@ -805,7 +816,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 
 	for ( int r = 0; r < sArgc; r++ ) {
 
-		if ( SqliteToJsval(cx, sArgv[r], &argv[r+1]) != JS_TRUE ) {
+		if ( SqliteToJsval(cx, sArgv[r], argv[r+1]) != JS_TRUE ) {
 
 			//sqlite3_result_error(sCx, "Invalid argument type", -1 ); // (TBD) enhance error report
 			sqlite3_result_error_code(sCx, SQLITE_MISMATCH); // (TBD) check this
@@ -863,7 +874,6 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 				break;
 			}
 			// else:
-		case JSTYPE_XML:
 		case JSTYPE_FUNCTION: // (TBD) call the function and pass its result to SQLite ?
 		case JSTYPE_STRING: {
 
@@ -901,7 +911,7 @@ DEFINE_SET_PROPERTY() {
 
 	JL_IGNORE( strict );
 
-	if ( JL_ValueIsCallable(cx, *vp) && JSID_IS_STRING(id) ) {
+	if ( JL_ValueIsCallable(cx, vp) && JSID_IS_STRING(id) ) {
 		
 		JL_ASSERT_THIS_INSTANCE();
 
@@ -910,14 +920,14 @@ DEFINE_SET_PROPERTY() {
 
 		FunctionPrivate *fpv = (FunctionPrivate*)jl_malloc(sizeof(FunctionPrivate));
 		JL_ASSERT_ALLOC(fpv);
-		fpv->fval = *vp;
+		fpv->fval = *vp.address();
 		fpv->obj = obj;
 		fpv->dbpv = dbpv;
 		
 		// sArgc: If this parameter is -1, then the SQL function or aggregate may take any number of arguments between 0 and the limit set by sqlite3_limit(SQLITE_LIMIT_FUNCTION_ARG).
 //		int status = sqlite3_create_function(dbpv->db, fName, JS_GetFunctionArity(fun), SQLITE_ANY /*SQLITE_UTF8*/, (void*)fpv, sqlite_function_call, NULL, NULL);
 		// if ( sqlite3_create_function16(dbpv->db, JS_GetStringChars(JSID_TO_STRING(id)), JS_GetFunctionArity(JS_ValueToFunction(cx, *vp)), SQLITE_UTF16, (void*)fpv, sqlite_function_call, NULL, NULL) != SQLITE_OK ) {
-		if ( sqlite3_create_function16(dbpv->db, JS_GetStringCharsZ(cx, JSID_TO_STRING(id)), JS_GetFunctionArity(JS_ValueToFunction(cx, *vp)), SQLITE_UTF16, (void*)fpv, sqlite_function_call, NULL, NULL) != SQLITE_OK ) {
+		if ( sqlite3_create_function16(dbpv->db, JS_GetStringCharsZ(cx, JSID_TO_STRING(id)), JS_GetFunctionArity(JS_ValueToFunction(cx, vp)), SQLITE_UTF16, (void*)fpv, sqlite_function_call, NULL, NULL) != SQLITE_OK ) {
 			
 			jl_free(fpv);
 			JL_CHK( SqliteThrowError(cx, dbpv->db) );

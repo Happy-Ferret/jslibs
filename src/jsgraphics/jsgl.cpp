@@ -1634,7 +1634,7 @@ DEFINE_FUNCTION( texEnv ) {
 	JL_ASSERT_ARGC_MIN( 3 ); // at least
 	ASSERT( argc-2 < COUNTOF(params) );
 	for ( unsigned int i = 2; i < argc; ++i )
-		JL_JsvalToNative(cx, JL_ARGV[i], &params[i-2]);
+		JL_JsvalToNative(cx, JL_ARG(i+1), &params[i-2]);
 
 	glTexEnvfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_ERR_CHK;
 
@@ -1692,7 +1692,7 @@ DEFINE_FUNCTION( texGen ) {
 	JL_ASSERT_ARGC_MIN( 3 ); // at least
 	ASSERT( argc-2 < COUNTOF(params) );
 	for ( unsigned int i = 2; i < argc; ++i )
-		JL_JsvalToNative(cx, JL_ARGV[i], &params[i-2]);
+		JL_JsvalToNative(cx, JL_ARG(i+1), &params[i-2]);
 
 	glTexGendv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_ERR_CHK;
 
@@ -1928,7 +1928,7 @@ DEFINE_FUNCTION( light ) {
 	JL_ASSERT_ARGC_MIN( 3 ); // at least
 	ASSERT( argc-2 < COUNTOF(params) );
 	for ( unsigned int i = 2; i < argc; ++i )
-		JL_JsvalToNative(cx, JL_ARGV[i], &params[i-2]);
+		JL_JsvalToNative(cx, JL_ARG(i+1), &params[i-2]);
 	glLightfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_ERR_CHK;
 	return JS_TRUE;
 	JL_BAD;
@@ -2092,7 +2092,7 @@ DEFINE_FUNCTION( material ) {
 	JL_ASSERT_ARGC_MIN( 3 ); // at least
 	ASSERT( argc-2 < COUNTOF(params) );
 	for ( unsigned int i = 2; i < argc; ++i )
-		JL_JsvalToNative(cx, JL_ARGV[i], &params[i-2]);
+		JL_JsvalToNative(cx, JL_ARG(i+1), &params[i-2]);
 	glMaterialfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_ERR_CHK;
 	;
 	return JS_TRUE;
@@ -2117,7 +2117,7 @@ DEFINE_FUNCTION( enable ) {
 	for ( unsigned i = 0; i < JL_ARGC; ++i ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(i+1);
-		glEnable( JSVAL_TO_INT(JL_ARGV[i]) );  OGL_ERR_CHK;
+		glEnable( JSVAL_TO_INT(JL_ARG(i+1)) );  OGL_ERR_CHK;
 	}
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -2142,7 +2142,7 @@ DEFINE_FUNCTION( disable ) {
 	for ( unsigned i = 0; i < JL_ARGC; ++i ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(i+1);
-		glDisable( JSVAL_TO_INT(JL_ARGV[i]) );  OGL_ERR_CHK;
+		glDisable( JSVAL_TO_INT(JL_ARG(i+1)) );  OGL_ERR_CHK;
 	}
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -3602,7 +3602,7 @@ DEFINE_FUNCTION( hasExtensionProc ) {
 	void *procAddr;
 	for ( unsigned i = 0; i < JL_ARGC; ++i ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &procName) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(i+1), &procName) );
 		procAddr = glGetProcAddress(procName);
 		if ( procAddr == NULL ) {
 
@@ -3640,7 +3640,7 @@ DEFINE_FUNCTION( hasExtensionName ) {
 //		const char *name;
 //		unsigned int nameLength;
 //		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARGV[i], &name, &nameLength) );
-		JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &name) );
+		JL_CHK( JL_JsvalToNative(cx, JL_ARG(i+1), &name) );
 
 		const char *pos = strstr(extensions, name);
 		if ( pos == NULL || ( pos[name.Length()] != ' ' && pos[name.Length()] != '\0' ) ) {

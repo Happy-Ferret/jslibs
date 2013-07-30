@@ -120,11 +120,11 @@ DEFINE_PROPERTY_GETTER( const ) {
 	JL_IGNORE( id );
 
 	JL_GetReservedSlot(  obj, SLOT_SQLITE_ERROR_CODE, vp );
-	if ( JSVAL_IS_VOID(*vp) )
+	if ( vp.isUndefined() )
 		return JS_TRUE;
-	int errorCode = JSVAL_TO_INT(*vp);
+	int errorCode = vp.toInt32();
 	JSString *str = JS_NewStringCopyZ( cx, SqliteConstString(errorCode) );
-	*vp = STRING_TO_JSVAL( str );
+	vp.setString( str );
 	return JS_TRUE;
 }
 
@@ -143,14 +143,21 @@ DEFINE_FUNCTION( toString ) {
 
 	JL_IGNORE( argc );
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
-	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
+	
+	JS::RootedObject hobj(cx, obj);
+	JS::RootedValue hrval(cx, *JL_RVAL);
+
+	return _textGetter(cx, hobj, JS::JSID_EMPTYHANDLE, &hrval);
+	JL_BAD;
 }
 
 
 
 DEFINE_FUNCTION( _serialize ) {
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_TYPE( jl::JsvalIsSerializer(cx, JL_ARG(1)), 1, "Serializer" );
@@ -162,9 +169,9 @@ DEFINE_FUNCTION( _serialize ) {
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, lineNumber), JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_SQLITE_ERROR_CODE, JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_SQLITE_ERROR_CODE, *JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_SQLITE_ERROR_TEXT, JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_SQLITE_ERROR_TEXT, *JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 
 	return JS_TRUE;
@@ -174,6 +181,7 @@ DEFINE_FUNCTION( _serialize ) {
 
 DEFINE_FUNCTION( _unserialize ) {
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_TYPE( jl::JsvalIsUnserializer(cx, JL_ARG(1)), 1, "Unserializer" );

@@ -60,6 +60,7 @@ ADD_DOC(isCallable, "boolean isCallable(value)", "returns true if the value can 
 
 DEFINE_FUNCTION( isCallable ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
 
 	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_ValueIsCallable(cx, JL_ARG(1)) );
@@ -89,6 +90,7 @@ ADD_DOC(stringify, "string|ArrayBuffer stringify(value [, toArrayBuffer])", "con
 
 DEFINE_FUNCTION( stringify ) {
 
+	JL_DEFINE_ARGS;
 	JLData str;
 
 	if ( JL_ARGC == 1 && JSVAL_IS_STRING(JL_ARG(1)) ) { // identity
@@ -183,6 +185,8 @@ $TOC_MEMBER $INAME
 ADD_DOC( join, "string|ArrayBuffer join(iterableObject [,toArrayBuffer])", "joins data" )
 DEFINE_FUNCTION( join ) {
 
+	JL_DEFINE_ARGS;
+
 	js::AutoValueVector avr(cx);
 	avr.reserve(16);
 
@@ -271,6 +275,8 @@ $TOC_MEMBER $INAME
 
 ADD_DOC( indexOf, "string|ArrayBuffer indexOf(data, pattern [,startIndex = 0])", "" );
 DEFINE_FUNCTION( indexOf ) {
+
+	JL_DEFINE_ARGS;
 
 	JLData srcStr, patStr;
 	uint32_t start;
@@ -362,6 +368,7 @@ JLThreadFuncDecl ProcessEventThread( void *data ) {
 
 DEFINE_FUNCTION( processEvents ) {
 
+	JL_DEFINE_ARGS;
 	int st;
 	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, jslangModuleId);
 
@@ -379,9 +386,9 @@ DEFINE_FUNCTION( processEvents ) {
 	unsigned int i;
 	for ( i = 0; i < argc; ++i ) {
 
-		JL_ASSERT_ARG_TYPE( IsHandle(cx, JL_ARGV[i]), i+1, "(pev) Handle" );
-		JL_ASSERT_ARG_TYPE( IsHandleType(cx, JSVAL_TO_OBJECT(JL_ARGV[i]), jl::CastCStrToUint32("pev")), i+1, "(pev) Handle" );
-		ProcessEvent *pe = (ProcessEvent*)GetHandlePrivate(cx, JL_ARGV[i]);
+		JL_ASSERT_ARG_TYPE( IsHandle(cx, JL_ARG(i+1)), i+1, "(pev) Handle" );
+		JL_ASSERT_ARG_TYPE( IsHandleType(cx, JSVAL_TO_OBJECT(JL_ARG(i+1)), jl::CastCStrToUint32("pev")), i+1, "(pev) Handle" );
+		ProcessEvent *pe = (ProcessEvent*)GetHandlePrivate(cx, JL_ARG(i+1));
 		JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_STATE ); //JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_ANINVALID, E_NAME("pev Handle") );
 
 		ASSERT( pe->prepareWait );
@@ -389,7 +396,7 @@ DEFINE_FUNCTION( processEvents ) {
 		ASSERT( pe->cancelWait );
 		ASSERT( pe->endWait );
 
-		JL_CHK( pe->prepareWait(pe, cx, JSVAL_TO_OBJECT(JL_ARGV[i])) );
+		JL_CHK( pe->prepareWait(pe, cx, JSVAL_TO_OBJECT(JL_ARG(i+1))) );
 
 		peList[i] = pe;
 	}
@@ -474,7 +481,7 @@ DEFINE_FUNCTION( processEvents ) {
 			JS_ClearPendingException(cx);
 		}
 
-		if ( pe->endWait(pe, &hasEvent, cx, JSVAL_TO_OBJECT(JL_ARGV[i])) != JS_TRUE )
+		if ( pe->endWait(pe, &hasEvent, cx, JSVAL_TO_OBJECT(JL_ARG(i+1))) != JS_TRUE )
 			ok = JS_FALSE; // report errors later
 
 		if ( exState )
@@ -590,6 +597,7 @@ static void TimeoutFinalize( void* data ) {
 
 DEFINE_FUNCTION( timeoutEvents ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	uint32_t timeout;
@@ -928,7 +936,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 
 
-#if defined(DEBUG) // || 1
+#if defined(DEBUG)  //   || 1
 #define JSLANG_TEST 
 #endif
 
@@ -970,10 +978,41 @@ struct Test1 : public TestIf {
 
 
 DEFINE_FUNCTION( jslangTest ) {
-	
+
 	JL_IGNORE(cx, argc, vp);
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
+
+	__asm { int 3 }
+
+	JS::RootedValue test1(cx);
+	__asm { nop }
+	jsval v1 = test1;
+	__asm { nop }
+	test1 = v1;
+
+	__asm { nop }
+
+	JS::MutableHandleValue test2(&test1);
+	__asm { nop }
+	jsval v2 = test2;
+	__asm { nop }
+	test2.set(v2);
+	
+	JS::HandleValue test3(test2);
+	jsval v3 = test3;
+	JL_IGNORE(v3);
+
+	struct { void operator()(JS::MutableHandleValue m1) {
+		
+		JL_IGNORE(m1);
+	} } cl1;
+
+	cl1(test2);
+
+	args.rval().set(test3);
+
 
 
 

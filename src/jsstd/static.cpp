@@ -70,32 +70,36 @@ typedef struct {
 	JSString *root;
 } ExpandChunk;
 
+
+
+
 DEFINE_FUNCTION( expand ) {
+
+	JL_DEFINE_ARGS;
 
 	// look at jslang: ::join()
 
 	jl::Stack<ExpandChunk, jl::StaticAllocMedium> stack;
 	JLData srcStr;
-	jsval value;
-	JSObject *mapObj;
-	jsval *mapFct;
-
+	bool hasMapFct;
+	JS::RootedValue value(cx);
+	
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &srcStr) );
 
-	mapObj = NULL;
-	mapFct = NULL;
-	
-	if ( JL_ARG_ISDEF(2) ) {
-	
-		if ( JL_ValueIsCallable(cx, JL_ARG(2)) )
-			mapFct = &JL_ARG(2);
-		else
-		if ( !JSVAL_IS_PRIMITIVE(JL_ARG(2)) )
-			mapObj = JSVAL_TO_OBJECT(JL_ARG(2));
+	JS::Value &mapVal = args[1];
+
+
+	if ( JL_ValueIsCallable(cx, mapVal) ) {
+			
+		hasMapFct = true;
+	} else {
+
+		hasMapFct = false;
 	}
+	
 
 	ptrdiff_t total;
 
@@ -141,16 +145,16 @@ DEFINE_FUNCTION( expand ) {
 
 				txt = keyEnd+1;
 				
-				if ( mapObj ) {
 
-					JL_CHK( JS_GetUCProperty(cx, mapObj, key, keyEnd - key, &value) );
-				} else
-				if ( mapFct ) {
+				if ( hasMapFct ) {
 
 					JL_CHK( JL_NativeToJsval(cx, key, keyEnd - key, value) );
-					JL_CHK( JS_CallFunctionValue(cx, obj, *mapFct, 1, &value, &value) );
-				} else {
+					JL_CHK( JS_CallFunctionValue(cx, obj, args[1], 1, value.address(), value.address()) );
+				} else if ( args[1].isObject() ) {
 
+					JL_CHK( JS_GetUCProperty(cx, &args[1].toObject(), key, keyEnd - key, value.address()) );
+				} else {
+					
 					continue;
 				}
 
@@ -198,7 +202,7 @@ assemble:
 	JSString *jsstr;
 	jsstr = JL_NewUCString(cx, res, total);
 	JL_CHK( jsstr );
-	*JL_RVAL = STRING_TO_JSVAL( jsstr );
+	args.rval().setString(jsstr);
 
 	return JS_TRUE;
 
@@ -258,6 +262,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( switchCase ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE( 3, 4 );
 	JL_ASSERT_ARG_IS_ARRAY(2);
 	JL_ASSERT_ARG_IS_ARRAY(3);
@@ -293,6 +298,8 @@ $TOC_MEMBER $INAME
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
 DEFINE_FUNCTION( internString ) {
 	
+	JL_DEFINE_ARGS;
+	
 	JL_ASSERT_ARGC(1);
 
 	JSString *str;
@@ -326,6 +333,8 @@ $TOC_MEMBER $INAME
 }}}
 **/
 DEFINE_FUNCTION( deepFreezeObject ) {
+	
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -344,6 +353,8 @@ $TOC_MEMBER $INAME
   Returns the number of own properties of an object.
 **/
 DEFINE_FUNCTION( countProperties ) {
+
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -377,6 +388,8 @@ $TOC_MEMBER $INAME
   }}}
 **/
 DEFINE_FUNCTION( clearObject ) {
+
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
@@ -481,6 +494,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( warning ) {
 
+	JL_DEFINE_ARGS;
+
 	JLData str;
 	JL_ASSERT_ARGC(1);
 
@@ -514,6 +529,8 @@ DEFINE_FUNCTION( assert ) {
 	if ( !JL_IS_SAFE )
 		return JS_TRUE;
 
+	JL_DEFINE_ARGS;
+
 	JL_ASSERT_ARGC_RANGE(1,2);
 
 	// see. js_DecompileValueGenerator  (http://infomonkey.cdleary.com/questions/144/how-to-get-the-script-text-code-at-runtime)
@@ -545,6 +562,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( collectGarbage ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_IGNORE(argc);
 
 	size_t gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES);
@@ -562,6 +581,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( maybeCollectGarbage ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_IGNORE(argc);
 
 	size_t gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES);
@@ -578,6 +599,8 @@ $TOC_MEMBER $INAME
   Suspends the execution of the current program during _time_ milliseconds. If _accurate_ is true, the precision of the pause is preferred to the performance of the function (CPU usage).
 **/
 DEFINE_FUNCTION( sleep ) {
+
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 	
@@ -627,6 +650,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( timeCounter ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_IGNORE(argc);
 	return JL_NativeToJsval(cx, jl::AccurateTimeCounter(), *JL_RVAL);
 }
@@ -644,6 +669,8 @@ $TOC_MEMBER $INAME
   }}}
 **/
 DEFINE_FUNCTION( stringRepeat ) {
+
+	JL_DEFINE_ARGS;
 
 	JLData str;
 
@@ -728,13 +755,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( print ) {
 
+	JL_DEFINE_ARGS;
+
 	// print() => host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
 
 	jsval fval;
 	JL_CHK( JS_GetPropertyById(cx, JL_GetHostPrivate(cx)->hostObject, JLID(cx, stdout), &fval) );
 	*JL_RVAL = JSVAL_VOID;
 	if (likely( JL_ValueIsCallable(cx, fval) ))
-		return JS_CallFunctionValue(cx, JL_GetGlobal(cx), fval, JL_ARGC, JL_ARGV, &fval);
+		return JS_CallFunctionValue(cx, JL_GetGlobal(cx), fval, JL_ARGC, JS_ARGV(cx,vp), &fval);
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -758,6 +787,8 @@ $TOC_MEMBER $INAME
 // function copied from mozilla/js/src/js.c
 DEFINE_FUNCTION( exec ) {
 
+	JL_DEFINE_ARGS;
+
 	JLData fileName;
 //	JSObject *scriptObjRoot;
 	
@@ -765,7 +796,7 @@ DEFINE_FUNCTION( exec ) {
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	bool useAndSaveCompiledScripts;
-	useAndSaveCompiledScripts = !JL_ARG_ISDEF(2) || JL_ARG(2) == JSVAL_TRUE;
+	useAndSaveCompiledScripts = !JL_ARG_ISDEF(2) || *JL_ARG(2).address() == JSVAL_TRUE;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &fileName) );
 
 	JSScript *script;
@@ -958,15 +989,17 @@ JLThreadFuncDecl SandboxWatchDogThreadProc(void *threadArg) {
 
 JSBool SandboxQueryFunction(JSContext *cx, unsigned argc, jsval *vp) {
 
+	JL_DEFINE_ARGS;
+
 	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(cx);
 	if ( JSVAL_IS_VOID( pv->queryFunctionValue ) ) {
 
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL->setUndefined();
 	} else {
 
 		JSObject *obj = JS_THIS_OBJECT(cx, vp);
 		JL_CHK( obj );
-		JL_CHK( JS_CallFunctionValue(cx, obj, pv->queryFunctionValue, JL_ARGC, JL_ARGV, JL_RVAL) );
+		JL_CHK( JS_CallFunctionValue(cx, obj, pv->queryFunctionValue, JL_ARGC, JS_ARGV(cx,vp), JL_RVAL) );
 		JL_CHKM( JSVAL_IS_PRIMITIVE(*JL_RVAL), E_RETURNVALUE, E_TYPE, E_TY_PRIMITIVE );
 	}
 	return JS_TRUE;
@@ -974,6 +1007,8 @@ JSBool SandboxQueryFunction(JSContext *cx, unsigned argc, jsval *vp) {
 }
 
 DEFINE_FUNCTION( sandboxEval ) {
+
+	JL_DEFINE_ARGS;
 
 	SandboxContextPrivate pv;
 
@@ -1189,6 +1224,8 @@ $TOC_MEMBER $INAME
   }}}
 **/
 DEFINE_FUNCTION( isStatementValid ) {
+
+	JL_DEFINE_ARGS;
 
 	JLData str;
 	JL_DEFINE_FUNCTION_OBJ;

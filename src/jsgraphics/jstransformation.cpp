@@ -136,7 +136,7 @@ DEFINE_CONSTRUCTOR() {
 			
 			float *tmp = (float*)&pv->mat->raw;
 			for ( int i = 0; i < 16; ++i )
-				JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], (tmp++)) );
+				JL_CHK( JL_JsvalToNative(cx, JL_ARG(i+1), (tmp++)) );
 			// see JL_CHK( JL_JsvalToNativeVector(cx, *JL_ARGV, tmp, 16, &len) );
 			pv->isIdentity = false;
 		} else {
@@ -200,7 +200,7 @@ DEFINE_FUNCTION( load ) {
 		
 		float *tmp = (float*)&pv->mat->raw;
 		for ( int i = 0; i < 16; ++i )
-			JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], (tmp++)) );
+			JL_CHK( JL_JsvalToNative(cx, JL_ARG(i+1), (tmp++)) );
 		// see JL_CHK( JL_JsvalToNativeVector(cx, *JL_ARGV, tmp, 16, &len) );
 		pv->isIdentity = false;
 	} else {

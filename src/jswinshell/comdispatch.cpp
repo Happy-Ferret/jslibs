@@ -58,7 +58,7 @@ JSBool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 	for ( unsigned i = 0; i < argc; ++i ) {
 
 		VariantInit(&params.rgvarg[i]);
-		JL_CHK( JsvalToVariant(cx, JL_ARGV[i], &params.rgvarg[i]) );
+		JL_CHK( JsvalToVariant(cx, JL_ARG(i+1), &params.rgvarg[i]) );
 	}
 
 	VARIANT *result = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
@@ -283,6 +283,7 @@ DEFINE_FUNCTION( functionList ) {
 
 	ITypeInfo *pTypeinfo = NULL;
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
@@ -335,6 +336,19 @@ bad:
 	if ( pTypeinfo != NULL )
 		pTypeinfo->Release();
 	return JS_FALSE;
+}
+
+
+DEFINE_FUNCTION( equals ) {
+
+	JL_DEFINE_ARGS;
+	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_ARGC(1);
+
+	JL_RVAL->setBoolean(JL_ARG(1).isObject() && &JL_ARG(1).toObject() == obj);
+	
+	return JS_TRUE;
+
 }
 
 
@@ -393,7 +407,7 @@ bad:
 	return NULL;
 }
 
-
+/*
 DEFINE_EQUALITY_OP() {
 
 	JL_IGNORE(cx);
@@ -401,6 +415,7 @@ DEFINE_EQUALITY_OP() {
 	*bp = v->isObject() && ( &v->toObject() == obj );
 	return JS_TRUE;
 }
+*/
 
 /*
 DEFINE_HAS_INSTANCE() {
@@ -409,6 +424,7 @@ DEFINE_HAS_INSTANCE() {
 	return JS_TRUE;
 }
 */
+
 
 CONFIGURE_CLASS
 	REVISION(jl::SvnRevToInt("$Revision: 2555 $"))
@@ -419,10 +435,11 @@ CONFIGURE_CLASS
 	HAS_GET_PROPERTY
 	HAS_SET_PROPERTY
 	HAS_ITERATOR_OBJECT
-	HAS_EQUALITY_OP
+//	HAS_EQUALITY_OP
 
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( functionList )
+		FUNCTION( equals )
 	END_STATIC_FUNCTION_SPEC
 
 END_CLASS
@@ -436,4 +453,5 @@ JSBool NewComDispatch( JSContext *cx, IDispatch *pdisp, jsval &rval ) {
 	JL_SetPrivate( varObj, pdisp);
 	pdisp->AddRef();
 	return JS_TRUE;
+	JL_BAD;
 }

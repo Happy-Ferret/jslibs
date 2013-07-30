@@ -453,6 +453,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( stdout ) {
 
+	JL_DEFINE_ARGS;
 	*JL_RVAL = JSVAL_VOID;
 	JLData str;
 	HostPrivate *hpv = JL_GetHostPrivate(cx);
@@ -460,7 +461,7 @@ DEFINE_FUNCTION( stdout ) {
 
 		for ( unsigned i = 0; i < argc; ++i ) {
 
-			JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
+			JL_CHK( JL_JsvalToNative(cx, JL_ARG(i+1), &str) );
 			int status = hpv->hostStdOut(hpv->privateData, str.GetConstStr(), str.Length());
 			JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdout"), E_WRITE );
 		}
@@ -476,6 +477,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( stderr ) {
 
+	JL_DEFINE_ARGS;
 	*JL_RVAL = JSVAL_VOID;
 	JLData str;
 	HostPrivate *hpv = JL_GetHostPrivate(cx);
@@ -483,7 +485,7 @@ DEFINE_FUNCTION( stderr ) {
 
 		for ( unsigned i = 0; i < argc; ++i ) {
 
-			JL_CHK( JL_JsvalToNative(cx, JL_ARGV[i], &str) );
+			JL_CHK( JL_JsvalToNative(cx, JL_ARG(i+1), &str) );
 			int status = hpv->hostStdErr(hpv->privateData, str.GetConstStr(), str.Length());
 			JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stderr"), E_WRITE );
 		}
@@ -498,7 +500,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( stdin ) {
 
-	JL_IGNORE( argc );
+	JL_DEFINE_ARGS;
 
 	HostPrivate *hpv = JL_GetHostPrivate(cx);
 	if (likely( hpv != NULL && hpv->hostStdIn != NULL )) {
@@ -533,6 +535,7 @@ DEFINE_FUNCTION( loadModule ) {
 	JLLibraryHandler module = JLDynamicLibraryNullHandler;
 	JLData str;
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(1);
 

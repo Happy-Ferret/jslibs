@@ -47,7 +47,7 @@
       <Path>$(IntDir)$(ProjectName)_BuildLog.htm</Path>
     </BuildLog>
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <ProgramDataBaseFileName>$(IntDir)$(ProjectName)_vc80.pdb</ProgramDataBaseFileName>
@@ -63,7 +63,7 @@
       <Path>$(IntDir)$(ProjectName)_BuildLog.htm</Path>
     </BuildLog>
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <ProgramDataBaseFileName>$(IntDir)$(ProjectName)_vc80.pdb</ProgramDataBaseFileName>

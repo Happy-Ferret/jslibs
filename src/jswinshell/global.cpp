@@ -43,6 +43,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( extractIcon ) {
 
 	JLData fileName;
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 
 	UINT iconIndex = 0;
@@ -122,7 +123,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( messageBox ) {
 
 	JLData caption, text;
-
+	
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 
 	UINT type = 0;
@@ -161,6 +163,7 @@ DEFINE_FUNCTION( createProcess ) {
 
 	JLData applicationName, commandLine, environment, currentDirectory;
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 
 	if ( JL_ARG_ISDEF(1) )

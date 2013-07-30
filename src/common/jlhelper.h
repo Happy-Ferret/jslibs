@@ -29,9 +29,7 @@
 
 #include <jsapi.h>
 #include <jsfriendapi.h>
-#include <jsdbgapi.h>
-//#include "jsatom.h"
-
+#include <jsdbgapi.h> // JS_GetScriptVersion, JS_GetScriptFilename, JS_GetScriptFilename
 #include "polyfill.h"
 
 #ifdef _MSC_VER
@@ -275,11 +273,7 @@ JL_SetElement(JSContext *cx, JSObject *obj, unsigned index, IN JS::Value &vp) {
 
 template <class T>
 ALWAYS_INLINE JSBool FASTCALL
-JL_GetReservedSlot(JSObject *obj, uint32_t slot, T &vp);
-
-template <>
-ALWAYS_INLINE JSBool FASTCALL
-JL_GetReservedSlot<JS::MutableHandleValue>(JSObject *obj, uint32_t slot, JS::MutableHandleValue &vp) {
+JL_GetReservedSlot(JSObject *obj, uint32_t slot, T &vp) {
 
 	ASSERT( slot < JSCLASS_RESERVED_SLOTS(JL_GetClass(obj)) );
 	ASSERT( JS_IsNative(obj) );
@@ -393,28 +387,60 @@ JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
 
 #define JL_BAD bad:return(JS_FALSE)
 
-#define JL_ARGC (argc)
+#ifndef USE_JSHANDLES
 
-// returns the ARGument Vector
-#define JL_ARGV (JS_ARGV(cx,vp))
+	#define JL_ARGC (argc)
 
-// returns the ARGument n
-#define JL_ARG( n ) (ASSERT((n) > 0 && (unsigned)(n) <= JL_ARGC), JL_ARGV[(n)-1])
+	// returns the ARGument Vector
+	#define JL_ARGV (JS_ARGV(cx,vp))
 
-// returns the ARGument n or undefined if it does not exist
-#define JL_SARG( n ) (JL_ARGC >= (n) ? JL_ARG(n) : JSVAL_VOID)
+	// returns the ARGument n
+	#define JL_ARG( n ) (ASSERT((n) > 0 && (unsigned)(n) <= JL_ARGC), JL_ARGV[(n)-1])
 
-// returns true if the ARGument n IS DEFined
-#define JL_ARG_ISDEF( n ) (JL_ARGC >= (n) && !JSVAL_IS_VOID(JL_ARG(n)))
+	// returns the ARGument n or undefined if it does not exist
+	#define JL_SARG( n ) (JL_ARGC >= (n) ? JL_ARG(n) : JSVAL_VOID)
 
-// is the current obj (this)
-#define JL_OBJ (obj)
+	// returns true if the ARGument n IS DEFined
+	#define JL_ARG_ISDEF( n ) (JL_ARGC >= (n) && !JSVAL_IS_VOID(JL_ARG(n)))
 
-// is the current obj (this) as a JS::Value. if this method returns null, an error has occurred and must be propagated or caught.
-#define JL_OBJVAL (argc, JS_THIS(cx, vp))
+	// is the current obj (this)
+	#define JL_OBJ (obj)
+
+	// is the current obj (this) as a JS::Value. if this method returns null, an error has occurred and must be propagated or caught.
+	#define JL_OBJVAL (argc, JS_THIS(cx, vp))
+
+	// the return value
+	#define JL_RVAL (&JS_RVAL(cx, vp))
+
+
+#else // USE_JSHANDLES
+
+	#define JL_ARGC (args.length())
+
+	// returns the ARGument Vector
+//	#define JL_ARGV (JS_ARGV(cx,vp))
+
+	// returns the ARGument n
+	#define JL_ARG( n ) (ASSERT((n) > 0 && (unsigned)(n) <= JL_ARGC), args.handleAt((n)-1))
+
+	// returns the ARGument n or undefined if it does not exist
+	#define JL_SARG( n ) (args.handleOrUndefinedAt((n)-1))
+
+	// returns true if the ARGument n IS DEFined
+	#define JL_ARG_ISDEF( n ) (args.hasDefined((n)-1))
 
 // the return value
-#define JL_RVAL (&JS_RVAL(cx, vp))
+	#define JL_RVAL (args.rval().address())
+
+	// is the current obj (this)
+	#define JL_OBJ (obj)
+
+	// is the current obj (this) as a JS::Value. if this method returns null, an error has occurred and must be propagated or caught.
+	#define JL_OBJVAL (argc, JS_THIS(cx, vp))
+
+
+#endif // USE_JSHANDLES
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -816,6 +842,8 @@ JL_ConstructObject( JSContext *cx, JSObject *proto, unsigned argc, JS::Value *ar
 }
 
 
+#ifndef USE_JSHANDLES
+
 ALWAYS_INLINE JSObject* FASTCALL
 JL_NewObjectWithGivenProto( JSContext *cx, JSClass *clasp, JSObject *proto, JSObject *parent ) {
 
@@ -826,6 +854,19 @@ JL_NewObjectWithGivenProto( JSContext *cx, JSClass *clasp, JSObject *proto, JSOb
 	return obj;
 }
 
+#else // USE_JSHANDLES
+
+ALWAYS_INLINE JSObject* FASTCALL
+JL_NewObjectWithGivenProto( JSContext *cx, JSClass *clasp, JSObject *proto, JSObject *parent ) {
+
+	ASSERT_IF( proto != NULL, JL_GetParent(cx, proto) != NULL );
+	// Doc. JS_NewObject, JL_NewObjectWithGivenProto behaves exactly the same, except that if proto is NULL, it creates an object with no prototype.
+	JS::RootedObject obj(cx, JS_NewObjectWithGivenProto(cx, clasp, proto, parent));  // (TBD) test if parent is ok (see bug 688510)
+	ASSERT( JL_GetParent(cx, obj) != NULL );
+	return obj;
+}
+
+#endif // USE_JSHANDLES
 
 ALWAYS_INLINE JSObject* FASTCALL
 JL_NewProtolessObj( JSContext *cx ) {
@@ -858,15 +899,15 @@ JL_NewJslibsObject( JSContext *cx, const char *className ) {
 }
 
 
+#ifndef USE_JSHANDLES
+
 #define JL_DEFINE_FUNCTION_OBJ \
 	JSObject *obj = JS_THIS_OBJECT(cx, vp); \
-	JL_CHK( obj ); \
-
+	JL_CHK( obj );
 
 #define JL_DEFINE_CALL_FUNCTION_OBJ \
 	JSObject *obj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp)); \
 	ASSERT( obj ); \
-
 
 namespace jlpv {
 	
@@ -880,12 +921,48 @@ namespace jlpv {
 	}
 }
 
+#else // USE_JSHANDLES
+
+#define JL_DEFINE_ARGS \
+	JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
+
+#define JL_DEFINE_FUNCTION_OBJ \
+	ASSERT( !JS_IsConstructing(cx, vp) ); \
+	JS::RootedObject obj(cx, args.computeThis(cx).toObjectOrNull());
+
+#define JL_DEFINE_CALL_FUNCTION_OBJ \
+	JSObject *obj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp));
+
+namespace jlpv {
+	
+	ALWAYS_INLINE JSObject *
+	CreateConstructorObject(JSContext *cx, JSClass *clasp, JSObject *proto, JS::CallArgs &args) {
+
+		JSObject *obj = JL_NewObjectWithGivenProto(cx, clasp, proto, NULL);
+		if ( obj != NULL )
+			args.rval().setObject(*obj);
+		return obj;
+	}
+}
+
+#endif // USE_JSHANDLES
+
+
+
 // Initialise 'this' object (obj variable) for constructors native functions ( support constructing and non-constructing form, eg. |Stream()| and  |new Stream()| ).
 // If JL_THIS_CLASS or JL_THIS_CLASS_PROTOTYPE are not available, use JS_NewObjectForConstructor(cx, vp) instead.
+#ifndef USE_JSHANDLES
+
 #define JL_DEFINE_CONSTRUCTOR_OBJ \
 	JSObject *obj; \
 	obj = jlpv::CreateConstructorObject(cx, JL_THIS_CLASS, JL_THIS_CLASS_PROTOTYPE, vp)
 
+#else // USE_JSHANDLES
+
+#define JL_DEFINE_CONSTRUCTOR_OBJ \
+	JS::RootedObject obj(cx, jlpv::CreateConstructorObject(cx, JL_THIS_CLASS, JL_THIS_CLASS_PROTOTYPE, args));
+
+#endif // USE_JSHANDLES
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1164,17 +1241,19 @@ JL_ObjectIsCallable( JSContext *cx, JSObject *obj ) {
 	return JS_ObjectIsCallable(cx, obj) == JS_TRUE;
 }
 
+template <class T>
 ALWAYS_INLINE bool FASTCALL
-JL_ValueIsCallable( JSContext *cx, JS::Value &val ) {
+JL_ValueIsCallable( JSContext *cx, const T &value ) {
 
-	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsCallable(cx, JSVAL_TO_OBJECT(val));
+	return !value.isPrimitive() && JL_ObjectIsCallable(cx, &value.toObject());
 }
 
+template <class T>
 ALWAYS_INLINE bool FASTCALL
-JL_ValueIsClass( const JS::Value &val, const JSClass *jsClass ) {
+JL_ValueIsClass( const T &val, const JSClass *jsClass ) {
 	
 	ASSERT( jsClass != NULL );
-	return !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == jsClass;
+	return !val.isPrimitive() && JL_GetClass(&val.toObject()) == jsClass;
 }
 
 ALWAYS_INLINE bool FASTCALL
@@ -1387,6 +1466,7 @@ enum E_TXTID {
 
 // obj
 
+// note: If JS_IsConstructing is true, JS_THIS must not be used, the constructor should construct and return a new object.
 #define JL_ASSERT_CONSTRUCTING() \
 	JL_ASSERT( (JL_ARGC, JS_IsConstructing(cx, vp)), E_THISOBJ, E_CONSTRUCT )
 
@@ -1943,7 +2023,7 @@ JL_JsvalToNative( JSContext *cx, const JS::Value &val, JLData *str ) {
 
 template <class T>
 ALWAYS_INLINE JSBool FASTCALL
-JL_NativeToJsval( JSContext *cx, JLData &cval, T &vp, bool toArrayBuffer ) {
+JL_NativeToJsval( JSContext *cx, JLData &cval, T &vp, bool toArrayBuffer = true ) {
 
 	return toArrayBuffer ? cval.GetJSString(cx, &vp) : cval.GetArrayBuffer(cx, &vp);
 }
@@ -3279,6 +3359,7 @@ ALWAYS_INLINE uint8_t* FASTCALL
 JL_ChangeBufferLength( JSContext *cx, JS::Value *vp, size_t nbytes ) {
 
 	// need to create a new buffer because ArrayBuffer does not support realloc nor length changing, then we copy it in a new one.
+	// see JS_ReallocateArrayBufferContents
 
 	ASSERT( vp->isObject() );
 	JSObject *arrayBufferObj = JSVAL_TO_OBJECT(*vp);
@@ -4195,9 +4276,10 @@ ALWAYS_INLINE const T
 GetNativeInterface( JSContext *cx, JSObject *obj, const jsid &id ) {
 
 	ASSERT( id != jspv::NullJsid() );
-	JSPropertyDescriptor desc;
-	if ( JS_GetPropertyDescriptorById(cx, obj, id, 0, &desc) )
-		return desc.obj == obj && desc.setter != JS_StrictPropertyStub ? (const T)desc.setter : NULL; // is JS_PropertyStub when eg. Stringify({_NI_BufferGet:function() {} })
+	//JSPropertyDescriptor desc;
+	JS::Rooted<JSPropertyDescriptor> desc(cx);
+	if ( JS_GetPropertyDescriptorById(cx, obj, id, 0, desc.address()) )
+		return desc.object() == obj && desc.setter() != JS_StrictPropertyStub ? (const T)desc.setter() : NULL; // is JS_PropertyStub when eg. Stringify({_NI_BufferGet:function() {} })
 	return NULL;
 }
 

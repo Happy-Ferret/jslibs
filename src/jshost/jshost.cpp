@@ -229,6 +229,8 @@ EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSOb
 JSBool
 EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
 
+	JL_DEFINE_ARGS;
+
 	JL_ASSERT_ARGC_RANGE(0, 1);
 
 	EndSignalProcessEvent *upe;

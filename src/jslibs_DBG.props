@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <_PropertySheetDisplayName>jslibs common properties</_PropertySheetDisplayName>
+    <OutDir>$(SolutionDir)..\..\$(Platform)_$(Configuration)\</OutDir>
+    <IntDir>$(Platform)_$(Configuration)\</IntDir>
+    <LinkIncremental>true</LinkIncremental>
+    <LocalDebuggerEnvironment>PATH=$(SolutionDir)..\..\libs\js\$(Platform)_$(Configuration)\dist\bin;$(SolutionDir)..\..\$(Platform)_$(Configuration)</LocalDebuggerEnvironment>
+    <LocalDebuggerCommand>$(SolutionDir)..\..\$(Platform)_$(Configuration)\jshost.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>debug.js</LocalDebuggerCommandArguments>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_USRDLL;DEBUG;JS_HASHMETER;JS_GC_ZEAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\common;..\..\libs\js\$(Platform)_$(Configuration)\dist\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MinimalRebuild>true</MinimalRebuild>
+      <ExceptionHandling>false</ExceptionHandling>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <Optimization>Disabled</Optimization>
+      <StringPooling>true</StringPooling>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <SmallerTypeCheck>true</SmallerTypeCheck>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions</EnableEnhancedInstructionSet>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>libc.lib; libcmt.lib; msvcrt.lib; libcd.lib; libcmtd.lib; %(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <AdditionalDependencies>..\..\libs\js\$(Platform)_$(Configuration)\dist\lib\mozjs-24.0a.lib;kernel32.lib;$(StopEvaluating)</AdditionalDependencies>
+
+<!--      <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary> -->
+		<ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
+
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

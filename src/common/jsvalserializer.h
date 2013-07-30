@@ -932,31 +932,34 @@ public:
 
 
 
+template <class T>
 ALWAYS_INLINE bool
-JsvalIsSerializer( JSContext *cx, jsval &val ) {
+JsvalIsSerializer( JSContext *cx, T val ) {
 
 	return JL_ValueIsClass(val, JL_GetCachedClass(JL_GetHostPrivate(cx), "Serializer"));
 }
 
+template <class T>
 ALWAYS_INLINE Serializer*
-JsvalToSerializer( JSContext *cx, jsval &val ) {
+JsvalToSerializer( JSContext *cx, T val ) {
 
 	ASSERT( jl::JsvalIsSerializer(cx, val) );
-	return static_cast<Serializer*>(JL_GetPrivate(JSVAL_TO_OBJECT(val)));
+	return static_cast<Serializer*>(JL_GetPrivate(&val.toObject()));
 }
 
-
+template <class T>
 ALWAYS_INLINE bool
-JsvalIsUnserializer( JSContext *cx, jsval &val ) {
+JsvalIsUnserializer( JSContext *cx, T val ) {
 
 	return JL_ValueIsClass(val, JL_GetCachedClass(JL_GetHostPrivate(cx), "Unserializer"));
 }
 
+template <class T>
 ALWAYS_INLINE Unserializer*
-JsvalToUnserializer( JSContext *cx, jsval &val ) {
+JsvalToUnserializer( JSContext *cx, T val ) {
 	
 	ASSERT( jl::JsvalIsUnserializer(cx, val) );
-	return static_cast<Unserializer*>(JL_GetPrivate(JSVAL_TO_OBJECT(val)));
+	return static_cast<Unserializer*>(JL_GetPrivate(&val.toObject()));
 }
 
 JL_END_NAMESPACE

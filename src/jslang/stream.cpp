@@ -28,27 +28,30 @@ BEGIN_CLASS( Stream )
 
 
 ALWAYS_INLINE JSBool
-GetStreamSource(JSContext *, JSObject *obj, JSObject **srcObj) {
+GetStreamSource(JSContext *cx, JS::HandleObject obj, JS::MutableHandleObject srcObj) {
 
-	jsval val;
+	JS::RootedValue val(cx);
+
 	JL_CHK( JL_GetReservedSlot(obj, SLOT_STREAM_SOURCE, val) );
 	ASSERT( val.isObject() );
-	*srcObj = JSVAL_TO_OBJECT( val );
+	srcObj.set( &val.toObject() );
 	return JS_TRUE;
 	JL_BAD;
 }
 
 ALWAYS_INLINE JSBool
-SetStreamSource(JSContext *cx, JSObject *obj, jsval *srcVal) {
+SetStreamSource(JSContext *cx, JS::HandleObject obj, JS::HandleValue srcVal) {
 
-	if ( JSVAL_IS_PRIMITIVE( *srcVal ) ) {
+	if ( srcVal.isPrimitive() ) {
 
-		JSObject *tmpObj;
-		JL_CHK( JS_ValueToObject(cx, *srcVal, &tmpObj) );
-		*srcVal = OBJECT_TO_JSVAL(tmpObj);
+		JS::RootedObject tmpObj(cx);
+		JL_CHK( JS_ValueToObject(cx, srcVal, tmpObj.address()) );
+		JL_CHK( JL_SetReservedSlot( obj, SLOT_STREAM_SOURCE, OBJECT_TO_JSVAL(tmpObj) ) );
+	} else {
+
+		JL_CHK( JL_SetReservedSlot( obj, SLOT_STREAM_SOURCE, srcVal) );
 	}
 
-	JL_CHK( JL_SetReservedSlot( obj, SLOT_STREAM_SOURCE, *srcVal) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -71,10 +74,10 @@ GetPosition(JSContext *cx, JSObject *obj, size_t *position) {
 
 
 ALWAYS_INLINE JSBool
-GetAvailable(JSContext *cx, JSObject *obj, size_t *available) {
+GetAvailable(JSContext *cx, JS::HandleObject obj, size_t *available) {
 
 	size_t position, length;
-	JSObject *srcObj;
+	JS::RootedObject srcObj(cx);
 	JL_CHK( GetPosition(cx, obj, &position) );
 	JL_CHK( GetStreamSource(cx, obj, &srcObj) );
 
@@ -145,12 +148,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JL_DEFINE_ARGS;
+	
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	// JL_ASSERT_CONSTRUCTING(); // supports this form (w/o new operator) : result.param1 = Blob('Hello World');
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
-	JL_CHK( SetStreamSource(cx, JL_OBJ, &JL_ARG(1)) );
+	JL_CHK( SetStreamSource(cx, JL_OBJ, JL_ARG(1)) );
 	JL_CHK( SetPosition(cx, JL_OBJ, 0) );
 	JL_CHK( SetStreamReadInterface(cx, JL_OBJ, StreamRead) );
 
@@ -167,7 +172,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( read ) {
 
 	uint8_t *buffer = NULL;
-
+	
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(0, 1);
