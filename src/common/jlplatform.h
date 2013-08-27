@@ -25,6 +25,9 @@
 #define JL_STRINGIFY(x) #x
 #define JL_TOSTRING(x) JL_STRINGIFY(x)
 
+#define JL__CONCAT(X,Y) X##Y
+#define JL_CONCAT(X,Y) JL__CONCAT(X,Y)
+
 
 // from jstypes.h
 #define JL_MACRO_BEGIN do {
@@ -545,7 +548,29 @@ JL_AssertFailure( const char *message, const char *location ) {
 ///////////////////////////////////////////////////////////////////////////////
 // Platform tools
 
+
 /* SFINAE
+
+1/ has member function
+
+template <typename Type>
+class HasGetter {
+   class yes { char m; };
+   class no { yes m[2]; };
+   struct BaseMixin { void Getter(){} };
+   struct Base : public Type, public BaseMixin {};
+   template <typename T, T t>  class Helper{};
+   template <typename U>
+   static no deduce(U*, Helper<void (BaseMixin::*)(), &U::Getter>* = 0);
+   static yes deduce(...);
+public:
+   static const bool result = sizeof(yes) == sizeof(deduce((Base*)(0)));
+};
+
+---
+
+2/ has member variable
+
 template<typename T>
 struct HasX {
 	struct Fallback {

@@ -400,6 +400,7 @@ int main_depstring(int argc, char* argv[]) {
 	
 	((jschar*)data)[0] = L('Y');
 
+	JL_IGNORE(tmp);
 
 
 
@@ -436,6 +437,8 @@ int main_arraylike(int argc, char* argv[]) {
 	JSString *s = JS_NewStringCopyZ(cx, (const char *)L("hello"));
 
 	JSBool tmp = JSVAL_IS_PRIMITIVE(STRING_TO_JSVAL(s));
+
+	JL_IGNORE(err, tmp);
 
 
 	return EXIT_SUCCESS;
@@ -496,6 +499,8 @@ __declspec(noinline) int main_fastcall(int argc, char* argv[]) {
             x = NOIL(func2)(cx, o, i);
 
 	printf("_stdcall: %d\n", clock() - t);
+
+	JL_IGNORE(tmp);
 
 	//printf("%d", x);
     return 0;
@@ -576,6 +581,7 @@ int main_PerfTest(int argc, char* argv[]) {
 	jsval v;
 
 	bool b = NOIL(test_perf)(v);
+	JL_IGNORE(b);
 	
 	//class JSString * JS_ValueToString(struct JSContext *,class JS::Value) => ?JS_ValueToString@@YAPAVJSString@@PAUJSContext@@VValue@JS@@@Z
 	//JS_ValueToString
@@ -781,8 +787,145 @@ int main_test_call(int argc, char* argv[]) {
 }
 
 
+
+
+
+/*
+class NPropertySet {
+
+	DLLLOCAL static NPropertySet *last;
+	NPropertySet *prev_;
+
+public:
+	JSNative native_;
+	const char *name_;
+	unsigned argcMin_;
+	unsigned argcMax_;
+	NPropertySet(JSNative native, const char *name, unsigned argcMin = 0, unsigned argcMax = -1)
+	: native_(native), name_(name), argcMin_(argcMin), argcMax_(argcMax != -1 ? argcMax : 7) {
+
+		prev_ = NPropertySet::last;
+		NPropertySet::last = this;
+	}
+
+	static bool Register( JSContext *cx, JS::MutableHandleObject obj ) {
+
+		for ( NPropertySet *it = NPropertySet::last; it; it = it->prev_ ) {
+
+			JS_DefineFunction(cx, obj, it->name_, it->native_, it->argcMax_, 0);
+		}
+		return true;
+	}
+};
+
+NPropertySet *NPropertySet::last = NULL;
+*/
+
+///////////
+
+
+#include "jlclass2.h"
+
+JL_CLASS( test, parentClass )
+
+	JL_HAS_PRIVATE
+
+	JL_SLOT(foo)
+	JL_SLOT(bar)
+
+	JL_CONST( foo, 1234 )
+
+
+	JL_CONSTRUCTOR() {
+	
+		return JS_TRUE;
+	}
+
+	JL_FUNCTION( fct1, 2 ) {
+
+		//JL_GetReservedSlot(
+		_slot_foo.index;
+
+		_const_foo.value;
+
+		return JS_FALSE;
+	}
+
+	JL_PROPERTY( status )
+
+		JL_GETTER() {
+
+			return JS_TRUE;
+		}
+
+
+		JL_SETTER() {
+
+			return JS_TRUE;
+		}
+
+	JL_PROPERTY_END
+
+	JL_INIT() {
+
+		return true;
+	}
+
+	// 	test::_classSpec.Register(cx, &globalObject);
+}
+
+
+
+/*
+#include "jlclass3.h"
+
+JL_CLASS( test ) {
+
+	JL_FUNCTION( fct1, 2 ) {
+
+		return JS_FALSE;
+	}
+
+
+	static JSBool _fct1(JSContext *cx, unsigned argc, JS::Value *vp);
+
+	jl3::jl_defClass::FunctionItem fct1_(_fct1, "fct1");
+
+	static JSBool _fct1(JSContext *cx, unsigned argc, JS::Value *vp) {
+
+
+		return JS_TRUE;
+	}
+};
+*/
+
+
+int main_test_class2(int argc, char* argv[]) {
+
+	JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
+	JSContext *cx = JS_NewContext(rt, 8192L);
+	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &global_class, NULL));
+	JS_InitStandardClasses(cx, globalObject);
+
+	
+	test::_classSpec.Register(cx, &globalObject);
+	
+
+	JS_DestroyContext(cx);
+	JS_DestroyRuntime(rt);
+	
+	JS_ShutDown();
+
+	return EXIT_SUCCESS;
+}
+
+	
+
+
+
 int main(int argc, char* argv[]) {
 
+	return main_test_class2(argc, argv);
 	//return main_PerfTest(argc, argv);
-	return main_test_call(argc, argv);
+	//return main_test_call(argc, argv);
 }

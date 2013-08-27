@@ -977,8 +977,9 @@ struct Test1 : public TestIf {
 };
 
 
-DEFINE_FUNCTION( jslangTest ) {
 
+DEFINE_FUNCTION( jslangTest ) {
+	
 	JL_IGNORE(cx, argc, vp);
 
 	JL_DEFINE_ARGS;
@@ -1137,6 +1138,103 @@ DEFINE_FUNCTION( jslangTest ) {
 
 
 
+
+#include "jlclass3.h"
+
+
+/*
+STATIC_CLASS()
+
+	JL_FUNCTION( xxx, 2 ) {
+
+
+		return JS_FALSE;
+	}
+
+
+CLASS_END
+
+
+
+CLASS( test )
+
+//	JL_PROTOTYPE( pTest )
+
+
+	JL_HAS_PRIVATE
+
+	JL_SLOT(foo)
+	JL_SLOT(bar)
+
+	JL_CONST( fooInt, 1234 )
+	JL_CONST( fooDbl, 1234.5 )
+
+	JL_CONSTRUCTOR() {
+	
+		return JS_TRUE;
+	}
+
+	JL_FUNCTION( fct1, 2 ) {
+
+		//JL_GetReservedSlot(
+		_slot_foo.index;
+		printf("const:%d\n", _const_fooInt.value);
+		return JS_FALSE;
+	}
+
+
+
+	JL_PROPERTY( status )
+
+		JL_GETTER() {
+
+			return JS_TRUE;
+		}
+
+		JL_SETTER() {
+
+			return JS_TRUE;
+		}
+	JL_PROPERTY_END
+
+
+
+	JL_PROPERTY( status1 )
+
+		JL_GETTER() {
+
+			return JS_TRUE;
+		}
+
+	JL_PROPERTY_END
+
+	JL_INIT() {
+
+		return true;
+	}
+
+CLASS_END
+
+*/
+
+
+////
+
+
+DEFINE_INIT() {
+
+	JS::RootedObject robj(cx, JL_GetGlobal(cx));
+
+	REGISTER_STATIC();
+	
+//	JL_CHK( _static::_classSpec.Register(cx, &robj) );
+
+	return JS_TRUE;
+	JL_BAD;
+}
+
+
+
 /**qa
 	if ( '_jsapiTests' in global )
 		_jsapiTests();
@@ -1157,6 +1255,8 @@ DEFINE_FUNCTION( jslangTest ) {
 **/
 
 CONFIGURE_STATIC
+
+	HAS_INIT
 
 //	REVISION(jl::SvnRevToInt("$Revision$")) // avoid to set a sourceId property to the global context.
 	BEGIN_STATIC_FUNCTION_SPEC
@@ -1181,3 +1281,138 @@ CONFIGURE_STATIC
 	END_STATIC_FUNCTION_SPEC
 
 END_STATIC
+
+
+
+
+
+STATIC_CLASS() {
+
+	REV(jl::SvnRevToInt("$Revision$"))
+
+/*
+	//IS_UNCONSTRUCTABLE
+	PROTO( Handle )
+	JL_HAS_PRIVATE
+	SLOT(bar)
+	SLOT(foo)
+
+	CONSTRUCTOR( 1 ) {
+
+		return JS_TRUE;
+	}
+
+	FINALIZE_RET() {
+	
+		return true;
+	}
+
+*/
+	
+	//DOC(".state is the state of the system");
+	STATIC_PROP {
+		NAME( state )
+		GET() {
+
+//			printf("%d\n", SLOT_INDEX(foo));
+			return JS_TRUE;
+		}
+	}
+
+	//DOC(".status is a status prop");
+	PROP {
+		NAME( status )
+		SET() {
+		
+			return JS_TRUE;
+		}
+	}
+
+	PROP {
+		NAME( status0 )
+		GET() {
+		
+			return JS_TRUE;
+		}
+	}
+
+	enum { status2, status3, status4 };
+
+	PROP {
+		NAME_ID( status2 )
+		NAME_ID( status3 )
+		NAME_ID( status4 )
+
+		GET() {
+			return JS_TRUE;
+		}
+
+		SET() {
+			return JS_TRUE;
+		}
+	}
+
+
+	FUNC( xxx ) {
+
+		_asm { int 3 }
+		
+
+		JS::CallArgs args;
+		args = JS::CallArgsFromVp(argc, vp);
+
+
+		//JSObject *o = &args.computeThis(cx).toObject();
+
+/*
+		struct obj {
+			obj(JSContext *cx, unsigned argc, JS::Value *vp) {
+
+			}
+
+			JSObject *operator()() {
+			
+			return NULL;
+		}} obj(cx,;
+		
+		obj();
+*/
+
+
+		return JS_TRUE;
+	}
+
+	FUNC( fct3 ) {
+
+		FUNC_HELPER {
+
+
+		}
+		
+		return JS_TRUE;
+	}
+
+	STATIC_FUNC( fct2, 1 ) {
+
+		return JS_TRUE;
+	}
+
+
+	CONSTANT_NAME( const1, 1234.5 )
+
+	#define MY_CONST 789
+	CONSTANT( MY_CONST )
+
+	ITERATOR() {
+	
+		JS::RootedObject o(cx);
+		return o;
+	}
+
+	INIT() {
+
+		return true;
+	}
+
+}
+

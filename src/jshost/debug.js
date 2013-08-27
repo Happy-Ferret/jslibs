@@ -9,9 +9,11 @@ var loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
 
 
-host.stdout( 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' );
+xxx();
 
-jslangTest();
+//host.stdout( 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' );
+
+jslangTest2();
 
 throw 0;
 

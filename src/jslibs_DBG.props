@@ -1,5 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
     <_PropertySheetDisplayName>jslibs common properties</_PropertySheetDisplayName>
@@ -36,10 +37,8 @@
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>libc.lib; libcmt.lib; msvcrt.lib; libcd.lib; libcmtd.lib; %(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalDependencies>..\..\libs\js\$(Platform)_$(Configuration)\dist\lib\mozjs-24.0a.lib;kernel32.lib;$(StopEvaluating)</AdditionalDependencies>
-
-<!--      <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary> -->
-		<ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
-
+      <!--      <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary> -->
+      <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
     </Link>
   </ItemDefinitionGroup>
 </Project>
