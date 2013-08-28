@@ -503,6 +503,7 @@ enum {
 	JLID_SPEC( available ),
 	JLID_SPEC( data ),
 	JLID_SPEC( type ),
+	JLID_SPEC( doc ),
 
 	LAST_JSID // see HostPrivate::ids[]
 };

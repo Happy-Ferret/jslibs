@@ -18,21 +18,64 @@ namespace jl3 { //JL_BEGIN_NAMESPACE
 
 struct Class;
 
+struct Doc {
+	const char *_description;
+	const char *_name;
+	enum Type { typeUnknown, typeModule, typeClass, typeStaticClass, typeFunction, typeProperty, typeConst } _type;
+	//Doc *_prev;
+
+	// creates a pending doc item
+	Doc(const char *txt)
+	: _description(txt) {
+
+		pendingDoc = this;
+	}
+
+	// get the ownership of the pending doc item
+	Doc() {
+
+		if ( pendingDoc ) {
+
+			*this = *pendingDoc;
+			pendingDoc = NULL;
+		}
+	}
+
+	void SetName(const char *name) {
+
+		_name = name;
+	}
+
+	void SetType(Type type) {
+
+		_type = type;
+	}
+
+private:
+	static const Doc *pendingDoc;
+};
+
+const Doc *Doc::pendingDoc = NULL;
+
 
 struct ConstLink {
 	ConstLink *_prev;
 	const char *name;
 	const JS::Value value;
+	Doc doc;
 
 	ConstLink(ConstLink *&last, const char *name, const JS::Value &value)
-	: _prev(last), name(name), value(value) {
+	: _prev(last), name(name), value(value), doc() {
 		
 		last = this;
+		
+		doc.SetName(name);
+		doc.SetType(Doc::typeConst);
 	}
 
 	bool Register( JSContext *cx, JS::MutableHandleObject obj ) {
 
-		for ( ConstLink *it = this; it; it = it->_prev ) {
+		for ( const ConstLink *it = this; it; it = it->_prev ) {
 
 			JL_CHK( JS_DefineProperty(cx, obj, it->name, it->value, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 		}
@@ -64,11 +107,14 @@ struct NameLink {
 	NameLink *_prev;
 	const char *name;
 	const int8_t tinyid;
+	Doc doc;
 
-	NameLink(NameLink *&last, const char *name, int8_t tinyid = noTinyId )
-	: _prev(last), name(name), tinyid(tinyid) {
+	NameLink(NameLink *&last, const char *name, int8_t tinyid = noTinyId)
+	: _prev(last), name(name), tinyid(tinyid), doc() {
 
 		last = this;
+
+		doc.SetName(name);
 	}
 
 private:
@@ -91,15 +137,20 @@ struct PropLink {
 
 	bool Register( JSContext *cx, JS::MutableHandleObject obj ) {
 
-		for ( PropLink *it = this; it; it = it->_prev ) {
+		for ( const PropLink *it = this; it; it = it->_prev ) {
 
 			unsigned attrs = JSPROP_PERMANENT | JSPROP_SHARED | ( it->setter ? 0 : JSPROP_READONLY ); // https://developer.mozilla.org/en-US/docs/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
 			for ( NameLink *nameIt = it->nameLink; nameIt; nameIt = nameIt->_prev ) {
+
+				nameIt->doc.SetType(Doc::typeProperty);
 				
-				if ( nameIt->tinyid == NameLink::noTinyId )
+				if ( nameIt->tinyid == NameLink::noTinyId ) {
+
 					JL_CHK( JS_DefineProperty(cx, obj, nameIt->name, JSVAL_VOID, it->getter, it->setter, attrs) );
-				else
+				} else {
+
 					JL_CHK( JS_DefinePropertyWithTinyId(cx, obj, nameIt->name, nameIt->tinyid, JSVAL_VOID, it->getter, it->setter, attrs) );
+				}
 			}
 		}
 		return true;
@@ -119,16 +170,20 @@ struct FuncLink {
 	const char *name;
 	const unsigned argcMin;
 	const unsigned argcMax;
+	Doc doc;
 
 	FuncLink(FuncLink *&last, JSNative native, const char *name = NULL, unsigned argcMin = 0, unsigned argcMax = 4)
-	: _prev(last), native(native), name(name), argcMin(argcMin), argcMax(argcMin > argcMax ? argcMin : argcMax) {
+	: _prev(last), native(native), name(name), argcMin(argcMin), argcMax(argcMin > argcMax ? argcMin : argcMax), doc() {
 
 		last = this;
+
+		doc.SetName(name);
+		doc.SetType(Doc::typeFunction);
 	}
 
 	bool Register( JSContext *cx, JS::MutableHandleObject obj ) {
 
-		for ( FuncLink *it = this; it; it = it->_prev ) {
+		for ( const FuncLink *it = this; it; it = it->_prev ) {
 
 			JL_CHK( JS_DefineFunction(cx, obj, it->name, it->native, it->argcMax, 0) );
 		}
@@ -160,9 +215,10 @@ struct Class {
 	ClassInit_t init;
 	const double buildDate;
 	SourceId_t sourceId;
+	Doc doc;
 
 	Class(const char *className = NULL)
-	: constructor(NULL), funcLink(NULL), staticFuncLink(NULL), propLink(NULL), staticPropLink(NULL), staticConstLink(NULL), reservedSlotCount(0), init(NULL), buildDate((double)__DATE__EPOCH * 1000), sourceId(0) {
+	: constructor(NULL), funcLink(NULL), staticFuncLink(NULL), propLink(NULL), staticPropLink(NULL), staticConstLink(NULL), reservedSlotCount(0), init(NULL), buildDate((double)__DATE__EPOCH * 1000), sourceId(0), doc() {
 
 		clasp.addProperty = JS_PropertyStub;
 		clasp.delProperty = JS_DeletePropertyStub;
@@ -174,6 +230,9 @@ struct Class {
 
 		clasp.name = className;
 		clasp.flags = 0;
+		
+		doc.SetName(className);
+		doc.SetType(className ? Doc::typeClass : Doc::typeStaticClass);
 	}
 
 	bool Register( JSContext *cx, JS::MutableHandleObject obj ) {
@@ -236,10 +295,14 @@ struct Class {
 		
 			JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _sourceId), JS::NumberValue(sourceId), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 			JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _buildDate), JS::NumberValue(buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+			
+			//JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _doc), ..., NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 		}
 
-		if ( init )
+		if ( init ) {
+
 			JL_CHK( init(cx, this, proto, ctor) );
+		}
 
 		return true;
 		bad: return false;
@@ -281,15 +344,17 @@ JSBool Unconstructible(JSContext *cx, unsigned argc, JS::Value *vp) {
 	namespace CLASSNAME
 
 
+#define STATIC_CLASS_NAME _static
+
 #define STATIC_CLASS(...) \
-	namespace _static { \
+	namespace STATIC_CLASS_NAME { \
 		static jl3::Class _class; \
 	} \
-	bool Register__static( JSContext *cx, JSObject *obj ) { \
+	bool Register_##STATIC_CLASS_NAME( JSContext *cx, JSObject *obj ) { \
 		JS::RootedObject rootedObj(cx, obj); \
-		return _static::_class.Register(cx, &rootedObj, ##__VA_ARGS__); \
+		return STATIC_CLASS_NAME::_class.Register(cx, &rootedObj, ##__VA_ARGS__); \
 	}; \
-	namespace _static
+	namespace STATIC_CLASS_NAME
 
 
 #define REGISTER_CLASS(CLASSNAME) \
@@ -298,8 +363,8 @@ JSBool Unconstructible(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 
 #define REGISTER_STATIC() \
-	bool Register__static( JSContext *cx, JSObject *obj ); \
-	JL_CHK( Register__static(cx, obj) );
+	bool Register_##STATIC_CLASS_NAME( JSContext *cx, JSObject *obj ); \
+	JL_CHK( Register_##STATIC_CLASS_NAME(cx, obj) );
 
 
 #define REV(NUMBER) \
@@ -354,9 +419,6 @@ JSBool Unconstructible(JSContext *cx, unsigned argc, JS::Value *vp) {
 	__STATIC_PROP(JL_CONCAT(prop, __COUNTER__))
 
 
-#define PROP_END \
-	}
-
 
 #define GET(...) \
 	static JSBool getter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp); \
@@ -379,7 +441,7 @@ JSBool Unconstructible(JSContext *cx, unsigned argc, JS::Value *vp) {
 	static JSBool _##NAME(JSContext *cx, unsigned argc, JS::Value *vp)
 
 
-#define MAKE_UNCONSTRUCTIBLE \
+#define UNCONSTRUCTIBLE \
 	const jl3::FuncLink constructor_(_class.constructor, jl3::Unconstructible, NULL);
 
 #define CONSTRUCTOR(...) \
@@ -421,7 +483,7 @@ JSBool Unconstructible(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 
 #define DOC(TEXT) \
-	static _pendingDoc = TEXT;
+	jl3::Doc JL_CONCAT(__doc, __COUNTER__)(TEXT);
 
 /*
 #define HAS_ADD_PROPERTY cs.clasp.addProperty = AddProperty;

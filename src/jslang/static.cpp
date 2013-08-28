@@ -1285,7 +1285,7 @@ END_STATIC
 
 
 
-
+DOC("static class has a lot of static mumbers")
 STATIC_CLASS() {
 
 	REV(jl::SvnRevToInt("$Revision$"))
@@ -1311,6 +1311,7 @@ STATIC_CLASS() {
 	
 	//DOC(".state is the state of the system");
 	STATIC_PROP {
+		DOC("state property is cool")
 		NAME( state )
 		GET() {
 
@@ -1321,6 +1322,7 @@ STATIC_CLASS() {
 
 	//DOC(".status is a status prop");
 	PROP {
+		DOC("status doc ...")
 		NAME( status )
 		SET() {
 		
@@ -1329,6 +1331,7 @@ STATIC_CLASS() {
 	}
 
 	PROP {
+		DOC("status0 doc ...")
 		NAME( status0 )
 		GET() {
 		
@@ -1339,8 +1342,13 @@ STATIC_CLASS() {
 	enum { status2, status3, status4 };
 
 	PROP {
+		DOC("status2 is a property")
 		NAME_ID( status2 )
+		
+		DOC("status3 is a property")
 		NAME_ID( status3 )
+		
+		DOC("status4 is a property")
 		NAME_ID( status4 )
 
 		GET() {
@@ -1352,10 +1360,10 @@ STATIC_CLASS() {
 		}
 	}
 
-
+	DOC("xxx is a test function")
 	FUNC( xxx ) {
 
-		_asm { int 3 }
+//		_asm { int 3 }
 		
 
 		JS::CallArgs args;
@@ -1382,6 +1390,7 @@ STATIC_CLASS() {
 		return JS_TRUE;
 	}
 
+	DOC("fct3 is a nice function")
 	FUNC( fct3 ) {
 
 		FUNC_HELPER {
@@ -1392,14 +1401,20 @@ STATIC_CLASS() {
 		return JS_TRUE;
 	}
 
+
+	DOC("this is a function that is named 'fct2', call it like this: fct2()");
 	STATIC_FUNC( fct2, 1 ) {
 
 		return JS_TRUE;
 	}
 
-
+	DOC("const1 is a constant value\n")
+	DOC("const1 is a constant value\n"
+		"this is a 2nd line"
+	)
 	CONSTANT_NAME( const1, 1234.5 )
 
+	DOC("MY_CONST is another constant")
 	#define MY_CONST 789
 	CONSTANT( MY_CONST )
 
