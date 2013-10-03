@@ -1,0 +1,179 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_SSE2|Win32">
+      <Configuration>Release_SSE2</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_SSE|Win32">
+      <Configuration>Release_SSE</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{3A214E06-B95E-4D61-A291-1F8DF2EC10FD}</ProjectGuid>
+    <RootNamespace>libvorbis</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_SSE2|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_SSE|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_SSE2|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_SSE|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)$(IntDir)</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)$(IntDir)</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_SSE|Win32'">$(ProjectDir)$(IntDir)</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_SSE2|Win32'">$(ProjectDir)$(IntDir)</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>src\include;..\libogg\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBVORBIS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(TargetPath)</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>src\include;..\libogg\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBVORBIS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CompileAs>CompileAsC</CompileAs>
+      <DisableSpecificWarnings>4244;4100;4267;4189;4305;4127;4706;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(TargetPath)</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_SSE|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>src\include;..\libogg\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBVORBIS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions</EnableEnhancedInstructionSet>
+      <CompileAs>CompileAsC</CompileAs>
+      <DisableSpecificWarnings>4244;4100;4267;4189;4305;4127;4706;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(TargetPath)</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_SSE2|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>src\include;..\libogg\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBVORBIS_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <CompileAs>CompileAsC</CompileAs>
+      <DisableSpecificWarnings>4244;4100;4267;4189;4305;4127;4706;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(TargetPath)</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\lib\analysis.c" />
+    <ClCompile Include="src\lib\bitrate.c" />
+    <ClCompile Include="src\lib\block.c" />
+    <ClCompile Include="src\lib\codebook.c" />
+    <ClCompile Include="src\lib\envelope.c" />
+    <ClCompile Include="src\lib\floor0.c" />
+    <ClCompile Include="src\lib\floor1.c" />
+    <ClCompile Include="src\lib\info.c" />
+    <ClCompile Include="src\lib\lookup.c" />
+    <ClCompile Include="src\lib\lpc.c" />
+    <ClCompile Include="src\lib\lsp.c" />
+    <ClCompile Include="src\lib\mapping0.c" />
+    <ClCompile Include="src\lib\mdct.c" />
+    <ClCompile Include="src\lib\psy.c" />
+    <ClCompile Include="src\lib\registry.c" />
+    <ClCompile Include="src\lib\res0.c" />
+    <ClCompile Include="src\lib\sharedbook.c" />
+    <ClCompile Include="src\lib\smallft.c" />
+    <ClCompile Include="src\lib\synthesis.c" />
+    <ClCompile Include="src\lib\vorbisenc.c" />
+    <ClCompile Include="src\lib\window.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\lib\backends.h" />
+    <ClInclude Include="src\lib\bitrate.h" />
+    <ClInclude Include="src\lib\codebook.h" />
+    <ClInclude Include="src\include\vorbis\codec.h" />
+    <ClInclude Include="src\lib\codec_internal.h" />
+    <ClInclude Include="src\lib\envelope.h" />
+    <ClInclude Include="src\lib\modes\floor_all.h" />
+    <ClInclude Include="src\lib\books\floor\floor_books.h" />
+    <ClInclude Include="src\lib\highlevel.h" />
+    <ClInclude Include="src\lib\lookup.h" />
+    <ClInclude Include="src\lib\lookup_data.h" />
+    <ClInclude Include="src\lib\lpc.h" />
+    <ClInclude Include="src\lib\lsp.h" />
+    <ClInclude Include="src\lib\masking.h" />
+    <ClInclude Include="src\lib\mdct.h" />
+    <ClInclude Include="src\lib\misc.h" />
+    <ClInclude Include="src\lib\os.h" />
+    <ClInclude Include="src\lib\psy.h" />
+    <ClInclude Include="src\lib\modes\psych_11.h" />
+    <ClInclude Include="src\lib\modes\psych_16.h" />
+    <ClInclude Include="src\lib\modes\psych_44.h" />
+    <ClInclude Include="src\lib\modes\psych_8.h" />
+    <ClInclude Include="src\lib\registry.h" />
+    <ClInclude Include="src\lib\books\coupled\res_books_stereo.h" />
+    <ClInclude Include="src\lib\books\uncoupled\res_books_uncoupled.h" />
+    <ClInclude Include="src\lib\modes\residue_16.h" />
+    <ClInclude Include="src\lib\modes\residue_44.h" />
+    <ClInclude Include="src\lib\modes\residue_44u.h" />
+    <ClInclude Include="src\lib\modes\residue_8.h" />
+    <ClInclude Include="src\lib\scales.h" />
+    <ClInclude Include="src\lib\modes\setup_11.h" />
+    <ClInclude Include="src\lib\modes\setup_16.h" />
+    <ClInclude Include="src\lib\modes\setup_22.h" />
+    <ClInclude Include="src\lib\modes\setup_32.h" />
+    <ClInclude Include="src\lib\modes\setup_44.h" />
+    <ClInclude Include="src\lib\modes\setup_44u.h" />
+    <ClInclude Include="src\lib\modes\setup_8.h" />
+    <ClInclude Include="src\lib\modes\setup_X.h" />
+    <ClInclude Include="src\lib\smallft.h" />
+    <ClInclude Include="src\include\vorbis\vorbisenc.h" />
+    <ClInclude Include="src\include\vorbis\vorbisfile.h" />
+    <ClInclude Include="src\lib\window.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

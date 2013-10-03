@@ -8,15 +8,17 @@ MFLAGS = $(MFLAGS) /MDd /GF /arch:SSE /GR-
 MFLAGS = $(MFLAGS) /MD /MP /Ox /Ob2 /Oi /Ot /Oy /GL /GF /FD /GS- /Gy /arch:SSE /GR- /Zi
 !ENDIF
 
+.\src\config.h:
+	copy /Y .\src\config.h.msvc .\src\config.h
+
 clean::
 	cd .\src && $(MAKE) -f Makefile.msvc NO_NLS=1 MFLAGS="$(MFLAGS)" distclean
 	-del .\src\config.h
-	-cd "$(OUTDIR)" && del iconv.lib
-	-cd "$(OUTDIR)" && del charset.lib
+	-cd $(OUTDIR) && del iconv.lib
+	-cd $(OUTDIR) && del charset.lib
 	
-all::
-	copy /Y .\src\config.h.msvc .\src\config.h
+all:: .\src\config.h
 	cd .\src && $(MAKE) -f Makefile.msvc NO_NLS=1 MFLAGS="$(MFLAGS)"
-	-mkdir "$(OUTDIR)"
-	copy /Y .\src\lib\iconv.lib "$(OUTDIR)"
-	copy /Y .\src\libcharset\lib\charset.lib "$(OUTDIR)"
+	-mkdir $(OUTDIR)
+	copy /Y .\src\lib\iconv.lib $(OUTDIR)
+	copy /Y .\src\libcharset\lib\charset.lib $(OUTDIR)
