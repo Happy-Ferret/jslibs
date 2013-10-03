@@ -82,6 +82,7 @@ DEFINE_FUNCTION( free ) {
 		jl_free(data);
 	}
 	return JS_TRUE;
+	JL_BAD;
 }
 
 DEFINE_FUNCTION( trim ) {

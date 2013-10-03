@@ -11,16 +11,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F432DBF2-5EF1-4EE9-A98D-03CD47287C11}</ProjectGuid>
-    <RootNamespace>jslang</RootNamespace>
+    <ProjectGuid>{D88ADD70-0B15-44EB-AF06-DB2B2E410A83}</ProjectGuid>
+    <RootNamespace>jstemplate</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -35,33 +35,43 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">
-    <ClCompile />
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\libs\openal\sdk\include;..\..\libs\openal\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">
-    <ClCompile />
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\libs\openal\sdk\include;..\..\libs\openal\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="handle.cpp" />
+    <ClCompile Include="buffer.cpp" />
+    <ClCompile Include="effect.cpp" />
+    <ClCompile Include="effectSlot.cpp" />
+    <ClCompile Include="error.cpp" />
+    <ClCompile Include="filter.cpp" />
+    <ClCompile Include="listener.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="serialize.cpp" />
-    <ClCompile Include="static.cpp" />
+    <ClCompile Include="oal.cpp" />
+    <ClCompile Include="oalefxapi.cpp" />
+    <ClCompile Include="source.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="stream.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="handlePub.h" />
-    <ClInclude Include="jslang.h" />
+    <ClInclude Include="error.h" />
+    <ClInclude Include="oalefxapi.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="blob_qa.js" />
-    <None Include="jslang_qa.js" />
+    <None Include="debug.js" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

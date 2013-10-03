@@ -170,6 +170,7 @@ DEFINE_FUNCTION( poll ) {
 	PRPollDesc *pollDesc = NULL;
 	jsval *props = NULL;
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE( 1, 2 );
 	JL_ASSERT_ARG_IS_ARRAY(1);
 
@@ -243,6 +244,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( intervalNow ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(0);
 
 	// (TBD) Check if it may wrap around in about 12 hours. Is it related to the data type ???
@@ -260,6 +262,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( sleep ) {
 
 	PRUint32 timeout;
+	JL_DEFINE_ARGS;
 	if ( JL_ARG_ISDEF(1) )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
 	else
@@ -281,6 +284,7 @@ DEFINE_FUNCTION( getEnv ) {
 
 	JLData name;
 	
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &name) );
@@ -339,6 +343,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getRandomNoise ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
@@ -398,6 +403,7 @@ DEFINE_FUNCTION( waitSemaphore ) {
 
 	JLData name;
 	
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	PRUintn mode;
@@ -454,6 +460,7 @@ DEFINE_FUNCTION( postSemaphore ) {
 
 	JLData name;
 	
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
 
 //	const char *name;
@@ -616,6 +623,7 @@ DEFINE_FUNCTION( availableSpace ) {
 
 	JLData path;
 	
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
 	
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &path) );
@@ -671,6 +679,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( configureSerialPort ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(1,2);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	
@@ -1053,6 +1062,7 @@ DEFINE_PROPERTY_GETTER( version ) {
 DEFINE_FUNCTION( jsioTest ) {
 
 	JL_IGNORE( argc, cx );
+	JL_DEFINE_ARGS;
 /*
 	const char **processArgv;
 

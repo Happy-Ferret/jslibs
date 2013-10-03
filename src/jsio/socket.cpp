@@ -45,8 +45,9 @@ DEFINE_CONSTRUCTOR() {
 
 	PRFileDesc *fd = NULL;
 
-	JL_ASSERT_CONSTRUCTING();
+	JL_DEFINE_ARGS;
 	JL_DEFINE_CONSTRUCTOR_OBJ;
+	JL_ASSERT_CONSTRUCTING();
 
 	int descType;
 	if ( JL_ARG_ISDEF(1) )
@@ -92,6 +93,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_SEND | else it will SHUTDOWN_BOTH
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -101,9 +103,9 @@ DEFINE_FUNCTION( shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_
 
 	PRShutdownHow how;
 	if ( JL_ARG_ISDEF(1) )
-		if ( JL_ARG(1) == JSVAL_FALSE )
+		if ( JL_ARG(1).isFalse() )
 			how = PR_SHUTDOWN_RCV;
-		else if (JL_ARG(1) == JSVAL_TRUE )
+		else if (JL_ARG(1).isTrue() )
 			how = PR_SHUTDOWN_SEND;
 		else
 			JL_ERR( E_ARG, E_NUM(1), E_INVALID );
@@ -147,6 +149,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( bind ) {
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 ); // need port number (at least)
@@ -217,6 +220,7 @@ $TOC_MEMBER $INAME
 //    Wan-Teh
 DEFINE_FUNCTION( listen ) {
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -247,6 +251,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( accept ) {
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
@@ -317,6 +322,7 @@ DEFINE_FUNCTION( connect ) {
 
 	JLData host;
 	
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(2);
@@ -388,6 +394,7 @@ DEFINE_FUNCTION( sendTo ) {
 
 	JLData host, str;
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 3 );
@@ -490,6 +497,7 @@ DEFINE_FUNCTION( recvFrom ) {
 	jsval tmp;
 	uint8_t *buffer = NULL;
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -584,6 +592,7 @@ DEFINE_FUNCTION( transmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
 	JLData headers;
 	
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(1,3);
@@ -1055,6 +1064,7 @@ DEFINE_FUNCTION( getHostsByName ) {
 
 	JLData host;
 	
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	char netdbBuf[PR_NETDB_BUF_SIZE];
@@ -1127,6 +1137,7 @@ DEFINE_FUNCTION( getHostsByAddr ) {
 	jsval tmp;
 	JLData addr;
 	
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC( 1 );
 
 	//const char *addr; // MAX_IP_STRING_LENGTH

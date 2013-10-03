@@ -41,10 +41,11 @@ DEFINE_CONSTRUCTOR() {
 	ALuint bid = 0; // The OpenAL sound buffer ID
 	JLData data;
 
+	JL_DEFINE_ARGS;
+	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_ASSERT_CONSTRUCTING();
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
-	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	int bits, rate, channels, frames;
 	data = JL_GetByteAudioObject(cx, JL_ARG(1), &bits,  &channels, &frames, &rate);
@@ -104,12 +105,13 @@ DEFINE_FUNCTION( valueOf ) {
 
 	JL_IGNORE( argc );
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
 	ALuint bid = (ALuint) JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( bid );
-	JL_CHK( JL_NativeToJsval(cx, bid, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, bid, *JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }

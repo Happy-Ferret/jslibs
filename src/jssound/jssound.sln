@@ -1,25 +1,15 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual C++ Express 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jssound", "jssound.vcproj", "{C79FB5B8-46EA-48A1-AFF1-546E92F03F12}"
-	ProjectSection(ProjectDependencies) = postProject
-		{53EC80AD-D1DC-4783-B1E9-D3E77B097BF4} = {53EC80AD-D1DC-4783-B1E9-D3E77B097BF4}
-		{69DEA591-D760-48EE-93B8-2A3DF3AB9503} = {69DEA591-D760-48EE-93B8-2A3DF3AB9503}
-	EndProjectSection
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jssound", "jssound.vcxproj", "{C79FB5B8-46EA-48A1-AFF1-546E92F03F12}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libsndfile", "..\..\libs\libsndfile\libsndfile.vcproj", "{69DEA591-D760-48EE-93B8-2A3DF3AB9503}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libsndfile", "..\..\libs\libsndfile\libsndfile.vcxproj", "{69DEA591-D760-48EE-93B8-2A3DF3AB9503}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ogg_static", "..\..\libs\libogg\libogg.vcproj", "{53EC80AD-D1DC-4783-B1E9-D3E77B097BF4}"
-	ProjectSection(ProjectDependencies) = postProject
-		{3A214E06-B95E-4D61-A291-1F8DF2EC10FD} = {3A214E06-B95E-4D61-A291-1F8DF2EC10FD}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ogg_static", "..\..\libs\libogg\libogg.vcxproj", "{53EC80AD-D1DC-4783-B1E9-D3E77B097BF4}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvorbis", "..\..\libs\libvorbis\libvorbis.vcproj", "{3A214E06-B95E-4D61-A291-1F8DF2EC10FD}"
-	ProjectSection(ProjectDependencies) = postProject
-		{CEBDE98B-A6AA-46E6-BC79-FAAF823DB9EC} = {CEBDE98B-A6AA-46E6-BC79-FAAF823DB9EC}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvorbis", "..\..\libs\libvorbis\libvorbis.vcxproj", "{3A214E06-B95E-4D61-A291-1F8DF2EC10FD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvorbisfile", "..\..\libs\libvorbis\libvorbisfile.vcproj", "{CEBDE98B-A6AA-46E6-BC79-FAAF823DB9EC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvorbisfile", "..\..\libs\libvorbis\libvorbisfile.vcxproj", "{CEBDE98B-A6AA-46E6-BC79-FAAF823DB9EC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

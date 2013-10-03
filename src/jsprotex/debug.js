@@ -1,20 +1,21 @@
 var loadModule = host.loadModule;
  //loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsprotex'); throw 0; // -inlineOnly
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsprotex'); throw 0; // -inlineOnly
+
+
+loadModule('jsprotex');
+var tmp = new Texture(10, 10, 4)
+tmp.set('red');
+halt(); //////////////////////////////////////////////////////////////////////
+
 
 loadModule('jsstd');
 loadModule('jsio');
 loadModule('jssdl');
 loadModule('jsgraphics');
-loadModule('jsprotex');
 loadModule('jsimage');
 
 
-	var tmp = new Texture(10, 10, 4)
-	tmp.set('red');
-
-
-halt(); //////////////////////////////////////////////////////////////////////
 
 
 const RED = [1,0,0,1];

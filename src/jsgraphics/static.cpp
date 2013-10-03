@@ -38,6 +38,8 @@ $TOC_MEMBER $INAME
  $ARRAY $INAME( x, y, z )
 **/
 DEFINE_FUNCTION( vec3 ) {
+
+	jl::Args args(ARGSARGS);
 	
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
@@ -69,7 +71,7 @@ DEFINE_FUNCTION( vec3 ) {
 //	else
 //		JL_ERR( E_INVALID, E_STR("vector3") );
 
-	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL);
+	return JL_NativeVectorToJsval(cx, v.raw, 3, *JL_RVAL);
 	JL_BAD;
 }
 
@@ -85,6 +87,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( vec3Length ) {
 	
+	jl::Args args(ARGSARGS);
+
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
 	uint32_t len, len2;
@@ -116,7 +120,7 @@ DEFINE_FUNCTION( vec3Length ) {
 //	else
 //		JL_ERR( E_INVALID, E_STR("vector3") );
 
-	return JL_NativeToJsval(cx, Vector3Length(&v), JL_RVAL);
+	return JL_NativeToJsval(cx, Vector3Length(&v), *JL_RVAL);
 	JL_BAD;
 }
 
@@ -141,6 +145,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( vec3Normalize ) {
 	
+	jl::Args args(ARGSARGS);
+
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	Vector3 v;
@@ -153,7 +159,7 @@ DEFINE_FUNCTION( vec3Normalize ) {
 
 	bool hasDest = JL_ARG_ISDEF(2);
 	*JL_RVAL = JL_ARG(hasDest ? 2 : 1);
-	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
+	return JL_NativeVectorToJsval(cx, v.raw, 3, *JL_RVAL, true);
 	JL_BAD;
 }
 
@@ -167,6 +173,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( vec3Add ) {
 	
+	jl::Args args(ARGSARGS);
+
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
 	Vector3 v, v2;
@@ -181,7 +189,7 @@ DEFINE_FUNCTION( vec3Add ) {
 
 	bool hasDest = JL_ARG_ISDEF(3);
 	*JL_RVAL = JL_ARG(hasDest ? 3 : 1);
-	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
+	return JL_NativeVectorToJsval(cx, v.raw, 3, *JL_RVAL, true);
 	JL_BAD;
 }
 
@@ -195,6 +203,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( vec3Sub ) {
 	
+	jl::Args args(ARGSARGS);
+
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
 	Vector3 v, v2;
@@ -209,7 +219,7 @@ DEFINE_FUNCTION( vec3Sub ) {
 
 	bool hasDest = JL_ARG_ISDEF(3);
 	*JL_RVAL = JL_ARG(hasDest ? 3 : 1);
-	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
+	return JL_NativeVectorToJsval(cx, v.raw, 3, *JL_RVAL, true);
 	JL_BAD;
 }
 
@@ -223,6 +233,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( vec3Cross ) {
 	
+	jl::Args args(ARGSARGS);
+
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
 	Vector3 v, v2;
@@ -237,7 +249,7 @@ DEFINE_FUNCTION( vec3Cross ) {
 
 	bool hasDest = JL_ARG_ISDEF(3);
 	*JL_RVAL = JL_ARG(hasDest ? 3 : 1);
-	return JL_NativeVectorToJsval(cx, v.raw, 3, JL_RVAL, true);
+	return JL_NativeVectorToJsval(cx, v.raw, 3, *JL_RVAL, true);
 	JL_BAD;
 }
 
@@ -249,6 +261,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( vec3Dot ) {
 	
+	jl::Args args(ARGSARGS);
+
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
 	Vector3 v, v2;
@@ -259,7 +273,7 @@ DEFINE_FUNCTION( vec3Dot ) {
 	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 	JL_ASSERT( len2 >= 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NVECTOR(3) );
 
-	return JL_NativeToJsval(cx, Vector3Dot(&v, &v2), JL_RVAL);
+	return JL_NativeToJsval(cx, Vector3Dot(&v, &v2), *JL_RVAL);
 	JL_BAD;
 }
 
@@ -285,6 +299,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( frustumSphere ) {
 	
+	jl::Args args(ARGSARGS);
+
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	Matrix44 tmpMat, *m = &tmpMat;
@@ -324,11 +340,11 @@ DEFINE_FUNCTION( frustumSphere ) {
 	bool hasDest = JL_ARG_ISDEF(2);
 	if ( hasDest )
 		*JL_RVAL = JL_ARG(2);
-	JL_CHK( JL_NativeVectorToJsval(cx, p1.raw, 3, JL_RVAL, hasDest) );
+	JL_CHK( JL_NativeVectorToJsval(cx, p1.raw, 3, *JL_RVAL, hasDest) );
 
 	jsval tmpVal;
-	JL_CHK( JL_NativeToJsval(cx, radius, &tmpVal) );
-	JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT(*JL_RVAL), 3, &tmpVal) );
+	JL_CHK( JL_NativeToJsval(cx, radius, tmpVal) );
+	JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT(*JL_RVAL), 3, tmpVal) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -342,6 +358,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( boxToCircumscribedSphere ) {
 	
+	jl::Args args(ARGSARGS);
+
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_ARRAY(1);
 
@@ -361,10 +379,10 @@ DEFINE_FUNCTION( boxToCircumscribedSphere ) {
 	Vector3AddVector3(&center, &center, &v2);
 	
 	*JL_RVAL = JL_ARG(1);
-	JL_CHK( JL_NativeVectorToJsval(cx, center.raw, 3, JL_RVAL, true) );
+	JL_CHK( JL_NativeVectorToJsval(cx, center.raw, 3, *JL_RVAL, true) );
 	jsval tmpVal;
-	JL_CHK( JL_NativeToJsval(cx, radius, &tmpVal) );
-	JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT(*JL_RVAL), 3, &tmpVal) );
+	JL_CHK( JL_NativeToJsval(cx, radius, tmpVal) );
+	JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT(*JL_RVAL), 3, tmpVal) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -380,6 +398,8 @@ DEFINE_FUNCTION( quaternionToEuler ) {
 
 	// see http://www.google.com/codesearch/p?hl=en#kpcXlMp9-Eg/cs7491/projects/proj002/cs7491.zip|pBok6PPJvB8/cs7491/MatrixLib/Quaternion.cpp&q=EulerToQuaternion%20lang:c++&l=185&t=1
 	// eg. http://www.euclideanspace.com/maths/geometry/rotations/conversions/eulerToQuaternion/steps/index.htm
+
+	jl::Args args(ARGSARGS);
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
@@ -432,7 +452,7 @@ DEFINE_FUNCTION( quaternionToEuler ) {
 	euler.z = atan2f(-(2*(q1q2-q0q3)),(q0q0+q1q1-q2q2-q3q3));
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
-	JL_CHK( JL_NativeVectorToJsval(cx, euler.raw, 3, JL_RVAL, true) );
+	JL_CHK( JL_NativeVectorToJsval(cx, euler.raw, 3, *JL_RVAL, true) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -445,6 +465,8 @@ $TOC_MEMBER $INAME
 
 **/
 DEFINE_FUNCTION( eulerToQuaternion ) {
+
+	jl::Args args(ARGSARGS);
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
@@ -488,7 +510,7 @@ DEFINE_FUNCTION( eulerToQuaternion ) {
 */
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
-	JL_CHK( JL_NativeVectorToJsval(cx, quat.raw, 4, JL_RVAL, true) );
+	JL_CHK( JL_NativeVectorToJsval(cx, quat.raw, 4, *JL_RVAL, true) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -501,6 +523,8 @@ $TOC_MEMBER $INAME
   If _dest is omited, the result is stored in _src_.$LF
 **/
 DEFINE_FUNCTION( quaternionToAxisAngle ) {
+
+	jl::Args args(ARGSARGS);
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
@@ -523,7 +547,7 @@ DEFINE_FUNCTION( quaternionToAxisAngle ) {
 	}
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
-	JL_CHK( JL_NativeVectorToJsval(cx, quat.raw, 4, JL_RVAL, true) );
+	JL_CHK( JL_NativeVectorToJsval(cx, quat.raw, 4, *JL_RVAL, true) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -535,6 +559,8 @@ $TOC_MEMBER $INAME
   _src_ has the following form: [ x, y, z, angle ]
 **/
 DEFINE_FUNCTION( axisAngleToQuaternion ) {
+
+	jl::Args args(ARGSARGS);
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
@@ -552,7 +578,7 @@ DEFINE_FUNCTION( axisAngleToQuaternion ) {
 	axisAngle.w = cs;
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
-	JL_CHK( JL_NativeVectorToJsval(cx, axisAngle.raw, 4, JL_RVAL, true) );
+	JL_CHK( JL_NativeVectorToJsval(cx, axisAngle.raw, 4, *JL_RVAL, true) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -565,6 +591,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getMatrix ) {
 
+	jl::Args args(ARGSARGS);
+
 	JL_ASSERT_ARGC(1);
 
 	float tmp[16], *m = tmp;
@@ -575,7 +603,7 @@ DEFINE_FUNCTION( getMatrix ) {
 	JL_CHKM( fct, E_ARG, E_NUM(1), E_SEP, E_INTERFACE, E_STR("Matrix44Get"), E_NOTSUPPORTED );
 
 	JL_CHK( fct(cx, matrixObj, &m) );
-	JL_CHK( JL_NativeVectorToJsval(cx, m, 16, JL_RVAL, false) );
+	JL_CHK( JL_NativeVectorToJsval(cx, m, 16, *JL_RVAL, false) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -588,6 +616,8 @@ $TOC_MEMBER $INAME
   Find the plane equation given 3 points.
 **/
 DEFINE_FUNCTION( planeFromPoints ) {
+
+	jl::Args args(ARGSARGS);
 
 	JL_ASSERT_ARGC_MIN(3);
 
@@ -620,7 +650,7 @@ DEFINE_FUNCTION( planeFromPoints ) {
 
 	plane[3] = -(plane[0] * v0[0] + plane[1] * v0[1] + plane[2] * v0[2]);
 
-	return JL_NativeVectorToJsval(cx, plane, 4, JL_RVAL, false);
+	return JL_NativeVectorToJsval(cx, plane, 4, *JL_RVAL, false);
 	JL_BAD;
 }
 
@@ -634,6 +664,8 @@ $TOC_MEMBER $INAME
   http://www.opengl.org/resources/code/samples/advanced/advanced97/notes/node100.html
 **/
 DEFINE_FUNCTION( shadowMatrix ) {
+
+	jl::Args args(ARGSARGS);
 
 	JL_ASSERT_ARGC_RANGE(2, 3);
 
@@ -674,10 +706,10 @@ DEFINE_FUNCTION( shadowMatrix ) {
 
 		JL_ASSERT_ARG_IS_ARRAY(3);
 		*JL_RVAL = JL_ARG(3);
-		return JL_NativeVectorToJsval(cx, (double*)shadowMat, 16, JL_RVAL, true);
+		return JL_NativeVectorToJsval(cx, (double*)shadowMat, 16, *JL_RVAL, true);
 	} else {
 
-		return JL_NativeVectorToJsval(cx, (double*)shadowMat, 16, JL_RVAL, false);
+		return JL_NativeVectorToJsval(cx, (double*)shadowMat, 16, *JL_RVAL, false);
 	}
 	JL_BAD;
 }

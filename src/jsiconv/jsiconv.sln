@@ -1,12 +1,9 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual C++ Express 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsiconv", "jsiconv.vcproj", "{09CAD080-B56A-4BC7-AA32-E1A0C6022E6F}"
-	ProjectSection(ProjectDependencies) = postProject
-		{96358E1B-274B-4F4D-BDCF-BD8F652E033E} = {96358E1B-274B-4F4D-BDCF-BD8F652E033E}
-	EndProjectSection
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsiconv", "jsiconv.vcxproj", "{09CAD080-B56A-4BC7-AA32-E1A0C6022E6F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libiconv_mak", "..\..\libs\libiconv\libiconv_mak.vcproj", "{96358E1B-274B-4F4D-BDCF-BD8F652E033E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libiconv_mak", "..\..\libs\libiconv\libiconv_mak.vcxproj", "{96358E1B-274B-4F4D-BDCF-BD8F652E033E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

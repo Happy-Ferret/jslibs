@@ -11,16 +11,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F432DBF2-5EF1-4EE9-A98D-03CD47287C11}</ProjectGuid>
-    <RootNamespace>jslang</RootNamespace>
+    <ProjectGuid>{0F57E262-8396-43C7-9AE4-0FF094F269DC}</ProjectGuid>
+    <RootNamespace>jsprotex</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -35,33 +35,50 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">
     <ClCompile />
+    <ClCompile>
+      <PreprocessorDefinitions>SSE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">
-    <ClCompile />
+    <ClCompile>
+      <PreprocessorDefinitions>SSE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="handle.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="serialize.cpp" />
+    <ClCompile Include="mt19937ar-cok.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">
+      </PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">
+      </ForcedIncludeFiles>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">
+      </PrecompiledHeader>
+      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">
+      </ForcedIncludeFiles>
+    </ClCompile>
+    <ClCompile Include="noise.cpp">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
     <ClCompile Include="static.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="stream.cpp" />
+    <ClCompile Include="texture.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="handlePub.h" />
-    <ClInclude Include="jslang.h" />
+    <ClInclude Include="static.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="texture.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="blob_qa.js" />
-    <None Include="jslang_qa.js" />
+    <None Include="debug.js" />
+    <None Include="jsprotex_qa.js" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

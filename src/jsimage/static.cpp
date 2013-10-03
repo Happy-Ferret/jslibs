@@ -220,7 +220,7 @@ DEFINE_FUNCTION( decodeJpegImage ) {
 
 	length = height * bytePerRow;
 	JOCTET * data;
-	data = (JOCTET *)JL_NewImageObject(cx, width, height, channels, TYPE_UINT8, JL_RVAL);
+	data = (JOCTET *)JL_NewImageObject(cx, width, height, channels, TYPE_UINT8, *JL_RVAL);
 	JL_CHK( data );
 
 	// cinfo->rec_outbuf_height : recomanded scanline height ( 1, 2 or 4 )
@@ -391,7 +391,7 @@ DEFINE_FUNCTION( encodeJpegImage ) {
 
 	// store compressed data
 
-	JL_CHK( JL_NewBufferGetOwnership(cx, dest.buffer, dest.dataLength, JL_RVAL) );
+	JL_CHK( JL_NewBufferGetOwnership(cx, dest.buffer, dest.dataLength, *JL_RVAL) );
 
 	jpeg_destroy_compress(&cinfo);
 	return JS_TRUE;
@@ -551,7 +551,7 @@ DEFINE_FUNCTION( decodePngImage ) {
 	int length;
 	length = height * bytePerRow;
 	png_bytep data;
-	data = (png_bytep)JL_NewImageObject(cx, width, height, channels, TYPE_UINT8, JL_RVAL);
+	data = (png_bytep)JL_NewImageObject(cx, width, height, channels, TYPE_UINT8, *JL_RVAL);
 	JL_CHK( data );
 
 	// int number_of_passes = png_set_interlace_handling(desc.png);
@@ -662,7 +662,7 @@ DEFINE_FUNCTION( encodePngImage ) {
 	// (TBD) use maybeRealloc here ?
 	desc.buffer = (void*)JL_DataBufferRealloc(cx, (uint8_t*)desc.buffer, desc.pos); // usually, compressed data is smaller that original one.
 	JL_ASSERT_ALLOC( desc.buffer );
-	JL_CHK( JL_NewBufferGetOwnership(cx, desc.buffer, desc.pos, JL_RVAL) );
+	JL_CHK( JL_NewBufferGetOwnership(cx, desc.buffer, desc.pos, *JL_RVAL) );
 	return JS_TRUE;
 bad:
 	JL_DataBufferFree(cx, (uint8_t*)desc.buffer);

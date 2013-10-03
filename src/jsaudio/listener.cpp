@@ -35,7 +35,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 
 	float pos[3];
 	uint32_t len;
-	JL_CHK( JL_JsvalToNativeVector(cx, *vp, pos, 3, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, vp, pos, 3, &len) );
 
 	alListener3f(AL_POSITION, pos[0], pos[1], pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -69,7 +69,7 @@ DEFINE_PROPERTY_SETTER( metersPerUnit ) {
 	JL_IGNORE( strict, id, obj );
 
 	float metersPerUnit;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &metersPerUnit) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &metersPerUnit) );
 
 	alListenerf(AL_METERS_PER_UNIT, metersPerUnit);
 	JL_CHK( CheckThrowCurrentOalError(cx) );

@@ -37,6 +37,7 @@ DEFINE_FUNCTION( next ) {
 
 	VARIANT *result = NULL;
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -52,7 +53,7 @@ DEFINE_FUNCTION( next ) {
 	if ( hr != S_OK ) // The number of elements returned is less than 1.
 		JL_CHK( JS_ThrowStopIteration(cx) );
 
-	JL_CHK( VariantToJsval(cx, result, *JL_RVAL) ); // loose variant ownership
+	JL_CHK( VariantToJsval(cx, result, args.rval()) ); // loose variant ownership
 	return JS_TRUE;
 
 bad:
@@ -78,11 +79,11 @@ CONFIGURE_CLASS
 END_CLASS
 
 
-JSBool NewComEnum( JSContext *cx, IEnumVARIANT *ienumv, jsval *rval ) {
+JSBool NewComEnum( JSContext *cx, IEnumVARIANT *ienumv, OUT JS::MutableHandleValue rval ) {
 
 	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComEnum), JL_CLASS_PROTOTYPE(cx, ComEnum), NULL);
 	JL_CHK( varObj );
-	*rval = OBJECT_TO_JSVAL( varObj );
+	rval.setObject( *varObj );
 	JL_SetPrivate( varObj, ienumv);
 	ienumv->AddRef();
 	return JS_TRUE;

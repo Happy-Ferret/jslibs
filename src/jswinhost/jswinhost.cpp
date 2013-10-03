@@ -154,7 +154,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int ) {
 	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, isFirstInstance), isFirstInstance) );
 
 	jsval arguments;
-	JL_CHK( JL_NativeVectorToJsval(cx, __argv, __argc, &arguments) );
+	JL_CHK( JL_NativeVectorToJsval(cx, __argv, __argc, arguments) );
 	JL_CHK( JS_SetPropertyById(cx, hostObj, JLID(cx, arguments), &arguments) );
 
 	jsval rval;

@@ -9,7 +9,16 @@ var loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
 
 
-xxx();
+
+host.loadModule('jsstd');
+throw 0;
+
+
+
+FooBar.fct2(1,2);
+throw 0;
+
+
 
 //host.stdout( 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' );
 

@@ -487,11 +487,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JL_DEFINE_ARGS;
+
 	TextureStruct *tex = NULL;
+
+	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_ASSERT_ARGC_RANGE(1,3);
 	JL_ASSERT_CONSTRUCTING();
-	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	tex = (TextureStruct*)JS_malloc(cx, sizeof(TextureStruct));
 	JL_CHK(tex);
@@ -570,7 +573,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( free ) {
 
-	JL_IGNORE(argc);
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -604,6 +607,8 @@ $TOC_MEMBER $INAME
 **/
 // PTYPE ok
 DEFINE_FUNCTION( swap ) {
+	
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -629,6 +634,8 @@ $TOC_MEMBER $INAME
 **/
 // PTYPE ok
 DEFINE_FUNCTION( clearChannel ) {
+	
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -686,6 +693,8 @@ $TOC_MEMBER $INAME
 **/
 // PTYPE ok
 DEFINE_FUNCTION( setChannel ) {
+	
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -743,7 +752,7 @@ DEFINE_FUNCTION( toHLS ) { // (TBD) test it
 
 	// see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimpcolorspace.c?view=markup
 
-	JL_IGNORE(argc);
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -824,7 +833,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( toRGB ) { // (TBD) test it
 	// see http://svn.gnome.org/viewcvs/gimp/trunk/libgimpcolor/gimpcolorspace.c?view=markup
 
-	JL_IGNORE(argc);
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -901,6 +910,8 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION( aliasing ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -966,6 +977,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( colorize ) {
 	// GIMP color to alpha: http://www.google.com/codesearch?hl=en&q=+gimp+%22color+to+alpha%22
 	// color exchange algo. : http://www.koders.com/c/fidB39DAC5A8DB8B6073D78FB23363C5E0541208B02.aspx
+
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1038,6 +1051,8 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION( extractColor ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -1091,7 +1106,7 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION( normalizeLevels ) {
 
-	JL_IGNORE(argc);
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1134,6 +1149,8 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION( clampLevels ) { // (TBD) check if this algo is right
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 2 );
@@ -1173,6 +1190,8 @@ $TOC_MEMBER $INAME
 **/
 // PTYPE ok
 DEFINE_FUNCTION( cutLevels ) { // (TBD) check if this algo is right
+
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1267,7 +1286,7 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION( invertLevels ) { // level = 1 / level
 
-	JL_IGNORE(argc);
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1291,7 +1310,7 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION( oppositeLevels ) { // level = -level
 
-	JL_IGNORE(argc);
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1314,6 +1333,8 @@ $TOC_MEMBER $INAME
 **/
 // PTYPE ok
 DEFINE_FUNCTION( powLevels ) { //
+	
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1345,6 +1366,8 @@ $TOC_MEMBER $INAME
 **/
 // PTYPE ok
 DEFINE_FUNCTION( mirrorLevels ) {
+	
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1394,6 +1417,8 @@ $TOC_MEMBER $INAME
 **/
 // PTYPE ok
 DEFINE_FUNCTION( wrapLevels ) { // real modulo
+	
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1429,6 +1454,8 @@ $TOC_MEMBER $INAME
 **/
 // PTYPE ok
 DEFINE_FUNCTION( addNoise ) {
+	
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1473,6 +1500,8 @@ $TOC_MEMBER $INAME
 **/
 // PTYPE ok
 DEFINE_FUNCTION( desaturate ) {
+	
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1555,6 +1584,8 @@ $TOC_MEMBER $INAME
 **/
 // PTYPE ok
 DEFINE_FUNCTION( set ) {
+	
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1615,6 +1646,8 @@ $TOC_MEMBER $INAME
 **/
 // PTYPE ok
 DEFINE_FUNCTION( add ) {
+	
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1703,6 +1736,8 @@ $TOC_MEMBER $INAME
 **/
 // PTYPE ok
 DEFINE_FUNCTION( mult ) {
+	
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1801,6 +1836,8 @@ $TOC_MEMBER $INAME
 **/
 // PTYPE ok
 DEFINE_FUNCTION( blend ) { // texture1, blenderTexture|blenderColor
+	
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1873,6 +1910,8 @@ $TOC_MEMBER $INAME
    For non-integer rotations, see RotoZoom() function.
 **/
 DEFINE_FUNCTION( rotate90 ) { // (TBD) test it
+	
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1947,6 +1986,8 @@ $TOC_MEMBER $INAME
    $ARG $BOOL vertically: flips the texture vertically (against y axis).
 **/
 DEFINE_FUNCTION( flip ) {
+	
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -1995,6 +2036,8 @@ $TOC_MEMBER $INAME
    $ARG $REAL rotations: the number of totations to perform. 0.25 is 90 degres (use 0 for none).
 **/
 DEFINE_FUNCTION( rotoZoom ) { // source: FxGen
+	
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -2133,6 +2176,8 @@ $TOC_MEMBER $INAME
 **/
 // PTYPE ok
 DEFINE_FUNCTION( resize ) {
+	
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -2294,6 +2339,8 @@ $TOC_MEMBER $INAME
 **/
 // (TBD) PTYPE
 DEFINE_FUNCTION( convolution ) {
+	
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -2431,6 +2478,8 @@ $TOC_MEMBER $INAME
   (TBD)
 **/
 DEFINE_FUNCTION( dilate ) {
+	
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -2527,6 +2576,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( forEachPixel ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
@@ -2561,8 +2612,8 @@ DEFINE_FUNCTION( forEachPixel ) {
 				callArgv[3] = INT_TO_JSVAL(y);
 				for ( c = 0; c < channels; c++ ) {
 
-					JL_CHK( JL_NativeToJsval(cx, tex->cbuffer[pos+c], &level) );
-					JL_CHK( JL_SetElement(cx, cArrayObj, c, &level) );
+					JL_CHK( JL_NativeToJsval(cx, tex->cbuffer[pos+c], level) );
+					JL_CHK( JL_SetElement(cx, cArrayObj, c, level) );
 				}
 
 				JL_CHK( JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(callArgv)-1, callArgv+1, callArgv) );
@@ -2571,7 +2622,7 @@ DEFINE_FUNCTION( forEachPixel ) {
 
 					for ( c = 0; c < channels; c++ ) {
 
-						JL_CHK( JL_GetElement(cx, cArrayObj, c, &level) );
+						JL_CHK( JL_GetElement(cx, cArrayObj, c, level) );
 						JL_CHK( JL_JsvalToNative(cx, level, &tex->cbackBuffer[pos+c]) );
 					}
 				}
@@ -2606,6 +2657,8 @@ $TOC_MEMBER $INAME
   }}}
 **/
 DEFINE_FUNCTION( boxBlur ) {
+
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -2704,7 +2757,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( normalizeVectors ) {
 
-	JL_IGNORE(argc);
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -2750,6 +2803,8 @@ $TOC_MEMBER $INAME
 **/
 // (TBD) PTYPE
 DEFINE_FUNCTION( normals ) {
+
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -2856,6 +2911,8 @@ $TOC_MEMBER $INAME
 // (TBD) PTYPE
 DEFINE_FUNCTION( light ) {
 	// Simple Lighting: http://www.gamasutra.com/features/19990416/intel_simd_04.htm
+
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -2972,6 +3029,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( nr ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC( 2 );
@@ -3044,6 +3103,8 @@ $TOC_MEMBER $INAME
   Remove the part of the texture that is outside the rectangle (x1,y1)-(x2,y2).
 **/
 DEFINE_FUNCTION( trim ) { // (TBD) test this new version that use jl::memcpy
+
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -3123,6 +3184,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( copy ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 3 );
@@ -3200,6 +3263,8 @@ $TOC_MEMBER $INAME
    $ARG $ENUM borderMode: one of Texture.borderWrap or Texture.borderClamp.
 **/
 DEFINE_FUNCTION( paste ) { // (Texture)texture, (int)x, (int)y, (bool)borderMode
+
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -3300,6 +3365,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( export ) { // (int)x, (int)y, (int)width, (int)height. Returns a Blob
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -3336,7 +3403,7 @@ DEFINE_FUNCTION( export ) { // (int)x, (int)y, (int)width, (int)height. Returns 
 
 	bufferLength = dWidth * dHeight * sChannels;
 	//buffer = (uint8_t*)jl_malloc(bufferLength +1);
-	buffer = JL_NewImageObject(cx, dWidth, dHeight, sChannels, TYPE_UINT8, JL_RVAL);
+	buffer = JL_NewImageObject(cx, dWidth, dHeight, sChannels, TYPE_UINT8, *JL_RVAL);
 	JL_CHK( buffer );
 
 	unsigned int c, x, y, posDst, posSrc;
@@ -3385,6 +3452,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( import ) { // (Blob)image, (int)x, (int)y
 
 	JLData data;
+
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -3489,6 +3558,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( shift ) {
 	// (TBD) I think it is possible to do the Shift operation without using a second buffer.
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(2, 3);
@@ -3538,6 +3609,8 @@ $TOC_MEMBER $INAME
 **/
 // (TBD) PTYPE
 DEFINE_FUNCTION( displace ) {
+
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -3618,6 +3691,8 @@ DEFINE_FUNCTION( cells ) { // source: FxGen
 	struct Point {
 		float x, y;
 	};
+
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -3743,6 +3818,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( addGradiantQuad ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(4);
@@ -3805,6 +3882,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( addGradiantLinear ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(2);
@@ -3863,6 +3942,8 @@ $TOC_MEMBER $INAME
   }}}
 **/
 DEFINE_FUNCTION( addGradiantRadial ) {
+
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -4021,6 +4102,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( addCracks ) { // source: FxGen
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(2);
@@ -4121,8 +4204,9 @@ DEFINE_FUNCTION( applyColorMatrix ) {
 	// Matrix Operations for Image Processing: http://www.graficaobscura.com/matrix/index.html
 	// Fun with the colormatrix: http://hirntier.blogspot.com/2008/09/fun-with-colormatrix.html
 
-	JL_ASSERT_ARGC(1);
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT_THIS_INSTANCE();
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(obj);
@@ -4164,6 +4248,8 @@ texture.addPerlin2([0,0,0], [1,0,0], [0,1,0]);
 }}}
 **/
 DEFINE_FUNCTION( addPerlin2 ) {
+
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -4231,6 +4317,8 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION( setRectangle ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(5);
@@ -4279,6 +4367,8 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION( setPixel ) { // x, y, levels
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(3, 4);
@@ -4325,6 +4415,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getPixelAt ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(2, 3);
@@ -4345,7 +4437,7 @@ DEFINE_FUNCTION( getPixelAt ) {
 	PTYPE *pos;
 	pos = PosByMode(tex, sx, sy, borderMode);
 	if (likely( pos != NULL ))
-		return JL_NativeVectorToJsval(cx, pos, tex->channels, JL_RVAL);
+		return JL_NativeVectorToJsval(cx, pos, tex->channels, *JL_RVAL);
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
@@ -4359,6 +4451,8 @@ $TOC_MEMBER $INAME
   Returns the average $pval. If _channel_ argument is given, the average is done on that channel only.
 **/
 DEFINE_FUNCTION( getGlobalLevel ) {
+
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -4375,7 +4469,7 @@ DEFINE_FUNCTION( getGlobalLevel ) {
 		size = tex->width * tex->height * tex->channels;
 		for ( i = 0; i < size; ++i )
 			sum += tex->cbuffer[i];
-		JL_CHK( JL_NativeToJsval(cx, sum / (PTYPE)size, JL_RVAL) );
+		JL_CHK( JL_NativeToJsval(cx, sum / (PTYPE)size, *JL_RVAL) );
 		return JS_TRUE;
 	}
 
@@ -4390,7 +4484,7 @@ DEFINE_FUNCTION( getGlobalLevel ) {
 		sum += *pos;
 		pos += tex->channels;
 	}
-	JL_CHK( JL_NativeToJsval(cx, sum / (PTYPE)size, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, sum / (PTYPE)size, *JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -4404,6 +4498,8 @@ $TOC_MEMBER $INAME
 **/
 // PTYPE ok
 DEFINE_FUNCTION( getLevelRange ) {
+
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -4451,7 +4547,7 @@ DEFINE_FUNCTION( getLevelRange ) {
 	vector[0] = min;
 	vector[1] = max;
 
-	return JL_NativeVectorToJsval(cx, vector, 2, JL_RVAL);
+	return JL_NativeVectorToJsval(cx, vector, 2, *JL_RVAL);
 	JL_BAD;
 }
 
@@ -4464,7 +4560,7 @@ $TOC_MEMBER $INAME
 // PTYPE ok
 DEFINE_FUNCTION( getBorderLevelRange ) {
 
-	JL_IGNORE(argc);
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -4530,7 +4626,7 @@ DEFINE_FUNCTION( getBorderLevelRange ) {
 	vector[0] = min;
 	vector[1] = max;
 
-	return JL_NativeVectorToJsval(cx, vector, 2, JL_RVAL);
+	return JL_NativeVectorToJsval(cx, vector, 2, *JL_RVAL);
 	JL_BAD;
 }
 
@@ -4628,7 +4724,7 @@ DEFINE_PROPERTY_GETTER( channels ) {
 //static JSBool _Test(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
 DEFINE_FUNCTION( test ) {
 
-	JL_IGNORE(argc, cx);
+	JL_DEFINE_ARGS;
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;

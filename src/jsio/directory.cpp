@@ -52,9 +52,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JL_DEFINE_ARGS;
+	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_CONSTRUCTING();
-	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_JSIO_DIR_NAME, JL_ARG(1) ) );
 	return JS_TRUE;
@@ -76,6 +77,7 @@ DEFINE_FUNCTION( open ) {
 
 	JLData str;
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 
 	jsval jsvalDirectoryName;
@@ -106,6 +108,7 @@ DEFINE_FUNCTION( close ) {
 
 	JL_IGNORE( argc );
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -137,6 +140,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -182,6 +186,7 @@ DEFINE_FUNCTION( make ) {
 	JL_IGNORE( argc );
 
 	JLData str;
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 
 	jsval jsvalDirectoryName;
@@ -214,6 +219,7 @@ DEFINE_FUNCTION( remove ) {
 	JL_IGNORE( argc );
 
 	JLData str;
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 
 	jsval jsvalDirectoryName;
@@ -343,6 +349,7 @@ DEFINE_FUNCTION( list ) {
 
 	JLData directoryName;
 	PRDir *dd = NULL;
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &directoryName) );

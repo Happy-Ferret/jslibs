@@ -43,11 +43,11 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( text ) {
 
 	JL_IGNORE(cx, id);
-	JL_CHK( JL_GetReservedSlot(  obj, 0, vp ) );
-	if ( JSVAL_IS_VOID(*vp) )
+	JL_CHK( JL_GetReservedSlot( obj, 0, vp ) );
+	if ( vp.isUndefined() )
 		return JS_TRUE;
 	int errorCode;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &errorCode) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &errorCode) );
 	char *errStr;
 	switch (errorCode) {
 		case AL_NO_ERROR:
@@ -73,7 +73,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 			break;
 	}
 	JSString *str = JS_NewStringCopyZ( cx, errStr );
-	*vp = STRING_TO_JSVAL( str );
+	vp.setString( str );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -87,10 +87,10 @@ DEFINE_PROPERTY_GETTER( const ) {
 
 	JL_IGNORE(id);
 	JL_CHK( JL_GetReservedSlot(  obj, 0, vp ) );
-	if ( JSVAL_IS_VOID(*vp) )
+	if ( vp.isUndefined() )
 		return JS_TRUE;
 	int errorCode;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &errorCode) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &errorCode) );
 	char *errStr;
 	switch (errorCode) {
 		case AL_NO_ERROR:
@@ -116,7 +116,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 			break;
 	}
 	JSString *str = JS_NewStringCopyZ( cx, errStr );
-	*vp = STRING_TO_JSVAL( str );
+	vp.setString( str );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -129,17 +129,26 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( toString ) {
 
 	JL_IGNORE(argc);
+
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
-	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
+
+	JS::RootedObject rtobj(cx, obj);
+	JS::RootedId rtid(cx, JSID_EMPTY);
+	JS::RootedValue hval(cx);
+	
+	return _textGetter(cx, rtobj, rtid, &hval);
 }
 
 
 
 DEFINE_FUNCTION( _serialize ) {
 
+	JL_DEFINE_ARGS;
+	JL_DEFINE_FUNCTION_OBJ;
+
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_TYPE( jl::JsvalIsSerializer(cx, JL_ARG(1)), 1, "Serializer" );
-	JL_DEFINE_FUNCTION_OBJ;
 
 	jl::Serializer *ser;
 	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
@@ -148,7 +157,7 @@ DEFINE_FUNCTION( _serialize ) {
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, lineNumber), JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot( JL_OBJ, 0, JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, 0, *JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 
 	return JS_TRUE;
@@ -158,9 +167,11 @@ DEFINE_FUNCTION( _serialize ) {
 
 DEFINE_FUNCTION( _unserialize ) {
 
+	JL_DEFINE_ARGS;
+	JL_DEFINE_FUNCTION_OBJ;
+
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_TYPE( jl::JsvalIsUnserializer(cx, JL_ARG(1)), 1, "Unserializer" );
-	JL_DEFINE_FUNCTION_OBJ;
 
 	jl::Unserializer *unser;
 	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));
@@ -205,7 +216,7 @@ ThrowOalError( JSContext *cx, ALenum err ) {
 	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(OalError), JL_CLASS_PROTOTYPE(cx, OalError), NULL );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	jsval errVal;
-	JL_CHK( JL_NativeToJsval(cx, err, &errVal) );
+	JL_CHK( JL_NativeToJsval(cx, err, errVal) );
 	JL_CHK( JL_SetReservedSlot(  error, 0, errVal ) );
 	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
 	JL_BAD;

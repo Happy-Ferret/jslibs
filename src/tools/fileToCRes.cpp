@@ -35,6 +35,8 @@
 char hex[] = "0123456789ABCDEF";
 
 int main(int argc, char* argv[]) {
+	
+	argc--;
 
 //	for ( int i = 0; i < sizeof(str); i++ )
 //		printf("%d:%d \n", i, str[i] );
@@ -46,8 +48,11 @@ int main(int argc, char* argv[]) {
 
 //	return EXIT_FAILURE;
 
+	printf("Running %s with %d arguments\n", argv[0], argc);
+
 	if ( argc < 2 )
 		return EXIT_FAILURE;
+
 
 	printf("Deleting the destination file %s\n", argv[2]);
 	remove(argv[2]);

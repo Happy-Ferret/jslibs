@@ -54,11 +54,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JL_DEFINE_ARGS;
+
 	Private *pv = NULL;
 
+	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_ASSERT_ARGC_RANGE(1,5);
 	JL_ASSERT_CONSTRUCTING();
-	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	pv = (Private*)jl_malloc(sizeof(Private));
 	JL_ASSERT_ALLOC(pv);
@@ -136,8 +138,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( close ) {
 
-	JL_ASSERT_ARGC(0);
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_ARGC(0);
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(obj);
@@ -224,6 +228,8 @@ static void VIWaitFinalize( void* data ) {
 
 DEFINE_FUNCTION( events ) {
 	
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
@@ -258,8 +264,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( next ) {
 
-	JL_ASSERT_ARGC(0);
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
+	JL_ASSERT_ARGC(0);
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(JL_OBJ);
@@ -273,7 +281,7 @@ DEFINE_FUNCTION( next ) {
 		return JS_ThrowStopIteration(cx);
 
 	uint8_t *data;
-	data = JL_NewImageObject(cx, width, height, dataSize / (width * height), TYPE_UINT8, JL_RVAL);
+	data = JL_NewImageObject(cx, width, height, dataSize / (width * height), TYPE_UINT8, *JL_RVAL);
 	JL_CHK( data );
 
 	bool status = vi->getPixels(pv->deviceID, data, pv->flipImageRedBlue, pv->flipImageY); // blocking function
@@ -411,11 +419,11 @@ DEFINE_PROPERTY_GETTER( list ) {
 	int i;
 	for ( i = 0; i < numDevices; i++ ) {
 
-		JL_CHK( JL_NativeToJsval(cx, videoInput::getDeviceName(i), &value) );
-		JL_CHK( JL_SetElement(cx, list, i, &value ) );
+		JL_CHK( JL_NativeToJsval(cx, videoInput::getDeviceName(i), value) );
+		JL_CHK( JL_SetElement(cx, list, i, value ) );
 	}
 
-	*vp = OBJECT_TO_JSVAL( list );
+	vp.setObject(*list);
 	return JS_TRUE;
 bad:
 	return JS_FALSE;
@@ -428,7 +436,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( version ) {
 
-	*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, JL_TOSTRING(VI_VERSION)));
+	vp.setString(JS_NewStringCopyZ(cx, JL_TOSTRING(VI_VERSION)));
 	return jl::StoreProperty(cx, obj, id, vp, true);
 }
 

@@ -103,9 +103,11 @@ DEFINE_CONSTRUCTOR() {
 
 	TransformationPrivate *pv = NULL;
 
-	JL_ASSERT_ARGC_RANGE(0,16);
-//	JL_ASSERT_CONSTRUCTING();
+	jl::Args args(ARGSARGS);
+
 	JL_DEFINE_CONSTRUCTOR_OBJ;
+	JL_ASSERT_ARGC_RANGE(0, 16);
+//	JL_ASSERT_CONSTRUCTING();
 
 	pv = (TransformationPrivate *)JS_malloc(cx, sizeof(TransformationPrivate));
 	JL_CHK(pv);
@@ -116,7 +118,7 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( JL_ARGC >= 1 ) {
 			
-		if ( JSVAL_IS_OBJECT(JL_ARG(1)) ) {
+		if ( JL_ARG(1).isObject() ) {
 
 			JL_ASSERT_ARGC(1);
 			Matrix44 *m = pv->mat;
@@ -172,6 +174,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( load ) {
 
+	jl::Args args(ARGSARGS);
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -179,7 +183,7 @@ DEFINE_FUNCTION( load ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_ASSERT_ARGC_MAX(16);
 
-	if ( JSVAL_IS_OBJECT(JL_ARG(1)) ) {
+	if ( JL_ARG(1).isObject() ) {
 
 		JL_ASSERT_ARGC(1);
 		Matrix44 *m = pv->mat;
@@ -222,6 +226,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( clear ) {
 	
 	JL_IGNORE(argc);
+
+	jl::Args args(ARGSARGS);
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -244,6 +251,9 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( clearRotation ) {
 
 	JL_IGNORE(argc);
+
+	jl::Args args(ARGSARGS);
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -264,7 +274,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( clearTranslation ) {
 
-	JL_IGNORE(argc);
+	jl::Args args(ARGSARGS);
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -288,6 +299,8 @@ $TOC_MEMBER $INAME
    $ARG $VAL matrix: an Array or an object that supports NIMatrix44Read native interface.
 **/
 DEFINE_FUNCTION( loadRotation ) {
+
+	jl::Args args(ARGSARGS);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -330,6 +343,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( loadTranslation ) {
 
+	jl::Args args(ARGSARGS);
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
@@ -363,6 +378,8 @@ $TOC_MEMBER $INAME
    $ARG $REAL z
 **/
 DEFINE_FUNCTION( translate ) {
+
+	jl::Args args(ARGSARGS);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -405,6 +422,8 @@ $TOC_MEMBER $INAME
    $ARG $REAL z
 **/
 DEFINE_FUNCTION( scale ) {
+
+	jl::Args args(ARGSARGS);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -457,6 +476,8 @@ $TOC_MEMBER $INAME
    $ARG $REAL z
 **/
 DEFINE_FUNCTION( rotationFromQuaternion ) {
+
+	jl::Args args(ARGSARGS);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -513,6 +534,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( taitBryanRotation ) {
 
+	jl::Args args(ARGSARGS);
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(3);
@@ -545,6 +568,8 @@ $TOC_MEMBER $INAME
    $ARG $REAL z
 **/
 DEFINE_FUNCTION( rotate ) {
+
+	jl::Args args(ARGSARGS);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -591,6 +616,8 @@ $TOC_MEMBER $INAME
    $ARG $REAL angle in degres
 **/
 DEFINE_FUNCTION( rotateX ) {
+	
+	jl::Args args(ARGSARGS);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -630,6 +657,8 @@ $TOC_MEMBER $INAME
    $ARG $REAL angle in degres
 **/
 DEFINE_FUNCTION( rotateY ) {
+	
+	jl::Args args(ARGSARGS);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -669,6 +698,8 @@ $TOC_MEMBER $INAME
    $ARG $REAL angle in degres
 **/
 DEFINE_FUNCTION( rotateZ ) {
+	
+	jl::Args args(ARGSARGS);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -724,6 +755,8 @@ DEFINE_FUNCTION( lookAt ) {
     m2 = y.m128;
     m3 = z.m128;
 */
+	
+	jl::Args args(ARGSARGS);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -781,6 +814,8 @@ $TOC_MEMBER $INAME
   Apply the (0,0,1)-(x,y,z) angle to the current transformation.
 **/
 DEFINE_FUNCTION( rotateToVector ) {
+	
+	jl::Args args(ARGSARGS);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -825,6 +860,8 @@ $TOC_MEMBER $INAME
   invert the current transformation.
 **/
 DEFINE_FUNCTION( invert ) {
+	
+	jl::Args args(ARGSARGS);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -850,6 +887,8 @@ $TOC_MEMBER $INAME
    $ARG $VAL newTransformation: an Array or an object that supports NIMatrix44Read native interface.
 **/
 DEFINE_FUNCTION( product ) {
+	
+	jl::Args args(ARGSARGS);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -891,6 +930,8 @@ $TOC_MEMBER $INAME
    $ARG $ARRAY vector
 **/
 DEFINE_FUNCTION( transformVector ) {
+	
+	jl::Args args(ARGSARGS);
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -912,14 +953,14 @@ DEFINE_FUNCTION( transformVector ) {
 
 		Matrix44MultVector3(pv->mat, &dst, &src);
 
-		JL_CHK( JL_NativeToJsval(cx, dst.x, &tmpValue) );
-		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 0, &tmpValue) );
+		JL_CHK( JL_NativeToJsval(cx, dst.x, tmpValue) );
+		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 0, tmpValue) );
 
-		JL_CHK( JL_NativeToJsval(cx, dst.y, &tmpValue) );
-		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 1, &tmpValue) );
+		JL_CHK( JL_NativeToJsval(cx, dst.y, tmpValue) );
+		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 1, tmpValue) );
 
-		JL_CHK( JL_NativeToJsval(cx, dst.z, &tmpValue) );
-		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 2, &tmpValue) );
+		JL_CHK( JL_NativeToJsval(cx, dst.z, tmpValue) );
+		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 2, tmpValue) );
 	} else
 	if ( length == 4 ) {
 
@@ -928,17 +969,17 @@ DEFINE_FUNCTION( transformVector ) {
 
 		Matrix44MultVector4(pv->mat, &dst, &src);
 
-		JL_CHK( JL_NativeToJsval(cx, dst.x, &tmpValue) );
-		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 0, &tmpValue) );
+		JL_CHK( JL_NativeToJsval(cx, dst.x, tmpValue) );
+		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 0, tmpValue) );
 
-		JL_CHK( JL_NativeToJsval(cx, dst.y, &tmpValue) );
-		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 1, &tmpValue) );
+		JL_CHK( JL_NativeToJsval(cx, dst.y, tmpValue) );
+		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 1, tmpValue) );
 
-		JL_CHK( JL_NativeToJsval(cx, dst.z, &tmpValue) );
-		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 2, &tmpValue) );
+		JL_CHK( JL_NativeToJsval(cx, dst.z, tmpValue) );
+		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 2, tmpValue) );
 
-		JL_CHK( JL_NativeToJsval(cx, dst.w, &tmpValue) );
-		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 3, &tmpValue) );
+		JL_CHK( JL_NativeToJsval(cx, dst.w, tmpValue) );
+		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 3, tmpValue) );
 	} else {
 
 		JL_ERR( E_ARG, E_NUM(1), E_LENGTH, E_INTERVAL_NUM(3, 4) ); // "Invalid vector length"
@@ -962,14 +1003,14 @@ DEFINE_PROPERTY_SETTER( translation ) {
 
 	JL_IGNORE(id, strict);
 	JL_ASSERT_THIS_INSTANCE();
-	JL_ASSERT_IS_ARRAY( *vp, "" );
+	JL_ASSERT_IS_ARRAY( vp, "" );
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float pos[3];
 	uint32_t len;
-	JL_CHK( JL_JsvalToNativeVector(cx, *vp, pos, 3, &len) );
+	JL_CHK( JL_JsvalToNativeVector(cx, vp, pos, 3, &len) );
 	Matrix44SetTranslation(pv->mat, pos[0], pos[1], pos[2]);
 	pv->isIdentity = false;
 	return JS_TRUE;
@@ -1048,11 +1089,11 @@ DEFINE_SET_PROPERTY() {
 	int slot = JSID_IS_INT( id );
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_ASSERT_IS_NUMBER(*vp, "");
+	JL_ASSERT_IS_NUMBER(vp, "");
 	JL_ASSERT_RANGE( slot, 0, 15, "[index]" );
 
 //	pv->mat->raw[slot] = JSVAL_IS_DOUBLE(*vp) ? JSVAL_TO_DOUBLE(*vp) : JSVAL_TO_INT(*vp);
-	JL_CHK( JL_JsvalToNative(cx, *vp, &pv->mat->raw[slot]) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &pv->mat->raw[slot]) );
 
 	pv->isIdentity = false;
 	return JS_TRUE;
@@ -1077,7 +1118,7 @@ DEFINE_INIT() {
 #ifdef DEBUG
 DEFINE_FUNCTION( test ) {
 
-	JL_IGNORE(argc, cx);
+	jl::Args args(ARGSARGS);
 
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;

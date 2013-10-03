@@ -18,15 +18,21 @@ namespace jl3 { //JL_BEGIN_NAMESPACE
 
 struct Class;
 
+
+/*
+Doc("number FooBar.status: of the FooBar instance");
+// ...
+host.doc("FooBar.status"); ?
+*/
 struct Doc {
-	const char *_description;
 	const char *_name;
+	const char *_summary;
+	const char *_details;
 	enum Type { typeUnknown, typeModule, typeClass, typeStaticClass, typeFunction, typeProperty, typeConst } _type;
-	//Doc *_prev;
 
 	// creates a pending doc item
-	Doc(const char *txt)
-	: _description(txt) {
+	Doc(const char *summary, const char *details = NULL)
+	: _summary(summary), _details(details) {
 
 		pendingDoc = this;
 	}
@@ -64,8 +70,9 @@ struct ConstLink {
 	const JS::Value value;
 	Doc doc;
 
-	ConstLink(ConstLink *&last, const char *name, const JS::Value &value)
-	: _prev(last), name(name), value(value), doc() {
+	template <typename T>
+	ConstLink(ConstLink *&last, const char *name, const T &value)
+	: _prev(last), name(name), value(JS::NumberValue(value)), doc() {
 		
 		last = this;
 		
@@ -143,6 +150,8 @@ struct PropLink {
 			for ( NameLink *nameIt = it->nameLink; nameIt; nameIt = nameIt->_prev ) {
 
 				nameIt->doc.SetType(Doc::typeProperty);
+
+				// doc.Register(cx, ???); // link the object with the string (using weak maps ?)
 				
 				if ( nameIt->tinyid == NameLink::noTinyId ) {
 
@@ -163,29 +172,80 @@ private:
 };
 
 
-struct FuncLink {
-	FuncLink *_prev;
+/*
+ class ArgCheck {
+	virtual bool Check(JSContext *cx, JS::HandleValue val) = 0;
+};
 
-	const JSNative native;
-	const char *name;
-	const unsigned argcMin;
-	const unsigned argcMax;
-	Doc doc;
+class ArgCheckBool : public ArgCheck {
+public:
+	bool Check(JSContext*, JS::HandleValue val) {
 
-	FuncLink(FuncLink *&last, JSNative native, const char *name = NULL, unsigned argcMin = 0, unsigned argcMax = 4)
-	: _prev(last), native(native), name(name), argcMin(argcMin), argcMax(argcMin > argcMax ? argcMin : argcMax), doc() {
+		return val.isBoolean();
+	}
+};
+
+class ArgCheckNumberRange : public ArgCheck {
+	const double min;
+	const double max;
+public:
+	ArgCheckNumberRange(double min, double max)
+	: min(min), max(max) {
+
+		_asm { int 3 }
+	}
+
+	bool Check(JSContext*, JS::HandleValue val) {
+
+		return val.isNumber() && val.toNumber() >= min && val.toNumber() <= max;
+	}
+};
+
+
+
+
+
+struct TypeLink {
+	TypeLink *_prev;
+	const ArgCheck &argType;
+
+	TypeLink(TypeLink *&last, const ArgCheck &argType)
+	: _prev(last), argType(argType) {
 
 		last = this;
+	}
 
-		doc.SetName(name);
-		doc.SetType(Doc::typeFunction);
+private:
+	void operator =(const TypeLink &);
+	TypeLink(const TypeLink &);
+};
+*/
+
+
+
+struct FuncLink {
+	FuncLink *_prev;
+	NameLink *nameLink;
+//	TypeLink *typeLink;
+	JSNative native;
+	unsigned argcMin;
+	unsigned argcMax;
+
+	FuncLink(FuncLink *&last)
+	: _prev(last), nameLink(NULL), /*typeLink(NULL),*/ native(NULL), argcMin(0), argcMax(0) {
+
+		last = this;
 	}
 
 	bool Register( JSContext *cx, JS::MutableHandleObject obj ) {
 
 		for ( const FuncLink *it = this; it; it = it->_prev ) {
 
-			JL_CHK( JS_DefineFunction(cx, obj, it->name, it->native, it->argcMax, 0) );
+			it->nameLink->doc.SetType(Doc::typeFunction);
+
+			JSFunction *fun = JS_DefineFunction(cx, obj, it->nameLink->name, it->native, it->argcMax, 0);
+			JL_CHK( fun );
+			// doc.Register(cx, JS_GetFunctionObject(fun)); // link the object with the string (using weak maps ?)
 		}
 		return true;
 		bad: return false;
@@ -206,6 +266,7 @@ struct Class {
 	JSClass clasp;
 	const char *parentProtoName;
 	FuncLink *constructor;
+	FuncLink *callFuncLink;
 	FuncLink *funcLink;
 	FuncLink *staticFuncLink;
 	PropLink *propLink;
@@ -218,7 +279,7 @@ struct Class {
 	Doc doc;
 
 	Class(const char *className = NULL)
-	: constructor(NULL), funcLink(NULL), staticFuncLink(NULL), propLink(NULL), staticPropLink(NULL), staticConstLink(NULL), reservedSlotCount(0), init(NULL), buildDate((double)__DATE__EPOCH * 1000), sourceId(0), doc() {
+	: constructor(NULL), callFuncLink(NULL), funcLink(NULL), staticFuncLink(NULL), propLink(NULL), staticPropLink(NULL), staticConstLink(NULL), reservedSlotCount(0), init(NULL), buildDate((double)__DATE__EPOCH * 1000), sourceId(0), doc() {
 
 		clasp.addProperty = JS_PropertyStub;
 		clasp.delProperty = JS_DeletePropertyStub;
@@ -245,6 +306,7 @@ struct Class {
 			ASSERT( parentProtoName == NULL );
 			ASSERT( reservedSlotCount == 0 );
 			ASSERT( constructor == NULL );
+			ASSERT( callFuncLink == NULL );
 			ASSERT( clasp.flags == 0 );
 			ASSERT( clasp.finalize == NULL );
 
@@ -284,7 +346,10 @@ struct Class {
 			ctor = constructor ? JL_GetConstructor(cx, proto) : proto;
 		}
 
-
+		if ( callFuncLink != NULL ) {
+		
+			clasp.call = callFuncLink->native;
+		}
 		JL_CHK( funcLink->Register(cx, &proto) );
 		JL_CHK( staticFuncLink->Register(cx, &ctor) );
 		JL_CHK( propLink->Register(cx, &proto) );
@@ -295,14 +360,15 @@ struct Class {
 		
 			JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _sourceId), JS::NumberValue(sourceId), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 			JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _buildDate), JS::NumberValue(buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-			
-			//JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _doc), ..., NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 		}
 
 		if ( init ) {
 
 			JL_CHK( init(cx, this, proto, ctor) );
 		}
+
+		// doc.Register(cx, ctor); // link the object with the string (using weak maps ?)
+	
 
 		return true;
 		bad: return false;
@@ -314,176 +380,368 @@ private:
 };
 
 
-JSBool Unconstructible(JSContext *cx, unsigned argc, JS::Value *vp) {
+JSBool Unconstructible(JSContext *cx, unsigned, JS::Value *) {
 
 	JL_ERR( E_CLASS, E_NOTCONSTRUCT );
 	JL_BAD;
 }
 
+enum Defining { defConstructor, defFunction, defStaticFunction, defProperty, defStaticProperty, defCall };
 
 } // namespace jl3::
 
 
 
-#define INITIALIZER_CALL_UNIQUE(ID) \
-	struct ID { ID(); } const ID; \
+
+#define MAKE_UNIQUE(N) \
+	JL_CONCAT(N, __COUNTER__)
+
+#define NS_BEGIN \
+	namespace MAKE_UNIQUE(__ns) {
+
+#define NS_END \
+	;}
+
+#define NEW_NS(N) \
+	NS_END namespace N {
+
+#define NEW_NS_UNIQUE \
+	NS_END NS_BEGIN
+
+
+
+#define DYNAMIC_INITIALIZER_UNIQUE(ID) \
+	struct ID { inline ID(); } static const ID; \
 	ID::ID()
 
-#define INITIALIZER_CALL() \
-	INITIALIZER_CALL_UNIQUE(JL_CONCAT(__initcall, __COUNTER__))
+#define DYNAMIC_INITIALIZER() \
+	DYNAMIC_INITIALIZER_UNIQUE(MAKE_UNIQUE(__di))
 
 
-#define CLASS(CLASSNAME, ...) \
+#define DOC(SUMMARY, ...) \
+	static const jl3::Doc MAKE_UNIQUE(__doc)(SUMMARY, ##__VA_ARGS__);
+
+
+// class
+
+#define CLASS(CLASSNAME) \
 	namespace CLASSNAME { \
 		static jl3::Class _class( #CLASSNAME ); \
 	} \
 	bool Register_##CLASSNAME( JSContext *cx, JSObject *obj ) { \
 		JS::RootedObject rootedObj(cx, obj); \
-		return CLASSNAME::_class.Register(cx, &rootedObj, ##__VA_ARGS__); \
+		return CLASSNAME::_class.Register(cx, &rootedObj); \
 	}; \
-	namespace CLASSNAME
+	namespace CLASSNAME { \
+		NS_BEGIN
 
 
 #define STATIC_CLASS_NAME _static
 
-#define STATIC_CLASS(...) \
+#define STATIC_CLASS() \
 	namespace STATIC_CLASS_NAME { \
 		static jl3::Class _class; \
 	} \
 	bool Register_##STATIC_CLASS_NAME( JSContext *cx, JSObject *obj ) { \
 		JS::RootedObject rootedObj(cx, obj); \
-		return STATIC_CLASS_NAME::_class.Register(cx, &rootedObj, ##__VA_ARGS__); \
+		return STATIC_CLASS_NAME::_class.Register(cx, &rootedObj); \
 	}; \
-	namespace STATIC_CLASS_NAME
+	namespace STATIC_CLASS_NAME { \
+		NS_BEGIN
 
+#define CLASS_END \
+		NS_END \
+	}
 
 #define REGISTER_CLASS(CLASSNAME) \
+	JL_MACRO_BEGIN \
 	bool Register_##CLASSNAME( JSContext *cx, JSObject *obj ); \
-	JL_CHK( Register_##CLASSNAME(cx, obj) );
+	JL_CHK( Register_##CLASSNAME(cx, obj) ); \
+	JL_MACRO_END
 
 
 #define REGISTER_STATIC() \
+	JL_MACRO_BEGIN \
 	bool Register_##STATIC_CLASS_NAME( JSContext *cx, JSObject *obj ); \
-	JL_CHK( Register_##STATIC_CLASS_NAME(cx, obj) );
+	JL_CHK( Register_##STATIC_CLASS_NAME(cx, obj) ); \
+	JL_MACRO_END
 
+
+// classs configuration
 
 #define REV(NUMBER) \
-	INITIALIZER_CALL_UNIQUE(__rev) { _class.sourceId = (NUMBER); }
+	NEW_NS(config) \
+	DYNAMIC_INITIALIZER_UNIQUE(__rev) { _class.sourceId = (NUMBER); }
 
 #define FROZEN_PROTO \
-	INITIALIZER_CALL_UNIQUE(__forzenProto) { _class.clasp.flags |= JSCLASS_FREEZE_PROTO; }
+	NEW_NS(config) \
+	DYNAMIC_INITIALIZER_UNIQUE(__forzenProto) { _class.clasp.flags |= JSCLASS_FREEZE_PROTO; }
 
 #define FROZEN_CTOR \
-	INITIALIZER_CALL_UNIQUE(__frozenCtor) { _class.clasp.flags |= JSCLASS_FREEZE_CTOR; }
+	NEW_NS(config) \
+	DYNAMIC_INITIALIZER_UNIQUE(__frozenCtor) { _class.clasp.flags |= JSCLASS_FREEZE_CTOR; }
 
 #define JL_HAS_PRIVATE \
-	INITIALIZER_CALL_UNIQUE(__hasPrivate) { _class.clasp.flags |= JSCLASS_HAS_PRIVATE; }
+	NEW_NS(config) \
+	DYNAMIC_INITIALIZER_UNIQUE(__hasPrivate) { _class.clasp.flags |= JSCLASS_HAS_PRIVATE; }
+
+#define PRIVATE \
+	JL_HAS_PRIVATE \
+	struct Private
 
 #define PROTO(CLASSNAME) \
-	INITIALIZER_CALL_UNIQUE(__proto) { _class.parentProtoName = #CLASSNAME; }
+	NEW_NS(config) \
+	DYNAMIC_INITIALIZER_UNIQUE(__proto) { _class.parentProtoName = #CLASSNAME; }
 
-#define SLOT(NAME) \
-	const jl3::ReservedSlot _slot_##NAME(_class.reservedSlotCount);
-
-#define CONSTANT_NAME(NAME, VALUE, ...) \
-	const jl3::ConstLink _const_##NAME(_class.staticConstLink, #NAME, JS::NumberValue(VALUE), ##__VA_ARGS__);
-
-#define CONSTANT(NAME, ...) \
-	const jl3::ConstLink _const_##NAME(_class.staticConstLink, #NAME, JS::NumberValue(NAME), ##__VA_ARGS__);
-
-#define NAME(N, ...) \
-	const jl3::NameLink _name_##N(_item.nameLink, #N, ##__VA_ARGS__);
-
-#define NAME_ID(NID, ...) \
-	const jl3::NameLink _name_##NID(_item.nameLink, #NID, NID, ##__VA_ARGS__);
+#define SLOT(N) \
+	NEW_NS(slot) \
+	static const jl3::ReservedSlot _slot_##N(_class.reservedSlotCount);
 
 
-#define __PROP(IDENTIFIER) \
-	namespace IDENTIFIER { \
-		jl3::PropLink _item(_class.propLink); \
-	}; \
-	namespace IDENTIFIER
+// name
+
+#define NAME(N) \
+	static const jl3::NameLink _name_##N(_item.nameLink, #N);
+
+#define NAME_ID(NID) \
+	static const jl3::NameLink _name_##NID(_item.nameLink, #NID, NID);
+
+
+// contants
+
+#define CONSTANT_NAME(N, VALUE) \
+	NEW_NS(constant) \
+	static const jl3::ConstLink _const_##N(_class.staticConstLink, #N, VALUE);
+
+#define CONSTANT(N) \
+	CONSTANT_NAME(N, N);
+
+
+// properties
 
 #define PROP \
-	__PROP(JL_CONCAT(prop, __COUNTER__))
-
-
-#define __STATIC_PROP(IDENTIFIER) \
-	namespace IDENTIFIER { \
-		jl3::PropLink _item(_class.staticPropLink); \
-	}; \
-	namespace IDENTIFIER
-
+	NEW_NS_UNIQUE \
+	static const jl3::Defining _defining = jl3::defProperty; \
+	static jl3::PropLink _item(_class.propLink);
 
 #define STATIC_PROP \
-	__STATIC_PROP(JL_CONCAT(prop, __COUNTER__))
+	NEW_NS_UNIQUE \
+	static const jl3::Defining _defining = jl3::defStaticProperty; \
+	static jl3::PropLink _item(_class.staticPropLink);
 
-
-
-#define GET(...) \
+#define GET() \
 	static JSBool getter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp); \
-	INITIALIZER_CALL_UNIQUE(__getter) { _item.getter = getter; } \
-	static JSBool getter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp, ##__VA_ARGS__)
+	DYNAMIC_INITIALIZER_UNIQUE(__getter) { _item.getter = getter; } \
+	static JSBool getter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp)
 
-#define SET(...) \
+#define SET() \
 	static JSBool setter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JSBool strict, JS::MutableHandle<JS::Value> vp); \
-	INITIALIZER_CALL_UNIQUE(__setter) { _item.setter = setter; } \
-	static JSBool setter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JSBool strict, JS::MutableHandle<JS::Value> vp, ##__VA_ARGS__)
-
-#define FUNC(NAME, ...) \
-	static JSBool _##NAME(JSContext *cx, unsigned argc, JS::Value *vp); \
-	const jl3::FuncLink NAME##_(_class.funcLink, _##NAME, #NAME, ##__VA_ARGS__); \
-	static JSBool _##NAME(JSContext *cx, unsigned argc, JS::Value *vp)
-
-#define STATIC_FUNC(NAME, ...) \
-	static JSBool _##NAME(JSContext *cx, unsigned argc, JS::Value *vp); \
-	const jl3::FuncLink NAME##_(_class.staticFuncLink, _##NAME, #NAME, ##__VA_ARGS__); \
-	static JSBool _##NAME(JSContext *cx, unsigned argc, JS::Value *vp)
+	DYNAMIC_INITIALIZER_UNIQUE(__setter) { _item.setter = setter; } \
+	static JSBool setter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JSBool strict, JS::MutableHandle<JS::Value> vp)
 
 
-#define UNCONSTRUCTIBLE \
-	const jl3::FuncLink constructor_(_class.constructor, jl3::Unconstructible, NULL);
+// functions
 
-#define CONSTRUCTOR(...) \
-	static JSBool _constructor(JSContext *cx, unsigned argc, JS::Value *vp); \
-	const jl3::FuncLink constructor_(_class.constructor, _constructor, NULL, ##__VA_ARGS__); \
-	static JSBool _constructor(JSContext *cx, unsigned argc, JS::Value *vp)
+#define JL_FUNCTION(N, ARGCMIN, ARGCMAX) \
+	FUNC NAME(N) ARGC(ARGCMIN, ARGCMAX) NATIVE_NAME(N)
+
+#define FUNC \
+	NEW_NS_UNIQUE \
+	static const jl3::Defining _defining = jl3::defFunction; \
+	static jl3::FuncLink _item(_class.funcLink);
+
+#define STATIC_FUNC \
+	NEW_NS_UNIQUE \
+	static const jl3::Defining _defining = jl3::defStaticFunction; \
+	static jl3::FuncLink _item(_class.staticFuncLink);
+
+#define NATIVE() \
+	static JSBool native(JSContext *cx, unsigned argc, JS::Value *vp); \
+	DYNAMIC_INITIALIZER_UNIQUE(__native) { _item.native = native; } \
+	static JSBool native(JSContext *cx, unsigned argc, JS::Value *vp)
+
+#define NATIVE_NAME(N) \
+	static JSBool N(JSContext *cx, unsigned argc, JS::Value *vp); \
+	DYNAMIC_INITIALIZER_UNIQUE(__native) { _item.native = N; } \
+	static JSBool N(JSContext *cx, unsigned argc, JS::Value *vp)
+
+#define ARGMIN(MIN) \
+	DYNAMIC_INITIALIZER_UNIQUE(__argcmin) { _item.argcMin = (MIN); }
+
+#define ARGMAX(MAX) \
+	DYNAMIC_INITIALIZER_UNIQUE(__argcmax) { _item.argcMax = (MAX); }
+
+#define ARGC(MIN, MAX) \
+	ARGMIN(MIN) \
+	ARGMAX(MAX)
+
+// JL_ASSERT_ARG_IS_BOOLEAN(argNum)
+// JL_ASSERT_ARG_IS_INTEGER(argNum)
+// JL_ASSERT_ARG_IS_INTEGER_NUMBER(argNum)
+// JL_ASSERT_ARG_IS_NUMBER(argNum)
+// JL_ASSERT_ARG_IS_OBJECT(argNum)
+// JL_ASSERT_ARG_IS_OBJECT_OR_NULL(argNum)
+// JL_ASSERT_ARG_IS_STRING(argNum)
+// JL_ASSERT_ARG_IS_ARRAY(argNum)
+// JL_ASSERT_ARG_IS_ARRAYLIKE(argNum)
+// JL_ASSERT_ARG_IS_CALLABLE(argNum)
+// JL_ASSERT_ARG_TYPE(condition, argNum, typeStr)
+// JL_ASSERT_ARG_VAL_RANGE(val, valMin, valMax, argNum)
+
+/* try1
+bool ReturnTrue() {
+	
+	return true;
+}
+
+template <class T1 = ReturnTrue, class T2 = ReturnTrue, class T3 = ReturnTrue, class T4 = ReturnTrue>
+class Checker {
+	bool Check() {
+		return t1() && t2() && t3() && t4();
+	}
+};
+*/
+
+
+/* try2
+struct ArgCheckNumberRange {
+	const double min;
+	const double max;
+
+	ArgCheckNumberRange(double min, double max)
+	: min(min), max(max) {
+	}
+
+	bool operator()(JSContext *, const JS::CallArgs &args, unsigned index) const {
+
+		JS::MutableHandleValue val = args.handleAt(index);
+		return val.isNumber() && val.toNumber() >= min && val.toNumber() <= max;
+	}
+};
+
+bool ArgCheckBool(JSContext *, const JS::CallArgs &args, unsigned index) {
+
+	return args.handleAt(index).isBoolean();
+}
+
+
+template <class T1>
+bool ArgCheck(JSContext *cx, const JS::CallArgs &args, T1 t1) { return t1(cx, args, 0); }
+
+template <class T1, class T2>
+bool ArgCheck(JSContext *cx, const JS::CallArgs &args, T1 t1, T2 t2) { return t1(cx, args, 0) && t2(cx, args, 1); }
+
+template <class T1, class T2, class T3>
+bool ArgCheck(JSContext *cx, const JS::CallArgs &args, T1 t1, T2 t2, T3 t3) { return t1(cx, args, 0) && t2(cx, args, 1) && t3(cx, args, 2); }
+
+template <class T1, class T2, class T3, class T4>
+bool ArgCheck(JSContext *cx, const JS::CallArgs &args, T1 t1, T2 t2, T3 t3, T4 t4) { return t1(cx, args, 0) && t2(cx, args, 1) && t3(cx, args, 2) && t4(cx, args, 3); }
+
+template <class T1, class T2, class T3, class T4, class T5>
+bool ArgCheck(JSContext *cx, const JS::CallArgs &args, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5) { return t1(cx, args, 0) && t2(cx, args, 1) && t3(cx, args, 2) && t4(cx, args, 3) && t5(cx, args, 4); }
+
+template <class T1, class T2, class T3, class T4, class T5, class T6>
+bool ArgCheck(JSContext *cx, const JS::CallArgs &args, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6) { return t1(cx, args, 0) && t2(cx, args, 1) && t3(cx, args, 2) && t4(cx, args, 3) && t5(cx, args, 4) && t6(cx, args, 5); }
+
+
+#define ARGTYPE(...) \
+	bool _CheckArgs(JSContext *cx, const JS::CallArgs &args) { \
+		return ArgCheck(cx, args, ##__VA_ARGS__); \
+	}
+
+// eg. ARGTYPE(ArgCheckBool, ArgCheckNumberRange(1,2))
+*/
+
+/* try3
+#define TOPT
+
+#define TBOOL \
+	(ok = ok && args.handleAt(index++).isBoolean())
+
+ALWAYS_INLINE bool _TRANGE(JSContext *, const JS::CallArgs &args, unsigned index, double min, double max) {
+
+	const JS::MutableHandleValue val = args.handleAt(index);
+	return val.isNumber() && val.toNumber() >= min && val.toNumber() <= max;
+}
+
+#define TRANGE(MIN, MAX) \
+	(ok = ok && _TRANGE(cx, args, index++, MIN, MAX))
+*/
+
+/*
+// eg.  ARGTYPE(TBOOL TVOID, TRANGE(1,2) TOPT); ... JL_CHK( _CheckArgs(cx, args) );
+struct TRANGE {
+	double min, max;
+	TRANGE(double min, double max)
+	: min(min), max(max) {
+	}
+	bool operator()(JSContext *, const JS::CallArgs &args, unsigned index) {
+
+		const JS::MutableHandleValue val = args.handleAt(index);
+		return val.isNumber() && val.toNumber() >= min && val.toNumber() <= max;
+	}
+};
+
+#define ARGTYPE(...) \
+	bool _CheckArgs(JSContext *cx, const JS::CallArgs &args) { \
+		unsigned index = 0; \
+		bool ok = true; \
+		__VA_ARGS__; \
+		return ok; \
+	}
+*/
+
+
+
+
+#define CALL \
+	NEW_NS(call) \
+	static const jl3::Defining _defining = jl3::defCall; \
+	static jl3::FuncLink _item(_class.callFuncLink);
+
+
+// other callbacks
+
+#define CONSTRUCTOR \
+	NEW_NS(constructor) \
+	static const jl3::Defining _defining = jl3::defConstructor; \
+	static jl3::FuncLink _item(_class.constructor);
+
+#define UNCONSTRUCTABLE \
+	DYNAMIC_INITIALIZER() { _item.native = jl3::Unconstructible; }
 
 #define FINALIZE() \
+	NEW_NS(config) \
 	static void _finalize(JSFreeOp *fop, JSObject *obj); \
-	INITIALIZER_CALL_UNIQUE(__finalize) { _class.clasp.finalize = _finalize; } \
+	DYNAMIC_INITIALIZER_UNIQUE(__finalize) { _class.clasp.finalize = _finalize; } \
 	static void _finalize(JSFreeOp *fop, JSObject *obj)
 
 #define FINALIZE_RET() \
+	NEW_NS(config) \
 	static void _finalize(JSFreeOp *fop, JSObject *obj); \
 	ALWAYS_INLINE int __finalizeWithReturnValue(JSFreeOp *fop, JSObject *obj); \
-	INITIALIZER_CALL_UNIQUE(__finalize) { _class.clasp.finalize = _finalize; } \
+	DYNAMIC_INITIALIZER_UNIQUE(__finalize) { _class.clasp.finalize = _finalize; } \
 	static void _finalize(JSFreeOp *fop, JSObject *obj) { __finalizeWithReturnValue(fop, obj); } \
 	ALWAYS_INLINE int __finalizeWithReturnValue(JSFreeOp *fop, JSObject *obj)
 
-#define CALL(...) \
-	static JSBool _call(JSContext *cx, unsigned argc, JS::Value *vp); \
-	INITIALIZER_CALL_UNIQUE(__call) { _class.clasp.call = _call; } \
-	static JSBool _call(JSContext *cx, unsigned argc, JS::Value *vp, ##__VA_ARGS__)
-
 #define HAS_INSTANCE() \
+	NEW_NS(config) \
 	static JSBool _hasInstance(JSContext *cx, JS::Handle<JSObject*> obj, JS::MutableHandle<JS::Value> vp, JSBool *bp) \
-	INITIALIZER_CALL_UNIQUE(__hasInstance) { _class.clasp.hasInstance = _hasInstance; } \
+	DYNAMIC_INITIALIZER_UNIQUE(__hasInstance) { _class.clasp.hasInstance = _hasInstance; } \
 	static JSBool _hasInstance(JSContext *cx, JS::Handle<JSObject*> obj, JS::MutableHandle<JS::Value> vp, JSBool *bp)
 
 #define ITERATOR() \
+	NEW_NS(config) \
 	static JSObject* _iteratorObject(JSContext *cx, JS::HandleObject obj, JSBool keysonly); \
-	INITIALIZER_CALL_UNIQUE(__iteratorObject) { js::Valueify(&_class.clasp)->ext.iteratorObject = _iteratorObject; } \
-	static JSObject* _iteratorObject(JSContext *cx, JS::HandleObject obj, JSBool keysonly)
+	DYNAMIC_INITIALIZER_UNIQUE(__iteratorObject) { js::Valueify(&_class.clasp)->ext.iteratorObject = _iteratorObject; } \
+	static JSObject* _iteratorObject(JSContext *cx, JS::HandleObject obj, JSBool keysonly) \
 
 #define INIT() \
+	NEW_NS(config) \
 	static bool _init(JSContext *cx, jl3::Class *sc, JSObject *proto, JSObject *obj); \
-	INITIALIZER_CALL_UNIQUE(__init) { _class.init = _init; } \
+	DYNAMIC_INITIALIZER_UNIQUE(__init) { _class.init = _init; } \
 	static bool _init(JSContext *cx, jl3::Class *sc, JSObject *proto, JSObject *obj)
 
-
-#define DOC(TEXT) \
-	jl3::Doc JL_CONCAT(__doc, __COUNTER__)(TEXT);
 
 /*
 #define HAS_ADD_PROPERTY cs.clasp.addProperty = AddProperty;
@@ -499,6 +757,15 @@ JSBool Unconstructible(JSContext *cx, unsigned argc, JS::Value *vp) {
 #define DEFINE_SET_PROPERTY() static JSBool SetProperty(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JSBool strict, JS::MutableHandle<JS::Value> vp)
 */
 
+// inline tools
+
+#define CHECKS() \
+	JL_MACRO_BEGIN \
+	if ( _defining == jl3::defFunction || _defining == jl3::defStaticFunction || _defining == jl3::defConstructor || _defining == jl3::defCall ) { \
+		JL_ASSERT_ARGC_MIN(_item.argcMin); \
+		JL_ASSERT_ARGC_MAX(_item.argcMax); \
+	} \
+	JL_MACRO_END
 
 #define FUNC_HELPER \
 	ASSERT( !JS_IsConstructing(cx, vp) ); \
@@ -506,9 +773,14 @@ JSBool Unconstructible(JSContext *cx, unsigned argc, JS::Value *vp) {
 	args = JS::CallArgsFromVp(argc, vp); \
 	JS::RootedObject obj(cx, &args.computeThis(cx).toObject());
 
+#define SLOT_INDEX(N) \
+	(slot::_slot_##N.index)
 
-// tools
+#undef JL_THIS_CLASS
+#define JL_THIS_CLASS \
+	(&(_class.clasp))
 
-#define SLOT_INDEX(NAME) \
-	(_slot_##NAME.index)
+#undef JL_THIS_CLASS_PROTOTYPE
+#define JL_THIS_CLASS_PROTOTYPE \
+	(JL_GetCachedProto(JL_GetHostPrivate(cx), JL_THIS_CLASS->name))
 

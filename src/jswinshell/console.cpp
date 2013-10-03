@@ -55,6 +55,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( close ) {
 
 	JL_IGNORE(argc);
+	JL_DEFINE_ARGS;
 
 	//	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 //	CloseHandle(hStdout);
@@ -82,6 +83,7 @@ DEFINE_FUNCTION( write ) {
 
 	JLData str;
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
 
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -108,6 +110,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(0,1);
 
 	char buffer[8192];
@@ -144,6 +147,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( setConsoleMode ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
 
 	DWORD mode;
@@ -168,6 +172,7 @@ DEFINE_FUNCTION( writeConsoleOutput ) {
 	JLData str;
 	BOOL res;
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(3, 5);
 
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -235,6 +240,7 @@ DEFINE_FUNCTION( fillConsoleOutput ) {
 	JLData str;
 	BOOL res;
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(6);
 
 	COORD size;
@@ -300,6 +306,7 @@ DEFINE_FUNCTION( scrollY ) {
 
 	//see. http://msdn.microsoft.com/en-us/library/ms685113(v=vs.85).aspx
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
 
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -571,6 +578,7 @@ void ConsoleWaitFinalize( void *pe ) {
 
 DEFINE_FUNCTION( events ) {
 	
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(0);
 
@@ -829,6 +837,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( setCursorPosition ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(2);
 
 	COORD position;

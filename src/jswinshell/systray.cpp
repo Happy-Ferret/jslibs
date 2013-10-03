@@ -1414,9 +1414,6 @@ DEFINE_TRACER() {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	if ( pv ) {
 
-//		for ( jl::QueueCell *it = jl::QueueBegin(&pv->popupMenuRoots); it; it = jl::QueueNext(it) )
-//			JS_CALL_VALUE_TRACER(trc, (jsval)QueueGetData(it), "jswinshell/Systray/popupMenuRoots");
-
 		struct Tmp {
 			JSTracer *_trc;
 			Tmp( JSTracer *trc ) : _trc(trc) {
@@ -1424,13 +1421,10 @@ DEFINE_TRACER() {
 
 			bool operator()( jsval &value ) {
 
-				JS_CALL_VALUE_TRACER(_trc, value, "jswinshell/Systray/popupMenuRoots");
+				JS_CallValueTracer(_trc, &value, "jswinshell/Systray/popupMenuRoots");
 				return false;
 			}
-		};
-
-		//pv->popupMenuRoots.BackForEach( Tmp(trc) );
-		Tmp tmp(trc);
+		} tmp(trc);
 		pv->popupMenuRoots.BackForEach( tmp );
 	}
 }

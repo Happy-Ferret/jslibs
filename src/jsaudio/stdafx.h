@@ -15,6 +15,8 @@
 
 #pragma once
 
+#define USE_JSHANDLES
+
 #include <jlhelper.h>
 #include <jlclass.h>
 

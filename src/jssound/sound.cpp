@@ -24,8 +24,9 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 
 	JL_IGNORE(argc);
 
-	JL_ASSERT_CONSTRUCTING();
+	JL_DEFINE_ARGS;
 	JL_DEFINE_CONSTRUCTOR_OBJ;
+	JL_ASSERT_CONSTRUCTING();
 
 	return JS_TRUE;
 	JL_BAD;

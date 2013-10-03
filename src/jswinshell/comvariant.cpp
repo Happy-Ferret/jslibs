@@ -54,6 +54,8 @@ public:
 
 // IDispatch
 	STDMETHOD(GetTypeInfoCount)( UINT *pctinfo ) {
+
+		JL_IGNORE(pctinfo);
 /*		
 		if ( pctinfo == NULL )
 			return E_INVALIDARG;
@@ -64,6 +66,8 @@ public:
 	}
 
 	STDMETHOD(GetTypeInfo)( UINT iTInfo, LCID lcid, ITypeInfo **ppTInfo ) {
+
+		JL_IGNORE(ppTInfo, lcid, iTInfo);
 /*
 		if (ppTInfo == NULL)
 			return E_INVALIDARG;
@@ -77,12 +81,15 @@ public:
 
 	STDMETHOD(GetIDsOfNames)( REFIID riid, LPOLESTR *rgszNames, UINT cNames, LCID lcid, DISPID *rgDispId ) {
 
+		JL_IGNORE(rgDispId, lcid, cNames, rgszNames, riid);
 //		DispGetIDsOfNames
 		return DISP_E_UNKNOWNNAME;
 	}
 
 	// doc: http://msdn.microsoft.com/en-us/library/ms221479.aspx
 	STDMETHOD(Invoke)( DISPID dispIdMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pVarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr ) {
+
+		JL_IGNORE(puArgErr, pExcepInfo, lcid);
 
 		if ( !(wFlags & DISPATCH_METHOD) || dispIdMember != DISPID_VALUE )
 			return DISP_E_MEMBERNOTFOUND;
@@ -101,16 +108,18 @@ public:
 
 		js::AutoArrayRooter tvr(cx, argc+1, argv);
 
+		// try also JS::AutoValueVector argv(cx)
+
 		JSBool status = JS_CallFunctionValue(cx, JL_GetGlobal(cx), _funcVal, argc, argv+1, argv);
 
 		JL_IGNORE(status); // (TBD) error check
 
 //		if ( !status )
-
+		
 		// pVarResult: location where the result is to be stored, or NULL if the caller expects no result.
 		// This argument is ignored if DISPATCH_PROPERTYPUT or DISPATCH_PROPERTYPUTREF is specified.
 		if ( pVarResult != NULL && (wFlags & (DISPATCH_PROPERTYPUT|DISPATCH_PROPERTYPUTREF)) != 0 )
-			JsvalToVariant(cx, *argv, pVarResult);
+			JsvalToVariant(cx, tvr.handleAt(0), pVarResult);
 		
 		return NOERROR;
 	}
@@ -163,7 +172,7 @@ JSBool BlobToVariant( JSContext *cx, jsval *val, VARIANT *variant ) {
 }
 
 
-JSBool VariantToBlob( JSContext *cx, IN VARIANT *variant, OUT jsval rval ) {
+JSBool VariantToBlob( JSContext *cx, IN VARIANT *variant, OUT JS::MutableHandleValue rval ) {
 
 	JL_ASSERT( variant->vt == (VT_ARRAY | VT_UI1), E_VALUE, E_INVALID ); // "Invalid variant type."
 
@@ -179,9 +188,8 @@ JSBool VariantToBlob( JSContext *cx, IN VARIANT *variant, OUT jsval rval ) {
 }
 
 
-
 // variant must be initialized ( see VariantInit() )
-JSBool JsvalToVariant( JSContext *cx, IN jsval &value, OUT VARIANT *variant ) {
+JSBool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *variant ) {
 
 	if ( value.isObject() ) {
 
@@ -240,7 +248,7 @@ JSBool JsvalToVariant( JSContext *cx, IN jsval &value, OUT VARIANT *variant ) {
 			time.wDay = (WORD)js_DateGetDate(cx, obj);
 			time.wHour = (WORD)js_DateGetHours(cx, obj);
 			time.wMinute = (WORD)js_DateGetMinutes(cx, obj);
-			time.wSecond = (WORD)js_DateGetSeconds(cx, obj);
+			time.wSecond = (WORD)js_DateGetSeconds(obj);
 			time.wMilliseconds = ((unsigned long)js_DateGetMsecSinceEpoch(obj)) % 1000;
 
 			V_VT(variant) = VT_DATE;
@@ -328,7 +336,7 @@ JSBool JsvalToVariant( JSContext *cx, IN jsval &value, OUT VARIANT *variant ) {
 
 
 // acquire the ownership of the variant
-JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval &rval ) {
+JSBool VariantToJsval( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rval ) {
 	
 	BOOL isRef = V_ISBYREF(variant);
 	BOOL isArray = V_ISARRAY(variant);
@@ -342,7 +350,7 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval &rval ) {
 
 		case VT_HRESULT: {
 			HRESULT errorCode = isRef ? *V_I4REF(variant) : V_I4(variant); // check ->scode and ResultFromScode
-			JL_CHK( WinNewError(cx, errorCode, &rval) );
+			JL_CHK( WinNewError(cx, errorCode, rval.address()) );
 			}
 			break;
 		case VT_ERROR: {
@@ -351,7 +359,7 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval &rval ) {
 				scode = isRef ? *V_ERRORREF(variant) : V_ERROR(variant);
 			else
 				scode = variant->scode;
-			JL_CHK( WinNewError(cx, scode, &rval) );
+			JL_CHK( WinNewError(cx, scode, rval.address()) );
 			}
 			break;
 		case VT_NULL:
@@ -414,9 +422,9 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, jsval &rval ) {
 				VariantInit(pvar);
 				VariantCopyInd(pvar, &varray[i]);
 
-				jsval val;
-				JL_CHK( VariantToJsval(cx, pvar, val) );
-				JL_CHK( JL_SetElement(cx, jsArr, i - lBound, val) );
+				JS::RootedValue val(cx);
+				JL_CHK( VariantToJsval(cx, pvar, &val) );
+				JL_CHK( JL_SetElement(cx, jsArr, i - lBound, &val) );
 			}
 
 			SafeArrayUnaccessData(psa);
@@ -527,6 +535,7 @@ DEFINE_FUNCTION( toDispatch ) {
 
 	HRESULT hr;
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -554,7 +563,7 @@ DEFINE_FUNCTION( toDispatch ) {
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
 
-	JL_CHK( NewComDispatch(cx, pdisp, *JL_RVAL) );
+	JL_CHK( NewComDispatch(cx, pdisp, args.rval()) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -562,6 +571,7 @@ DEFINE_FUNCTION( toDispatch ) {
 
 DEFINE_FUNCTION( toString ) {
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -591,6 +601,7 @@ DEFINE_FUNCTION( toString ) {
 
 DEFINE_FUNCTION( toTypeName ) {
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -684,7 +695,7 @@ END_CLASS
 
 
 // acquire the ownership of the variant
-JSBool NewComVariant( JSContext *cx, VARIANT *variant, jsval &rval ) {
+JSBool NewComVariant( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rval ) {
 
 	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComVariant), JL_CLASS_PROTOTYPE(cx, ComVariant), NULL);
 	JL_CHK( varObj );
@@ -694,7 +705,7 @@ JSBool NewComVariant( JSContext *cx, VARIANT *variant, jsval &rval ) {
 	JL_BAD;
 }
 
-JSBool NewComVariantCopy( JSContext *cx, VARIANT *variant, jsval &rval ) {
+JSBool NewComVariantCopy( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rval ) {
 
 	VARIANT *newvariant = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
 	VariantInit(newvariant);

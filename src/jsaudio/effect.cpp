@@ -51,8 +51,9 @@ DEFINE_CONSTRUCTOR() {
 
 	Private *pv = NULL;
 
-	JL_ASSERT_CONSTRUCTING();
+	JL_DEFINE_ARGS;
 	JL_DEFINE_CONSTRUCTOR_OBJ;
+	JL_ASSERT_CONSTRUCTING();
 
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
@@ -88,13 +89,14 @@ DEFINE_FUNCTION( valueOf ) {
 
 	JL_IGNORE( argc );
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	JL_CHK( JL_NativeToJsval(cx, pv->effect, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, pv->effect, *JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -132,7 +134,7 @@ DEFINE_PROPERTY_SETTER( type ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	int effectType;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &effectType) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &effectType) );
 
 	alEffecti(pv->effect, AL_EFFECT_TYPE, effectType);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -184,7 +186,7 @@ DEFINE_PROPERTY_SETTER( effectFloat ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	float f;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &f) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &f) );
 	alEffectf(pv->effect, param, f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
@@ -216,7 +218,7 @@ DEFINE_PROPERTY_SETTER( effectInt ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	int i;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &i) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &i) );
 	alEffecti(pv->effect, param, i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
@@ -248,7 +250,7 @@ DEFINE_PROPERTY_SETTER( effectBool ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	bool b;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &b) );
 	alEffecti(pv->effect, param, b ? AL_TRUE : AL_FALSE);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
@@ -265,7 +267,7 @@ DEFINE_PROPERTY_GETTER( effectBool ) {
 	int i;
 	alGetEffecti(pv->effect, param, &i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	*vp = BOOLEAN_TO_JSVAL(i == AL_TRUE);
+	vp.setBoolean(i == AL_TRUE);
 	return JS_TRUE;
 	JL_BAD;
 }

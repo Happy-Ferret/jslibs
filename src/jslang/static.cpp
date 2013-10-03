@@ -1223,9 +1223,11 @@ CLASS_END
 
 DEFINE_INIT() {
 
+
 	JS::RootedObject robj(cx, JL_GetGlobal(cx));
 
-	REGISTER_STATIC();
+	//REGISTER_STATIC();
+	REGISTER_CLASS(FooBar);
 	
 //	JL_CHK( _static::_classSpec.Register(cx, &robj) );
 
@@ -1284,64 +1286,84 @@ END_STATIC
 
 
 
+enum { status2, status3, status4 };
 
-DOC("static class has a lot of static mumbers")
-STATIC_CLASS() {
+CLASS(EmptyClass)
+CLASS_END
+
+DOC("static class has a lot of static mumbers", "some more details...")
+CLASS(FooBar)
 
 	REV(jl::SvnRevToInt("$Revision$"))
 
-/*
-	//IS_UNCONSTRUCTABLE
-	PROTO( Handle )
-	JL_HAS_PRIVATE
 	SLOT(bar)
 	SLOT(foo)
 
-	CONSTRUCTOR( 1 ) {
+	PROTO( Handle )
 
-		return JS_TRUE;
+	PRIVATE {
+		int i;
+		int j;
 	}
 
+	// CONSTRUCTOR UNCONSTRUCTABLE
+	CONSTRUCTOR NATIVE() {
+		
+		JL_DEFINE_ARGS;
+		JL_DEFINE_CONSTRUCTOR_OBJ;
+		JL_SetPrivate(obj, new config::Private);
+		return JS_TRUE;
+		JL_BAD;
+	}
+
+
 	FINALIZE_RET() {
-	
+			
+		delete JL_GetPrivate(obj);
 		return true;
 	}
 
-*/
-	
-	//DOC(".state is the state of the system");
-	STATIC_PROP {
-		DOC("state property is cool")
+
+	DOC("state property is cool", "details about that...")
+	STATIC_PROP 
 		NAME( state )
 		GET() {
 
 //			printf("%d\n", SLOT_INDEX(foo));
 			return JS_TRUE;
 		}
-	}
 
-	//DOC(".status is a status prop");
-	PROP {
-		DOC("status doc ...")
+
+	DOC(".status is a status prop");
+	PROP
 		NAME( status )
 		SET() {
 		
 			return JS_TRUE;
 		}
-	}
 
-	PROP {
-		DOC("status0 doc ...")
-		NAME( status0 )
+
+	DOC("status0 doc ...")
+	PROP NAME( status0 )
 		GET() {
-		
+
+			SLOT_INDEX(bar);
 			return JS_TRUE;
 		}
+		SET() {
+			return JS_TRUE;
+		}
+
+
+	CALL ARGC(0,1) NATIVE() {
+		
+		
+		return JS_TRUE;
 	}
 
-	enum { status2, status3, status4 };
 
-	PROP {
+
+	PROP
 		DOC("status2 is a property")
 		NAME_ID( status2 )
 		
@@ -1358,76 +1380,60 @@ STATIC_CLASS() {
 		SET() {
 			return JS_TRUE;
 		}
-	}
 
-	DOC("xxx is a test function")
-	FUNC( xxx ) {
+	
 
-//		_asm { int 3 }
-		
-
-		JS::CallArgs args;
-		args = JS::CallArgsFromVp(argc, vp);
-
-
-		//JSObject *o = &args.computeThis(cx).toObject();
-
-/*
-		struct obj {
-			obj(JSContext *cx, unsigned argc, JS::Value *vp) {
-
-			}
-
-			JSObject *operator()() {
-			
-			return NULL;
-		}} obj(cx,;
-		
-		obj();
-*/
-
+	JL_FUNCTION(yyy, 0, 1) {
 
 		return JS_TRUE;
 	}
 
-	DOC("fct3 is a nice function")
-	FUNC( fct3 ) {
 
-		FUNC_HELPER {
+	FUNC NAME(zzz) ARGC(0, 1) NATIVE() {
 
+		_item.argcMax;
 
-		}
-		
 		return JS_TRUE;
 	}
 
 
 	DOC("this is a function that is named 'fct2', call it like this: fct2()");
-	STATIC_FUNC( fct2, 1 ) {
+	STATIC_FUNC
+		NAME(fct2)
+		ARGMIN(2)
+		NATIVE() {
+			
+			JL_DEFINE_ARGS;
 
-		return JS_TRUE;
-	}
+			return JS_TRUE;
+			JL_BAD;
+		}
 
-	DOC("const1 is a constant value\n")
 	DOC("const1 is a constant value\n"
 		"this is a 2nd line"
 	)
+
+
 	CONSTANT_NAME( const1, 1234.5 )
 
 	DOC("MY_CONST is another constant")
+
 	#define MY_CONST 789
 	CONSTANT( MY_CONST )
+	CONSTANT( 999 )
 
+	CONSTANT( PATH_MAX )
+	
 	ITERATOR() {
 	
 		JS::RootedObject o(cx);
 		return o;
 	}
 
+
 	INIT() {
 
 		return true;
 	}
-
-}
-
+	
+CLASS_END

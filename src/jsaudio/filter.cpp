@@ -51,8 +51,9 @@ DEFINE_CONSTRUCTOR() {
 
 	Private *pv = NULL;
 
-	JL_ASSERT_CONSTRUCTING();
+	JL_DEFINE_ARGS;
 	JL_DEFINE_CONSTRUCTOR_OBJ;
+	JL_ASSERT_CONSTRUCTING();
 
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
@@ -88,12 +89,13 @@ DEFINE_FUNCTION( valueOf ) {
 
 	JL_IGNORE( argc );
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_CHK( JL_NativeToJsval(cx, pv->filter, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, pv->filter, *JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -123,10 +125,10 @@ DEFINE_PROPERTY_SETTER( type ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	int filterType;
-	if ( JSVAL_IS_VOID(*vp) )
+	if ( vp.isUndefined() )
 		filterType = AL_FILTER_NULL;
 	else
-		JL_CHK( JL_JsvalToNative(cx, *vp, &filterType) );
+		JL_CHK( JL_JsvalToNative(cx, vp, &filterType) );
 	alFilteri(pv->filter, AL_FILTER_TYPE, filterType);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;
@@ -146,7 +148,7 @@ DEFINE_PROPERTY_GETTER( type ) {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	if ( filterType == AL_FILTER_NULL )
-		*vp = JSVAL_VOID;
+		vp.setUndefined();
 	else
 		JL_CHK( JL_NativeToJsval(cx, filterType, vp) );
 
@@ -166,7 +168,7 @@ DEFINE_PROPERTY_SETTER( filterFloat ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	float f;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &f) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &f) );
 	alFilterf(pv->filter, param, f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return JS_TRUE;

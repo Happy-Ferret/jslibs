@@ -89,10 +89,7 @@ DEFINE_FUNCTION( expand ) {
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &srcStr) );
 
-	JS::Value &mapVal = args[1];
-
-
-	if ( JL_ValueIsCallable(cx, mapVal) ) {
+	if ( JL_ValueIsCallable(cx, JL_ARG(2)) ) {
 			
 		hasMapFct = true;
 	} else {
@@ -149,10 +146,10 @@ DEFINE_FUNCTION( expand ) {
 				if ( hasMapFct ) {
 
 					JL_CHK( JL_NativeToJsval(cx, key, keyEnd - key, value) );
-					JL_CHK( JS_CallFunctionValue(cx, obj, args[1], 1, value.address(), value.address()) );
-				} else if ( args[1].isObject() ) {
+					JL_CHK( JS_CallFunctionValue(cx, obj, JL_ARG(2), 1, value.address(), value.address()) );
+				} else if ( JL_ARG(2).isObject() ) {
 
-					JL_CHK( JS_GetUCProperty(cx, &args[1].toObject(), key, keyEnd - key, value.address()) );
+					JL_CHK( JS_GetUCProperty(cx, &JL_ARG(2).toObject(), key, keyEnd - key, value.address()) );
 				} else {
 					
 					continue;

@@ -78,15 +78,35 @@ DEFINE_FINALIZE() {
 	FinalizeDescriptor(fop, obj); // defined in descriptor.cpp
 }
 
+/*
+class Auto {
+	int a;
+	Auto(int a) : a(a) {}
+	~Auto() {
+
+	}
+
+
+};
+*/
+
+
 /**doc
 $TOC_MEMBER $INAME
  $INAME( fileName )
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_ASSERT_ARGC_RANGE(0,1);
-	JL_ASSERT_CONSTRUCTING();
+	JL_DEFINE_ARGS;
+
+	if ( !JS_IsConstructing(cx, vp) ) {
+
+		return JL_GetHostPrivate(cx)->report(cx, false, E_THISOBJ, E_CONSTRUCT);
+	}
+
+	
 	JL_DEFINE_CONSTRUCTOR_OBJ;
+	JL_ASSERT_ARGC_RANGE(0,1);
 
 	jsval filename;
 	if ( !JL_ARG_ISDEF(1) ) {
@@ -130,6 +150,7 @@ DEFINE_FUNCTION( open ) {
 	jsval jsvalFileName;
 	JLData str;
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MAX(2);
@@ -203,6 +224,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( seek ) {
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -253,6 +275,7 @@ DEFINE_FUNCTION( delete ) {
 	jsval jsvalFileName;
 	JLData str;
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -280,6 +303,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( lock ) {
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -309,6 +333,7 @@ DEFINE_FUNCTION( move ) {
 	jsval jsvalFileName;
 	JLData fileName, destDirName;
 	
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );

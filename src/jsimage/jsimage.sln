@@ -1,20 +1,13 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual C++ Express 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsimage", "jsimage.vcproj", "{01FF0714-4E8A-45D6-81D9-EBD41CFF24F7}"
-	ProjectSection(ProjectDependencies) = postProject
-		{C2066F94-8E00-4BC3-9FDD-02CF98AFFB68} = {C2066F94-8E00-4BC3-9FDD-02CF98AFFB68}
-		{0008960E-E0DD-41A6-8265-00B31DDB4C21} = {0008960E-E0DD-41A6-8265-00B31DDB4C21}
-	EndProjectSection
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jsimage", "jsimage.vcxproj", "{01FF0714-4E8A-45D6-81D9-EBD41CFF24F7}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libpng", "..\..\libs\libpng\libpng.vcproj", "{0008960E-E0DD-41A6-8265-00B31DDB4C21}"
-	ProjectSection(ProjectDependencies) = postProject
-		{B9898A5A-A1D6-4DBB-87F6-609F97BD7848} = {B9898A5A-A1D6-4DBB-87F6-609F97BD7848}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libpng", "..\..\libs\libpng\libpng.vcxproj", "{0008960E-E0DD-41A6-8265-00B31DDB4C21}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libjpeg", "..\..\libs\libjpeg\libjpeg.vcproj", "{C2066F94-8E00-4BC3-9FDD-02CF98AFFB68}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libjpeg", "..\..\libs\libjpeg\libjpeg.vcxproj", "{C2066F94-8E00-4BC3-9FDD-02CF98AFFB68}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "..\..\libs\zlib\zlib.vcproj", "{B9898A5A-A1D6-4DBB-87F6-609F97BD7848}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "..\..\libs\zlib\zlib.vcxproj", "{B9898A5A-A1D6-4DBB-87F6-609F97BD7848}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

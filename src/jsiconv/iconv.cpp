@@ -132,10 +132,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( process ) {
 	
+	char *outBuf = NULL; // keep on top
 	JLData data;
 	JL_DEFINE_FUNCTION_OBJ;
-
-	char *outBuf = NULL; // keep on top
 
 	JL_ASSERT_INSTANCE(obj, JL_CLASS(Iconv));
 
@@ -319,7 +318,7 @@ DEFINE_FUNCTION( process ) {
 	} else {
 
 		//jsEncStr = JL_NewString(cx, outBuf, length); // loose outBuf ownership	// JL_CHK( StringAndLengthToJsval(cx, JL_RVAL, outBuf, length) );
-		JL_CHK( JLData(outBuf, true, length).GetJSString(cx, JL_RVAL) );
+		JL_CHK( JLData(outBuf, true, length).GetJSString(cx, *JL_RVAL) );
 	}
 
 	return JS_TRUE;
@@ -346,7 +345,7 @@ DEFINE_PROPERTY_SETTER( invalidChar ) {
 //	const char *chr;
 //	size_t length;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &chr, &length) );
-	JL_CHK( JL_JsvalToNative(cx, *vp, &chr) );
+	JL_CHK( JL_JsvalToNative(cx, vp, &chr) );
 	JL_ASSERT_WARN( chr.Length() == 1, E_VALUE, E_LENGTH, E_NUM(1) );
 	pv->invalidChar = chr.GetConstStr()[0];
 	return JS_TRUE;
@@ -397,8 +396,8 @@ int do_one( unsigned int namescount, const char * const * names, void* data ) {
 	while (namescount--) {
 
 		// (TBD) check errors
-		JL_NativeToJsval(ipv->cx, names[namescount], &value); // iconv_canonicalize
-		JL_SetElement(ipv->cx, ipv->list, ipv->listLen, &value);
+		JL_NativeToJsval(ipv->cx, names[namescount], value); // iconv_canonicalize
+		JL_SetElement(ipv->cx, ipv->list, ipv->listLen, value);
 		ipv->listLen++;
 	}
 	return 0;
@@ -409,7 +408,7 @@ DEFINE_PROPERTY_GETTER( list ) {
 
 	JSObject *list = JS_NewArrayObject(cx, 0, NULL);
 	JL_CHK( list );
-	*vp = OBJECT_TO_JSVAL( list );
+	vp.setObject(*list);
 	IteratorPrivate ipv;
 	ipv.cx = cx;
 	ipv.list = list;
@@ -447,7 +446,7 @@ DEFINE_PROPERTY_GETTER( jsUC ) {
 			JL_CHK( JL_NativeToJsval(cx, "UCS-2le", vp) );
 			break;
 		default:
-			*vp = JSVAL_VOID;
+			vp.setUndefined();
 			break;
 	}
 	return jl::StoreProperty(cx, obj, id, vp, true);

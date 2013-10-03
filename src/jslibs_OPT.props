@@ -1,26 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="UserMacros">
+    <jslibsRootDir>$(SolutionDir)..\..\</jslibsRootDir>
+    <jslibsIntDir>$(Platform)_$(Configuration)\</jslibsIntDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <BuildMacro Include="jslibsRootDir">
+      <Value>$(jslibsRootDir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="jslibsIntDir">
+      <Value>$(jslibsIntDir)</Value>
+    </BuildMacro>
+  </ItemGroup>
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
-    <_PropertySheetDisplayName>jslibs common properties</_PropertySheetDisplayName>
-    <OutDir>$(SolutionDir)..\..\$(Platform)_$(Configuration)\</OutDir>
-    <IntDir>$(Platform)_$(Configuration)\</IntDir>
-    <LinkIncremental>false</LinkIncremental>
-    <LocalDebuggerEnvironment>PATH=$(SolutionDir)..\..\libs\js\$(Platform)_$(Configuration)\dist\bin;$(SolutionDir)..\..\$(Platform)_$(Configuration)</LocalDebuggerEnvironment>
-    <LocalDebuggerCommand>$(SolutionDir)..\..\$(Platform)_$(Configuration)\jshost.exe</LocalDebuggerCommand>
+    <_PropertySheetDisplayName>jslibs OPT common properties</_PropertySheetDisplayName>
+    <OutDir>$(jslibsRootDir)$(jslibsIntDir)</OutDir>
+    <IntDir>$(jslibsIntDir)</IntDir>
+    <LocalDebuggerEnvironment>PATH=$(jslibsRootDir)libs\js\$(jslibsIntDir)dist\bin;$(jslibsRootDir)\libs\nspr\$(jslibsIntDir)dist\bin;$(jslibsRootDir)$(jslibsIntDir)</LocalDebuggerEnvironment>
+    <LocalDebuggerCommand>$(jslibsRootDir)$(jslibsIntDir)jshost.exe</LocalDebuggerCommand>
     <LocalDebuggerCommandArguments>debug.js</LocalDebuggerCommandArguments>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalOptions>/MP</AdditionalOptions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_USRDLL;_SECURE_SCL_THROWS=0;_SECURE_SCL=0;_HAS_ITERATOR_DEBUGGING=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\common;..\..\libs\js\$(Platform)_$(Configuration)\dist\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\common;$(jslibsRootDir)libs\js\$(jslibsIntDir)dist\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>false</ExceptionHandling>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <Optimization>Full</Optimization>
-      <WholeProgramOptimization>true</WholeProgramOptimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -34,24 +43,24 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <PrecompiledHeader>Use</PrecompiledHeader>
+      <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>libc.lib; libcmt.lib; libcd.lib; libcmtd.lib; msvcrtd.lib; %(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <AdditionalDependencies>..\..\libs\js\$(Platform)_$(Configuration)\dist\lib\mozjs-24.0a.lib;kernel32.lib;$(StopEvaluating)</AdditionalDependencies>
-
-<!--      <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary> -->
-		<ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
-		
+      <AdditionalDependencies>$(jslibsRootDir)libs\js\$(jslibsIntDir)dist\lib\mozjs-24.0a.lib;kernel32.lib;$(StopEvaluating)</AdditionalDependencies>
+      <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
+      <AdditionalOptions>/LTCG %(AdditionalOptions)</AdditionalOptions>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <Lib>
-      <AdditionalOptions>/LTCG</AdditionalOptions>
+      <LinkTimeCodeGeneration>true</LinkTimeCodeGeneration>
     </Lib>
   </ItemDefinitionGroup>
 </Project>

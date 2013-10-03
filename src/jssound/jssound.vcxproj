@@ -11,16 +11,17 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F432DBF2-5EF1-4EE9-A98D-03CD47287C11}</ProjectGuid>
-    <RootNamespace>jslang</RootNamespace>
+    <ProjectGuid>{C79FB5B8-46EA-48A1-AFF1-546E92F03F12}</ProjectGuid>
+    <RootNamespace>jssound</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -35,33 +36,58 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">
-    <ClCompile />
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\libs\libvorbis\src\include;..\..\libs\libogg\src\include;..\..\libs\libsndfile\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">
-    <ClCompile />
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\libs\libvorbis\src\include;..\..\libs\libogg\src\include;..\..\libs\libsndfile\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="handle.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="serialize.cpp" />
+    <ClCompile Include="oggvorbisdecoder.cpp" />
+    <ClCompile Include="sound.cpp" />
+    <ClCompile Include="soundfiledecoder.cpp" />
     <ClCompile Include="static.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="stream.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="handlePub.h" />
-    <ClInclude Include="jslang.h" />
+    <ClInclude Include="sound.h" />
+    <ClInclude Include="static.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="blob_qa.js" />
-    <None Include="jslang_qa.js" />
+    <None Include="debug.js" />
+    <None Include="jssound_qa.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\libs\libogg\libogg.vcxproj">
+      <Project>{53ec80ad-d1dc-4783-b1e9-d3e77b097bf4}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\libsndfile\libsndfile.vcxproj">
+      <Project>{69dea591-d760-48ee-93b8-2a3df3ab9503}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

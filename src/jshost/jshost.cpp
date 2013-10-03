@@ -541,7 +541,9 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 
 
 //	setvbuf(stderr, pBuffer, mode, buffer_size);
-
+	
+//	JS_Init();
+	
 	cx = CreateHost(maxMem, maxAlloc, (uint32_t)(maybeGCInterval * 1000));
 	HOST_MAIN_ASSERT( cx != NULL, "Unable to initialize the JavaScript engine." );
 
@@ -622,7 +624,7 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, name), hostName) );
 	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, path), hostPath) );
 
-	JL_CHK( JL_NativeVectorToJsval(cx, argumentVector, argc - (argumentVector-argv), &arguments) );
+	JL_CHK( JL_NativeVectorToJsval(cx, argumentVector, argc - (argumentVector-argv), arguments) );
 	JL_CHK( JS_SetPropertyById(cx, hostObj, JLID(cx, arguments), &arguments) );
 
 	JL_CHK( JS_DefineProperty(cx, hostObj, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED) ); // https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
@@ -721,7 +723,10 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 
 	JS_SetGCCallback(JL_GetRuntime(cx), NULL);
 	DestroyHost(cx, disabledFree);
-	JS_ShutDown();
+	if ( !disabledFree ) {
+	
+		JS_ShutDown();
+	}
 	cx = NULL;
 
 

@@ -137,6 +137,9 @@ my_ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report)
 
 int main(int argc, char* argv[]) {
 	
+	argc--;
+	printf("Running %s with %d arguments\n", argv[0], argc);
+
 	if ( argc < 2 )
 		return EXIT_FAILURE;
 

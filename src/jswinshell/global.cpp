@@ -209,6 +209,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( fileOpenDialog ) {
 
+	JL_DEFINE_ARGS;
+
 	OPENFILENAME ofn = { sizeof(OPENFILENAME) };
 	char fileName[PATH_MAX];
 	char filter[255];
@@ -257,6 +259,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( expandEnvironmentStrings ) {
 
+	JL_DEFINE_ARGS;
+
 	JLData src;
 	JL_ASSERT_ARGC_MIN(1);
 
@@ -286,6 +290,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( messageBeep ) {
 
+	JL_DEFINE_ARGS;
+
 	UINT type = (UINT)-1;
 	if ( argc >= 1 )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &type) );
@@ -306,6 +312,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( beep ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(2);
 
 	unsigned int freq, duration;
@@ -326,6 +333,8 @@ $TOC_MEMBER $INAME
   Creates a new COM object by object name or CLSID.
 **/
 DEFINE_FUNCTION( createComObject ) {
+
+	JL_DEFINE_ARGS;
 
 	IUnknown *punk = NULL;
 	IDispatch *pdisp = NULL;
@@ -356,7 +365,7 @@ DEFINE_FUNCTION( createComObject ) {
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
 //	pdisp->AddRef();
-	JL_CHK( NewComDispatch(cx, pdisp, *JL_RVAL) );
+	JL_CHK( NewComDispatch(cx, pdisp, args.rval()) );
 	pdisp->Release();
 	punk->Release();
 	return JS_TRUE;
@@ -436,11 +445,12 @@ ParseRootKey(IN const char *path, OUT size_t *length) {
 }
 
 DEFINE_FUNCTION( registrySet ) {
-	
+
 	jsval value;
 	JLData subKeyStr, valueNameStr;
 	const char *subKey;
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(3);
 	
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &subKeyStr) );
@@ -549,6 +559,7 @@ DEFINE_FUNCTION( registryGet ) {
 	uint8_t *buffer = NULL;
 	JLData pathStr, valueName;
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(1,2);
 	
 	const char *path;
@@ -570,7 +581,7 @@ DEFINE_FUNCTION( registryGet ) {
 	if ( st != ERROR_SUCCESS )
 		return WinThrowError(cx, st);
 
-	if ( (argc == 1) || (argc >= 2 && JL_ARG(2) == JSVAL_VOID) ) {
+	if ( (argc == 1) || (argc >= 2 && JL_ARG(2).isUndefined()) ) {
 
 		JSObject *arrObj = JS_NewArrayObject(cx, 0, NULL);
 		JL_CHK( arrObj );
@@ -707,6 +718,7 @@ DEFINE_FUNCTION( directoryChangesInit ) {
 
 	JLData pathName;
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(2,3);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pathName) );
@@ -754,6 +766,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( directoryChangesLookup ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(1,2);
 	JL_ASSERT_ARG_TYPE( IsHandleType(cx, JL_ARG(1), JLHID(dmon)), 1, "(dmon) Handle" );
 
@@ -914,6 +927,7 @@ static void FinalizeDirectoryChangesEvents( void *data ) {
 
 DEFINE_FUNCTION( directoryChangesEvents ) {
 	
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(1, 2);
 	JL_ASSERT_ARG_TYPE( IsHandleType(cx, JL_ARG(1), JLHID(dmon)), 1, "(dmon) Handle" );
 
@@ -967,6 +981,7 @@ DEFINE_FUNCTION( guidToString ) {
 
 	JLData str;
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
@@ -1334,6 +1349,7 @@ DEFINE_FUNCTION( jswinshelltest ) {
 
 	JL_IGNORE( argc, cx );
 
+	JL_DEFINE_ARGS;
 	*JL_RVAL = JSVAL_VOID;
 	return JS_TRUE;
 }

@@ -318,6 +318,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( isEnabled ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC_MIN(1);
@@ -332,6 +334,8 @@ DEFINE_FUNCTION( isEnabled ) {
 
 
 DEFINE_FUNCTION( get ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -735,7 +739,7 @@ DEFINE_FUNCTION( get ) {
 		{
 			GLdouble params[1];
 			glGetDoublev(pname, params);  OGL_ERR_CHK;
-			return JL_NativeToJsval(cx, *params, JL_RVAL);
+			return JL_NativeToJsval(cx, *params, *JL_RVAL);
 		}
 
 		case GL_ALIASED_POINT_SIZE_RANGE:
@@ -746,7 +750,7 @@ DEFINE_FUNCTION( get ) {
 		{
 			GLdouble params[2];
 			glGetDoublev(pname, params);  OGL_ERR_CHK;
-			return JL_NativeVectorToJsval(cx, params, COUNTOF(params), JL_RVAL);
+			return JL_NativeVectorToJsval(cx, params, COUNTOF(params), *JL_RVAL);
 		}
 
 		case GL_CURRENT_NORMAL:
@@ -754,7 +758,7 @@ DEFINE_FUNCTION( get ) {
 		{
 			GLdouble params[3];
 			glGetDoublev(pname, params);  OGL_ERR_CHK;
-			return JL_NativeVectorToJsval(cx, params, COUNTOF(params), JL_RVAL);
+			return JL_NativeVectorToJsval(cx, params, COUNTOF(params), *JL_RVAL);
 		}
 
 		case GL_ACCUM_CLEAR_VALUE:
@@ -773,7 +777,7 @@ DEFINE_FUNCTION( get ) {
 		{
 			GLdouble params[4];
 			glGetDoublev(pname, params);  OGL_ERR_CHK;
-			return JL_NativeVectorToJsval(cx, params, COUNTOF(params), JL_RVAL);
+			return JL_NativeVectorToJsval(cx, params, COUNTOF(params), *JL_RVAL);
 		}
 
 		case GL_COLOR_MATRIX:
@@ -787,7 +791,7 @@ DEFINE_FUNCTION( get ) {
 		{
 			GLdouble params[16];
 			glGetDoublev(pname, params);  OGL_ERR_CHK;
-			return JL_NativeVectorToJsval(cx, params, COUNTOF(params), JL_RVAL);
+			return JL_NativeVectorToJsval(cx, params, COUNTOF(params), *JL_RVAL);
 		}
 
 		case GL_COMPRESSED_TEXTURE_FORMATS: // enum
@@ -796,7 +800,7 @@ DEFINE_FUNCTION( get ) {
 			glGetIntegerv(GL_NUM_COMPRESSED_TEXTURE_FORMATS, &count);
 			GLint *params = (GLint*)alloca(count * sizeof(GLenum));
 			glGetIntegerv(pname, params);
-			return JL_NativeVectorToJsval(cx, params, count, JL_RVAL);
+			return JL_NativeVectorToJsval(cx, params, count, *JL_RVAL);
 		}
 	}
 
@@ -817,6 +821,8 @@ $TOC_MEMBER $INAME
    glGetBooleanv
 **/
 DEFINE_FUNCTION( getBoolean ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -845,6 +851,8 @@ $TOC_MEMBER $INAME
    glGetIntegerv
 **/
 DEFINE_FUNCTION( getInteger ) {
+	
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -891,7 +899,7 @@ DEFINE_FUNCTION( getInteger ) {
 		while (count--) {
 
 			tmpValue = INT_TO_JSVAL( params[count] );
-			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
 		}
 
 	} else {
@@ -918,6 +926,8 @@ $TOC_MEMBER $INAME
    glGetDoublev
 **/
 DEFINE_FUNCTION( getDouble ) {
+	
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -963,12 +973,12 @@ DEFINE_FUNCTION( getDouble ) {
 		count = JL_MIN(count, COUNTOF(params));
 		while (count--) {
 
-			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
-			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
 		}
 	} else {
 
-		JL_CHK( JL_NativeToJsval(cx, params[0], JL_RVAL) );
+		JL_CHK( JL_NativeToJsval(cx, params[0], *JL_RVAL) );
 	}
 
 	return JS_TRUE;
@@ -987,13 +997,15 @@ $TOC_MEMBER $INAME
    glGetString
 **/
 DEFINE_FUNCTION( getString ) {
+	
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
-	return JL_NativeToJsval(cx, (char*)glGetString(JSVAL_TO_INT(JL_ARG(1))), JL_RVAL);  OGL_ERR_CHK;
+	return JL_NativeToJsval(cx, (char*)glGetString(JSVAL_TO_INT(JL_ARG(1))), *JL_RVAL);  OGL_ERR_CHK;
 	JL_BAD;
 }
 
@@ -1005,6 +1017,8 @@ $TOC_MEMBER $INAME
    glDrawBuffer
 **/
 DEFINE_FUNCTION( drawBuffer ) {
+	
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1026,6 +1040,8 @@ $TOC_MEMBER $INAME
    glReadBuffer
 **/
 DEFINE_FUNCTION( readBuffer ) {
+	
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1050,6 +1066,8 @@ $TOC_MEMBER $INAME
    glAccum
 **/
 DEFINE_FUNCTION( accum ) {
+	
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1081,6 +1099,8 @@ $TOC_MEMBER $INAME
    glStencilFunc
 **/
 DEFINE_FUNCTION( stencilFunc ) {
+	
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1090,7 +1110,7 @@ DEFINE_FUNCTION( stencilFunc ) {
 	JL_ASSERT_ARG_IS_NUMBER(3);
 
 	GLuint mask;
-	if ( JL_ARG(3) == INT_TO_JSVAL(-1) )
+	if ( INT_TO_JSVAL(-1) == JL_ARG(3) )
 		mask = 0xffffffff;
 	else
 		JL_JsvalToNative(cx, JL_ARG(3), &mask);
@@ -1114,6 +1134,8 @@ $TOC_MEMBER $INAME
    glStencilOp
 **/
 DEFINE_FUNCTION( stencilOp ) {
+	
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1141,6 +1163,8 @@ $TOC_MEMBER $INAME
    glStencilMask
 **/
 DEFINE_FUNCTION( stencilMask ) {
+		
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1148,7 +1172,7 @@ DEFINE_FUNCTION( stencilMask ) {
 	JL_ASSERT_ARG_IS_NUMBER(1);
 
 	GLuint mask;
-	if ( JL_ARG(1) == INT_TO_JSVAL(-1) )
+	if ( INT_TO_JSVAL(-1) == JL_ARG(1) )
 		mask = 0xffffffff;
 	else
 		JL_JsvalToNative(cx, JL_ARG(1), &mask);
@@ -1171,6 +1195,8 @@ $TOC_MEMBER $INAME
    glAlphaFunc
 **/
 DEFINE_FUNCTION( alphaFunc ) {
+		
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1196,6 +1222,8 @@ $TOC_MEMBER $INAME
    glFlush
 **/
 DEFINE_FUNCTION( flush ) {
+		
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1216,6 +1244,8 @@ $TOC_MEMBER $INAME
    glFinish
 **/
 DEFINE_FUNCTION( finish ) {
+		
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1239,6 +1269,8 @@ $TOC_MEMBER $INAME
    glFogi, glFogf, glFogfv
 **/
 DEFINE_FUNCTION( fog ) {
+		
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1287,6 +1319,8 @@ $TOC_MEMBER $INAME
    glHint
 **/
 DEFINE_FUNCTION( hint ) {
+		
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1315,6 +1349,8 @@ $TOC_MEMBER $INAME
    glVertex3d, glVertex2d
 **/
 DEFINE_FUNCTION( vertex ) {
+		
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1372,6 +1408,8 @@ $TOC_MEMBER $INAME
    glEdgeFlag
 **/
 DEFINE_FUNCTION( edgeFlag ) {
+		
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1402,6 +1440,8 @@ $TOC_MEMBER $INAME
    glColor4d, glColor3d
 **/
 DEFINE_FUNCTION( color ) {
+		
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1462,6 +1502,8 @@ $TOC_MEMBER $INAME
    glNormal3d
 **/
 DEFINE_FUNCTION( normal ) {
+		
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1495,6 +1537,8 @@ $TOC_MEMBER $INAME
    glTexCoord1d, glTexCoord2d, glTexCoord3d
 **/
 DEFINE_FUNCTION( texCoord ) {
+		
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1541,6 +1585,8 @@ $TOC_MEMBER $INAME
    glTexParameteri, glTexParameterf, glTexParameterfv
 **/
 DEFINE_FUNCTION( texParameter ) {
+		
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1594,6 +1640,8 @@ $TOC_MEMBER $INAME
    glTexEnvi, glTexEnvf, glTexEnvfv
 **/
 DEFINE_FUNCTION( texEnv ) {
+		
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1654,6 +1702,8 @@ $TOC_MEMBER $INAME
    glTexGeni, glTexGend, glTexGendv
 **/
 DEFINE_FUNCTION( texGen ) {
+		
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1720,6 +1770,8 @@ $TOC_MEMBER $INAME
    http://www.opengl.org/sdk/docs/man/xhtml/glTexImage2D.xml
 **/
 DEFINE_FUNCTION( texImage2D ) {
+		
+	jl::Args args(ARGSARGS);
 
 	JLData data;
 
@@ -1763,6 +1815,8 @@ $TOC_MEMBER $INAME
   $H OpenGL documentation
 **/
 DEFINE_FUNCTION( copyTexSubImage2D ) {
+		
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1802,6 +1856,8 @@ $TOC_MEMBER $INAME
   $H OpenGL documentation
 **/
 DEFINE_FUNCTION( texSubImage2D ) {
+		
+	jl::Args args(ARGSARGS);
 
 	JLData data;
 
@@ -1847,6 +1903,8 @@ $TOC_MEMBER $INAME
    glLightModeli, glLightModelf, glLightModelfv
 **/
 DEFINE_FUNCTION( lightModel ) {
+		
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1894,6 +1952,8 @@ $TOC_MEMBER $INAME
    glLighti, glLightf, glLightfv
 **/
 DEFINE_FUNCTION( light ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -1950,6 +2010,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getLight ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC_RANGE(2,3);
@@ -1999,12 +2061,12 @@ DEFINE_FUNCTION( getLight ) {
 		jsval tmpValue;
 		while ( count-- ) {
 
-			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
-			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
 		}
 	} else {
 
-		JL_CHK(JL_NativeToJsval(cx, params[0], JL_RVAL) );
+		JL_CHK(JL_NativeToJsval(cx, params[0], *JL_RVAL) );
 	}
 
 	return JS_TRUE;
@@ -2022,6 +2084,8 @@ $TOC_MEMBER $INAME
    glColorMaterial
 **/
 DEFINE_FUNCTION( colorMaterial ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -2048,6 +2112,8 @@ $TOC_MEMBER $INAME
    glMateriali, glMaterialf, glMaterialfv
 **/
 DEFINE_FUNCTION( material ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -2110,6 +2176,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( enable ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC_MIN(1);
@@ -2134,6 +2202,8 @@ $TOC_MEMBER $INAME
    glDisable
 **/
 DEFINE_FUNCTION( disable ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -2160,6 +2230,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( pointSize ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(1);
@@ -2184,6 +2256,8 @@ $TOC_MEMBER $INAME
    glLineWidth
 **/
 DEFINE_FUNCTION( lineWidth ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -2210,6 +2284,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( shadeModel ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(1);
@@ -2233,6 +2309,8 @@ $TOC_MEMBER $INAME
    glBlendFunc
 **/
 DEFINE_FUNCTION( blendFunc ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -2258,6 +2336,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( depthFunc ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(1);
@@ -2280,6 +2360,8 @@ $TOC_MEMBER $INAME
    glDepthMask
 **/
 DEFINE_FUNCTION( depthMask ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -2305,6 +2387,8 @@ $TOC_MEMBER $INAME
    glDepthRange
 **/
 DEFINE_FUNCTION( depthRange ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -2334,6 +2418,8 @@ $TOC_MEMBER $INAME
    glPolygonOffset
 **/
 DEFINE_FUNCTION( polygonOffset ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -2366,6 +2452,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( cullFace ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(1);
@@ -2388,6 +2476,8 @@ $TOC_MEMBER $INAME
    glFrontFace
 **/
 DEFINE_FUNCTION( frontFace ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -2414,13 +2504,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( clearStencil ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	GLuint s;
-	if ( JL_ARG(1) == INT_TO_JSVAL(-1) )
+	if ( INT_TO_JSVAL(-1) == JL_ARG(1) )
 		s = 0xffffffff;
 	else
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &s) );
@@ -2442,6 +2534,8 @@ $TOC_MEMBER $INAME
    glClearDepth
 **/
 DEFINE_FUNCTION( clearDepth ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -2471,6 +2565,8 @@ $TOC_MEMBER $INAME
    glClearColor
 **/
 DEFINE_FUNCTION( clearColor ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -2507,6 +2603,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( clearAccum ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(4);
@@ -2539,6 +2637,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( clear ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(1);
@@ -2568,13 +2668,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( colorMask ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
 	if ( JL_ARG_ISDEF(1) ) {
 
 		JL_ASSERT_ARG_IS_BOOLEAN(1);
-		if ( JL_ARG(1) == JSVAL_FALSE ) {
+		if ( JL_ARG(1).isFalse() ) {
 
 			glColorMask(0,0,0,0);  OGL_ERR_CHK;
 		} else {
@@ -2608,6 +2710,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( clipPlane ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(2);
@@ -2637,6 +2741,8 @@ $TOC_MEMBER $INAME
    glViewport
 **/
 DEFINE_FUNCTION( viewport ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -2668,6 +2774,8 @@ $TOC_MEMBER $INAME
    glFrustum
 **/
 DEFINE_FUNCTION( frustum ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -2710,6 +2818,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ortho ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(6);
@@ -2749,6 +2859,8 @@ $TOC_MEMBER $INAME
    gluPerspective
 **/
 DEFINE_FUNCTION( perspective ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -2821,6 +2933,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( matrixMode ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(1);
@@ -2842,6 +2956,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( loadIdentity ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(0);
@@ -2862,6 +2978,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( pushMatrix ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(0);
@@ -2881,6 +2999,8 @@ $TOC_MEMBER $INAME
    glPopMatrix
 **/
 DEFINE_FUNCTION( popMatrix ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -2903,6 +3023,8 @@ $TOC_MEMBER $INAME
    glLoadMatrixf
 **/
 DEFINE_FUNCTION( loadMatrix ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -2928,6 +3050,8 @@ $TOC_MEMBER $INAME
    glLoadMatrixf
 **/
 DEFINE_FUNCTION( multMatrix ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -2958,6 +3082,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( rotate ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(4);
@@ -2987,6 +3113,8 @@ $TOC_MEMBER $INAME
    glTranslated
 **/
 DEFINE_FUNCTION( translate ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -3022,6 +3150,8 @@ $TOC_MEMBER $INAME
    glScaled
 **/
 DEFINE_FUNCTION( scale ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -3063,6 +3193,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( newList ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC_RANGE(0,1);
@@ -3094,6 +3226,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( deleteList ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(1);
@@ -3114,6 +3248,8 @@ $TOC_MEMBER $INAME
    glEndList
 **/
 DEFINE_FUNCTION( endList ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -3138,6 +3274,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( callList ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(1);
@@ -3160,7 +3298,7 @@ DEFINE_FUNCTION( callList ) {
 		jsval value;
 		for ( unsigned i = 0; i < length; ++i ) {
 
-			JL_CHK( JL_GetElement(cx, jsArray, i, &value) );
+			JL_CHK( JL_GetElement(cx, jsArray, i, value) );
 			lists[i] = JSVAL_TO_INT(value);
 		}
 
@@ -3186,6 +3324,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( polygonMode ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(2);
@@ -3209,6 +3349,8 @@ $TOC_MEMBER $INAME
    glBegin
 **/
 DEFINE_FUNCTION( begin ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -3234,6 +3376,8 @@ $TOC_MEMBER $INAME
    glEnd
 **/
 DEFINE_FUNCTION( end ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -3261,6 +3405,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( pushAttrib ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(1);
@@ -3287,6 +3433,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( popAttrib ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(0);
@@ -3307,6 +3455,8 @@ $TOC_MEMBER $INAME
    glGenTextures
 **/
 DEFINE_FUNCTION( genTexture ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -3331,6 +3481,8 @@ $TOC_MEMBER $INAME
    glBindTexture
 **/
 DEFINE_FUNCTION( bindTexture ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -3359,6 +3511,8 @@ $TOC_MEMBER $INAME
    glDeleteTextures
 **/
 DEFINE_FUNCTION( deleteTexture ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -3392,6 +3546,8 @@ $TOC_MEMBER $INAME
    glCopyTexImage2D
 **/
 DEFINE_FUNCTION( copyTexImage2D ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -3433,6 +3589,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( pixelTransfer ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -3464,6 +3622,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( pixelStore ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -3494,6 +3654,8 @@ $TOC_MEMBER $INAME
    glRasterPos*
 **/
 DEFINE_FUNCTION( rasterPos ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -3536,6 +3698,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( pixelZoom ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(2);
@@ -3561,6 +3725,8 @@ $TOC_MEMBER $INAME
    glPixelMapfv
 **/
 DEFINE_FUNCTION( pixelMap ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -3595,6 +3761,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( hasExtensionProc ) {
 
 	JLData procName;
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT( glGetProcAddress != NULL, E_OS, E_INIT, E_STR("OpenGL"), E_COMMENT("extensions") );
@@ -3626,6 +3794,8 @@ $TOC_MEMBER $INAME
    true if all extensions are available.
 **/
 DEFINE_FUNCTION( hasExtensionName ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -3665,6 +3835,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( blendEquation ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glBlendEquation, PFNGLBLENDEQUATIONPROC );
@@ -3696,6 +3868,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( stencilFuncSeparate ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glStencilFuncSeparate, PFNGLSTENCILFUNCSEPARATEPROC ); // Opengl 2.0+
@@ -3707,7 +3881,7 @@ DEFINE_FUNCTION( stencilFuncSeparate ) {
 	JL_ASSERT_ARG_IS_NUMBER(4);
 
 	GLuint mask;
-	if ( JL_ARG(4) == INT_TO_JSVAL(-1) )
+	if ( INT_TO_JSVAL(-1) == JL_ARG(4) )
 		mask = 0xffffffff;
 	else
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &mask) );
@@ -3732,6 +3906,8 @@ $TOC_MEMBER $INAME
    glStencilOp
 **/
 DEFINE_FUNCTION( stencilOpSeparate ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -3761,6 +3937,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( activeStencilFaceEXT ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glActiveStencilFaceEXT, PFNGLACTIVESTENCILFACEEXTPROC ); // Opengl 2.0+
@@ -3787,6 +3965,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( bindRenderbuffer ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glBindRenderbufferEXT, PFNGLBINDRENDERBUFFEREXTPROC );
@@ -3810,6 +3990,8 @@ $TOC_MEMBER $INAME
    glGenRenderbuffersEXT
 **/
 DEFINE_FUNCTION( genRenderbuffer ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -3836,6 +4018,8 @@ $TOC_MEMBER $INAME
    glDeleteRenderbuffersEXT
 **/
 DEFINE_FUNCTION( deleteRenderbuffer ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -3864,6 +4048,8 @@ $TOC_MEMBER $INAME
    glRenderbufferStorageEXT
 **/
 DEFINE_FUNCTION( renderbufferStorage ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -3894,6 +4080,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getRenderbufferParameter ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glGetRenderbufferParameterivEXT, PFNGLGETRENDERBUFFERPARAMETERIVEXTPROC );
@@ -3911,7 +4099,7 @@ DEFINE_FUNCTION( getRenderbufferParameter ) {
 		JL_ASSERT_ARG_IS_INTEGER(3);
 		int count;
 		count = JL_MIN(JSVAL_TO_INT(JL_ARG(3)), (int)COUNTOF(params));
-		JL_CHK( JL_NativeVectorToJsval(cx, params, count, JL_RVAL, false) );
+		JL_CHK( JL_NativeVectorToJsval(cx, params, count, *JL_RVAL, false) );
 	} else {
 
 		*JL_RVAL = INT_TO_JSVAL( params[0] );
@@ -3932,6 +4120,8 @@ $TOC_MEMBER $INAME
    glBindFramebufferEXT
 **/
 DEFINE_FUNCTION( bindFramebuffer ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -3956,6 +4146,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( genFramebuffer ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glGenFramebuffersEXT, PFNGLGENFRAMEBUFFERSEXTPROC );
@@ -3979,6 +4171,8 @@ $TOC_MEMBER $INAME
    glDeleteFranebuffersEXT
 **/
 DEFINE_FUNCTION( deleteFramebuffer ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -4005,6 +4199,8 @@ $TOC_MEMBER $INAME
    glCheckFramebufferStatusEXT
 **/
 DEFINE_FUNCTION( checkFramebufferStatus ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -4033,6 +4229,8 @@ $TOC_MEMBER $INAME
    glFramebufferTexture1DEXT
 **/
 DEFINE_FUNCTION( framebufferTexture1D ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -4066,6 +4264,8 @@ $TOC_MEMBER $INAME
    glFramebufferTexture2DEXT
 **/
 DEFINE_FUNCTION( framebufferTexture2D ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -4101,6 +4301,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( framebufferTexture3D ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glFramebufferTexture3DEXT, PFNGLFRAMEBUFFERTEXTURE3DEXTPROC );
@@ -4135,6 +4337,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( framebufferRenderbuffer ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glFramebufferRenderbufferEXT, PFNGLFRAMEBUFFERRENDERBUFFEREXTPROC );
@@ -4168,6 +4372,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getFramebufferAttachmentParameter ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glGetFramebufferAttachmentParameterivEXT, PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVEXTPROC  );
@@ -4186,7 +4392,7 @@ DEFINE_FUNCTION( getFramebufferAttachmentParameter ) {
 		JL_ASSERT_ARG_IS_INTEGER(4);
 		int count;
 		count = JL_MIN(JSVAL_TO_INT(JL_ARG(4)), (int)COUNTOF(params));
-		JL_CHK( JL_NativeVectorToJsval(cx, params, count, JL_RVAL, false) );
+		JL_CHK( JL_NativeVectorToJsval(cx, params, count, *JL_RVAL, false) );
 	} else {
 
 		*JL_RVAL = INT_TO_JSVAL( params[0] );
@@ -4207,6 +4413,8 @@ $TOC_MEMBER $INAME
    glCreateShaderObjectARB
 **/
 DEFINE_FUNCTION( createShaderObject ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -4232,6 +4440,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( deleteObject ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glDeleteObjectARB, PFNGLDELETEOBJECTARBPROC );
@@ -4256,6 +4466,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getInfoLog ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glGetInfoLogARB, PFNGLGETINFOLOGARBPROC );
@@ -4270,7 +4482,7 @@ DEFINE_FUNCTION( getInfoLog ) {
 	buffer[length] = '\0'; // needed ?
 	glGetInfoLogARB(shaderHandle, length, &length, buffer);  OGL_ERR_CHK;
 //	JL_CHK( JL_StringAndLengthToJsval(cx, JL_RVAL, buffer, length+1) );
-	JL_CHK( JL_NativeToJsval(cx, buffer, length+1, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, buffer, length+1, *JL_RVAL) );
 
 	return JS_TRUE;
 	JL_BAD;
@@ -4284,6 +4496,8 @@ $TOC_MEMBER $INAME
    glCreateProgramObjectARB
 **/
 DEFINE_FUNCTION( createProgramObject ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -4306,6 +4520,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( shaderSource ) {
 
 	JLData source;
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 	JL_INIT_OPENGL_EXTENSION( glShaderSourceARB, PFNGLSHADERSOURCEARBPROC );
 	JL_ASSERT_ARGC(2);
@@ -4337,6 +4553,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( compileShader ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glCompileShaderARB, PFNGLCOMPILESHADERARBPROC );
@@ -4360,6 +4578,8 @@ $TOC_MEMBER $INAME
    glCompileShaderARB
 **/
 DEFINE_FUNCTION( attachObject ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -4389,6 +4609,8 @@ $TOC_MEMBER $INAME
    glLinkProgramARB
 **/
 DEFINE_FUNCTION( linkProgram ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -4420,6 +4642,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( useProgramObject ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glUseProgramObjectARB, PFNGLUSEPROGRAMOBJECTARBPROC );
@@ -4446,6 +4670,8 @@ $TOC_MEMBER $INAME
    glGetActiveUniformARB, glGetUniformLocationARB, glGetProgramiv
 **/
 DEFINE_FUNCTION( getUniformInfo ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -4520,6 +4746,8 @@ DEFINE_FUNCTION( getUniformLocation ) {
 
 	JLData name;
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 	JL_INIT_OPENGL_EXTENSION( glGetUniformLocationARB, PFNGLGETUNIFORMLOCATIONARBPROC );
 
@@ -4551,6 +4779,8 @@ $TOC_MEMBER $INAME
   glUniform1fARB, glUniform1iARB
 **/
 DEFINE_FUNCTION( uniform ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -4646,7 +4876,7 @@ DEFINE_FUNCTION( uniform ) {
 
 
 	jsval staticArgs[4];
-	jsval *args;
+	jsval *aargs;
 	int count;
 	if ( JL_ARGC == 2 && JL_ValueIsArrayLike(cx, JL_ARG(2)) ) { // (TBD) check if array-like make sense here.
 
@@ -4656,30 +4886,30 @@ DEFINE_FUNCTION( uniform ) {
 		count = tmp;
 		while ( tmp-- ) {
 
-			JL_CHK( JL_GetElement(cx, arr, tmp, &staticArgs[tmp]) );
+			JL_CHK( JL_GetElement(cx, arr, tmp, staticArgs[tmp]) );
 		}
-		args = staticArgs;
+		aargs = staticArgs;
 	} else {
 
 		count = JL_ARGC-1;
-		args = JL_ARGV;
+		aargs = JL_ARGV;
 	}
 
 	JL_CHKM( count >= 1 && count <= 4, E_ARGC, E_RANGE, E_INTERVAL_NUM(1, 4) );
 
-	if ( JSVAL_IS_DOUBLE(args[0]) ) {
+	if ( JSVAL_IS_DOUBLE(aargs[0]) ) {
 
 		float v1, v2, v3, v4;
-		JL_CHK( JL_JsvalToNative(cx, args[0], &v1) );
+		JL_CHK( JL_JsvalToNative(cx, aargs[0], &v1) );
 		if ( count > 1 ) {
 
-			JL_CHK( JL_JsvalToNative(cx, args[1], &v2) );
+			JL_CHK( JL_JsvalToNative(cx, aargs[1], &v2) );
 			if ( count > 2 ) {
 
-				JL_CHK( JL_JsvalToNative(cx, args[2], &v3) );
+				JL_CHK( JL_JsvalToNative(cx, aargs[2], &v3) );
 				if ( count > 3 ) {
 
-					JL_CHK( JL_JsvalToNative(cx, args[3], &v4) );
+					JL_CHK( JL_JsvalToNative(cx, aargs[3], &v4) );
 					glUniform4fARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
 					return JS_TRUE;
 				}
@@ -4694,16 +4924,16 @@ DEFINE_FUNCTION( uniform ) {
 	} else {
 
 		int v1, v2, v3, v4;
-		JL_CHK( JL_JsvalToNative(cx, args[0], &v1) );
+		JL_CHK( JL_JsvalToNative(cx, aargs[0], &v1) );
 		if ( count > 1 ) {
 
-			JL_CHK( JL_JsvalToNative(cx, args[1], &v2) );
+			JL_CHK( JL_JsvalToNative(cx, aargs[1], &v2) );
 			if ( count > 2 ) {
 
-				JL_CHK( JL_JsvalToNative(cx, args[2], &v3) );
+				JL_CHK( JL_JsvalToNative(cx, aargs[2], &v3) );
 				if ( count > 3 ) {
 
-					JL_CHK( JL_JsvalToNative(cx, args[3], &v4) );
+					JL_CHK( JL_JsvalToNative(cx, aargs[3], &v4) );
 					glUniform4iARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
 					if ( glGetError() == GL_INVALID_OPERATION )
 						glUniform4fARB(uniformLocation, (float)v1, (float)v2, (float)v3, (float)v4);  OGL_ERR_CHK;
@@ -4800,6 +5030,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( uniformMatrix ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glUniformMatrix4fvARB, PFNGLUNIFORMMATRIX4FVARBPROC );
@@ -4835,6 +5067,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( uniformFloatVector ) {
 
 	GLfloat *value = NULL;
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 	JL_INIT_OPENGL_EXTENSION( glUniform1fvARB, PFNGLUNIFORM1FVARBPROC );
 	JL_INIT_OPENGL_EXTENSION( glUniform2fvARB, PFNGLUNIFORM2FVARBPROC );
@@ -4915,6 +5149,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( uniformFloat ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glUniform1fARB, PFNGLUNIFORM1FARBPROC );
@@ -4970,6 +5206,8 @@ $TOC_MEMBER $INAME
   glUniform1iARB, glUniform2iARB, glUniform3iARB, glUniform4iARB
 **/
 DEFINE_FUNCTION( uniformInteger ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -5028,6 +5266,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getObjectParameter ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glGetObjectParameterfvARB, PFNGLGETOBJECTPARAMETERFVARBPROC );
@@ -5054,12 +5294,12 @@ DEFINE_FUNCTION( getObjectParameter ) {
 
 		while (count--) {
 
-			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
-			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
 		}
 	} else {
 
-		JL_CHK( JL_NativeToJsval(cx, params[0], JL_RVAL) );
+		JL_CHK( JL_NativeToJsval(cx, params[0], *JL_RVAL) );
 	}
 
 	return JS_TRUE;
@@ -5077,6 +5317,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( bindAttribLocation ) {
 
 	JLData name;
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 	JL_INIT_OPENGL_EXTENSION( glBindAttribLocationARB, PFNGLBINDATTRIBLOCATIONARBPROC );
 
@@ -5103,6 +5345,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( getAttribLocation ) {
 
 	JLData name;
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 	JL_INIT_OPENGL_EXTENSION( glGetAttribLocationARB, PFNGLGETATTRIBLOCATIONARBPROC );
 
@@ -5127,6 +5371,8 @@ $TOC_MEMBER $INAME
   glVertexAttrib1dARB
 **/
 DEFINE_FUNCTION( vertexAttrib ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -5195,6 +5441,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( genBuffer ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glGenBuffers, PFNGLGENBUFFERSPROC );
@@ -5223,6 +5471,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( bindBuffer ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glBindBuffer, PFNGLBINDBUFFERPROC );
@@ -5250,6 +5500,8 @@ $TOC_MEMBER $INAME
 **/
 /*
 DEFINE_FUNCTION( bufferData ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -5283,6 +5535,8 @@ $TOC_MEMBER $INAME
    glPointParameterf, glPointParameterfv
 **/
 DEFINE_FUNCTION( pointParameter ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -5336,6 +5590,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( activeTexture ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glActiveTexture, PFNGLACTIVETEXTUREPROC );
@@ -5360,6 +5616,8 @@ $TOC_MEMBER $INAME
    glClientActiveTexture
 **/
 DEFINE_FUNCTION( clientActiveTexture ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -5388,6 +5646,8 @@ $TOC_MEMBER $INAME
    glMultiTexCoord1d, glMultiTexCoord2d, glMultiTexCoord3d
 **/
 DEFINE_FUNCTION( multiTexCoord ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -5443,6 +5703,8 @@ $TOC_MEMBER $INAME
 /*
 DEFINE_FUNCTION( createPbuffer ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 
@@ -5463,6 +5725,8 @@ $TOC_MEMBER $INAME
    glGenQueriesARB
 **/
 DEFINE_FUNCTION( genQueries ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -5490,6 +5754,8 @@ $TOC_MEMBER $INAME
    glDeleteQueriesARB
 **/
 DEFINE_FUNCTION( deleteQueries ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -5521,6 +5787,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( beginQuery ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glBeginQueryARB, PFNGLBEGINQUERYARBPROC );
@@ -5548,6 +5816,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( endQuery ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glEndQueryARB, PFNGLENDQUERYARBPROC );
@@ -5574,6 +5844,8 @@ $TOC_MEMBER $INAME
    glGetQueryivARB
 **/
 DEFINE_FUNCTION( getQuery ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -5606,6 +5878,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getQueryObject ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glGetQueryObjectivARB, PFNGLGETQUERYOBJECTIVARBPROC );
@@ -5629,7 +5903,7 @@ DEFINE_FUNCTION( getQueryObject ) {
 
 		GLuint param;
 		glGetQueryObjectuivARB(JSVAL_TO_INT( JL_ARG(1) ), pname, &param);  OGL_ERR_CHK;
-		JL_CHK( JL_NativeToJsval(cx, param, JL_RVAL) );
+		JL_CHK( JL_NativeToJsval(cx, param, *JL_RVAL) );
 	}
 
 	return JS_TRUE;
@@ -5649,6 +5923,8 @@ $TOC_MEMBER $INAME
    gluLookAt
 **/
 DEFINE_FUNCTION( unProject ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -5688,6 +5964,8 @@ $TOC_MEMBER $INAME
    glDrawPixels
 **/
 DEFINE_FUNCTION( drawImage ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 	JL_ASSERT_ARGC_RANGE(1,2);
@@ -5793,6 +6071,8 @@ $TOC_MEMBER $INAME
    glGenTextures, glBindTexture, glGetIntegerv, glCopyTexImage2D, glGetTexLevelParameteriv, glGetTexImage, glDeleteTextures
 **/
 DEFINE_FUNCTION( readImage ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -5941,6 +6221,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( loadTrimesh ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_INIT_OPENGL_EXTENSION( glGenBuffers, PFNGLGENBUFFERSPROC );
@@ -6019,6 +6301,8 @@ $TOC_MEMBER $INAME
    glVertexPointer
 **/
 DEFINE_FUNCTION( drawTrimesh ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -6162,6 +6446,8 @@ void TextureBufferFinalize(void* data) {
 
 DEFINE_FUNCTION( createTextureBuffer ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_IGNORE(argc);
@@ -6198,6 +6484,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( defineTextureImage ) {
 
 	JLData dataStr;
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 	JL_ASSERT_ARGC_MIN(3);
 	JL_ASSERT_ARG_IS_INTEGER(1);
@@ -6347,6 +6635,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( pixelWidthFactor ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	// see. http://www.songho.ca/opengl/gl_projectionmatrix.html
@@ -6374,6 +6664,8 @@ $TOC_MEMBER $INAME( size )
 **/
 DEFINE_FUNCTION( drawPoint ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(1);
@@ -6396,6 +6688,8 @@ $TOC_MEMBER $INAME
 $INAME( radius [ , vertexCount = 12 ] )
 ** /
 DEFINE_FUNCTION( drawDisk ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -6430,6 +6724,8 @@ $INAME( radius, slices, stacks, smooth );
 **/
 DEFINE_FUNCTION( drawSphere ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(4);
@@ -6459,6 +6755,8 @@ $INAME( radius, slices, loops );
 **/
 DEFINE_FUNCTION( drawDisk ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(3);
@@ -6486,6 +6784,8 @@ $TOC_MEMBER $INAME
 $INAME( baseRadius, topRadius, height, slices, stacks, smooth );
 **/
 DEFINE_FUNCTION( drawCylinder ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -6520,6 +6820,8 @@ $TOC_MEMBER $INAME
 $INAME( lengthX, lengthY, lengthZ );
 **/
 DEFINE_FUNCTION( drawBox ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -6686,6 +6988,8 @@ $TOC_MEMBER $INAME()
 **/
 DEFINE_FUNCTION( fullQuad ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_IGNORE(argc, cx);
@@ -6719,6 +7023,8 @@ $TOC_MEMBER $INAME
    gluLookAt
 **/
 DEFINE_FUNCTION( lookAt ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -6758,6 +7064,8 @@ $TOC_MEMBER $INAME
  $VOID $INAME( pointX, pointY, pointZ [, upx, upy, upz] )
 **/
 DEFINE_FUNCTION( aimAt ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 
@@ -6816,6 +7124,8 @@ $TOC_MEMBER $INAME()
 **/
 DEFINE_FUNCTION( keepTranslation ) {
 
+	jl::Args args(ARGSARGS);
+
 	OGL_CX_CHK;
 
 	JL_IGNORE(argc, cx);
@@ -6852,6 +7162,8 @@ $TOC_MEMBER $INAME
    glGetError
 **/
 DEFINE_PROPERTY_GETTER( error ) {
+
+	jl::Args args(ARGSARGS);
 
 	OGL_CX_CHK;
 

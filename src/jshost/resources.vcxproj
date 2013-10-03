@@ -18,7 +18,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'" Label="Configuration">
     <ConfigurationType>Utility</ConfigurationType>
@@ -36,25 +35,45 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">$(SolutionDir)$(Platform)_$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">$(Platform)_$(Configuration)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">$(SolutionDir)$(Platform)_$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">$(Platform)_$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">$(ProjectName)_$(Platform)_$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">.\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">$(ProjectName)_$(Platform)_$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">.\</OutDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">embeddedBootstrapScript</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">.js.xdr.cres</TargetExt>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">embeddedBootstrapScript</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">.js.xdr.cres</TargetExt>
   </PropertyGroup>
-  <ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">
+    <CustomBuild>
+      <Command>
+      </Command>
+    </CustomBuild>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">
+    <CustomBuild>
+      <Command>
+      </Command>
+    </CustomBuild>
   </ItemDefinitionGroup>
   <ItemGroup>
     <CustomBuild Include="embeddedBootstrapScript.js">
-      <Command Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">set PATH=%PATH%;$(SolutionDir)..\..\libs\js\$(IntDir)dist\bin
-"$(IntDir)jsScriptToXDR.exe" "%(FullPath)" "%(FullPath).xdr" true bootstrap
-"$(IntDir)fileToCRes.exe" "%(FullPath).xdr" "%(FullPath).xdr.cres"
+      <Command Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">set PATH=$(SolutionDir)..\..\libs\js\$(Platform)_$(Configuration)\dist\bin;$(SolutionDir)..\..\$(Platform)_$(Configuration)\;%PATH%
+echo PATH: %PATH%
+echo jsScriptToXDR:
+jsScriptToXDR.exe "%(FullPath)" "%(FullPath).xdr" true bootstrap
+echo fileToCRes:
+fileToCRes.exe "%(FullPath).xdr" "$(TargetPath)"
 </Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">%(FullPath).xdr;%(FullPath).xdr.cres;%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">set PATH=%PATH%;$(SolutionDir)..\..\libs\js\$(IntDir)dist\bin
-"$(IntDir)jsScriptToXDR.exe" "%(FullPath)" "%(FullPath).xdr" true bootstrap
-"$(IntDir)fileToCRes.exe" "%(FullPath).xdr" "%(FullPath).xdr.cres"
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">%(FullPath).xdr;$(TargetPath);%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">set PATH=$(SolutionDir)..\..\libs\js\$(Platform)_$(Configuration)\dist\bin;$(SolutionDir)..\..\$(Platform)_$(Configuration)\;%PATH%
+echo PATH: %PATH%
+echo jsScriptToXDR:
+jsScriptToXDR.exe "%(FullPath)" "%(FullPath).xdr" true bootstrap
+echo fileToCRes:
+fileToCRes.exe "%(FullPath).xdr" "$(TargetPath)"
 </Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">%(FullPath).xdr;%(FullPath).xdr.cres;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">%(FullPath).xdr;$(TargetPath);%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">Build custom bootstrap</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">Build custom bootstrap</Message>
     </CustomBuild>

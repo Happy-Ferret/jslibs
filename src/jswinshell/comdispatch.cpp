@@ -29,6 +29,7 @@ DEFINE_FINALIZE() {
 
 JSBool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -101,7 +102,7 @@ JSBool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
 
-	JL_CHK( VariantToJsval(cx, result, *JL_RVAL) ); // loose variant ownership
+	JL_CHK( VariantToJsval(cx, result, args.rval()) ); // loose variant ownership
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -188,7 +189,7 @@ end:
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
 
-	JL_CHK( VariantToJsval(cx, result, *vp.address()) ); // loose variant ownership
+	JL_CHK( VariantToJsval(cx, result, vp) ); // loose variant ownership
 	return JS_TRUE;
 
 bad:
@@ -229,7 +230,7 @@ DEFINE_SET_PROPERTY() {
 
 	VARIANTARG arg;
 	VariantInit(&arg);
-	JL_CHK( JsvalToVariant(cx, *vp.address(), &arg) ); // *vp will be stored in an object slot !
+	JL_CHK( JsvalToVariant(cx, vp, &arg) ); // *vp will be stored in an object slot !
 
 	WORD flags;
 	if ( V_VT(&arg) == VT_DISPATCH && V_ISBYREF(&arg) )
@@ -348,7 +349,7 @@ DEFINE_FUNCTION( equals ) {
 	JL_RVAL->setBoolean(JL_ARG(1).isObject() && &JL_ARG(1).toObject() == obj);
 	
 	return JS_TRUE;
-
+	JL_BAD;
 }
 
 
@@ -394,8 +395,8 @@ DEFINE_ITERATOR_OBJECT() {
 		JL_CHK( WinThrowError(cx, hr) );
 
 	{
-		jsval tmp;
-		JSBool st = NewComEnum(cx, pEnum, tmp);
+		JS::RootedValue tmp(cx);
+		JSBool st = NewComEnum(cx, pEnum, &tmp);
 		JL_CHK(st);
 		pEnum->Release();
 		return JSVAL_TO_OBJECT(tmp);
@@ -435,7 +436,6 @@ CONFIGURE_CLASS
 	HAS_GET_PROPERTY
 	HAS_SET_PROPERTY
 	HAS_ITERATOR_OBJECT
-//	HAS_EQUALITY_OP
 
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION( functionList )
@@ -445,7 +445,7 @@ CONFIGURE_CLASS
 END_CLASS
 
 
-JSBool NewComDispatch( JSContext *cx, IDispatch *pdisp, jsval &rval ) {
+JSBool NewComDispatch( JSContext *cx, IDispatch *pdisp, OUT JS::MutableHandleValue rval ) {
 
 	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComDispatch), JL_CLASS_PROTOTYPE(cx, ComDispatch), NULL);
 	JL_CHK(varObj);

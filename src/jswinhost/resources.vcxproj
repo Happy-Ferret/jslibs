@@ -36,39 +36,51 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">$(SolutionDir)$(Platform)_$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">$(Platform)_$(Configuration)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">$(SolutionDir)$(Platform)_$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">$(Platform)_$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">.\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">$(ProjectName)_$(Platform)_$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">.\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">$(ProjectName)_$(Platform)_$(Configuration)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">embeddedBootstrapScript</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">.js.xdr.cres</TargetExt>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">embeddedBootstrapScript</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">.js.xdr.cres</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
     <CustomBuild Include="embeddedBootstrapScript.js">
-      <Command Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">set PATH=%PATH%%3b$(SolutionDir)..\..\libs\js\$(IntDir)dist\bin
-"$(IntDir)jsScriptToXDR.exe" "%(FullPath)" "%(FullPath).xdr" true bootstrap
-"$(IntDir)fileToCRes.exe" "%(FullPath).xdr" "%(FullPath).xdr.cres"
+      <Command Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">set PATH=$(SolutionDir)..\..\libs\js\$(Platform)_$(Configuration)\dist\bin;$(SolutionDir)..\..\$(Platform)_$(Configuration)\;%PATH%
+echo PATH: %PATH%
+echo jsScriptToXDR:
+jsScriptToXDR.exe "%(FullPath)" "%(FullPath).xdr" true bootstrap
+echo fileToCRes:
+fileToCRes.exe "%(FullPath).xdr" "$(TargetPath)"
 </Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">%(FullPath).xdr;%(FullPath).xdr.cres;%(Outputs)</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">set PATH=%PATH%%3b$(SolutionDir)..\..\libs\js\$(IntDir)dist\bin
-"$(IntDir)jsScriptToXDR.exe" "%(FullPath)" "%(FullPath).xdr" true bootstrap
-"$(IntDir)fileToCRes.exe" "%(FullPath).xdr" "%(FullPath).xdr.cres"
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">%(FullPath).xdr;$(TargetPath);%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">set PATH=$(SolutionDir)..\..\libs\js\$(Platform)_$(Configuration)\dist\bin;$(SolutionDir)..\..\$(Platform)_$(Configuration)\;%PATH%
+echo PATH: %PATH%
+echo jsScriptToXDR:
+jsScriptToXDR.exe "%(FullPath)" "%(FullPath).xdr" true bootstrap
+echo fileToCRes:
+fileToCRes.exe "%(FullPath).xdr" "$(TargetPath)"
 </Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">%(FullPath).xdr;%(FullPath).xdr.cres;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">%(FullPath).xdr;$(TargetPath);%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">Build custom bootstrap</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">Build custom bootstrap</Message>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\tools\fileToCRes.vcxproj">
       <Project>{7993efa2-8340-46db-9781-936e28989a6d}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <Private>true</Private>
+      <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
     <ProjectReference Include="..\tools\jsScriptToXDR.vcxproj">
       <Project>{85ec7e4d-7386-41f5-bfc7-15e6ff3dac2a}</Project>
-      <Private>true</Private>
+      <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>

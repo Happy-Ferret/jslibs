@@ -88,6 +88,7 @@ $TOC_MEMBER $INAME
 
 DEFINE_FUNCTION( decodeOggVorbis ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
@@ -148,7 +149,7 @@ DEFINE_FUNCTION( decodeOggVorbis ) {
 	// convert data chunks into a single memory buffer.
 	//char *buf = (char*)jl_malloc(totalSize +1);
 	uint8_t *buf;
-	buf = JL_NewByteAudioObject(cx, bits, info->channels, totalSize / (info->channels * (bits/8)), info->rate, JL_RVAL);
+	buf = JL_NewByteAudioObject(cx, bits, info->channels, totalSize / (info->channels * (bits/8)), info->rate, *JL_RVAL);
 	JL_CHK( buf );
 
 	ov_clear(&descriptor); // beware: info must be valid
@@ -202,7 +203,7 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 		case SEEK_SET:
 			if ( offset < 0 )
 				return -1;
-			JL_NativeToJsval(pv->cx, offset, &tmpVal); // (TBD) manage error
+			JL_NativeToJsval(pv->cx, offset, tmpVal); // (TBD) manage error
 			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
 			return 0;
 
@@ -213,7 +214,7 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 			JL_JsvalToNative(pv->cx, tmpVal, &position); // (TBD) manage error
 
 			position += size_t(offset);
-			JL_NativeToJsval(pv->cx, position, &tmpVal); // (TBD) manage error
+			JL_NativeToJsval(pv->cx, position, tmpVal); // (TBD) manage error
 			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
 			return 0;
 
@@ -231,7 +232,7 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 			if ( offset > 0 || -offset > position + available )
 				return -1;
 			JL_JsvalToNative(pv->cx, tmpVal, &position);
-			JL_NativeToJsval(pv->cx, position + available + offset, &tmpVal); // the pointer is set to the size of the file plus offset.
+			JL_NativeToJsval(pv->cx, position + available + offset, tmpVal); // the pointer is set to the size of the file plus offset.
 			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal);
 			return 0;
 
@@ -284,6 +285,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( decodeSound ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
@@ -343,7 +345,7 @@ DEFINE_FUNCTION( decodeSound ) {
 
 	// convert data chunks into a single memory buffer.
 	uint8_t *buf;
-	buf = JL_NewByteAudioObject(cx, 16, info.channels, totalSize / (info.channels * (16 / 8)), info.samplerate, JL_RVAL);
+	buf = JL_NewByteAudioObject(cx, 16, info.channels, totalSize / (info.channels * (16 / 8)), info.samplerate, *JL_RVAL);
 	JL_CHK( buf );
 
 	sf_close(descriptor);
@@ -377,6 +379,7 @@ DEFINE_FUNCTION( splitChannels ) {
 
 	JLData data;
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
@@ -397,9 +400,9 @@ DEFINE_FUNCTION( splitChannels ) {
 	for ( int c = 0; c < channels; c++ ) {
 
 		uint8_t *buf;
-		buf = JL_NewByteAudioObject(cx, bits, 1, frames, rate, &tmpVal);
+		buf = JL_NewByteAudioObject(cx, bits, 1, frames, rate, tmpVal);
 		JL_CHK( buf );
-		JL_CHK( JL_SetElement(cx, destArray, c, &tmpVal) );
+		JL_CHK( JL_SetElement(cx, destArray, c, tmpVal) );
 
 		if ( bits == 16 ) {
 

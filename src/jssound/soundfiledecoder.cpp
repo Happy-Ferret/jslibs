@@ -74,37 +74,37 @@ bad:
 sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 
 	Private *pv = (Private*)user_data;
+	ASSERT( pv->cx );
 
-	jsval tmpVal;
+	JS::RootedValue tmpVal(pv->cx);
 	int position, available;
 
-	ASSERT( pv->cx );
 	switch ( whence ) {
 		case SEEK_SET:
 			if ( offset < 0 )
 				return -1;
-			JL_CHK( JL_NativeToJsval(pv->cx, offset, &tmpVal) );
-			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) );
+			JL_CHK( JL_NativeToJsval(pv->cx, offset, tmpVal) );
+			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
 			return 0;
 
 		case SEEK_CUR:
-			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) );
+			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
 			if ( JSVAL_IS_VOID( tmpVal ) )
 				return -1;
 			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
 
 			position += int(offset);
-			JL_CHK( JL_NativeToJsval(pv->cx, position, &tmpVal) );
-			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) );
+			JL_CHK( JL_NativeToJsval(pv->cx, position, tmpVal) );
+			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
 			return 0;
 
 		case SEEK_END:
-			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, available), &tmpVal) );
+			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, available), tmpVal.address()) );
 			if ( JSVAL_IS_VOID( tmpVal ) )
 				return -1;
 			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &available) );
 
-			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) );
+			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
 			if ( JSVAL_IS_VOID( tmpVal ) )
 				return -1;
 			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
@@ -112,8 +112,8 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 			if ( offset > 0 || -offset > position + available )
 				return -1;
 			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
-			JL_CHK( JL_NativeToJsval(pv->cx, position + available + offset, &tmpVal) ); // the pointer is set to the size of the file plus offset.
-			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) );
+			JL_CHK( JL_NativeToJsval(pv->cx, position + available + offset, tmpVal) ); // the pointer is set to the size of the file plus offset.
+			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
 			return 0;
 	}
 bad:
@@ -195,10 +195,11 @@ DEFINE_CONSTRUCTOR() {
 
 	Private *pv = NULL;
 
+	JL_DEFINE_ARGS;
+//	JL_ASSERT_CONSTRUCTING();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
-	JL_ASSERT_CONSTRUCTING();
-	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK( pv );
@@ -285,6 +286,7 @@ DEFINE_FUNCTION( read ) {
 
 	uint8_t *buf = NULL;
 
+	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -304,7 +306,7 @@ DEFINE_FUNCTION( read ) {
 		if ( frames <= 0 ) {
 
 			// like Descriptor::read, returns an empty audio object even if EOF
-			JL_CHK( JL_NewByteAudioObjectOwner(cx, NULL, pv->bits, pv->sfInfo.channels, 0, pv->sfInfo.samplerate, JL_RVAL) );
+			JL_CHK( JL_NewByteAudioObjectOwner(cx, NULL, pv->bits, pv->sfInfo.channels, 0, pv->sfInfo.samplerate, *JL_RVAL) );
 			return JS_TRUE;
 		}
 	} else {
@@ -351,7 +353,7 @@ DEFINE_FUNCTION( read ) {
 
 			if ( JL_MaybeRealloc(amount, totalSize) )
 				buf = (uint8_t*)jl_realloc(buf, totalSize);
-			JL_CHK( JL_NewByteAudioObjectOwner(cx, buf, pv->bits, pv->sfInfo.channels, totalSize / (pv->sfInfo.channels * pv->bits / 8), pv->sfInfo.samplerate, JL_RVAL) );
+			JL_CHK( JL_NewByteAudioObjectOwner(cx, buf, pv->bits, pv->sfInfo.channels, totalSize / (pv->sfInfo.channels * pv->bits / 8), pv->sfInfo.samplerate, *JL_RVAL) );
 		}
 
 	} else {
@@ -374,7 +376,7 @@ DEFINE_FUNCTION( read ) {
 		} while ( items > 0 );
 
 		if ( buffer.Length() )
-			JL_CHK( JL_NewByteAudioObjectOwner(cx, buffer.GetDataOwnership(), pv->bits, pv->sfInfo.channels, buffer.Length() / (pv->sfInfo.channels * pv->bits/8), pv->sfInfo.samplerate, JL_RVAL) );
+			JL_CHK( JL_NewByteAudioObjectOwner(cx, buffer.GetDataOwnership(), pv->bits, pv->sfInfo.channels, buffer.Length() / (pv->sfInfo.channels * pv->bits/8), pv->sfInfo.samplerate, *JL_RVAL) );
 		else
 			*JL_RVAL = JSVAL_VOID;
 	}
@@ -422,7 +424,7 @@ DEFINE_PROPERTY_GETTER( bits ) {
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	*vp = INT_TO_JSVAL( pv->bits );
+	vp.setInt32( pv->bits );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -439,7 +441,7 @@ DEFINE_PROPERTY_GETTER( rate ) {
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	*vp = INT_TO_JSVAL( pv->sfInfo.samplerate );
+	vp.setInt32( pv->sfInfo.samplerate );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -456,7 +458,7 @@ DEFINE_PROPERTY_GETTER( channels ) {
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	*vp = INT_TO_JSVAL( pv->sfInfo.channels );
+	vp.setInt32( pv->sfInfo.channels );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -474,7 +476,7 @@ DEFINE_PROPERTY_GETTER( frames ) {
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	*vp = INT_TO_JSVAL( size_t(pv->sfInfo.frames) );
+	vp.setInt32( size_t(pv->sfInfo.frames) );
 	return JS_TRUE;
 	JL_BAD;
 }

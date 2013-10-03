@@ -38,6 +38,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( open ) {
 
+	JL_DEFINE_ARGS;
+	
 	// Initialize the OpenAL library (cf. alutInit)
 	JLData deviceName;
 	JL_ASSERT_WARN( alcGetCurrentContext() == NULL, E_LIB, E_STR("OpenAL"), E_OPEN );
@@ -90,6 +92,8 @@ DEFINE_FUNCTION( close ) {
 
 	JL_IGNORE( argc );
 
+	JL_DEFINE_ARGS;
+
 	ResetEfxApi();
 	// cf. alutExit
 	ALCcontext *context = alcGetCurrentContext();
@@ -126,7 +130,7 @@ DEFINE_PROPERTY_GETTER( hasEfx ) {
 	ALCcontext *pContext = alcGetCurrentContext();
 	JL_ASSERT( pContext != NULL, E_LIB, E_STR("OpenAL"), E_INTERNAL );
 	ALCdevice *pDevice = alcGetContextsDevice(pContext);
-	*vp = BOOLEAN_TO_JSVAL( alcIsExtensionPresent(pDevice, (ALCchar*)ALC_EXT_EFX_NAME) );
+	vp.setBoolean( alcIsExtensionPresent(pDevice, (ALCchar*)ALC_EXT_EFX_NAME) != ALC_FALSE );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -163,6 +167,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( dopplerFactor ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
@@ -187,6 +192,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( dopplerVelocity ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
@@ -211,6 +217,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( speedOfSound ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
@@ -234,6 +241,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( distanceModel ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
@@ -257,6 +265,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( enable ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
@@ -278,6 +287,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( disable ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
@@ -299,6 +309,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( isEnabled ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
@@ -321,6 +332,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getString ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
@@ -351,6 +363,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getBoolean ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
@@ -377,6 +390,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getInteger ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
@@ -394,7 +408,7 @@ DEFINE_FUNCTION( getInteger ) {
 		while (count--) {
 
 			tmpValue = INT_TO_JSVAL( params[count] );
-			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
 		}
 	} else {
 
@@ -418,6 +432,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getDouble ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
@@ -434,12 +449,12 @@ DEFINE_FUNCTION( getDouble ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
-			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
 		}
 	} else {
 
-		JL_CHK( JL_NativeToJsval(cx, params[0], JL_RVAL) );
+		JL_CHK( JL_NativeToJsval(cx, params[0], *JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -457,6 +472,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( listener ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(2);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
@@ -502,6 +518,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getListenerReal ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
@@ -518,12 +535,12 @@ DEFINE_FUNCTION( getListenerReal ) {
 		jsval tmpValue;
 		while ( count-- ) {
 			
-			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
-			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
 		}
 	} else {
 
-		JL_CHK(JL_NativeToJsval(cx, params[0], JL_RVAL) );
+		JL_CHK(JL_NativeToJsval(cx, params[0], *JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -541,9 +558,10 @@ DEFINE_FUNCTION( genSource ) {
 
 	JL_IGNORE( argc );
 
+	JL_DEFINE_ARGS;
 	ALuint sourceID; // The OpenAL sound source
 	alGenSources(1, &sourceID);
-	JL_CHK( JL_NativeToJsval(cx, sourceID, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, sourceID, *JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -561,6 +579,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( source ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(3);
 	JL_ASSERT_ARG_IS_NUMBER(1);
 	JL_ASSERT_ARG_IS_INTEGER(2);
@@ -609,6 +628,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getSourceReal ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(2);
 	JL_ASSERT_ARG_IS_NUMBER(1);
 	JL_ASSERT_ARG_IS_INTEGER(2);
@@ -632,12 +652,12 @@ DEFINE_FUNCTION( getSourceReal ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
-			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
 		}
 	} else {
 
-		JL_CHK(JL_NativeToJsval(cx, params[0], JL_RVAL) );
+		JL_CHK(JL_NativeToJsval(cx, params[0], *JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -650,6 +670,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getSourceInteger ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(2);
 	JL_ASSERT_ARG_IS_NUMBER(1);
 	JL_ASSERT_ARG_IS_INTEGER(2);
@@ -674,12 +695,12 @@ DEFINE_FUNCTION( getSourceInteger ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
-			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
 		}
 	} else {
 
-		JL_CHK( JL_NativeToJsval(cx, params[0], JL_RVAL) );
+		JL_CHK( JL_NativeToJsval(cx, params[0], *JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -697,6 +718,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( deleteSource ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
 
@@ -723,6 +745,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( sourceQueueBuffers ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(2);
 	JL_ASSERT_ARG_IS_NUMBER(1);
 
@@ -761,6 +784,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( sourceUnqueueBuffers ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(2);
 	JL_ASSERT_ARG_IS_NUMBER(1);
 
@@ -798,6 +822,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( buffer ) {
 
+	JL_DEFINE_ARGS;
 	JLData data;
 
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -826,7 +851,7 @@ DEFINE_FUNCTION( buffer ) {
 	alBufferData(bufferID, format, data.GetConstStr(), (ALsizei)data.Length(), rate);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_NativeToJsval(cx, bufferID, JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, bufferID, *JL_RVAL) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -847,6 +872,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getBufferReal ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
@@ -863,12 +889,12 @@ DEFINE_FUNCTION( getBufferReal ) {
 		jsval tmpValue;
 		while ( count-- ) {
 
-			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
-			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
 		}
 	} else {
 
-		JL_CHK(JL_NativeToJsval(cx, params[0], JL_RVAL) );
+		JL_CHK(JL_NativeToJsval(cx, params[0], *JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -889,6 +915,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getBufferInteger ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
@@ -905,12 +932,12 @@ DEFINE_FUNCTION( getBufferInteger ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( JL_NativeToJsval(cx, params[count], &tmpValue) );
-			JL_CHK( JL_SetElement(cx, arrayObj, count, &tmpValue) );
+			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
+			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
 		}
 	} else {
 
-		JL_CHK( JL_NativeToJsval(cx, params[0], JL_RVAL) );
+		JL_CHK( JL_NativeToJsval(cx, params[0], *JL_RVAL) );
 	}
 	return JS_TRUE;
 	JL_BAD;
@@ -932,6 +959,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( deleteBuffer ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
 
@@ -955,6 +983,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( playSource ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
 
@@ -977,6 +1006,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( stopSource ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
 
@@ -999,6 +1029,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( pauseSource ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
 
@@ -1021,6 +1052,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( rewindSource ) {
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_NUMBER(1);
 
@@ -1079,6 +1111,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( playSound ) {
 
+	JL_DEFINE_ARGS;
 	JLData data;
 
 	JL_ASSERT_ARGC_MIN( 1 );
