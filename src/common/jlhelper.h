@@ -438,9 +438,12 @@ JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
 		struct Args {
 
 			const JS::CallArgs jsargs;
+			JSContext *_cx;
+//			JSObject *_thisObj;
+			JS::RootedObject _thisObj;
 
-			Args(JSContext *, unsigned argc, JS::Value *vp)
-			: jsargs( JS::CallArgsFromVp(argc, vp) ) {
+			Args(JSContext *cx, unsigned argc, JS::Value *vp)
+			: _cx(cx), _thisObj(cx), jsargs( JS::CallArgsFromVp(argc, vp) ) {
 			}
 
 			unsigned length() const {
@@ -478,10 +481,82 @@ JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
 				return jsargs.computeThis(cx);
 			}
 
+			JS::HandleObject thisObj() {
+
+				if ( _thisObj ) {
+
+					return _thisObj;
+				} else {
+				
+					_thisObj.set( &jsargs.computeThis(_cx).toObject() );
+					return _thisObj;
+				}
+			}
+
 		private:
 			void operator=( const Args & );
 		};
 	}
+
+	#define PROPARGSARGS cx, obj, id, vp
+	namespace jl {
+
+		struct PropArgs {
+
+			JS::RootedObject _thisObj;
+			JS::RootedValue _vp;
+
+			PropArgs(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleValue vp)
+			: _thisObj(cx, obj), _vp(cx, vp) {
+				
+				JL_IGNORE(id);
+			}
+
+			unsigned length() const {
+			
+				return 1;
+			}
+
+			bool hasDefined(unsigned) const {
+
+				return true;
+			}
+
+			JS::MutableHandleValue handleAt(unsigned) {
+
+				return &_vp;
+			}
+
+			JS::HandleValue handleOrUndefinedAt(unsigned) const {
+			
+				return _vp;
+			}
+
+//			JS::MutableHandleValue operator[](unsigned i) const {}
+
+			JS::MutableHandleValue rval() {
+
+				return &_vp;
+			}
+
+			JS::Value computeThis(JSContext *cx) const {
+
+				JS::RootedValue thisVal(cx);
+				thisVal.setObject(*_thisObj);
+				return thisVal;
+			}
+
+			JS::HandleObject thisObj() const {
+
+				return _thisObj;
+			}
+
+		private:
+			void operator=( const PropArgs & );
+		};
+	}
+
+
 
 
 	#define JL_ARGC (args.length())
@@ -502,7 +577,7 @@ JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
 	#define JL_RVAL (args.rval().address())
 
 	// is the current obj (this)
-	#define JL_OBJ (obj)
+	#define JL_OBJ (args.thisObj())
 
 	// is the current obj (this) as a JS::Value. if this method returns null, an error has occurred and must be propagated or caught.
 	#define JL_OBJVAL (argc, JS_THIS(cx, vp))
@@ -996,8 +1071,11 @@ namespace jlpv {
 #define JL_DEFINE_ARGS \
 	jl::Args args(ARGSARGS);
 
+#define JL_DEFINE_PROP_ARGS \
+	jl::PropArgs args(PROPARGSARGS);
+
 #define JL_DEFINE_FUNCTION_OBJ \
-	JS::RootedObject obj(cx, args.computeThis(cx).toObjectOrNull());
+	// JS::RootedObject obj(cx, args.computeThis(cx).toObjectOrNull());
 
 #define JL_DEFINE_CALL_FUNCTION_OBJ \
 	JSObject *obj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp));

@@ -318,7 +318,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( isEnabled ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -335,7 +335,7 @@ DEFINE_FUNCTION( isEnabled ) {
 
 DEFINE_FUNCTION( get ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -822,7 +822,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getBoolean ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -852,7 +852,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getInteger ) {
 	
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -927,7 +927,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getDouble ) {
 	
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -998,7 +998,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getString ) {
 	
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1018,7 +1018,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( drawBuffer ) {
 	
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1041,7 +1041,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( readBuffer ) {
 	
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1067,7 +1067,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( accum ) {
 	
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1100,7 +1100,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( stencilFunc ) {
 	
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1135,7 +1135,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( stencilOp ) {
 	
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1164,7 +1164,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( stencilMask ) {
 		
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1196,7 +1196,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( alphaFunc ) {
 		
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1223,7 +1223,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( flush ) {
 		
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1245,7 +1245,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( finish ) {
 		
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1270,7 +1270,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( fog ) {
 		
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1320,7 +1320,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( hint ) {
 		
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1350,7 +1350,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( vertex ) {
 		
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1409,7 +1409,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( edgeFlag ) {
 		
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1441,7 +1441,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( color ) {
 		
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1503,7 +1503,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( normal ) {
 		
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1538,7 +1538,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( texCoord ) {
 		
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1586,7 +1586,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( texParameter ) {
 		
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1641,7 +1641,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( texEnv ) {
 		
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1703,7 +1703,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( texGen ) {
 		
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1771,7 +1771,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( texImage2D ) {
 		
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JLData data;
 
@@ -1816,7 +1816,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( copyTexSubImage2D ) {
 		
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1857,7 +1857,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( texSubImage2D ) {
 		
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JLData data;
 
@@ -1904,7 +1904,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( lightModel ) {
 		
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -1953,7 +1953,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( light ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2010,7 +2010,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getLight ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2085,7 +2085,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( colorMaterial ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2113,7 +2113,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( material ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2176,7 +2176,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( enable ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2203,7 +2203,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( disable ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2230,7 +2230,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( pointSize ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2257,7 +2257,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( lineWidth ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2284,7 +2284,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( shadeModel ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2310,7 +2310,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( blendFunc ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2336,7 +2336,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( depthFunc ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2361,7 +2361,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( depthMask ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2388,7 +2388,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( depthRange ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2419,7 +2419,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( polygonOffset ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2452,7 +2452,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( cullFace ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2477,7 +2477,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( frontFace ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2504,7 +2504,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( clearStencil ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2535,7 +2535,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( clearDepth ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2566,7 +2566,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( clearColor ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2603,7 +2603,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( clearAccum ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2637,7 +2637,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( clear ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2668,7 +2668,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( colorMask ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2710,7 +2710,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( clipPlane ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2742,7 +2742,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( viewport ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2775,7 +2775,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( frustum ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2818,7 +2818,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( ortho ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2860,7 +2860,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( perspective ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2933,7 +2933,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( matrixMode ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2956,7 +2956,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( loadIdentity ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -2978,7 +2978,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( pushMatrix ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3000,7 +3000,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( popMatrix ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3024,7 +3024,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( loadMatrix ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3051,7 +3051,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( multMatrix ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3082,7 +3082,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( rotate ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3114,7 +3114,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( translate ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3151,7 +3151,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( scale ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3193,7 +3193,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( newList ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3226,7 +3226,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( deleteList ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3249,7 +3249,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( endList ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3274,7 +3274,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( callList ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3324,7 +3324,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( polygonMode ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3350,7 +3350,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( begin ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3377,7 +3377,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( end ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3405,7 +3405,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( pushAttrib ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3433,7 +3433,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( popAttrib ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3456,7 +3456,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( genTexture ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3482,7 +3482,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( bindTexture ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3512,7 +3512,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( deleteTexture ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3547,7 +3547,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( copyTexImage2D ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3589,7 +3589,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( pixelTransfer ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3622,7 +3622,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( pixelStore ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3655,7 +3655,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( rasterPos ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3698,7 +3698,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( pixelZoom ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3726,7 +3726,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( pixelMap ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3761,7 +3761,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( hasExtensionProc ) {
 
 	JLData procName;
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 	JL_ASSERT_ARGC_MIN(1);
@@ -3795,7 +3795,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( hasExtensionName ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3835,7 +3835,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( blendEquation ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3868,7 +3868,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( stencilFuncSeparate ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3907,7 +3907,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( stencilOpSeparate ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3937,7 +3937,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( activeStencilFaceEXT ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3965,7 +3965,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( bindRenderbuffer ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -3991,7 +3991,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( genRenderbuffer ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4019,7 +4019,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( deleteRenderbuffer ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4049,7 +4049,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( renderbufferStorage ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4080,7 +4080,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getRenderbufferParameter ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4121,7 +4121,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( bindFramebuffer ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4146,7 +4146,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( genFramebuffer ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4172,7 +4172,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( deleteFramebuffer ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4200,7 +4200,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( checkFramebufferStatus ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4230,7 +4230,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( framebufferTexture1D ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4265,7 +4265,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( framebufferTexture2D ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4301,7 +4301,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( framebufferTexture3D ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4337,7 +4337,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( framebufferRenderbuffer ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4372,7 +4372,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getFramebufferAttachmentParameter ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4414,7 +4414,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( createShaderObject ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4440,7 +4440,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( deleteObject ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4466,7 +4466,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getInfoLog ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4497,7 +4497,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( createProgramObject ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4520,7 +4520,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( shaderSource ) {
 
 	JLData source;
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 	JL_INIT_OPENGL_EXTENSION( glShaderSourceARB, PFNGLSHADERSOURCEARBPROC );
@@ -4553,7 +4553,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( compileShader ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4579,7 +4579,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( attachObject ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4610,7 +4610,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( linkProgram ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4642,7 +4642,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( useProgramObject ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4671,7 +4671,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getUniformInfo ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -4746,7 +4746,7 @@ DEFINE_FUNCTION( getUniformLocation ) {
 
 	JLData name;
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 	JL_INIT_OPENGL_EXTENSION( glGetUniformLocationARB, PFNGLGETUNIFORMLOCATIONARBPROC );
@@ -4780,7 +4780,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( uniform ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5030,7 +5030,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( uniformMatrix ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5067,7 +5067,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( uniformFloatVector ) {
 
 	GLfloat *value = NULL;
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 	JL_INIT_OPENGL_EXTENSION( glUniform1fvARB, PFNGLUNIFORM1FVARBPROC );
@@ -5149,7 +5149,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( uniformFloat ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5207,7 +5207,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( uniformInteger ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5266,7 +5266,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getObjectParameter ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5317,7 +5317,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( bindAttribLocation ) {
 
 	JLData name;
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 	JL_INIT_OPENGL_EXTENSION( glBindAttribLocationARB, PFNGLBINDATTRIBLOCATIONARBPROC );
@@ -5345,7 +5345,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( getAttribLocation ) {
 
 	JLData name;
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 	JL_INIT_OPENGL_EXTENSION( glGetAttribLocationARB, PFNGLGETATTRIBLOCATIONARBPROC );
@@ -5372,7 +5372,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( vertexAttrib ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5441,7 +5441,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( genBuffer ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5471,7 +5471,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( bindBuffer ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5501,7 +5501,7 @@ $TOC_MEMBER $INAME
 /*
 DEFINE_FUNCTION( bufferData ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5536,7 +5536,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( pointParameter ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5590,7 +5590,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( activeTexture ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5617,7 +5617,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( clientActiveTexture ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5647,7 +5647,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( multiTexCoord ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5703,7 +5703,7 @@ $TOC_MEMBER $INAME
 /*
 DEFINE_FUNCTION( createPbuffer ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5726,7 +5726,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( genQueries ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5755,7 +5755,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( deleteQueries ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5787,7 +5787,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( beginQuery ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5816,7 +5816,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( endQuery ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5845,7 +5845,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getQuery ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5878,7 +5878,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getQueryObject ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5924,7 +5924,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( unProject ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -5965,7 +5965,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( drawImage ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 	JL_ASSERT_ARGC_RANGE(1,2);
@@ -6072,7 +6072,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( readImage ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -6221,7 +6221,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( loadTrimesh ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -6302,7 +6302,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( drawTrimesh ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -6446,7 +6446,7 @@ void TextureBufferFinalize(void* data) {
 
 DEFINE_FUNCTION( createTextureBuffer ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -6484,7 +6484,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( defineTextureImage ) {
 
 	JLData dataStr;
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 	JL_ASSERT_ARGC_MIN(3);
@@ -6635,7 +6635,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( pixelWidthFactor ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -6664,7 +6664,7 @@ $TOC_MEMBER $INAME( size )
 **/
 DEFINE_FUNCTION( drawPoint ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -6689,7 +6689,7 @@ $INAME( radius [ , vertexCount = 12 ] )
 ** /
 DEFINE_FUNCTION( drawDisk ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -6724,7 +6724,7 @@ $INAME( radius, slices, stacks, smooth );
 **/
 DEFINE_FUNCTION( drawSphere ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -6755,7 +6755,7 @@ $INAME( radius, slices, loops );
 **/
 DEFINE_FUNCTION( drawDisk ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -6785,7 +6785,7 @@ $INAME( baseRadius, topRadius, height, slices, stacks, smooth );
 **/
 DEFINE_FUNCTION( drawCylinder ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -6821,7 +6821,7 @@ $INAME( lengthX, lengthY, lengthZ );
 **/
 DEFINE_FUNCTION( drawBox ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -6988,7 +6988,7 @@ $TOC_MEMBER $INAME()
 **/
 DEFINE_FUNCTION( fullQuad ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -7024,7 +7024,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( lookAt ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -7065,7 +7065,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( aimAt ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -7124,7 +7124,7 @@ $TOC_MEMBER $INAME()
 **/
 DEFINE_FUNCTION( keepTranslation ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 
@@ -7163,7 +7163,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( error ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 

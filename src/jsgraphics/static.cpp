@@ -39,7 +39,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( vec3 ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 	
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
@@ -87,7 +87,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( vec3Length ) {
 	
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
@@ -145,7 +145,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( vec3Normalize ) {
 	
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
@@ -173,7 +173,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( vec3Add ) {
 	
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
@@ -203,7 +203,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( vec3Sub ) {
 	
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
@@ -233,7 +233,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( vec3Cross ) {
 	
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
@@ -261,7 +261,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( vec3Dot ) {
 	
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
@@ -299,7 +299,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( frustumSphere ) {
 	
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
@@ -358,7 +358,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( boxToCircumscribedSphere ) {
 	
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_ARRAY(1);
@@ -399,7 +399,7 @@ DEFINE_FUNCTION( quaternionToEuler ) {
 	// see http://www.google.com/codesearch/p?hl=en#kpcXlMp9-Eg/cs7491/projects/proj002/cs7491.zip|pBok6PPJvB8/cs7491/MatrixLib/Quaternion.cpp&q=EulerToQuaternion%20lang:c++&l=185&t=1
 	// eg. http://www.euclideanspace.com/maths/geometry/rotations/conversions/eulerToQuaternion/steps/index.htm
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
@@ -466,7 +466,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( eulerToQuaternion ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
@@ -524,7 +524,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( quaternionToAxisAngle ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
@@ -560,7 +560,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( axisAngleToQuaternion ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
@@ -591,7 +591,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getMatrix ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC(1);
 
@@ -617,7 +617,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( planeFromPoints ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC_MIN(3);
 
@@ -665,7 +665,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( shadowMatrix ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC_RANGE(2, 3);
 

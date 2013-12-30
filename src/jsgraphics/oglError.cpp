@@ -122,7 +122,7 @@ DEFINE_FUNCTION( toString ) {
 
 	JL_IGNORE(argc);
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 
@@ -136,7 +136,7 @@ DEFINE_FUNCTION( toString ) {
 
 DEFINE_FUNCTION( _serialize ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(1);
@@ -159,7 +159,7 @@ DEFINE_FUNCTION( _serialize ) {
 
 DEFINE_FUNCTION( _unserialize ) {
 
-	jl::Args args(ARGSARGS);
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(1);

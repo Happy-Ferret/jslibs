@@ -192,6 +192,8 @@ DEFINE_PROPERTY_GETTER( eof ) {
 	
 	JL_IGNORE( id );
 
+	JL_DEFINE_PROP_ARGS;	
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	jl::Unserializer *unser;

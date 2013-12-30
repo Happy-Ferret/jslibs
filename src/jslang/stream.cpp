@@ -59,7 +59,7 @@ SetStreamSource(JSContext *cx, JS::HandleObject obj, JS::HandleValue srcVal) {
 ALWAYS_INLINE JSBool
 SetPosition(JSContext *cx, JSObject *obj, size_t position) {
 
-	JL_CHK( JL_NativeToReservedSlot(cx, JL_OBJ, SLOT_STREAM_POSITION, position) );
+	JL_CHK( JL_NativeToReservedSlot(cx, obj, SLOT_STREAM_POSITION, position) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -67,7 +67,7 @@ SetPosition(JSContext *cx, JSObject *obj, size_t position) {
 ALWAYS_INLINE JSBool
 GetPosition(JSContext *cx, JSObject *obj, size_t *position) {
 
-	JL_CHK( JL_ReservedSlotToNative(cx, JL_OBJ, SLOT_STREAM_POSITION, position) );
+	JL_CHK( JL_ReservedSlotToNative(cx, obj, SLOT_STREAM_POSITION, position) );
 	return JS_TRUE;
 	JL_BAD;
 }
@@ -181,7 +181,7 @@ DEFINE_FUNCTION( read ) {
 
 	size_t amount, available;
 
-	JL_CHK( GetAvailable(cx, obj, &available) );
+	JL_CHK( GetAvailable(cx, JL_OBJ, &available) );
 
 	if ( JL_ARG_ISDEF(1) ) {
 
