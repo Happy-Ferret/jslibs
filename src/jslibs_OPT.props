@@ -54,7 +54,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <IgnoreSpecificDefaultLibraries>libc.lib; libcmt.lib; libcd.lib; libcmtd.lib; msvcrtd.lib; %(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <AdditionalDependencies>$(jslibsRootDir)libs\js\$(jslibsIntDir)dist\lib\mozjs-24.0a.lib;kernel32.lib;$(StopEvaluating)</AdditionalDependencies>
+      <AdditionalDependencies>$(jslibsRootDir)libs\js\$(jslibsIntDir)dist\lib\mozjs-29a1.lib;kernel32.lib;$(StopEvaluating)</AdditionalDependencies>
       <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
       <AdditionalOptions>/LTCG %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
