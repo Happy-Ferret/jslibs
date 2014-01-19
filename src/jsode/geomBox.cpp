@@ -60,11 +60,11 @@ DEFINE_CONSTRUCTOR() {
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 
 	JL_SetPrivate(obj, geomId);
-	return JS_TRUE;
+	return true;
 bad:
 	if ( geomId )
 		ode::dGeomDestroy(geomId);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -90,7 +90,7 @@ DEFINE_PROPERTY_SETTER( lengths ) {
 	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dGeomBoxSetLengths(geom, vector[0], vector[1], vector[2]);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -103,7 +103,7 @@ DEFINE_PROPERTY_GETTER( lengths ) {
 	ode::dVector3 result;
 	ode::dGeomBoxGetLengths(geom, result);
 	JL_CHK( ODERealVectorToJsval(cx, result, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

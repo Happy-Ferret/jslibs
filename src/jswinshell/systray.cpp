@@ -445,7 +445,7 @@ DEFINE_CONSTRUCTOR() {
 	WaitForSingleObject(pv->systrayEvent, INFINITE); // first pulse
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 	}
 
 bad:
@@ -457,7 +457,7 @@ bad:
 			CloseHandle(pv->systrayEvent);
 		delete pv;
 	}
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -519,12 +519,12 @@ DEFINE_FUNCTION( close ) {
 	CloseSystray(JL_GetRuntime(cx), pv);
 	
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
-JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, const MSGInfo *trayMsg, jsval *rval ) {
+bool ProcessSystrayMessage( JSContext *cx, JSObject *obj, const MSGInfo *trayMsg, jsval *rval ) {
 
 	UINT message = trayMsg->message;
 	LPARAM lParam = trayMsg->lParam;
@@ -649,7 +649,7 @@ JSBool ProcessSystrayMessage( JSContext *cx, JSObject *obj, const MSGInfo *trayM
 			} // switch lParam
 	} //  switch message
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -680,7 +680,7 @@ DEFINE_FUNCTION( processEvents ) {
 		JL_CHK( ProcessSystrayMessage(cx, obj, trayMsg, JL_RVAL) );
 		jl_free(trayMsg);
 	}	
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -700,9 +700,9 @@ struct SystrayUserProcessEvent {
 
 S_ASSERT( offsetof(SystrayUserProcessEvent, pe) == 0 );
 
-static JSBool SystrayPrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
+static bool SystrayPrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
 	
-	return JS_TRUE;
+	return true;
 }
 
 void SystrayStartWait( volatile ProcessEvent *pe ) {
@@ -720,7 +720,7 @@ bool SystrayCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+bool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 	JL_IGNORE( obj );
 
@@ -729,12 +729,12 @@ JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 	
 	if ( pv == NULL ) { // maybe Systray::close() has been called in between
 
-		return JS_TRUE;
+		return true;
 	}
 
 	*hasEvent = !jl::QueueIsEmpty(&pv->msgQueue);
 
-	JSBool ok;
+	bool ok;
 	jsval rval;
 	MSGInfo *trayMsg;
 	while ( !jl::QueueIsEmpty(&pv->msgQueue) ) {
@@ -749,7 +749,7 @@ JSBool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 		if ( JL_GetPrivate(upe->systrayObj) == NULL ) // maybe Systray::close() has been called in between
 			break;
 	}	
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -790,7 +790,7 @@ DEFINE_FUNCTION( events ) {
 	if ( !st )
 		JL_CHK( JL_ThrowOSError(cx) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -813,18 +813,18 @@ DEFINE_FUNCTION( focus ) {
 	SetForegroundWindow(pv->nid.hWnd);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
-ALWAYS_INLINE JSBool NormalizeMenuInfo( JSContext *cx, JSObject *obj, const jsval key, jsval *value ) {
+ALWAYS_INLINE bool NormalizeMenuInfo( JSContext *cx, JSObject *obj, const jsval key, jsval *value ) {
 
 	if ( JL_ValueIsCallable(cx, *value) )
 		return JL_CallFunctionVA(cx, obj, *value, value, key);
-	return JS_TRUE;
+	return true;
 }
 
-JSBool FillMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *hMenu ) {
+bool FillMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *hMenu ) {
 
 //	*hMenu = CreatePopupMenu();
 	ASSERT( *hMenu != NULL );
@@ -1021,7 +1021,7 @@ JSBool FillMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *
 		}
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1095,7 +1095,7 @@ DEFINE_FUNCTION( popupMenu ) {
 	ASSERT( st );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1175,7 +1175,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 	JL_ASSERT( status == TRUE, E_THISOBJ, E_INTERNAL );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1199,7 +1199,7 @@ DEFINE_FUNCTION( callDefault ) {
 		JL_CHK( JS_IdToValue(cx, id, &key) );
 		JL_CHK( CallFunction( cx, obj, functionVal, rval, 1, key ) );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -1249,7 +1249,7 @@ DEFINE_FUNCTION( position ) {
 	}
 	*JL_RVAL = OBJECT_TO_JSVAL(point);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1289,7 +1289,7 @@ DEFINE_FUNCTION( rect ) {
 	}
 	*JL_RVAL = OBJECT_TO_JSVAL(point);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1355,13 +1355,13 @@ DEFINE_PROPERTY_SETTER( visible ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JSBool state;
+	bool state;
 	JL_CHK( JS_ValueToBoolean(cx, vp, &state ) );
 	
-	BOOL status = Shell_NotifyIconA_retry( state == JS_TRUE ? NIM_ADD : NIM_DELETE, &pv->nid);
+	BOOL status = Shell_NotifyIconA_retry( state == true ? NIM_ADD : NIM_DELETE, &pv->nid);
 	JL_ASSERT( status == TRUE, E_THISOBJ, E_INTERNAL );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1390,7 +1390,7 @@ DEFINE_PROPERTY_SETTER( text ) {
 	BOOL status = Shell_NotifyIconA_retry(NIM_MODIFY, &pv->nid);
 	JL_ASSERT( status == TRUE, E_THISOBJ, E_INTERNAL );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1404,7 +1404,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	if ( pv->nid.uFlags & NIF_TIP )
 		vp.setString( JS_NewStringCopyZ(cx, pv->nid.szTip) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

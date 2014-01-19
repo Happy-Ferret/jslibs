@@ -61,12 +61,12 @@ DEFINE_CONSTRUCTOR() {
 	ode::dJointSetFeedback(jointId, NULL);
 	
 	JL_SetPrivate(obj, jointId);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( jointId )
 		ode::dJointDestroy(jointId);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -91,7 +91,7 @@ DEFINE_FUNCTION( addTorque ) {
 	ode::dJointAddHingeTorque(jointId, (ode::dReal)torque);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -115,7 +115,7 @@ DEFINE_PROPERTY_SETTER( anchor ) {
 	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dJointSetHingeAnchor( jointId, vector[0], vector[1], vector[2] );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -126,7 +126,7 @@ DEFINE_PROPERTY_GETTER( anchor ) {
 	ode::dVector3 vector;
 	ode::dJointGetHingeAnchor(jointId,vector);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -142,7 +142,7 @@ DEFINE_PROPERTY_GETTER( anchor2 ) { // read only
 	ode::dVector3 vector;
 	ode::dJointGetHingeAnchor2(jointId,vector);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -161,7 +161,7 @@ DEFINE_PROPERTY_SETTER( axis ) {
 	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dJointSetHingeAxis( jointId, vector[0], vector[1], vector[2] );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -173,7 +173,7 @@ DEFINE_PROPERTY_GETTER( axis ) {
 	ode::dJointGetHingeAxis(jointId,vector);
 	//FloatVectorToArray(cx, 3, vector, vp);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -187,7 +187,7 @@ DEFINE_PROPERTY_GETTER( angle ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetHingeAngle(jointId), vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -201,7 +201,7 @@ DEFINE_PROPERTY_GETTER( angleRate ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetHingeAngleRate(jointId), vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

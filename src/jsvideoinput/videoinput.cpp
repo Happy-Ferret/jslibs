@@ -119,7 +119,7 @@ DEFINE_CONSTRUCTOR() {
 	// vi->setFormat(deviceId, VI_NTSC_M);
 
 	JL_SetPrivate(JL_OBJ, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pv ) {
@@ -128,7 +128,7 @@ bad:
 			vi->stopDevice(pv->deviceID);
 		jl_free(pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -150,7 +150,7 @@ DEFINE_FUNCTION( close ) {
 	vi->stopDevice(pv->deviceID);
 	
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -172,13 +172,13 @@ struct VIEvent {
 
 S_ASSERT( offsetof(VIEvent, pe) == 0 );
 
-static JSBool VIPrepareWait( volatile ProcessEvent *pe, JSContext *, JSObject *) {
+static bool VIPrepareWait( volatile ProcessEvent *pe, JSContext *, JSObject *) {
 	
 	VIEvent *upe = (VIEvent*)pe;
 
 	ResetEvent(upe->imageEvent); // (TBD) handle errors ?
 
-	return JS_TRUE;
+	return true;
 }
 
 static void VIStartWait( volatile ProcessEvent *pe ) {
@@ -198,7 +198,7 @@ static bool VICancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-static JSBool VIEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
+static bool VIEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
 
 	VIEvent *upe = (VIEvent*)pe;
 
@@ -214,7 +214,7 @@ static JSBool VIEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *c
 		}
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -252,7 +252,7 @@ DEFINE_FUNCTION( events ) {
 
 	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -288,7 +288,7 @@ DEFINE_FUNCTION( next ) {
 	if ( !status )
 		return JS_ThrowStopIteration(cx);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -307,7 +307,7 @@ DEFINE_PROPERTY_GETTER( hasNewFrame ) {
 
 	JL_CHK(JL_NativeToJsval(cx, vi->isFrameNew(pv->deviceID), vp) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -325,7 +325,7 @@ DEFINE_PROPERTY_GETTER( width ) {
 
 	JL_CHK( JL_NativeToJsval(cx, vi->getWidth(pv->deviceID), vp) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -343,7 +343,7 @@ DEFINE_PROPERTY_GETTER( height ) {
 
 	JL_CHK( JL_NativeToJsval(cx, vi->getHeight(pv->deviceID), vp) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -365,7 +365,7 @@ DEFINE_PROPERTY_GETTER( channels ) {
 
 	JL_CHK( JL_NativeToJsval(cx, dataSize / (width * height), vp) ); 
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -383,7 +383,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 
 	JL_CHK( JL_NativeToJsval(cx, videoInput::getDeviceName(pv->deviceID), vp) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -398,7 +398,7 @@ DEFINE_PROPERTY_GETTER( hasDevice ) {
 
 	int numDevices = videoInput::listDevices(true);
 	JL_CHK(JL_NativeToJsval(cx, numDevices > 0, vp) ); 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -424,9 +424,9 @@ DEFINE_PROPERTY_GETTER( list ) {
 	}
 
 	vp.setObject(*list);
-	return JS_TRUE;
+	return true;
 bad:
-	return JS_FALSE;
+	return false;
 }
 
 /**doc

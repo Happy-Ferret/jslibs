@@ -48,11 +48,11 @@ DEFINE_CONSTRUCTOR() {
 	pv->mode = 0;
 	
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	JS_free(cx, pv);
-	return JS_FALSE;
+	return false;
 }
 
 #define SETBIT(value, mask, polarity) ((value) = (polarity) ? (value) | (mask) : (value) & ~(mask) )
@@ -154,7 +154,7 @@ DEFINE_PROPERTY_GETTER( surface ) {
 			break;
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -248,7 +248,7 @@ DEFINE_PROPERTY_SETTER( surface ) {
 //	dContactApprox1_2	= 0x2000,
 //	dContactApprox1	= 0x3000
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

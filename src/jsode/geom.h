@@ -33,11 +33,11 @@ DECLARE_CLASS( GeomRay )
 DECLARE_CLASS( GeomConvex )
 DECLARE_CLASS( GeomTrimesh )
 
-JSBool SetupReadMatrix(JSContext *cx, JSObject *obj);
+bool SetupReadMatrix(JSContext *cx, JSObject *obj);
 
 void FinalizeGeom(JSObject *obj);
 
-JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj);
+bool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj);
 
 ALWAYS_INLINE bool JL_JsvalIsGeom( const jsval val ) {
 

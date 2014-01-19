@@ -59,7 +59,7 @@ DEFINE_FUNCTION( extractIcon ) {
 //		if ( GetLastError() != 0 )
 //			return WinThrowError(cx, GetLastError());
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 	JSObject *icon = JL_NewObjectWithGivenProto(cx, JL_CLASS(Icon), JL_CLASS_PROTOTYPE(cx, Icon), NULL);
 	HICON *phIcon = (HICON*)jl_malloc(sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
@@ -67,7 +67,7 @@ DEFINE_FUNCTION( extractIcon ) {
 	*phIcon = hIcon;
 	JL_SetPrivate( icon, phIcon);
 	*JL_RVAL = OBJECT_TO_JSVAL(icon);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -140,7 +140,7 @@ DEFINE_FUNCTION( messageBox ) {
 	if ( res == 0 )
 		return JL_ThrowOSError(cx);
 	*JL_RVAL = INT_TO_JSVAL( res );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -193,7 +193,7 @@ DEFINE_FUNCTION( createProcess ) {
 	CloseHandle(pi.hThread);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -247,7 +247,7 @@ DEFINE_FUNCTION( fileOpenDialog ) {
 	}
 
 	*JL_RVAL = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, fileName) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -270,7 +270,7 @@ DEFINE_FUNCTION( expandEnvironmentStrings ) {
 	if ( res == 0 )
 		return JL_ThrowOSError(cx);
 	*JL_RVAL = STRING_TO_JSVAL( JS_NewStringCopyN(cx, dst, res) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -298,7 +298,7 @@ DEFINE_FUNCTION( messageBeep ) {
 	MessageBeep(type);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -321,7 +321,7 @@ DEFINE_FUNCTION( beep ) {
 	Beep(freq, duration);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -368,14 +368,14 @@ DEFINE_FUNCTION( createComObject ) {
 	JL_CHK( NewComDispatch(cx, pdisp, args.rval()) );
 	pdisp->Release();
 	punk->Release();
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pdisp )
 		pdisp->Release();
 	if ( punk )
 		punk->Release();
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -528,7 +528,7 @@ DEFINE_FUNCTION( registrySet ) {
 
 	*JL_RVAL = JSVAL_VOID;
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -609,7 +609,7 @@ DEFINE_FUNCTION( registryGet ) {
 			return WinThrowError(cx, st);
 
 		RegCloseKey(hKey);
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &valueName) );
@@ -623,7 +623,7 @@ DEFINE_FUNCTION( registryGet ) {
 		
 		*JL_RVAL = JSVAL_VOID;
 		RegCloseKey(hKey);
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( st != ERROR_SUCCESS ) {
@@ -668,10 +668,10 @@ DEFINE_FUNCTION( registryGet ) {
 
 	RegCloseKey(hKey);
 
-	return JS_TRUE;
+	return true;
 bad:
 	JL_DataBufferFree(cx, buffer);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -748,7 +748,7 @@ DEFINE_FUNCTION( directoryChangesInit ) {
 	if ( !ReadDirectoryChangesW(dc->hDirectory, &dc->buffer[dc->currentBuffer], sizeof(*dc->buffer), dc->watchSubtree, dc->notifyFilter, NULL, &dc->overlapped, NULL) )
 		return WinThrowError(cx, GetLastError());
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -790,7 +790,7 @@ DEFINE_FUNCTION( directoryChangesLookup ) {
 			JSObject *arrObj = JS_NewArrayObject(cx, 0, NULL);
 			JL_CHK( arrObj );
 			*JL_RVAL = OBJECT_TO_JSVAL( arrObj );
-			return JS_TRUE;
+			return true;
 		}
 	}
 
@@ -832,7 +832,7 @@ DEFINE_FUNCTION( directoryChangesLookup ) {
 			pFileNotify = NULL;
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -873,9 +873,9 @@ struct DirectoryUserProcessEvent {
 
 S_ASSERT( offsetof(DirectoryUserProcessEvent, pe) == 0 );
 
-static JSBool DirectoryChangesPrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
+static bool DirectoryChangesPrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
 	
-	return JS_TRUE;
+	return true;
 }
 
 static void DirectoryChangesStartWait( volatile ProcessEvent *pe ) {
@@ -897,7 +897,7 @@ static bool DirectoryChangesCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-static JSBool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
+static bool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
 	
 	DirectoryUserProcessEvent *upe = (DirectoryUserProcessEvent*)pe;
 
@@ -905,14 +905,14 @@ static JSBool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent
 	*hasEvent = (st == WAIT_OBJECT_0);
 
 	if ( !*hasEvent )
-		return JS_TRUE;
+		return true;
 
 	if ( JSVAL_IS_VOID(upe->callbackFunction) )
-		return JS_TRUE;
+		return true;
 
 	jsval rval;
 	JL_CHK( JL_CallFunctionVA(cx, upe->callbackFunctionThis, upe->callbackFunction, &rval, upe->dcVal) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -962,7 +962,7 @@ DEFINE_FUNCTION( directoryChangesEvents ) {
 //	if ( upe->cancelEvent == NULL )
 //		JL_ThrowOSError(cx);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -997,7 +997,7 @@ DEFINE_FUNCTION( guidToString ) {
 
 	JL_CHK( JL_NativeToJsval(cx, szGuid, 38, *JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1036,7 +1036,7 @@ DEFINE_PROPERTY_GETTER( clipboard ) {
 		GlobalUnlock(hglb);
 		CloseClipboard();
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1076,7 +1076,7 @@ DEFINE_PROPERTY_SETTER( clipboard ) {
 			return JL_ThrowOSError(cx);
 		CloseClipboard();
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1091,7 +1091,7 @@ DEFINE_PROPERTY_GETTER( systemCodepage ) {
 	JL_IGNORE( id, obj, cx );
 
 	vp.setInt32(GetACP());
-	return JS_TRUE;
+	return true;
 }
 
 /**doc
@@ -1104,7 +1104,7 @@ DEFINE_PROPERTY_GETTER( consoleCodepage ) {
 	JL_IGNORE( id, obj, cx );
 
 	vp.setInt32(GetOEMCP());
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -1139,7 +1139,7 @@ DEFINE_PROPERTY_SETTER( numlockState ) {
 	bool state;
 	JL_CHK( JL_JsvalToNative(cx, vp, &state) );
 	SetKeyState(VK_NUMLOCK, state);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1161,7 +1161,7 @@ DEFINE_PROPERTY_SETTER( capslockState ) {
 	bool state;
 	JL_CHK( JL_JsvalToNative(cx, vp, &state) );
 	SetKeyState(VK_CAPITAL, state);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1184,7 +1184,7 @@ DEFINE_PROPERTY_SETTER( scrolllockState ) {
 	bool state;
 	JL_CHK( JL_JsvalToNative(cx, vp, &state) );
 	SetKeyState(VK_SCROLL, state);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1340,7 +1340,7 @@ DEFINE_PROPERTY_GETTER( folderPath ) {
 	if ( SUCCEEDED( SHGetFolderPath(NULL, JSID_TO_INT(id), NULL, 0, path) ) ) // |CSIDL_FLAG_CREATE
 		return JL_NativeToJsval(cx, path, vp);
 	vp.setUndefined();
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -1351,7 +1351,7 @@ DEFINE_FUNCTION( jswinshelltest ) {
 
 	JL_DEFINE_ARGS;
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 }
 #endif //DEBUG
 

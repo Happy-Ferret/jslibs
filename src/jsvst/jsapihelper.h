@@ -19,7 +19,7 @@ class JsException {
 public:
 	JsException( JSContext *cx, const char *text, bool force = false ) {
 		
-		JSBool hasException = JL_IsExceptionPending(cx);
+		bool hasException = JL_IsExceptionPending(cx);
 		if ( force || !hasException )
 			JS_ReportError(cx, text);
 	}
@@ -91,10 +91,10 @@ protected:
 
 	inline bool JsvalToBool( jsval val ) {
 
-		JSBool b;
+		bool b;
 		if ( !JS_ValueToBoolean(_cx, val, &b) )
 			throw JsException(_cx, "cannot convert the value to a boolean");
-		return b == JS_TRUE;
+		return b == true;
 	}
 
 	inline jsval BoolToJsval( bool b ) {
@@ -208,14 +208,14 @@ protected:
 
 	inline bool InstanceOf( JSObject *obj, JSClass *jsClass ) {
 
-		return JL_ObjectIsInstanceOf(_cx, obj, jsClass) == JS_TRUE;
+		return JL_ObjectIsInstanceOf(_cx, obj, jsClass) == true;
 	}
 
 	inline bool InstanceOf( jsval val, JSClass *jsClass ) {
 
 		if ( !JSVAL_IS_PRIMITIVE(val) )
 			return false;
-		return JL_ObjectIsInstanceOf(_cx, JSVAL_TO_OBJECT(val), jsClass) == JS_TRUE;
+		return JL_ObjectIsInstanceOf(_cx, JSVAL_TO_OBJECT(val), jsClass) == true;
 	}
 
 	inline bool JsvalIsCallable( jsval val ) {
@@ -226,7 +226,7 @@ protected:
 	inline jsval FunctionCall0( JSObject *obj, jsval fval ) {
 
 		jsval rval;
-		if ( JS_CallFunctionValue(_cx, obj, fval, 0, NULL, &rval) != JS_TRUE )
+		if ( JS_CallFunctionValue(_cx, obj, fval, 0, NULL, &rval) != true )
 			throw JsException(_cx, "unable to call the function" );
 		return rval;
 	}
@@ -234,7 +234,7 @@ protected:
 	inline jsval FunctionCall1( JSObject *obj, jsval fval, jsval arg1 ) {
 
 		jsval rval;
-		if ( JS_CallFunctionValue(_cx, obj, fval, 1, &arg1, &rval) != JS_TRUE )
+		if ( JS_CallFunctionValue(_cx, obj, fval, 1, &arg1, &rval) != true )
 			throw JsException(_cx, "unable to call the function" );
 		return rval;
 	}
@@ -242,7 +242,7 @@ protected:
 	inline jsval FunctionCall2( JSObject *obj, jsval fval, jsval arg1, jsval arg2 ) {
 
 		jsval rval, args[] = { arg1, arg2 };
-		if ( JS_CallFunctionValue(_cx, obj, fval, 2, args, &rval) != JS_TRUE )
+		if ( JS_CallFunctionValue(_cx, obj, fval, 2, args, &rval) != true )
 			throw JsException(_cx, "unable to call the function" );
 		return rval;
 	}
@@ -250,7 +250,7 @@ protected:
 	inline jsval FunctionCall3( JSObject *obj, jsval fval, jsval arg1, jsval arg2, jsval arg3 ) {
 
 		jsval rval, args[] = { arg1, arg2, arg3 };
-		if ( JS_CallFunctionValue(_cx, obj, fval, sizeof(args)/sizeof(*args), args, &rval) != JS_TRUE )
+		if ( JS_CallFunctionValue(_cx, obj, fval, sizeof(args)/sizeof(*args), args, &rval) != true )
 			throw JsException(_cx, "unable to call the function" );
 		return rval;
 	}
@@ -258,7 +258,7 @@ protected:
 	inline jsval FunctionCall4( JSObject *obj, jsval fval, jsval arg1, jsval arg2, jsval arg3, jsval arg4 ) {
 
 		jsval rval, args[] = { arg1, arg2, arg3, arg4 };
-		if ( JS_CallFunctionValue(_cx, obj, fval, sizeof(args)/sizeof(*args), args, &rval) != JS_TRUE )
+		if ( JS_CallFunctionValue(_cx, obj, fval, sizeof(args)/sizeof(*args), args, &rval) != true )
 			throw JsException(_cx, "unable to call the function" );
 		return rval;
 	}
@@ -266,7 +266,7 @@ protected:
 	inline jsval FunctionCall5( JSObject *obj, jsval fval, jsval arg1, jsval arg2, jsval arg3, jsval arg4, jsval arg5 ) {
 
 		jsval rval, args[] = { arg1, arg2, arg3, arg4, arg5 };
-		if ( JS_CallFunctionValue(_cx, obj, fval, sizeof(args)/sizeof(*args), args, &rval) != JS_TRUE )
+		if ( JS_CallFunctionValue(_cx, obj, fval, sizeof(args)/sizeof(*args), args, &rval) != true )
 			throw JsException(_cx, "unable to call the function" );
 		return rval;
 	}

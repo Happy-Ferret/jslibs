@@ -112,7 +112,7 @@ DEFINE_CONSTRUCTOR() {
 	pv->invalidChar = '?';
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pv ) {
@@ -121,7 +121,7 @@ bad:
 			iconv_close(pv->cd);
 		JS_free(cx, pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -148,7 +148,7 @@ DEFINE_FUNCTION( process ) {
 		
 		status = iconv(pv->cd, NULL, NULL, NULL, NULL); // sets cd's conversion state to the initial state.
 		pv->remainderLen = 0;
-		return JS_TRUE;
+		return true;
 	}
 
 	char *inBuf;
@@ -293,7 +293,7 @@ DEFINE_FUNCTION( process ) {
 		
 		JS_free(cx, outBuf);
 		*JL_RVAL = JL_GetEmptyStringValue(cx);
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( JL_MaybeRealloc(outLen, length) ) {
@@ -321,11 +321,11 @@ DEFINE_FUNCTION( process ) {
 		JL_CHK( JLData(outBuf, true, length).GetJSString(cx, *JL_RVAL) );
 	}
 
-	return JS_TRUE;
+	return true;
 
 bad:
 	JS_free(cx, outBuf); // JS_free NULL pointer is legal.
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -348,7 +348,7 @@ DEFINE_PROPERTY_SETTER( invalidChar ) {
 	JL_CHK( JL_JsvalToNative(cx, vp, &chr) );
 	JL_ASSERT_WARN( chr.Length() == 1, E_VALUE, E_LENGTH, E_NUM(1) );
 	pv->invalidChar = chr.GetConstStr()[0];
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -361,7 +361,7 @@ DEFINE_PROPERTY_GETTER( invalidChar ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );	
 //	JL_CHK( JL_StringAndLengthToJsval(cx, vp, &pv->invalidChar, 1) );
 	JL_CHK( JL_NativeToJsval(cx, &pv->invalidChar, 1, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -373,7 +373,7 @@ DEFINE_PROPERTY_GETTER( hasIncompleteSequence ) {
 	pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );	
 	JL_CHK(JL_NativeToJsval(cx, pv->remainderLen != 0, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

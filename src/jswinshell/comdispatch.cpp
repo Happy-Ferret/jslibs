@@ -27,7 +27,7 @@ DEFINE_FINALIZE() {
 }
 
 
-JSBool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
+bool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 
 	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
@@ -94,7 +94,7 @@ JSBool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 		JL_CHK( JS_DeletePropertyById(cx, JL_OBJ, funNameId) ); // beware: permanant properties cannot be removed.
 
 	#ifdef DEBUG
-		JSBool found;
+		bool found;
 		ASSERT( JS_HasPropertyById(cx, obj, funNameId, &found) && !found );
 	#endif
 	} // ...
@@ -103,7 +103,7 @@ JSBool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 		JL_CHK( WinThrowError(cx, hr) );
 
 	JL_CHK( VariantToJsval(cx, result, args.rval()) ); // loose variant ownership
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -173,7 +173,7 @@ DEFINE_GET_PROPERTY() {
 		JL_CHK( JS_IdToValue(cx, id, &tmp) );
 		JL_CHK( JS_DefinePropertyById(cx, funObj, JLID(cx, name), tmp, NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY) ); // (TBD) use JS_SetProperty instead ?
 		JL_CHK( JS_DefinePropertyById(cx, obj, id, vp, NULL, NULL, /*JSPROP_PERMANENT|*/JSPROP_READONLY) ); // not JSPROP_PERMANENT else prop is undeletable, see DISP_E_MEMBERNOTFOUND case in FunctionInvoke()  // (TBD) use JS_SetProperty instead ?
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( hr == DISP_E_EXCEPTION ) {
@@ -190,7 +190,7 @@ end:
 		JL_CHK( WinThrowError(cx, hr) );
 
 	JL_CHK( VariantToJsval(cx, result, vp) ); // loose variant ownership
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( result != NULL ) {
@@ -198,7 +198,7 @@ bad:
 		VariantClear(result);
 		JS_free(cx, result);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -208,7 +208,7 @@ DEFINE_SET_PROPERTY() {
 
 	JL_ASSERT_THIS_INSTANCE();
 
-//	JSBool found;
+//	bool found;
 //	JS_AlreadyHasOwnPropertyById(cx, obj, id, &found);
 //	jsval xxx;
 //	JS_LookupPropertyById(cx, obj, id, &xxx);
@@ -266,16 +266,16 @@ DEFINE_SET_PROPERTY() {
 		switch ( hr ) {
 			case DISP_E_BADPARAMCOUNT: // doc. An error return value that indicates that the number of elements provided to the method is different from the number of arguments accepted by the method.
 				JL_ERR( E_NAME(name), E_WRITE ); //JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "read-only property"); // (TBD) be more specific
-				return JS_TRUE;
+				return true;
 			//case DISP_E_PARAMNOTFOUND:
 			//	JL_REPORT_WARNING("Invalid argument %d.", argErr);
-			//	return JS_TRUE;
+			//	return true;
 			default:
 				JL_CHK( WinThrowError(cx, hr) );
 		}
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -304,7 +304,7 @@ DEFINE_FUNCTION( functionList ) {
 		JL_CHK( WinThrowError(cx, hr) );
 
 	if ( count == 0 )
-		return JS_TRUE;
+		return true;
 
 	hr = disp->GetTypeInfo(0, 0, &pTypeinfo);
 	if ( FAILED(hr) )
@@ -331,12 +331,12 @@ DEFINE_FUNCTION( functionList ) {
 	}
 
 	pTypeinfo->Release();
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pTypeinfo != NULL )
 		pTypeinfo->Release();
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -348,7 +348,7 @@ DEFINE_FUNCTION( equals ) {
 
 	JL_RVAL->setBoolean(JL_ARG(1).isObject() && &JL_ARG(1).toObject() == obj);
 	
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -396,7 +396,7 @@ DEFINE_ITERATOR_OBJECT() {
 
 	{
 		JS::RootedValue tmp(cx);
-		JSBool st = NewComEnum(cx, pEnum, &tmp);
+		bool st = NewComEnum(cx, pEnum, &tmp);
 		JL_CHK(st);
 		pEnum->Release();
 		return JSVAL_TO_OBJECT(tmp);
@@ -414,7 +414,7 @@ DEFINE_EQUALITY_OP() {
 	JL_IGNORE(cx);
 	//*bp = JSVAL_IS_OBJECT(*v) && JSVAL_TO_OBJECT(*v) == obj;
 	*bp = v->isObject() && ( &v->toObject() == obj );
-	return JS_TRUE;
+	return true;
 }
 */
 
@@ -422,7 +422,7 @@ DEFINE_EQUALITY_OP() {
 DEFINE_HAS_INSTANCE() {
 
 	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
-	return JS_TRUE;
+	return true;
 }
 */
 
@@ -445,13 +445,13 @@ CONFIGURE_CLASS
 END_CLASS
 
 
-JSBool NewComDispatch( JSContext *cx, IDispatch *pdisp, OUT JS::MutableHandleValue rval ) {
+bool NewComDispatch( JSContext *cx, IDispatch *pdisp, OUT JS::MutableHandleValue rval ) {
 
 	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComDispatch), JL_CLASS_PROTOTYPE(cx, ComDispatch), NULL);
 	JL_CHK(varObj);
 	rval.setObject( *varObj );
 	JL_SetPrivate( varObj, pdisp);
 	pdisp->AddRef();
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }

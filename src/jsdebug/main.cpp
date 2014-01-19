@@ -123,7 +123,7 @@ done_scriptList:
 #undef JS_NewScriptObject
 		JL_CHK( JL_NativeToJsval(cx, filename, &argv[1]) );
 
-		JSBool status;
+		bool status;
 		JSRuntime *rt;
 		rt = JL_GetRuntime(cx);
 		// avoid nested calls (NewScriptHook)
@@ -163,7 +163,7 @@ void DestroyScriptHook(JSFreeOp *fop, JSScript *script, void *callerdata) {
 		argv[3] = OBJECT_TO_JSVAL( JS_GetScriptObject(script) );
 
 		// avoid nested calls (NewScriptHook)
-		JSBool status;
+		bool status;
 		status = JS_CallFunctionValue(cx, moduleObject, jsHookFct, COUNTOF(argv)-1, argv+1, argv);
 	bad_1:
 		JS_POP_TEMP_ROOT(cx, &tvr);
@@ -230,13 +230,13 @@ JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char 
 }
 
 
-JSBool GetScriptLocation( JSContext *cx, jsval *val, unsigned lineno, JSScript **script, jsbytecode **pc ) {
+bool GetScriptLocation( JSContext *cx, jsval *val, unsigned lineno, JSScript **script, jsbytecode **pc ) {
 
 	if ( JL_ValueIsCallable(cx, *val) ) {
 
 		*script = JS_GetFunctionScript(cx, JS_ValueToFunction(cx, *val));
 		if ( *script == NULL )
-			return JS_TRUE;
+			return true;
 		lineno += JS_GetScriptBaseLineNumber(cx, *script);
 	} else
 /*
@@ -244,7 +244,7 @@ JSBool GetScriptLocation( JSContext *cx, jsval *val, unsigned lineno, JSScript *
 
 		*script = (JSScript *) JL_GetPrivate(JSVAL_TO_OBJECT(*val));
 		if ( *script == NULL )
-			return JS_TRUE;
+			return true;
 		lineno += JS_GetScriptBaseLineNumber(cx, *script);
 	} else
 */
@@ -256,10 +256,10 @@ JSBool GetScriptLocation( JSContext *cx, jsval *val, unsigned lineno, JSScript *
 		JL_CHK( JL_JsvalToNative(cx, *val, &fileName) );
 		*script = ScriptByLocation(cx, scriptFileList, fileName, lineno);
 		if ( *script == NULL )
-			return JS_TRUE;
+			return true;
 	}
 	*pc = JS_LineNumberToPC(cx, *script, lineno);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -269,7 +269,7 @@ void SourceHandler(const char *filename, unsigned lineno, jschar *str, size_t le
 
 
 
-JSBool
+bool
 ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JL_CHK( InitJslibsModule(cx, id)  );
@@ -309,19 +309,19 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	INIT_STATIC();
 	INIT_CLASS( Debugger );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
-JSBool
+bool
 ModuleRelease(JSContext *cx) {
 
 	JS_SetNewScriptHookProc(JL_GetRuntime(cx), NULL, NULL);
 	JS_SetDestroyScriptHookProc(JL_GetRuntime(cx), NULL, NULL);
 
 	if ( JL_GetHostPrivate(JL_GetRuntime(cx))->canSkipCleanup ) // do not cleanup in unsafe mode.
-		return JS_TRUE;
+		return true;
 
 	jl::Queue *scriptFileList = &((ModulePrivate*)JL_GetModulePrivate(cx, _moduleId))->scriptFileList;
 
@@ -333,5 +333,5 @@ ModuleRelease(JSContext *cx) {
 
 	jl_free(JL_GetModulePrivate(cx, _moduleId));
 
-	return JS_TRUE;
+	return true;
 }

@@ -121,11 +121,11 @@ DEFINE_PROPERTY_GETTER( const ) {
 
 	JL_GetReservedSlot(  obj, SLOT_SQLITE_ERROR_CODE, vp );
 	if ( vp.isUndefined() )
-		return JS_TRUE;
+		return true;
 	int errorCode = vp.toInt32();
 	JSString *str = JS_NewStringCopyZ( cx, SqliteConstString(errorCode) );
 	vp.setString( str );
-	return JS_TRUE;
+	return true;
 }
 
 /**doc
@@ -174,7 +174,7 @@ DEFINE_FUNCTION( _serialize ) {
 	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_SQLITE_ERROR_TEXT, *JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -198,7 +198,7 @@ DEFINE_FUNCTION( _unserialize ) {
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
 	JL_CHK( JL_SetReservedSlot( JL_OBJ, SLOT_SQLITE_ERROR_TEXT, *JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -225,7 +225,7 @@ CONFIGURE_CLASS
 END_CLASS
 
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 SqliteThrowErrorStatus( JSContext *cx, int status ) {
 
 	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(SqliteError), JL_CLASS_PROTOTYPE(cx, SqliteError), NULL ); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
@@ -233,12 +233,12 @@ SqliteThrowErrorStatus( JSContext *cx, int status ) {
 	JL_CHK( JL_SetReservedSlot(  error, SLOT_SQLITE_ERROR_CODE, INT_TO_JSVAL(status) ) );
 	JL_CHK( JL_SetReservedSlot(  error, SLOT_SQLITE_ERROR_TEXT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, "???")) ) );
 	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
-	return JS_FALSE;
+	return false;
 	JL_BAD;
 }
 
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 SqliteThrowError( JSContext *cx, sqlite3 *db ) {
 
 	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(SqliteError), JL_CLASS_PROTOTYPE(cx, SqliteError), NULL ); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
@@ -246,7 +246,7 @@ SqliteThrowError( JSContext *cx, sqlite3 *db ) {
 	JL_CHK( JL_SetReservedSlot(  error, SLOT_SQLITE_ERROR_CODE, INT_TO_JSVAL(sqlite3_extended_errcode(db)) ) );
 	JL_CHK( JL_SetReservedSlot(  error, SLOT_SQLITE_ERROR_TEXT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, sqlite3_errmsg(db))) ) );
 	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
-	return JS_FALSE;
+	return false;
 	JL_BAD;
 }
 

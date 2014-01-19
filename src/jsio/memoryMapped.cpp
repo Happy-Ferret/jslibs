@@ -27,13 +27,13 @@ struct MemoryMappedPrivate {
 	void *addr;
 };
 
-JSBool MemoryMappedBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
+bool MemoryMappedBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
 
 	JL_IGNORE( cx );
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(obj);
 	*str = JLData(((const char*)pv->addr) + pv->offset, false, pv->size);
-	return JS_TRUE;
+	return true;
 }
 
 /**doc
@@ -119,7 +119,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( SetBufferGetInterface(cx, obj, MemoryMappedBufferGet) );
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 bad:
 	if ( pv ) {
 
@@ -129,7 +129,7 @@ bad:
 			PR_CloseFileMap(pv->fmap);
 		JS_free(cx, pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -146,7 +146,7 @@ DEFINE_PROPERTY_GETTER( file ) {
 	JL_IGNORE(id, cx);
 
 	JL_CHK( JL_GetReservedSlot( obj, MEMORYMAPPED_SLOT_FILE, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -162,7 +162,7 @@ DEFINE_PROPERTY_SETTER( offset ) {
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_JsvalToNative(cx, vp, &pv->offset) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -173,7 +173,7 @@ DEFINE_PROPERTY_GETTER( offset ) {
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->offset, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

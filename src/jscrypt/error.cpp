@@ -71,13 +71,13 @@ DEFINE_PROPERTY_GETTER( const ) {
 
 	JL_CHK( JL_GetReservedSlot(  obj, 0, vp ) );
 	if ( JSVAL_IS_VOID(*vp) )
-		return JS_TRUE;
+		return true;
 	int errorCode;
 	errorCode = JSVAL_TO_INT(*vp);
 	JSString *str;
 	str = JS_NewStringCopyZ( cx, ConstString(errorCode) );
 	*vp = STRING_TO_JSVAL( str );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -88,13 +88,13 @@ DEFINE_PROPERTY_GETTER( text ) {
 
 	JL_CHK( JL_GetReservedSlot(  obj, 0, vp ) );
 	if ( JSVAL_IS_VOID(*vp) )
-		return JS_TRUE;
+		return true;
 	int errorCode;
 	errorCode = JSVAL_TO_INT(*vp);
 	JSString *str;
 	str = JS_NewStringCopyZ( cx, error_to_string(errorCode) );
 	*vp = STRING_TO_JSVAL( str );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -124,7 +124,7 @@ DEFINE_FUNCTION( _serialize ) {
 	JL_CHK( JL_GetReservedSlot( JL_OBJ, 0, JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -145,7 +145,7 @@ DEFINE_FUNCTION( _unserialize ) {
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
 	JL_CHK( JL_SetReservedSlot( JL_OBJ, 0, *JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -173,7 +173,7 @@ END_CLASS
 
 
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 ThrowCryptError( JSContext *cx, int errorCode ) {
 
 //	JS_ReportWarning( cx, "CryptError exception" );

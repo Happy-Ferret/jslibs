@@ -36,7 +36,7 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-JSBool
+bool
 ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 //malloc=jl_malloc;calloc=jl_calloc;realloc=jl_realloc;free=jl_free
@@ -56,6 +56,6 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 		var image = dec( new File('test.jpeg') );
 */
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }

@@ -49,12 +49,12 @@ BEGIN_CLASS( Window )
 //void Finalize(JSContext *cx, JSObject *obj) {
 //	JL_GetPrivate(obj);
 //}
-//static JSBool ClassConstruct(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
+//static bool ClassConstruct(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
 //	JL_ASSERT( JS_IsConstructing(cx) && JL_GetClass(obj) == thisClass, RT_ERROR_INVALID_CLASS );
-//	return JS_TRUE;
+//	return true;
 //}
-//	JSBool Call(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
-//		return JS_TRUE;
+//	bool Call(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
+//		return true;
 //	}
 
 LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -88,7 +88,7 @@ LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				jsval argv[] = { STRING_TO_JSVAL(JS_NewStringCopyN(cx, &c, 1)), INT_TO_JSVAL(lParam) };
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // needed to protect the new string
-				JSBool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
+				bool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
 				JL_CHK( status );
 				return 0;
@@ -102,7 +102,7 @@ LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				jsval argv[] = { INT_TO_JSVAL(wParam), INT_TO_JSVAL(lParam) };
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // not really needed
-				JSBool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
+				bool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
 				JL_CHK( status );
 				return 0;
@@ -116,7 +116,7 @@ LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				jsval argv[] = { INT_TO_JSVAL(wParam), INT_TO_JSVAL(lParam) };
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // not really needed
-				JSBool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
+				bool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
 				JL_CHK( status );
 				return 0;
@@ -130,7 +130,7 @@ LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				jsval argv[] = { BOOLEAN_TO_JSVAL(wParam != WA_INACTIVE) };
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // not really needed
-				JSBool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
+				bool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
 				JL_CHK( status );
 				return 0;
@@ -145,7 +145,7 @@ LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				jsval argv[] = { INT_TO_JSVAL((short)LOWORD(lParam)), INT_TO_JSVAL((short)HIWORD(lParam)) };
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // not really needed
-				JSBool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
+				bool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
 				JL_CHK( status );
 				return 0;
@@ -159,7 +159,7 @@ LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				jsval argv[] = { INT_TO_JSVAL(MAKEPOINTS(lParam).x), INT_TO_JSVAL(MAKEPOINTS(lParam).y), BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // not really needed
-				JSBool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
+				bool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
 				JL_CHK( status );
 				return 0;
@@ -173,7 +173,7 @@ LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				jsval argv[] = { INT_TO_JSVAL( GET_WHEEL_DELTA_WPARAM(wParam)/WHEEL_DELTA ), BOOLEAN_TO_JSVAL(wParam & MK_LBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_RBUTTON), BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // not really needed
-				JSBool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
+				bool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
 				JL_CHK( status );
 				return 0;
@@ -195,7 +195,7 @@ LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 //					BOOLEAN_TO_JSVAL(wParam & MK_MBUTTON) };
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // not really needed
-				JSBool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
+				bool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
 				JL_CHK( status );
 				return 0;
@@ -214,7 +214,7 @@ LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 				jsval argv[] = { INT_TO_JSVAL( message==WM_LBUTTONUP ? 1 : message==WM_RBUTTONUP ? 2 : message==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE };
 				JSTempValueRooter tvr;
 				JS_PUSH_TEMP_ROOT(cx, COUNTOF(argv), argv, &tvr); // not really needed
-				JSBool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
+				bool status = JS_CallFunctionValue(cx, obj, functionVal, COUNTOF(argv), argv, &rval);
 				JS_POP_TEMP_ROOT(cx, &tvr);
 				JL_CHK( status );
 				return 0;
@@ -263,7 +263,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT( prevWindowLong != 0 || (err=GetLastError()) == 0, "Unable to SetWindowLong. (error %d)", err );
 
 	JL_SetPrivate(obj, hWnd);
-	return JS_TRUE;
+	return true;
 }
 
 bool TrackMouseLeave( HWND hWnd ) {
@@ -287,7 +287,7 @@ DEFINE_FUNCTION( open ) {
 	SetFocus(hWnd);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -315,7 +315,7 @@ DEFINE_FUNCTION( processEvents ) {
 		while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) { //GetInputState() // determines whether there are mouse-button or keyboard messages in the calling thread's message queue.
 
 			if (JL_IsExceptionPending(cx)) // need JS_ErrorFromException(...) ??
-				return JS_FALSE;
+				return false;
 
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
@@ -329,7 +329,7 @@ DEFINE_FUNCTION( processEvents ) {
 
 //	} while(!quit);
 
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -347,15 +347,15 @@ DEFINE_FUNCTION( close ) {
 	UnregisterClass(WINDOW_CLASS_NAME, GetModuleHandle(NULL));
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 }
 
 
 /*
-JSBool Exit(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
+bool Exit(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
 
 	PostQuitMessage(0);
-	return JS_TRUE;
+	return true;
 }
 */
 
@@ -369,7 +369,7 @@ DEFINE_FUNCTION( waitForMessage ) {
 	DWORD status = MsgWaitForMultipleObjects(0, NULL, FALSE, val, QS_ALLEVENTS);
 	//*rval = (status == WAIT_TIMEOUT) ? JSVAL_FALSE : JSVAL_TRUE;
 	*rval = BOOLEAN_TO_JSVAL( status != WAIT_TIMEOUT );
-	return JS_TRUE;
+	return true;
 }
 
 /*
@@ -393,7 +393,7 @@ DEFINE_FUNCTION( createOpenGLBitmap ) {
 
 
 
-	return JS_TRUE;
+	return true;
 }
 */
 
@@ -401,7 +401,7 @@ DEFINE_FUNCTION( createOpenGLBitmap ) {
 /*
 // The Effects of Double Buffering on Animation Frame Rates
 //		http://www.futuretech.blinkenlights.nl/dbuffer.html
-JSBool _SwapBuffers(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
+bool _SwapBuffers(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
 
 	glFlush();
 	glFinish();
@@ -410,7 +410,7 @@ JSBool _SwapBuffers(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, js
 	JL_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
 	BOOL res = SwapBuffers(hDC); // Doc: With multithread applications, flush the drawing commands in any other threads drawing to the same window before calling SwapBuffers.
 	JL_ASSERT( res, "Unable to SwapBuffers.(%x)", GetLastError() );
-	return JS_TRUE;
+	return true;
 }
 */
 
@@ -476,13 +476,13 @@ DEFINE_FUNCTION( createOpenGLContext ) {
 //  wglDeleteContext(hRC);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 }
 
 
 // The Effects of Double Buffering on Animation Frame Rates
 //		http://www.futuretech.blinkenlights.nl/dbuffer.html
-JSBool _SwapBuffers(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
+bool _SwapBuffers(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
 
 //	glFlush();
 //	glFinish();
@@ -491,7 +491,7 @@ JSBool _SwapBuffers(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, js
 	JL_ASSERT( hDC != NULL, "Could not get the Current Device Context." );
 	BOOL res = SwapBuffers(hDC); // Doc: With multithread applications, flush the drawing commands in any other threads drawing to the same window before calling SwapBuffers.
 	JL_ASSERT( res, "Unable to SwapBuffers.(%x)", GetLastError() );
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -503,7 +503,7 @@ DEFINE_FUNCTION( mode ) {
 		JL_ASSERT_ARGC_MIN(3);
 
 		int32 bits;
-		JSBool fullscreen;
+		bool fullscreen;
 
 		unsigned int size[2];
 //		IntArrayToVector(cx, 2, argv, size);
@@ -522,7 +522,7 @@ DEFINE_FUNCTION( mode ) {
 		dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
 
 		// doc: CDS_FULLSCREEN Gets Rid Of Start Bar. The mode is temporary in nature.
-		status = ChangeDisplaySettings(&dmScreenSettings, fullscreen == JS_TRUE ? CDS_FULLSCREEN : 0);
+		status = ChangeDisplaySettings(&dmScreenSettings, fullscreen == true ? CDS_FULLSCREEN : 0);
 	} else {
 
 		status = ChangeDisplaySettings(NULL, 0);
@@ -530,7 +530,7 @@ DEFINE_FUNCTION( mode ) {
 	JL_ASSERT( status == DISP_CHANGE_SUCCESSFUL, "Unable to ChangeDisplaySettings.(%d)", status);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -538,13 +538,13 @@ DEFINE_PROPERTY( clipCursor ) {
 
 	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT(hWnd != NULL, "Uninitialized data");
-	JSBool clip;
+	bool clip;
 	JS_ValueToBoolean(cx, *vp, &clip);
 	RECT r;
 	GetWindowRect(hWnd, &r);
 	BOOL sysStatus = ClipCursor( clip ? &r : NULL );
 	JL_ASSERT( sysStatus != 0, "Unable to ClipCursor." );
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -559,7 +559,7 @@ DEFINE_PROPERTY( absoluteClipCursor ) {
 		JL_CHK( JL_JsvalToNativeVector(cx, *vp, v, 4, &length) );
 		JL_ASSERT( length == 4, "Invalid array size." );
 
-		JSBool clip;
+		bool clip;
 		JS_ValueToBoolean(cx, *vp, &clip);
 		RECT r = { v[0], v[1], v[2], v[3] };
 		sysStatus = ClipCursor( &r );
@@ -567,17 +567,17 @@ DEFINE_PROPERTY( absoluteClipCursor ) {
 		sysStatus = ClipCursor( NULL );
 	}
 	JL_ASSERT( sysStatus != 0, "Unable to ClipCursor." );
-	return JS_TRUE;
+	return true;
 }
 
 
 
 DEFINE_PROPERTY( showCursor ) {
 
-	JSBool show;
+	bool show;
 	JS_ValueToBoolean(cx, *vp, &show);
 	ShowCursor( show ? TRUE : FALSE );
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -610,7 +610,7 @@ DEFINE_PROPERTY( clientRect ) {
 	JL_CHK( JL_SetElement(cx, arrayObj, 2, &value) );
 	value = INT_TO_JSVAL(r.bottom);
 	JL_CHK( JL_SetElement(cx, arrayObj, 3, &value) );
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -639,7 +639,7 @@ DEFINE_PROPERTY( rectGetter ) {
 	int vector[] = { r.left, r.top, r.right, r.bottom };
 	JL_CHK( IntVectorToJsval(cx, vector, COUNTOF(vector), vp) );
 //	}
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -657,7 +657,7 @@ DEFINE_PROPERTY( rectSetter ) {
 	JL_ASSERT( length == 4, "Invalid array size." );
 
 	SetWindowPos(hWnd, 0, v[0], v[1], v[2] - v[0], v[3] - v[1], SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -674,7 +674,7 @@ DEFINE_PROPERTY( cursorAbsolutePositionSetter ) {
 
 	BOOL sysStatus = SetCursorPos(vec[0], vec[1]); // http://windowssdk.msdn.microsoft.com/en-us/library/ms648394.aspx
 	JL_ASSERT( sysStatus != 0, "Unable to SetCursorPos." );
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -687,7 +687,7 @@ DEFINE_PROPERTY( cursorAbsolutePositionGetter ) {
 	int vector[] = { pt.x, pt.y };
 	//IntVectorToArray(cx, COUNTOF(vector), vector, vp);
 	JL_CHK( IntVectorToJsval(cx, vector, COUNTOF(vector), vp) );
-	return JS_TRUE;
+	return true;
 }
 
 DEFINE_PROPERTY( cursorPositionSetter ) {
@@ -704,7 +704,7 @@ DEFINE_PROPERTY( cursorPositionSetter ) {
 	ClientToScreen(hWnd, &pt);
 	BOOL sysStatus = SetCursorPos(pt.x, pt.y); // http://windowssdk.msdn.microsoft.com/en-us/library/ms648394.aspx
 	JL_ASSERT( sysStatus != 0, "Unable to SetCursorPos." );
-	return JS_TRUE;
+	return true;
 }
 
 DEFINE_PROPERTY( cursorPositionGetter ) {
@@ -717,7 +717,7 @@ DEFINE_PROPERTY( cursorPositionGetter ) {
 	int vector[] = { pt.x, pt.y };
 //	IntVectorToArray(cx, COUNTOF(vector), vector, vp);
 	JL_CHK( IntVectorToJsval(cx, vector, COUNTOF(vector), vp) );
-	return JS_TRUE;
+	return true;
 }
 
 DEFINE_PROPERTY( title ) {
@@ -727,7 +727,7 @@ DEFINE_PROPERTY( title ) {
 	const char *title;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &title) );
 	SetWindowText(hWnd, title);
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -736,7 +736,7 @@ DEFINE_PROPERTY( showFrame ) {
 	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
 
-	JSBool show;
+	bool show;
 	JS_ValueToBoolean(cx, *vp, &show);
 
 	DWORD s = GetWindowLong(hWnd, GWL_STYLE);
@@ -751,7 +751,7 @@ DEFINE_PROPERTY( showFrame ) {
 	// Certain window data is cached, so changes you make using SetWindowLong will not take effect until you call the SetWindowPos function.
 	// Specifically, if you change any of the frame styles, you must call SetWindowPos with the SWP_FRAMECHANGED flag for the cache to be updated properly.
 	SetWindowPos(hWnd, HWND_TOP, 0,0,0,0,  SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER); //HWND_TOPMOST
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -762,7 +762,7 @@ DEFINE_PROPERTY( desktopRect ) {
 	int vector[] = { r.left, r.top, r.right, r.bottom };
 //	IntVectorToArray(cx, COUNTOF(vector), vector, vp);
 	JL_CHK( IntVectorToJsval(cx, vector, COUNTOF(vector), vp) );
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -770,7 +770,7 @@ DEFINE_PROPERTY( captureMouse ) {
 
 	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
-	JSBool capture;
+	bool capture;
 	JS_ValueToBoolean(cx, *vp, &capture);
 
 	// Only the foreground window can capture the mouse.
@@ -779,7 +779,7 @@ DEFINE_PROPERTY( captureMouse ) {
 		SetCapture(hWnd);
 	else
 		ReleaseCapture();
-	return JS_TRUE;
+	return true;
 }
 
 DEFINE_PROPERTY( activeGetter ) {
@@ -787,18 +787,18 @@ DEFINE_PROPERTY( activeGetter ) {
 	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
 	*vp = BOOLEAN_TO_JSVAL( GetActiveWindow() == hWnd );
-	return JS_TRUE;
+	return true;
 }
 
 DEFINE_PROPERTY( activeSetter ) {
 
 	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
-	JSBool active;
+	bool active;
 	JS_ValueToBoolean(cx, *vp, &active);
 	if ( active )
 		SetActiveWindow(hWnd);
-	return JS_TRUE;
+	return true;
 }
 
 

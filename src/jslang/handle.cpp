@@ -68,7 +68,7 @@ DEFINE_FUNCTION( toString ) {
 	JL_CHK( handleStr );
 	*JL_RVAL = STRING_TO_JSVAL(handleStr);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -76,7 +76,7 @@ DEFINE_FUNCTION( toString ) {
 DEFINE_FUNCTION( valueOf ) {
 
 	*JL_RVAL = INT_TO_JSVAL(213);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -86,7 +86,7 @@ DEFINE_INIT() {
 
 	JL_IGNORE(cx, sc, proto, obj);
 	JL_SAFE( globalKey = jl::SessionId() );
-	return JS_TRUE;
+	return true;
 }
 
 /*
@@ -101,7 +101,7 @@ DEFINE_FUNCTION( _serialize ) {
 
 	ser->Write(cx, globalKey);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -119,7 +119,7 @@ DEFINE_FUNCTION( _unserialize ) {
 	unser->Read(cx, gKey);
 	JL_CHKM( gKey == globalKey, E_THISOPERATION, E_INVALID );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */

@@ -28,7 +28,7 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_ASSERT_CONSTRUCTING();
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -43,15 +43,15 @@ CONFIGURE_CLASS // This section containt the declaration and the configuration o
 //	HAS_FINALIZE
 
 //DEFINE_FUNCTION( call ) {
-//	return JS_TRUE;
+//	return true;
 //}
 
 //DEFINE_PROPERTY( prop ) {
-//	return JS_TRUE;
+//	return true;
 //}
 
 //DEFINE_FUNCTION( func ) {
-//	return JS_TRUE;
+//	return true;
 //}
 
 	BEGIN_FUNCTION_SPEC

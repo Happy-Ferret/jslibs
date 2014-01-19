@@ -21,7 +21,7 @@ DECLARE_STATIC()
 //#include "fastcgi.h"
 
 
-JSBool
+bool
 ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 //	_unsafeMode = JL_GetHostPrivate(cx)->unsafeMode;
@@ -31,6 +31,6 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 //	INIT_CLASS( FastCGI );
 	INIT_STATIC();
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }

@@ -19,7 +19,7 @@
 #include "database.h"
 
 
-JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval &rval ) {
+bool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval &rval ) {
 
 	switch( sqlite3_value_type(value) ) {
 
@@ -42,7 +42,7 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval &rval ) {
 		default:
 			JL_ERR( E_DATATYPE, E_NOTSUPPORTED );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -50,7 +50,7 @@ JSBool SqliteToJsval( JSContext *cx, sqlite3_value *value, jsval &rval ) {
 
 // doc: The sqlite3_bind_*() routines must be called after sqlite3_prepare() or sqlite3_reset() and before sqlite3_step().
 //      Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
-JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj, JSObject *curObj ) {
+bool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj, JSObject *curObj ) {
 
 	jsval val;
 	int anonParamIndex = 0;
@@ -127,7 +127,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 				break;
 			case JSTYPE_BOOLEAN:
-				if ( sqlite3_bind_int(pStmt, param, JSVAL_TO_BOOLEAN(val) == JS_TRUE ? 1 : 0 ) != SQLITE_OK )
+				if ( sqlite3_bind_int(pStmt, param, JSVAL_TO_BOOLEAN(val) == true ? 1 : 0 ) != SQLITE_OK )
 					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 				break;
 			case JSTYPE_NUMBER:
@@ -177,7 +177,7 @@ JSBool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj
 				JL_ERR( E_PARAMTYPE, E_NOTSUPPORTED );
 		}
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -277,13 +277,13 @@ DEFINE_FUNCTION( close ) {
 	JL_SetPrivate(obj, NULL);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
 /*
-JSBool JssqliteStep( JSContext *cx, JSObject *obj, int *status ) {
+bool JssqliteStep( JSContext *cx, JSObject *obj, int *status ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
@@ -322,10 +322,10 @@ JSBool JssqliteStep( JSContext *cx, JSObject *obj, int *status ) {
 
 		case SQLITE_ROW: // SQLITE_ROW is returned each time a new row of data is ready for processing by the caller
 			*rval = JSVAL_TRUE;
-			return JS_TRUE;
+			return true;
 		case SQLITE_DONE: // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
 			*rval = JSVAL_FALSE;
-			return JS_TRUE;
+			return true;
 		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
 			JL_REPORT_ERROR( "This routine was called inappropriately." );
 //		case SQLITE_ERROR:
@@ -339,7 +339,7 @@ JSBool JssqliteStep( JSContext *cx, JSObject *obj, int *status ) {
 }
 */
 
-JSBool DoStep(JSContext *cx, JSObject *obj, jsval *rval) {
+bool DoStep(JSContext *cx, JSObject *obj, jsval *rval) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
@@ -379,10 +379,10 @@ JSBool DoStep(JSContext *cx, JSObject *obj, jsval *rval) {
 
 		case SQLITE_ROW: // SQLITE_ROW is returned each time a new row of data is ready for processing by the caller
 			*rval = JSVAL_TRUE;
-			return JS_TRUE;
+			return true;
 		case SQLITE_DONE: // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
 			*rval = JSVAL_FALSE;
-			return JS_TRUE;
+			return true;
 		case SQLITE_MISUSE:
 			// doc. means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE.
 			//      Or it could be the case that a database connection is being used by a different thread than the one it was created it.
@@ -441,7 +441,7 @@ DEFINE_FUNCTION( col ) {
 	int col;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &col) );
 	JL_CHK( SqliteToJsval(cx, sqlite3_column_value(pStmt, col), *JL_RVAL) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -467,7 +467,7 @@ DEFINE_FUNCTION( row ) {
 	if ( *JL_RVAL == JSVAL_FALSE ) { // the statement has finished executing successfully
 
 		*JL_RVAL = JSVAL_VOID; // return undefined
-		return JS_TRUE;
+		return true;
 	}
 
 	// returns an array [ row1Data, row2Data, ... ] else return an object { row1Name:row1Data, row2Name:row2Data,  ... }
@@ -500,7 +500,7 @@ DEFINE_FUNCTION( row ) {
 			JL_CHK( JL_SetElement(cx, row, col, colJsValue) );
 		}
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -533,7 +533,7 @@ DEFINE_FUNCTION( next ) { // for details, see Row() function thet is the base of
 		JL_CHK( SqliteToJsval(cx, sqlite3_column_value(pStmt, col), tmp) );
 		JL_CHK( JS_SetProperty(cx, row, sqlite3_column_name(pStmt, col), &tmp) );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -579,7 +579,7 @@ DEFINE_PROPERTY_GETTER( columnCount ) {
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 	vp.setInt32(sqlite3_column_count(pStmt));
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -603,7 +603,7 @@ DEFINE_PROPERTY_GETTER( columnNames ) {
 //	const char * tmp = JL_GetStringBytes( JS_ValueToString(cx, id) );
 	
 	if ( !vp.isUndefined() )
-		return JS_TRUE;
+		return true;
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -671,7 +671,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( sql ) {
 
 //	if ( *vp != JSVAL_VOID )
-//		return JS_TRUE;
+//		return true;
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -688,7 +688,7 @@ DEFINE_DEL_PROPERTY() {
 
 	JL_IGNORE( id, cx );
 	
-	*succeeded = JS_TRUE;
+	*succeeded = true;
 	return JL_SetReservedSlot(obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
 }
 
@@ -714,8 +714,8 @@ DEFINE_EQUALITY_OP() {
 
 	JL_IGNORE( v, obj, cx );
 
-	*bp = JS_FALSE;
-	return JS_TRUE;
+	*bp = false;
+	return true;
 }
 */
 

@@ -53,7 +53,7 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-JSBool
+bool
 ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 /* crash case: see http://www.sqlite.org/cvstrac/tktview?tn=3251
@@ -93,7 +93,7 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	INIT_CLASS( BlobStream );
 	INIT_CLASS( Database );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

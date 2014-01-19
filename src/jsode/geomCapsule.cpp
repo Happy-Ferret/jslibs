@@ -56,12 +56,12 @@ DEFINE_CONSTRUCTOR() {
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 
 	JL_SetPrivate(obj, geomId);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( geomId )
 		ode::dGeomDestroy(geomId);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -83,7 +83,7 @@ DEFINE_PROPERTY_SETTER( radius ) {
 	double value;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &value) );
 	ode::dGeomCapsuleSetParams(geom, (ode::dReal)value, length);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -94,7 +94,7 @@ DEFINE_PROPERTY_GETTER( radius ) {
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
 	JL_CHK( ODERealToJsval(cx, radius, vp) ); // see JL_NewNumberValue and JS_NewDouble
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -112,7 +112,7 @@ DEFINE_PROPERTY_SETTER( length ) {
 	double value;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &value) );
 	ode::dGeomCapsuleSetParams(geom, radius, (ode::dReal)value);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -123,7 +123,7 @@ DEFINE_PROPERTY_GETTER( length ) {
 	ode::dReal radius, length;
 	ode::dGeomCapsuleGetParams(geom, &radius, &length);
 	JL_CHK( ODERealToJsval(cx, length, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

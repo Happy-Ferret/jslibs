@@ -380,7 +380,7 @@ private:
 };
 
 
-JSBool Unconstructible(JSContext *cx, unsigned, JS::Value *) {
+bool Unconstructible(JSContext *cx, unsigned, JS::Value *) {
 
 	JL_ERR( E_CLASS, E_NOTCONSTRUCT );
 	JL_BAD;
@@ -530,14 +530,14 @@ enum Defining { defConstructor, defFunction, defStaticFunction, defProperty, def
 	static jl3::PropLink _item(_class.staticPropLink);
 
 #define GET() \
-	static JSBool getter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp); \
+	static bool getter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp); \
 	DYNAMIC_INITIALIZER_UNIQUE(__getter) { _item.getter = getter; } \
-	static JSBool getter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp)
+	static bool getter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp)
 
 #define SET() \
-	static JSBool setter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JSBool strict, JS::MutableHandle<JS::Value> vp); \
+	static bool setter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, bool strict, JS::MutableHandle<JS::Value> vp); \
 	DYNAMIC_INITIALIZER_UNIQUE(__setter) { _item.setter = setter; } \
-	static JSBool setter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JSBool strict, JS::MutableHandle<JS::Value> vp)
+	static bool setter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, bool strict, JS::MutableHandle<JS::Value> vp)
 
 
 // functions
@@ -556,14 +556,14 @@ enum Defining { defConstructor, defFunction, defStaticFunction, defProperty, def
 	static jl3::FuncLink _item(_class.staticFuncLink);
 
 #define NATIVE() \
-	static JSBool native(JSContext *cx, unsigned argc, JS::Value *vp); \
+	static bool native(JSContext *cx, unsigned argc, JS::Value *vp); \
 	DYNAMIC_INITIALIZER_UNIQUE(__native) { _item.native = native; } \
-	static JSBool native(JSContext *cx, unsigned argc, JS::Value *vp)
+	static bool native(JSContext *cx, unsigned argc, JS::Value *vp)
 
 #define NATIVE_NAME(N) \
-	static JSBool N(JSContext *cx, unsigned argc, JS::Value *vp); \
+	static bool N(JSContext *cx, unsigned argc, JS::Value *vp); \
 	DYNAMIC_INITIALIZER_UNIQUE(__native) { _item.native = N; } \
-	static JSBool N(JSContext *cx, unsigned argc, JS::Value *vp)
+	static bool N(JSContext *cx, unsigned argc, JS::Value *vp)
 
 #define ARGMIN(MIN) \
 	DYNAMIC_INITIALIZER_UNIQUE(__argcmin) { _item.argcMin = (MIN); }
@@ -726,15 +726,15 @@ struct TRANGE {
 
 #define HAS_INSTANCE() \
 	NEW_NS(config) \
-	static JSBool _hasInstance(JSContext *cx, JS::Handle<JSObject*> obj, JS::MutableHandle<JS::Value> vp, JSBool *bp) \
+	static bool _hasInstance(JSContext *cx, JS::Handle<JSObject*> obj, JS::MutableHandle<JS::Value> vp, bool *bp) \
 	DYNAMIC_INITIALIZER_UNIQUE(__hasInstance) { _class.clasp.hasInstance = _hasInstance; } \
-	static JSBool _hasInstance(JSContext *cx, JS::Handle<JSObject*> obj, JS::MutableHandle<JS::Value> vp, JSBool *bp)
+	static bool _hasInstance(JSContext *cx, JS::Handle<JSObject*> obj, JS::MutableHandle<JS::Value> vp, bool *bp)
 
 #define ITERATOR() \
 	NEW_NS(config) \
-	static JSObject* _iteratorObject(JSContext *cx, JS::HandleObject obj, JSBool keysonly); \
+	static JSObject* _iteratorObject(JSContext *cx, JS::HandleObject obj, bool keysonly); \
 	DYNAMIC_INITIALIZER_UNIQUE(__iteratorObject) { js::Valueify(&_class.clasp)->ext.iteratorObject = _iteratorObject; } \
-	static JSObject* _iteratorObject(JSContext *cx, JS::HandleObject obj, JSBool keysonly) \
+	static JSObject* _iteratorObject(JSContext *cx, JS::HandleObject obj, bool keysonly) \
 
 #define INIT() \
 	NEW_NS(config) \
@@ -745,16 +745,16 @@ struct TRANGE {
 
 /*
 #define HAS_ADD_PROPERTY cs.clasp.addProperty = AddProperty;
-#define DEFINE_ADD_PROPERTY() static JSBool AddProperty(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp)
+#define DEFINE_ADD_PROPERTY() static bool AddProperty(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp)
 
 #define HAS_DEL_PROPERTY cs.clasp.delProperty = DelProperty;
-#define DEFINE_DEL_PROPERTY() static JSBool DelProperty(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JSBool *succeeded)
+#define DEFINE_DEL_PROPERTY() static bool DelProperty(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, bool *succeeded)
 
 #define HAS_GET_PROPERTY cs.clasp.getProperty = GetProperty;
-#define DEFINE_GET_PROPERTY() static JSBool GetProperty(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp)
+#define DEFINE_GET_PROPERTY() static bool GetProperty(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp)
 
 #define HAS_SET_PROPERTY cs.clasp.setProperty = SetProperty;
-#define DEFINE_SET_PROPERTY() static JSBool SetProperty(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JSBool strict, JS::MutableHandle<JS::Value> vp)
+#define DEFINE_SET_PROPERTY() static bool SetProperty(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, bool strict, JS::MutableHandle<JS::Value> vp)
 */
 
 // inline tools

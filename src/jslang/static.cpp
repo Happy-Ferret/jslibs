@@ -64,7 +64,7 @@ DEFINE_FUNCTION( isCallable ) {
 	JL_ASSERT_ARGC(1);
 
 	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_ValueIsCallable(cx, JL_ARG(1)) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -96,12 +96,12 @@ DEFINE_FUNCTION( stringify ) {
 	if ( JL_ARGC == 1 && JSVAL_IS_STRING(JL_ARG(1)) ) { // identity
 		
 		*JL_RVAL = JL_ARG(1);
-		return JS_TRUE;
+		return true;
 	} else 
 	if ( JL_ARGC == 0 || (JL_ARGC == 1 && JSVAL_IS_VOID(JL_ARG(1))) ) { // undefined
 
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 
 	bool toArrayBuffer;
@@ -138,7 +138,7 @@ DEFINE_FUNCTION( stringify ) {
 				*JL_RVAL = STRING_TO_JSVAL( jsstr );
 			}
 
-			return JS_TRUE;
+			return true;
 		}
 
 	}
@@ -147,7 +147,7 @@ DEFINE_FUNCTION( stringify ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	JL_CHK( toArrayBuffer ? str.GetArrayBuffer(cx, *JL_RVAL) : str.GetJSString(cx, *JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -217,7 +217,7 @@ DEFINE_FUNCTION( join ) {
 		jsval nextFct;
 		JL_CHK( JS_GetPropertyById(cx, argObj, JLID(cx, next), &nextFct) );
 		JL_ASSERT_IS_CALLABLE(nextFct, "iterator");
-		while ( JS_CallFunctionValue(cx, argObj, nextFct, 0, NULL, &val) != JS_FALSE ) { // loop until StopIteration or error
+		while ( JS_CallFunctionValue(cx, argObj, nextFct, 0, NULL, &val) != false ) { // loop until StopIteration or error
 
 			JL_CHK( JL_JsvalToNative(cx, val, &*++strList) );
 			length += strList->Length();
@@ -262,7 +262,7 @@ DEFINE_FUNCTION( join ) {
 		*JL_RVAL = STRING_TO_JSVAL(jsstr);
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -292,7 +292,7 @@ DEFINE_FUNCTION( indexOf ) {
 		if ( start > srcStr.Length() - patStr.Length() ) {
 			
 			*JL_RVAL = INT_TO_JSVAL( -1 );
-			return JS_TRUE;
+			return true;
 		}
 	} else {
 	
@@ -304,7 +304,7 @@ DEFINE_FUNCTION( indexOf ) {
 	else
 		*JL_RVAL = INT_TO_JSVAL( jl::Match(srcStr.GetConstStr()+start, srcStr.Length()-start, patStr.GetConstStr(), patStr.Length()) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -379,7 +379,7 @@ DEFINE_FUNCTION( processEvents ) {
 	if ( JL_ARGC == 0 ) {
 		
 		*JL_RVAL = JSVAL_ZERO;
-		return JS_TRUE;
+		return true;
 	}
 
 	// fill peList slots
@@ -466,8 +466,8 @@ DEFINE_FUNCTION( processEvents ) {
 	int32_t eventsMask;
 	eventsMask = 0;
 	bool hasEvent;
-	JSBool ok;
-	ok = JS_TRUE;
+	bool ok;
+	ok = true;
 
 	// notify waiters
 	for ( i = 0; i < argc; ++i ) {
@@ -481,8 +481,8 @@ DEFINE_FUNCTION( processEvents ) {
 			JS_ClearPendingException(cx);
 		}
 
-		if ( pe->endWait(pe, &hasEvent, cx, JSVAL_TO_OBJECT(JL_ARG(i+1))) != JS_TRUE )
-			ok = JS_FALSE; // report errors later
+		if ( pe->endWait(pe, &hasEvent, cx, JSVAL_TO_OBJECT(JL_ARG(i+1))) != true )
+			ok = false; // report errors later
 
 		if ( exState )
 			JS_RestoreExceptionState(cx, exState);
@@ -535,9 +535,9 @@ struct TimeoutProcessEvent {
 
 S_ASSERT( offsetof(TimeoutProcessEvent, pe) == 0 );
 
-static JSBool TimeoutPrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
+static bool TimeoutPrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
 	
-	return JS_TRUE;
+	return true;
 }
 
 static void TimeoutStartWait( volatile ProcessEvent *pe ) {
@@ -562,7 +562,7 @@ static bool TimeoutCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-static JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+static bool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 	JL_IGNORE(obj);
 
@@ -572,19 +572,19 @@ static JSBool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSConte
 
 	// not triggered, then nothing to reset
 	if ( !*hasEvent )
-		return JS_TRUE;
+		return true;
 
 	// reset for further use.
 	JLEventReset(upe->cancel);
 	upe->canceled = false;
 
 	if ( JSVAL_IS_VOID( upe->callbackFunction ) )
-		return JS_TRUE;
+		return true;
 
 	jsval rval;
 	JL_CHK( JL_CallFunctionVA(cx, upe->callbackFunctionThis, upe->callbackFunction, &rval) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -630,7 +630,7 @@ DEFINE_FUNCTION( timeoutEvents ) {
 		upe->callbackFunction = JSVAL_VOID;
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -712,7 +712,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	TEST( JS_ValueToId(cx, OBJECT_TO_JSVAL(o), &id) );
 	TEST( !JSID_IS_OBJECT(id) );
 
-	JSBool found;
+	bool found;
 	TEST( JS_DefineProperty(cx, o, "test", JSVAL_ONE, NULL, NULL, JSPROP_PERMANENT) );
 	TEST( JS_HasProperty(cx, o, "test", &found) );
 	TEST( found );
@@ -925,7 +925,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 	/////////////////////////////////////////////////////////////////
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1017,7 +1017,7 @@ DEFINE_FUNCTION( jslangTest ) {
 
 
 
-//	JSBool st = JS_IsInt8Array(obj, cx);
+//	bool st = JS_IsInt8Array(obj, cx);
 
 /*
 	static uint64_t xx[2];
@@ -1148,7 +1148,7 @@ STATIC_CLASS()
 	JL_FUNCTION( xxx, 2 ) {
 
 
-		return JS_FALSE;
+		return false;
 	}
 
 
@@ -1171,7 +1171,7 @@ CLASS( test )
 
 	JL_CONSTRUCTOR() {
 	
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_FUNCTION( fct1, 2 ) {
@@ -1179,7 +1179,7 @@ CLASS( test )
 		//JL_GetReservedSlot(
 		_slot_foo.index;
 		printf("const:%d\n", _const_fooInt.value);
-		return JS_FALSE;
+		return false;
 	}
 
 
@@ -1188,12 +1188,12 @@ CLASS( test )
 
 		JL_GETTER() {
 
-			return JS_TRUE;
+			return true;
 		}
 
 		JL_SETTER() {
 
-			return JS_TRUE;
+			return true;
 		}
 	JL_PROPERTY_END
 
@@ -1203,7 +1203,7 @@ CLASS( test )
 
 		JL_GETTER() {
 
-			return JS_TRUE;
+			return true;
 		}
 
 	JL_PROPERTY_END
@@ -1231,7 +1231,7 @@ DEFINE_INIT() {
 	
 //	JL_CHK( _static::_classSpec.Register(cx, &robj) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1312,7 +1312,7 @@ CLASS(FooBar)
 		JL_DEFINE_ARGS;
 		JL_DEFINE_CONSTRUCTOR_OBJ;
 		JL_SetPrivate(obj, new config::Private);
-		return JS_TRUE;
+		return true;
 		JL_BAD;
 	}
 
@@ -1330,7 +1330,7 @@ CLASS(FooBar)
 		GET() {
 
 //			printf("%d\n", SLOT_INDEX(foo));
-			return JS_TRUE;
+			return true;
 		}
 
 
@@ -1339,7 +1339,7 @@ CLASS(FooBar)
 		NAME( status )
 		SET() {
 		
-			return JS_TRUE;
+			return true;
 		}
 
 
@@ -1348,17 +1348,17 @@ CLASS(FooBar)
 		GET() {
 
 			SLOT_INDEX(bar);
-			return JS_TRUE;
+			return true;
 		}
 		SET() {
-			return JS_TRUE;
+			return true;
 		}
 
 
 	CALL ARGC(0,1) NATIVE() {
 		
 		
-		return JS_TRUE;
+		return true;
 	}
 
 
@@ -1374,18 +1374,18 @@ CLASS(FooBar)
 		NAME_ID( status4 )
 
 		GET() {
-			return JS_TRUE;
+			return true;
 		}
 
 		SET() {
-			return JS_TRUE;
+			return true;
 		}
 
 	
 
 	JL_FUNCTION(yyy, 0, 1) {
 
-		return JS_TRUE;
+		return true;
 	}
 
 
@@ -1393,7 +1393,7 @@ CLASS(FooBar)
 
 		_item.argcMax;
 
-		return JS_TRUE;
+		return true;
 	}
 
 
@@ -1405,7 +1405,7 @@ CLASS(FooBar)
 			
 			JL_DEFINE_ARGS;
 
-			return JS_TRUE;
+			return true;
 			JL_BAD;
 		}
 

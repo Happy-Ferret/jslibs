@@ -346,7 +346,7 @@ DEFINE_FUNCTION( frustumSphere ) {
 	JL_CHK( JL_NativeToJsval(cx, radius, tmpVal) );
 	JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT(*JL_RVAL), 3, tmpVal) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -384,7 +384,7 @@ DEFINE_FUNCTION( boxToCircumscribedSphere ) {
 	JL_CHK( JL_NativeToJsval(cx, radius, tmpVal) );
 	JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT(*JL_RVAL), 3, tmpVal) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -453,7 +453,7 @@ DEFINE_FUNCTION( quaternionToEuler ) {
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
 	JL_CHK( JL_NativeVectorToJsval(cx, euler.raw, 3, *JL_RVAL, true) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -511,7 +511,7 @@ DEFINE_FUNCTION( eulerToQuaternion ) {
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
 	JL_CHK( JL_NativeVectorToJsval(cx, quat.raw, 4, *JL_RVAL, true) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -548,7 +548,7 @@ DEFINE_FUNCTION( quaternionToAxisAngle ) {
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
 	JL_CHK( JL_NativeVectorToJsval(cx, quat.raw, 4, *JL_RVAL, true) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -579,7 +579,7 @@ DEFINE_FUNCTION( axisAngleToQuaternion ) {
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
 	JL_CHK( JL_NativeVectorToJsval(cx, axisAngle.raw, 4, *JL_RVAL, true) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -604,7 +604,7 @@ DEFINE_FUNCTION( getMatrix ) {
 
 	JL_CHK( fct(cx, matrixObj, &m) );
 	JL_CHK( JL_NativeVectorToJsval(cx, m, 16, *JL_RVAL, false) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

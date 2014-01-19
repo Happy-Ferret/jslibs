@@ -189,7 +189,7 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	JL_SetPrivate(obj, process);
-	return JS_TRUE;
+	return true;
 
 bad_throw:
 	ThrowIoError(cx);
@@ -199,7 +199,7 @@ bad:
 		PR_DestroyProcessAttr(psattr);
 	if ( process)
 		PR_DetachProcess(process); 
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -232,7 +232,7 @@ DEFINE_FUNCTION( wait ) {
 	JL_CHK( PR_WaitProcess(process, &exitValue) == PR_SUCCESS );
 	JL_SetPrivate( obj, NULL);
 	JL_CHK( JL_NativeToJsval(cx, exitValue, *JL_RVAL) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -256,7 +256,7 @@ DEFINE_FUNCTION( detach ) {
 	JL_CHK( PR_DetachProcess(process) == PR_SUCCESS );
 	JL_SetPrivate( obj, NULL); // On return, the value of process becomes an invalid pointer and should not be passed to other functions.
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -280,7 +280,7 @@ DEFINE_FUNCTION( kill ) {
 	JL_CHK( PR_KillProcess(process) == PR_SUCCESS );
 	JL_SetPrivate( obj, NULL); // Invalidates the current process pointer.
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -302,7 +302,7 @@ DEFINE_PROPERTY_GETTER( stdin ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	JL_CHK( JL_GetReservedSlot( obj, SLOT_PROCESS_STDIN, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -318,7 +318,7 @@ DEFINE_PROPERTY_GETTER( stdout ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	JL_CHK( JL_GetReservedSlot( obj, SLOT_PROCESS_STDOUT, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -334,7 +334,7 @@ DEFINE_PROPERTY_GETTER( stderr ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	JL_CHK( JL_GetReservedSlot( obj, SLOT_PROCESS_STDERR, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

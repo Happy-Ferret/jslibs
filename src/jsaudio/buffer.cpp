@@ -72,12 +72,12 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	JL_SetPrivate(obj, (void*)bid);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( bid )
 		alDeleteBuffers(1, &bid);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -92,7 +92,7 @@ DEFINE_FUNCTION( free ) {
 	ALuint bid = (ALuint) JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( bid );
 	alBufferData(bid, AL_FORMAT_MONO8, NULL, 0, 0);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -112,7 +112,7 @@ DEFINE_FUNCTION( valueOf ) {
 	ALuint bid = (ALuint) JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( bid );
 	JL_CHK( JL_NativeToJsval(cx, bid, *JL_RVAL) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -140,7 +140,7 @@ DEFINE_PROPERTY_GETTER( frequency ) {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	JL_CHK( JL_NativeToJsval(cx, frequency, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -163,7 +163,7 @@ DEFINE_PROPERTY_GETTER( size ) {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	JL_CHK( JL_NativeToJsval(cx, size, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -187,7 +187,7 @@ DEFINE_PROPERTY_GETTER( bits ) {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	JL_CHK( JL_NativeToJsval(cx, bits, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -210,7 +210,7 @@ DEFINE_PROPERTY_GETTER( channels ) {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	JL_CHK( JL_NativeToJsval(cx, channels, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

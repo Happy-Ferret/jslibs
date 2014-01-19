@@ -40,8 +40,8 @@ int _puts(JSContext *cx, const char *str) {
 	//	jsstr = JS_ConcatStrings(cx, jsstr, JS_NewStringCopyZ(cx, "\n"));
 
 		jsval tmp;
-		JSBool status = JS_CallFunctionValue(cx, JL_GetGlobal(cx), stdoutFunction, 1, &tmp, &tmp);
-		if ( status == JS_TRUE )
+		bool status = JS_CallFunctionValue(cx, JL_GetGlobal(cx), stdoutFunction, 1, &tmp, &tmp);
+		if ( status == true )
 			return len;
 	}
 
@@ -159,7 +159,7 @@ DEFINE_FUNCTION( dumpHeap )
     size_t maxDepth;
     void *thingToIgnore;
     FILE *dumpFile;
-    JSBool ok;
+    bool ok;
 
     if (argc > 0) {
         v = JS_ARGV(cx, vp)[0];
@@ -168,7 +168,7 @@ DEFINE_FUNCTION( dumpHeap )
 
             str = JS_ValueToString(cx, v);
             if (!str)
-                return JS_FALSE;
+                return false;
             JS_ARGV(cx, vp)[0] = STRING_TO_JSVAL(str);
 				fileName = JLData(cx, str);
 //            fileName = JL_GetStringBytesZ(cx, str);
@@ -208,7 +208,7 @@ DEFINE_FUNCTION( dumpHeap )
             uint32 depth;
 
             if (!JS_ValueToECMAUint32(cx, v, &depth))
-                return JS_FALSE;
+                return false;
             maxDepth = depth;
         }
     }
@@ -230,7 +230,7 @@ DEFINE_FUNCTION( dumpHeap )
         dumpFile = fopen(fileName, "w");
         if (!dumpFile) {
             JS_ReportError(cx, "can't open %s: %s", fileName, strerror(errno));
-            return JS_FALSE;
+            return false;
         }
     }
 
@@ -245,7 +245,7 @@ DEFINE_FUNCTION( dumpHeap )
                    badTraceArg);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_FALSE;
+	return false;
 }
 
 #else // DEBUG
@@ -254,7 +254,7 @@ DEFINE_FUNCTION( dumpHeap ) {
 
 	JL_WARN( E_THISOPERATION, E_NOTSUPPORTED );
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -271,11 +271,11 @@ static bool hasGCTrace = false; // (TBD) fix static keyword issue
 static JSGCCallback prevGCCallback = NULL; // (TBD) fix static keyword issue
 static char GCTraceFileName[PATH_MAX]; // (TBD) fix static keyword issue
 
-JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
+bool GCCallTrace(JSContext *cx, JSGCStatus status) {
 
 //	const char *statusStr[4] = { "JSGC_BEGIN", "JSGC_END", "JSGC_MARK_END", "JSGC_FINALIZE_END" };
 	if ( status == JSGC_END )
-		return JS_TRUE;
+		return true;
 
 	time_t t;
 	struct tm *tim;
@@ -292,7 +292,7 @@ JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 		dumpFile = fopen(GCTraceFileName, "a");
 		if (!dumpFile) {
 			JS_ReportError(cx, "can't open %s: %s", GCTraceFileName, strerror(errno));
-			return JS_FALSE;
+			return false;
 		}
 	} else {
 		dumpFile = stdout;
@@ -309,7 +309,7 @@ JSBool GCCallTrace(JSContext *cx, JSGCStatus status) {
 	if ( dumpFile != stdout )
 		fclose(dumpFile);
 
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -391,7 +391,7 @@ DEFINE_PROPERTY_SETTER( gcZeal ) {
 
 	JL_WARN( E_THISOPERATION, E_NOTSUPPORTED );
 	*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 
 #endif // JS_GC_ZEAL
 
@@ -407,7 +407,7 @@ DEFINE_FUNCTION( disableJIT ) {
 	JS_SetOptions(cx, JS_GetOptions(cx) & ~(/*JSOPTION_JIT|*/JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE));
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -425,7 +425,7 @@ DEFINE_FUNCTION( objectGCId ) {
 		JL_CHK( JS_GetObjectId(cx, JSVAL_TO_OBJECT(JL_ARG(1)), &id) );
 		JL_CHK( JL_NativeToJsval(cx, JSID_BITS(id), JL_RVAL) );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -446,12 +446,12 @@ DEFINE_FUNCTION( getObjectPrivate ) {
 	if ( !(JL_GetClass(obj)->flags & JSCLASS_HAS_PRIVATE) ) {
 
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 	unsigned long n;
 	n = (unsigned long)JL_GetPrivate(JSVAL_TO_OBJECT( JL_ARG( 1 ) ));
 	JL_CHK( JL_NewNumberValue(cx, (double)n, JL_RVAL) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -476,7 +476,7 @@ ValueToScript(JSContext *cx, jsval v)
     return script;
 }
 
-JSBool
+bool
 GetTrapArgs(JSContext *cx, unsigned argc, jsval *argv, JSScript **scriptp,
             int32 *ip)
 {
@@ -494,16 +494,16 @@ GetTrapArgs(JSContext *cx, unsigned argc, jsval *argv, JSScript **scriptp,
              JL_GetClass(JSVAL_TO_OBJECT(v)) == &js_ScriptClass)) {
             script = ValueToScript(cx, v);
             if (!script)
-                return JS_FALSE;
+                return false;
             *scriptp = script;
             intarg++;
         }
         if (argc > intarg) {
             if (!JS_ValueToInt32(cx, argv[intarg], ip))
-                return JS_FALSE;
+                return false;
         }
     }
-    return JS_TRUE;
+    return true;
 }
 
 JSTrapStatus
@@ -542,10 +542,10 @@ DEFINE_FUNCTION( trap )
     argc--;
     str = JS_ValueToString(cx, argv[argc]);
     if (!str)
-        return JS_FALSE;
+        return false;
     argv[argc] = STRING_TO_JSVAL(str);
     if (!GetTrapArgs(cx, argc, argv, &script, &i))
-        return JS_FALSE;
+        return false;
     return JS_SetTrap(cx, script, script->code + i, TrapHandler, str);
 	JL_BAD;
 }
@@ -561,9 +561,9 @@ DEFINE_FUNCTION( untrap )
     int32 i;
 
     if (!GetTrapArgs(cx, argc, argv, &script, &i))
-        return JS_FALSE;
+        return false;
     JS_ClearTrap(cx, script, script->code + i, NULL, NULL);
-    return JS_TRUE;
+    return true;
 }
 
 / **doc
@@ -582,13 +582,13 @@ DEFINE_FUNCTION( lineToPC )
 
 	 script = JS_GetScriptedCaller(cx, NULL)->script;
     if (!GetTrapArgs(cx, argc, argv, &script, &i))
-        return JS_FALSE;
+        return false;
     lineno = (i == 0) ? script->lineno : (unsigned)i;
     pc = JS_LineNumberToPC(cx, script, lineno);
     if (!pc)
-        return JS_FALSE;
+        return false;
     *rval = INT_TO_JSVAL(pc - script->code);
-    return JS_TRUE;
+    return true;
 	 JL_BAD;
 }
 
@@ -604,12 +604,12 @@ DEFINE_FUNCTION( pCToLine )
     unsigned lineno;
 
     if (!GetTrapArgs(cx, argc, argv, &script, &i))
-        return JS_FALSE;
+        return false;
     lineno = JS_PCToLineNumber(cx, script, script->code + i);
     if (!lineno)
-        return JS_FALSE;
+        return false;
     *rval = INT_TO_JSVAL(lineno);
-    return JS_TRUE;
+    return true;
 }
 */
 
@@ -645,7 +645,7 @@ DEFINE_PROPERTY_GETTER( scriptFilenameList ) {
 		JL_CHK( JL_SetElement(cx, arr, index, &filename) );
 		++index;
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -679,10 +679,10 @@ DEFINE_FUNCTION( getActualLineno ) {
 	if ( script == NULL ) {
 
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 	*JL_RVAL = INT_TO_JSVAL(JS_PCToLineNumber(cx, script, pc));
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -733,7 +733,7 @@ DEFINE_FUNCTION( stackFrameInfo ) {
 	if ( fp == NULL ) {
 
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 
 	JSObject *frameInfo;
@@ -811,7 +811,7 @@ DEFINE_FUNCTION( stackFrameInfo ) {
 //	JL_CHK( JS_DefineProperty(cx, frameInfo, "opnd", fp->regs->sp[-1], NULL, NULL, JSPROP_ENUMERATE) );
 //	char * s = JL_GetStringBytes(JS_ValueToString(cx, fp->regs->sp[-1]));
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -836,7 +836,7 @@ DEFINE_FUNCTION( evalInStackFrame ) {
 	if ( fp == NULL ) {
 
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 
 	JSScript *script;
@@ -854,7 +854,7 @@ DEFINE_FUNCTION( evalInStackFrame ) {
 
 	JL_CHK( JS_EvaluateUCInStackFrame(cx, fp, str, (unsigned)strlen, JS_GetScriptFilename(cx, script), JS_PCToLineNumber(cx, script, pc), JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -905,7 +905,7 @@ DEFINE_FUNCTION( locate ) {
 	if ( fp == NULL ) {
 
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 
 	JSScript *script;
@@ -931,7 +931,7 @@ DEFINE_FUNCTION( locate ) {
 	tmp = INT_TO_JSVAL(lineno);
 	JL_CHK( JL_SetElement(cx, arrObj, 1, &tmp) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -983,14 +983,14 @@ next:
 	if ( !script ) {
 
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_CHK( JL_NativeToJsval(cx, JS_GetScriptFilename(cx, script), &values[0]) );
 	JL_CHK( JL_NativeToJsval(cx, JS_GetScriptBaseLineNumber(cx, script), &values[1] ) );
 	*JL_RVAL = OBJECT_TO_JSVAL( JS_NewArrayObject(cx, COUNTOF(values), values) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1002,13 +1002,13 @@ S_ASSERT(JSTRY_ITER == 2);
 
 static const char* const TryNoteNames[] = { "catch", "finally", "iter" };
 
-JSBool
+bool
 TryNotes(JSContext *cx, JSScript *script, FILE *gOutFile)
 {
     JSTryNote *tn, *tnlimit;
 
     if (script->trynotesOffset == 0)
-        return JS_TRUE;
+        return true;
 
     tn = script->trynotes()->vector;
     tnlimit = tn + script->trynotes()->length;
@@ -1020,7 +1020,7 @@ TryNotes(JSContext *cx, JSScript *script, FILE *gOutFile)
                 TryNoteNames[tn->kind], tn->stackDepth,
                 tn->start, tn->start + tn->length);
     } while (++tn != tnlimit);
-    return JS_TRUE;
+    return true;
 }
 */
 
@@ -1047,11 +1047,11 @@ DEFINE_FUNCTION( scriptByLocation ) {
 	if ( scrobj == NULL ) {
 
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 
 	*JL_RVAL = OBJECT_TO_JSVAL(scrobj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -1097,24 +1097,24 @@ DEFINE_FUNCTION( disassembleScript ) {
 	end = script->code + script->length;
 	while (pc < end) {
 
-		len = js_Disassemble1(cx, script, pc, pc - script->code, JS_TRUE, &sprinter);
+		len = js_Disassemble1(cx, script, pc, pc - script->code, true, &sprinter);
 		if (!len)
-			return JS_FALSE;
+			return false;
 		pc += len;
 	}
 
     JSString *str = JS_NewStringCopyZ(cx, sprinter.base);
     JS_ARENA_RELEASE(&cx->tempPool, mark);
     if (!str)
-        return JS_FALSE;
+        return false;
     JS_SET_RVAL(cx, vp, STRING_TO_JSVAL(str));
-	return JS_TRUE;
+	return true;
 
 #else // DEBUG
 
 	JL_WARN( E_THISOPERATION, E_NOTSUPPORTED );
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 
 #endif // DEBUG
 
@@ -1141,7 +1141,7 @@ DEFINE_FUNCTION( assertJit ) {
 #endif
 
 	JS_SET_RVAL(cx, vp, JSVAL_VOID);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -1159,13 +1159,13 @@ DEFINE_FUNCTION( debugOutput ) {
 	OutputDebugString(str); // (TBD) not thread-safe, use a critical section
 	}
 	*JL_RVAL = JSVAL_TRUE;
-	return JS_TRUE;
+	return true;
 #else
 	JL_WARN( E_THISOPERATION, E_NOTSUPPORTED );
 #endif
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1180,7 +1180,7 @@ DEFINE_FUNCTION( createLeak ) {
 	malloc(1234);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1192,7 +1192,7 @@ DEFINE_FUNCTION( VALGRIND_COUNT_ERRORS ) {
 	// but the client program can detect when errors occur. Only useful for tools that report errors, e.g. it's useful for Memcheck,
 	// but for Cachegrind it will always return zero because Cachegrind doesn't report errors.
 	*JL_RVAL = INT_TO_JSVAL( VALGRIND_COUNT_ERRORS );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1204,7 +1204,7 @@ DEFINE_FUNCTION( VALGRIND_DO_LEAK_CHECK ) {
 	// This is useful for incrementally checking for leaks between arbitrary places in the program's execution. It has no return value.
 	VALGRIND_DO_LEAK_CHECK;
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1214,7 +1214,7 @@ DEFINE_FUNCTION( VALGRIND_DO_QUICK_LEAK_CHECK ) {
 	// like VALGRIND_DO_LEAK_CHECK, except it produces only a leak summary (like --leak-check=summary). It has no return value.
 	VALGRIND_DO_QUICK_LEAK_CHECK;
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1238,7 +1238,7 @@ DEFINE_FUNCTION( VALGRIND_COUNT_LEAKS ) {
 	JL_SetElement(cx, arrayObj, 2, &tmp);
 	tmp = INT_TO_JSVAL(suppressed);
 	JL_SetElement(cx, arrayObj, 3, &tmp);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1249,7 +1249,7 @@ DEFINE_FUNCTION( debugBreak ) {
 
 	JL_Break();
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -1282,7 +1282,7 @@ DEFINE_FUNCTION( crashGuard ) {
 
 #endif
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1306,7 +1306,7 @@ DEFINE_FUNCTION( setPerfTestMode ) {
 
 #endif // WIN32
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1327,17 +1327,17 @@ DEFINE_FUNCTION( testDebug ) {
 	jsid id;
 	JSObject *obj = JL_NewObj(cx);
 	JS_ValueToId(cx, OBJECT_TO_JSVAL(obj), &id);
-	JSBool isobjid = JSID_IS_OBJECT(id);
+	bool isobjid = JSID_IS_OBJECT(id);
 
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 }
 
 DEFINE_FUNCTION( test2Debug ) {
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 
 //	JL_DEFINE_FUNCTION_OBJ;
 //	jsval arg = JSVAL_ONE;

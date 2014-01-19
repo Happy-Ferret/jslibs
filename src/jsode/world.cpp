@@ -311,10 +311,10 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, OBJECT_TO_JSVAL(surfaceParametersObject)) );
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 bad:
 	JS_free(cx, pv);
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -335,7 +335,7 @@ DEFINE_FUNCTION( destroy ) {
 	ode::dJointGroupDestroy(pv->contactGroupId);
 	ode::dWorldDestroy(pv->worldId);
 	JL_SetPrivate( obj, NULL);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -454,7 +454,7 @@ DEFINE_FUNCTION( step ) {
 		ode::dWorldQuickStep(pv->worldId, stepSize / 1000.f);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -491,7 +491,7 @@ DEFINE_FUNCTION( scaleImpulse ) {
 	}
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -514,7 +514,7 @@ DEFINE_PROPERTY_SETTER( autoDisableLinearThreshold ) {
 	ode::dReal threshold;
 	JL_CHK( JsvalToODEReal(cx, *vp, &threshold) );
 	ode::dWorldSetAutoDisableLinearThreshold(pv->worldId, threshold);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -525,7 +525,7 @@ DEFINE_PROPERTY_GETTER( autoDisableLinearThreshold ) {
 	ode::dReal threshold;
 	threshold = ode::dWorldGetAutoDisableLinearThreshold(pv->worldId);
 	JL_CHK( ODERealToJsval(cx, threshold, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -542,7 +542,7 @@ DEFINE_PROPERTY_SETTER( autoDisableAngularThreshold ) {
 	ode::dReal threshold;
 	JL_CHK( JsvalToODEReal(cx, *vp, &threshold) );
 	ode::dWorldSetAutoDisableAngularThreshold(pv->worldId, threshold);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -554,7 +554,7 @@ DEFINE_PROPERTY_GETTER( autoDisableAngularThreshold ) {
 	ode::dReal threshold;
 	threshold = ode::dWorldGetAutoDisableAngularThreshold(pv->worldId);
 	JL_CHK( ODERealToJsval(cx, threshold, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -572,7 +572,7 @@ DEFINE_PROPERTY_GETTER( gravity ) {
 	ode::dWorldGetGravity(pv->worldId, gravity);
 	//ODERealVectorToArray(cx, 3, gravity, vp);
 	JL_CHK( ODERealVectorToJsval(cx, gravity, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -586,7 +586,7 @@ DEFINE_PROPERTY_SETTER( gravity ) {
 	JL_CHK( JsvalToODERealVector(cx, *vp, gravity, 3, &length) );
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dWorldSetGravity( pv->worldId, gravity[0], gravity[1], gravity[2] );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -651,7 +651,7 @@ DEFINE_PROPERTY_SETTER( real ) {
 			ode::dWorldSetMaxAngularSpeed(pv->worldId, value);
 			break;
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -697,7 +697,7 @@ DEFINE_PROPERTY_GETTER( real ) {
 			break;
 	}
 	JL_CHK(JL_NativeToJsval(cx, value, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

@@ -43,7 +43,7 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
-JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+bool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JL_CHK( InitJslibsModule(cx, id)  );
 
@@ -68,23 +68,23 @@ JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	INIT_CLASS( Process );
 	INIT_STATIC();
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
-JSBool ModuleRelease(JSContext *cx) {
+bool ModuleRelease(JSContext *cx) {
 
 	JsioPrivate *mpv = (JsioPrivate*)JL_GetModulePrivate(cx, _moduleId);
 
 	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // do not cleanup in unsafe mode.
-		return JS_TRUE;
+		return true;
 
 	if ( mpv->peCancel != NULL )
 		PR_DestroyPollableEvent(mpv->peCancel);
 
 	jl_free(mpv);
 
-	return JS_TRUE;
+	return true;
 //	JL_BAD;
 }
 

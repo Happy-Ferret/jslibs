@@ -17,10 +17,10 @@
 
 DECLARE_CLASS( IoError )
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError );
 
-ALWAYS_INLINE JSBool
+ALWAYS_INLINE bool
 ThrowIoError( JSContext *cx ) {
 
 	return ThrowIoErrorArg(cx, PR_GetError(), PR_GetOSError());

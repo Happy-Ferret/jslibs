@@ -36,7 +36,7 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-JSBool
+bool
 ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JL_CHK( InitJslibsModule(cx, id)  );
@@ -55,17 +55,17 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	INIT_CLASS( ComEnum );
 	INIT_CLASS( ComDispatch );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
-JSBool
+bool
 ModuleRelease(JSContext *cx) {
 
 	JL_IGNORE(cx);
 
-	return JS_TRUE;
+	return true;
 }
 
 void

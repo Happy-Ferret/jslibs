@@ -37,6 +37,6 @@ struct PrngPrivate {
 };
 
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 ThrowCryptError( JSContext *cx, int errorCode );
 

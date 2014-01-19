@@ -146,6 +146,8 @@ int main(int argc, char* argv[]) {
 	printf("Deleting the destination file %s\n", argv[2]);
 	remove(argv[2]);
 	
+	JS_Init();
+
 	JSClass global_class = {
 		 "global", JSCLASS_GLOBAL_FLAGS,
 		 JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
@@ -156,10 +158,14 @@ int main(int argc, char* argv[]) {
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
 	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
 	JSContext *cx = JS_NewContext(rt, 8192L);
-	JS_SetOptions(cx, JS_GetOptions(cx));
-	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
+	JS::ContextOptionsRef(cx).setVarObjFix(true);
+	
+//	JS_SetOptions(cx, JS_GetOptions(cx));
+//	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
+
+
 	JS_SetErrorReporter(cx, my_ErrorReporter);
-	JSObject *globalObject = JS_NewGlobalObject(cx, &global_class, NULL);
+	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &global_class, NULL, JS::DontFireOnNewGlobalHook));
 	JS_InitStandardClasses(cx, globalObject);
 
 	//JSScript *script = JS_CompileFile(cx, JL_GetGlobal(cx), argv[1]);
@@ -181,7 +187,6 @@ int main(int argc, char* argv[]) {
 	printf("Empty source give empty destination: %s\n", allowEmptyDest ? "true" : "false");
 
 	// do not use JSOPTION_COMPILE_N_GO option (see https://bugzilla.mozilla.org/show_bug.cgi?id=494363)
-	JS_SetOptions(cx, JS_GetOptions(cx) | JSOPTION_VAROBJFIX); /*JSOPTION_JIT |*/ 
 
 	printf("Script name: %s\n", argc >= 4 ? argv[4] : "(NULL)" );
 	printf("Compiling file %s\n", argv[1]);
@@ -189,7 +194,11 @@ int main(int argc, char* argv[]) {
 	//JSScript *script = JS_CompileFileHandle(cx, globalObject, argc >= 4 ? argv[4] : NULL, srcFile);
 	char *srcCode = (char*)malloc(fileSize);
 	fread(srcCode, 1, fileSize, srcFile);
-	JSScript *script = JS_CompileScript(cx, globalObject, srcCode, fileSize, srcCode, 1);
+
+	JS::CompileOptions options(cx);
+	options.setVersion(JSVERSION_LATEST);
+
+	JS::RootedScript script(cx, JS_CompileScript(cx, globalObject, srcCode, fileSize, options));
 	free(srcCode);
 
 	fclose(srcFile);

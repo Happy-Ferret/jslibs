@@ -21,15 +21,15 @@ JS_END_EXTERN_C
 
 int count = 0;
 
-static JSBool soubokTest_next(JSContext *cx, unsigned argc, jsval *vp) {
+static bool soubokTest_next(JSContext *cx, unsigned argc, jsval *vp) {
 
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
 	if ( ++count == 5 )
 		return JS_ThrowStopIteration(cx);
-	return JS_TRUE;
+	return true;
 }
 
-static JSObject* soubokTest_IteratorObject(JSContext *cx, JSObject *obj, JSBool keysonly) {
+static JSObject* soubokTest_IteratorObject(JSContext *cx, JSObject *obj, bool keysonly) {
 
 	JSObject *itObj = JS_NewObject(cx, NULL, NULL, NULL);
 	JS_DefineFunction(cx, itObj, "next", soubokTest_next, 0, 0);
@@ -37,14 +37,14 @@ static JSObject* soubokTest_IteratorObject(JSContext *cx, JSObject *obj, JSBool 
 	return itObj;
 }
 
-JSBool soubokTest_constructor( JSContext *cx, unsigned argc, jsval *vp ) {
+bool soubokTest_constructor( JSContext *cx, unsigned argc, jsval *vp ) {
 
 	JSObject *obj;
 	obj = JS_NewObjectForConstructor(cx, vp);
 	if ( obj == NULL )
-		return JS_FALSE;
+		return false;
 	JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
-	return JS_TRUE;
+	return true;
 }
 
 js::Class soubokTest_BlobClass = {

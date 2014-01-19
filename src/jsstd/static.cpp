@@ -201,7 +201,7 @@ assemble:
 	JL_CHK( jsstr );
 	args.rval().setString(jsstr);
 
-	return JS_TRUE;
+	return true;
 
 bad:
 	while ( stack ) {
@@ -210,7 +210,7 @@ bad:
 			JS_RemoveStringRoot(cx, &stack->root);
 		--stack;
 	}
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -229,7 +229,7 @@ DEFINE_FUNCTION( switchCase ) {
 	if ( argc <= 2 ) {
 		
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 
 	unsigned int i;
@@ -238,17 +238,17 @@ DEFINE_FUNCTION( switchCase ) {
 		if ( JS_SameValue(cx, JL_ARGV[0], JL_ARGV[i]) ) { // see also JS_StrictlyEqual
 			
 			*JL_RVAL = JL_ARGV[i+1];
-			return JS_TRUE;
+			return true;
 		}
 
 	if ( i > argc ) {
 
 		*JL_RVAL = JL_ARGV[argc-1];
-		return JS_TRUE;
+		return true;
 	}
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -274,14 +274,14 @@ DEFINE_FUNCTION( switchCase ) {
 	
 		JL_CHK( JL_GetElement(cx, caseArray, i, *JL_RVAL) );
 		
-		JSBool same;
+		bool same;
 		JL_CHK( JS_SameValue(cx, JL_ARG(1), *JL_RVAL, &same) );
 		if ( same )
 			return JL_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(3)), i, *JL_RVAL);
 	}
 
 	*JL_RVAL = argc >= 4 ? JL_ARG(4) : JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -308,7 +308,7 @@ DEFINE_FUNCTION( internString ) {
 	str = JS_InternJSString(cx, str);
 	JL_CHK( str );
 	*JL_RVAL = STRING_TO_JSVAL(str);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -361,7 +361,7 @@ DEFINE_FUNCTION( countProperties ) {
 	*JL_RVAL = INT_TO_JSVAL(JS_IdArrayLength(cx, arr));
 	JS_DestroyIdArray(cx, arr);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -403,7 +403,7 @@ DEFINE_FUNCTION( clearObject ) {
 	JS_DestroyIdArray(cx, list);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -477,7 +477,7 @@ DEFINE_FUNCTION( setScope ) {
 	JL_CHK( JS_ValueToObject(cx, JL_ARG(2), &p) ); // p = JSVAL_TO_OBJECT(JL_ARG(2));
 	*JL_RVAL = OBJECT_TO_JSVAL( JS_GetParent(o) );
 	JL_CHK( JS_SetParent(cx, o, p) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -502,7 +502,7 @@ DEFINE_FUNCTION( warning ) {
 	JL_CHK( JS_ReportWarning(cx, "%s", str.GetConstStrZ()) );
 	
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -524,7 +524,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( assert ) {
 
 	if ( !JL_IS_SAFE )
-		return JS_TRUE;
+		return true;
 
 	JL_DEFINE_ARGS;
 
@@ -543,11 +543,11 @@ DEFINE_FUNCTION( assert ) {
 			str = JLData("Assertion failed.", true);
 		
 		JS_ReportError( cx, "%s", str.GetConstStrZ());
-		return JS_FALSE;
+		return false;
 	}
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -616,7 +616,7 @@ DEFINE_FUNCTION( sleep ) {
 		jl::SleepMilliseconds(time);
 	
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -678,12 +678,12 @@ DEFINE_FUNCTION( stringRepeat ) {
 	if ( count == 0 ) {
 
 		*JL_RVAL = JL_GetEmptyStringValue(cx);
-		return JS_TRUE;
+		return true;
 	}
 	if ( count == 1 ) {
 
 		*JL_RVAL = STRING_TO_JSVAL( JS_ValueToString(cx, JL_ARG(1)) ); // force string conversion because we must return a string.
-		return JS_TRUE;
+		return true;
 	}
 
 	size_t len;
@@ -693,7 +693,7 @@ DEFINE_FUNCTION( stringRepeat ) {
 	if ( len == 0 ) {
 
 		*JL_RVAL = JL_GetEmptyStringValue(cx);
-		return JS_TRUE;
+		return true;
 	}
 
 	size_t newLen;
@@ -721,7 +721,7 @@ DEFINE_FUNCTION( stringRepeat ) {
 	jsstr = JL_NewUCString(cx, newBuf, newLen);
 	JL_CHK( jsstr );
 	*JL_RVAL = STRING_TO_JSVAL( jsstr );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -761,7 +761,7 @@ DEFINE_FUNCTION( print ) {
 	*JL_RVAL = JSVAL_VOID;
 	if (likely( JL_ValueIsCallable(cx, fval) ))
 		return JS_CallFunctionValue(cx, JL_GetGlobal(cx), fval, JL_ARGC, JS_ARGV(cx,vp), &fval);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -803,7 +803,7 @@ DEFINE_FUNCTION( exec ) {
 	// doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
 	JL_CHK( JS_ExecuteScript(cx, obj, script, JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -883,7 +883,7 @@ DEFINE_HAS_INSTANCE() {
 
 	JL_IGNORE(obj, cx);
 	*bp = !JSVAL_IS_PRIMITIVE(vp) && JL_GetClass(JSVAL_TO_OBJECT(vp)) == JL_THIS_CLASS;
-	return JS_TRUE;
+	return true;
 }
 
 CONFIGURE_CLASS
@@ -895,37 +895,37 @@ END_CLASS
 
 
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
-static JSBool
+static bool
 sandbox_resolve(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, unsigned flags, JS::MutableHandleObject objp) {
 
-	JSBool resolved;
+	bool resolved;
 	if ( (flags & JSRESOLVE_ASSIGNING) == 0 ) {
 
 		if ( !JS_ResolveStandardClass(cx, obj, id, &resolved) )
-			return JS_FALSE;
+			return false;
 
 		if ( !resolved && id == JLID(cx, Reflect) ) { // JSID_IS_ATOM(id, CLASS_ATOM(cx, Reflect))
 			
 			if ( !JS_InitReflect(cx, obj) )
-				return JS_FALSE;
-			resolved = JS_TRUE;
+				return false;
+			resolved = true;
 		}
 
 		if ( !resolved && id == JLID(cx, Debugger) ) {
 
 			if ( !JS_DefineDebuggerObject(cx, obj) ) // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
-				return JS_FALSE;
-			resolved = JS_TRUE;
+				return false;
+			resolved = true;
 		}
 
 		if ( resolved ) {
 
 			objp.set(obj);
-			return JS_TRUE;
+			return true;
 		}
 	}
 	objp.set(NULL);
-	return JS_TRUE;
+	return true;
 }
 
 static JSClass sandbox_class = {
@@ -947,7 +947,7 @@ struct SandboxContextPrivate {
 	JSOperationCallback prevOperationCallback;
 };
 
-JSBool SandboxMaxOperationCallback(JSContext *cx) {
+bool SandboxMaxOperationCallback(JSContext *cx) {
 
 	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(cx);
 	if ( pv->expired && !JL_IsExceptionPending(cx) ) {
@@ -984,7 +984,7 @@ JLThreadFuncDecl SandboxWatchDogThreadProc(void *threadArg) {
 	return 0;
 }
 
-JSBool SandboxQueryFunction(JSContext *cx, unsigned argc, jsval *vp) {
+bool SandboxQueryFunction(JSContext *cx, unsigned argc, jsval *vp) {
 
 	JL_DEFINE_ARGS;
 
@@ -999,7 +999,7 @@ JSBool SandboxQueryFunction(JSContext *cx, unsigned argc, jsval *vp) {
 		JL_CHK( JS_CallFunctionValue(cx, obj, pv->queryFunctionValue, JL_ARGC, JS_ARGV(cx,vp), JL_RVAL) );
 		JL_CHKM( JSVAL_IS_PRIMITIVE(*JL_RVAL), E_RETURNVALUE, E_TYPE, E_TY_PRIMITIVE );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1067,7 +1067,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 
 	pv.prevOperationCallback = JS_SetOperationCallback(cx, SandboxMaxOperationCallback);
 
-	JSBool ok;
+	bool ok;
 	ok = JS_EvaluateUCScript(cx, globalObj, src, srclen, filename, lineno, vp);
 
 	JSOperationCallback tmp;
@@ -1152,7 +1152,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 
 //	JSCrossCompartmentCall *call = JS_EnterCrossCompartmentCall(cx, globalObject);
 
-	JSBool ok;
+	bool ok;
 	ok = JS_EvaluateUCScript(scx, globalObject, src, (unsigned)srclen, filename, lineno, JL_RVAL);
 
 //	JS_LeaveCrossCompartmentCall(call);
@@ -1232,8 +1232,8 @@ DEFINE_FUNCTION( isStatementValid ) {
 	//size_t length;
 	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-	JL_CHK( JL_NativeToJsval(cx, JS_BufferIsCompilableUnit(cx, obj, str.GetConstStr(), str.Length()) == JS_TRUE, *JL_RVAL) );
-	return JS_TRUE;
+	JL_CHK( JL_NativeToJsval(cx, JS_BufferIsCompilableUnit(cx, obj, str.GetConstStr(), str.Length()) == true, *JL_RVAL) );
+	return true;
 	JL_BAD;
 }
 
@@ -1250,7 +1250,7 @@ DEFINE_FUNCTION( halt ) {
 
 	JL_ERR(E_STR("the program has been stopped"));
 bad:	
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -1388,7 +1388,7 @@ DEFINE_PROPERTY_GETTER( currentMemoryUsage ) {
 #endif
 
 	JL_CHK( JL_NewNumberValue(cx, bytes, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1423,7 +1423,7 @@ DEFINE_PROPERTY_GETTER( peakMemoryUsage ) {
 		return JL_ThrowOSError(cx);
 
 	JL_CHK( JL_NewNumberValue(cx, pmc.PeakWorkingSetSize, vp) ); // same value as "windows task manager" "peak mem usage"
-	return JS_TRUE;
+	return true;
 #else
 
 	// see:
@@ -1435,7 +1435,7 @@ DEFINE_PROPERTY_GETTER( peakMemoryUsage ) {
 #endif
 
 	vp.setUndefined();
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1550,7 +1550,7 @@ DEFINE_PROPERTY_GETTER( privateMemoryUsage ) {
 	JL_WARN( E_API, E_NOTIMPLEMENTED );
 
 	*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 
 #endif
 	JL_BAD;
@@ -1585,7 +1585,7 @@ DEFINE_PROPERTY_GETTER( currentFilename ) {
 	const char *filename;
 	filename = JS_GetScriptFilename(cx, script);
 	JL_CHK( JL_NativeToJsval(cx, filename, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1606,7 +1606,7 @@ DEFINE_PROPERTY_GETTER( currentLineNumber ) {
 	unsigned lineno;
 	JL_CHK( JS_DescribeScriptedCaller(cx, NULL, &lineno) );
 	JL_CHK( JL_NativeToJsval(cx, lineno, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1647,7 +1647,7 @@ DEFINE_PROPERTY_GETTER( processTime ) {
 #endif
 
 	vp.setUndefined();
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1707,7 +1707,7 @@ DEFINE_PROPERTY_GETTER( cpuLoad ) {
 #endif
 
 	vp.setUndefined();
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1722,7 +1722,7 @@ DEFINE_PROPERTY_GETTER( cpuId ) {
 	JL_IGNORE(id, obj);
 
 	if ( !vp.isUndefined() )
-		return JS_TRUE;
+		return true;
 
 	jl::CpuInfo_t info;
 	jl::CPUInfo(info);
@@ -1734,11 +1734,11 @@ DEFINE_PROPERTY_GETTER( cpuId ) {
 
 #ifdef _DEBUG
 
-JSBool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+bool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 
 	JL_IGNORE(vp, id, obj, cx);
 
-	return JS_TRUE;
+	return true;
 //	JL_BAD;
 }
 
@@ -1813,7 +1813,7 @@ DEFINE_FUNCTION( jsstdTest ) {
 
 
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1825,7 +1825,7 @@ DEFINE_INIT() {
 	JL_IGNORE(proto, sc);
 
 	INIT_CLASS( OperationLimit );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

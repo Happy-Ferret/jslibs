@@ -32,7 +32,7 @@ DEFINE_PROPERTY_GETTER( code ) {
 	JL_GetReservedSlot( obj, SLOT_WIN_ERROR_CODE_LO, lo );
 	JL_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
 	JL_CHK( JL_NewNumberValue(cx, (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi)), vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -58,7 +58,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 	JL_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
 
 	vp.setString( JS_NewStringCopyZ(cx, ErrorToConstName( (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi)) )) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -76,7 +76,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 	LPVOID lpvMessageBuffer;
 	DWORD res = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&lpvMessageBuffer, 0, NULL);
 	if ( res == 0 )
-		return JS_FALSE;
+		return false;
 
 	if ( ((char*)lpvMessageBuffer)[res-2] == '\r' ) { // remove the trailing CRLF
 
@@ -86,7 +86,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 
 	vp.setString(JS_NewStringCopyN( cx, (char*)lpvMessageBuffer, res+1 )); // doc: If the function succeeds, the return value is the number of TCHARs stored in the output buffer, excluding the terminating null character.
 	LocalFree(lpvMessageBuffer);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -101,9 +101,9 @@ DEFINE_FUNCTION( toString ) {
 	JS::RootedValue hval(cx);
 	
 	if ( !_textGetter(cx, rtobj, rtid, &hval) )
-		return JS_FALSE;
+		return false;
 	*JL_RVAL = hval;
-	return JS_TRUE;
+	return true;
 	}
 	JL_BAD;
 }
@@ -128,7 +128,7 @@ DEFINE_FUNCTION( _serialize ) {
 	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_LO, *JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -152,7 +152,7 @@ DEFINE_FUNCTION( _unserialize ) {
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
 	JL_CHK( JL_SetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_LO, *JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -180,7 +180,7 @@ CONFIGURE_CLASS
 END_CLASS
 
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 WinNewError( JSContext *cx, DWORD errorCode, jsval *rval ) {
 
 	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(WinError), JL_CLASS_PROTOTYPE(cx, WinError), NULL ); // (TBD) understand why it must have a constructor to be throwed in an exception
@@ -189,11 +189,11 @@ WinNewError( JSContext *cx, DWORD errorCode, jsval *rval ) {
 
 	JL_CHK( JL_SetReservedSlot(  error, SLOT_WIN_ERROR_CODE_HI, INT_TO_JSVAL(HIWORD(errorCode)) ) );
 	JL_CHK( JL_SetReservedSlot(  error, SLOT_WIN_ERROR_CODE_LO, INT_TO_JSVAL(LOWORD(errorCode)) ) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 WinThrowError( JSContext *cx, DWORD errorCode ) {
 
 //	JL_SAFE(	JS_ReportWarning( cx, "WinError exception" ) );
@@ -204,7 +204,7 @@ WinThrowError( JSContext *cx, DWORD errorCode ) {
 	JL_CHK( JL_SetReservedSlot(  error, SLOT_WIN_ERROR_CODE_HI, INT_TO_JSVAL(HIWORD(errorCode)) ) );
 	JL_CHK( JL_SetReservedSlot(  error, SLOT_WIN_ERROR_CODE_LO, INT_TO_JSVAL(LOWORD(errorCode)) ) );
 	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
-	return JS_FALSE;
+	return false;
 	JL_BAD;
 }
 

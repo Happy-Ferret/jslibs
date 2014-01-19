@@ -29,12 +29,12 @@ DECLARE_CLASS( JointPlane );
 
 void FinalizeJoint(JSObject *obj);
 
-JSBool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj );
+bool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj );
 
-ALWAYS_INLINE JSBool JointToJSObject( JSContext *cx, ode::dJointID jointId, JSObject **obj ) { // (TBD) JSObject** = Conservative Stack Scanning issue ?
+ALWAYS_INLINE bool JointToJSObject( JSContext *cx, ode::dJointID jointId, JSObject **obj ) { // (TBD) JSObject** = Conservative Stack Scanning issue ?
 
 	*obj = (JSObject*)ode::dJointGetData(jointId);
 	if ( *obj != NULL )
-		return JS_TRUE;
+		return true;
 	return ReconstructJoint(cx, jointId, obj);
 }

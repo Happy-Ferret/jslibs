@@ -122,7 +122,7 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pv ) {
@@ -136,7 +136,7 @@ bad:
 		}
 		JS_free(cx, pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -250,10 +250,10 @@ DEFINE_FUNCTION( process ) {
 			JL_CHK( ThrowZError(cx, status, pv->stream.msg) );
 		JL_ASSERT( pv->stream.state == Z_NULL, E_THISOBJ, E_STATE );
 	}
-	return JS_TRUE;
+	return true;
 
 bad:
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -273,7 +273,7 @@ DEFINE_PROPERTY_GETTER( idle ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.state == Z_NULL, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -291,7 +291,7 @@ DEFINE_PROPERTY_GETTER( adler32 ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.adler, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -308,7 +308,7 @@ DEFINE_PROPERTY_GETTER( lengthIn ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.total_in, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -325,7 +325,7 @@ DEFINE_PROPERTY_GETTER( lengthOut ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->stream.total_out, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -343,7 +343,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY( idealInputLength ) {
 
 	JL_NewNumberValue(cx, Buffer::staticBufferLength, vp);
-	return JS_TRUE;
+	return true;
 }
 */
 

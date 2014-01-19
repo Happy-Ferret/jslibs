@@ -54,7 +54,7 @@ DEFINE_FUNCTION( next ) {
 		JL_CHK( JS_ThrowStopIteration(cx) );
 
 	JL_CHK( VariantToJsval(cx, result, args.rval()) ); // loose variant ownership
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( result ) {
@@ -62,7 +62,7 @@ bad:
 		VariantClear(result);
 		JS_free(cx, result);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -79,13 +79,13 @@ CONFIGURE_CLASS
 END_CLASS
 
 
-JSBool NewComEnum( JSContext *cx, IEnumVARIANT *ienumv, OUT JS::MutableHandleValue rval ) {
+bool NewComEnum( JSContext *cx, IEnumVARIANT *ienumv, OUT JS::MutableHandleValue rval ) {
 
 	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComEnum), JL_CLASS_PROTOTYPE(cx, ComEnum), NULL);
 	JL_CHK( varObj );
 	rval.setObject( *varObj );
 	JL_SetPrivate( varObj, ienumv);
 	ienumv->AddRef();
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }

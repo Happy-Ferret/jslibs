@@ -54,7 +54,7 @@ EXTERN_C void *zipfile_malloc( size_t size ) {
 
 
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 ThrowZipFileError( JSContext *cx, int errorCode );
 
 
@@ -86,7 +86,7 @@ struct Private {
 
 
 
-JSBool PrepareReadCurrentFile( JSContext *cx, JSObject *obj ) {
+bool PrepareReadCurrentFile( JSContext *cx, JSObject *obj ) {
 
 	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -113,13 +113,13 @@ JSBool PrepareReadCurrentFile( JSContext *cx, JSObject *obj ) {
 	pv->inZipOpened = true;
 	pv->remainingLength = pfile_info.uncompressed_size;
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
 
-JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
+bool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(obj);
@@ -144,7 +144,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 
 	// empty data mean EOF ?
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -206,7 +206,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pv ) {
@@ -217,7 +217,7 @@ bad:
 			unzClose(pv->uf);
 		jl_free(pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -268,7 +268,7 @@ DEFINE_FUNCTION( open ) {
 	ASSERT( pv && !pv->uf == !!pv->zf );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -311,7 +311,7 @@ DEFINE_FUNCTION( close ) {
 	JL_SetPrivate( obj, NULL);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -365,7 +365,7 @@ DEFINE_FUNCTION( select ) {
 		if ( status == UNZ_END_OF_LIST_OF_FILE ) {
 
 			pv->eol = true;
-			return JS_TRUE;
+			return true;
 		}
 		UNZ_CHK( status );
 		pv->eol = false;
@@ -380,7 +380,7 @@ DEFINE_FUNCTION( select ) {
 		JL_CHK( JL_SetReservedSlot( obj, SLOT_INZIPFILENAME, JL_ARG(1)) );
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -420,7 +420,7 @@ DEFINE_FUNCTION( goFirst ) {
 	pv->eol = false;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -457,12 +457,12 @@ DEFINE_FUNCTION( goNext ) {
 	if ( status == UNZ_END_OF_LIST_OF_FILE ) {
 
 		pv->eol = true;
-		return JS_TRUE;
+		return true;
 	}
 	UNZ_CHK( status );
 	pv->eol = false;
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -503,13 +503,13 @@ DEFINE_FUNCTION( goTo ) {
 		if ( status == UNZ_END_OF_LIST_OF_FILE ) {
 
 			pv->eol = true;
-			return JS_TRUE;
+			return true;
 		}
 		UNZ_CHK( status );
 	}
 	pv->eol = false;
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -537,7 +537,7 @@ DEFINE_FUNCTION( read ) {
 	//if ( pv->eol ) {
 
 	//	*JL_RVAL = JSVAL_VOID;
-	//	return JS_TRUE;
+	//	return true;
 	//}
 	if ( pv->eol )
 		UNZ_CHK( JLERR_ENDOFLIST );
@@ -550,7 +550,7 @@ DEFINE_FUNCTION( read ) {
 	if ( pv->remainingLength == 0 ) {
 
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 
 	uLong requestedLength;
@@ -575,9 +575,9 @@ DEFINE_FUNCTION( read ) {
 
 	pv->remainingLength -= rd;
 	ASSERT( unzeof(pv->uf) == (pv->remainingLength == 0) );
-	return JS_TRUE;
+	return true;
 bad:
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -662,7 +662,7 @@ DEFINE_FUNCTION( write ) {
 	ZIP_CHK( zipWriteInFileInZip(pv->zf, data.GetConstStr(), data.Length()) );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -709,7 +709,7 @@ DEFINE_PROPERTY_GETTER( globalComment ) {
 		JL_CHK( JL_GetReservedSlot( obj, SLOT_GLOBALCOMMENT, vp) );
 	}
 	
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -724,7 +724,7 @@ DEFINE_PROPERTY_SETTER( globalComment ) {
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
 
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_GLOBALCOMMENT, *vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -774,7 +774,7 @@ DEFINE_PROPERTY_GETTER( filename ) {
 		//if ( pv->eol ) {
 
 		//	*vp = JSVAL_VOID;
-		//	return JS_TRUE;
+		//	return true;
 		//}
 		if ( pv->eol )
 			UNZ_CHK( JLERR_ENDOFLIST );
@@ -796,7 +796,7 @@ DEFINE_PROPERTY_GETTER( filename ) {
 			unzGetCurrentFileInfo(pv->uf, &pfile_info, filename, pfile_info.size_filename, NULL, 0, NULL, 0);
 		}
 
-		JSBool ok;
+		bool ok;
 		ok = JL_NativeToJsval(cx, filename, pfile_info.size_filename, vp);
 		
 		if ( filename != buffer )
@@ -810,7 +810,7 @@ DEFINE_PROPERTY_GETTER( filename ) {
 		JL_CHK( JL_GetReservedSlot( obj, SLOT_INZIPFILENAME, vp) );
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -834,7 +834,7 @@ DEFINE_PROPERTY_GETTER( level ) {
 		//if ( pv->eol ) {
 
 		//	*vp = JSVAL_VOID;
-		//	return JS_TRUE;
+		//	return true;
 		//}
 		if ( pv->eol )
 			UNZ_CHK( JLERR_ENDOFLIST );
@@ -859,7 +859,7 @@ DEFINE_PROPERTY_GETTER( level ) {
 		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTLEVEL, vp) );
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -876,7 +876,7 @@ DEFINE_PROPERTY_SETTER( level ) {
 	JL_ASSERT( JSVAL_IS_VOID(*vp) || JSVAL_IS_NUMBER(*vp), E_TYPE, E_TY_NUMBER );
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_CURRENTLEVEL, *vp) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -911,7 +911,7 @@ DEFINE_PROPERTY_GETTER( date ) {
 		//if ( pv->eol ) {
 
 		//	*vp = JSVAL_VOID;
-		//	return JS_TRUE;
+		//	return true;
 		//}
 		if ( pv->eol )
 			UNZ_CHK( JLERR_ENDOFLIST );
@@ -935,7 +935,7 @@ DEFINE_PROPERTY_GETTER( date ) {
 		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTDATE, vp) );
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -952,7 +952,7 @@ DEFINE_PROPERTY_SETTER( date ) {
 	JL_ASSERT( JSVAL_IS_VOID(*vp) || !JSVAL_IS_PRIMITIVE(*vp) && JS_ObjectIsDate(cx, JSVAL_TO_OBJECT(*vp)), E_VALUE, E_INVALID );
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_CURRENTDATE, *vp) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -977,7 +977,7 @@ DEFINE_PROPERTY_GETTER( extra ) {
 		//if ( pv->eol ) {
 
 		//	*vp = JSVAL_VOID;
-		//	return JS_TRUE;
+		//	return true;
 		//}
 		if ( pv->eol )
 			UNZ_CHK( JLERR_ENDOFLIST );
@@ -1002,7 +1002,7 @@ DEFINE_PROPERTY_GETTER( extra ) {
 		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTEXTRAFIELD, vp) );
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1017,7 +1017,7 @@ DEFINE_PROPERTY_SETTER( extra ) {
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
 
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_CURRENTEXTRAFIELD, *vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1040,7 +1040,7 @@ DEFINE_PROPERTY_SETTER( password ) {
 	JL_ASSERT( pv->uf, E_THISOPERATION, E_INVALID );
 
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_CURRENTPASSWORD, *vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1052,7 +1052,7 @@ DEFINE_FUNCTION( zipfileTest ) {
 
 	JL_IGNORE(vp, cx, argc);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1147,11 +1147,11 @@ DEFINE_PROPERTY_GETTER( const ) {
 
 	JL_GetReservedSlot( obj, 0, vp);
 	if ( JSVAL_IS_VOID(*vp) )
-		return JS_TRUE;
+		return true;
 	int errorCode = JSVAL_TO_INT(*vp);
 	JSString *str = JS_NewStringCopyZ( cx, ZipFileErrorConstString(errorCode) );
 	*vp = STRING_TO_JSVAL( str );
-	return JS_TRUE;
+	return true;
 }
 
 DEFINE_PROPERTY_GETTER( code ) {
@@ -1189,7 +1189,7 @@ CONFIGURE_CLASS
 END_CLASS
 
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 ThrowZipFileError( JSContext *cx, int errorCode ) {
 
 	ASSERT( errorCode <= 0 );
@@ -1197,6 +1197,6 @@ ThrowZipFileError( JSContext *cx, int errorCode ) {
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JL_CHK( JL_SetReservedSlot( error, 0, INT_TO_JSVAL(errorCode)) );
 	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
-	return JS_FALSE;
+	return false;
 	JL_BAD;
 }

@@ -63,7 +63,7 @@ DEFINE_CONSTRUCTOR() {
 	ASSERT( pv->effect ); // ensure that 0 is not a valid id, else change bad: behavior
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pv ) {
@@ -72,7 +72,7 @@ bad:
 			alDeleteEffects(1, &pv->effect);
 		JS_free(cx, pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -97,7 +97,7 @@ DEFINE_FUNCTION( valueOf ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( JL_NativeToJsval(cx, pv->effect, *JL_RVAL) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -139,7 +139,7 @@ DEFINE_PROPERTY_SETTER( type ) {
 	alEffecti(pv->effect, AL_EFFECT_TYPE, effectType);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -157,7 +157,7 @@ DEFINE_PROPERTY_GETTER( type ) {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	JL_CHK( JL_NativeToJsval(cx, effectType, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -171,7 +171,7 @@ DEFINE_FUNCTION( test ) {
 
 
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -189,7 +189,7 @@ DEFINE_PROPERTY_SETTER( effectFloat ) {
 	JL_CHK( JL_JsvalToNative(cx, vp, &f) );
 	alEffectf(pv->effect, param, f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -204,7 +204,7 @@ DEFINE_PROPERTY_GETTER( effectFloat ) {
 	alGetEffectf(pv->effect, param, &f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	JL_CHK(JL_NativeToJsval(cx, f, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -221,7 +221,7 @@ DEFINE_PROPERTY_SETTER( effectInt ) {
 	JL_CHK( JL_JsvalToNative(cx, vp, &i) );
 	alEffecti(pv->effect, param, i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -236,7 +236,7 @@ DEFINE_PROPERTY_GETTER( effectInt ) {
 	alGetEffecti(pv->effect, param, &i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	JL_CHK( JL_NativeToJsval(cx, i, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -253,7 +253,7 @@ DEFINE_PROPERTY_SETTER( effectBool ) {
 	JL_CHK( JL_JsvalToNative(cx, vp, &b) );
 	alEffecti(pv->effect, param, b ? AL_TRUE : AL_FALSE);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -268,7 +268,7 @@ DEFINE_PROPERTY_GETTER( effectBool ) {
 	alGetEffecti(pv->effect, param, &i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	vp.setBoolean(i == AL_TRUE);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

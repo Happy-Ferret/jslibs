@@ -29,7 +29,7 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-JSBool
+bool
 ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JL_CHK( InitJslibsModule(cx, id)  );
@@ -47,16 +47,16 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	INIT_STATIC();
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
-JSBool
+bool
 ModuleRelease(JSContext *cx) {
 
 	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // do not cleanup in unsafe mode.
-		return JS_TRUE;
+		return true;
 
 	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, _moduleId);
 
@@ -67,5 +67,5 @@ ModuleRelease(JSContext *cx) {
 
 	jl_free(mpv);
 
-	return JS_TRUE;
+	return true;
 }

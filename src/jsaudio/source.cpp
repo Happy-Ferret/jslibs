@@ -41,34 +41,34 @@ inline float BufferSecTime( ALint bid ) {
 	JL_ASSERT_ALLOC( pItem );
 	*pItem = value;
 	QueuePush( queue, pItem ); // no need to JS_AddRoot *pItem, see Tracer callback
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
-inline JSBool UnshiftJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
+inline bool UnshiftJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
 
 	jsval *pItem = (jsval*)jl_malloc(sizeof(jsval));
 	JL_ASSERT_ALLOC( pItem );
 	*pItem = value;
 	QueueUnshift( queue, pItem ); // no need to JS_AddRoot *pItem, see Tracer callback
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
 
 
-JSBool QueueBuffersJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
+bool QueueBuffersJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
 
 	jsval *pItem = (jsval*)JS_malloc(cx, sizeof(jsval));
 	JL_CHK( pItem );
 	*pItem = value;
 	QueuePush(queue, pItem); // no need to JS_AddRoot *pItem, see Tracer callback !
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 /*
-JSBool UnqueueBuffersJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
+bool UnqueueBuffersJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
 
 	for ( jl::QueueCell *it = jl::QueueBegin(queue); it; it = jl::QueueNext(it) ) {
 
@@ -76,19 +76,19 @@ JSBool UnqueueBuffersJsval( JSContext *cx, jl::Queue *queue, jsval value ) {
 
 			jsval *pItem = (jsval*)QueueRemoveCell(queue, it);
 			JS_free(cx, pItem);
-			return JS_TRUE;
+			return true;
 		}
 	}
-	return JS_FALSE; // not found
+	return false; // not found
 }
 */
 
-JSBool UnqueueBuffersJsval( JSContext *cx, jl::Queue *queue, jsval *rval ) {
+bool UnqueueBuffersJsval( JSContext *cx, jl::Queue *queue, jsval *rval ) {
 
 	jsval *pval = (jsval*)QueueShift(queue);
 	*rval = *pval;
 	JS_free(cx, pval);
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -159,7 +159,7 @@ DEFINE_CONSTRUCTOR() {
 	ASSERT( pv->sid ); // ensure that 0 is not a valid id, else change bad: behavior
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pv ) {
@@ -170,7 +170,7 @@ bad:
 			jl::QueueDestruct(pv->queue);
 		JS_free(cx, pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -207,7 +207,7 @@ DEFINE_FUNCTION( queueBuffers ) {
 	pv->totalTime += BufferSecTime(bid);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -239,7 +239,7 @@ DEFINE_FUNCTION( unqueueBuffers ) {
 		JL_ASSERT( bid == tmp, E_LIB, E_INTERNAL, E_COMMENT("wrong buffer") ); // JL_ASSERT( bid == tmp, "Internal error in UnqueueBuffers()." );
 	);
 	pv->totalTime -= BufferSecTime(bid);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -260,7 +260,7 @@ DEFINE_FUNCTION( play ) {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -279,7 +279,7 @@ DEFINE_FUNCTION( pause ) {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -298,7 +298,7 @@ DEFINE_FUNCTION( stop ) {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -317,7 +317,7 @@ DEFINE_FUNCTION( rewind ) {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -347,7 +347,7 @@ DEFINE_FUNCTION( effect ) {
 	JL_CHK( JS_DefineProperty(cx, JL_OBJ, "effect", JL_ARG(2), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	alSource3i(pv->sid, AL_AUXILIARY_SEND_FILTER, effectSlot, send, filter);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -364,7 +364,7 @@ DEFINE_FUNCTION( valueOf ) {
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_NativeToJsval(cx, pv->sid, *JL_RVAL) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -500,7 +500,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 	size_t len;
 	JL_CHK( JL_JsvalToNativeVector(cx, *vp, pos, 3, &len) );
 	alSource3f(pv->sid, AL_POSITION, pos[0], pos[1], pos[2]);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -524,7 +524,7 @@ DEFINE_FUNCTION( position ) {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -543,7 +543,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	JL_CHK( JL_NativeVectorToJsval(cx, pos, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -557,7 +557,7 @@ DEFINE_PROPERTY_SETTER( velocity ) {
 	size_t len;
 	JL_CHK( JL_JsvalToNativeVector(cx, *vp, pos, 3, &len) );
 	alSource3f(pv->sid, AL_VELOCITY, pos[0], pos[1], pos[2]);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -579,7 +579,7 @@ DEFINE_FUNCTION( velocity ) {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -597,7 +597,7 @@ DEFINE_PROPERTY_GETTER( velocity ) {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	JL_CHK( JL_NativeVectorToJsval(cx, pos, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -618,7 +618,7 @@ DEFINE_PROPERTY_GETTER( remainingTime ) {
 	if ( loop == AL_TRUE ) {
 
 		vp.set(JS_GetPositiveInfinityValue(cx));
-		return JS_TRUE;
+		return true;
 	}
 
 	ALint state;
@@ -626,13 +626,13 @@ DEFINE_PROPERTY_GETTER( remainingTime ) {
 	if ( state != AL_PLAYING && state != AL_PAUSED ) {
 
 		vp.setUndefined();
-		return JS_TRUE;
+		return true;
 	}
 
 	ALfloat secOffset;
 	alGetSourcef(pv->sid, AL_SEC_OFFSET, &secOffset);
 	JL_CHK(JL_NativeToJsval(cx, pv->totalTime - secOffset, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -695,7 +695,7 @@ DEFINE_PROPERTY_SETTER( sourceFloatInd ) {
 	JL_CHK( JL_JsvalToNative(cx, vp, &f) );
 	alSourcef(pv->sid, param, f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -710,7 +710,7 @@ DEFINE_PROPERTY_GETTER( sourceFloatInd ) {
 	alGetSourcef(pv->sid, param, &f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	JL_CHK(JL_NativeToJsval(cx, f, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -728,7 +728,7 @@ DEFINE_PROPERTY_SETTER( sourceIntInd ) {
 	JL_CHK( JL_JsvalToNative(cx, *vp, &i) );
 	alSourcei(pv->sid, param, i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -744,7 +744,7 @@ DEFINE_PROPERTY_GETTER( sourceIntInd ) {
 	alGetSourcei(pv->sid, param, &i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	JL_CHK( JL_NativeToJsval(cx, i, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -761,7 +761,7 @@ DEFINE_PROPERTY_SETTER( sourceBoolInd ) {
 	JL_CHK( JL_JsvalToNative(cx, vp, &b) );
 	alSourcei(pv->sid, param, b ? AL_TRUE : AL_FALSE);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -776,7 +776,7 @@ DEFINE_PROPERTY_GETTER( sourceBoolInd ) {
 	alGetSourcei(pv->sid, param, &i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	vp.setBoolean(i == AL_TRUE);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

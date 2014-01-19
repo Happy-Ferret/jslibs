@@ -69,7 +69,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 	JL_IGNORE(id);
 	JL_CHK( JL_GetReservedSlot(  obj, 0, vp ) );
 	if ( vp.isUndefined() )
-		return JS_TRUE;
+		return true;
 	int errorCode;
 	JL_CHK( JL_JsvalToNative(cx, vp, &errorCode) );
 	char *errStr;
@@ -152,7 +152,7 @@ DEFINE_FUNCTION( _serialize ) {
 	JL_CHK( JL_GetReservedSlot( JL_OBJ, 0, *JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -175,7 +175,7 @@ DEFINE_FUNCTION( _unserialize ) {
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
 	JL_CHK( JL_SetReservedSlot( JL_OBJ, 0, *JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -204,7 +204,7 @@ END_CLASS
 
 
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 ThrowOglError( JSContext *cx, GLenum err ) {
 
 	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(OglError), JL_CLASS_PROTOTYPE(cx, OglError), NULL );

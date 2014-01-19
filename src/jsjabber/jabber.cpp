@@ -43,7 +43,7 @@ using namespace gloox;
 DECLARE_CLASS( Jabber )
 
 
-JSBool JidToJsval( JSContext *cx, const JID *jid, jsval *rval ) {
+bool JidToJsval( JSContext *cx, const JID *jid, jsval *rval ) {
 
 	JSObject *jidObj = JL_NewObj(cx);
 	*rval = OBJECT_TO_JSVAL(jidObj);
@@ -52,7 +52,7 @@ JSBool JidToJsval( JSContext *cx, const JID *jid, jsval *rval ) {
 	JL_CHK( JL_NativeToProperty(cx, jidObj, "server", jid->server().c_str()) );
 	JL_CHK( JL_NativeToProperty(cx, jidObj, "username", jid->username().c_str()) );
 	JL_CHK( JL_NativeToProperty(cx, jidObj, "resource", jid->resource().c_str()) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -277,7 +277,7 @@ DEFINE_CONSTRUCTOR() {
 	pv->client->registerMessageHandler( pv->handlers );
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pv ) { 
@@ -286,7 +286,7 @@ bad:
 		delete pv->handlers;
 		JS_free(cx, pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -327,20 +327,20 @@ DEFINE_FUNCTION( connect ) {
 	pv->client->connect(false); // the function returnes immediately after the connection has been established.
 	pv->handlers->_cx = NULL;
 	if ( JL_IsExceptionPending(cx) )
-		return JS_FALSE;
+		return false;
 
 	//bool usingCompression = pv->client->compression();
 
 	ConnectionTCPClient *connection = dynamic_cast<ConnectionTCPClient*>( pv->client->connectionImpl() ); // (TBD) TM
 	if ( !connection )
-		return JS_TRUE;
+		return true;
 
 	int sock = connection->socket(); // return The socket of the active connection, or -1 if no connection is established.
 	if ( sock == -1 )
-		return JS_TRUE;
+		return true;
 
 	JL_CHK( JL_NativeToJsval(cx, sock, JL_RVAL) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -363,10 +363,10 @@ DEFINE_FUNCTION( disconnect ) {
 	pv->handlers->_cx = NULL;
 
 	if ( JL_IsExceptionPending(cx) )
-		return JS_FALSE;
+		return false;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -389,10 +389,10 @@ DEFINE_FUNCTION( process ) {
 	pv->handlers->_cx = NULL;
 
 	if ( JL_IsExceptionPending(cx) )
-		return JS_FALSE;
+		return false;
 
 	JL_CHK( JL_NativeToJsval(cx, (int)cErr, JL_RVAL) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -431,7 +431,7 @@ DEFINE_FUNCTION( sendMessage ) {
 	pv->client->send( message );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -444,7 +444,7 @@ DEFINE_FUNCTION( rosterItem ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -470,16 +470,16 @@ DEFINE_PROPERTY_GETTER( socket ) {
 	if ( !connection ) {
 
 		*vp = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 	int sock = connection->socket(); // return The socket of the active connection, or -1 if no connection is established.
 	if ( sock == -1 ) {
 
 		*vp = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 	JL_CHK( JL_NativeToJsval(cx, sock, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -496,7 +496,7 @@ DEFINE_PROPERTY_GETTER( status ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_NativeToJsval(cx, pv->client->status().c_str(), vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -511,7 +511,7 @@ DEFINE_PROPERTY_SETTER( status ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_JsvalToNative(cx, *vp, &status) );
 	pv->client->setPresence(pv->client->presence(), pv->client->priority(), status.GetConstStrZ());
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -529,7 +529,7 @@ DEFINE_PROPERTY_GETTER( presence ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	Presence presence = pv->client->presence();
 	JL_CHK( JL_NativeToJsval(cx, presence, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -542,7 +542,7 @@ DEFINE_PROPERTY_SETTER( presence ) {
 	int presence;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &presence) );
 	pv->client->setPresence((Presence)presence, pv->client->priority(), pv->client->status());
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -563,7 +563,7 @@ DEFINE_PROPERTY( roster ) {
 		JL_CHK( JL_SetElement(cx, rosterList, i, &rosterItem) );
 		i++;
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -583,7 +583,7 @@ DEFINE_PROPERTY_GETTER( connectionTotalIn ) {
 	int totalIn, totalOut;
 	pv->client->connectionImpl()->getStatistics( totalIn, totalOut);
 	JL_CHK( JL_NativeToJsval(cx, totalIn, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -602,7 +602,7 @@ DEFINE_PROPERTY_GETTER( connectionTotalOut ) {
 	int totalIn, totalOut;
 	pv->client->connectionImpl()->getStatistics( totalIn, totalOut);
 	JL_CHK( JL_NativeToJsval(cx, totalOut, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

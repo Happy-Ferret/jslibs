@@ -79,10 +79,10 @@ DEFINE_CONSTRUCTOR() {
 		return ThrowCryptError(cx,err);
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 bad:
 	jl_free(pv);
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -132,7 +132,7 @@ DEFINE_FUNCTION( read ) {
 	actualRead = pv->prng.read( (unsigned char*)pr, readCount, &pv->state );
 	JL_CHKM( actualRead == readCount, E_DATA, E_CREATE );
 	
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -164,7 +164,7 @@ DEFINE_FUNCTION( addEntropy ) {
 		return ThrowCryptError(cx, err);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -191,7 +191,7 @@ DEFINE_FUNCTION( autoEntropy ) {
 		return ThrowCryptError(cx, err);
 	
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -233,7 +233,7 @@ DEFINE_PROPERTY_GETTER( state ) {
 	//stateData[size] = '\0';
 	//JL_CHK( JL_NewBlob(cx, stateData, size, vp) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -255,7 +255,7 @@ DEFINE_PROPERTY_SETTER( state ) {
 	err = pv->prng.pimport((const unsigned char *)state.GetConstStr(), (unsigned long)state.Length(), &pv->state);
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -276,7 +276,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx,pv->prng.name) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

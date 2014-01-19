@@ -343,21 +343,21 @@ namespace jl2 { //JL_BEGIN_NAMESPACE
 	static bool _init(JSContext *cx, jl2::ClassSpec *sc, JSObject *proto, JSObject *obj)
 
 #define JL_CONSTRUCTOR(...) \
-	static JSBool _constructor(JSContext *cx, unsigned argc, JS::Value *vp); \
+	static bool _constructor(JSContext *cx, unsigned argc, JS::Value *vp); \
 	const jl2::FunctionItem constructor_(_classSpec.constructor, _constructor, NULL, ##__VA_ARGS__); \
-	static JSBool _constructor(JSContext *cx, unsigned argc, JS::Value *vp)
+	static bool _constructor(JSContext *cx, unsigned argc, JS::Value *vp)
 
 
 
 #define JL_FUNCTION(NAME, ...) \
-	static JSBool _##NAME(JSContext *cx, unsigned argc, JS::Value *vp); \
+	static bool _##NAME(JSContext *cx, unsigned argc, JS::Value *vp); \
 	const jl2::FunctionItem NAME##_(_classSpec.functionItem, _##NAME, #NAME, ##__VA_ARGS__); \
-	static JSBool _##NAME(JSContext *cx, unsigned argc, JS::Value *vp)
+	static bool _##NAME(JSContext *cx, unsigned argc, JS::Value *vp)
 
 #define JL_STATIC_FUNCTION(NAME, ...) \
-	static JSBool _##NAME(JSContext *cx, unsigned argc, JS::Value *vp); \
+	static bool _##NAME(JSContext *cx, unsigned argc, JS::Value *vp); \
 	const jl2::FunctionItem NAME##_(_classSpec.staticFunctionItem, _##NAME, #NAME, ##__VA_ARGS__); \
-	static JSBool _##NAME(JSContext *cx, unsigned argc, JS::Value *vp)
+	static bool _##NAME(JSContext *cx, unsigned argc, JS::Value *vp)
 
 /*
 #define DEF_FUNCTION_START \
@@ -384,9 +384,9 @@ namespace jl2 { //JL_BEGIN_NAMESPACE
 
 
 #define JL_GETTER() \
-	static JSBool getter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp)
+	static bool getter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp)
 
 #define JL_SETTER() \
-	static JSBool setter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JSBool strict, JS::MutableHandle<JS::Value> vp)
+	static bool setter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, bool strict, JS::MutableHandle<JS::Value> vp)
 
 

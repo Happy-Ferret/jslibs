@@ -194,7 +194,7 @@ DEFINE_CONSTRUCTOR() {
 	return JL_SetReservedSlot( obj, OGLFT_SLOT_FONT, JL_ARG(1)); // GC protection
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pv ) {
@@ -204,11 +204,11 @@ bad:
 			delete pv->face; // static_cast<OGLFT::Polygonal*>(pv->face);
 		jl_free(pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 //DEFINE_FUNCTION( call ) {
-//	return JS_TRUE;
+//	return true;
 //}
 
 
@@ -256,7 +256,7 @@ DEFINE_FUNCTION( measure ) {
 		JL_CHK( JL_SetElement(cx, arrObj, 3, &tmp) );
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -288,7 +288,7 @@ DEFINE_FUNCTION( width ) {
 		JL_CHK(JL_NativeToJsval(cx, bbox.x_max_ * vector_scale_, JL_RVAL) );
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -340,7 +340,7 @@ DEFINE_FUNCTION( draw ) {
 	}
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -371,7 +371,7 @@ DEFINE_FUNCTION( compile ) {
 	GLuint list = pv->face->compile(str);
 	*JL_RVAL = INT_TO_JSVAL(list);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -400,7 +400,7 @@ DEFINE_FUNCTION( setColor ) {
 		GLfloat color[4];
 		glGetFloatv(GL_CURRENT_COLOR, color);
 		pv->face->setForegroundColor(color);
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ASSERT_ARG_IS_ARRAY(1);
@@ -414,7 +414,7 @@ DEFINE_FUNCTION( setColor ) {
 	if ( len == 1 )
 		color[1] = color[2] = color[0];
 	pv->face->setForegroundColor(color);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -444,7 +444,7 @@ DEFINE_FUNCTION( setBackgroundColor ) {
 		GLclampf color[4];
 		glGetFloatv(GL_COLOR_CLEAR_VALUE, color);
 		pv->face->setBackgroundColor(color);
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ASSERT_ARG_IS_ARRAY(1);
@@ -459,7 +459,7 @@ DEFINE_FUNCTION( setBackgroundColor ) {
 		color[1] = color[2] = color[0];
 	pv->face->setBackgroundColor(color);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -495,7 +495,7 @@ DEFINE_PROPERTY_GETTER( advance ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK(JL_NativeToJsval(cx, pv->face->advance(), vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -508,7 +508,7 @@ DEFINE_PROPERTY_SETTER( advance ) {
 	bool advance;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &advance) );
 	pv->face->setAdvance(advance);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -618,7 +618,7 @@ DEFINE_FUNCTION( setCharacterDisplayLists ) {
 	}
 	pv->face->setCharacterDisplayLists(lists);
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */

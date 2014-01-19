@@ -76,7 +76,7 @@ DEFINE_FUNCTION( open ) {
 	InitEfxApi();
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -114,7 +114,7 @@ DEFINE_FUNCTION( close ) {
 		JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_CLOSE_DEVICE") );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -131,7 +131,7 @@ DEFINE_PROPERTY_GETTER( hasEfx ) {
 	JL_ASSERT( pContext != NULL, E_LIB, E_STR("OpenAL"), E_INTERNAL );
 	ALCdevice *pDevice = alcGetContextsDevice(pContext);
 	vp.setBoolean( alcIsExtensionPresent(pDevice, (ALCchar*)ALC_EXT_EFX_NAME) != ALC_FALSE );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -151,7 +151,7 @@ DEFINE_PROPERTY_GETTER( maxAuxiliarySends ) {
 	ALCint numSends;
 	alcGetIntegerv(pDevice, ALC_MAX_AUXILIARY_SENDS, 1, &numSends);
 	JL_CHK( JL_NativeToJsval(cx, numSends, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -176,7 +176,7 @@ DEFINE_FUNCTION( dopplerFactor ) {
 	alDopplerFactor( value );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -201,7 +201,7 @@ DEFINE_FUNCTION( dopplerVelocity ) {
 	alDopplerVelocity( value );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -226,7 +226,7 @@ DEFINE_FUNCTION( speedOfSound ) {
 	alSpeedOfSound( value );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -250,7 +250,7 @@ DEFINE_FUNCTION( distanceModel ) {
 	alDistanceModel( distanceModel );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -272,7 +272,7 @@ DEFINE_FUNCTION( enable ) {
 	alEnable( JSVAL_TO_INT(JL_ARG(1)) );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -294,7 +294,7 @@ DEFINE_FUNCTION( disable ) {
 	alDisable( JSVAL_TO_INT(JL_ARG(1)) );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -315,7 +315,7 @@ DEFINE_FUNCTION( isEnabled ) {
 
 	*JL_RVAL = BOOLEAN_TO_JSVAL( alIsEnabled( JSVAL_TO_INT(JL_ARG(1)) ) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -340,13 +340,13 @@ DEFINE_FUNCTION( getString ) {
 	if ( str == NULL ) {
 
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 	JSString *jsstr = JS_NewStringCopyZ(cx, str);
 	JL_CHK( jsstr );
 	*JL_RVAL = STRING_TO_JSVAL( jsstr );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -371,7 +371,7 @@ DEFINE_FUNCTION( getBoolean ) {
 	alGetBooleanv(JSVAL_TO_INT(JL_ARG(1)), &params);
 	*JL_RVAL = BOOLEAN_TO_JSVAL(params);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -414,7 +414,7 @@ DEFINE_FUNCTION( getInteger ) {
 
 		*JL_RVAL = INT_TO_JSVAL( params[0] );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -456,7 +456,7 @@ DEFINE_FUNCTION( getDouble ) {
 
 		JL_CHK( JL_NativeToJsval(cx, params[0], *JL_RVAL) );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -480,14 +480,14 @@ DEFINE_FUNCTION( listener ) {
 	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
 
 		alListeneri( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ) );
-		return JS_TRUE;
+		return true;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_ARG(2)) ) {
 
 		float param;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &param) );
 		alListenerf( JSVAL_TO_INT( JL_ARG(1) ), param );
-		return JS_TRUE;
+		return true;
 	}
 	if ( JL_ValueIsArrayLike(cx, JL_ARG(2)) ) {
 
@@ -496,7 +496,7 @@ DEFINE_FUNCTION( listener ) {
 //		J_JSVAL_TO_REAL_VECTOR( JL_ARG(2), params, length );
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, 16, &length) );
 		alListenerfv( JSVAL_TO_INT(JL_ARG(1)), params );
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ERR( E_ARG, E_NUM(2), E_INVALID );
@@ -542,7 +542,7 @@ DEFINE_FUNCTION( getListenerReal ) {
 
 		JL_CHK(JL_NativeToJsval(cx, params[0], *JL_RVAL) );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -562,7 +562,7 @@ DEFINE_FUNCTION( genSource ) {
 	ALuint sourceID; // The OpenAL sound source
 	alGenSources(1, &sourceID);
 	JL_CHK( JL_NativeToJsval(cx, sourceID, *JL_RVAL) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -591,14 +591,14 @@ DEFINE_FUNCTION( source ) {
 	if ( JSVAL_IS_INT(JL_ARG(3)) ) {
 
 		alSourcei( sid, JSVAL_TO_INT( JL_ARG(2) ), JSVAL_TO_INT( JL_ARG(3) ) );
-		return JS_TRUE;
+		return true;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
 
 		float param;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &param) );
 		alSourcef( sid, JSVAL_TO_INT( JL_ARG(2) ), param );
-		return JS_TRUE;
+		return true;
 	}
 	if ( JL_ValueIsArrayLike(cx, JL_ARG(3)) ) {
 
@@ -606,7 +606,7 @@ DEFINE_FUNCTION( source ) {
 		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
 		alSourcefv( sid, JSVAL_TO_INT(JL_ARG(2)), params );
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ERR( E_ARG, E_NUM(3), E_INVALID );
@@ -659,7 +659,7 @@ DEFINE_FUNCTION( getSourceReal ) {
 
 		JL_CHK(JL_NativeToJsval(cx, params[0], *JL_RVAL) );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -702,7 +702,7 @@ DEFINE_FUNCTION( getSourceInteger ) {
 
 		JL_CHK( JL_NativeToJsval(cx, params[0], *JL_RVAL) );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -728,7 +728,7 @@ DEFINE_FUNCTION( deleteSource ) {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -760,14 +760,14 @@ DEFINE_FUNCTION( sourceQueueBuffers ) {
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, COUNTOF(params), &length) );
 		alSourceQueueBuffers( sid, length, params );
 		JL_CHK( CheckThrowCurrentOalError(cx) );
-		return JS_TRUE;
+		return true;
 	}
 
 	ALuint buffer;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &buffer) );
 	alSourceQueueBuffers( sid, 1, &buffer );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -798,14 +798,14 @@ DEFINE_FUNCTION( sourceUnqueueBuffers ) {
 		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, COUNTOF(params), &length) );
 		alSourceUnqueueBuffers( sid, length, params );
-		return JS_TRUE;
+		return true;
 	}
 
 	ALuint buffer;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &buffer) );
 	alSourceUnqueueBuffers( sid, 1, &buffer );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -852,7 +852,7 @@ DEFINE_FUNCTION( buffer ) {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	JL_CHK( JL_NativeToJsval(cx, bufferID, *JL_RVAL) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -896,7 +896,7 @@ DEFINE_FUNCTION( getBufferReal ) {
 
 		JL_CHK(JL_NativeToJsval(cx, params[0], *JL_RVAL) );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -939,7 +939,7 @@ DEFINE_FUNCTION( getBufferInteger ) {
 
 		JL_CHK( JL_NativeToJsval(cx, params[0], *JL_RVAL) );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -969,7 +969,7 @@ DEFINE_FUNCTION( deleteBuffer ) {
 	alDeleteBuffers(1, &bufferId);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -992,7 +992,7 @@ DEFINE_FUNCTION( playSource ) {
 	alSourcePlay(sid);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1015,7 +1015,7 @@ DEFINE_FUNCTION( stopSource ) {
 	alSourceStop(sid);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1038,7 +1038,7 @@ DEFINE_FUNCTION( pauseSource ) {
 	alSourcePause(sid);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1061,7 +1061,7 @@ DEFINE_FUNCTION( rewindSource ) {
 	alSourceRewind(sid);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1078,7 +1078,7 @@ DEFINE_FUNCTION( genEffect ) {
 	ALuint eid;
 	alGenEffects(1, &eid);
 	JL_CHK( JL_NativeToJsval(cx, eid, JL_RVAL) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -1095,7 +1095,7 @@ DEFINE_FUNCTION( deleteEffect ) {
 	ALuint eid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &eid) );
 	alDeleteEffects(1, eid);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -1177,7 +1177,7 @@ DEFINE_FUNCTION( playSound ) {
 	alDeleteSources(1, &sourceID);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

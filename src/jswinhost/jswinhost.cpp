@@ -174,7 +174,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int ) {
 	JL_CHK( dotPos );
 	strcpy(dotPos+1, "js");
 
-	if ( ExecuteScriptFileName(cx, tmp, false, &rval) != JS_TRUE )
+	if ( ExecuteScriptFileName(cx, tmp, false, &rval) != true )
 		if ( JL_IsExceptionPending(cx) )
 			JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
 

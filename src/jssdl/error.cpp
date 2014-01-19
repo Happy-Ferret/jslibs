@@ -63,7 +63,7 @@ DEFINE_FUNCTION( _serialize ) {
 	JL_CHK( JL_GetReservedSlot( JL_OBJ, 0, JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -84,7 +84,7 @@ DEFINE_FUNCTION( _unserialize ) {
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
 	JL_CHK( JL_SetReservedSlot( JL_OBJ, 0, *JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -108,7 +108,7 @@ CONFIGURE_CLASS
 END_CLASS
 
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 ThrowSdlError( JSContext *cx ) {
 
 	JSObject *errorObj = JL_NewObjectWithGivenProto( cx, JL_CLASS(SdlError), JL_CLASS_PROTOTYPE(cx, SdlError), NULL );

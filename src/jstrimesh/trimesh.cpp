@@ -73,16 +73,16 @@ DEFINE_CONSTRUCTOR() {
 	memset(pv, 0, sizeof(Surface));
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	JS_free(cx, pv);
-	return JS_FALSE;
+	return false;
 }
 
 
 //DEFINE_PROPERTY( prop ) {
-//	return JS_TRUE;
+//	return true;
 //}
 /*
 DEFINE_FUNCTION( addVertex ) {
@@ -111,7 +111,7 @@ DEFINE_FUNCTION( addVertex ) {
 	JL_CHK( JL_NativeToJsval(cx, pv->vertexCount, JL_RVAL) );
 	pv->vertexCount += 1;
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -143,7 +143,7 @@ DEFINE_FUNCTION( addTriangle ) {
 
 	JL_CHK( JL_NativeToJsval(cx, pv->indexCount, JL_RVAL) );
 	pv->indexCount += 1;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -170,7 +170,7 @@ DEFINE_FUNCTION( addIndices ) {
 	}
 
 	pv->indexCount += 1;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -194,7 +194,7 @@ DEFINE_FUNCTION( defineVertexBuffer ) {
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
 	if ( count == 0 )
-		return JS_TRUE;
+		return true;
 
 	JL_ASSERT( (count > 0) && (count % 3 == 0), E_ARG, E_NUM(1), E_INVALID, E_SEP, E_ARRAYLENGTH, E_INVALID ); // "Invalid count, need [X,Y,Z, ...]"
 
@@ -210,7 +210,7 @@ DEFINE_FUNCTION( defineVertexBuffer ) {
 //			JL_CHK( JL_JsvalToNative(cx, item, &pv->vertex[i]) );
 	}
 	pv->vertexCount = count / 3;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -233,7 +233,7 @@ DEFINE_FUNCTION( defineNormalBuffer ) {
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
 	if ( count == 0 )
-		return JS_TRUE;
+		return true;
 
 	JL_ASSERT( (count > 0) && (count % 3 == 0) && count == pv->vertexCount * 3, E_ARG, E_NUM(1), E_INVALID, E_SEP, E_ARRAYLENGTH, E_INVALID ); // "Invalid count, need [X,Y,Z, ...]"
 
@@ -245,7 +245,7 @@ DEFINE_FUNCTION( defineNormalBuffer ) {
 		JL_CHK( JL_GetElement(cx, arrayObj, i, &item) );
 		JL_CHK( JL_JsvalToNative(cx, item, &pv->normal[i]) );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -268,7 +268,7 @@ DEFINE_FUNCTION( defineTextureCoordinateBuffer ) {
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
 	if ( count == 0 )
-		return JS_TRUE;
+		return true;
 
 	JL_ASSERT( (count > 0) && (count % 3 == 0) && count == pv->vertexCount * 3, E_ARG, E_NUM(1), E_INVALID, E_SEP, E_ARRAYLENGTH, E_INVALID ); // "Invalid count, need [S,T,R, ...]"
 
@@ -280,7 +280,7 @@ DEFINE_FUNCTION( defineTextureCoordinateBuffer ) {
 		JL_CHK( JL_GetElement(cx, arrayObj, i, &item) );
 		JL_CHK( JL_JsvalToNative(cx, item, &pv->textureCoordinate[i]) );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -303,7 +303,7 @@ DEFINE_FUNCTION( defineColorBuffer ) {
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
 	if ( count == 0 )
-		return JS_TRUE;
+		return true;
 
 	JL_ASSERT( (count > 0) && (count % 4 == 0) && count == pv->vertexCount * 4, E_ARG, E_NUM(1), E_INVALID, E_SEP, E_ARRAYLENGTH, E_INVALID ); // "Invalid count, need [R,G,B,A, ...]"
 
@@ -315,7 +315,7 @@ DEFINE_FUNCTION( defineColorBuffer ) {
 		JL_CHK( JL_GetElement(cx, arrayObj, i, &item) );
 		JL_CHK( JL_JsvalToNative(cx, item, &pv->color[i]) );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -338,7 +338,7 @@ DEFINE_FUNCTION( defineIndexBuffer ) {
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
 	if ( count == 0 )
-		return JS_TRUE;
+		return true;
 
 	JL_ASSERT( (count > 0) && (count % 3 == 0), E_ARG, E_NUM(1), E_INVALID, E_SEP, E_ARRAYLENGTH, E_INVALID ); // "Invalid count, need [V1,V2,V3, ...]"
 
@@ -351,7 +351,7 @@ DEFINE_FUNCTION( defineIndexBuffer ) {
 		JL_CHK( JL_JsvalToNative(cx, item, &pv->index[i]) );
 	}
 	pv->indexCount = count;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -361,7 +361,7 @@ DEFINE_PROPERTY_GETTER( vertexCount ) {
 	Surface *pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->vertexCount, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -370,7 +370,7 @@ DEFINE_PROPERTY_GETTER( indexCount ) {
 	Surface *pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_NativeToJsval(cx, pv->indexCount, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -380,7 +380,7 @@ DEFINE_PROPERTY_GETTER( hasNormal ) {
 	Surface *pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = BOOLEAN_TO_JSVAL( pv->normal != NULL );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -389,7 +389,7 @@ DEFINE_PROPERTY_GETTER( hasTextureCoordinateBuffer ) {
 	Surface *pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = BOOLEAN_TO_JSVAL( pv->normal != NULL );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -398,7 +398,7 @@ DEFINE_PROPERTY_GETTER( hasColor ) {
 	Surface *pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	*vp = BOOLEAN_TO_JSVAL( pv->normal != NULL );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

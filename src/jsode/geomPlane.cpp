@@ -56,12 +56,12 @@ DEFINE_CONSTRUCTOR() {
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 
 	JL_SetPrivate(obj, geomId);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( geomId )
 		ode::dGeomDestroy(geomId);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -84,7 +84,7 @@ DEFINE_PROPERTY_SETTER( params ) {
 	JL_CHK( JsvalToODERealVector(cx, *vp, params, 4, &length) );
 	JL_ASSERT( length >= 4, E_VALUE, E_TYPE, E_TY_NVECTOR(4) );
 	ode::dGeomPlaneSetParams(geom, params[0], params[1], params[2], params[3]);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -95,7 +95,7 @@ DEFINE_PROPERTY_GETTER( params ) {
 	ode::dVector4 result;
 	ode::dGeomPlaneGetParams(geom, result);
 	JL_CHK( ODERealVectorToJsval(cx, result, COUNTOF(result), vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -114,7 +114,7 @@ DEFINE_PROPERTY( lengthsSetter ) {
 	JL_CHK( JL_JsvalToNativeVector(cx, *vp, vector, 3, &length) );
 	JL_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomPlaneSetLengths(geom, vector[0], vector[1], vector[2]);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -126,7 +126,7 @@ DEFINE_PROPERTY( lengthsGetter ) {
 	ode::dGeomPlaneGetLengths(geom, result);
 	//FloatVectorToArray(cx, 3, result, vp);
 	JL_CHK( FloatVectorToJsval(cx, result, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */

@@ -57,7 +57,7 @@ ErrorCallback(void *userRef, const char *, const unsigned) {
 }
 
 
-static JSBool
+static bool
 Report( JSContext *cx, bool isWarning, ... ) {
 
    va_list vl;
@@ -151,7 +151,7 @@ Report( JSContext *cx, bool isWarning, ... ) {
 
 //bad:
 //	va_end(vl);
-//	return JS_FALSE;
+//	return false;
 }
 
 
@@ -171,7 +171,7 @@ void StderrWrite(JSContext *cx, const char *message, size_t length) {
 	ASSERT( globalObject );
 
 	jsval fct;
-	if (unlikely( JS_GetPropertyById(cx, JL_GetHostPrivate(cx)->hostObject, JLID(cx, stderr), &fct) != JS_TRUE || !JL_ValueIsCallable(cx, fct) ))
+	if (unlikely( JS_GetPropertyById(cx, JL_GetHostPrivate(cx)->hostObject, JLID(cx, stderr), &fct) != true || !JL_ValueIsCallable(cx, fct) ))
 		return;
 		
 	JSExceptionState *exs = JS_SaveExceptionState(cx);
@@ -354,12 +354,12 @@ out:
 
 
 
-JSBool OperationCallback(JSContext *cx) {
+bool OperationCallback(JSContext *cx) {
 
 	JSOperationCallback tmp = JS_SetOperationCallback(cx, NULL);
 	JS_MaybeGC(cx);
 	JS_SetOperationCallback(cx, tmp);
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -402,7 +402,7 @@ DEFINE_PROPERTY_GETTER( unsafeMode ) {
 	JL_IGNORE( id, obj );
 
 	JL_CHK( JL_NativeToJsval(cx, JL_GetHostPrivate(cx)->unsafeMode, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -415,7 +415,7 @@ DEFINE_PROPERTY_GETTER( jsVersion ) {
 	JL_IGNORE( id, obj );
 
 	JL_CHK( JL_NativeToJsval(cx, JS_GetVersion(cx), vp) ); // btw, see JS_GetImplementationVersion()
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -430,7 +430,7 @@ DEFINE_PROPERTY_GETTER( incrementalGarbageCollector ) {
 
 	uint32_t gcMode = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_MODE);
 	JL_CHK( JL_NativeToJsval(cx, gcMode == JSGC_MODE_INCREMENTAL, vp) ); // JSGC_MODE_GLOBAL
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -441,7 +441,7 @@ DEFINE_PROPERTY_SETTER( incrementalGarbageCollector ) {
 	bool incGc;
 	JL_CHK( JL_JsvalToNative(cx, vp, &incGc) );
 	JS_SetGCParameter(JL_GetRuntime(cx), JSGC_MODE, incGc ? JSGC_MODE_INCREMENTAL : JSGC_MODE_GLOBAL);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -466,7 +466,7 @@ DEFINE_FUNCTION( stdout ) {
 			JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdout"), E_WRITE );
 		}
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -490,7 +490,7 @@ DEFINE_FUNCTION( stderr ) {
 			JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stderr"), E_WRITE );
 		}
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -521,7 +521,7 @@ DEFINE_FUNCTION( stdin ) {
 
 		*JL_RVAL = JSVAL_VOID;
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -564,7 +564,7 @@ DEFINE_FUNCTION( loadModule ) {
 				if ( existingNsVal == JSVAL_VOID ) {
 
 					nsObj = JS_NewObject(cx, NULL, NULL, NULL);
-					JL_CHK( JS_DefineProperty(cx, obj, ns, OBJECT_TO_JSVAL(nsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // doc. On success, JS_DefineProperty returns JS_TRUE. If the property already exists or cannot be created, JS_DefineProperty returns JS_FALSE.
+					JL_CHK( JS_DefineProperty(cx, obj, ns, OBJECT_TO_JSVAL(nsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // doc. On success, JS_DefineProperty returns true. If the property already exists or cannot be created, JS_DefineProperty returns false.
 				} else {
 
 					JL_ASSERT_OBJECT( existingNsVal );
@@ -591,7 +591,7 @@ DEFINE_FUNCTION( loadModule ) {
 		JL_SAFE_END
 
 		*JL_RVAL = JSVAL_FALSE;
-		return JS_TRUE;
+		return true;
 	}
 
 	for ( jl::QueueCell *it = jl::QueueBegin(&hpv->moduleList); it; it = jl::QueueNext(it) ) {
@@ -600,7 +600,7 @@ DEFINE_FUNCTION( loadModule ) {
 
 			JLDynamicLibraryClose(&module);
 			*JL_RVAL = JSVAL_NULL; // already loaded
-			return JS_TRUE;
+			return true;
 		}
 	}
 
@@ -627,12 +627,12 @@ DEFINE_FUNCTION( loadModule ) {
 	//JL_CHK( JL_NewNumberValue(cx, uid, JL_RVAL) ); // really needed ? yes, UnloadModule will need this ID, ... but UnloadModule is too complicated to implement and will never exist.
 	*JL_RVAL = OBJECT_TO_JSVAL(JL_OBJ);
 
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( JLDynamicLibraryOk(module) )
 		JLDynamicLibraryClose(&module);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -641,7 +641,7 @@ DEFINE_INIT() {
 	JL_IGNORE( proto, sc );
 
 	JL_GetHostPrivate(cx)->hostObject = obj;
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -761,7 +761,7 @@ bad:
 	QA.ASSERTOP( host._buildDate, '>', +new Date(2012, 3 -1, 1) );
 	QA.ASSERTOP( host._buildDate, '<=', Date.now() - new Date().getTimezoneOffset() * 60 * 1000 );
 **/
-JSBool
+bool
 InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, HostOutput stdErr, void* userPrivateData ) { // init the host for jslibs usage (modules, errors, ...)
 
 	_unsafeMode = unsafeMode;
@@ -811,13 +811,13 @@ InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, Ho
 	if ( !jslangModuleInit(cx, globalObject) )
 		JL_ERR( E_MODULE, E_NAME("jslang"), E_INIT );
 
-	return JS_TRUE;
+	return true;
 bad:
-	return JS_FALSE;
+	return false;
 }
 
 
-JSBool
+bool
 DestroyHost( JSContext *cx, bool skipCleanup ) {
 
 	JSRuntime *rt = JL_GetRuntime(cx);
@@ -894,7 +894,7 @@ DestroyHost( JSContext *cx, bool skipCleanup ) {
 
 	DestructHostPrivate(hpv);
 
-	return JS_TRUE;
+	return true;
 
 bad:
 	// on error, do the minimum.
@@ -903,7 +903,7 @@ bad:
 		JS_DestroyContext(cx);
 		JS_DestroyRuntime(rt);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 

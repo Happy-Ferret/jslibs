@@ -20,20 +20,20 @@
 
 
 
-JSBool
+bool
 ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
-	if ( InitJslibsModule(cx, id)  != JS_TRUE )
-		return JS_FALSE;
+	if ( InitJslibsModule(cx, id)  != true )
+		return false;
 
 	Init_JSNI(cx, obj);
-	return JS_TRUE;
+	return true;
 }
 
-JSBool
+bool
 ModuleRelease(JSContext *cx) {
 
 	Release_JSNI(cx);
 	Destroy_JSNI();
-	return JS_TRUE;
+	return true;
 }

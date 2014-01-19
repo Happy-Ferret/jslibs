@@ -61,7 +61,7 @@ DEFINE_FUNCTION( randSeed ) {
 	init_genrand(seed);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -118,7 +118,7 @@ DEFINE_FUNCTION( perlinNoise ) {
 	if ( argc == 6 )
 		return JL_NativeToJsval(cx, Noise3DPerlin(x, y, z, a, b, n), *JL_RVAL);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -136,7 +136,7 @@ DEFINE_FUNCTION( perlinNoiseReinit ) {
 	InitNoise();
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -164,7 +164,7 @@ DEFINE_INIT() {
 	JL_IGNORE( obj, proto, sc, cx );
 
 	InitNoise();
-	return JS_TRUE;
+	return true;
 }
 
 

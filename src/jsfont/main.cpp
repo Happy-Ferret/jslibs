@@ -70,7 +70,7 @@ void* JsfontRealloc( FT_Memory, long, long new_size, void* block ) {
 	return jl_realloc(block, new_size);
 }
 
-JSBool
+bool
 ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JsfontModulePrivate *mpv = (JsfontModulePrivate*)ModulePrivateAlloc(sizeof(JsfontModulePrivate));
@@ -94,15 +94,15 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	INIT_CLASS(Font);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
-JSBool
+bool
 ModuleRelease(JSContext *) {
 
-	return JS_TRUE;
+	return true;
 }
 
 

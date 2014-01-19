@@ -59,12 +59,12 @@ DEFINE_CONSTRUCTOR() {
 	ode::dJointSetFeedback(jointId, NULL);
 	
 	JL_SetPrivate(obj, jointId);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( jointId )
 		ode::dJointDestroy(jointId);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -86,7 +86,7 @@ DEFINE_PROPERTY_SETTER( anchor ) {
 	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dJointSetUniversalAnchor( jointId, vector[0], vector[1], vector[2] );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -98,7 +98,7 @@ DEFINE_PROPERTY_GETTER( anchor ) {
 	ode::dJointGetUniversalAnchor(jointId,vector);
 	//ODERealVectorToArray(cx, 3, vector, vp);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -114,7 +114,7 @@ DEFINE_PROPERTY_GETTER( anchor2 ) {
 	ode::dVector3 vector;
 	ode::dJointGetUniversalAnchor2(jointId,vector);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -133,7 +133,7 @@ DEFINE_PROPERTY_SETTER( axis1 ) {
 	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dJointSetUniversalAxis1( jointId, vector[0], vector[1], vector[2] );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -144,7 +144,7 @@ DEFINE_PROPERTY_GETTER( axis1 ) {
 	ode::dVector3 vector;
 	ode::dJointGetUniversalAxis1(jointId,vector);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -163,7 +163,7 @@ DEFINE_PROPERTY_SETTER( axis2 ) {
 	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dJointSetUniversalAxis2( jointId, vector[0], vector[1], vector[2] );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -174,7 +174,7 @@ DEFINE_PROPERTY_GETTER( axis2 ) {
 	ode::dVector3 vector;
 	ode::dJointGetUniversalAxis2(jointId,vector);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

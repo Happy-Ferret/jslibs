@@ -27,7 +27,7 @@ $SVN_REVISION $Revision: 3533 $
 BEGIN_CLASS( Stream )
 
 
-ALWAYS_INLINE JSBool
+ALWAYS_INLINE bool
 GetStreamSource(JSContext *cx, JS::HandleObject obj, JS::MutableHandleObject srcObj) {
 
 	JS::RootedValue val(cx);
@@ -35,11 +35,11 @@ GetStreamSource(JSContext *cx, JS::HandleObject obj, JS::MutableHandleObject src
 	JL_CHK( JL_GetReservedSlot(obj, SLOT_STREAM_SOURCE, val) );
 	ASSERT( val.isObject() );
 	srcObj.set( &val.toObject() );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
-ALWAYS_INLINE JSBool
+ALWAYS_INLINE bool
 SetStreamSource(JSContext *cx, JS::HandleObject obj, JS::HandleValue srcVal) {
 
 	if ( srcVal.isPrimitive() ) {
@@ -52,28 +52,28 @@ SetStreamSource(JSContext *cx, JS::HandleObject obj, JS::HandleValue srcVal) {
 		JL_CHK( JL_SetReservedSlot( obj, SLOT_STREAM_SOURCE, srcVal) );
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
-ALWAYS_INLINE JSBool
+ALWAYS_INLINE bool
 SetPosition(JSContext *cx, JSObject *obj, size_t position) {
 
 	JL_CHK( JL_NativeToReservedSlot(cx, obj, SLOT_STREAM_POSITION, position) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
-ALWAYS_INLINE JSBool
+ALWAYS_INLINE bool
 GetPosition(JSContext *cx, JSObject *obj, size_t *position) {
 
 	JL_CHK( JL_ReservedSlotToNative(cx, obj, SLOT_STREAM_POSITION, position) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
-ALWAYS_INLINE JSBool
+ALWAYS_INLINE bool
 GetAvailable(JSContext *cx, JS::HandleObject obj, size_t *available) {
 
 	size_t position, length;
@@ -81,7 +81,7 @@ GetAvailable(JSContext *cx, JS::HandleObject obj, size_t *available) {
 	JL_CHK( GetPosition(cx, obj, &position) );
 	JL_CHK( GetStreamSource(cx, obj, &srcObj) );
 
-	JSBool found;
+	bool found;
 	JL_CHK( JS_HasPropertyById(cx, obj, JLID(cx, length), &found) );
 
 	jsval val;
@@ -100,12 +100,12 @@ GetAvailable(JSContext *cx, JS::HandleObject obj, size_t *available) {
 	}
 
 	*available = length - position;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
-ALWAYS_INLINE JSBool
+ALWAYS_INLINE bool
 StreamRead( JSContext *cx, JSObject *streamObj, char *buf, size_t *amount ) {
 
 	JLData data;
@@ -122,7 +122,7 @@ StreamRead( JSContext *cx, JSObject *streamObj, char *buf, size_t *amount ) {
 	if ( length - position <= 0 ) { // position >= length
 
 		*amount = 0; // EOF
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( position + *amount > length )
@@ -130,7 +130,7 @@ StreamRead( JSContext *cx, JSObject *streamObj, char *buf, size_t *amount ) {
 
 	jl::memcpy( buf, data.GetConstStr() + position, *amount ); // (TBD) possible optimization. see JLData::CopyTo() ?
 	JL_CHK( SetPosition(cx, streamObj, position + *amount) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -159,7 +159,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( SetPosition(cx, JL_OBJ, 0) );
 	JL_CHK( SetStreamReadInterface(cx, JL_OBJ, StreamRead) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -189,7 +189,7 @@ DEFINE_FUNCTION( read ) {
 		if ( amount == 0 ) {
 
 			JL_CHK( JL_NewEmptyBuffer(cx, *JL_RVAL) );
-			return JS_TRUE;
+			return true;
 		}
 		if ( available < amount )
 			amount = available;
@@ -201,7 +201,7 @@ DEFINE_FUNCTION( read ) {
 	if ( available == 0 ) {
 
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 
 	buffer = JL_NewBuffer(cx, amount, *JL_RVAL);
@@ -215,16 +215,16 @@ DEFINE_FUNCTION( read ) {
 	if ( readAmount == 0 ) {
 
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( readAmount != amount )
 		JL_ChangeBufferLength(cx, JL_RVAL, readAmount);
 
-	return JS_TRUE;
+	return true;
 bad:
 	JL_DataBufferFree(cx, buffer);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -241,7 +241,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 	JL_CHK( GetPosition(cx, obj, &position) );
 	
 	JL_CHK( JL_NativeToJsval(cx, position, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -252,7 +252,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 	size_t position;
 	JL_CHK( JL_JsvalToNative(cx, vp, &position) );
 	JL_CHK( SetPosition(cx, obj, position) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -273,7 +273,7 @@ DEFINE_PROPERTY_GETTER( available ) {
 	size_t available;
 	JL_CHK( GetAvailable(cx, obj, &available) );
 	JL_CHK( JL_NativeToJsval(cx, available, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -287,7 +287,7 @@ DEFINE_PROPERTY_GETTER( source ) {
 	JL_IGNORE(id);
 	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
 	JL_CHK( JL_GetReservedSlot( obj, SLOT_STREAM_SOURCE, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

@@ -87,7 +87,7 @@ public:
 		vstPlugin = JS_DefineObject(_cx, JL_GetGlobal(_cx), "vstPlugin", JL_CLASS(VSTPlugin), NULL, NULL);
 		JL_SetPrivate(vstPlugin, this);
 
-		JSBool status = ExecuteScriptFileName(_cx, "vstPlugin.js", false, &_rval);
+		bool status = ExecuteScriptFileName(_cx, "vstPlugin.js", false, &_rval);
 		
 		JL_IGNORE(status);
 
@@ -793,7 +793,7 @@ DEFINE_PROPERTY_GETTER( hostLanguage ) {
 	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	VstInt32 lang = vstPlugin->getHostLanguage();
 	*vp = INT_TO_JSVAL(lang);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -809,7 +809,7 @@ DEFINE_PROPERTY_GETTER( directory ) {
 
 		*vp = JSVAL_VOID;
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -821,9 +821,9 @@ DEFINE_PROPERTY_GETTER( canProcessReplacing ) {
 		JsVst *vstPlugin = (JsVst *)JL_GetPrivate(obj);
 		JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 		JL_ASSERT_IS_BOOLEAN(*vp, "");
-		vstPlugin->canProcessReplacing( JSVAL_TO_BOOLEAN(*vp) == JS_TRUE ? true : false );
+		vstPlugin->canProcessReplacing( JSVAL_TO_BOOLEAN(*vp) == true ? true : false );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -837,7 +837,7 @@ DEFINE_PROPERTY_SETTER( numPrograms ) {
 	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	JL_ASSERT_IS_INTEGER(*vp, "");
 	vstPlugin->SetNumPrograms( JSVAL_TO_INT(*vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -880,7 +880,7 @@ DEFINE_PROPERTY_GETTER( samplePos ) {
 		JL_CHK( JL_NewNumberValue(cx, info->samplePos, vp ) );
 	else
 		*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -893,7 +893,7 @@ DEFINE_PROPERTY_GETTER( sampleRate ) {
 		JL_CHK( JL_NewNumberValue(cx, info->sampleRate, vp ) );
 	else
 		*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -906,7 +906,7 @@ DEFINE_PROPERTY_GETTER( nanoSeconds ) {
 		JL_CHK( JL_NewNumberValue(cx, info->nanoSeconds, vp ) );
 	else
 		*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -919,7 +919,7 @@ DEFINE_PROPERTY_GETTER( ppqPos ) {
 		JL_CHK( JL_NewNumberValue(cx, info->ppqPos, vp ) );
 	else
 		*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -932,7 +932,7 @@ DEFINE_PROPERTY_GETTER( tempo ) {
 		JL_CHK( JL_NewNumberValue(cx, info->tempo, vp ) );
 	else
 		*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -945,7 +945,7 @@ DEFINE_PROPERTY_GETTER( barStartPos ) {
 		JL_CHK( JL_NewNumberValue(cx, info->barStartPos, vp ) );
 	else
 		*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -958,7 +958,7 @@ DEFINE_PROPERTY_GETTER( cycleStartPos ) {
 		JL_CHK( JL_NewNumberValue(cx, info->cycleStartPos, vp ) );
 	else
 		*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -971,7 +971,7 @@ DEFINE_PROPERTY_GETTER( cycleEndPos ) {
 		JL_CHK( JL_NewNumberValue(cx, info->cycleEndPos, vp ) );
 	else
 		*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -984,7 +984,7 @@ DEFINE_PROPERTY_GETTER( timeSigNumerator ) {
 		*vp = INT_TO_JSVAL(info->timeSigNumerator);
 	else
 		*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -997,7 +997,7 @@ DEFINE_PROPERTY_GETTER( timeSigDenominator ) {
 		*vp = INT_TO_JSVAL(info->timeSigDenominator);
 	else
 		*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1010,7 +1010,7 @@ DEFINE_PROPERTY_GETTER( smpteOffset ) {
 		*vp = INT_TO_JSVAL(info->smpteOffset);
 	else
 		*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1023,7 +1023,7 @@ DEFINE_PROPERTY_GETTER( smpteFrameRate ) {
 		*vp = INT_TO_JSVAL(info->smpteFrameRate);
 	else
 		*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1036,7 +1036,7 @@ DEFINE_PROPERTY_GETTER( samplesToNextClock ) {
 		*vp = INT_TO_JSVAL(info->samplesToNextClock);
 	else
 		*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1104,7 +1104,7 @@ DEFINE_FUNCTION( sendVstEventToHost ) {
 
 	bool res;
 
-	if ( JL_ObjectIsInstanceOf(cx, eventObj, JL_CLASS(MidiEvent)) == JS_TRUE ) {
+	if ( JL_ObjectIsInstanceOf(cx, eventObj, JL_CLASS(MidiEvent)) == true ) {
 
 		VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(eventObj);
 		JL_ASSERT_OBJECT_STATE(pv, JL_CLASS_NAME(MidiEvent));
@@ -1120,7 +1120,7 @@ DEFINE_FUNCTION( sendVstEventToHost ) {
 	}
 
 	*JL_RVAL = BOOLEAN_TO_JSVAL( res );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1128,7 +1128,7 @@ DEFINE_FUNCTION( sendVstEventToHost ) {
 DEFINE_HAS_INSTANCE() {
 
 	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
-	return JS_TRUE;
+	return true;
 }
 */
 

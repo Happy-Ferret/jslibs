@@ -32,7 +32,7 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-JSBool
+bool
 ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JL_CHK( InitJslibsModule(cx, id)  );
@@ -40,6 +40,6 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	INIT_STATIC();
 	INIT_CLASS( Texture );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }

@@ -42,7 +42,7 @@ DEFINE_FUNCTION( open ) {
 	if ( status == FALSE )
 		return WinThrowError(cx, GetLastError());
 	SetConsoleTitle("");
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -67,7 +67,7 @@ DEFINE_FUNCTION( close ) {
 //	JL_ASSERT( res != 0, "Unable to free the console." );
 	
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 //	JL_BAD;
 }
 
@@ -96,7 +96,7 @@ DEFINE_FUNCTION( write ) {
 		return WinThrowError(cx, GetLastError());
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -136,7 +136,7 @@ DEFINE_FUNCTION( read ) {
 		return WinThrowError(cx, GetLastError());
 
 	*JL_RVAL = STRING_TO_JSVAL(JS_NewStringCopyN(cx, buffer, read));
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -158,7 +158,7 @@ DEFINE_FUNCTION( setConsoleMode ) {
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -225,7 +225,7 @@ DEFINE_FUNCTION( writeConsoleOutput ) {
 		return WinThrowError(cx, GetLastError());
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -293,7 +293,7 @@ DEFINE_FUNCTION( fillConsoleOutput ) {
 	}
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -341,7 +341,7 @@ DEFINE_FUNCTION( scrollY ) {
 		return WinThrowError(cx, GetLastError());
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -370,7 +370,7 @@ DEFINE_FUNCTION( readConsoleInput ) {
 	if ( numberOfEventsRead == 0 ) {
 		
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 
 	jsval tmp;
@@ -422,7 +422,7 @@ DEFINE_FUNCTION( readConsoleInput ) {
 		}
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -445,9 +445,9 @@ struct ConsoleUserProcessEvent {
 
 S_ASSERT( offsetof(ConsoleUserProcessEvent, pe) == 0 );
 
-static JSBool ConsolePrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
+static bool ConsolePrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
 	
-	return JS_TRUE;
+	return true;
 }
 
 void ConsoleStartWait( volatile ProcessEvent *pe ) {
@@ -467,7 +467,7 @@ bool ConsoleCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-JSBool ConsoleEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
+bool ConsoleEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
 
 	ConsoleUserProcessEvent *upe = (ConsoleUserProcessEvent*)pe;
 
@@ -564,7 +564,7 @@ JSBool ConsoleEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 			}
 		}
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -594,7 +594,7 @@ DEFINE_FUNCTION( events ) {
 	upe->obj = JL_OBJ;
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(upe->obj)) ); // GC protection
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -617,7 +617,7 @@ DEFINE_PROPERTY_SETTER( title ) {
 	JLData str;
 	JL_CHK( JL_JsvalToNative(cx, vp, &str) );
 	SetConsoleTitle(str);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -630,7 +630,7 @@ DEFINE_PROPERTY_GETTER( title ) {
 	if ( res == 0 )
 		return JL_ThrowOSError(cx);
 	vp.setString(JS_NewStringCopyN(cx, buffer, res));
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -658,7 +658,7 @@ DEFINE_PROPERTY_SETTER( width ) {
 	res = SetConsoleWindowInfo(hStdout, TRUE, &csbiInfo.srWindow);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -673,7 +673,7 @@ DEFINE_PROPERTY_GETTER( width ) {
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
 	vp.setInt32(csbiInfo.srWindow.Right - csbiInfo.srWindow.Left + 1);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -698,7 +698,7 @@ DEFINE_PROPERTY_SETTER( height ) {
 	res = SetConsoleWindowInfo(hStdout, TRUE, &csbiInfo.srWindow);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -713,7 +713,7 @@ DEFINE_PROPERTY_GETTER( height ) {
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
 	vp.setInt32(csbiInfo.srWindow.Bottom - csbiInfo.srWindow.Top + 1 );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -733,7 +733,7 @@ DEFINE_PROPERTY_SETTER( textAttribute ) {
 	BOOL res = SetConsoleTextAttribute(hStdout, attributes);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -747,7 +747,7 @@ DEFINE_PROPERTY_GETTER( textAttribute ) {
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
 	vp.setInt32(consoleScreenBufferInfo.wAttributes);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -766,7 +766,7 @@ DEFINE_PROPERTY_GETTER( cursorPositionX ) {
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
 	vp.setInt32(consoleScreenBufferInfo.dwCursorPosition.X - consoleScreenBufferInfo.srWindow.Left);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -787,7 +787,7 @@ DEFINE_PROPERTY_SETTER( cursorPositionX ) {
 	res = SetConsoleCursorPosition(hStdout, consoleScreenBufferInfo.dwCursorPosition);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -806,7 +806,7 @@ DEFINE_PROPERTY_GETTER( cursorPositionY ) {
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
 	vp.setInt32(consoleScreenBufferInfo.dwCursorPosition.Y - consoleScreenBufferInfo.srWindow.Top);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -826,7 +826,7 @@ DEFINE_PROPERTY_SETTER( cursorPositionY ) {
 	res = SetConsoleCursorPosition(hStdout, consoleScreenBufferInfo.dwCursorPosition);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -858,7 +858,7 @@ DEFINE_FUNCTION( setCursorPosition ) {
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -880,7 +880,7 @@ DEFINE_PROPERTY_GETTER( cursorSize ) {
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
 	vp.setInt32( cursorInfo.bVisible == TRUE ? cursorInfo.dwSize : 0 );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -907,7 +907,7 @@ DEFINE_PROPERTY_SETTER( cursorSize ) {
 	res = SetConsoleCursorInfo(hStdout, &cursorInfo);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

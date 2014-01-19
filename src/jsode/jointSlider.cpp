@@ -61,12 +61,12 @@ DEFINE_CONSTRUCTOR() {
 	ode::dJointSetFeedback(jointId, NULL);
 	
 	JL_SetPrivate(obj, jointId);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( jointId )
 		ode::dJointDestroy(jointId);
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -90,7 +90,7 @@ DEFINE_FUNCTION( addForce ) {
 	ode::dJointAddSliderForce(jointId, real);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -114,7 +114,7 @@ DEFINE_PROPERTY_SETTER( axis ) {
 	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dJointSetSliderAxis( jointId, vector[0], vector[1], vector[2] );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -125,7 +125,7 @@ DEFINE_PROPERTY_GETTER( axis ) {
 	ode::dVector3 vector;
 	ode::dJointGetSliderAxis(jointId,vector);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -139,7 +139,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetSliderPosition(jointId), vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -153,7 +153,7 @@ DEFINE_PROPERTY_GETTER( positionRate ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetSliderPositionRate(jointId), vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

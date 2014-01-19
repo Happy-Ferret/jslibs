@@ -106,13 +106,13 @@ JSTrapStatus TrapHandler(JSContext *cx, JSScript *script, jsbytecode *pc, jsval 
 }
 
 
-JSBool DebugErrorHookHandler(JSContext *cx, const char *message, JSErrorReport *report, void *closure) {
+bool DebugErrorHookHandler(JSContext *cx, const char *message, JSErrorReport *report, void *closure) {
 
 	JSStackFrame *fp = JL_CurrentStackFrame(cx);
 	if ( !fp || !JS_GetFrameScript(cx, fp) )
-		return JS_TRUE;
+		return true;
 	JSTrapStatus status = BreakHandler(cx, (JSObject*)closure, fp, FROM_ERROR);
-	return status == JSTRAP_ERROR ? JS_FALSE : JS_TRUE; // (TBD) check return value management
+	return status == JSTRAP_ERROR ? false : true; // (TBD) check return value management
 }
 
 
@@ -122,7 +122,7 @@ JSTrapStatus ThrowHookHandler(JSContext *cx, JSScript *script, jsbytecode *pc, j
 }
 
 
-void* ExecuteHookHandler(JSContext *cx, JSStackFrame *fp, JSBool before, JSBool *ok, void *closure) {
+void* ExecuteHookHandler(JSContext *cx, JSStackFrame *fp, bool before, bool *ok, void *closure) {
 
 //	if ( JS_IsNativeFrame(cx, fp) )
 //		return NULL;
@@ -131,12 +131,12 @@ void* ExecuteHookHandler(JSContext *cx, JSStackFrame *fp, JSBool before, JSBool 
 	return NULL; // hookData for the "after" stage.
 }
 
-void* FirstExecuteHookHandler(JSContext *cx, JSStackFrame *fp, JSBool before, JSBool *ok, void *closure) {
+void* FirstExecuteHookHandler(JSContext *cx, JSStackFrame *fp, bool before, bool *ok, void *closure) {
 
 	BreakHandler(cx, (JSObject*)closure, fp, FROM_EXECUTE); // (TBD) manage return value !
 	JS_SetExecuteHook(JL_GetRuntime(cx), NULL, NULL);
 //	if ( status == JSTRAP_ERROR )
-//		*ok == JS_FALSE; // ok is NULL when before is true !!!
+//		*ok == false; // ok is NULL when before is true !!!
 	return NULL;
 }
 
@@ -207,14 +207,14 @@ JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakR
 	if ( pv->excludedFiles && script && IsExcludedFile(&pv->excludedFiles, filename) )
 		return JSTRAP_CONTINUE;
 
-	if ( JS_GetProperty(cx, obj, "onBreak", &fval) == JS_FALSE )
+	if ( JS_GetProperty(cx, obj, "onBreak", &fval) == false )
 		return JSTRAP_ERROR;
 	if ( !JL_ValueIsCallable(cx, fval) ) // nothing to do
 		return JSTRAP_CONTINUE;
 
 	IFDEBUG( exception = JSVAL_VOID ); // avoid "potentially uninitialized local variable" warning
 
-	JSBool hasException;
+	bool hasException;
 	hasException = JL_IsExceptionPending(cx);
 	if ( hasException ) {
 
@@ -258,7 +258,7 @@ JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakR
 		JL_CHK( JS_SetExecuteHook(rt, NULL, NULL) );
 		JS_SetNewScriptHookProc(rt, NULL, NULL); // beware: never remove JS_SetDestroyScriptHookProc hook !!!
 
-		JSBool status;
+		bool status;
 		status = JS_CallFunctionValue(cx, obj, fval, COUNTOF(argv)-1, argv+1, &argv[0]);
 
 		// apply the previous hooks that could be changed.
@@ -380,10 +380,10 @@ DEFINE_CONSTRUCTOR() {
 	memset(pv, 0, sizeof(DebuggerPrivate));
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 bad:
 	JS_free(cx, pv);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -422,7 +422,7 @@ DEFINE_FUNCTION( toggleBreakpoint ) {
 
 		JL_ERR( E_ARG, E_NUM(2), E_SEP, E_LOCATION, E_INVALID );
 		*JL_RVAL = JSVAL_ZERO;
-		return JS_TRUE;
+		return true;
 	}
 
 	JSTrapHandler prevHandler;
@@ -436,7 +436,7 @@ DEFINE_FUNCTION( toggleBreakpoint ) {
 	}
 
 	*JL_RVAL = INT_TO_JSVAL( JS_PCToLineNumber(cx, script, pc) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -462,7 +462,7 @@ DEFINE_FUNCTION( hasBreakpoint ) {
 
 		JL_ERR( E_ARG, E_NUM(1), E_SEP, E_LOCATION, E_INVALID );
 		*JL_RVAL = JSVAL_FALSE;
-		return JS_TRUE;
+		return true;
 	}
 
 	JSTrapHandler prevHandler;
@@ -475,7 +475,7 @@ DEFINE_FUNCTION( hasBreakpoint ) {
 
 		*JL_RVAL = JSVAL_FALSE;
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -491,7 +491,7 @@ DEFINE_FUNCTION( clearBreakpoints ) {
 	JS_ClearAllTrapsForCompartment(cx);
 	
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -784,6 +784,6 @@ END_CLASS
 	//		// set the next trap on the next opcode
 	//		JSOp op = JS_GetTrapOpcode(cx, nextScript, nextPc);
 	//		nextPc += jsCodeSpec[op].length;
-	//		JSBool status = JS_SetTrap(cx, nextScript, nextPc, InterruptHandler, (void*)PRIVATE_TO_JSVAL(NULL));
+	//		bool status = JS_SetTrap(cx, nextScript, nextPc, InterruptHandler, (void*)PRIVATE_TO_JSVAL(NULL));
 	//*/
 	//		break;

@@ -26,7 +26,7 @@ struct VectorPrivate {
 	VectorGet_t Get;
 };
 
-ALWAYS_INLINE JSBool CreateVector( JSContext *cx, JSObject *parent, void *userData, VectorSet_t set, VectorGet_t get, jsval *val ) {
+ALWAYS_INLINE bool CreateVector( JSContext *cx, JSObject *parent, void *userData, VectorSet_t set, VectorGet_t get, jsval *val ) {
 	
 	JSObject *obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(Vector), JL_CLASS_PROTOTYPE(cx, Vector), NULL);
 	JL_CHK(obj);
@@ -37,6 +37,6 @@ ALWAYS_INLINE JSBool CreateVector( JSContext *cx, JSObject *parent, void *userDa
 	pv->Set = set;
 	pv->Get = get;
 	JL_SetPrivate( obj, pv);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }

@@ -42,10 +42,10 @@ JSDOUBLE_IS_NaN(double d)
 /*
 // declared friend in jsiter.h
 
-extern JS_FRIEND_API(JSBool)
+extern JS_FRIEND_API(bool)
 js_ValueToIterator(JSContext *cx, unsigned flags, js::Value *vp);
 
-extern JS_FRIEND_API(JSBool)
+extern JS_FRIEND_API(bool)
 js_CloseIterator(JSContext *cx, JSObject *iterObj);
 */
 

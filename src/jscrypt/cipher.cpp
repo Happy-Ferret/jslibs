@@ -284,7 +284,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( ThrowCryptError(cx, err) );
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pv ) {
@@ -292,7 +292,7 @@ bad:
 		jl_free(pv->symmetric_XXX); // free a NULL pointer is legal.
 		jl_free(pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -317,7 +317,7 @@ DEFINE_FUNCTION( wipe ) {
 	FinalizeCipher(obj, true);
 	JL_SetPrivate( obj, NULL);
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -386,7 +386,7 @@ DEFINE_FUNCTION( encrypt ) {
 //	jl_free(ct);
 
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -450,7 +450,7 @@ DEFINE_FUNCTION( decrypt ) {
 	//pt[ct.Length()] = '\0';
 	//JL_CHK( JL_NewBlob( cx, pt, ct.Length(), JL_RVAL ) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -473,7 +473,7 @@ DEFINE_PROPERTY_GETTER( blockLength ) {
 	pv = (CipherPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL( pv->descriptor->block_length );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -493,7 +493,7 @@ DEFINE_PROPERTY( keySize ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 	*vp = INT_TO_JSVAL( size );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -516,7 +516,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 	jsstr = JS_NewStringCopyZ(cx, pv->descriptor->name);
 	JL_CHK( jsstr );
 	*vp = STRING_TO_JSVAL( jsstr );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -600,7 +600,7 @@ DEFINE_PROPERTY_SETTER( IV ) {
 			ASSERT(false);
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -624,7 +624,7 @@ DEFINE_PROPERTY_GETTER( IV ) {
 		case mode_ecb:
 			JL_WARN( E_STR("IV"), E_NOTSUPPORTED, E_COMMENT("ECB") );
 			*vp = JSVAL_VOID;
-			return JS_TRUE;
+			return true;
 		case mode_cfb: {
 			symmetric_CFB *tmp = (symmetric_CFB *)pv->symmetric_XXX;
 			IVLength = tmp->blocklen;
@@ -685,7 +685,7 @@ DEFINE_PROPERTY_GETTER( IV ) {
 	//IV[IVLength] = '\0';
 	//JL_CHK( JL_NewBlob( cx, IV, IVLength, vp ) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

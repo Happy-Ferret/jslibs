@@ -15,7 +15,7 @@
 
 #pragma once
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 ThrowSdlError( JSContext *cx );
 
 ALWAYS_INLINE bool 

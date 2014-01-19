@@ -93,11 +93,11 @@ DEFINE_CONSTRUCTOR() {
 	pv->isValid = true;
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	jl_free(pv);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -150,7 +150,7 @@ DEFINE_CALL() {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -191,7 +191,7 @@ DEFINE_FUNCTION( write ) {
 	}
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -235,7 +235,7 @@ DEFINE_FUNCTION( done ) {
 
 	pv->isValid = false;
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -263,7 +263,7 @@ DEFINE_FUNCTION( reset ) {
 	pv->isValid = true;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -289,7 +289,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 	jsstr = JS_NewStringCopyZ(cx, pv->descriptor->name );
 	JL_CHK( jsstr );
 	*vp = STRING_TO_JSVAL( jsstr );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -307,7 +307,7 @@ DEFINE_PROPERTY_GETTER( blockSize ) {
 	pv = (HashPrivate *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL( pv->descriptor->blocksize );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }	
 
@@ -325,7 +325,7 @@ DEFINE_PROPERTY_GETTER( length ) {
 	pv = (HashPrivate *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL( pv->descriptor->hashsize );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }	
 
@@ -377,7 +377,7 @@ DEFINE_FUNCTION( cipherHash ) {
 		return ThrowCryptError(cx, err);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

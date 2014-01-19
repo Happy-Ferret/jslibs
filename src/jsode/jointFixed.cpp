@@ -60,12 +60,12 @@ DEFINE_CONSTRUCTOR() {
 	ode::dJointSetFeedback(jointId, NULL);
 	
 	JL_SetPrivate(obj, jointId);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( jointId )
 		ode::dJointDestroy(jointId);
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -86,7 +86,7 @@ DEFINE_FUNCTION( set ) {
 	ode::dJointSetFixed(jointId);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

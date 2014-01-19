@@ -58,7 +58,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_CONSTRUCTING();
 
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_JSIO_DIR_NAME, JL_ARG(1) ) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -94,7 +94,7 @@ DEFINE_FUNCTION( open ) {
 
 	JL_SetPrivate(  obj, dd );
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -118,13 +118,13 @@ DEFINE_FUNCTION( close ) {
 	dd = (PRDir *)JL_GetPrivate( obj );
 	JL_ASSERT_WARN( dd, E_NAME(JL_THIS_CLASS_NAME), E_CLOSED );
 	if ( !dd )
-		return JS_TRUE;
+		return true;
 
 	if ( PR_CloseDir(dd) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	JL_SetPrivate(  obj, NULL );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -165,13 +165,13 @@ DEFINE_FUNCTION( read ) {
 		if ( errorCode == PR_NO_MORE_FILES_ERROR ) {
 
 			*JL_RVAL = JSVAL_VOID;
-			return JS_TRUE;
+			return true;
 		} else
 			return ThrowIoError(cx);
 	}
 
 	*JL_RVAL = STRING_TO_JSVAL(JS_NewStringCopyZ( cx, dirEntry->name ));
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -203,7 +203,7 @@ DEFINE_FUNCTION( make ) {
 		return ThrowIoError(cx);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -241,7 +241,7 @@ DEFINE_FUNCTION( remove ) {
 
 		*JL_RVAL = JSVAL_TRUE;
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -273,7 +273,7 @@ DEFINE_PROPERTY_GETTER( exist ) {
 		if ( PR_GetError() == PR_FILE_NOT_FOUND_ERROR ) {
 		
 			vp.setBoolean(false);
-			return JS_TRUE;
+			return true;
 		} else {
 
 			return ThrowIoError(cx);
@@ -284,7 +284,7 @@ DEFINE_PROPERTY_GETTER( exist ) {
 			return ThrowIoError(cx);
 		vp.setBoolean(true);
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -298,7 +298,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 
 	JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, vp ) );
 	JL_CHK( jl::StoreProperty(cx, obj, id, vp, false) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -443,7 +443,7 @@ DEFINE_FUNCTION( list ) {
 
 	JL_CHKB( PR_CloseDir(dd) == PR_SUCCESS, bad_throw);
 
-	return JS_TRUE;
+	return true;
 
 bad_throw:
 	ThrowIoError(cx);
@@ -468,9 +468,9 @@ bad_throw:
 
 
 /*
-static JSBool getListNext(JSContext *cx, unsigned argc, jsval *vp) {
+static bool getListNext(JSContext *cx, unsigned argc, jsval *vp) {
 
-	return JS_TRUE;
+	return true;
 }
 
 DEFINE_FUNCTION( getList ) {
@@ -481,7 +481,7 @@ DEFINE_FUNCTION( getList ) {
 	JS_DefineFunctionById(cx, iterator, JLID(cx, next), getListNext, 0, 0); // JSPROP_PERMANENT | JSPROP_READONLY
 	JL_NativeToProperty(cx, iterator, 
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

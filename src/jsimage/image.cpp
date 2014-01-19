@@ -47,7 +47,7 @@ DEFINE_FUNCTION( alloc ) {
 	JL_SetPrivate( obj, data);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -64,7 +64,7 @@ DEFINE_CONSTRUCTOR() {
 	functionObject = JS_GetFunctionObject(allocFunction);
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_FUNCTION_ALLOC, OBJECT_TO_JSVAL(functionObject)) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -81,7 +81,7 @@ DEFINE_FUNCTION( free ) {
 		JL_SetPrivate( obj, NULL);
 		jl_free(data);
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -113,7 +113,7 @@ DEFINE_FUNCTION( trim ) {
 	//JL_ASSERT( !(x<0 || x1<0 || x>width || x1>width || y<0 || y1<0 || y>height || y1>height), "Invalid size." );
 	JL_ASSERT( !(x<0 || x1<0 || x>width || x1>width || y<0 || y1<0 || y>height || y1>height), E_ARG, E_NUM(1), E_INVALID );
 
-	JSBool reuseBuffer;
+	bool reuseBuffer;
 	reuseBuffer = false; // default
 	if ( argc >= 2 )
 		JS_ValueToBoolean(cx, JL_ARG(2), &reuseBuffer);
@@ -157,7 +157,7 @@ DEFINE_FUNCTION( trim ) {
 	if ( !reuseBuffer )
 		jl_free(tmpDataPtr);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -166,22 +166,22 @@ DEFINE_FUNCTION( gamma ) {
 	JL_ASSERT_ARGC_MIN(1);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
 
-//	JSBool Call(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
-//		return JS_TRUE;
+//	bool Call(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
+//		return true;
 //	}
 
-//	JSBool prop(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
-//		return JS_TRUE;
+//	bool prop(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
+//		return true;
 //	}
 
-//	JSBool Func(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
-//		return JS_TRUE;
+//	bool Func(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
+//		return true;
 //	}
 
 

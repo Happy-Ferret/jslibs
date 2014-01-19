@@ -49,21 +49,21 @@ ALWAYS_INLINE void SerializerFree( SerializedData **ser ) {
 	*ser = NULL;
 }
 
-ALWAYS_INLINE JSBool SerializeJsval( JSContext *cx, SerializedData *ser, jsval *val ) {
+ALWAYS_INLINE bool SerializeJsval( JSContext *cx, SerializedData *ser, jsval *val ) {
 
 	jl::Serializer serializer;
 	JL_CHK( serializer.Write(cx, *val) );
 	JL_CHK( serializer.GetBufferOwnership(&ser->data, &ser->length) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
-ALWAYS_INLINE JSBool UnserializeJsval( JSContext *cx, SerializedData *ser, jsval *rval ) {
+ALWAYS_INLINE bool UnserializeJsval( JSContext *cx, SerializedData *ser, jsval *rval ) {
 
 	jl::Unserializer unserializer(ser->data, ser->length);
 	ser->data = NULL;
 	JL_CHK( unserializer.Read(cx, *rval) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -143,10 +143,10 @@ TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length ) {
 }
 
 
-JSBool
+bool
 TheTask(JSContext *cx, TaskPrivate *pv) {
 
-	JSBool ok;
+	bool ok;
 	jsval argv[3] = { JSVAL_NULL }; // argv[0] is rval and code
 
 	JSObject *globalObj;
@@ -239,7 +239,7 @@ TheTask(JSContext *cx, TaskPrivate *pv) {
 		JLEventTrigger(pv->responseEvent);
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -272,7 +272,7 @@ TaskThreadProc( void *threadArg ) {
 	pv = (TaskPrivate*)threadArg;
 	ASSERT( pv );
 
-	JSBool ok;
+	bool ok;
 	
 	ok = TheTask(cx, pv);
 	
@@ -409,7 +409,7 @@ DEFINE_CONSTRUCTOR() {
 	//JL_updateMallocCounter(cx, ???); 400KB ?
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pv != NULL ) {
@@ -426,7 +426,7 @@ bad:
 			JLMutexFree(&pv->mutex);
 		delete pv;
 	}
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -489,7 +489,7 @@ DEFINE_FUNCTION( close ) {
 	}
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -524,7 +524,7 @@ DEFINE_FUNCTION( request ) {
 	JLSemaphoreRelease(pv->requestSem); // +1 // signals a request
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -558,7 +558,7 @@ DEFINE_FUNCTION( response ) {
 		JL_CHK( UnserializeJsval(cx, serializedException, &exception) );
 		JS_SetPendingException(cx, exception);
 
-		return JS_FALSE;
+		return false;
 	}
 
 	if ( pv->end ) {
@@ -566,7 +566,7 @@ DEFINE_FUNCTION( response ) {
 		JLMutexRelease(pv->mutex); // ++
 		jsval exception = JSVAL_VOID; // throw a StopTask exception
 		JS_SetPendingException(cx, exception);
-		return JS_FALSE;
+		return false;
 	}
 
 	JLMutexRelease(pv->mutex); // ++
@@ -581,7 +581,7 @@ DEFINE_FUNCTION( response ) {
 
 		JLMutexRelease(pv->mutex); // ++
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 
 	SerializedData * serializedResponse;
@@ -593,20 +593,20 @@ DEFINE_FUNCTION( response ) {
 		SerializedData * serializedException = (SerializedData *)QueueShift(&pv->exceptionList);
 		JLMutexRelease(pv->mutex); // ++
 		jsval exception;
-		JSBool ok = UnserializeJsval(cx, serializedException, &exception);
+		bool ok = UnserializeJsval(cx, serializedException, &exception);
 		SerializerFree(&serializedException);
 		JL_CHK( ok ); // (TBD) throw a TaskException ?
 		JS_SetPendingException(cx, exception);
-		return JS_FALSE;
+		return false;
 	} else {
 
-		JSBool ok = UnserializeJsval(cx, serializedResponse, JL_RVAL);
+		bool ok = UnserializeJsval(cx, serializedResponse, JL_RVAL);
 		SerializerFree(&serializedResponse);
 		JL_CHK( ok );
 	}
 	JLMutexRelease(pv->mutex); // ++
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -629,7 +629,7 @@ DEFINE_PROPERTY_GETTER( pendingRequestCount ) {
 	JL_CHK( JL_NativeToJsval(cx, (size_t)pv->pendingRequestCount, vp) );
 //	JL_CHK( JL_NativeToJsval(cx, pv->end ? 0 : pv->pendingRequestCount, vp) );
 	JLMutexRelease(pv->mutex); // ++
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -651,7 +651,7 @@ DEFINE_PROPERTY_GETTER( processingRequestCount ) {
 	JLMutexAcquire(pv->mutex); // --
 	JL_CHK( JL_NativeToJsval(cx, (size_t)pv->processingRequestCount, vp) );
 	JLMutexRelease(pv->mutex); // ++
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -674,7 +674,7 @@ DEFINE_PROPERTY_GETTER( pendingResponseCount ) {
 	JL_CHK( JL_NativeToJsval(cx, (size_t)pv->pendingResponseCount, vp) );
 //	JL_CHK( JL_NativeToJsval(cx, pv->pendingResponseCount ? pv->pendingResponseCount : QueueIsEmpty(&pv->exceptionList) ? 0 : 1 , vp) );
 	JLMutexRelease(pv->mutex); // ++
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -696,7 +696,7 @@ DEFINE_PROPERTY_GETTER( idle ) {
 	JLMutexAcquire(pv->mutex); // --
 	JL_CHK(JL_NativeToJsval(cx, pv->pendingRequestCount + pv->processingRequestCount + pv->pendingResponseCount == 0 || pv->end, vp) );
 	JLMutexRelease(pv->mutex); // ++
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -742,9 +742,9 @@ struct TaskEvent {
 
 S_ASSERT( offsetof(TaskEvent, pe) == 0 );
 
-static JSBool TaskPrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
+static bool TaskPrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
 	
-	return JS_TRUE;
+	return true;
 }
 
 void TaskStartWait( volatile ProcessEvent *pe ) {
@@ -765,14 +765,14 @@ bool TaskCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-JSBool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
+bool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
 
 	TaskEvent *upe = (TaskEvent*)pe;
 
 	*hasEvent = (upe->pv->pendingResponseCount > 0);
 
 	if ( !*hasEvent )
-		return JS_TRUE;
+		return true;
 
 	jsval fct, argv[2];
 	argv[1] = OBJECT_TO_JSVAL(upe->obj); // already rooted
@@ -781,7 +781,7 @@ JSBool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS
 	if ( JL_ValueIsCallable(cx, fct) )
 		JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, COUNTOF(argv)-1, argv+1, argv) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -809,7 +809,7 @@ DEFINE_FUNCTION( events ) {
 
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(upe->obj)) ); // GC protection
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

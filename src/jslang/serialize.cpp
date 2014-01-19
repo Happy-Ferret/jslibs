@@ -46,12 +46,12 @@ DEFINE_CONSTRUCTOR() {
 	ser->Write(cx, JL_THIS_CLASS_REVISION);
 
 	JL_SetPrivate(JL_OBJ, ser);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( ser )
 		delete ser;
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -70,7 +70,7 @@ DEFINE_FUNCTION( write ) {
 	ser = static_cast<jl::Serializer*>(JL_GetPrivate(JL_OBJ));
 	JL_ASSERT_THIS_OBJECT_STATE(ser);
 	JL_CHKM( ser->Write(cx, JL_ARG(1)), E_MODULE, E_INTERNAL ); // "Serializer write error."
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -98,7 +98,7 @@ DEFINE_FUNCTION( done ) {
 	JL_SetPrivate(JL_OBJ, NULL);
 	//JL_updateMallocCounter(cx, length);
 	JL_CHK( JL_NewBufferGetOwnership(cx, data, length, *vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -157,11 +157,11 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT( srcId == JL_THIS_CLASS_REVISION, E_ARG, E_NUM(1), E_VERSION, E_COMMENT("serialized data") );
 
 	JL_SetPrivate(JL_OBJ, unser);
-	return JS_TRUE;
+	return true;
 bad:
 	if ( unser )
 		delete unser;
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -179,7 +179,7 @@ DEFINE_FUNCTION( read ) {
 	unser = static_cast<jl::Unserializer*>(JL_GetPrivate(JL_OBJ));
 	JL_ASSERT_THIS_OBJECT_STATE(unser);
 	JL_CHKM( unser->Read(cx, *JL_RVAL), E_MODULE, E_INTERNAL ); // "Unserializer read error."
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -200,7 +200,7 @@ DEFINE_PROPERTY_GETTER( eof ) {
 	unser = static_cast<jl::Unserializer*>(JL_GetPrivate(JL_OBJ));
 	JL_ASSERT_THIS_OBJECT_STATE(unser);
 	vp.setBoolean(!unser->IsEmpty());
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

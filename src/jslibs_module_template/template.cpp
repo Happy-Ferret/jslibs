@@ -23,7 +23,7 @@ BEGIN_CLASS( Template ) // Start the definition of the class. It defines some sy
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
 //	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup ) // skip cleanups if possible.
-//		return JS_TRUE;
+//		return true;
 
 }
 
@@ -32,14 +32,14 @@ DEFINE_CONSTRUCTOR() { // Called when the object is constructed ( a = new Templa
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 /*
 DEFINE_PROPERTY( prop ) {
 
-	return JS_TRUE;
+	return true;
 }
 */
 
@@ -54,7 +54,7 @@ DEFINE_FUNCTION( _serialize ) {
 
 	//ser->Write(cx, globalKey);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -70,7 +70,7 @@ DEFINE_FUNCTION( _unserialize ) {
 	//uint32_t gKey;
 	//unser->Read(cx, gKey);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

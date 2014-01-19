@@ -122,7 +122,7 @@ DEFINE_CONSTRUCTOR() {
 	*phIcon = hIcon;
 
 	JL_SetPrivate(obj, phIcon);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( phIcon ) {
@@ -131,7 +131,7 @@ bad:
 			DestroyIcon(*phIcon);
 		JS_free(cx, phIcon);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 

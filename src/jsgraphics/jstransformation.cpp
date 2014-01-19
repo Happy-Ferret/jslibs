@@ -151,7 +151,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( SetMatrix44GetInterface(cx, obj, GetMatrix) );
 
 	JL_SetPrivate(JL_OBJ, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pv ) {
@@ -160,7 +160,7 @@ bad:
 			Matrix44Free(pv->mat);
 		JS_free(cx, pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -213,7 +213,7 @@ DEFINE_FUNCTION( load ) {
 	}
 	
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -238,7 +238,7 @@ DEFINE_FUNCTION( clear ) {
 	pv->isIdentity = true;
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -262,7 +262,7 @@ DEFINE_FUNCTION( clearRotation ) {
 	Matrix44ClearRotation(pv->mat);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -284,7 +284,7 @@ DEFINE_FUNCTION( clearTranslation ) {
 	Matrix44ClearTranslation(pv->mat);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -328,7 +328,7 @@ DEFINE_FUNCTION( loadRotation ) {
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -363,7 +363,7 @@ DEFINE_FUNCTION( loadTranslation ) {
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -407,7 +407,7 @@ DEFINE_FUNCTION( translate ) {
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -459,7 +459,7 @@ DEFINE_FUNCTION( scale ) {
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -518,7 +518,7 @@ DEFINE_FUNCTION( rotationFromQuaternion ) {
 	pv->isIdentity = false;
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -552,7 +552,7 @@ DEFINE_FUNCTION( taitBryanRotation ) {
 	pv->isIdentity = false;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -582,7 +582,7 @@ DEFINE_FUNCTION( rotate ) {
 	float angle;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &angle) );
 	if ( angle == 0.0f )
-		return JS_TRUE;
+		return true;
 
 	float x, y, z;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &x) );
@@ -603,7 +603,7 @@ DEFINE_FUNCTION( rotate ) {
 		Matrix44Mult(pv->mat, pv->mat, &r);
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -630,7 +630,7 @@ DEFINE_FUNCTION( rotateX ) {
 	float angle;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &angle) );
 	if ( angle == 0.0f )
-		return JS_TRUE;
+		return true;
 
 	if ( pv->isIdentity ) {
 
@@ -644,7 +644,7 @@ DEFINE_FUNCTION( rotateX ) {
 		Matrix44Mult(pv->mat, pv->mat, &r);
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -671,7 +671,7 @@ DEFINE_FUNCTION( rotateY ) {
 	float angle;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &angle) );
 	if ( angle == 0.0f )
-		return JS_TRUE;
+		return true;
 
 	if ( pv->isIdentity ) {
 
@@ -685,7 +685,7 @@ DEFINE_FUNCTION( rotateY ) {
 		Matrix44Mult(pv->mat, pv->mat, &r);
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -712,7 +712,7 @@ DEFINE_FUNCTION( rotateZ ) {
 	float angle;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &angle) );
 	if ( angle == 0.0f )
-		return JS_TRUE;
+		return true;
 
 	if ( pv->isIdentity ) {
 
@@ -726,7 +726,7 @@ DEFINE_FUNCTION( rotateZ ) {
 		Matrix44Mult(pv->mat, pv->mat, &r);
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -803,7 +803,7 @@ DEFINE_FUNCTION( lookAt ) {
 	pv->isIdentity = false;
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -850,7 +850,7 @@ DEFINE_FUNCTION( rotateToVector ) {
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -874,7 +874,7 @@ DEFINE_FUNCTION( invert ) {
 		Matrix44Invert(pv->mat);
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -917,7 +917,7 @@ DEFINE_FUNCTION( product ) {
 	pv->isIdentity = false;
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -986,7 +986,7 @@ DEFINE_FUNCTION( transformVector ) {
 	}
 
 	*JL_RVAL = JL_ARG(1);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1013,7 +1013,7 @@ DEFINE_PROPERTY_SETTER( translation ) {
 	JL_CHK( JL_JsvalToNativeVector(cx, vp, pos, 3, &len) );
 	Matrix44SetTranslation(pv->mat, pos[0], pos[1], pos[2]);
 	pv->isIdentity = false;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1028,7 +1028,7 @@ DEFINE_PROPERTY_GETTER( translation ) {
 	float pos[3];
 	Matrix44GetTranslation(pv->mat, &pos[0], &pos[1], &pos[2]);
 	JL_CHK( JL_NativeVectorToJsval(cx, pos, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1039,12 +1039,12 @@ DEFINE_PROPERTY_GETTER( translation ) {
 DEFINE_NEW_RESOLVE() {
 
 	if (!JSVAL_IS_INT(id) || (flags & JSRESOLVE_ASSIGNING))
-		return JS_TRUE;
+		return true;
 	int slot = JSVAL_TO_INT( id );
 	JL_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
 	JS_DefineProperty(cx, obj, (char*)slot, JSVAL_VOID, NULL, NULL, JSPROP_INDEX | JSPROP_SHARED );
 	*objp = obj;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -1067,13 +1067,13 @@ DEFINE_GET_PROPERTY() {
 	JL_ASSERT_THIS_INSTANCE();
 
 	if ( !JSID_IS_INT(id) )
-		return JS_TRUE;
+		return true;
 	int slot = JSID_IS_INT( id );
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_ASSERT_RANGE( slot, 0, 15, "[index]" );
 	JL_CHK( JL_NativeToJsval(cx, pv->mat->raw[slot], vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1085,7 +1085,7 @@ DEFINE_SET_PROPERTY() {
 	JL_ASSERT_THIS_INSTANCE();
 
 	if ( !JSID_IS_INT(id) )
-		return JS_TRUE;
+		return true;
 	int slot = JSID_IS_INT( id );
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -1096,7 +1096,7 @@ DEFINE_SET_PROPERTY() {
 	JL_CHK( JL_JsvalToNative(cx, vp, &pv->mat->raw[slot]) );
 
 	pv->isIdentity = false;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1111,7 +1111,7 @@ DEFINE_INIT() {
 
 	JL_IGNORE(obj, proto, sc, cx);
 	jl::PoolInitialize( &matrixPool, 8192 );
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -1121,7 +1121,7 @@ DEFINE_FUNCTION( test ) {
 	JL_DEFINE_ARGS;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 }
 #endif //DEBUG
 

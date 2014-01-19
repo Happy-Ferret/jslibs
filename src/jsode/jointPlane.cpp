@@ -61,12 +61,12 @@ DEFINE_CONSTRUCTOR() {
 	ode::dJointSetFeedback(jointId, NULL);
 	
 	JL_SetPrivate(obj, jointId);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( jointId )
 		ode::dJointDestroy(jointId);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -104,7 +104,7 @@ DEFINE_FUNCTION( alignToZAxis ) {
 	ode::dBodySetAngularVel(bodyId, 0, 0, rot[2]);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -123,7 +123,7 @@ DEFINE_PROPERTY( x ) {
 
 	ode::dJointSetPlane2DXParam( jointId, 
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */

@@ -17,15 +17,15 @@
 
 DECLARE_CLASS( OalError )
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 ThrowOalError( JSContext *cx, ALenum err );
 
-ALWAYS_INLINE JSBool 
+ALWAYS_INLINE bool 
 CheckThrowCurrentOalError( JSContext *cx ) {
 
 	ALenum err = alGetError();
 	if (unlikely( err != AL_NO_ERROR ))
 		return ThrowOalError(cx, err);
-	return JS_TRUE;
+	return true;
 }
 

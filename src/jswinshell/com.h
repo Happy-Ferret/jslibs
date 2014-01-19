@@ -29,10 +29,10 @@ DECLARE_CLASS( ComDispatch )
 DECLARE_CLASS( ComObject )
 
 
-JSBool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *variant );
-JSBool VariantToJsval( JSContext *cx, IN VARIANT *variant, OUT JS::MutableHandleValue rval );
+bool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *variant );
+bool VariantToJsval( JSContext *cx, IN VARIANT *variant, OUT JS::MutableHandleValue rval );
 
-JSBool NewComVariant( JSContext *cx, VARIANT *variant, OUT JS::MutableHandleValue rval );
-JSBool NewComVariantCopy( JSContext *cx, VARIANT *variant, OUT JS::MutableHandleValue rval );
-JSBool NewComDispatch( JSContext *cx, IDispatch *pdisp, OUT JS::MutableHandleValue rval );
-JSBool NewComEnum( JSContext *cx, IEnumVARIANT *enumv, OUT JS::MutableHandleValue rval );
+bool NewComVariant( JSContext *cx, VARIANT *variant, OUT JS::MutableHandleValue rval );
+bool NewComVariantCopy( JSContext *cx, VARIANT *variant, OUT JS::MutableHandleValue rval );
+bool NewComDispatch( JSContext *cx, IDispatch *pdisp, OUT JS::MutableHandleValue rval );
+bool NewComEnum( JSContext *cx, IEnumVARIANT *enumv, OUT JS::MutableHandleValue rval );

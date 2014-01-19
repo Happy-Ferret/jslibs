@@ -95,7 +95,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ALLOC(pv->face);
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pv ) {
@@ -104,7 +104,7 @@ bad:
 			FT_Done_Face(pv->face);
 		jl_free(pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -130,7 +130,7 @@ DEFINE_FUNCTION( setSize ) {
 	status = FT_Set_Pixel_Sizes(face, width, height);
 	JL_ASSERT( status == 0, "Unable to FT_Set_Pixel_Sizes." );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -186,7 +186,7 @@ DEFINE_FUNCTION( getCharOutline ) {
 	FTCHK( FT_Outline_Decompose(&g->outline, &funcs, NULL) );
 
 	FT_Done_Glyph( (FT_Glyph)g );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -240,7 +240,7 @@ DEFINE_FUNCTION( drawChar ) {
 	JL_CHK( buf );
 	jl::memcpy(buf, pv->face->glyph->bitmap.buffer, bufLength);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -451,7 +451,7 @@ DEFINE_FUNCTION( drawString ) {
 
 	if ( glyphs != glyphs_static ) // memory optimization only
 		jl_free(glyphs);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -473,7 +473,7 @@ DEFINE_PROPERTY_GETTER( ascender ) {
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL(pv->face->size->metrics.ascender >> 6);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -489,7 +489,7 @@ DEFINE_PROPERTY_GETTER( descender ) {
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL(pv->face->size->metrics.descender >> 6);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -503,7 +503,7 @@ DEFINE_PROPERTY_GETTER( width ) {
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	*vp = INT_TO_JSVAL(pv->face->size->metrics.max_advance >> 6);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -571,7 +571,7 @@ DEFINE_PROPERTY_GETTER( poscriptName ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( JL_NativeToJsval(cx, FT_Get_Postscript_Name(pv->face), vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

@@ -25,7 +25,7 @@ $SVN_REVISION $Revision: 3533 $
 **/
 BEGIN_CLASS( Mass )
 
-JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID, ode::dMass *pMass) {
+bool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID, ode::dMass *pMass) {
 
 	jsval bodyVal;
 	JL_CHK( JL_GetReservedSlot( massObject, MASS_SLOT_BODY, &bodyVal) );
@@ -36,7 +36,7 @@ JSBool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID
 	*pBodyID = (ode::dBodyID)JL_GetPrivate(bodyObject);
 	ASSERT(*pBodyID);
 	ode::dBodyGetMass(*pBodyID, pMass);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -69,7 +69,7 @@ DEFINE_FUNCTION( translate ) {
 	ode::dBodySetMass(bodyID, &mass);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -93,7 +93,7 @@ DEFINE_FUNCTION( adjust ) {
 	ode::dBodySetMass(bodyID, &mass);
 	
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -114,7 +114,7 @@ DEFINE_FUNCTION( setZero ) {
 	ode::dBodySetMass(bodyID, &mass);
 	
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -149,7 +149,7 @@ DEFINE_FUNCTION( setBoxTotal ) {
 	ode::dBodySetMass(bodyID, &mass);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -173,7 +173,7 @@ DEFINE_PROPERTY_SETTER( value ) {
 	JL_CHK( JL_JsvalToNative(cx, *vp, &massValue) );
 	mass.mass = (ode::dReal)massValue;
 	ode::dBodySetMass(bodyID, &mass);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -185,7 +185,7 @@ DEFINE_PROPERTY_GETTER( value ) {
 
 	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
 	JL_CHK( JL_NativeToJsval(cx, mass.mass, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -209,7 +209,7 @@ DEFINE_PROPERTY_SETTER( center ) {
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 
 	ode::dBodySetMass(bodyID, &mass);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -221,7 +221,7 @@ DEFINE_PROPERTY_GETTER( center ) {
 	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
 	//JL_CHK( ODERealVectorToArray(cx, 3, mass.c, vp) );
 	JL_CHK( ODERealVectorToJsval(cx, mass.c, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

@@ -48,7 +48,7 @@ JL_HandleJSClass( JSContext *cx ) {
 
 
 template <class Struct>
-INLINE JSBool FASTCALL
+INLINE bool FASTCALL
 HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruct, HandleFinalizeCallback_t finalizeCallback, jsval *handleVal ) {
 
 	ASSERT( handleType != JL_HANDLE_INVALID );
@@ -71,12 +71,12 @@ HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruc
 	pv->finalizeCallback = finalizeCallback;
 	*userStruct = (Struct*)(pv+1);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
-INLINE JSBool
+INLINE bool
 HandleClose( JSContext *cx, jsval handleVal ) { // see finalize
 	
 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
@@ -93,7 +93,7 @@ HandleClose( JSContext *cx, jsval handleVal ) { // see finalize
 	jl_free(pv);
 	JL_SetPrivate( handleObj, NULL);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -156,7 +156,7 @@ bad:
 }
 
 
-INLINE JSBool
+INLINE bool
 SetHandleSlot( JSContext *cx, jsval handleVal, uint32_t slotIndex, jsval value ) {
 
 	ASSERT( slotIndex < JL_HANDLE_PUBLIC_SLOT_COUNT );
@@ -167,7 +167,7 @@ SetHandleSlot( JSContext *cx, jsval handleVal, uint32_t slotIndex, jsval value )
 }
 
 
-INLINE JSBool
+INLINE bool
 GetHandleSlot( JSContext *cx, jsval handleVal, uint32_t slotIndex, jsval &value ) {
 
 	ASSERT( slotIndex < JL_HANDLE_PUBLIC_SLOT_COUNT );

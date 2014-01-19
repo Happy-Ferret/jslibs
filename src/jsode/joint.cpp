@@ -31,7 +31,7 @@ void FinalizeJoint(JSObject *obj) {
 }
 
 
-JSBool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj ) { // (TBD) JSObject** = Conservative Stack Scanning issue ?
+bool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj ) { // (TBD) JSObject** = Conservative Stack Scanning issue ?
 
 	JL_ASSERT( jointId != NULL && ode::dJointGetData(jointId) == NULL, E_MODULE, E_INTERNAL, E_SEP, E_STR(JL_CLASS_NAME(Joint)), E_STATE );
 
@@ -70,7 +70,7 @@ JSBool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj ) 
 	ode::dJointSetData(jointId, *obj);
 	JL_SetPrivate( *obj, jointId);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -93,13 +93,13 @@ BEGIN_CLASS( Joint )
 DEFINE_PROPERTY( body1 ) {
 
 	JL_GetReservedSlot( obj, JOINT_SLOT_BODY1, vp);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 DEFINE_PROPERTY( body2 ) {
 
 	JL_GetReservedSlot( obj, JOINT_SLOT_BODY2, vp);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -126,7 +126,7 @@ DEFINE_FUNCTION( destroy ) {
 	ode::dJointDestroy(jointId);
 	
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -142,7 +142,7 @@ DEFINE_FUNCTION( getBody ) {
 	if ( index < 0 || index >= ode::dJointGetNumBodies(jointId) ) {
 		
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 
 	ode::dBodyID bodyId;
@@ -153,7 +153,7 @@ DEFINE_FUNCTION( getBody ) {
 	// (TBD)! construct a new wrapper if it has been finalized !
 
 	*JL_RVAL = jsBody ? OBJECT_TO_JSVAL( jsBody ) : JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -183,7 +183,7 @@ DEFINE_FUNCTION( attach ) {
 //	JL_ASSERT(bodyID != NULL, RT_ERROR_NOT_INITIALIZED);
 
 	ode::dJointAttach(jointID, bodyID1, bodyID2);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -277,7 +277,7 @@ DEFINE_PROPERTY_SETTER( body1 ) {
 	JL_CHK( JL_JsvalToBody(cx, *vp, &bodyId) );
 	ode::dJointAttach(jointId, bodyId, ode::dJointGetBody(jointId, 1));
 //	return jl::StoreProperty(cx, obj, id, vp, false);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -293,7 +293,7 @@ DEFINE_PROPERTY_GETTER( body1 ) {
 	else
 		*vp = JSVAL_VOID;
 //	return jl::StoreProperty(cx, obj, id, vp, false);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -313,7 +313,7 @@ DEFINE_PROPERTY_SETTER( body2 ) {
 	JL_CHK( JL_JsvalToBody(cx, *vp, &bodyId) );
 	ode::dJointAttach(jointId, ode::dJointGetBody(jointId, 0), bodyId);
 //	return jl::StoreProperty(cx, obj, id, vp, false);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -329,7 +329,7 @@ DEFINE_PROPERTY_GETTER( body2 ) {
 	else
 		*vp = JSVAL_VOID;
 //	return jl::StoreProperty(cx, obj, id, vp, false);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -352,7 +352,7 @@ DEFINE_PROPERTY_SETTER( disabled ) {
 		ode::dJointDisable(jointId);
 	else
 		ode::dJointEnable(jointId);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -363,7 +363,7 @@ DEFINE_PROPERTY_GETTER( disabled ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( jointId );
 	JL_CHK( JL_NativeToJsval(cx, ode::dJointIsEnabled(jointId) == 0, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -384,7 +384,7 @@ DEFINE_PROPERTY_SETTER( useFeedback ) {
 	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
 	ode::dJointFeedback *currentFeedback = ode::dJointGetFeedback(jointId);
 	if ( !currentFeedback == !b ) // no changes
-		return JS_TRUE;
+		return true;
 
 	if ( b ) {
 
@@ -398,7 +398,7 @@ DEFINE_PROPERTY_SETTER( useFeedback ) {
 		JS_free(cx, currentFeedback);
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -410,7 +410,7 @@ DEFINE_PROPERTY_GETTER( useFeedback ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( jointId );
 	JL_CHK( JL_NativeToJsval(cx, ode::dJointGetFeedback(jointId) != NULL, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -470,7 +470,7 @@ DEFINE_PROPERTY_SETTER( feedbackVector ) {
 	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -508,7 +508,7 @@ DEFINE_PROPERTY_GETTER( feedbackVector ) {
 	}
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -590,7 +590,7 @@ DEFINE_PROPERTY_SETTER( jointParam ) {
 	ode::dReal value;
 	JL_CHK( JsvalToODEReal(cx, *vp, &value) );
 	JointSetParam(jointId, JSID_TO_INT(id), value);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -600,7 +600,7 @@ DEFINE_PROPERTY_GETTER( jointParam ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	JL_CHK( ODERealToJsval(cx, JointGetParam(jointId, JSID_TO_INT(id)), vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -613,7 +613,7 @@ DEFINE_PROPERTY_SETTER( jointParam1 ) {
 	ode::dReal real;
 	JL_CHK( JsvalToODEReal(cx, *vp, &real) );
 	JointSetParam(jointId, JSID_TO_INT(id) + ode::dParamGroup2, real);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -623,7 +623,7 @@ DEFINE_PROPERTY_GETTER( jointParam1 ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	JL_CHK( ODERealToJsval(cx, JointGetParam(jointId, JSID_TO_INT(id) + ode::dParamGroup2), vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -636,7 +636,7 @@ DEFINE_PROPERTY_SETTER( jointParam2 ) {
 	ode::dReal real;
 	JL_CHK( JsvalToODEReal(cx, *vp, &real) );
 	JointSetParam(jointId, JSID_TO_INT(id) + ode::dParamGroup3, real);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -646,7 +646,7 @@ DEFINE_PROPERTY_GETTER( jointParam2 ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	JL_CHK( ODERealToJsval(cx, JointGetParam(jointId, JSID_TO_INT(id) + ode::dParamGroup3), vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

@@ -50,7 +50,7 @@ size_t readStream( void *ptr, size_t size, size_t nmemb, void *pv ) {
 
 	StreamReadInfo *info = (StreamReadInfo*)pv;
 	size_t amount = size * nmemb;
-//	if ( info->streamRead( info->cx, info->obj, (char*)ptr, &amount ) != JS_TRUE )
+//	if ( info->streamRead( info->cx, info->obj, (char*)ptr, &amount ) != true )
 //		return -1; // (TBD) check for a better error
 
 	NIStreamRead read = StreamReadInterface(info->cx, info->obj);
@@ -165,7 +165,7 @@ DEFINE_FUNCTION( decodeOggVorbis ) {
 		jl_free(buffer);
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -259,7 +259,7 @@ sf_count_t SfRead(void *ptr, sf_count_t count, void *user_data) {
 	StreamReadInfo *pv = (StreamReadInfo *)user_data;
 
 	size_t amount = size_t(count);
-//	if ( pv->streamRead( pv->cx, pv->obj, (char*)ptr, &amount ) != JS_TRUE )
+//	if ( pv->streamRead( pv->cx, pv->obj, (char*)ptr, &amount ) != true )
 //		return -1; // (TBD) find a better error
 
 	NIStreamRead read = StreamReadInterface( pv->cx, pv->obj);
@@ -303,7 +303,7 @@ DEFINE_FUNCTION( decodeSound ) {
 	JL_ASSERT( descriptor != NULL, E_ARG, E_NUM(1), E_INVALID ); // "Invalid stream."
 
 	if ( JL_IsExceptionPending(cx) )
-		return JS_FALSE;
+		return false;
 
 	JL_CHKM( info.channels == 1 || info.channels == 2, E_NUM(info.channels), E_STR("channels"), E_FORMAT );
 
@@ -361,7 +361,7 @@ DEFINE_FUNCTION( decodeSound ) {
 		jl_free(buffer);
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -416,7 +416,7 @@ DEFINE_FUNCTION( splitChannels ) {
 		}
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

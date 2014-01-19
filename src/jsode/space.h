@@ -22,12 +22,12 @@ ALWAYS_INLINE bool JL_JsvalIsSpace( const jsval val ) {
 	return !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT( val )) == JL_CLASS(Space);
 }
 
-ALWAYS_INLINE JSBool JL_JsvalToSpaceID( JSContext *cx, jsval val, ode::dSpaceID *spaceId ) {
+ALWAYS_INLINE bool JL_JsvalToSpaceID( JSContext *cx, jsval val, ode::dSpaceID *spaceId ) {
 
 	JL_ASSERT_IS_OBJECT(val, JL_CLASS_NAME(Space));
 	JSObject *obj = JSVAL_TO_OBJECT(val);
 	JL_ASSERT_INSTANCE(obj, JL_CLASS(Space));
 	*spaceId = (ode::dSpaceID)JL_GetPrivate(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }

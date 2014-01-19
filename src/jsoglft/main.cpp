@@ -35,7 +35,7 @@ namespace OGLFT {
 }
 
 
-JSBool
+bool
 ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JsoglftPrivate *mpv = (JsoglftPrivate*)ModulePrivateAlloc(sizeof(JsoglftPrivate));
@@ -79,17 +79,17 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	INIT_STATIC();
 	INIT_CLASS( Font3D );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
-JSBool
+bool
 ModuleRelease(JSContext *cx) {
 
 //	jl_free(GetModulePrivate(cx, _moduleId));
 
-	return JS_TRUE;
+	return true;
 }
 
 

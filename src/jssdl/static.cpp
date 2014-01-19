@@ -59,7 +59,7 @@ BEGIN_STATIC
 
 
 // see PollEvent
-JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SDL_Event *ev, jsval *rval, bool *fired ) {
+bool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SDL_Event *ev, jsval *rval, bool *fired ) {
 
 	jsval fVal;
 
@@ -97,7 +97,7 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 					argv[2] = STRING_TO_JSVAL(JS_NewUCStringCopyN(cx, (jschar*)&ev->key.keysym.unicode, 1));
 				}
 
-				JSBool status = JS_CallFunctionValue(cx, thisObj, fVal, COUNTOF(argv), argv, rval);
+				bool status = JS_CallFunctionValue(cx, thisObj, fVal, COUNTOF(argv), argv, rval);
 				JL_CHK( status );
 				*fired = true;
 			}
@@ -187,8 +187,8 @@ JSBool FireListener( JSContext *cx, JSObject *thisObj, JSObject *listenerObj, SD
 		default:
 			*fired = false;
 	}
-//	return JL_IsExceptionPending(cx) ? JS_FALSE : JS_TRUE; // (TBD) why this line is needed ?
-	return JS_TRUE;
+//	return JL_IsExceptionPending(cx) ? false : true; // (TBD) why this line is needed ?
+	return true;
 	JL_BAD;
 }
 
@@ -238,7 +238,7 @@ DEFINE_FUNCTION( getVideoModeList ) {
 	if ( modes == (SDL_Rect **)-1 ) { // any dimension is okay for this format.
 		
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 
 	JSObject *modesArray = JS_NewArrayObject(cx, 0, NULL);
@@ -260,7 +260,7 @@ DEFINE_FUNCTION( getVideoModeList ) {
 		tmp = INT_TO_JSVAL(modes[i]->h);
 		JL_CHK( JL_SetElement(cx, rectArray, 1, &tmp) );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -306,7 +306,7 @@ DEFINE_FUNCTION( videoModeOK ) {
 	int status = SDL_VideoModeOK(width, height, bpp, (Uint32)flags);
 //	JL_CHK(JL_NativeToJsval(cx, status != 0, JL_RVAL) );
 	JL_CHK( JL_NativeToJsval(cx, status, JL_RVAL) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -374,7 +374,7 @@ DEFINE_FUNCTION( setVideoMode ) {
 	//	return ThrowSdlError(cx);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -388,7 +388,7 @@ DEFINE_PROPERTY_GETTER( videoWidth ) {
 //	const SDL_VideoInfo *info = SDL_GetVideoInfo();
 //	const SDL_Surface *surface = SDL_GetVideoSurface();
 	*vp = _surface != NULL ? INT_TO_JSVAL( surfaceWidth ) : JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 }
 
 /**doc
@@ -400,7 +400,7 @@ DEFINE_PROPERTY_GETTER( videoHeight ) {
 
 //	const SDL_Surface *surface = SDL_GetVideoSurface();
 	*vp = _surface != NULL ? INT_TO_JSVAL( surfaceHeight ) : JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 }
 
 /**doc
@@ -412,7 +412,7 @@ DEFINE_PROPERTY_GETTER( videoBitsPerPixel ) {
 
 //	const SDL_Surface *surface = SDL_GetVideoSurface();
 	*vp = _surface != NULL ? INT_TO_JSVAL( _surface->format->BitsPerPixel ) : JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 }
 
 /**doc
@@ -423,7 +423,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( desktopWidth ) {
 
 	*vp = INT_TO_JSVAL( desktopWidth );
-	return JS_TRUE;
+	return true;
 }
 
 /**doc
@@ -434,7 +434,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( desktopHeight ) {
 
 	*vp = INT_TO_JSVAL( desktopHeight );
-	return JS_TRUE;
+	return true;
 }
 
 /**doc
@@ -445,7 +445,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( desktopBitsPerPixel ) {
 
 	*vp = *vp = INT_TO_JSVAL( desktopBitsPerPixel );
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -464,7 +464,7 @@ DEFINE_PROPERTY_GETTER( videoFlags ) {
 
 		*vp = JSVAL_VOID;
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -482,7 +482,7 @@ DEFINE_PROPERTY_SETTER( icon ) {
 	if ( JSVAL_IS_VOID(image) ) {
 
 		SDL_WM_SetIcon(NULL, NULL);
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ASSERT_IS_OBJECT(image, "");
@@ -514,7 +514,7 @@ DEFINE_PROPERTY_SETTER( icon ) {
 
 	SDL_WM_SetIcon(surface, NULL); // (TBD) manage mask with image alpha ?
 	SDL_FreeSurface(surface);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -532,7 +532,7 @@ DEFINE_FUNCTION( toggleFullScreen ) {
 	if ( surface == NULL ) {
 
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 
 //	int status = SDL_WM_ToggleFullScreen( surface ); // This is currently only implemented in the X11 video driver ??
@@ -541,7 +541,7 @@ DEFINE_FUNCTION( toggleFullScreen ) {
 	bool hasFullscreen = (surface->flags & SDL_FULLSCREEN) != 0;
 	JLSetVideoMode(surface->w, surface->h, surface->format->BitsPerPixel, hasFullscreen ? surface->flags & ~SDL_FULLSCREEN : surface->flags | SDL_FULLSCREEN);
   	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 }
 */
 
@@ -555,7 +555,7 @@ DEFINE_PROPERTY( isFullScreen ) {
 
 	bool fullScreen = ( (SDL_GetVideoSurface()->flags & SDL_FULLSCREEN) != 0 );
 	JL_CHK(JL_NativeToJsval(cx, fullScreen, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -570,7 +570,7 @@ DEFINE_FUNCTION( iconify ) {
 
 	SDL_WM_IconifyWindow();
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 }
 
 /**doc
@@ -594,7 +594,7 @@ DEFINE_FUNCTION( setGamma ) {
 		return ThrowSdlError(cx);
 	
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -622,7 +622,7 @@ DEFINE_FUNCTION( glSwapBuffers ) {
 	
 	// (TBD) check error	*SDL_GetError() != '\0' ???
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -647,7 +647,7 @@ DEFINE_FUNCTION( glSetAttribute ) {
 		return ThrowSdlError(cx);
 	
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -672,7 +672,7 @@ DEFINE_FUNCTION( glGetAttribute ) {
 		return ThrowSdlError(cx);
 	JL_CHK( JL_NativeToJsval(cx, value, JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -689,7 +689,7 @@ DEFINE_PROPERTY_SETTER( caption ) {
 	JLData title;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &title) );
 	SDL_WM_SetCaption(title, NULL);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -701,7 +701,7 @@ DEFINE_PROPERTY_GETTER( caption ) {
 		*vp = JSVAL_VOID;
 	else
 		JL_CHK( JL_NativeToJsval(cx, title, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -726,7 +726,7 @@ DEFINE_PROPERTY_SETTER( grabInput ) {
 	bool grab;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &grab) );
 	SDL_WM_GrabInput( grab ? SDL_GRAB_ON : SDL_GRAB_OFF );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -734,7 +734,7 @@ DEFINE_PROPERTY_GETTER( grabInput ) {
 
 	SDL_GrabMode mode = SDL_WM_GrabInput( SDL_GRAB_QUERY );
 	JL_CHK(JL_NativeToJsval(cx, mode == SDL_GRAB_ON ? true : false, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -749,7 +749,7 @@ DEFINE_PROPERTY_SETTER( showCursor ) {
 	bool show;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &show) );
 	SDL_ShowCursor( show ? 1 : 0 );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -757,7 +757,7 @@ DEFINE_PROPERTY_GETTER( showCursor ) {
 
 	int show = SDL_ShowCursor( -1 ); // query
 	JL_CHK(JL_NativeToJsval(cx, show == 0 ? false : true, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -781,7 +781,7 @@ DEFINE_FUNCTION( setCursor ) {
 	SDL_SetCursor(cursor);
 	
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -799,7 +799,7 @@ DEFINE_PROPERTY_GETTER( videoDriverName ) {
 		JL_CHK( JL_NativeToJsval(cx, name, vp) );
 	else
 		*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -843,7 +843,7 @@ DEFINE_FUNCTION( pollEvent ) {
 	if ( status == 0 ) {
 		
 		*JL_RVAL = JSVAL_FALSE;
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( JL_ARG_ISDEF(1) ) {
@@ -854,7 +854,7 @@ DEFINE_FUNCTION( pollEvent ) {
 	}
 
 	*JL_RVAL = JSVAL_TRUE;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -878,7 +878,7 @@ DEFINE_FUNCTION( warpMouse ) {
 	SDL_WarpMouse(x, y);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -894,7 +894,7 @@ DEFINE_PROPERTY_GETTER( mouseX ) {
 	int x;
 	SDL_GetMouseState(&x, NULL); // query only button state
 	*vp = INT_TO_JSVAL( x ); // query only button state
-	return JS_TRUE;
+	return true;
 }
 
 /**doc
@@ -907,7 +907,7 @@ DEFINE_PROPERTY_GETTER( mouseY ) {
 	int y;
 	SDL_GetMouseState(NULL, &y); // query only button state
 	*vp = INT_TO_JSVAL( y ); // query only button state
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -934,7 +934,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( buttonState ) {
 
 	*vp = INT_TO_JSVAL( SDL_GetMouseState(NULL, NULL) ); // query only button state
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -958,7 +958,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( modifierState ) {
 
 	*vp = INT_TO_JSVAL( SDL_GetModState() );
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -1001,7 +1001,7 @@ DEFINE_FUNCTION( getKeyName ) {
 	char *keyName = SDL_GetKeyName((SDLKey)key);
 	JSString *jsStr = JS_NewStringCopyZ(cx, keyName);
 	*JL_RVAL = STRING_TO_JSVAL(jsStr);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1020,7 +1020,7 @@ DEFINE_PROPERTY_SETTER( keyRepeatDelay ) {
 	int status = SDL_EnableKeyRepeat(delay, interval);
 	if ( status == -1 )
 		return ThrowSdlError(cx);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1030,7 +1030,7 @@ DEFINE_PROPERTY_GETTER( keyRepeatDelay ) {
 	int delay, interval;
 	SDL_GetKeyRepeat(&delay, &interval);
 	JL_CHK( JL_NativeToJsval(cx, delay, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1048,7 +1048,7 @@ DEFINE_PROPERTY_SETTER( keyRepeatInterval ) {
 	int status = SDL_EnableKeyRepeat(delay, interval);
 	if ( status == -1 )
 		return ThrowSdlError(cx);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1057,7 +1057,7 @@ DEFINE_PROPERTY_GETTER( keyRepeatInterval ) {
 	int delay, interval;
 	SDL_GetKeyRepeat(&delay, &interval);
 	JL_CHK( JL_NativeToJsval(cx, interval, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1072,7 +1072,7 @@ DEFINE_PROPERTY_SETTER( unicodeKeyboardTranslation ) {
 	bool enable;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &enable) );
 	SDL_EnableUNICODE(enable ? 1 : 0);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1080,7 +1080,7 @@ DEFINE_PROPERTY_GETTER( unicodeKeyboardTranslation ) {
 
 	int enable = SDL_EnableUNICODE(-1);
 	*vp = BOOLEAN_TO_JSVAL( enable == 1 );
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -1092,7 +1092,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( appStateActive ) {
 
 	JL_CHK(JL_NativeToJsval(cx, (SDL_GetAppState() & SDL_APPACTIVE) != 0, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1104,7 +1104,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( hasRDTSC ) {
 
 	JL_CHK(JL_NativeToJsval(cx, SDL_HasRDTSC() == SDL_TRUE, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1115,7 +1115,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( hasMMX ) {
 
 	JL_CHK(JL_NativeToJsval(cx, SDL_HasMMX() == SDL_TRUE, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1126,7 +1126,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( hasMMXExt ) {
 
 	JL_CHK(JL_NativeToJsval(cx, SDL_HasMMXExt() == SDL_TRUE, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1137,7 +1137,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( has3DNow ) {
 
 	JL_CHK(JL_NativeToJsval(cx, SDL_Has3DNow() == SDL_TRUE, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1148,7 +1148,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( has3DNowExt ) {
 
 	JL_CHK(JL_NativeToJsval(cx, SDL_Has3DNowExt() == SDL_TRUE, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1159,7 +1159,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( hasSSE ) {
 
 	JL_CHK(JL_NativeToJsval(cx, SDL_HasSSE() == SDL_TRUE, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1170,7 +1170,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( hasSSE2 ) {
 
 	JL_CHK(JL_NativeToJsval(cx, SDL_HasSSE2() == SDL_TRUE, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1181,7 +1181,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( hasAltiVec ) {
 
 	JL_CHK(JL_NativeToJsval(cx, SDL_HasAltiVec() == SDL_TRUE, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1227,7 +1227,7 @@ DEFINE_PROPERTY_SETTER( maxFPS ) {
 		JL_CHK( JL_JsvalToNative(cx, *vp, &value) );
 		_maxFPS = value;
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1240,7 +1240,7 @@ DEFINE_PROPERTY_GETTER( maxFPS ) {
 
 		JL_CHK( JL_NativeToJsval(cx, int32_t(_maxFPS), vp) );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1263,12 +1263,12 @@ struct SurfaceReadyProcessEvent {
 
 S_ASSERT( offsetof(SurfaceReadyProcessEvent, pe) == 0 );
 
-static JSBool SurfaceReadyPrepareWait( volatile ProcessEvent *pe, JSContext *, JSObject * ) {
+static bool SurfaceReadyPrepareWait( volatile ProcessEvent *pe, JSContext *, JSObject * ) {
 
 	SurfaceReadyProcessEvent *upe = (SurfaceReadyProcessEvent*)pe;
 	upe->cancel = false;
 
-	return JS_TRUE;
+	return true;
 }
 
 static void SurfaceReadyStartWait( volatile ProcessEvent *pe ) {
@@ -1294,7 +1294,7 @@ static bool SurfaceReadyCancelWait( volatile ProcessEvent *pe ) {
 }
 
 
-JSBool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+bool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 //	JLMutexAcquire(surfaceReadyLock);
 //	surfaceIdle = false;
@@ -1304,14 +1304,14 @@ JSBool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext
 
 	*hasEvent = surfaceReady;
 	if ( !*hasEvent )
-		return JS_TRUE;
+		return true;
 
 	if ( JSVAL_IS_VOID(upe->callbackFctVal) )
-		return JS_TRUE;
+		return true;
 
 	jsval rval;
 	JL_CHK( JS_CallFunctionValue(cx, upe->callbackFctThis, upe->callbackFctVal, 0, NULL, &rval) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1341,7 +1341,7 @@ DEFINE_FUNCTION( surfaceReadyEvents ) {
 		upe->callbackFctVal = JSVAL_VOID;
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1366,12 +1366,12 @@ struct SdlEventsProcessEvent {
 
 S_ASSERT( offsetof(SdlEventsProcessEvent, pe) == 0 );
 
-static JSBool SDLPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject *obj ) {
+static bool SDLPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject *obj ) {
 	
 	SdlEventsProcessEvent *upe = (SdlEventsProcessEvent*)pe;
 	upe->cancel = false;
 
-	return JS_TRUE;
+	return true;
 }
 
 void SDLStartWait( volatile ProcessEvent *pe ) {
@@ -1398,7 +1398,7 @@ bool SDLCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+bool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 	SdlEventsProcessEvent *upe = (SdlEventsProcessEvent*)pe;
 
@@ -1428,7 +1428,7 @@ JSBool SDLEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSO
 			break;
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1451,7 +1451,7 @@ DEFINE_FUNCTION( sdlEvents ) {
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_OBJVAL) ); // GC protection
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_ARG(1)) ); // GC protection
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

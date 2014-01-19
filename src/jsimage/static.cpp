@@ -198,8 +198,8 @@ DEFINE_FUNCTION( decodeJpegImage ) {
 //		src->read = ReadUsingJsMethod;
 //	}
 
-//	JSBool status = GetNativeResource(cx, JSVAL_TO_OBJECT(argv[0]), &src->pv, &src->read, NULL );
-//	JL_ASSERT( status == JS_TRUE, "Unable to GetNativeResource." );
+//	bool status = GetNativeResource(cx, JSVAL_TO_OBJECT(argv[0]), &src->pv, &src->read, NULL );
+//	JL_ASSERT( status == true, "Unable to GetNativeResource." );
 
 // read image headers
 	jpeg_read_header(&cinfo, TRUE); //we passed TRUE to reject a tables-only JPEG file as an error.
@@ -234,7 +234,7 @@ DEFINE_FUNCTION( decodeJpegImage ) {
 	jpeg_destroy_decompress(&cinfo);
 	//jpeg_destroy((j_common_ptr)&cinfo);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -394,14 +394,14 @@ DEFINE_FUNCTION( encodeJpegImage ) {
 	JL_CHK( JL_NewBufferGetOwnership(cx, dest.buffer, dest.dataLength, *JL_RVAL) );
 
 	jpeg_destroy_compress(&cinfo);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( dest.buffer != NULL )
 		jl_free(dest.buffer);
 	if ( cinfo.global_state != 0 )
 		jpeg_destroy_compress(&cinfo);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -564,7 +564,7 @@ DEFINE_FUNCTION( decodePngImage ) {
 	png_read_end(desc.png, desc.info); // read rest of file, and get additional chunks in desc.info - REQUIRED
 	png_destroy_read_struct(&desc.png, &desc.info, NULL);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -663,10 +663,10 @@ DEFINE_FUNCTION( encodePngImage ) {
 	desc.buffer = (void*)JL_DataBufferRealloc(cx, (uint8_t*)desc.buffer, desc.pos); // usually, compressed data is smaller that original one.
 	JL_ASSERT_ALLOC( desc.buffer );
 	JL_CHK( JL_NewBufferGetOwnership(cx, desc.buffer, desc.pos, *JL_RVAL) );
-	return JS_TRUE;
+	return true;
 bad:
 	JL_DataBufferFree(cx, (uint8_t*)desc.buffer);
-	return JS_FALSE;
+	return false;
 }
 
 // (TBD) use these compilation options: PNG_SETJMP_NOT_SUPPORTED, PNG_NO_CONSOLE_IO, PNG_NO_STDIO, ...

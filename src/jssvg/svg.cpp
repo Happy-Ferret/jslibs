@@ -30,7 +30,7 @@ struct CxObj {
 };
 
 
-JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPixbuf **pixbuf) {
+bool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPixbuf **pixbuf) {
 
 	*pixbuf = NULL;
 	jsval onImageFct;
@@ -54,7 +54,7 @@ JSBool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPix
 			JL_ASSERT( *pixbuf == NULL, E_STR("image"), E_CREATE );
 		}
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -119,7 +119,7 @@ DEFINE_CONSTRUCTOR() {
 	cairo_matrix_init_identity(&pv->transformation);
 	
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pv ) {
@@ -127,7 +127,7 @@ bad:
 		g_object_unref(pv->handle);
 		JS_free(cx, pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -181,7 +181,7 @@ DEFINE_FUNCTION( write ) {
 	handle->priv->base_uri = tmp;
 
 	if ( JL_IsExceptionPending(cx) )
-		return JS_FALSE;
+		return false;
 
 	if ( !status ) {
 
@@ -193,7 +193,7 @@ DEFINE_FUNCTION( write ) {
 	}
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -225,7 +225,7 @@ DEFINE_PROPERTY( xmlData ) {
 	handle->priv->base_uri = tmp;
 
 	if ( JL_IsExceptionPending(cx) )
-		return JS_FALSE;
+		return false;
 
 	if ( !status ) {
 
@@ -235,7 +235,7 @@ DEFINE_PROPERTY( xmlData ) {
 		} else
 			JL_REPORT_ERROR("SVG error: %s", error->message);
 	}
-	return JS_TRUE;
+	return true;
 }
 */
 
@@ -403,7 +403,7 @@ DEFINE_FUNCTION( renderImage ) { // using cairo
 	cairo_destroy(cr);
 	cairo_surface_destroy(surface);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -436,7 +436,7 @@ DEFINE_FUNCTION( getImage ) { // using pixbuf
 	JL_CHK( JS_DefineProperty(cx, blobObj, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
 	JL_CHK( JS_DefineProperty(cx, blobObj, "height", INT_TO_JSVAL(height), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT ) );
 
-	return JS_TRUE;
+	return true;
 }
 */
 
@@ -473,13 +473,13 @@ DEFINE_FUNCTION( setVisible ) {
 	if ( drawsub == NULL ) {
 
 		*JL_RVAL = JSVAL_FALSE;
-		return JS_TRUE;
+		return true;
 	}
 
 	drawsub->state->visible = visible ? TRUE : FALSE;
 
 	*JL_RVAL = JSVAL_TRUE;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -505,7 +505,7 @@ DEFINE_FUNCTION( scale ) {
 	cairo_matrix_scale(&pv->transformation, sx, sy);
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -529,7 +529,7 @@ DEFINE_FUNCTION( rotate ) {
 	cairo_matrix_rotate(&pv->transformation, angle);
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -554,7 +554,7 @@ DEFINE_FUNCTION( translate ) {
 	cairo_matrix_translate(&pv->transformation, tx, ty);
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -620,7 +620,7 @@ DEFINE_PROPERTY_GETTER( width ) {
 	RsvgDimensionData dim;
 	rsvg_handle_get_dimensions(handle, &dim);
 	JL_CHK( JL_NativeToJsval(cx, dim.width, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -641,7 +641,7 @@ DEFINE_PROPERTY_GETTER( height ) {
 	RsvgDimensionData dim;
 	rsvg_handle_get_dimensions(handle, &dim);
 	JL_CHK( JL_NativeToJsval(cx, dim.height, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -664,7 +664,7 @@ DEFINE_PROPERTY_GETTER( title ) {
 		JL_CHK( JL_NativeToJsval(cx, title, vp) );
 	else
 		*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -687,7 +687,7 @@ DEFINE_PROPERTY_GETTER( metadata ) {
 		JL_CHK( JL_NativeToJsval(cx, metadata, vp) );
 	else
 		*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -710,7 +710,7 @@ DEFINE_PROPERTY_GETTER( description ) {
 		JL_CHK( JL_NativeToJsval(cx, description, vp) );
 	else
 		*vp = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -731,7 +731,7 @@ DEFINE_PROPERTY(images) {
 		*vp = OBJECT_TO_JSVAL( JL_NewObj(cx) );
 		JL_CHK( JL_SetReservedSlot( JL_OBJ, SLOT_IMAGES_OBJECT, *vp) );
 	}
-	return JS_TRUE;
+	return true;
 }
 */
 

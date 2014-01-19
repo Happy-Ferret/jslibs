@@ -66,7 +66,7 @@ DEFINE_FUNCTION( accept ) {
 	int rc;
 	rc = FCGX_Accept_r(&_request);
 	*JL_RVAL = INT_TO_JSVAL( rc );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -89,7 +89,7 @@ DEFINE_FUNCTION( getParam ) {
 		if ( !_request.envp ) {
 		
 			*JL_RVAL = JL_GetEmptyStringValue(cx);
-			return JS_TRUE;
+			return true;
 		}
 
 		// (TDB) use FCGX_ParamArray instead ?
@@ -107,7 +107,7 @@ DEFINE_FUNCTION( getParam ) {
 		}
 		*JL_RVAL = OBJECT_TO_JSVAL(argsObj);
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -125,11 +125,11 @@ DEFINE_FUNCTION( read ) {
 		
 		JS_free(cx, str);
 		*JL_RVAL = JL_GetEmptyStringValue(cx);
-		return JS_TRUE;
+		return true;
 	}
 	str[result] = '\0';
 	JL_CHK( JLData(str, true, result).GetJSString(cx, JL_RVAL) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -149,7 +149,7 @@ DEFINE_FUNCTION( write ) {
 		*JL_RVAL = STRING_TO_JSVAL( jsstr );
 	} else
 		*JL_RVAL = JL_GetEmptyStringValue(cx);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -162,7 +162,7 @@ DEFINE_FUNCTION( flush ) {
 	int result = FCGX_FFlush(_request.out);
 	JL_ASSERT( result != -1, E_LIB, E_INTERNAL ); // "fcgi flush"
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -178,7 +178,7 @@ DEFINE_FUNCTION( log ) {
 	JL_ASSERT( result != -1, E_LIB, E_INTERNAL ); // "fcgi log write"
 	FCGX_FFlush(_request.err);
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -188,7 +188,7 @@ DEFINE_FUNCTION( shutdownPending ) {
 
 	FCGX_ShutdownPending();
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 }
 
 DEFINE_FUNCTION( urlEncode ) {
@@ -226,7 +226,7 @@ DEFINE_FUNCTION( urlEncode ) {
 
 	*it1 = '\0';
 	JL_CHK( JLData(dest, true, it1-dest).GetJSString(cx, JL_RVAL) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -293,12 +293,12 @@ DEFINE_FUNCTION( urlDecode ) {
 
 	*it1 = '\0';
 	JL_CHK( JLData(dest, true, it1-dest).GetJSString(cx, JL_RVAL) );
-	return JS_TRUE;
+	return true;
 
 decoding_error:
 	JS_free(cx, dest);
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -360,7 +360,7 @@ DEFINE_FUNCTION( parseHeader ) {
 	JS_DefineProperty(cx, record, "type", INT_TO_JSVAL( header->type ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	JS_DefineProperty(cx, record, "requestId", INT_TO_JSVAL( (header->requestIdB1 << 8) + header->requestIdB0 ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	JS_DefineProperty(cx, record, "contentLength", INT_TO_JSVAL( (header->contentLengthB1 << 8) + header->contentLengthB0 ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -382,7 +382,7 @@ DEFINE_FUNCTION( parseBeginRequestBody ) {
 	FCGI_BeginRequestBody *beginRequestBody = (FCGI_BeginRequestBody *)data;
 	JS_DefineProperty(cx, record, "rule", INT_TO_JSVAL( (beginRequestBody->roleB1 << 8) + beginRequestBody->roleB0 ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 	JS_DefineProperty(cx, record, "keepConn", BOOLEAN_TO_JSVAL( beginRequestBody->flags & FCGI_KEEP_CONN == 0 ? JSVAL_TRUE : JSVAL_FALSE ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -408,7 +408,7 @@ DEFINE_FUNCTION( parseBeginRequestBody ) {
 //	JL_NewNumberValue(cx, appStatus, &appStatusVal);
 //	JS_DefineProperty(cx, record, "appStatus", appStatusVal, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 //	JS_DefineProperty(cx, record, "protocolStatus", INT_TO_JSVAL( endRequestBody->protocolStatus ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
-//	return JS_TRUE;
+//	return true;
 //}
 
 
@@ -465,7 +465,7 @@ DEFINE_FUNCTION( parsePairs ) { // arguments: data [, paramObject ]
 			JS_free(cx, name);
 		data += valueLength;
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -501,7 +501,7 @@ DEFINE_FUNCTION( makeHeader ) { // type, requestId, contentLength
 	JSString *jsstr = JL_NewString(cx, (char*)record, sizeof(FCGI_Header));
 	JL_CHK( jsstr );
 	*rval = STRING_TO_JSVAL(jsstr);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -526,7 +526,7 @@ DEFINE_FUNCTION( makeEndRequestBody ) {
 	JSString *jsstr = JL_NewString(cx, (char*)body, sizeof(FCGI_EndRequestRecord));
 	JL_CHK( jsstr );
 	*rval = STRING_TO_JSVAL(jsstr);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -593,7 +593,7 @@ DEFINE_FUNCTION( makePairs ) {
 	}
 	JS_DestroyIdArray(cx, pairsArray);
 	*rval = STRING_TO_JSVAL( JL_NewString(cx, (char*)buffer, bufferPos) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -711,7 +711,7 @@ DEFINE_FUNCTION( parseRecord ) {
 	}
 
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

@@ -61,12 +61,12 @@ DEFINE_CONSTRUCTOR() {
 	ode::dJointSetFeedback(jointId, NULL);
 	
 	JL_SetPrivate(obj, jointId);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( jointId )
 		ode::dJointDestroy(jointId);
-	return JS_FALSE;
+	return false;
 
 }
 
@@ -96,7 +96,7 @@ DEFINE_FUNCTION( setAxis ) {
 	if ( !JL_ARG_ISDEF(3) ) {
 		
 		ode::dJointSetLMotorNumAxes(jointId, anum+1);
-		return JS_TRUE;
+		return true;
 	}
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &rel) );
 	
@@ -109,7 +109,7 @@ DEFINE_FUNCTION( setAxis ) {
 		ode::dJointSetLMotorNumAxes(jointId, anum+1);
 	
 	ode::dJointSetLMotorAxis(jointId, anum, rel, vector[0], vector[1], vector[2]);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

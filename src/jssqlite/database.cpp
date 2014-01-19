@@ -80,7 +80,7 @@ DEFINE_FUNCTION( close ) {
 	jl_free(pv);
 
 	JL_SetPrivate(obj, NULL);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -114,7 +114,7 @@ DEFINE_FUNCTION( read ) {
 		if ( amount == 0 && available > 0 ) { // not EOF
 
 			JL_CHK( JL_NewEmptyBuffer(cx, *JL_RVAL) );
-			return JS_TRUE;
+			return true;
 		}
 
 		amount = js::Min(amount, available);
@@ -126,7 +126,7 @@ DEFINE_FUNCTION( read ) {
 	if ( available == 0 ) { // EOF
 
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 
 	uint8_t *buffer;
@@ -139,7 +139,7 @@ DEFINE_FUNCTION( read ) {
 
 	pv->position += amount;
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -172,7 +172,7 @@ DEFINE_FUNCTION( write ) {
 
 	pv->position += data.Length();
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -187,7 +187,7 @@ DEFINE_PROPERTY_GETTER( available ) {
 	int available = sqlite3_blob_bytes(pv->pBlob) - pv->position;
 	JL_CHK( JL_NativeToJsval(cx, available, vp) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -201,7 +201,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 
 	JL_CHK( JL_NativeToJsval(cx, pv->position, vp) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -217,7 +217,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 
 	pv->position = JL_MINMAX(pv->position, 0, sqlite3_blob_bytes(pv->pBlob));
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -323,7 +323,7 @@ DEFINE_CONSTRUCTOR() {
 	jl::StackInit(&pv->blobList);
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 	}
 
 bad:
@@ -333,7 +333,7 @@ bad:
 			sqlite3_close(pv->db);
 		JS_free(cx, pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -446,11 +446,11 @@ DEFINE_FUNCTION( close ) {
 	jl_free(pv);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 
 bad:
 	jl_free(pv);
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -504,7 +504,7 @@ DEFINE_FUNCTION( openBlobStream ) {
 	JL_CHK( JL_SetReservedSlot(blobStreamBoj, BlobStream::SLOT_DATABASE, OBJECT_TO_JSVAL( obj )) ); // link to avoid GC
 
 	*JL_RVAL = OBJECT_TO_JSVAL(blobStreamBoj);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( blobStreamPv ) {
@@ -513,7 +513,7 @@ bad:
 			sqlite3_blob_close( blobStreamPv->pBlob );
 		jl_free(blobStreamPv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -613,7 +613,7 @@ DEFINE_FUNCTION( query ) {
 	if ( argc >= 2 && !JSVAL_IS_PRIMITIVE(JL_ARG(2)) )
 		JL_CHK( JL_SetReservedSlot( dbStatement, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, JL_ARG(2)) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -707,13 +707,13 @@ DEFINE_FUNCTION( exec ) {
 	if ( sqlite3_finalize(pStmt) != SQLITE_OK )
 		JL_CHK( SqliteThrowError(cx, pv->db) );
 
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pStmt != NULL )
 		sqlite3_finalize(pStmt);
 
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -765,7 +765,7 @@ DEFINE_PROPERTY_GETTER( changes ) {
 	// Only changes that are directly specified by the INSERT, UPDATE, or DELETE statement are counted. Auxiliary changes caused by triggers are not counted. Use the sqlite3_total_changes() function to find the total number of changes including changes caused by triggers.
 	//JL_NewNumberValue( cx, sqlite3_changes(db), vp );
 	vp.setInt32( sqlite3_changes(pv->db) ); // sqlite3_total_changes
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -816,7 +816,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 
 	for ( int r = 0; r < sArgc; r++ ) {
 
-		if ( SqliteToJsval(cx, sArgv[r], argv[r+1]) != JS_TRUE ) {
+		if ( SqliteToJsval(cx, sArgv[r], argv[r+1]) != true ) {
 
 			//sqlite3_result_error(sCx, "Invalid argument type", -1 ); // (TBD) enhance error report
 			sqlite3_result_error_code(sCx, SQLITE_MISMATCH); // (TBD) check this
@@ -824,7 +824,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 		}
 	}
 
-	if ( JS_CallFunctionValue(cx, fpv->obj, fpv->fval, sArgc, argv+1, argv) != JS_TRUE ) {
+	if ( JS_CallFunctionValue(cx, fpv->obj, fpv->fval, sArgc, argv+1, argv) != true ) {
 
 		sqlite3_result_error(sCx, "Function call error", -1 ); // (TBD) better error message
 		JL_CHK( false );
@@ -934,7 +934,7 @@ DEFINE_SET_PROPERTY() {
 		}
 		jl::StackPush(&dbpv->fctpvList, fpv);
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

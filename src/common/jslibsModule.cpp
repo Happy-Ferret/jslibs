@@ -42,7 +42,7 @@ EXTERN_C size_t jl_msize_fct( void *ptr ) { return jl_msize(ptr); }
 EXTERN_C void jl_free_fct( void *ptr ) { jl_free(ptr); }
 
 
-static JSBool FASTCALL
+static bool FASTCALL
 InitJslibsModule( JSContext *cx, uint32_t id ) {
 
 	// printf("id=%u / &_moduleId=%p / _moduleId=%u\n", &_moduleId, _moduleId, id);
@@ -73,7 +73,7 @@ InitJslibsModule( JSContext *cx, uint32_t id ) {
 	jl_msize = hpv && hpv->alloc.msize ? hpv->alloc.msize : jl_msize;
 	jl_free = hpv && hpv->alloc.free ? hpv->alloc.free : jl_free;
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

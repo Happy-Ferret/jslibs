@@ -110,7 +110,7 @@ public:
 
 		// try also JS::AutoValueVector argv(cx)
 
-		JSBool status = JS_CallFunctionValue(cx, JL_GetGlobal(cx), _funcVal, argc, argv+1, argv);
+		bool status = JS_CallFunctionValue(cx, JL_GetGlobal(cx), _funcVal, argc, argv+1, argv);
 
 		JL_IGNORE(status); // (TBD) error check
 
@@ -149,7 +149,7 @@ private:
 };
 
 
-JSBool BlobToVariant( JSContext *cx, jsval *val, VARIANT *variant ) {
+bool BlobToVariant( JSContext *cx, jsval *val, VARIANT *variant ) {
 
 	JLData buf;
 	JL_CHK( JL_JsvalToNative(cx, *val, &buf) );
@@ -167,12 +167,12 @@ JSBool BlobToVariant( JSContext *cx, jsval *val, VARIANT *variant ) {
 	jl::memcpy(pArrayData, buf.GetConstStr(), buf.Length());
 	SafeArrayUnaccessData(variant->parray);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
-JSBool VariantToBlob( JSContext *cx, IN VARIANT *variant, OUT JS::MutableHandleValue rval ) {
+bool VariantToBlob( JSContext *cx, IN VARIANT *variant, OUT JS::MutableHandleValue rval ) {
 
 	JL_ASSERT( variant->vt == (VT_ARRAY | VT_UI1), E_VALUE, E_INVALID ); // "Invalid variant type."
 
@@ -183,13 +183,13 @@ JSBool VariantToBlob( JSContext *cx, IN VARIANT *variant, OUT JS::MutableHandleV
 	JL_CHK( JL_NewBufferCopyN(cx, pArrayData, variant->parray->rgsabound[0].cElements, rval) );
 	SafeArrayUnaccessData(variant->parray);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
 // variant must be initialized ( see VariantInit() )
-JSBool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *variant ) {
+bool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *variant ) {
 
 	if ( value.isObject() ) {
 
@@ -204,7 +204,7 @@ JSBool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *var
 			JL_CHK( JL_JsvalToNative(cx, value, &buf) );
 			V_VT(variant) = VT_BSTR;
 			V_BSTR(variant) = SysAllocStringByteLen(buf.GetConstStr(), buf.Length());
-			return JS_TRUE;
+			return true;
 		}
 
 		if ( JL_GetClass(obj) == JL_CLASS(ComDispatch) ) {
@@ -214,7 +214,7 @@ JSBool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *var
 			disp->AddRef();
 			V_VT(variant) = VT_DISPATCH;
 			V_DISPATCH(variant) = disp;
-			return JS_TRUE;
+			return true;
 		}
 
 		if ( JL_GetClass(obj) == JL_CLASS(ComVariant) ) {
@@ -224,7 +224,7 @@ JSBool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *var
 			HRESULT hr = VariantCopy(variant, v); // Frees the destination variant and makes a copy of the source variant.
 			if ( FAILED(hr) )
 				JL_CHK( WinThrowError(cx, hr) );
-			return JS_TRUE;
+			return true;
 		}
 
 		if ( JS_ObjectIsCallable(cx, obj) ) {
@@ -235,7 +235,7 @@ JSBool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *var
 			V_DISPATCH(variant) = disp;
 			// (TBD) fixme
 			// NewComDispatch(cx, disp, value); // GC protect the function stored in disp ?
-			return JS_TRUE;
+			return true;
 		}
 
 		if ( JS_ObjectIsDate(cx, obj) ) { // see bug 625870
@@ -253,7 +253,7 @@ JSBool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *var
 
 			V_VT(variant) = VT_DATE;
 			SystemTimeToVariantTime(&time, &V_DATE(variant));
-			return JS_TRUE;
+			return true;
 		}
 	}
 
@@ -265,14 +265,14 @@ JSBool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *var
 		const jschar *src;
 		src = JS_GetStringCharsAndLength(cx, jsstr, &srclen);
 		V_BSTR(variant) = SysAllocStringLen( (OLECHAR*)src, srclen);
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( value.isBoolean() ) {
 
 		V_VT(variant) = VT_BOOL;
-		V_BOOL(variant) = value.toBoolean() == JS_TRUE ? TRUE : FALSE;
-		return JS_TRUE;
+		V_BOOL(variant) = value.toBoolean() == true ? TRUE : FALSE;
+		return true;
 	}
 
 	if ( value.isInt32() ) {
@@ -282,11 +282,11 @@ JSBool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *var
 			
 			V_VT(variant) = VT_I2;
 			V_I2(variant) = (SHORT)i;
-			return JS_TRUE;
+			return true;
 		}
 		V_VT(variant) = VT_I4;
 		V_I4(variant) = i;
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( value.isDouble() ) {
@@ -298,24 +298,24 @@ JSBool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *var
 
 			V_VT(variant) = VT_I4;
 			V_I4(variant) = i;
-			return JS_TRUE;
+			return true;
 		}
 
 		V_VT(variant) = VT_R8;
 		V_R8(variant) = d;
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( value.isUndefined() ) {
 
 		V_VT(variant) = VT_EMPTY; // (TBD) or VT_VOID ???
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( value.isNull() ) {
 
 		V_VT(variant) = VT_NULL;
-		return JS_TRUE;
+		return true;
 	}
 
 
@@ -330,13 +330,13 @@ JSBool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *var
 	src = JS_GetStringCharsAndLength(cx, jsstr, &srclen);
 	V_BSTR(variant) = SysAllocStringLen( (OLECHAR*)src, srclen );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
 // acquire the ownership of the variant
-JSBool VariantToJsval( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rval ) {
+bool VariantToJsval( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rval ) {
 	
 	BOOL isRef = V_ISBYREF(variant);
 	BOOL isArray = V_ISARRAY(variant);
@@ -510,7 +510,7 @@ JSBool VariantToJsval( JSContext *cx, VARIANT *variant, JS::MutableHandleValue r
 		JL_CHK( WinThrowError(cx, hr) );
 	JS_free(cx, variant);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -545,13 +545,13 @@ DEFINE_FUNCTION( toDispatch ) {
 	if ( V_VT(variant) != VT_DISPATCH ) {
 
 		*JL_RVAL = OBJECT_TO_JSVAL(JL_OBJ);
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( V_VT(variant) != VT_UNKNOWN ) {
 
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 
 	IUnknown *punk = NULL;
@@ -564,7 +564,7 @@ DEFINE_FUNCTION( toDispatch ) {
 		JL_CHK( WinThrowError(cx, hr) );
 
 	JL_CHK( NewComDispatch(cx, pdisp, args.rval()) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -594,7 +594,7 @@ DEFINE_FUNCTION( toString ) {
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;	
 }
 
@@ -673,7 +673,7 @@ DEFINE_FUNCTION( toTypeName ) {
 DEFINE_HAS_INSTANCE() {
 
 	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
-	return JS_TRUE;
+	return true;
 }
 */
 
@@ -695,17 +695,17 @@ END_CLASS
 
 
 // acquire the ownership of the variant
-JSBool NewComVariant( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rval ) {
+bool NewComVariant( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rval ) {
 
 	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComVariant), JL_CLASS_PROTOTYPE(cx, ComVariant), NULL);
 	JL_CHK( varObj );
 	rval.setObject( *varObj );
 	JL_SetPrivate( varObj, variant);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
-JSBool NewComVariantCopy( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rval ) {
+bool NewComVariantCopy( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rval ) {
 
 	VARIANT *newvariant = (VARIANT*)JS_malloc(cx, sizeof(VARIANT));
 	VariantInit(newvariant);

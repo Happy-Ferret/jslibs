@@ -22,11 +22,11 @@ DECLARE_CLASS( File )
 DECLARE_CLASS( Socket )
 
 
-JSBool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc );
-JSBool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int index );
+bool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc );
+bool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int index );
 
 
-JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
+bool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
 
 	JL_ASSERT_INHERITANCE(obj, JL_CLASS(Descriptor));
 	JL_ASSERT( *amount <= PR_INT32_MAX );
@@ -55,7 +55,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 	if ( res == 0 ) { // timeout, no data
 
 		*amount = 0;
-		return JS_TRUE; // no data, but it is not an error.
+		return true; // no data, but it is not an error.
 	}
 
 	// PR_Read doc:
@@ -75,7 +75,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 			case PR_CONNECT_RESET_ERROR: // TCP connection reset by peer
 			case PR_CONNECT_TIMEOUT_ERROR: // Connection attempt timed out
 				*amount = 0;
-				return JS_TRUE;
+				return true;
 			default:
 				// try to catch logic errors
 				return ThrowIoError(cx);
@@ -83,7 +83,7 @@ JSBool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_
 	}
 
 	*amount = res;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -145,7 +145,7 @@ DEFINE_FUNCTION( close ) {
 
 	JL_ASSERT_WARN( fd, E_NAME(JL_THIS_CLASS_NAME), E_CLOSED ); // see PublicApiRules (http://code.google.com/p/jslibs/wiki/PublicApiRules)
 	if ( !fd )
-		return JS_TRUE;
+		return true;
 
 	PRStatus status;
 	status = PR_Close(fd);
@@ -157,7 +157,7 @@ DEFINE_FUNCTION( close ) {
 	JL_SetPrivate( obj, NULL);
 	JL_CHK( SetStreamReadInterface(cx, obj, NULL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -180,7 +180,7 @@ void* JSBufferRealloc(void * opaqueAllocatorContext, void* address, size_t size)
 }
 
 
-JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
+bool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 
 	jl::Buffer buf;
 	BufferInitialize(&buf, jl::bufferTypeChunk, jl::bufferGrowTypeNoGuess, cx, JSBufferAlloc, JSBufferRealloc, JSBufferFree);
@@ -202,7 +202,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 			// no error, no data received, we cannot reach currentReadLength
 			BufferFinalize(&buf);
 			*rval = JSVAL_VOID;
-			return JS_TRUE;
+			return true;
 		} else
 		if ( res == -1 ) { // doc: -1 indicates a failure. The reason for the failure can be obtained by calling PR_GetError.
 
@@ -221,7 +221,7 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 
 					BufferFinalize(&buf);
 					*rval = JSVAL_VOID;
-					return JS_TRUE;
+					return true;
 				default:
 					JL_CHK( ThrowIoError(cx) );
 			}
@@ -236,17 +236,17 @@ JSBool ReadAllToJsval(JSContext *cx, PRFileDesc *fd, jsval *rval ) {
 
 		BufferFinalize(&buf);
 		JL_CHK( JL_NewEmptyBuffer(cx, rval) );
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_CHK( JL_NewBufferGetOwnership(cx, BufferGetDataOwnership(&buf), BufferGetLength(&buf), rval) );
 
 	BufferFinalize(&buf);
-	return JS_TRUE;
+	return true;
 
 bad:
 	BufferFinalize(&buf);
-	return JS_FALSE;
+	return false;
 }
 */
 
@@ -337,7 +337,7 @@ DEFINE_FUNCTION( read ) {
 
 				if ( amount > 0 )
 					JL_CHK( JL_ChangeBufferLength(cx, JL_RVAL, 0) ); // mean no data available, but connection still established.
-				return JS_TRUE;
+				return true;
 
 			case PR_CONNECT_ABORTED_ERROR: // Connection aborted
 				//Network dropped connection on reset.
@@ -363,7 +363,7 @@ DEFINE_FUNCTION( read ) {
 				//  Operations that were in progress fail with WSAENETRESET. Subsequent operations fail with WSAECONNRESET.
 				JL_CHK( JL_FreeBuffer(cx, *JL_RVAL) );
 				*JL_RVAL = JSVAL_VOID;
-				return JS_TRUE;
+				return true;
 
 			default:
 				return ThrowIoError(cx);
@@ -372,24 +372,24 @@ DEFINE_FUNCTION( read ) {
 
 	if ( (uint32_t)res == amount ) { // also handle |res == amount == 0|
 
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( res == 0 ) { // doc: 0 means end of file is reached or the network connection is closed.
 
 		JL_CHK( JL_FreeBuffer(cx, *JL_RVAL) );
 		*JL_RVAL = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( res > 0 ) { // doc: a positive number indicates the number of bytes actually read in.
 
 		buf = JL_ChangeBufferLength(cx, JL_RVAL, res);
 		JL_CHK( buf );
-		return JS_TRUE;
+		return true;
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -459,7 +459,7 @@ DEFINE_FUNCTION( write ) {
 				// source: msdn, Winsock Error Codes
 
 				*JL_RVAL = JSVAL_VOID;
-				return JS_TRUE;
+				return true;
 			default:
 				return ThrowIoError(cx);
 		}
@@ -487,7 +487,7 @@ DEFINE_FUNCTION( write ) {
 		JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, *JL_RVAL) );
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -510,7 +510,7 @@ DEFINE_FUNCTION( sync ) {
 	JL_CHKB( PR_Sync(fd) == PR_SUCCESS, bad_ioerror );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 
 bad_ioerror:
 	ThrowIoError(cx);
@@ -544,7 +544,7 @@ DEFINE_PROPERTY_GETTER( available ) {
 //		switch ( PR_GetError() ) {
 //			case PR_NOT_IMPLEMENTED_ERROR:
 //				*vp = JSVAL_VOID;
-//				return JS_TRUE;
+//				return true;
 //		}
 		return ThrowIoError(cx);
 	}
@@ -569,7 +569,7 @@ DEFINE_PROPERTY_GETTER( type ) {
 	fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd ); //	JL_ASSERT_THIS_INSTANCE();
 	vp.setInt32( (int32_t)PR_GetDescType(fd) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -590,7 +590,7 @@ DEFINE_PROPERTY_GETTER( closed ) {
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate( obj );
 	vp.setBoolean( fd == NULL );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -679,7 +679,7 @@ DEFINE_FUNCTION( import ) {
 	JL_CHK( JL_SetReservedSlot( descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) );
 
 	*JL_RVAL = OBJECT_TO_JSVAL(descriptorObject);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -709,7 +709,7 @@ struct IOProcessEvent {
 S_ASSERT( offsetof(IOProcessEvent, pe) == 0 );
 
 
-static JSBool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject *obj ) {
+static bool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject *obj ) {
 
 	IOProcessEvent *upe = (IOProcessEvent*)pe;
 
@@ -759,7 +759,7 @@ static JSBool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject 
 		JL_CHK( InitPollDesc(cx, *descriptor, &upe->pollDesc[1 + i]) ); // upe->pollDesc[0] is reserved for mpv->peCancel
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -783,7 +783,7 @@ static bool IOCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-static JSBool IOEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+static bool IOEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 
 	JL_IGNORE(obj);
 
@@ -803,12 +803,12 @@ static JSBool IOEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *c
 end:
 	jl_free(upe->pollDesc);
 	jl_free(upe->descVal);
-	return JS_TRUE;
+	return true;
 
 bad:
 	jl_free(upe->pollDesc);
 	jl_free(upe->descVal);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -833,7 +833,7 @@ DEFINE_FUNCTION( events ) {
 
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(1)) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -882,7 +882,7 @@ DEFINE_FUNCTION( isReadable ) {
 	if ( result == -1 ) // error
 		return ThrowIoError(cx);
 	*JL_RVAL = BOOLEAN_TO_JSVAL( result == 1 && (desc.out_flags & PR_POLL_READ) != 0 );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -930,7 +930,7 @@ DEFINE_FUNCTION( isWritable ) {
 	if ( result == -1 ) // error
 		return ThrowIoError(cx);
 	*JL_RVAL = BOOLEAN_TO_JSVAL( result == 1 && (desc.out_flags & PR_POLL_WRITE) != 0 );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -967,7 +967,7 @@ DEFINE_PROPERTY_SETTER( timeout ) {
 
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, vp) );
 	JL_CHK( jl::StoreProperty(cx, obj, id, vp, false) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

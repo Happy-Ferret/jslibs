@@ -60,7 +60,7 @@ DEFINE_FUNCTION( base64Encode ) {
 
 	JL_CHK( JLData(out, true, outLength).GetJSString(cx, JL_RVAL) ); // "unable to create the base64 string."
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -95,7 +95,7 @@ DEFINE_FUNCTION( base64Decode ) {
 	//out[outLength] = '\0';
 	//JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -138,7 +138,7 @@ DEFINE_FUNCTION( hexEncode ) {
 
 	JL_CHK( JLData(out, true, outLength).GetJSString(cx, JL_RVAL) ); // "unable to create the hex string."
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -184,7 +184,7 @@ DEFINE_FUNCTION( hexDecode ) {
 	//out[outLength] = '\0';
 	//JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

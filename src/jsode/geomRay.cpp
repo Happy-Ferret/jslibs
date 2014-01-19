@@ -56,12 +56,12 @@ DEFINE_CONSTRUCTOR() {
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 
 	JL_SetPrivate(obj, geomId);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( geomId )
 		ode::dGeomDestroy(geomId);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -81,7 +81,7 @@ DEFINE_PROPERTY_SETTER( length ) {
 	double radius;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &radius) );
 	ode::dGeomRaySetLength(geom, (ode::dReal)radius);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -90,7 +90,7 @@ DEFINE_PROPERTY_GETTER( length ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	JL_CHK( JL_NativeToJsval(cx, ode::dGeomRayGetLength(geom), vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -111,7 +111,7 @@ DEFINE_PROPERTY_SETTER( start ) {
 	JL_CHK( JsvalToODERealVector(cx, *vp, start, 3, &length) );
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dGeomRaySet(geom, start[0], start[1], start[2], dir[0], dir[1], dir[2]);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -122,7 +122,7 @@ DEFINE_PROPERTY_GETTER( start ) {
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
 	JL_CHK( ODERealVectorToJsval(cx, start, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -143,7 +143,7 @@ DEFINE_PROPERTY_SETTER( direction ) {
 	JL_CHK( JsvalToODERealVector(cx, *vp, dir, 3, &length) );
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dGeomRaySet(geom, start[0], start[1], start[2], dir[0], dir[1], dir[2]);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -154,7 +154,7 @@ DEFINE_PROPERTY_GETTER( direction ) {
 	ode::dVector3 start, dir;
 	ode::dGeomRayGet(geom, start, dir);
 	JL_CHK( ODERealVectorToJsval(cx, dir, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -172,7 +172,7 @@ DEFINE_PROPERTY_SETTER( firstContact ) {
 	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
 	JL_CHK( JL_JsvalToNative(cx, *vp, &firstContact) );
 	ode::dGeomRaySetParams(geom, firstContact, backfaceCull);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -183,7 +183,7 @@ DEFINE_PROPERTY_GETTER( firstContact ) {
 	int firstContact, backfaceCull;
 	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
 	JL_CHK( JL_NativeToJsval(cx, firstContact, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -200,7 +200,7 @@ DEFINE_PROPERTY_SETTER( backfaceCull ) {
 	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
 	JL_CHK( JL_JsvalToNative(cx, *vp, &backfaceCull) );
 	ode::dGeomRaySetParams(geom, firstContact, backfaceCull);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -211,7 +211,7 @@ DEFINE_PROPERTY_GETTER( backfaceCull ) {
 	int firstContact, backfaceCull;
 	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
 	JL_CHK( JL_NativeToJsval(cx, backfaceCull, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -228,7 +228,7 @@ DEFINE_PROPERTY_SETTER( closestHit ) {
 	int closestHit;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &closestHit) );
 	ode::dGeomRaySetClosestHit(geom, closestHit);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -239,7 +239,7 @@ DEFINE_PROPERTY_GETTER( closestHit ) {
 	int closestHit;
 	closestHit = ode::dGeomRayGetClosestHit(geom);
 	JL_CHK( JL_NativeToJsval(cx, closestHit, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

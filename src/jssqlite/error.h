@@ -20,8 +20,8 @@ DECLARE_CLASS( SqliteError )
 #define SLOT_SQLITE_ERROR_CODE 0
 #define SLOT_SQLITE_ERROR_TEXT 1
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 SqliteThrowErrorStatus( JSContext *cx, int status );
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 SqliteThrowError( JSContext *cx, sqlite3 *db );

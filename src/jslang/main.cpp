@@ -36,7 +36,7 @@ $MODULE_FOOTER
 **/
 
 
-JSBool jslangModuleInit(JSContext *cx, JSObject *obj) {
+bool jslangModuleInit(JSContext *cx, JSObject *obj) {
 
 	ModulePrivate *mpv = (ModulePrivate*)jl_calloc(sizeof(ModulePrivate), 1);
 	JL_CHKM( JL_SetModulePrivate(cx, jslangModuleId, mpv), E_MODULE, E_INIT );
@@ -49,16 +49,16 @@ JSBool jslangModuleInit(JSContext *cx, JSObject *obj) {
 	INIT_CLASS( Unserializer );
 	INIT_STATIC();
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
-JSBool jslangModuleRelease(JSContext *cx) {
+bool jslangModuleRelease(JSContext *cx) {
 
 	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivateOrNULL(cx, jslangModuleId);
 	if ( !mpv )
-		return JS_FALSE;
+		return false;
 
 	for ( size_t i = 0; i < COUNTOF(mpv->processEventThreadInfo); ++i ) {
 
@@ -80,7 +80,7 @@ JSBool jslangModuleRelease(JSContext *cx) {
 
 	jl_free(mpv);
 
-	return JS_TRUE;
+	return true;
 }
 
 

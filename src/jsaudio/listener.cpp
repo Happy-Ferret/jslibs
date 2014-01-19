@@ -40,7 +40,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 	alListener3f(AL_POSITION, pos[0], pos[1], pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -54,7 +54,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	JL_CHK( JL_NativeVectorToJsval(cx, pos, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -74,7 +74,7 @@ DEFINE_PROPERTY_SETTER( metersPerUnit ) {
 	alListenerf(AL_METERS_PER_UNIT, metersPerUnit);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -88,7 +88,7 @@ DEFINE_PROPERTY_GETTER( metersPerUnit ) {
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	JL_CHK(JL_NativeToJsval(cx, metersPerUnit, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

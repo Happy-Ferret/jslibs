@@ -57,7 +57,7 @@ DEFINE_CONSTRUCTOR() {
 	ASSERT( pv->effectSlot ); // ensure that 0 is not a valid id, else change bad: behavior
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pv ) {
@@ -66,7 +66,7 @@ bad:
 			alDeleteAuxiliaryEffectSlots(1, &pv->effectSlot);
 		JS_free(cx, pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 DEFINE_FUNCTION( valueOf ) {
@@ -80,7 +80,7 @@ DEFINE_FUNCTION( valueOf ) {
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_NativeToJsval(cx, pv->effectSlot, *JL_RVAL) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -124,7 +124,7 @@ DEFINE_PROPERTY_SETTER( effectGain ) {
 	JL_CHK( JL_JsvalToNative(cx, vp, &gain) );
 	alAuxiliaryEffectSlotf( pv->effectSlot, AL_EFFECTSLOT_GAIN, gain );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -140,7 +140,7 @@ DEFINE_PROPERTY_GETTER( effectGain ) {
 	alGetAuxiliaryEffectSlotf( pv->effectSlot, AL_EFFECTSLOT_GAIN, &gain );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	JL_CHK(JL_NativeToJsval(cx, gain, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -157,7 +157,7 @@ DEFINE_PROPERTY_SETTER( effectSendAuto ) {
 	JL_CHK( JL_JsvalToNative(cx, vp, &sendAuto) );
 	alAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, sendAuto ? AL_TRUE : AL_FALSE );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -173,7 +173,7 @@ DEFINE_PROPERTY_GETTER( effectSendAuto ) {
 	alGetAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, &sendAuto );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	JL_CHK(JL_NativeToJsval(cx, sendAuto == AL_TRUE ? true : false, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

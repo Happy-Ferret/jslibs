@@ -40,7 +40,7 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-JSBool
+bool
 ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	const struct ltc_cipher_descriptor * cipherList[] = {
@@ -126,6 +126,6 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	INIT_CLASS( Prng );
 	INIT_CLASS( Hash );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }

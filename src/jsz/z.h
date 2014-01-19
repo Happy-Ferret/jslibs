@@ -15,5 +15,5 @@
 
 #pragma once
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 ThrowZError( JSContext *cx, int errorCode, const char *errorMessage );

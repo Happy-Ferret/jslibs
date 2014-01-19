@@ -35,7 +35,7 @@ BEGIN_STATIC
 === Static functions ===
 **/
 
-JSBool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc ) {
+bool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc ) {
 
 	pollDesc->in_flags = 0;
 	pollDesc->out_flags = 0;
@@ -43,7 +43,7 @@ JSBool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc ) {
 	if ( JSVAL_IS_PRIMITIVE( descVal ) ) {
 
 		pollDesc->fd = NULL; // indicate to PR_Poll that this PRFileDesc object should be ignored.
-		return JS_TRUE;
+		return true;
 	}
 
 	JSObject *fdObj = JSVAL_TO_OBJECT( descVal );
@@ -53,7 +53,7 @@ JSBool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc ) {
 	//   fd is a pointer to a PRFileDesc object representing a socket or a pollable event. This field can be set to NULL to indicate to PR_Poll that this PRFileDesc object should be ignored.
 	pollDesc->fd = (PRFileDesc*)JL_GetPrivate(fdObj); // beware: fd == NULL may be NULL !
 
-	JSBool has;
+	bool has;
 	JL_CHK( JS_HasPropertyById(cx, fdObj, JLID(cx, writable), &has) );
 	if ( has )
 		pollDesc->in_flags |= PR_POLL_WRITE;
@@ -74,17 +74,17 @@ JSBool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc ) {
 	if ( has )
 		pollDesc->in_flags |= PR_POLL_ERR;
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
-JSBool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int index ) {
+bool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int index ) {
 
 	jsval tmp, cbArgv[3];
 
 	if ( JSVAL_IS_PRIMITIVE( descVal ) )
-		return JS_TRUE;
+		return true;
 
 	JSObject *fdObj;
 	fdObj = JSVAL_TO_OBJECT( descVal );
@@ -132,7 +132,7 @@ JSBool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int i
 			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -196,7 +196,7 @@ DEFINE_FUNCTION( poll ) {
 		if ( result == -1 )
 			return ThrowIoError(cx);
 		*JL_RVAL = JSVAL_ZERO;
-		return JS_TRUE;
+		return true;
 	}
 
 	pollDesc = (PRPollDesc*)jl_malloca(sizeof(PRPollDesc) * propsCount);
@@ -228,12 +228,12 @@ DEFINE_FUNCTION( poll ) {
 	}
 	jl_freea(props);
 	jl_freea(pollDesc);
-	return JS_TRUE;
+	return true;
 bad:
 	jl_freea(props);
 	jl_freea(pollDesc);
 bad1:
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -249,7 +249,7 @@ DEFINE_FUNCTION( intervalNow ) {
 
 	// (TBD) Check if it may wrap around in about 12 hours. Is it related to the data type ???
 	JL_CHK( JL_NativeToJsval(cx, PR_IntervalToMilliseconds( PR_IntervalNow() ), *JL_RVAL) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -270,7 +270,7 @@ DEFINE_FUNCTION( sleep ) {
 	PR_Sleep( PR_MillisecondsToInterval(timeout) );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -298,7 +298,7 @@ DEFINE_FUNCTION( getEnv ) {
 
 		JL_CHK( JL_NativeToJsval(cx, value, *JL_RVAL) );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -324,7 +324,7 @@ doc:
 
 	PRStatus status = PR_SetEnv...
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -358,7 +358,7 @@ DEFINE_FUNCTION( getRandomNoise ) {
 
 		JL_ERR( E_FUNC, E_NOTIMPLEMENTED );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -383,7 +383,7 @@ DEFINE_FUNCTION( hton ) {
 	if (
 
 	PR_htonll
-	return JS_TRUE;
+	return true;
 }
 
 */
@@ -446,7 +446,7 @@ DEFINE_FUNCTION( waitSemaphore ) {
 	}
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -484,7 +484,7 @@ DEFINE_FUNCTION( postSemaphore ) {
 	}
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -514,7 +514,7 @@ DEFINE_FUNCTION( createProcess ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	int processArgc;
-	if ( JL_ARG_ISDEF(2) && JSVAL_IS_OBJECT(JL_ARG(2)) && JL_IsArrayObject( cx, JSVAL_TO_OBJECT(JL_ARG(2)) ) == JS_TRUE ) {
+	if ( JL_ARG_ISDEF(2) && JSVAL_IS_OBJECT(JL_ARG(2)) && JL_IsArrayObject( cx, JSVAL_TO_OBJECT(JL_ARG(2)) ) == true ) {
 
 		JSIdArray *idArray;
 		idArray = JS_Enumerate( cx, JSVAL_TO_OBJECT(JL_ARG(2)) ); // make a kind of auto-ptr for this
@@ -598,13 +598,13 @@ DEFINE_FUNCTION( createProcess ) {
 
 	if ( processArgv )
 		jl_free(processArgv);
-	return JS_TRUE;
+	return true;
 bad_throw:
 	ThrowIoError(cx);
 bad:
 	if ( processArgv )
 		jl_free(processArgv);
-	return JS_FALSE;
+	return false;
 }
 */
 
@@ -645,7 +645,7 @@ DEFINE_FUNCTION( availableSpace ) {
 
 	*JL_RVAL = DOUBLE_TO_JSVAL( available );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -766,7 +766,7 @@ DEFINE_FUNCTION( configureSerialPort ) {
 
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -793,7 +793,7 @@ DEFINE_PROPERTY_GETTER( hostName ) {
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
 	JL_CHK( JL_NativeToJsval(cx, tmp, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -810,7 +810,7 @@ DEFINE_PROPERTY_GETTER( architecture ) {
 	if ( PR_GetSystemInfo( PR_SI_ARCHITECTURE, tmp, sizeof(tmp) ) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	JL_CHK( JL_NativeToJsval(cx, tmp, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -826,7 +826,7 @@ DEFINE_PROPERTY_GETTER( systemName ) {
 	if ( PR_GetSystemInfo( PR_SI_SYSNAME, tmp, sizeof(tmp) ) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	JL_CHK( JL_NativeToJsval(cx, tmp, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -842,7 +842,7 @@ DEFINE_PROPERTY_GETTER( systemRelease ) {
 	if ( PR_GetSystemInfo( PR_SI_RELEASE, tmp, sizeof(tmp) ) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	JL_CHK( JL_NativeToJsval(cx, tmp, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -863,7 +863,7 @@ DEFINE_PROPERTY_GETTER( numberOfProcessors ) {
 	}
 	JL_CHK( JL_NativeToJsval(cx, count, vp) );
 	//	JL_CHK( jl::StoreProperty(cx, obj, id, vp, true) ); // may change ??
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -877,7 +877,7 @@ DEFINE_PROPERTY_GETTER( physicalMemorySize ) {
 
 	JL_IGNORE( id, obj );
 	JL_CHK( JL_NativeToJsval(cx, (double)PR_GetPhysicalMemorySize(), vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -917,7 +917,7 @@ DEFINE_PROPERTY_GETTER( processPriority ) {
 			ASSERT(false);
 	}
 	vp.setInt32(priorityValue);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -947,7 +947,7 @@ DEFINE_PROPERTY_SETTER( processPriority ) {
 	}
 
 	PR_SetThreadPriority(PR_GetCurrentThread(), priority);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -976,7 +976,7 @@ DEFINE_PROPERTY_GETTER( currentDirectory ) {
 	JSString *str = JS_NewStringCopyZ(cx, buf);
 	JL_CHK( str );
 	vp.setString(str);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -992,7 +992,7 @@ DEFINE_PROPERTY_SETTER( currentDirectory ) {
 #else // XP_WIN
 	chdir(dir);
 #endif // XP_WIN
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1011,7 +1011,7 @@ DEFINE_PROPERTY_GETTER( directorySeparator ) {
 	char tmp = PR_GetDirectorySeparator();
 	JL_CHK( JL_NativeToJsval(cx, &tmp, 1, vp) );
 	JL_CHK( jl::StoreProperty(cx, obj, id, vp, true) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1029,7 +1029,7 @@ DEFINE_PROPERTY_GETTER( pathSeparator ) {
 	char tmp = PR_GetPathSeparator();
 	JL_CHK( JL_NativeToJsval(cx, &tmp, 1, vp) );
 	JL_CHK( jl::StoreProperty(cx, obj, id, vp, true) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1042,7 +1042,7 @@ DEFINE_PROPERTY_GETTER( version ) {
 
 	JL_CHK( JL_NativeToJsval(cx, PR_VERSION, vp) );
 	JL_CHK( jl::StoreProperty(cx, obj, id, vp, true) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1110,7 +1110,7 @@ DEFINE_FUNCTION( jsioTest ) {
 
 
 	*JL_RVAL = OBJECT_TO_JSVAL(o);
-	return JS_TRUE;
+	return true;
 */
 
 /*
@@ -1135,7 +1135,7 @@ DEFINE_FUNCTION( jsioTest ) {
 */
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 #endif // HAS_JSIOTEST

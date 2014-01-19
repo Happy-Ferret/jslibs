@@ -236,7 +236,7 @@ DEFINE_CONSTRUCTOR() {
 	pv->cx = NULL; // see definition
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pv ) {
@@ -245,7 +245,7 @@ bad:
 			sf_close(pv->sfDescriptor);
 		jl_free(pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -307,7 +307,7 @@ DEFINE_FUNCTION( read ) {
 
 			// like Descriptor::read, returns an empty audio object even if EOF
 			JL_CHK( JL_NewByteAudioObjectOwner(cx, NULL, pv->bits, pv->sfInfo.channels, 0, pv->sfInfo.samplerate, *JL_RVAL) );
-			return JS_TRUE;
+			return true;
 		}
 	} else {
 
@@ -319,7 +319,7 @@ DEFINE_FUNCTION( read ) {
 		if ( total == 0 ) {
 		
 			*JL_RVAL = JSVAL_VOID; // EOF
-			return JS_TRUE;
+			return true;
 		} else {
 
 			frames = (int32_t)total;
@@ -382,10 +382,10 @@ DEFINE_FUNCTION( read ) {
 	}
 	pv->cx = NULL;
 
-	return JS_TRUE;
+	return true;
 bad:
 	jl_free(buf);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -407,7 +407,7 @@ DEFINE_PROPERTY_GETTER( inputStream ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( JL_GetReservedSlot( obj, SLOT_INPUT_STREAM, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -425,7 +425,7 @@ DEFINE_PROPERTY_GETTER( bits ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	vp.setInt32( pv->bits );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -442,7 +442,7 @@ DEFINE_PROPERTY_GETTER( rate ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	vp.setInt32( pv->sfInfo.samplerate );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -459,7 +459,7 @@ DEFINE_PROPERTY_GETTER( channels ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	vp.setInt32( pv->sfInfo.channels );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -477,7 +477,7 @@ DEFINE_PROPERTY_GETTER( frames ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	vp.setInt32( size_t(pv->sfInfo.frames) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

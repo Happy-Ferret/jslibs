@@ -33,11 +33,11 @@ struct JsioPrivate {
 
 void FinalizeDescriptor(JSFreeOp *fop, JSObject *obj);
 
-JSBool NativeInterfaceStreamRead(JSContext *cx, JSObject *obj, char *buf, size_t *amount);
+bool NativeInterfaceStreamRead(JSContext *cx, JSObject *obj, char *buf, size_t *amount);
 
 
 
-ALWAYS_INLINE JSBool
+ALWAYS_INLINE bool
 GetTimeoutInterval(JSContext *cx, JSObject *obj, PRIntervalTime *timeout, PRIntervalTime defaultTimeout = PR_INTERVAL_NO_TIMEOUT) {
 
 	JL_IGNORE(cx);
@@ -52,7 +52,7 @@ GetTimeoutInterval(JSContext *cx, JSObject *obj, PRIntervalTime *timeout, PRInte
 	
 		JL_CHK( JL_JsvalToNative(cx, timeoutValue, timeout) );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

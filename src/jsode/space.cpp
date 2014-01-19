@@ -24,7 +24,7 @@ check this:
 
 
 
-JSBool ReconstructSpace(JSContext *cx, ode::dSpaceID spaceId, JSObject **obj) { // (TBD) JSObject** = Conservative Stack Scanning issue ?
+bool ReconstructSpace(JSContext *cx, ode::dSpaceID spaceId, JSObject **obj) { // (TBD) JSObject** = Conservative Stack Scanning issue ?
 
 	/*
 	if (unlikely( bodyId == (ode::dBodyID)0 )) { // bodyId may be null if body is world.env
@@ -49,7 +49,7 @@ JSBool ReconstructSpace(JSContext *cx, ode::dSpaceID spaceId, JSObject **obj) { 
 	JL_SetPrivate( *obj, bodyId);
 	*/
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -98,12 +98,12 @@ DEFINE_CONSTRUCTOR() {
 	//ode::dHashSpaceSetLevels(spaceId, -3, 10);
 
 	JL_SetPrivate(obj, spaceId);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( spaceId )
 		ode::dSpaceDestroy(spaceId);
-	return JS_FALSE;
+	return false;
 
 }
 
@@ -134,7 +134,7 @@ DEFINE_FUNCTION( destroy ) {
 	}
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

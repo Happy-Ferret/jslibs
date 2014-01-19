@@ -77,19 +77,19 @@ static volatile int32_t gEndSignalState = 0;
 static JLCondHandler gEndSignalCond;
 static JLMutexHandler gEndSignalLock;
 
-JSBool
+bool
 EndSignalGetter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp) {
 
 	JL_IGNORE(id, obj);
 
 	JL_CHK( JL_NativeToJsval(cx, (int32_t)gEndSignalState, vp) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
-JSBool
-EndSignalSetter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JSBool strict, JS::MutableHandle<JS::Value> vp) {
+bool
+EndSignalSetter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, bool strict, JS::MutableHandle<JS::Value> vp) {
 
 	JL_IGNORE(strict, id, obj);
 
@@ -101,7 +101,7 @@ EndSignalSetter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, J
 	JLCondBroadcast(gEndSignalCond);
 	JLMutexRelease(gEndSignalLock);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -173,13 +173,13 @@ struct EndSignalProcessEvent {
 
 S_ASSERT( offsetof(EndSignalProcessEvent, pe) == 0 );
 
-static JSBool
+static bool
 EndSignalPrepareWait( volatile ProcessEvent *pe, JSContext *, JSObject * ) {
 	
 	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
 
 	upe->cancel = false;
-	return JS_TRUE;
+	return true;
 }
 
 static void
@@ -206,7 +206,7 @@ EndSignalCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-static JSBool
+static bool
 EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
 
 	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
@@ -214,19 +214,19 @@ EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSOb
 	*hasEvent = (gEndSignalState != 0);
 
 	if ( !*hasEvent )
-		return JS_TRUE;
+		return true;
 
 	if ( JSVAL_IS_VOID( upe->callbackFunction ) )
-		return JS_TRUE;
+		return true;
 
 	jsval rval;
 	JL_CHK( JS_CallFunctionValue(cx, upe->callbackFunctionThis, upe->callbackFunction, 0, NULL, &rval) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
-JSBool
+bool
 EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
 
 	JL_DEFINE_ARGS;
@@ -253,7 +253,7 @@ EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
 		upe->callbackFunction = JSVAL_VOID;
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -632,7 +632,7 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 
 #ifdef DBG_ALLOC
 	struct Tmp {
-		static JSBool dbgAllocGetter(JSContext *cx, JSObject *, jsid, jsval *vp) {
+		static bool dbgAllocGetter(JSContext *cx, JSObject *, jsid, jsval *vp) {
 			return JL_NativeToJsval(cx, (int32_t)allocAmount, vp);
 		}
 	};
@@ -668,8 +668,8 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 	ASSERT( !JL_IsExceptionPending(cx) );
 
 
-	JSBool executeStatus;
-	executeStatus = JS_TRUE;
+	bool executeStatus;
+	executeStatus = true;
 
 
 	// inline (command-line) script
@@ -682,13 +682,13 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 
 	// file script
 
-	if ( scriptName != NULL && executeStatus == JS_TRUE ) {
+	if ( scriptName != NULL && executeStatus == true ) {
 
 		executeStatus = ExecuteScriptFileName(cx, scriptName, compileOnly, &rval);
 	}
 
 
-	if ( executeStatus == JS_TRUE ) {
+	if ( executeStatus == true ) {
 
 		if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 ) // (TBD) enhance this, use JL_JsvalToNative() ?
 			exitValue = JSVAL_TO_INT(rval);
@@ -924,14 +924,14 @@ var day = Math.floor(r / d);
  * ".so" : for linux
 
 === Modules entry points signature are ===
-|| `"ModuleInit"` || `JSBool (*ModuleInitFunction)(JSContext *, JSObject *)` || Called when the module is being load ||
+|| `"ModuleInit"` || `bool (*ModuleInitFunction)(JSContext *, JSObject *)` || Called when the module is being load ||
 || `"ModuleRelease"` || `void (*ModuleReleaseFunction)(JSContext *cx)` || Called when the module is not more needed ||
 || `"ModuleFree"` || `void (*ModuleFreeFunction)(void)` || Called to let the module moke some cleanup tasks ||
 
 
 === Exemple (win32) ===
 {{{
-extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj) {
+extern "C" __declspec(dllexport) bool ModuleInit(JSContext *cx, JSObject *obj) {
 
  InitFileClass(cx, obj);
  InitDirectoryClass(cx, obj);
@@ -939,7 +939,7 @@ extern "C" __declspec(dllexport) JSBool ModuleInit(JSContext *cx, JSObject *obj)
  InitErrorClass(cx, obj);
  InitGlobal(cx, obj);
 
- return JS_TRUE;
+ return true;
 }
 
 == Embedding JS scripts in your jshost binary ==

@@ -65,11 +65,11 @@ DEFINE_PROPERTY_GETTER( const ) {
 
 	JL_GetReservedSlot(  obj, 0, vp );
 	if ( JSVAL_IS_VOID(*vp) )
-		return JS_TRUE;
+		return true;
 	int errorCode = JSVAL_TO_INT(*vp);
 	JSString *str = JS_NewStringCopyZ( cx, ZConstString(errorCode) );
 	*vp = STRING_TO_JSVAL( str );
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -100,7 +100,7 @@ DEFINE_FUNCTION( _serialize ) {
 	JL_CHK( JL_GetReservedSlot( JL_OBJ, 1, JL_RVAL) );
 	JL_CHK( ser->Write(cx, *JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -123,7 +123,7 @@ DEFINE_FUNCTION( _unserialize ) {
 	JL_CHK( unser->Read(cx, *JL_RVAL) );
 	JL_CHK( JL_SetReservedSlot( JL_OBJ, 1, *JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -150,7 +150,7 @@ CONFIGURE_CLASS
 END_CLASS
 
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 ThrowZError( JSContext *cx, int errorCode, const char *errorMessage ) {
 
 	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(ZError), JL_CLASS_PROTOTYPE(cx, ZError), NULL );
@@ -158,6 +158,6 @@ ThrowZError( JSContext *cx, int errorCode, const char *errorMessage ) {
 	JL_CHK( JL_SetReservedSlot(  error, 0, INT_TO_JSVAL(errorCode) ) );
 	JL_CHK( JL_SetReservedSlot(  error, 1, STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage != NULL ? errorMessage : ZConstString(errorCode) )) ) );
 	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
-	return JS_FALSE;
+	return false;
 	JL_BAD;
 }

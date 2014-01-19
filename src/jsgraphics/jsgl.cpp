@@ -75,7 +75,7 @@ ALWAYS_INLINE double JsvalToDouble(JSContext * RESTRICT cx, const jsval &val) {
 DECLARE_CLASS(Ogl)
 
 /*
-JSBool GetArgInt( JSContext *cx, unsigned *argc, jsval **argv, unsigned count, int *rval ) { // (TBD) jsval** = Conservative Stack Scanning issue ?
+bool GetArgInt( JSContext *cx, unsigned *argc, jsval **argv, unsigned count, int *rval ) { // (TBD) jsval** = Conservative Stack Scanning issue ?
 
 	size_t i;
 	if ( JSVAL_IS_PRIMITIVE(**argv) || !JL_IsArray(cx, **argv) ) {
@@ -88,18 +88,18 @@ JSBool GetArgInt( JSContext *cx, unsigned *argc, jsval **argv, unsigned count, i
 			++*argv;
 		}
 		*argc -= count;
-		return JS_TRUE;
+		return true;
 	}
 	unsigned len;
 	JL_CHK( JL_JsvalToNativeVector(cx, **argv, rval, count, &len) );
 	JL_ASSERT( len == count, "Not enough elements." );
 	++*argv;
 	--*argc;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
-JSBool GetArgDouble( JSContext *cx, unsigned *argc, jsval **argv, unsigned count, double *rval ) { // (TBD) jsval** = Conservative Stack Scanning issue ?
+bool GetArgDouble( JSContext *cx, unsigned *argc, jsval **argv, unsigned count, double *rval ) { // (TBD) jsval** = Conservative Stack Scanning issue ?
 
 	size_t i;
 	if ( JSVAL_IS_PRIMITIVE(**argv) || !JL_IsArray(cx, **argv) ) {
@@ -112,14 +112,14 @@ JSBool GetArgDouble( JSContext *cx, unsigned *argc, jsval **argv, unsigned count
 			++*argv;
 		}
 		*argc -= count;
-		return JS_TRUE;
+		return true;
 	}
 	unsigned len;
 	JL_CHK( JL_JsvalToNativeVector(cx, **argv, rval, count, &len) );
 	JL_ASSERT( len == count, "Not enough elements." );
 	++*argv;
 	--*argc;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -326,7 +326,7 @@ DEFINE_FUNCTION( isEnabled ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	*JL_RVAL = BOOLEAN_TO_JSVAL(  glIsEnabled(JSVAL_TO_INT(JL_ARG(1))) );  OGL_ERR_CHK;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -449,7 +449,7 @@ DEFINE_FUNCTION( get ) {
 			GLboolean params[1];
 			glGetBooleanv(pname, params);  OGL_ERR_CHK;
 			*JL_RVAL = BOOLEAN_TO_JSVAL( *params );
-			return JS_TRUE;
+			return true;
 		}
 
 		case GL_COLOR_WRITEMASK:
@@ -464,7 +464,7 @@ DEFINE_FUNCTION( get ) {
 			};
 			*JL_RVAL = OBJECT_TO_JSVAL(JS_NewArrayObject(cx, COUNTOF(ret), ret));
 			JL_CHK( *JL_RVAL != JSVAL_NULL );
-			return JS_TRUE;
+			return true;
 		}
 
 		case GL_ACCUM_ALPHA_BITS: // uint
@@ -654,7 +654,7 @@ DEFINE_FUNCTION( get ) {
 			GLint params[1];
 			glGetIntegerv(pname, params);  OGL_ERR_CHK;
 			*JL_RVAL = INT_TO_JSVAL(*params);
-			return JS_TRUE;
+			return true;
 		}
 
 		case GL_MAP2_GRID_SEGMENTS:
@@ -669,7 +669,7 @@ DEFINE_FUNCTION( get ) {
 			};
 			*JL_RVAL = OBJECT_TO_JSVAL( JS_NewArrayObject(cx, COUNTOF(jsparams), jsparams) );
 			JL_CHK( *JL_RVAL != JSVAL_NULL );
-			return JS_TRUE;
+			return true;
 		}
 
 		case GL_SCISSOR_BOX:
@@ -685,7 +685,7 @@ DEFINE_FUNCTION( get ) {
 			};
 			*JL_RVAL = OBJECT_TO_JSVAL( JS_NewArrayObject(cx, COUNTOF(jsparams), jsparams) );
 			JL_CHK( *JL_RVAL != JSVAL_NULL );
-			return JS_TRUE;
+			return true;
 		}
 
 		case GL_ALPHA_BIAS:
@@ -832,7 +832,7 @@ DEFINE_FUNCTION( getBoolean ) {
 	GLboolean params;
 	glGetBooleanv(JSVAL_TO_INT(JL_ARG(1)), &params);  OGL_ERR_CHK;
 	*JL_RVAL = BOOLEAN_TO_JSVAL(params);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -907,7 +907,7 @@ DEFINE_FUNCTION( getInteger ) {
 		*JL_RVAL = INT_TO_JSVAL( params[0] );
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -981,7 +981,7 @@ DEFINE_FUNCTION( getDouble ) {
 		JL_CHK( JL_NativeToJsval(cx, params[0], *JL_RVAL) );
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1028,7 +1028,7 @@ DEFINE_FUNCTION( drawBuffer ) {
 	glDrawBuffer(JSVAL_TO_INT(JL_ARG(1)));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1051,7 +1051,7 @@ DEFINE_FUNCTION( readBuffer ) {
 	glReadBuffer(JSVAL_TO_INT(JL_ARG(1)));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1081,7 +1081,7 @@ DEFINE_FUNCTION( accum ) {
 	glAccum(JSVAL_TO_INT(JL_ARG(1)), value);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1118,7 +1118,7 @@ DEFINE_FUNCTION( stencilFunc ) {
 	glStencilFunc(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), mask);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1147,7 +1147,7 @@ DEFINE_FUNCTION( stencilOp ) {
 	glStencilOp(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1180,7 +1180,7 @@ DEFINE_FUNCTION( stencilMask ) {
 	glStencilMask( mask );  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1210,7 +1210,7 @@ DEFINE_FUNCTION( alphaFunc ) {
 	glAlphaFunc( JSVAL_TO_INT(JL_ARG(1)), ref );  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1232,7 +1232,7 @@ DEFINE_FUNCTION( flush ) {
 	glFlush();  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1254,7 +1254,7 @@ DEFINE_FUNCTION( finish ) {
 	glFinish();  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1282,7 +1282,7 @@ DEFINE_FUNCTION( fog ) {
 
 		glFogi(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)));  OGL_ERR_CHK;
 
-		return JS_TRUE;
+		return true;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_ARG(2)) ) {
 
@@ -1291,7 +1291,7 @@ DEFINE_FUNCTION( fog ) {
 
 		glFogf( JSVAL_TO_INT(JL_ARG(1)), param );  OGL_ERR_CHK;
 
-		return JS_TRUE;
+		return true;
 	}
 	if ( JL_ValueIsArrayLike(cx, JL_ARG(2)) ) {
 
@@ -1301,7 +1301,7 @@ DEFINE_FUNCTION( fog ) {
 
 		glFogfv( JSVAL_TO_INT(JL_ARG(1)), params );  OGL_ERR_CHK;
 
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ERR( E_ARG, E_NUM(2), E_TYPE, E_TY_NUMBER, E_OR, E_TY_ARRAY );
@@ -1331,7 +1331,7 @@ DEFINE_FUNCTION( hint ) {
 	glHint( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)) );  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1370,13 +1370,13 @@ DEFINE_FUNCTION( vertex ) {
 
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &w) );
 				glVertex4d(x, y, z, w);  OGL_ERR_CHK;
-				return JS_TRUE;
+				return true;
 			}
 			glVertex3d(x, y, z);  OGL_ERR_CHK;
-			return JS_TRUE;
+			return true;
 		}
 		glVertex2d(x, y);  OGL_ERR_CHK;
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ASSERT_ARGC(1);
@@ -1394,7 +1394,7 @@ DEFINE_FUNCTION( vertex ) {
 		JL_ERR( E_ARG, E_NUM(1), E_LENGTH, E_INTERVAL_NUM(2, 4) );
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1421,7 +1421,7 @@ DEFINE_FUNCTION( edgeFlag ) {
 	glEdgeFlag(flag);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1458,7 +1458,7 @@ DEFINE_FUNCTION( color ) {
 
 			glColor3d(r, r, r);  OGL_ERR_CHK;
 			;
-			return JS_TRUE;
+			return true;
 		}
 		JL_JsvalToNative(cx, JL_ARG(2), &g);
 		JL_JsvalToNative(cx, JL_ARG(3), &b);
@@ -1466,7 +1466,7 @@ DEFINE_FUNCTION( color ) {
 
 			glColor3d(r, g, b);  OGL_ERR_CHK;
 			;
-			return JS_TRUE;
+			return true;
 		}
 		JL_JsvalToNative(cx, JL_ARG(4), &a);
 		glColor4d(r, g, b, a);  OGL_ERR_CHK;
@@ -1486,7 +1486,7 @@ DEFINE_FUNCTION( color ) {
 			JL_ERR( E_ARG, E_NUM(1), E_LENGTH, E_INTERVAL_NUM(3, 4) );
 		}
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1521,7 +1521,7 @@ DEFINE_FUNCTION( normal ) {
 
 	*JL_RVAL = JSVAL_VOID;
 	;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1552,7 +1552,7 @@ DEFINE_FUNCTION( texCoord ) {
 		glTexCoord1d(s);  OGL_ERR_CHK;
 
 		;
-		return JS_TRUE;
+		return true;
 	}
 	double t;
 	JL_JsvalToNative(cx, JL_ARG(2), &t);
@@ -1561,7 +1561,7 @@ DEFINE_FUNCTION( texCoord ) {
 		glTexCoord2d(s, t);  OGL_ERR_CHK;
 
 		;
-		return JS_TRUE;
+		return true;
 	}
 	double r;
 	JL_JsvalToNative(cx, JL_ARG(3), &r);
@@ -1569,7 +1569,7 @@ DEFINE_FUNCTION( texCoord ) {
 	glTexCoord3d(s, t, r);  OGL_ERR_CHK;
 
 	;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1600,7 +1600,7 @@ DEFINE_FUNCTION( texParameter ) {
 
 		glTexParameteri( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ), JSVAL_TO_INT( JL_ARG(3) ) );  OGL_ERR_CHK;
 
-		return JS_TRUE;
+		return true;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
 
@@ -1609,7 +1609,7 @@ DEFINE_FUNCTION( texParameter ) {
 
 		glTexParameterf( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ), param );  OGL_ERR_CHK;
 
-		return JS_TRUE;
+		return true;
 	}
 	if ( JL_ValueIsArrayLike(cx, JL_ARG(3)) ) {
 
@@ -1619,12 +1619,12 @@ DEFINE_FUNCTION( texParameter ) {
 
 		glTexParameterfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_ERR_CHK;
 
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ERR( E_ARG, E_NUM(3), E_TYPE, E_TY_NUMBER, E_OR, E_TY_ARRAY );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1654,7 +1654,7 @@ DEFINE_FUNCTION( texEnv ) {
 
 		glTexEnvi( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ), JSVAL_TO_INT( JL_ARG(3) ) );  OGL_ERR_CHK;
 
-		return JS_TRUE;
+		return true;
 	}
 	if ( argc == 3 && JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
 
@@ -1663,7 +1663,7 @@ DEFINE_FUNCTION( texEnv ) {
 
 		glTexEnvf( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), param );  OGL_ERR_CHK;
 
-		return JS_TRUE;
+		return true;
 	}
 
 	GLfloat params[MAX_PARAMS];
@@ -1674,7 +1674,7 @@ DEFINE_FUNCTION( texEnv ) {
 
 		glTexEnvfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_ERR_CHK;
 
-		return JS_TRUE;
+		return true;
 	}
 
 	// process functions arguments [2..n]
@@ -1686,7 +1686,7 @@ DEFINE_FUNCTION( texEnv ) {
 
 	glTexEnvfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_ERR_CHK;
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1716,7 +1716,7 @@ DEFINE_FUNCTION( texGen ) {
 
 		glTexGeni( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ), JSVAL_TO_INT( JL_ARG(3) ) );  OGL_ERR_CHK;
 
-		return JS_TRUE;
+		return true;
 	}
 	if ( argc == 3 && JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
 
@@ -1725,7 +1725,7 @@ DEFINE_FUNCTION( texGen ) {
 
 		glTexGend( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), param );  OGL_ERR_CHK;
 
-		return JS_TRUE;
+		return true;
 	}
 
 	GLdouble params[MAX_PARAMS];
@@ -1736,7 +1736,7 @@ DEFINE_FUNCTION( texGen ) {
 
 		glTexGendv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_ERR_CHK;
 
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ASSERT_ARGC_MIN( 3 ); // at least
@@ -1746,7 +1746,7 @@ DEFINE_FUNCTION( texGen ) {
 
 	glTexGendv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_ERR_CHK;
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1793,7 +1793,7 @@ DEFINE_FUNCTION( texImage2D ) {
 	glTexImage2D( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)), JSVAL_TO_INT(JL_ARG(5)), JSVAL_TO_INT(JL_ARG(6)), JSVAL_TO_INT(JL_ARG(7)), JSVAL_TO_INT(JL_ARG(8)), (GLvoid*)data.GetConstStr() );  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1833,7 +1833,7 @@ DEFINE_FUNCTION( copyTexSubImage2D ) {
 	glCopyTexSubImage2D( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)), JSVAL_TO_INT(JL_ARG(5)), JSVAL_TO_INT(JL_ARG(6)), JSVAL_TO_INT(JL_ARG(7)), JSVAL_TO_INT(JL_ARG(8)) );  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1888,7 +1888,7 @@ DEFINE_FUNCTION( texSubImage2D ) {
 	glTexSubImage2D(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)), JSVAL_TO_INT(JL_ARG(5)), JSVAL_TO_INT(JL_ARG(6)), JSVAL_TO_INT(JL_ARG(7)), JSVAL_TO_INT(JL_ARG(8)), pixels);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1915,7 +1915,7 @@ DEFINE_FUNCTION( lightModel ) {
 	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
 
 		glLightModeli( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ) );  OGL_ERR_CHK;
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( JSVAL_IS_DOUBLE(JL_ARG(2)) ) {
@@ -1923,7 +1923,7 @@ DEFINE_FUNCTION( lightModel ) {
 		float param;
 		JL_JsvalToNative(cx, JL_ARG(2), &param);
 		glLightModelf( JSVAL_TO_INT( JL_ARG(1) ), param );  OGL_ERR_CHK;
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( JL_ValueIsArrayLike(cx, JL_ARG(2)) ) {
@@ -1932,11 +1932,11 @@ DEFINE_FUNCTION( lightModel ) {
 		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, COUNTOF(params), &length ) );
 		glLightModelfv( JSVAL_TO_INT(JL_ARG(1)), params );  OGL_ERR_CHK;
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ERR( E_ARG, E_NUM(2), E_TYPE, E_TY_NUMBER, E_OR, E_TY_ARRAY );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1965,7 +1965,7 @@ DEFINE_FUNCTION( light ) {
 	if ( argc == 3 && JSVAL_IS_INT(JL_ARG(3)) ) {
 
 		glLighti( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ), JSVAL_TO_INT( JL_ARG(3) ) );  OGL_ERR_CHK;
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( argc == 3 && JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
@@ -1973,7 +1973,7 @@ DEFINE_FUNCTION( light ) {
 		float param;
 		JL_JsvalToNative(cx, JL_ARG(3), &param);
 		glLightf( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ), param );  OGL_ERR_CHK;
-		return JS_TRUE;
+		return true;
 	}
 
 	GLfloat params[MAX_PARAMS];
@@ -1982,7 +1982,7 @@ DEFINE_FUNCTION( light ) {
 		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
 		glLightfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_ERR_CHK;
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ASSERT_ARGC_MIN( 3 ); // at least
@@ -1990,7 +1990,7 @@ DEFINE_FUNCTION( light ) {
 	for ( unsigned int i = 2; i < argc; ++i )
 		JL_JsvalToNative(cx, JL_ARG(i+1), &params[i-2]);
 	glLightfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_ERR_CHK;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2069,7 +2069,7 @@ DEFINE_FUNCTION( getLight ) {
 		JL_CHK(JL_NativeToJsval(cx, params[0], *JL_RVAL) );
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2096,7 +2096,7 @@ DEFINE_FUNCTION( colorMaterial ) {
 	glColorMaterial(JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2134,7 +2134,7 @@ DEFINE_FUNCTION( material ) {
 
 		glMateriali( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ), JSVAL_TO_INT( JL_ARG(3) ) );  OGL_ERR_CHK;
 		;
-		return JS_TRUE;
+		return true;
 	}
 	if ( argc == 3 && JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
 
@@ -2142,7 +2142,7 @@ DEFINE_FUNCTION( material ) {
 		JL_JsvalToNative(cx, JL_ARG(3), &param);
 		glMaterialf( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ), param );  OGL_ERR_CHK;
 		;
-		return JS_TRUE;
+		return true;
 	}
 
 	GLfloat params[MAX_PARAMS]; // alloca ?
@@ -2152,7 +2152,7 @@ DEFINE_FUNCTION( material ) {
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
 		glMaterialfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_ERR_CHK;
 		;
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ASSERT_ARGC_MIN( 3 ); // at least
@@ -2161,7 +2161,7 @@ DEFINE_FUNCTION( material ) {
 		JL_JsvalToNative(cx, JL_ARG(i+1), &params[i-2]);
 	glMaterialfv( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params );  OGL_ERR_CHK;
 	;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2188,7 +2188,7 @@ DEFINE_FUNCTION( enable ) {
 		glEnable( JSVAL_TO_INT(JL_ARG(i+1)) );  OGL_ERR_CHK;
 	}
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2215,7 +2215,7 @@ DEFINE_FUNCTION( disable ) {
 		glDisable( JSVAL_TO_INT(JL_ARG(i+1)) );  OGL_ERR_CHK;
 	}
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2242,7 +2242,7 @@ DEFINE_FUNCTION( pointSize ) {
 	glPointSize(size);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2269,7 +2269,7 @@ DEFINE_FUNCTION( lineWidth ) {
 	glLineWidth(width);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2294,7 +2294,7 @@ DEFINE_FUNCTION( shadeModel ) {
 	glShadeModel(JSVAL_TO_INT( JL_ARG(1) ));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2321,7 +2321,7 @@ DEFINE_FUNCTION( blendFunc ) {
 	glBlendFunc(JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2346,7 +2346,7 @@ DEFINE_FUNCTION( depthFunc ) {
 	glDepthFunc( JSVAL_TO_INT( JL_ARG(1) ) );  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2371,7 +2371,7 @@ DEFINE_FUNCTION( depthMask ) {
 	glDepthMask( JSVAL_TO_BOOLEAN( JL_ARG(1) ) != 0 );  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2403,7 +2403,7 @@ DEFINE_FUNCTION( depthRange ) {
 	glDepthRange(zNear, zFar);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2437,7 +2437,7 @@ DEFINE_FUNCTION( polygonOffset ) {
 	glPolygonOffset(factor, units);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2462,7 +2462,7 @@ DEFINE_FUNCTION( cullFace ) {
 	glCullFace(JSVAL_TO_INT( JL_ARG(1) ));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2487,7 +2487,7 @@ DEFINE_FUNCTION( frontFace ) {
 	glFrontFace(JSVAL_TO_INT( JL_ARG(1) ));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2520,7 +2520,7 @@ DEFINE_FUNCTION( clearStencil ) {
 	glClearStencil(s);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2548,7 +2548,7 @@ DEFINE_FUNCTION( clearDepth ) {
 	glClearDepth(depth);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2585,7 +2585,7 @@ DEFINE_FUNCTION( clearColor ) {
 	glClearColor(r, g, b, a);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2622,7 +2622,7 @@ DEFINE_FUNCTION( clearAccum ) {
 	glClearAccum(r, g, b, a);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2647,7 +2647,7 @@ DEFINE_FUNCTION( clear ) {
 	glClear(JSVAL_TO_INT(JL_ARG(1)));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2683,7 +2683,7 @@ DEFINE_FUNCTION( colorMask ) {
 
 			glColorMask(1,1,1,1);  OGL_ERR_CHK;
 		}
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ASSERT_ARGC(4);
@@ -2694,7 +2694,7 @@ DEFINE_FUNCTION( colorMask ) {
 
 	glColorMask( JSVAL_TO_BOOLEAN(JL_ARG(1)) != 0, JSVAL_TO_BOOLEAN(JL_ARG(2)) != 0, JSVAL_TO_BOOLEAN(JL_ARG(3)) != 0, JSVAL_TO_BOOLEAN(JL_ARG(4)) != 0 );  OGL_ERR_CHK;
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2724,7 +2724,7 @@ DEFINE_FUNCTION( clipPlane ) {
 	JL_CHKM( len == 4, E_ARG, E_NUM(2), E_LENGTH, E_NUM(4) );
 	glClipPlane(JSVAL_TO_INT(JL_ARG(1)), equation);  OGL_ERR_CHK;
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2755,7 +2755,7 @@ DEFINE_FUNCTION( viewport ) {
 	glViewport(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2798,7 +2798,7 @@ DEFINE_FUNCTION( frustum ) {
 	glFrustum(left, right, bottom, top, zNear, zFar);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2841,7 +2841,7 @@ DEFINE_FUNCTION( ortho ) {
 	glOrtho(left, right, bottom, top, zNear, zFar);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2918,7 +2918,7 @@ DEFINE_FUNCTION( perspective ) {
 */
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2943,7 +2943,7 @@ DEFINE_FUNCTION( matrixMode ) {
 	glMatrixMode(JSVAL_TO_INT( JL_ARG(1) ));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2965,7 +2965,7 @@ DEFINE_FUNCTION( loadIdentity ) {
 	glLoadIdentity();  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2987,7 +2987,7 @@ DEFINE_FUNCTION( pushMatrix ) {
 	glPushMatrix();  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3009,7 +3009,7 @@ DEFINE_FUNCTION( popMatrix ) {
 	glPopMatrix();  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3036,7 +3036,7 @@ DEFINE_FUNCTION( loadMatrix ) {
 	glLoadMatrixf(m);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3064,7 +3064,7 @@ DEFINE_FUNCTION( multMatrix ) {
 	glMultMatrixf(m);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3097,7 +3097,7 @@ DEFINE_FUNCTION( rotate ) {
 	glRotated(angle, x, y, z);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3133,7 +3133,7 @@ DEFINE_FUNCTION( translate ) {
 	glTranslated(x, y, z);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3165,7 +3165,7 @@ DEFINE_FUNCTION( scale ) {
 
 		glScaled(x, x, x);  OGL_ERR_CHK;
 		;
-		return JS_TRUE;
+		return true;
 	}
 	JL_JsvalToNative(cx, JL_ARG(2), &y);
 
@@ -3174,12 +3174,12 @@ DEFINE_FUNCTION( scale ) {
 		JL_JsvalToNative(cx, JL_ARG(3), &z);
 		glScaled(x, y, z);  OGL_ERR_CHK;
 		;
-		return JS_TRUE;
+		return true;
 	}
 
 	glScaled(x, y, 1);  OGL_ERR_CHK;
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3210,7 +3210,7 @@ DEFINE_FUNCTION( newList ) {
 	glNewList(list, compileOnly ? GL_COMPILE : GL_COMPILE_AND_EXECUTE);  OGL_ERR_CHK;
 
 	*JL_RVAL = INT_TO_JSVAL(list);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3236,7 +3236,7 @@ DEFINE_FUNCTION( deleteList ) {
 	glDeleteLists(JSVAL_TO_INT(JL_ARG(1)), 1);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3258,7 +3258,7 @@ DEFINE_FUNCTION( endList ) {
 	glEndList();  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3285,7 +3285,7 @@ DEFINE_FUNCTION( callList ) {
 	if ( JSVAL_IS_INT( JL_ARG(1) ) ) {
 
 		glCallList(JSVAL_TO_INT(JL_ARG(1)));  OGL_ERR_CHK;
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( JL_ValueIsArray(cx, JL_ARG(1)) ) { // no array-like. convert a string into an array of calllist does not make sense here.
@@ -3305,7 +3305,7 @@ DEFINE_FUNCTION( callList ) {
 		glCallLists(length, GL_UNSIGNED_INT, lists);  OGL_ERR_CHK; // http://www.opengl.org/documentation/specs/man_pages/hardcopy/GL/html/gl/calllists.html
 
 //		jl_free(lists); // alloca
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ERR( E_ARG, E_NUM(1), E_TYPE, E_TY_INTEGER, E_OR, E_TY_ARRAY );
@@ -3335,7 +3335,7 @@ DEFINE_FUNCTION( polygonMode ) {
 	glPolygonMode(JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3364,7 +3364,7 @@ DEFINE_FUNCTION( begin ) {
 	glBegin(JSVAL_TO_INT( JL_ARG(1) ));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3390,7 +3390,7 @@ DEFINE_FUNCTION( end ) {
 #endif // DEBUG
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3420,7 +3420,7 @@ DEFINE_FUNCTION( pushAttrib ) {
 	glPushAttrib(mask);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3442,7 +3442,7 @@ DEFINE_FUNCTION( popAttrib ) {
 	glPopAttrib();  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3466,7 +3466,7 @@ DEFINE_FUNCTION( genTexture ) {
 	glGenTextures(1, &texture);  OGL_ERR_CHK;
 
 	*JL_RVAL = INT_TO_JSVAL(texture);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3496,7 +3496,7 @@ DEFINE_FUNCTION( bindTexture ) {
 	glBindTexture( JSVAL_TO_INT( JL_ARG(1) ), texture );  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3523,7 +3523,7 @@ DEFINE_FUNCTION( deleteTexture ) {
 	glDeleteTextures(1, &texture);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3574,7 +3574,7 @@ DEFINE_FUNCTION( copyTexImage2D ) {
 
 	*JL_RVAL = JSVAL_VOID;
 	;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3609,7 +3609,7 @@ DEFINE_FUNCTION( pixelTransfer ) {
 	}
 
 	*JL_RVAL = JSVAL_VOID;
- 	return JS_TRUE;
+ 	return true;
 	JL_BAD;
 }
 
@@ -3642,7 +3642,7 @@ DEFINE_FUNCTION( pixelStore ) {
 	}
 
 	*JL_RVAL = JSVAL_VOID;
- 	return JS_TRUE;
+ 	return true;
 	JL_BAD;
 }
 
@@ -3677,15 +3677,15 @@ DEFINE_FUNCTION( rasterPos ) {
 			JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &w) );
 			glRasterPos4d(x, y, z, w);  OGL_ERR_CHK;
 			;
-			return JS_TRUE;
+			return true;
 		}
 		glRasterPos3d(x, y, z);  OGL_ERR_CHK;
 		;
-		return JS_TRUE;
+		return true;
 	}
 	glRasterPos2d(x, y);  OGL_ERR_CHK;
 	;
- 	return JS_TRUE;
+ 	return true;
 	JL_BAD;
 }
 
@@ -3713,7 +3713,7 @@ DEFINE_FUNCTION( pixelZoom ) {
 	glPixelZoom(x, y);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
- 	return JS_TRUE;
+ 	return true;
 	JL_BAD;
 }
 
@@ -3740,7 +3740,7 @@ DEFINE_FUNCTION( pixelMap ) {
 	glPixelMapfv(JSVAL_TO_INT(JL_ARG(1)), mapsize, values);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
- 	return JS_TRUE;
+ 	return true;
 	JL_BAD;
 }
 
@@ -3775,12 +3775,12 @@ DEFINE_FUNCTION( hasExtensionProc ) {
 		if ( procAddr == NULL ) {
 
 			*JL_RVAL = JSVAL_FALSE;
-			return JS_TRUE;
+			return true;
 		}
 	}
 
 	*JL_RVAL = JSVAL_TRUE;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3816,11 +3816,11 @@ DEFINE_FUNCTION( hasExtensionName ) {
 		if ( pos == NULL || ( pos[name.Length()] != ' ' && pos[name.Length()] != '\0' ) ) {
 
 			*JL_RVAL = JSVAL_FALSE;
-			return JS_TRUE;
+			return true;
 		}
 	}
 	*JL_RVAL = JSVAL_TRUE;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3847,7 +3847,7 @@ DEFINE_FUNCTION( blendEquation ) {
 	glBlendEquation(JSVAL_TO_INT(JL_ARG(1)));
 
 	*JL_RVAL = JSVAL_VOID;
- 	return JS_TRUE;
+ 	return true;
 	JL_BAD;
 }
 
@@ -3889,7 +3889,7 @@ DEFINE_FUNCTION( stencilFuncSeparate ) {
 	glStencilFuncSeparate(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), mask);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3922,7 +3922,7 @@ DEFINE_FUNCTION( stencilOpSeparate ) {
 	glStencilOpSeparate(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3949,7 +3949,7 @@ DEFINE_FUNCTION( activeStencilFaceEXT ) {
 	glActiveStencilFaceEXT(JSVAL_TO_INT( JL_ARG(1) ));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3978,7 +3978,7 @@ DEFINE_FUNCTION( bindRenderbuffer ) {
 	glBindRenderbufferEXT(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)) );  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4004,7 +4004,7 @@ DEFINE_FUNCTION( genRenderbuffer ) {
 
 	*JL_RVAL = INT_TO_JSVAL(buffer);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4031,7 +4031,7 @@ DEFINE_FUNCTION( deleteRenderbuffer ) {
 	glDeleteRenderbuffersEXT(1, &buffer);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4063,7 +4063,7 @@ DEFINE_FUNCTION( renderbufferStorage ) {
 	glRenderbufferStorageEXT(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)) );  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4105,7 +4105,7 @@ DEFINE_FUNCTION( getRenderbufferParameter ) {
 		*JL_RVAL = INT_TO_JSVAL( params[0] );
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4133,7 +4133,7 @@ DEFINE_FUNCTION( bindFramebuffer ) {
 	glBindFramebufferEXT( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)) );  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4157,7 +4157,7 @@ DEFINE_FUNCTION( genFramebuffer ) {
 	glGenFramebuffersEXT(1, &buffer);  OGL_ERR_CHK;
 	*JL_RVAL = INT_TO_JSVAL(buffer);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4185,7 +4185,7 @@ DEFINE_FUNCTION( deleteFramebuffer ) {
 	glDeleteFramebuffersEXT(1, &buffer);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4211,7 +4211,7 @@ DEFINE_FUNCTION( checkFramebufferStatus ) {
 
 	*JL_RVAL = INT_TO_JSVAL( glCheckFramebufferStatusEXT(JSVAL_TO_INT(JL_ARG(1))) );  OGL_ERR_CHK;
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4246,7 +4246,7 @@ DEFINE_FUNCTION( framebufferTexture1D ) {
 	glFramebufferTexture1DEXT( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)), JSVAL_TO_INT(JL_ARG(5)) );  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4281,7 +4281,7 @@ DEFINE_FUNCTION( framebufferTexture2D ) {
 	glFramebufferTexture2DEXT( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)), JSVAL_TO_INT(JL_ARG(5)) );  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4318,7 +4318,7 @@ DEFINE_FUNCTION( framebufferTexture3D ) {
 	glFramebufferTexture3DEXT( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)), JSVAL_TO_INT(JL_ARG(5)), JSVAL_TO_INT(JL_ARG(6)) );  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4352,7 +4352,7 @@ DEFINE_FUNCTION( framebufferRenderbuffer ) {
 	glFramebufferRenderbufferEXT( JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), JSVAL_TO_INT(JL_ARG(3)), JSVAL_TO_INT(JL_ARG(4)) );  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4398,7 +4398,7 @@ DEFINE_FUNCTION( getFramebufferAttachmentParameter ) {
 		*JL_RVAL = INT_TO_JSVAL( params[0] );
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4427,7 +4427,7 @@ DEFINE_FUNCTION( createShaderObject ) {
 	GLhandleARB handle = glCreateShaderObjectARB(shaderType);  OGL_ERR_CHK;
 	*JL_RVAL = INT_TO_JSVAL(handle);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4453,7 +4453,7 @@ DEFINE_FUNCTION( deleteObject ) {
 	glDeleteObjectARB(shaderHandle);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4484,7 +4484,7 @@ DEFINE_FUNCTION( getInfoLog ) {
 //	JL_CHK( JL_StringAndLengthToJsval(cx, JL_RVAL, buffer, length+1) );
 	JL_CHK( JL_NativeToJsval(cx, buffer, length+1, *JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4506,7 +4506,7 @@ DEFINE_FUNCTION( createProgramObject ) {
 
 	GLhandleARB programHandle = glCreateProgramObjectARB();  OGL_ERR_CHK;
 	*JL_RVAL = INT_TO_JSVAL(programHandle);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4540,7 +4540,7 @@ DEFINE_FUNCTION( shaderSource ) {
 	glShaderSourceARB(shaderHandle, 1, &buffer, &length);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4566,7 +4566,7 @@ DEFINE_FUNCTION( compileShader ) {
 	glCompileShaderARB(shaderHandle);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4597,7 +4597,7 @@ DEFINE_FUNCTION( attachObject ) {
 	glAttachObjectARB(programHandle, shaderHandle);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4628,7 +4628,7 @@ DEFINE_FUNCTION( linkProgram ) {
 	glLinkProgramARB(programHandle);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4657,7 +4657,7 @@ DEFINE_FUNCTION( useProgramObject ) {
 	glUseProgramObjectARB(programHandle);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4729,7 +4729,7 @@ DEFINE_FUNCTION( getUniformInfo ) {
 		}
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4765,7 +4765,7 @@ DEFINE_FUNCTION( getUniformLocation ) {
 
 	*JL_RVAL = INT_TO_JSVAL(uniformLocation);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4911,16 +4911,16 @@ DEFINE_FUNCTION( uniform ) {
 
 					JL_CHK( JL_JsvalToNative(cx, aargs[3], &v4) );
 					glUniform4fARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
-					return JS_TRUE;
+					return true;
 				}
 				glUniform3fARB(uniformLocation, v1, v2, v3);  OGL_ERR_CHK;
-				return JS_TRUE;
+				return true;
 			}
 			glUniform2fARB(uniformLocation, v1, v2);  OGL_ERR_CHK;
-			return JS_TRUE;
+			return true;
 		}
 		glUniform1fARB(uniformLocation, v1);  OGL_ERR_CHK;
-		return JS_TRUE;
+		return true;
 	} else {
 
 		int v1, v2, v3, v4;
@@ -4937,22 +4937,22 @@ DEFINE_FUNCTION( uniform ) {
 					glUniform4iARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
 					if ( glGetError() == GL_INVALID_OPERATION )
 						glUniform4fARB(uniformLocation, (float)v1, (float)v2, (float)v3, (float)v4);  OGL_ERR_CHK;
-					return JS_TRUE;
+					return true;
 				}
 				glUniform3iARB(uniformLocation, v1, v2, v3);  OGL_ERR_CHK;
 				if ( glGetError() == GL_INVALID_OPERATION )
 					glUniform3fARB(uniformLocation, (float)v1, (float)v2, (float)v3);  OGL_ERR_CHK;
-				return JS_TRUE;
+				return true;
 			}
 			glUniform2iARB(uniformLocation, v1, v2);  OGL_ERR_CHK;
 			if ( glGetError() == GL_INVALID_OPERATION )
 				glUniform2fARB(uniformLocation, (float)v1, (float)v2);  OGL_ERR_CHK;
-			return JS_TRUE;
+			return true;
 		}
 		glUniform1iARB(uniformLocation, v1);  OGL_ERR_CHK;
 		if ( glGetError() == GL_INVALID_OPERATION )
 			glUniform1fARB(uniformLocation, (float)v1);  OGL_ERR_CHK;
-		return JS_TRUE;
+		return true;
 	}
 
 
@@ -4967,12 +4967,12 @@ DEFINE_FUNCTION( uniform ) {
 		if ( JSVAL_IS_INT(arg2) ) {
 
 			glUniform1iARB(uniformLocation, JSVAL_TO_INT(arg2));  OGL_ERR_CHK;
-			return JS_TRUE;
+			return true;
 		}
 		if ( JSVAL_IS_BOOLEAN(arg2) ) {
 
 			glUniform1iARB(uniformLocation, arg2 == JSVAL_TRUE ? 1 : 0);  OGL_ERR_CHK;
-			return JS_TRUE;
+			return true;
 		}
 	}
 
@@ -4989,16 +4989,16 @@ DEFINE_FUNCTION( uniform ) {
 
 					JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &v4) );
 					glUniform4fARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
-					return JS_TRUE;
+					return true;
 				}
 				glUniform3fARB(uniformLocation, v1, v2, v3);  OGL_ERR_CHK;
-				return JS_TRUE;
+				return true;
 			}
 			glUniform2fARB(uniformLocation, v1, v2);  OGL_ERR_CHK;
-			return JS_TRUE;
+			return true;
 		}
 		glUniform1fARB(uniformLocation, v1);  OGL_ERR_CHK;
-		return JS_TRUE;
+		return true;
 	}
 
 
@@ -5015,7 +5015,7 @@ DEFINE_FUNCTION( uniform ) {
 
 	JL_ERR( E_VALUE, E_INVALID );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -5047,7 +5047,7 @@ DEFINE_FUNCTION( uniformMatrix ) {
 	JL_CHK( JL_JsvalToMatrix44(cx, JL_ARG(2), &m) );
 	glUniformMatrix4fvARB(uniformLocation, 1, false, m);  OGL_ERR_CHK;
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -5096,7 +5096,7 @@ DEFINE_FUNCTION( uniformFloatVector ) {
 
 		ASSERT( len >= 0 && len <= 4 );
 		(len == 3 ? glUniform3fvARB : len == 4 ? glUniform4fvARB : len == 2 ? glUniform2fvARB : len == 1 ? glUniform1fvARB : NULL)(uniformLocation, 1, val);  OGL_ERR_CHK;
-		return JS_TRUE;
+		return true;
 	}
 
 
@@ -5131,11 +5131,11 @@ DEFINE_FUNCTION( uniformFloatVector ) {
 	(len == 3 ? glUniform3fvARB : len == 4 ? glUniform4fvARB : len == 2 ? glUniform2fvARB : len == 1 ? glUniform1fvARB : NULL)(uniformLocation, count, value);  OGL_ERR_CHK;
 	jl_freea(value);
 
-	return JS_TRUE;
+	return true;
 bad:
 	if (value)
 		jl_freea(value);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -5180,20 +5180,20 @@ DEFINE_FUNCTION( uniformFloat ) {
 
 					JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &v4) );
 					glUniform4fARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
-					return JS_TRUE;
+					return true;
 				}
 				glUniform3fARB(uniformLocation, v1, v2, v3);  OGL_ERR_CHK;
-				return JS_TRUE;
+				return true;
 			}
 			glUniform2fARB(uniformLocation, v1, v2);  OGL_ERR_CHK;
-			return JS_TRUE;
+			return true;
 		}
 		glUniform1fARB(uniformLocation, v1);  OGL_ERR_CHK;
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ERR( E_ARG, E_INTERVAL_NUM(2, 5), E_TYPE, E_TY_NUMBER );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -5239,20 +5239,20 @@ DEFINE_FUNCTION( uniformInteger ) {
 
 					JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &v4) );
 					glUniform4iARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
-					return JS_TRUE;
+					return true;
 				}
 				glUniform3iARB(uniformLocation, v1, v2, v3);  OGL_ERR_CHK;
-				return JS_TRUE;
+				return true;
 			}
 			glUniform2iARB(uniformLocation, v1, v2);  OGL_ERR_CHK;
-			return JS_TRUE;
+			return true;
 		}
 		glUniform1iARB(uniformLocation, v1);  OGL_ERR_CHK;
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ERR( E_ARG, E_INTERVAL_NUM(2, 5), E_TYPE, E_TY_NUMBER );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -5302,7 +5302,7 @@ DEFINE_FUNCTION( getObjectParameter ) {
 		JL_CHK( JL_NativeToJsval(cx, params[0], *JL_RVAL) );
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -5330,7 +5330,7 @@ DEFINE_FUNCTION( bindAttribLocation ) {
 	glBindAttribLocationARB(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), name);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -5358,7 +5358,7 @@ DEFINE_FUNCTION( getAttribLocation ) {
 	location = glGetAttribLocationARB(JSVAL_TO_INT(JL_ARG(1)), name);  OGL_ERR_CHK;
 	*JL_RVAL = INT_TO_JSVAL(location);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -5400,7 +5400,7 @@ DEFINE_FUNCTION( vertexAttrib ) {
 	if ( JL_ARGC == 2 && JSVAL_IS_INT(arg2) ) {
 
 		glVertexAttrib1sARB(index, (GLshort)JSVAL_TO_INT(arg2));  OGL_ERR_CHK;
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( JSVAL_IS_NUMBER(arg2) ) {
@@ -5416,19 +5416,19 @@ DEFINE_FUNCTION( vertexAttrib ) {
 
 					JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &v4) );
 					glVertexAttrib4dARB(index, v1, v2, v3, v4);  OGL_ERR_CHK;
-					return JS_TRUE;
+					return true;
 				}
 				glVertexAttrib3dARB(index, v1, v2, v3);  OGL_ERR_CHK;
-				return JS_TRUE;
+				return true;
 			}
 			glVertexAttrib2dARB(index, v1, v2);  OGL_ERR_CHK;
-			return JS_TRUE;
+			return true;
 		}
 		glVertexAttrib1dARB(index, v1);  OGL_ERR_CHK;
-		return JS_TRUE;
+		return true;
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -5455,7 +5455,7 @@ DEFINE_FUNCTION( genBuffer ) {
 
 	*JL_RVAL = INT_TO_JSVAL(buffer);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -5484,7 +5484,7 @@ DEFINE_FUNCTION( bindBuffer ) {
 	glBindBuffer(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -5519,7 +5519,7 @@ DEFINE_FUNCTION( bufferData ) {
 	glBufferDataARB(target, buffer);  OGL_ERR_CHK;
 	*JL_RVAL = JSVAL_VOID;
 	;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -5552,7 +5552,7 @@ DEFINE_FUNCTION( pointParameter ) {
 
 		glPointParameteri(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)));  OGL_ERR_CHK;
 		;
-		return JS_TRUE;
+		return true;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_ARG(2)) ) {
 
@@ -5562,7 +5562,7 @@ DEFINE_FUNCTION( pointParameter ) {
 		glPointParameterf( JSVAL_TO_INT(JL_ARG(1)), param );  OGL_ERR_CHK;
 
 		;
-		return JS_TRUE;
+		return true;
 	}
 	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) {  // (TBD) check if array-like make sense here.
 
@@ -5571,7 +5571,7 @@ DEFINE_FUNCTION( pointParameter ) {
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, COUNTOF(params), &length ) );
 		glPointParameterfv( JSVAL_TO_INT(JL_ARG(1)), params );  OGL_ERR_CHK;
 		;
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ERR( E_ARG, E_NUM(2), E_TYPE, E_TY_NUMBER, E_OR, E_TY_ARRAY );
@@ -5602,7 +5602,7 @@ DEFINE_FUNCTION( activeTexture ) {
 	glActiveTexture(JSVAL_TO_INT(JL_ARG(1)));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -5629,7 +5629,7 @@ DEFINE_FUNCTION( clientActiveTexture ) {
 	glClientActiveTexture(JSVAL_TO_INT(JL_ARG(1)));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -5668,7 +5668,7 @@ DEFINE_FUNCTION( multiTexCoord ) {
 
 		glMultiTexCoord1d(target, s);  OGL_ERR_CHK;
 
-		return JS_TRUE;
+		return true;
 	}
 	double t;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &t) );
@@ -5676,7 +5676,7 @@ DEFINE_FUNCTION( multiTexCoord ) {
 
 		glMultiTexCoord2d(target, s, t);  OGL_ERR_CHK;
 
-		return JS_TRUE;
+		return true;
 	}
 	double r;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &r) );
@@ -5684,7 +5684,7 @@ DEFINE_FUNCTION( multiTexCoord ) {
 
 		glMultiTexCoord3d(target, s, t, r);  OGL_ERR_CHK;
 
-		return JS_TRUE;
+		return true;
 	}
 
 	ASSERT(false);
@@ -5709,7 +5709,7 @@ DEFINE_FUNCTION( createPbuffer ) {
 
 
 	;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -5739,7 +5739,7 @@ DEFINE_FUNCTION( genQueries ) {
 	glGenQueriesARB(1, &query);  OGL_ERR_CHK;
 
 	*JL_RVAL = INT_TO_JSVAL(query);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -5769,7 +5769,7 @@ DEFINE_FUNCTION( deleteQueries ) {
 	glDeleteQueriesARB(1, &query);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -5800,7 +5800,7 @@ DEFINE_FUNCTION( beginQuery ) {
 	glBeginQueryARB(JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -5828,7 +5828,7 @@ DEFINE_FUNCTION( endQuery ) {
 	glEndQueryARB(JSVAL_TO_INT( JL_ARG(1) ));  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -5861,7 +5861,7 @@ DEFINE_FUNCTION( getQuery ) {
 	glGetQueryivARB(JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ), &params );  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -5906,7 +5906,7 @@ DEFINE_FUNCTION( getQueryObject ) {
 		JL_CHK( JL_NativeToJsval(cx, param, *JL_RVAL) );
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -5950,7 +5950,7 @@ DEFINE_FUNCTION( unProject ) {
 
 	JL_CHK( JL_NativeVectorToJsval(cx, w, 3, JL_RVAL, false) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -6054,7 +6054,7 @@ DEFINE_FUNCTION( drawImage ) {
 	glDrawPixels(width, height, format, type, data);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -6163,7 +6163,7 @@ DEFINE_FUNCTION( readImage ) {
 		}
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -6287,7 +6287,7 @@ DEFINE_FUNCTION( loadTrimesh ) {
 	JL_CHK( CheckThrowCurrentOglError(cx) );
 
 	;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -6378,7 +6378,7 @@ DEFINE_FUNCTION( drawTrimesh ) {
 	JL_CHK( CheckThrowCurrentOglError(cx) );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -6461,7 +6461,7 @@ DEFINE_FUNCTION( createTextureBuffer ) {
 	glGenBuffers(1, &pbo);  OGL_ERR_CHK;
 	tb->pv = (void*)pbo;
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -6622,7 +6622,7 @@ DEFINE_FUNCTION( defineTextureImage ) {
 	glTexImage2D( JSVAL_TO_INT(JL_ARG(1)), 0, format, width, height, 0, format, type, data );  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -6678,7 +6678,7 @@ DEFINE_FUNCTION( drawPoint ) {
 	glEnd();  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -6712,7 +6712,7 @@ DEFINE_FUNCTION( drawDisk ) {
 	}
 	glEnd();  OGL_ERR_CHK;
 	;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -6745,7 +6745,7 @@ DEFINE_FUNCTION( drawSphere ) {
 	gluDeleteQuadric(q);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -6775,7 +6775,7 @@ DEFINE_FUNCTION( drawDisk ) {
 	gluDeleteQuadric(q);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -6810,7 +6810,7 @@ DEFINE_FUNCTION( drawCylinder ) {
 	gluDeleteQuadric(q);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -6978,7 +6978,7 @@ DEFINE_FUNCTION( drawBox ) {
 	glEnd();  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -7010,7 +7010,7 @@ DEFINE_FUNCTION( fullQuad ) {
 	glPopMatrix();
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -7055,7 +7055,7 @@ DEFINE_FUNCTION( lookAt ) {
 	gluLookAt(eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -7113,7 +7113,7 @@ DEFINE_FUNCTION( aimAt ) {
 	glMultMatrixf(m);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -7145,7 +7145,7 @@ DEFINE_FUNCTION( keepTranslation ) {
 	glLoadMatrixf(m);  OGL_ERR_CHK;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -7172,13 +7172,13 @@ DEFINE_PROPERTY_GETTER( error ) {
 	// When an error occurs, the error flag is set to the appropriate error code value. No other errors are recorded
 	// until glGetError is called, the error code is returned, and the flag is reset to GL_NO_ERROR.
 	*vp = INT_TO_JSVAL(glGetError());
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
 
-JSBool MatrixGet(JSContext *cx, JSObject *obj, float **m) {
+bool MatrixGet(JSContext *cx, JSObject *obj, float **m) {
 
 	JL_IGNORE(obj, cx);
 
@@ -7248,7 +7248,7 @@ DEFINE_INIT() {
 
 	ASSERT( glGetProcAddress != NULL );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -7282,7 +7282,7 @@ DEFINE_FUNCTION( test ) {
 */
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 #endif // DEBUG

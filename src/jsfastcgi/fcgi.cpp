@@ -31,24 +31,24 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	JL_ASSERT_CONSTRUCTING(_class);
-	return JS_TRUE;
+	return true;
 }
 
 DEFINE_FUNCTION(Accept) {
 	
 	
-	return JS_TRUE;
+	return true;
 }
 
 DEFINE_FUNCTION(Finish) {
 	
 	FCGX_Finish();
-	return JS_TRUE;
+	return true;
 }
 
 DEFINE_FUNCTION(Puts) {
 	
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -58,15 +58,15 @@ CONFIGURE_CLASS
 	HAS_FINALIZE
 
 //DEFINE_FUNCTION( call ) {
-//	return JS_TRUE;
+//	return true;
 //}
 
 //DEFINE_PROPERTY( prop ) {
-//	return JS_TRUE;
+//	return true;
 //}
 
 //DEFINE_FUNCTION( func ) {
-//	return JS_TRUE;
+//	return true;
 //}
 
 	BEGIN_FUNCTION_SPEC

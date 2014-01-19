@@ -44,7 +44,7 @@ struct AsymmetricCipherPrivate {
 };
 
 
-JSBool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **prngState) {
+bool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **prngState) {
 
 	jsval prngVal;
 	JL_CHK( JL_GetReservedSlot( obj, ASYMMETRIC_CIPHER_PRNG_SLOT, &prngVal) );
@@ -56,7 +56,7 @@ JSBool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **pr
 	*prngState = &prngPrivate->state;
 	*prngIndex = find_prng(prngPrivate->prng.name);
 	JL_ASSERT( *prngIndex != -1, E_STR("PRNG"), E_NAME(prngPrivate->prng.name), E_NOTFOUND );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -203,11 +203,11 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 	pv->hasKey = false;
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	jl_free(pv);
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -231,7 +231,7 @@ DEFINE_FUNCTION( wipe ) {
 	FinalizeAsymmetricCipher(obj, true);
 	JL_SetPrivate( obj, NULL);
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -324,7 +324,7 @@ DEFINE_FUNCTION( createKeys ) { // ( bitsSize )
 	pv->hasKey = true;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -407,12 +407,12 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 		JL_CHK( ThrowCryptError(cx, err) );
 
 	JL_CHK( JL_NewBufferGetOwnership(cx, out, outLength, JL_RVAL) );
-	return JS_TRUE;
+	return true;
 
 bad:
 	zeromem(out, outLength); // safe clear
 	JL_DataBufferFree(cx, out);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -469,7 +469,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 			if ( err == CRYPT_OK && stat != 1 ) {
 
 				*JL_RVAL = JSVAL_VOID;
-				return JS_TRUE;
+				return true;
 			}
 			break;
 		}
@@ -494,7 +494,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 			if ( err == CRYPT_OK && stat != 1 ) {
 
 				*JL_RVAL = JSVAL_VOID;
-				return JS_TRUE;
+				return true;
 			}
 			break;
 		}
@@ -507,12 +507,12 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 		JL_CHK( ThrowCryptError(cx, err) );
 
 	JL_CHK( JL_NewBufferGetOwnership(cx, out, outLength, JL_RVAL) );
-	return JS_TRUE;
+	return true;
 
 bad:
 	zeromem(out, outLength); // safe clear
 	JL_DataBufferFree(cx, out);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -587,12 +587,12 @@ DEFINE_FUNCTION( sign ) { // ( data [, saltLength] )
 		JL_CHK( ThrowCryptError(cx, err) );
 
 	JL_CHK( JL_NewBufferGetOwnership(cx, out, outLength, JL_RVAL) );
-	return JS_TRUE;
+	return true;
 
 bad:
 	zeromem(out, outLength); // safe clear
 	JL_DataBufferFree(cx, out);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -660,7 +660,7 @@ DEFINE_FUNCTION( verifySignature ) { // ( data, signature [, saltLength] )
 		return ThrowCryptError(cx, err);
 
 	*JL_RVAL = BOOLEAN_TO_JSVAL( stat == 1 );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -721,7 +721,7 @@ DEFINE_PROPERTY_GETTER( blockLength ) {
 			ASSERT(false);
 	}
 	*vp = INT_TO_JSVAL( blockLength );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -762,7 +762,7 @@ DEFINE_PROPERTY_GETTER( keySize ) {
 			ASSERT(false);
 	}
 	*vp = INT_TO_JSVAL( keySize );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -827,7 +827,7 @@ DEFINE_PROPERTY_SETTER( key ) {
 		return ThrowCryptError(cx, err);
 
 	pv->hasKey = true;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -873,12 +873,12 @@ DEFINE_PROPERTY_GETTER( key ) {
 		JL_CHK( ThrowCryptError(cx, err) );
 
 	JL_CHK( JL_NewBufferGetOwnership(cx, key, keyLength, vp) );
-	return JS_TRUE;
+	return true;
 
 bad:
 	zeromem(key, keyLength); // safe clear
 	JL_DataBufferFree(cx, key);
-	return JS_FALSE;
+	return false;
 }
 
 

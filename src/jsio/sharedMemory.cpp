@@ -33,24 +33,24 @@ struct MemHeader {
 };
 
 
-JSBool Lock( JSContext *cx, ClassPrivate *pv ) {
+bool Lock( JSContext *cx, ClassPrivate *pv ) {
 
 	PRStatus status = PR_WaitSemaphore( pv->accessSem );
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
-	return JS_TRUE;
+	return true;
 }
 
-JSBool Unlock( JSContext *cx, ClassPrivate *pv ) {
+bool Unlock( JSContext *cx, ClassPrivate *pv ) {
 
 	PRStatus status = PR_PostSemaphore( pv->accessSem );
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
-	return JS_TRUE;
+	return true;
 }
 
 
-JSBool SharedMemoryBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
+bool SharedMemoryBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(SharedMemory) );
@@ -60,12 +60,12 @@ JSBool SharedMemoryBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
 //	*size = mh->currentDataLength;
 	*str = JLData(((const char *)pv->mem) + sizeof(MemHeader), false, mh->currentDataLength);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
-JSBool CloseSharedMemory( JSObject *obj ) {
+bool CloseSharedMemory( JSObject *obj ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
 
@@ -95,7 +95,7 @@ JSBool CloseSharedMemory( JSObject *obj ) {
 
 	jl_free(pv);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -200,7 +200,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( SetBufferGetInterface(cx, obj, SharedMemoryBufferGet) );
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad_ioerror:
 	ThrowIoError(cx);
@@ -213,7 +213,7 @@ bad:
 			PR_CloseSharedMemory(shm);
 		jl_free(pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -261,7 +261,7 @@ DEFINE_FUNCTION( write ) {
 	JL_CHK( Unlock(cx, pv) );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -308,7 +308,7 @@ DEFINE_FUNCTION( read ) {
 	//data[dataLength] = '\0';
 	//JL_CHK( JL_NewBlob( cx, data, dataLength, JL_RVAL ) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -336,7 +336,7 @@ DEFINE_FUNCTION( clear ) {
 	JL_CHK( Unlock(cx, pv) );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -362,7 +362,7 @@ DEFINE_FUNCTION( close ) {
 	JL_SetPrivate( JL_OBJ, NULL);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -409,7 +409,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 
 		JL_CHK( Unlock(cx, pv) );
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -440,7 +440,7 @@ DEFINE_PROPERTY_GETTER( content ) {
 	//data[dataLength] = '\0';
 	//JL_CHK( JL_NewBlob( cx, data, dataLength, vp ) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -478,7 +478,7 @@ DEFINE_PROPERTY( xdrSetter ) {
 
 	JL_CHK( Unlock(cx, pv) );
 
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -501,7 +501,7 @@ DEFINE_PROPERTY( xdrGetter ) {
 	JS_XDRDestroy(xdr);
 
 	JL_CHK( Unlock(cx, pv) );
-	return JS_TRUE;
+	return true;
 }
 */
 

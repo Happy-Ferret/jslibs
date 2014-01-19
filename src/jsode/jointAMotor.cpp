@@ -62,12 +62,12 @@ DEFINE_CONSTRUCTOR() {
 	ode::dJointSetFeedback(jointId, NULL);
 
 	JL_SetPrivate(obj, jointId);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( jointId )
 		ode::dJointDestroy(jointId);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -92,7 +92,7 @@ DEFINE_FUNCTION( addTorque0 ) {
 	ode::dJointAddAMotorTorques(jointId, real,0,0);
 	
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -113,7 +113,7 @@ DEFINE_FUNCTION( addTorque1 ) {
 	ode::dJointAddAMotorTorques(jointId, 0,real,0);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -134,7 +134,7 @@ DEFINE_FUNCTION( addTorque2 ) {
 	ode::dJointAddAMotorTorques(jointId, 0,0,real);
 	
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -160,7 +160,7 @@ DEFINE_FUNCTION( setAxis ) {
 	if ( !JL_ARG_ISDEF(3) ) {
 		
 		ode::dJointSetAMotorNumAxes(jointId, anum+1);
-		return JS_TRUE;
+		return true;
 	}
 	JL_JsvalToNative(cx, JL_ARG(2), &rel);
 	ode::dVector3 vector;
@@ -172,7 +172,7 @@ DEFINE_FUNCTION( setAxis ) {
 		ode::dJointSetAMotorNumAxes(jointId, anum+1);
 	
 	ode::dJointSetAMotorAxis(jointId, anum, rel, vector[0], vector[1], vector[2]);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -201,7 +201,7 @@ DEFINE_FUNCTION( setAngle ) {
 	ode::dJointSetAMotorAngle(jointId, anum, angle);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -222,7 +222,7 @@ DEFINE_PROPERTY_SETTER( eulerMode ) {
 	bool eulerMode;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &eulerMode) );
 	ode::dJointSetAMotorMode(jointId, eulerMode ?  ode::dAMotorEuler :  ode::dAMotorUser);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -232,7 +232,7 @@ DEFINE_PROPERTY_GETTER( eulerMode ) {
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	bool eulerMode = ode::dJointGetAMotorMode(jointId) == ode::dAMotorEuler;
 	JL_CHK(JL_NativeToJsval(cx, eulerMode, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

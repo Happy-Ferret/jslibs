@@ -115,12 +115,12 @@ DEFINE_CONSTRUCTOR() {
 	jl_free(cursorImage);
 
 	JL_SetPrivate(obj, cursor);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( cursor )
 		SDL_FreeCursor(cursor);
-	return JS_FALSE;
+	return false;
 }
 
 

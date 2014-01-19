@@ -79,7 +79,7 @@ DEFINE_FUNCTION( draw3DText ) {
 		*JL_RVAL = JSVAL_VOID;
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

@@ -43,7 +43,7 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-JSBool
+bool
 ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JL_CHK( InitJslibsModule(cx, id)  );
@@ -92,17 +92,17 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	INIT_CLASS( OalEffect );
 	INIT_CLASS( OalFilter );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
-JSBool
+bool
 ModuleRelease(JSContext *cx) {
 
 	ALCcontext *context = alcGetCurrentContext();
 	if ( context == NULL )
-		return JS_TRUE; // already closed
+		return true; // already closed
 
 	// cf. alutExit
 	ALCdevice *device;
@@ -117,6 +117,6 @@ ModuleRelease(JSContext *cx) {
 	if (!alcCloseDevice (device))
 		JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_CLOSE_DEVICE") );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }

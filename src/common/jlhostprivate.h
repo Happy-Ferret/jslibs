@@ -18,15 +18,170 @@
 #define JL_HOSTPRIVATE_MAX_CLASS_PROTO_CACHE_BIT (9)
 
 
-struct ClassProtoCache {
-	JSClass *clasp;
-	JSObject *proto;
+
+template <class T, const size_t ITEM_COUNT>
+class StaticArray {
+
+	uint8_t data[ITEM_COUNT * sizeof(T)];
+public:
+	T& operator[](size_t slotIndex) {
+
+		ASSERT( slotIndex < ITEM_COUNT );
+		return *((T*)data)[slotIndex];
+	}
+
+	void Destruct() {
+
+		for ( size_t i = 0; i < ITEM_COUNT; ++i ) {
+			
+			(&this[i])::~T();
+		}
+	}
+
+	template <class P1>
+	void Construct(P1 p1) {
+		
+		for ( size_t i = 0; i < ITEM_COUNT; ++i ) {
+			
+			::new (&this[i])(p1);
+		}
+	}
+
+	template <class P1, class P2>
+	void Construct(P1 p1, P2 p2) {
+		
+		for ( size_t i = 0; i < ITEM_COUNT; ++i ) {
+			
+			::new (&this[i])(p1, p2);
+		}
+	}
+
 };
 
+
+struct ClassProtoCache {
+	JSClass *clasp;
+	JS::PersistentRootedObject proto;
+		
+	ClassProtoCache(JSContext *cx, JSClass *c, JS::HandleObject p) : clasp(c), proto(cx, p) {
+	}
+};
+
+// does not support more than (1<<MAX_CLASS_PROTO_CACHE_BIT)-1 proto.
+template <const size_t CACHE_LENGTH>
+struct ProtoCache {
+	
+	StaticArray<ClassProtoCache, CACHE_LENGTH> items;
+
+	ProtoCache() {
+
+		for ( int i = 0; i < CACHE_LENGTH; ++i ) {
+			
+			items[i].classp = NULL;
+		}
+	}
+
+	bool Add(JSContext *cx, const char * const className, JSClass * const clasp, IN JS::HandleObject proto ) {
+
+		ASSERT( jlpv::RemovedSlot() != NULL );
+		ASSERT( className != NULL );
+		ASSERT( className[0] != '\0' );
+		ASSERT( clasp != NULL );
+		ASSERT( clasp != jlpv::RemovedSlot() );
+		ASSERT( proto != NULL );
+		ASSERT( JL_GetClass(proto) == clasp );
+
+		size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
+		size_t first = slotIndex;
+
+	//	ASSERT( slotIndex < COUNTOF(hpv->classProtoCache) );
+
+		for (;;) {
+
+			ClassProtoCache &slot = items[slotIndex];
+
+			if ( slot.clasp == NULL ) {
+
+				::new (&slot) ClassProtoCache(cx, proto);
+				return true;
+			}
+
+			if ( slot.clasp == clasp ) // already cached
+				return false;
+
+			slotIndex = (slotIndex + 1) % CACHE_LENGTH;
+
+			if ( slotIndex == first ) // no more free slot
+				return false;
+		}
+	}
+
+	const ClassProtoCache* Get( const char * const className ) const {
+
+		size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
+		const size_t first = slotIndex;
+
+		ASSERT( slotIndex < CACHE_LENGTH );
+
+		for (;;) {
+
+			const ClassProtoCache &slot = items[slotIndex];
+		
+			// slot->clasp == NULL -> empty
+			// slot->clasp == jlpv::RemovedSlot() -> slot removed, but maybe next slot will match !
+
+			if ( slot.clasp == NULL ) // not found
+				return NULL;
+
+			if ( slot.clasp != (JSClass*)jlpv::RemovedSlot() && ( slot.clasp->name == className || !strcmp(slot.clasp->name, className) ) ) // see "Enable String Pooling"
+				return &slot;
+
+			slotIndex = (slotIndex + 1) % CACHE_LENGTH;
+
+			if ( slotIndex == first ) // not found
+				return NULL;
+		}
+	}
+
+	
+	void Remove( const char *const className ) {
+
+		ASSERT( jlpv::RemovedSlot() != NULL );
+
+		size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
+		size_t first = slotIndex;
+		
+		ASSERT( slotIndex < CACHE_LENGTH );
+
+		for (;;) {
+
+			const ClassProtoCache &slot = items[slotIndex];
+
+			if ( slot.clasp == NULL || ( slot.clasp != (JSClass*)jlpv::RemovedSlot() && ( slot.clasp->name == className || strcmp(slot.clasp->name, className) == 0 ) ) ) {
+			
+				slot.clasp = (JSClass*)jlpv::RemovedSlot();
+				slot.~ClassProtoCache();
+				return;
+			}
+
+			slotIndex = (slotIndex + 1) % COUNTOF(hpv->classProtoCache);
+
+			if ( slotIndex == first ) // not found
+				return;
+		}
+	}
+};
+
+
 struct HostPrivate {
+	HostPrivate(JSContext *cx) : hostObject(cx), objectProto(cx) {
+		
+		ids.Construct(cx);
+	}
+
 	uint32_t versionKey; // used to ensure compatibility between host and modules. see JL_HOSTPRIVATE_KEY macro.
 	bool unsafeMode; // used to spread the unsafe status across modules.
-	JSObject *hostObject;
+	JS::PersistentRootedObject hostObject;
 	bool isEnding;
 	bool canSkipCleanup; // allows modules to skip the memory cleanup phase.
 	void *privateData;
@@ -36,17 +191,18 @@ struct HostPrivate {
 	int (*hostStdIn)( void *privateData, char *buffer, size_t bufferSize );
 	int (*hostStdOut)( void *privateData, const char *buffer, size_t length );
 	int (*hostStdErr)( void *privateData, const char *buffer, size_t length );
-	JSBool (*report)( JSContext *cx, bool isWarning, ... );
+	bool (*report)( JSContext *cx, bool isWarning, ... );
 	struct ModulePrivate {
 		uint32_t moduleId;
 		void *privateData;
 	} modulePrivate[1<<8]; // does not support more than 256 modules.
 	jl::Queue moduleList;
 	JSClass *objectClass;
-	JSObject *objectProto;
+	JS::PersistentRootedObject objectProto;
 	jl_allocators_t alloc;
-	ClassProtoCache classProtoCache[1<<JL_HOSTPRIVATE_MAX_CLASS_PROTO_CACHE_BIT]; // does not support more than (1<<MAX_CLASS_PROTO_CACHE_BIT)-1 proto.
-	jsid ids[LAST_JSID];
+	ProtoCache<1 << JL_HOSTPRIVATE_MAX_CLASS_PROTO_CACHE_BIT> classProtoCache;
+	//JS::PersistentRootedId ids[LAST_JSID];
+	StaticArray<JS::PersistentRootedId, LAST_JSID> ids;
 	
 // experimental:
 	//	jl::StaticAlloc<char[16], 128> p16;
@@ -60,9 +216,9 @@ S_ASSERT( offsetof(HostPrivate, unsafeMode) == 4 ); // then unsafeMode.
 
 
 ALWAYS_INLINE HostPrivate *
-ConstructHostPrivate() {
+ConstructHostPrivate(JSContext *cx) {
 
-	return ::new(jl_calloc(1, sizeof(HostPrivate))) HostPrivate; // beware: don't realloc later because WatchDogThreadProc points on it.
+	return ::new(jl_calloc(1, sizeof(HostPrivate))) HostPrivate(cx); // beware: don't realloc later because WatchDogThreadProc points on it.
 }
 
 ALWAYS_INLINE void

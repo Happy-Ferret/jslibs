@@ -28,8 +28,8 @@ typedef int (*HostInput)( void *privateData, char *buffer, size_t bufferLength )
 typedef int (*HostOutput)( void *privateData, const char *buffer, size_t length );
 
 JSContext* CreateHost( uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInterval );
-JSBool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, HostOutput stdErr, void* userPrivateData );
-JSBool DestroyHost( JSContext *cx, bool skipCleanup );
+bool InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, HostOutput stdErr, void* userPrivateData );
+bool DestroyHost( JSContext *cx, bool skipCleanup );
 
 bool InitializeMemoryManager( jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memalign_t *memalign, jl_realloc_t *realloc, jl_msize_t *msize, jl_free_t *free );
 bool FinalizeMemoryManager( bool freeQueue, jl_malloc_t *malloc, jl_calloc_t *calloc, jl_memalign_t *memalign, jl_realloc_t *realloc, jl_msize_t *msize, jl_free_t *free );

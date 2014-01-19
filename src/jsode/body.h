@@ -23,9 +23,9 @@ struct BodyPrivate {
 };
 
 
-JSBool ReconstructBody(JSContext *cx, ode::dBodyID bodyId, JSObject **obj);
+bool ReconstructBody(JSContext *cx, ode::dBodyID bodyId, JSObject **obj);
 
-ALWAYS_INLINE JSBool JL_JsvalToBody( JSContext *cx, jsval val, ode::dBodyID *bodyId ) {
+ALWAYS_INLINE bool JL_JsvalToBody( JSContext *cx, jsval val, ode::dBodyID *bodyId ) {
 	
 	//JL_ASSERT_OBJECT_STATE( JSVAL_IS_OBJECT(val), JL_CLASS_NAME(Body) );
 	JL_ASSERT_IS_OBJECT(val, JL_CLASS_NAME(Body));
@@ -34,12 +34,12 @@ ALWAYS_INLINE JSBool JL_JsvalToBody( JSContext *cx, jsval val, ode::dBodyID *bod
 	JL_ASSERT_INSTANCE(obj, JL_CLASS(Body));
 	
 	*bodyId = (ode::dBodyID)JL_GetPrivate(obj); // may be null if body is world.env
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
 
-ALWAYS_INLINE JSBool BodyToJsval( JSContext *cx, ode::dBodyID bodyId, jsval *val ) {
+ALWAYS_INLINE bool BodyToJsval( JSContext *cx, ode::dBodyID bodyId, jsval *val ) {
 
 	JSObject *obj;
 	if (unlikely( !bodyId )) { // bodyId may be null if body is world.env
@@ -53,6 +53,6 @@ ALWAYS_INLINE JSBool BodyToJsval( JSContext *cx, ode::dBodyID bodyId, jsval *val
 	}
 	JL_ASSERT_INSTANCE(obj, JL_CLASS(Body));
 	*val = OBJECT_TO_JSVAL( obj );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }

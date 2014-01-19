@@ -465,8 +465,8 @@
 #endif
 
 #ifdef _MSC_VER
-#define UNLIKELY_SPLIT_BEGIN(...) { struct { INLINE NEVER_INLINE JSBool FASTCALL operator()( ##__VA_ARGS__ ) {
-#define UNLIKELY_SPLIT_END(...) } } inner; if ( inner( ##__VA_ARGS__ ) ) return JS_TRUE; else goto bad; JL_BAD; }
+#define UNLIKELY_SPLIT_BEGIN(...) { struct { INLINE NEVER_INLINE bool FASTCALL operator()( ##__VA_ARGS__ ) {
+#define UNLIKELY_SPLIT_END(...) } } inner; if ( inner( ##__VA_ARGS__ ) ) return true; else goto bad; JL_BAD; }
 #else
 #define UNLIKELY_SPLIT_BEGIN(...)
 #define UNLIKELY_SPLIT_END(...)

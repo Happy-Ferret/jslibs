@@ -92,12 +92,12 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( SetupReadMatrix(cx, obj) );
 
 	JL_SetPrivate(obj, geomId);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( geomId )
 		ode::dGeomDestroy(geomId);
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -112,7 +112,7 @@ DEFINE_PROPERTY_GETTER( triangleCount ) {
 	JL_ASSERT_THIS_OBJECT_STATE( geomId );
 	int count = ode::dGeomTriMeshGetTriangleCount(geomId);
 	JL_CHK( JL_NativeToJsval(cx, count, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

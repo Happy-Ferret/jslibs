@@ -27,7 +27,7 @@ check:
 #include "geom.h"
 #include "space.h"
 
-JSBool ReadMatrix(JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
+bool ReadMatrix(JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
 	ode::dGeomID geomID = (ode::dGeomID)JL_GetPrivate(obj);
 
@@ -52,11 +52,11 @@ JSBool ReadMatrix(JSContext *cx, JSObject *obj, float **pm) { // Doc: __declspec
 	m[13] = pos[1];
 	m[14] = pos[2];
 	m[15] = 1;
-	return JS_TRUE;
+	return true;
 }
 
 
-JSBool SetupReadMatrix(JSContext *cx, JSObject *obj) {
+bool SetupReadMatrix(JSContext *cx, JSObject *obj) {
 
 	return SetMatrix44GetInterface(cx, obj, ReadMatrix);
 }
@@ -71,7 +71,7 @@ void FinalizeGeom(JSObject *obj) {
 }
 
 
-JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) { // (TBD) JSObject** = Conservative Stack Scanning issue ?
+bool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) { // (TBD) JSObject** = Conservative Stack Scanning issue ?
 
 	JL_ASSERT( geomId != NULL && ode::dGeomGetData(geomId) == NULL, E_MODULE, E_INTERNAL, E_SEP, E_STR(JL_CLASS_NAME(Geom)), E_STATE );
 
@@ -107,7 +107,7 @@ JSBool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) { // 
 
 	ode::dGeomSetData(geomId, *obj);
 	JL_SetPrivate( *obj, geomId);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -139,7 +139,7 @@ DEFINE_FUNCTION( destroy ) {
 	SetMatrix44GetInterface(cx, obj, NULL);
 	
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -184,11 +184,11 @@ DEFINE_FUNCTION( pointDepth ) {
 		default:
 			*JL_RVAL = JSVAL_VOID;
 			JL_ERR( E_STR(JL_THIS_CLASS_NAME), E_NOTSUPPORTED );
-			return JS_TRUE;
+			return true;
 	}
 
 	JL_CHK( JL_NativeToJsval(cx, depth, JL_RVAL) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -214,7 +214,7 @@ DEFINE_PROPERTY_SETTER( disabled ) {
 		ode::dGeomDisable(geom);
 	else
 		ode::dGeomEnable(geom);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -225,7 +225,7 @@ DEFINE_PROPERTY( disabledGetter ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	*vp = BOOLEAN_TO_JSVAL( ode::dGeomIsEnabled(geom) != 1 );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -243,7 +243,7 @@ DEFINE_PROPERTY_SETTER( temporalCoherence ) {
 	bool enableState;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &enableState) );
 	ode::dGeomTriMeshEnableTC(geomId, ode::dGeomGetClass(geomId), enableState ? 1 : 0 );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -254,7 +254,7 @@ DEFINE_PROPERTY_GETTER( temporalCoherence ) {
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geomId );
 	*vp = BOOLEAN_TO_JSVAL( ode::dGeomTriMeshIsTCEnabled(geomId, ode::dGeomGetClass(geomId)) == 1 );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -273,7 +273,7 @@ DEFINE_PROPERTY_SETTER( body ) {
 	JL_CHK( JL_JsvalToBody(cx, *vp, &bodyId) );
 	ode::dGeomSetBody(geom, bodyId);
 //	return jl::StoreProperty(cx, obj, id, vp, false);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -284,7 +284,7 @@ DEFINE_PROPERTY_GETTER( body ) {
 	JL_ASSERT_THIS_OBJECT_STATE( geomId );
 	JL_CHK( BodyToJsval(cx, ode::dGeomGetBody(geomId), vp) );
 //	return jl::StoreProperty(cx, obj, id, vp, false);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -304,7 +304,7 @@ DEFINE_PROPERTY_SETTER( offset ) {
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
 		ode::dGeomClearOffset(geom);
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( !JSVAL_IS_PRIMITIVE(*vp) ) {
@@ -329,7 +329,7 @@ DEFINE_PROPERTY_SETTER( offset ) {
 		ode::dMatrix3 m3 = { m[0], m[4], m[8], 0, m[1], m[5], m[9], 0, m[2], m[6], m[10], 0 }; // (TBD) check
 		ode::dGeomSetOffsetRotation(geom, m3);
 		ode::dGeomSetOffsetPosition(geom, m[3], m[7], m[11]);
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ERR( E_VALUE, E_TYPE, E_STR("matrix44"), E_OR, E_TY_UNDEFINED );
@@ -391,7 +391,7 @@ DEFINE_PROPERTY_GETTER( space ) {
 	
 	JL_CHK( JL_GetReservedSlot( obj, SLOT_GEOM_SPACEOBJECT, vp) );
 	if ( JSVAL_IS_VOID( *vp ) )
-		return JS_TRUE;
+		return true;
 
 //	JL_ASSERT_OBJECT( *vp );
 //	JSObject *spaceObj = JSVAL_TO_OBJECT( *vp );
@@ -408,7 +408,7 @@ DEFINE_PROPERTY_GETTER( space ) {
 		return JL_SetReservedSlot( obj, SLOT_GEOM_SPACEOBJECT, *vp);
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -426,7 +426,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 	JL_ASSERT_THIS_OBJECT_STATE(geom);
 	const ode::dReal *vector = ode::dGeomGetPosition(geom);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -441,7 +441,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_ASSERT( length >= 3, E_VALUE, E_TYPE, E_TY_NVECTOR(3) );
 	ode::dGeomSetPosition( geom, vector[0], vector[1], vector[2] );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -467,7 +467,7 @@ DEFINE_PROPERTY_GETTER( aabb ) {
 	tmp[5] = aabb[5];
 
 	JL_CHK( ODERealVectorToJsval(cx, tmp, 6, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -499,7 +499,7 @@ DEFINE_PROPERTY_GETTER( boundarySphere ) {
 	JL_CHK( JL_NativeToJsval(cx, radius, &tmpVal) );
 	JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT(*vp), 3, &tmpVal) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -514,7 +514,7 @@ DEFINE_PROPERTY( offsetPositionGetter ) {
 	//ODERealVectorToArray(cx, 3, vector, vp);
 	JL_CHK( ODERealVectorToJsval(cx, vector, 3, vp) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -529,7 +529,7 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 	JL_CHK( JsvalToODERealVector(cx, *vp, vector, 3, &length) );
 	JL_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomSetOffsetPosition( geom, vector[0], vector[1], vector[2] ); // (TBD) dGeomSetOffsetWorldRotation
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */

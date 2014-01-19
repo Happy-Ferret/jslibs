@@ -24,20 +24,20 @@ const char *
 OpenGLErrorToConst(GLenum errorCode);
 
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 ThrowOglError( JSContext *cx, GLenum err );
 
 
-NEVER_INLINE JSBool FASTCALL
+NEVER_INLINE bool FASTCALL
 ThrowOglCustomError( JSContext *cx, int err );
 
 
-ALWAYS_INLINE JSBool
+ALWAYS_INLINE bool
 CheckThrowCurrentOglError( JSContext *cx ) {
 
 	GLenum err = glGetError();
 	if (unlikely( err != GL_NO_ERROR ))
 		return ThrowOglError(cx, err);
-	return JS_TRUE;
+	return true;
 }
 

@@ -167,13 +167,13 @@ JSClass global_class = {
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub
 };
 
-JSBool Print(JSContext *cx, unsigned argc, jsval *vp) {
+bool Print(JSContext *cx, unsigned argc, jsval *vp) {
 		
 	JSString *str = JS_ValueToString(cx, vp[2]);
 
 	_putws(JS_GetStringCharsZ(cx, str));
 
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -204,14 +204,14 @@ bad:
 
 
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
-static JSBool
+static bool
 sandbox_resolve(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, unsigned flags, JS::MutableHandleObject objp) {
 
-	JSBool resolved;
+	bool resolved;
 	if ( (flags & JSRESOLVE_ASSIGNING) == 0 ) {
 
 		if ( !JS_ResolveStandardClass(cx, obj, id, &resolved) )
-			return JS_FALSE;
+			return false;
 
 		if ( !resolved && JSID_IS_STRING(id) ) {
 			jsval v;
@@ -219,19 +219,19 @@ sandbox_resolve(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, u
 			if ( !wcscmp(JS_GetStringCharsZ(cx, JSVAL_TO_STRING(v)), L("Debugger") ) ) {
 
 				if ( !JS_DefineDebuggerObject(cx, obj) ) // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
-					return JS_FALSE;
-				resolved = JS_TRUE;
+					return false;
+				resolved = true;
 			}
 		}
 
 		if ( resolved ) {
 
 			objp.set(obj);
-			return JS_TRUE;
+			return true;
 		}
 	}
 	objp.set(NULL);
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -246,14 +246,14 @@ static JSClass sandbox_class = {
 };
 
 
-JSBool Sandbox(JSContext *cx, unsigned argc, jsval *vp) {
+bool Sandbox(JSContext *cx, unsigned argc, jsval *vp) {
 
 	JSObject *obj = JS_NewGlobalObject(cx, &sandbox_class, NULL);
     JL_CHK( JS_WrapObject(cx, &obj) );
 	JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
-	return JS_TRUE;
+	return true;
 bad:
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -287,7 +287,7 @@ int main_test_Debugger(int argc, char* argv[]) {
 
 	JSScript *script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "<inline>", 1);
 
-	JS_SetDebugMode(cx, JS_TRUE);
+	JS_SetDebugMode(cx, true);
 
 	JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
 
@@ -432,11 +432,11 @@ int main_arraylike(int argc, char* argv[]) {
 	JSObject *o = JS_NewObject(cx, NULL, NULL, NULL);
 
 	unsigned len;
-	JSBool err = JS_GetArrayLength(cx, o, &len);
+	bool err = JS_GetArrayLength(cx, o, &len);
 
 	JSString *s = JS_NewStringCopyZ(cx, (const char *)L("hello"));
 
-	JSBool tmp = JSVAL_IS_PRIMITIVE(STRING_TO_JSVAL(s));
+	bool tmp = JSVAL_IS_PRIMITIVE(STRING_TO_JSVAL(s));
 
 	JL_IGNORE(err, tmp);
 
@@ -750,7 +750,7 @@ int main_test_call(int argc, char* argv[]) {
 	JSScript *script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "test", 1);
 
 	jsval rval;
-	JSBool ok = JS_ExecuteScript(cx, globalObject, script, &rval);
+	bool ok = JS_ExecuteScript(cx, globalObject, script, &rval);
 	ASSERT( ok );
 
 	void *tmp = JS_EncodeInterpretedFunction(cx, JSVAL_TO_OBJECT(rval), &xdrLength);
@@ -838,7 +838,7 @@ JL_CLASS( test, parentClass )
 
 	JL_CONSTRUCTOR() {
 	
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_FUNCTION( fct1, 2 ) {
@@ -848,20 +848,20 @@ JL_CLASS( test, parentClass )
 
 		_const_foo.value;
 
-		return JS_FALSE;
+		return false;
 	}
 
 	JL_PROPERTY( status )
 
 		JL_GETTER() {
 
-			return JS_TRUE;
+			return true;
 		}
 
 
 		JL_SETTER() {
 
-			return JS_TRUE;
+			return true;
 		}
 
 	JL_PROPERTY_END
@@ -883,18 +883,18 @@ JL_CLASS( test ) {
 
 	JL_FUNCTION( fct1, 2 ) {
 
-		return JS_FALSE;
+		return false;
 	}
 
 
-	static JSBool _fct1(JSContext *cx, unsigned argc, JS::Value *vp);
+	static bool _fct1(JSContext *cx, unsigned argc, JS::Value *vp);
 
 	jl3::jl_defClass::FunctionItem fct1_(_fct1, "fct1");
 
-	static JSBool _fct1(JSContext *cx, unsigned argc, JS::Value *vp) {
+	static bool _fct1(JSContext *cx, unsigned argc, JS::Value *vp) {
 
 
-		return JS_TRUE;
+		return true;
 	}
 };
 */

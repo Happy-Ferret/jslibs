@@ -95,7 +95,7 @@ const ColorName colorNameList[] = {
 };
 
 
-ALWAYS_INLINE JSBool FASTCALL
+ALWAYS_INLINE bool FASTCALL
 TextureInit( TextureStruct *tex, unsigned int width, unsigned int height, unsigned int channels ) {
 
 	tex->cbufferSize = width * height * channels * sizeof(PTYPE);
@@ -104,23 +104,23 @@ TextureInit( TextureStruct *tex, unsigned int width, unsigned int height, unsign
 	tex->width = width;
 	tex->height = height;
 	tex->channels = channels;
-	return JS_TRUE;
+	return true;
 }
 
-ALWAYS_INLINE JSBool FASTCALL
+ALWAYS_INLINE bool FASTCALL
 TextureResizeBackBuffer( TextureStruct *tex, size_t newSize ) {
 	
 	if ( tex->cbackBuffer != NULL && tex->cbackBufferSize == newSize )
-		return JS_TRUE;
+		return true;
 	if ( tex->cbackBuffer == NULL )
 		tex->cbackBuffer = (PTYPE*)jl_malloc(newSize);
 	else
 		tex->cbackBuffer = (PTYPE*)jl_realloc(tex->cbackBuffer, newSize);
 	tex->cbackBufferSize = newSize;
-	return JS_TRUE;
+	return true;
 }
 
-ALWAYS_INLINE JSBool FASTCALL
+ALWAYS_INLINE bool FASTCALL
 TextureSetupBackBuffer( TextureStruct *tex ) {
 
 	return TextureResizeBackBuffer(tex, tex->cbufferSize);
@@ -168,13 +168,13 @@ IsTexture( JSContext *cx, jsval val ) {
 }
 
 
-ALWAYS_INLINE JSBool FASTCALL
+ALWAYS_INLINE bool FASTCALL
 ValueToTexture( JSContext* cx, jsval value, TextureStruct **tex ) {
 
 	JL_ASSERT( IsTexture(cx, value), E_VALUE, E_TYPE, E_NAME(JL_CLASS_NAME(Texture)) );
 	*tex = (TextureStruct*)JL_GetPrivate(JSVAL_TO_OBJECT( value ));
 	JL_ASSERT_OBJECT_STATE(tex, JL_GetClassName(JSVAL_TO_OBJECT(value)) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -255,18 +255,18 @@ PosByMode( const TextureStruct *tex, int x, int y, BorderMode mode ) {
 }
 
 
-ALWAYS_INLINE JSBool FASTCALL
+ALWAYS_INLINE bool FASTCALL
 JL_JsvalToBorderMode( JSContext* cx, jsval val, BorderMode *mode ) {
 	
 	if ( val != JSVAL_VOID )
 		return JL_JsvalToNative(cx, val, (int*)mode);
 	*mode = borderWrap;
-	return JS_TRUE;
+	return true;
 }
 
 
 // levels: number | array | string ('#8800AAFF' | 'DarkMagenta')
-JSBool FASTCALL
+bool FASTCALL
 InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, PTYPE *level ) {
 	
 	unsigned int i;
@@ -277,7 +277,7 @@ InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, PTYPE *l
 		JL_CHK( JL_JsvalToNative(cx, value, &val) );
 		for ( i = 0; i < levelMaxLength; i++ )
 			level[i] = val;
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( JSVAL_IS_STRING(value) ) {
@@ -307,7 +307,7 @@ InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, PTYPE *l
 				color++;
 				level[i] = PMAX * val / 255.f;
 			}
-			return JS_TRUE;
+			return true;
 		}
 
 		// color names
@@ -323,7 +323,7 @@ InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, PTYPE *l
 //				int i = JL_MIN(levelMaxLength, COLOR_NAME_COMPONENT_COUNT);
 //				while ( i-- )
 //					level[i] = n->component[i]/(float)COLOR_NAME_COMPONENT_VALUE_MAX;
-				return JS_TRUE;
+				return true;
 			}
 		}
 	}
@@ -333,7 +333,7 @@ InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, PTYPE *l
 		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, value, level, levelMaxLength, &length) );
 		JL_ASSERT( length >= levelMaxLength, E_ARRAYLENGTH, E_MIN, E_NUM(levelMaxLength) );
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ERR( E_ARG, E_TYPE, E_TY_NUMBER, E_OR, E_TY_ARRAY, E_OR, E_TY_STRING );
@@ -342,7 +342,7 @@ InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, PTYPE *l
 
 
 // curve: number | function | array | blob
-JSBool FASTCALL
+bool FASTCALL
 InitCurveData( IN JSContext* cx, IN jsval value, IN size_t length, OUT float *curve ) { // length is the curve resolution
 	
 	size_t i;
@@ -360,7 +360,7 @@ InitCurveData( IN JSContext* cx, IN jsval value, IN size_t length, OUT float *cu
 			JL_CHK( JL_JsvalToNative(cx, argv[0], &fval) );
 			curve[i] = PTYPE(fval);
 		}
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( JL_ValueIsArray(cx, value) ) { // do not manage array-like here since string are handeled below.
@@ -374,7 +374,7 @@ InitCurveData( IN JSContext* cx, IN jsval value, IN size_t length, OUT float *cu
 		JL_CHK( JL_JsvalToNativeVector(cx, value, curveArray, curveArrayLength, &tmp) );
 		for ( i = 0; i < length; ++i )
 			curve[i] = curveArray[i * curveArrayLength / length]; // no interpolation
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( JSVAL_IS_NUMBER(value) ) {
@@ -385,7 +385,7 @@ InitCurveData( IN JSContext* cx, IN jsval value, IN size_t length, OUT float *cu
 		val = PTYPE(dval);
 		for ( i = 0; i < length; ++i )
 			curve[i] = val;
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( JL_ValueIsData(cx, value) ) {
@@ -403,13 +403,13 @@ InitCurveData( IN JSContext* cx, IN jsval value, IN size_t length, OUT float *cu
 
 		for ( i = 0; i < length; ++i )
 			curve[i] = (PTYPE)bstrData[i * bstrLen / length] / 255.f; // (TBD) check
-		return JS_TRUE;
+		return true;
 	}
 
 	//  // (TBD) throws an error ?
 	//for ( int i = 0; i < length; i++ )
 	//	curve[i] = PMAX;
-	//return JS_TRUE;
+	//return true;
 
 	JL_ERR( E_ARG, E_TYPE, E_TY_FUNC, E_OR, E_TY_NUMBER, E_OR, E_TY_DATA );
 	JL_BAD;
@@ -429,7 +429,7 @@ $SVN_REVISION $Revision$
 
 BEGIN_CLASS( Texture )
 
-JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
+bool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -438,7 +438,7 @@ JSBool NativeInterfaceBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
 //	*buf = (char*)tex->cbuffer;
 //	*size = tex->width * tex->height * tex->channels * sizeof(PTYPE);
 	*str = JLData((const void *)tex->cbuffer,  tex->width * tex->height * tex->channels * sizeof(PTYPE));
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -517,7 +517,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( TextureInit(tex, width, height, channels) );
 
 		JL_SetPrivate(obj, tex);
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( IsTexture(cx, JL_ARG(1)) ) { // copy constructor
@@ -529,7 +529,7 @@ DEFINE_CONSTRUCTOR() {
 		jl::memcpy( tex->cbuffer, srcTex->cbuffer, srcTex->width * srcTex->height * srcTex->channels * sizeof(PTYPE) );
 
 		JL_SetPrivate(obj, tex);
-		return JS_TRUE;
+		return true;
 	}
 
 	{
@@ -546,7 +546,7 @@ DEFINE_CONSTRUCTOR() {
 				tex->cbuffer[i] = (PTYPE)buffer[i] / (PTYPE)255.f; // map [0 -> 255] to [0.0 -> 1.0]
 
 			JL_SetPrivate(obj, tex);
-			return JS_TRUE;
+			return true;
 		}
 	}
 
@@ -558,7 +558,7 @@ bad:
 		TextureFreeBuffers(tex);
 		JS_free(cx, tex);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -584,7 +584,7 @@ DEFINE_FUNCTION( free ) {
 	TextureFreeBuffers(tex);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -623,7 +623,7 @@ DEFINE_FUNCTION( swap ) {
 	JL_SetPrivate( obj, JL_GetPrivate(texObj));
 	JL_SetPrivate( texObj, tmp);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -668,7 +668,7 @@ DEFINE_FUNCTION( clearChannel ) {
 		}
 	}
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -737,7 +737,7 @@ DEFINE_FUNCTION( setChannel ) {
 	}
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -808,7 +808,7 @@ DEFINE_FUNCTION( toHLS ) { // (TBD) test it
 	}
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -878,7 +878,7 @@ DEFINE_FUNCTION( toRGB ) { // (TBD) test it
 	}
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -952,7 +952,7 @@ DEFINE_FUNCTION( aliasing ) {
 			tex->cbuffer[i] = floor( count * tex->cbuffer[i] ) / count;
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1028,7 +1028,7 @@ DEFINE_FUNCTION( colorize ) {
 			tex->cbuffer[pos+c] = (tex->cbuffer[pos+c] * (PTYPE(1) - ratio) + colorDst[c] * ratio);
 	}
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1092,7 +1092,7 @@ DEFINE_FUNCTION( extractColor ) {
 		tex->cbuffer[i] = ratio;
 	}
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1133,7 +1133,7 @@ DEFINE_FUNCTION( normalizeLevels ) {
 	for ( int i = 0; i < tsize; i++ )
 		tex->cbuffer[i] = ( tex->cbuffer[i] - min ) / amp; // value is normalized to 0...PMAX
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1175,7 +1175,7 @@ DEFINE_FUNCTION( clampLevels ) { // (TBD) check if this algo is right
 			tex->cbuffer[i] = min;
 	}
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1217,7 +1217,7 @@ DEFINE_FUNCTION( cutLevels ) { // (TBD) check if this algo is right
 			tex->cbuffer[i] = 0;
 	}
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1273,7 +1273,7 @@ DEFINE_FUNCTION( cutLevels ) {
 				tex->cbuffer[pos+c] = 0;
 	}
 	*JL_RVAL = OBJECT_TO_JSVAL(JL_OBJ);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -1298,7 +1298,7 @@ DEFINE_FUNCTION( invertLevels ) { // level = 1 / level
 	for ( i = 0; i < size; i++ )
 		tex->cbuffer[i] = PTYPE(1) / tex->cbuffer[i];
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1322,7 +1322,7 @@ DEFINE_FUNCTION( oppositeLevels ) { // level = -level
 	for ( int i = 0; i < tsize; i++ )
 		tex->cbuffer[i] =  - tex->cbuffer[i];
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1351,7 +1351,7 @@ DEFINE_FUNCTION( powLevels ) { //
 	for ( int i = 0; i < tsize; i++ )
 		tex->cbuffer[i] =  powf(tex->cbuffer[i], power);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1404,7 +1404,7 @@ DEFINE_FUNCTION( mirrorLevels ) {
 				tex->cbuffer[i] = PTYPE(2) * threshold - value;
 		}
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1441,7 +1441,7 @@ DEFINE_FUNCTION( wrapLevels ) { // real modulo
 	}
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1486,7 +1486,7 @@ DEFINE_FUNCTION( addNoise ) {
 		for ( i = 0; i < tsize; i++ )
 			tex->cbuffer[i] += PRAND * pixel[i % channels] / PMAX; //(TBD) test if i%channels works fine, else use double for loop
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1566,7 +1566,7 @@ DEFINE_FUNCTION( desaturate ) {
 	tex->channels = 1;
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1606,7 +1606,7 @@ DEFINE_FUNCTION( set ) {
 		
 		JL_ASSERT( TextureSameFormat(tex, tex1), E_STR("Texture"), E_FORMAT );
 		memcpy(tex->cbuffer, tex1->cbuffer, size * sizeof(PTYPE));
-		return JS_TRUE;
+		return true;
 	}
 
 	{
@@ -1620,7 +1620,7 @@ DEFINE_FUNCTION( set ) {
 			const uint8_t *buffer = (const uint8_t*)data.GetConstStr();
 			for ( i = 0; i < tsize; i++ )
 				tex->cbuffer[i] = (PTYPE)buffer[i] / PTYPE(255); // map [0 -> 255] to [0.0 -> 1.0]
-			return JS_TRUE;
+			return true;
 		}
 	}
 
@@ -1632,7 +1632,7 @@ DEFINE_FUNCTION( set ) {
 		for ( i = 0; i < size; i++ )
 			tex->cbuffer[i*channels+c] = pixel[c];
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1675,7 +1675,7 @@ DEFINE_FUNCTION( add ) {
 		value *= factor;
 		for ( i = 0; i < size; i++ )
 			tex->cbuffer[i] += value;
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( IsTexture(cx, JL_ARG(1)) ) {
@@ -1702,7 +1702,7 @@ DEFINE_FUNCTION( add ) {
 				for ( i = 0; i < size; i++ )
 					tex->cbuffer[i] += tex1->cbuffer[i] * factor;
 		}
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( JL_ValueIsArrayLike(cx, JL_ARG(1)) ) {
@@ -1720,7 +1720,7 @@ DEFINE_FUNCTION( add ) {
 				pos += channels;
 			}
 		}
-		return JS_TRUE;
+		return true;
 	}
 	
 	JL_ERR( E_ARG, E_INVALID );
@@ -1759,7 +1759,7 @@ DEFINE_FUNCTION( mult ) {
 		size = tex->width * tex->height * tex->channels;
 		for ( i = 0; i < size; i++ )
 			tex->cbuffer[i] *= value;
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( IsTexture(cx, JL_ARG(1)) ) {
@@ -1789,7 +1789,7 @@ DEFINE_FUNCTION( mult ) {
 			for ( i = 0; i < size; i++ )
 				tex->cbuffer[i] *= tex1->cbuffer[i];
 		}
-		return JS_TRUE;
+		return true;
 	}
 
 	if ( JL_ValueIsArrayLike(cx, JL_ARG(1)) ) {
@@ -1807,7 +1807,7 @@ DEFINE_FUNCTION( mult ) {
 				pos += channels;
 			}
 		}
-		return JS_TRUE;
+		return true;
 	}
 
 	JL_ERR( E_ARG, E_INVALID );
@@ -1894,7 +1894,7 @@ DEFINE_FUNCTION( blend ) { // texture1, blenderTexture|blenderColor
 */
 	}
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -1972,7 +1972,7 @@ DEFINE_FUNCTION( rotate90 ) { // (TBD) test it
 	TextureSwapBuffers(tex);
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2019,7 +2019,7 @@ DEFINE_FUNCTION( flip ) {
 		}
 	TextureSwapBuffers(tex);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2159,7 +2159,7 @@ DEFINE_FUNCTION( rotoZoom ) { // source: FxGen
 	TextureSwapBuffers(tex);
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2207,7 +2207,7 @@ DEFINE_FUNCTION( resize ) {
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
 	if ( newWidth == width && newHeight == height ) // optimization
-		return JS_TRUE;
+		return true;
 
 	JL_CHK( TextureResizeBackBuffer(tex, newWidth * newHeight * channels * sizeof(PTYPE)) );
 
@@ -2306,7 +2306,7 @@ DEFINE_FUNCTION( resize ) {
 	// channels don't change
 
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2465,7 +2465,7 @@ DEFINE_FUNCTION( convolution ) {
 	//jl_free(kernel); // alloca
 	TextureSwapBuffers(tex);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2548,7 +2548,7 @@ DEFINE_FUNCTION( dilate ) {
 	}
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2630,9 +2630,9 @@ DEFINE_FUNCTION( forEachPixel ) {
 		}
 	}
 	TextureSwapBuffers(tex);
-	return JS_TRUE;
+	return true;
 bad:
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -2745,7 +2745,7 @@ DEFINE_FUNCTION( boxBlur ) {
 
 //	jl_free( line );
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2791,7 +2791,7 @@ DEFINE_FUNCTION( normalizeVectors ) {
 			tex->cbuffer[pos+c] *= length;
 	}
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -2882,7 +2882,7 @@ DEFINE_FUNCTION( normals ) {
 	tex->channels = 3;
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3015,7 +3015,7 @@ DEFINE_FUNCTION( light ) {
 				tex->cbuffer[pos+c] = tex->cbuffer[pos+c] * ( localAmbient[c] + fDiffDot * diffuse[c] ) / PMAX + fSpecDot * localSpecular[c];  // sdword r	= (sdword) ((sdword(pPxSrc->r*(localAmbient.r + fDiffDot*Diffuse.r)) >> 8) + (fSpecDot*localSpecular.r));
 		}
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3091,7 +3091,7 @@ DEFINE_FUNCTION( nr ) {
 	}
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3167,7 +3167,7 @@ DEFINE_FUNCTION( trim ) { // (TBD) test this new version that use jl::memcpy
 	tex->height = newHeight;
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3247,7 +3247,7 @@ DEFINE_FUNCTION( copy ) {
 		}
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3328,7 +3328,7 @@ DEFINE_FUNCTION( paste ) { // (Texture)texture, (int)x, (int)y, (bool)borderMode
 		}
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3421,7 +3421,7 @@ DEFINE_FUNCTION( export ) { // (int)x, (int)y, (int)width, (int)height. Returns 
 				buffer[posDst+c] = (uint8_t)(MINMAX(tex->cbuffer[posSrc+c] * 255.f, 0, 255)); // map [0.0 -> 1.0] to [0 -> 255]
 		}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3506,7 +3506,7 @@ DEFINE_FUNCTION( import ) { // (Blob)image, (int)x, (int)y
 			dPos++;
 			sPos++;
 		}
-		return JS_TRUE;			
+		return true;			
 	}
 
 	BorderMode borderMode;
@@ -3541,7 +3541,7 @@ DEFINE_FUNCTION( import ) { // (Blob)image, (int)x, (int)y
 				tex->cbuffer[posDst+c] = (PTYPE)buffer[posSrc+c] / (PTYPE)255.f;
 		}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3594,7 +3594,7 @@ DEFINE_FUNCTION( shift ) {
 		}
 	TextureSwapBuffers(tex);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3673,7 +3673,7 @@ DEFINE_FUNCTION( displace ) {
 		}
 	TextureSwapBuffers(tex);
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3792,7 +3792,7 @@ DEFINE_FUNCTION( cells ) { // source: FxGen
 	//jl_free(cellPoints); // alloca
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3856,7 +3856,7 @@ DEFINE_FUNCTION( addGradiantQuad ) {
 				tex->cbuffer[pos+c] += pixel1[c]*r1 + pixel2[c]*r2 + pixel3[c]*r3 + pixel4[c]*r4;
 		}
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -3916,10 +3916,10 @@ DEFINE_FUNCTION( addGradiantLinear ) {
 
 	//jl_free(curvex); // alloca
 	//jl_free(curvey); // alloca
-	return JS_TRUE;
+	return true;
 
 bad:
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -4005,7 +4005,7 @@ DEFINE_FUNCTION( addGradiantRadial ) {
 		}
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4069,7 +4069,7 @@ DEFINE_FUNCTION( addGradiantRadial ) {
 		}
 
 	*JL_RVAL = OBJECT_TO_JSVAL(JL_OBJ);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 */
@@ -4188,7 +4188,7 @@ DEFINE_FUNCTION( addCracks ) { // source: FxGen
 	}
 	//jl_free(curve); // alloca
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4228,7 +4228,7 @@ DEFINE_FUNCTION( applyColorMatrix ) {
 		Vector4LoadToPtr(&tmp, pos);
 	}
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4298,7 +4298,7 @@ DEFINE_FUNCTION( addPerlin2 ) {
 		}
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4352,7 +4352,7 @@ DEFINE_FUNCTION( setRectangle ) {
 		}
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4391,7 +4391,7 @@ DEFINE_FUNCTION( setPixel ) { // x, y, levels
 	if (likely( pos != NULL ))
 		return InitLevelData(cx, JL_ARG(3), tex->channels, pos);
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4440,7 +4440,7 @@ DEFINE_FUNCTION( getPixelAt ) {
 		return JL_NativeVectorToJsval(cx, pos, tex->channels, *JL_RVAL);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4470,7 +4470,7 @@ DEFINE_FUNCTION( getGlobalLevel ) {
 		for ( i = 0; i < size; ++i )
 			sum += tex->cbuffer[i];
 		JL_CHK( JL_NativeToJsval(cx, sum / (PTYPE)size, *JL_RVAL) );
-		return JS_TRUE;
+		return true;
 	}
 
 	int onlyChannel;
@@ -4486,7 +4486,7 @@ DEFINE_FUNCTION( getGlobalLevel ) {
 	}
 	JL_CHK( JL_NativeToJsval(cx, sum / (PTYPE)size, *JL_RVAL) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -4716,18 +4716,18 @@ DEFINE_PROPERTY_GETTER( channels ) {
 //	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &seed) );
 //	double d = NoiseInt(seed);
 //	JL_CHK( JL_NewNumberValue(cx, d, rval) );
-//	return JS_TRUE;
+//	return true;
 //}
 
 
 #ifdef _DEBUG
-//static JSBool _Test(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
+//static bool _Test(JSContext *cx, JSObject *obj, unsigned argc, jsval *argv, jsval *rval) {
 DEFINE_FUNCTION( test ) {
 
 	JL_DEFINE_ARGS;
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 }
 #endif // _DEBUG
 

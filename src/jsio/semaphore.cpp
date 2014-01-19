@@ -99,7 +99,7 @@ DEFINE_CONSTRUCTOR() {
 	pv->name[name.Length()] = '\0';
 
 	JL_SetPrivate(JL_OBJ, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pv ) {
@@ -107,7 +107,7 @@ bad:
 			PR_CloseSemaphore(pv->semaphore);
 		JS_free(cx, pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -138,7 +138,7 @@ DEFINE_FUNCTION( wait ) {
 		return ThrowIoError(cx);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -165,7 +165,7 @@ DEFINE_FUNCTION( post ) {
 		return ThrowIoError(cx);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -217,10 +217,10 @@ struct SemProcessEvent {
 
 S_ASSERT( offsetof(SemProcessEvent, pe) == 0 );
 
-static JSBool SemPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject *obj ) {
+static bool SemPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject *obj ) {
 
 	SemProcessEvent *upe = (SemProcessEvent*)pe;
-	return JS_TRUE;
+	return true;
 }
 
 
@@ -241,22 +241,22 @@ static bool SemCancelWait( volatile ProcessEvent *pe ) {
 }
 
 
-static JSBool SemEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+static bool SemEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
 		
 	SemProcessEvent *upe = (SemProcessEvent*)pe;
 	*hasEvent = upe->hasEvent;
 	
 	if ( !*hasEvent )
-		return JS_TRUE;
+		return true;
 
 	if ( JSVAL_IS_VOID( upe->callbackFunction ) )
-		return JS_TRUE;
+		return true;
 
 	jsval rval;
 	JL_CHK( JS_CallFunctionValue(cx, upe->callbackFunctionThis, upe->callbackFunction, 0, NULL, &rval) );
 
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -298,7 +298,7 @@ DEFINE_FUNCTION( events ) {
 		upe->callbackFunction = JSVAL_VOID;
 	}
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

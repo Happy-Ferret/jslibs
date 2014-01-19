@@ -83,7 +83,7 @@ void odeFreeFunction (void *ptr, size_t) {
 	jl_free(ptr);
 }
 
-JSBool
+bool
 ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 //	put_StackCommitSize
@@ -141,15 +141,15 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	INIT_CLASS( World );
 	INIT_CLASS( SurfaceParameters );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
-JSBool
+bool
 ModuleRelease(JSContext *cx) {
 
 	JL_IGNORE(cx);
-	return JS_TRUE;
+	return true;
 }
 
 void

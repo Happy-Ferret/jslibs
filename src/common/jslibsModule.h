@@ -21,12 +21,12 @@ extern uint32_t _moduleId;
 struct JSContext;
 class JSObject;
 
-typedef JSBool (*ModuleInitFunction)(JSContext *, JSObject *, uint32_t id);
-typedef JSBool (*ModuleReleaseFunction)(JSContext *);
+typedef bool (*ModuleInitFunction)(JSContext *, JSObject *, uint32_t id);
+typedef bool (*ModuleReleaseFunction)(JSContext *);
 typedef void (*ModuleFreeFunction)();
 
-EXTERN_C DLLEXPORT JSBool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id);
-EXTERN_C DLLEXPORT JSBool ModuleRelease(JSContext *cx);
+EXTERN_C DLLEXPORT bool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id);
+EXTERN_C DLLEXPORT bool ModuleRelease(JSContext *cx);
 EXTERN_C DLLEXPORT void ModuleFree();
 
-JSBool InitJslibsModule( JSContext *cx );
+bool InitJslibsModule( JSContext *cx );

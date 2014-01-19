@@ -63,7 +63,7 @@ DEFINE_CONSTRUCTOR() {
 	ASSERT( pv->filter ); // ensure that 0 is not a valid id, else change bad: behavior
 
 	JL_SetPrivate(obj, pv);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( pv ) {
@@ -72,7 +72,7 @@ bad:
 			alDeleteFilters(1, &pv->filter);
 		JS_free(cx, pv);
 	}
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -96,7 +96,7 @@ DEFINE_FUNCTION( valueOf ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( JL_NativeToJsval(cx, pv->filter, *JL_RVAL) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -131,7 +131,7 @@ DEFINE_PROPERTY_SETTER( type ) {
 		JL_CHK( JL_JsvalToNative(cx, vp, &filterType) );
 	alFilteri(pv->filter, AL_FILTER_TYPE, filterType);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -152,7 +152,7 @@ DEFINE_PROPERTY_GETTER( type ) {
 	else
 		JL_CHK( JL_NativeToJsval(cx, filterType, vp) );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -171,7 +171,7 @@ DEFINE_PROPERTY_SETTER( filterFloat ) {
 	JL_CHK( JL_JsvalToNative(cx, vp, &f) );
 	alFilterf(pv->filter, param, f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -186,7 +186,7 @@ DEFINE_PROPERTY_GETTER( filterFloat ) {
 	alGetFilterf(pv->filter, param, &f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	JL_CHK(JL_NativeToJsval(cx, f, vp) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

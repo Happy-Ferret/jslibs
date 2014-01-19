@@ -125,7 +125,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( ReserveStreamReadInterface(cx, obj) );
 
 	ASSERT( JL_GetPrivate(obj) == NULL ); // JL_SetPrivate( obj, NULL); // (TBD) optional ?
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -210,7 +210,7 @@ DEFINE_FUNCTION( open ) {
 	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj); // allows to write f.Open(...).Read()
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -257,7 +257,7 @@ DEFINE_FUNCTION( seek ) {
 		return ThrowIoError(cx);
 
 	*JL_RVAL = DOUBLE_TO_JSVAL((double)ret);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -290,7 +290,7 @@ DEFINE_FUNCTION( delete ) {
 		return ThrowIoError(cx);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -319,7 +319,7 @@ DEFINE_FUNCTION( lock ) {
 		return ThrowIoError(cx);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -373,7 +373,7 @@ DEFINE_FUNCTION( move ) {
 	JL_CHK( JL_SetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, STRING_TO_JSVAL(jsstr) ) );
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -406,7 +406,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 	ret = PR_Seek64( fd, offset, PR_SEEK_SET );
 	if ( ret == -1 )
 		return ThrowIoError(cx);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -422,7 +422,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 	if ( ret == -1 )
 		return ThrowIoError(cx);
 //	JL_CHK( JL_NewNumberValue(cx, (double)ret, vp) );
-//	return JS_TRUE;
+//	return true;
 	return JL_NativeToJsval(cx, ret, vp);
 	JL_BAD;
 }
@@ -453,7 +453,7 @@ DEFINE_PROPERTY_GETTER( content ) {
 	if (unlikely( status != PR_SUCCESS )) {
 
 		*vp = JSVAL_VOID;
-		return JS_TRUE;
+		return true;
 	}
 */
 
@@ -465,7 +465,7 @@ DEFINE_PROPERTY_GETTER( content ) {
 		if ( err == PR_FILE_NOT_FOUND_ERROR ) {
 
 			vp.setUndefined();
-			return JS_TRUE;
+			return true;
 		}
 		return ThrowIoErrorArg(cx, err, PR_GetOSError());
 	}
@@ -477,7 +477,7 @@ DEFINE_PROPERTY_GETTER( content ) {
 
 		PR_Close(fd);
 		JL_CHK( JL_NewEmptyBuffer(cx, vp) );
-		return JS_TRUE;
+		return true;
 	}
 
 	if (unlikely( available == -1 )) {
@@ -516,11 +516,11 @@ DEFINE_PROPERTY_GETTER( content ) {
 	}
 
 	JL_CHK( JL_NewBufferGetOwnership(cx, buf, res, vp) );
-	return JS_TRUE;
+	return true;
 
 bad:
 	JL_DataBufferFree(cx, buf);
-	return JS_FALSE;
+	return false;
 }
 
 
@@ -543,11 +543,11 @@ DEFINE_PROPERTY_SETTER( content ) {
 			PRErrorCode err = PR_GetError();
 			if ( err == PR_FILE_NOT_FOUND_ERROR ) {
 
-				return JS_TRUE; // property will return *undefined*
+				return true; // property will return *undefined*
 			}
 			return ThrowIoErrorArg( cx, err, PR_GetOSError() );
 		}
-		return JS_TRUE;
+		return true;
 	}
 
 	PRFileDesc *fd;
@@ -574,7 +574,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 
 	if ( PR_Close(fd) != PR_SUCCESS )
 		return ThrowIoError(cx);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -612,7 +612,7 @@ DEFINE_PROPERTY_SETTER( name ) {
 	if ( PR_Rename(fromFileName, toFileName) != PR_SUCCESS ) // if status == PR_FILE_EXISTS_ERROR ...
 		return ThrowIoError(cx);
 	JL_CHK( JL_SetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, vp ) );
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -736,7 +736,7 @@ DEFINE_PROPERTY_GETTER( info ) {
 	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "modifyTime", fileInfo.modifyTime / (double)1000) );
 	
 //	return jl::StoreProperty(cx, obj, id, vp, false); // file info may change between dwo calls
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -780,7 +780,7 @@ DEFINE_PROPERTY_GETTER( id ) {
 
 #endif // XP_WIN
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -819,7 +819,7 @@ DEFINE_PROPERTY( standard ) {
 
 		JL_CHK( JL_SetReservedSlot( obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) ); // avoid PR_Close
 	}
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

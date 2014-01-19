@@ -485,7 +485,7 @@ void EndVideo() {
 
 
 
-JSBool
+bool
 ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JL_CHKM( SDL_WasInit(0) == 0, E_MODULE, E_NAME("jssdl"), E_INIT );
@@ -517,7 +517,7 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	INIT_STATIC();
 	INIT_CLASS( Cursor );
 
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

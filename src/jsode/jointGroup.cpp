@@ -39,12 +39,12 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT( groupId, E_STR(JL_THIS_CLASS_NAME), E_CREATE );
 
 	JL_SetPrivate(obj, groupId);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( groupId )
 		ode::dJointGroupDestroy(groupId);
-	return JS_FALSE;
+	return false;
 
 }
 
@@ -66,7 +66,7 @@ DEFINE_FUNCTION( destroy ) {
 	JL_SetPrivate( obj, NULL);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -84,7 +84,7 @@ DEFINE_FUNCTION( empty ) {
 	ode::dJointGroupEmpty(groupId);
 
 	*JL_RVAL = JSVAL_VOID;
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 

@@ -57,12 +57,12 @@ DEFINE_CONSTRUCTOR() {
 	ode::dGeomSetData(geomId, obj); // 'obj' do not need to be rooted because Goem's data is reset to NULL when 'obj' is finalized.
 
 	JL_SetPrivate(obj, geomId);
-	return JS_TRUE;
+	return true;
 
 bad:
 	if ( geomId )
 		ode::dGeomDestroy(geomId);
-	return JS_FALSE;
+	return false;
 }
 
 /**doc
@@ -80,7 +80,7 @@ DEFINE_PROPERTY_SETTER( radius ) {
 	double radius;
 	JL_CHK( JL_JsvalToNative(cx, *vp, &radius) );
 	ode::dGeomSphereSetRadius(geom, (ode::dReal)radius);
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
@@ -89,7 +89,7 @@ DEFINE_PROPERTY_GETTER( radius ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	JL_CHK( ODERealToJsval(cx, ode::dGeomSphereGetRadius(geom), vp) ); // see JL_NewNumberValue and JS_NewDouble
-	return JS_TRUE;
+	return true;
 	JL_BAD;
 }
 
