@@ -1,0 +1,11 @@
+--- 
++++ src/js/src/jspubtd.h	2013-06-24 17:41:44 +0200
+@@ -386,6 +386,8 @@
+         return reinterpret_cast<const PerThreadDataFriendFields *>(
+             reinterpret_cast<const char*>(rt) + RuntimeMainThreadOffset);
+     }
++	void *jldata;
++	#define JSRUNTIME_HAS_JLDATA
+ };
+ 
+ } /* namespace js */
