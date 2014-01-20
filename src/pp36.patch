@@ -1,0 +1,2012 @@
+Index: common/jlclass.h
+===================================================================
+--- common/jlclass.h	(revision 3667)
++++ common/jlclass.h	(working copy)
+@@ -39,7 +39,7 @@
+ 	JSFunctionSpec *fs;
+ 	JSFunctionSpec *static_fs;
+ 	ConstValueSpec *static_const;
+-	bool (*init)(JSContext *cx, ClassSpec *sc, JSObject *proto, JSObject *obj);
++	bool (*init)(JSContext *cx, ClassSpec *sc, JS::HandleObject proto, JS::HandleObject obj);
+ 	SourceId_t sourceId;
+ 	double buildDate;
+ };
+@@ -49,14 +49,18 @@
+ // if removeGetterAndSetter is false, it is up to the caller to filter calls using: if ( *vp != JSVAL_VOID ) return true;
+ // if removeGetterAndSetter is true, the value is stored for r/w getter or setter will never be called again.
+ ALWAYS_INLINE bool FASTCALL
+-StoreProperty( JSContext *cx, JSObject *obj, jsid id, const JS::Value &vp, bool removeGetterAndSetter ) {
++StoreProperty( JSContext *cx, JS::HandleObject obj, IN JS::HandleId id, IN JS::HandleValue vp, bool removeGetterAndSetter ) {
+ 
+-	unsigned int attrs;
+-	bool found;
+-	JSPropertyOp getter;
+-	JSStrictPropertyOp setter;
++	JS::Rooted<JSPropertyDescriptor> desc(cx);
++	JL_CHK( JS_GetPropertyDescriptorById(cx, obj, id, 0, &desc) );
++	bool found = desc.object() != NULL;
++	unsigned int attrs = desc.attributes();
++	JSPropertyOp getter = desc.getter();
++	JSStrictPropertyOp setter = desc.setter();
+ 
+-	JL_CHK( JS_GetPropertyAttrsGetterAndSetterById(cx, obj, id, &attrs, &found, &getter, &setter) );
++
++	//JL_CHK( JS_GetPropertyAttrsGetterAndSetterById(cx, obj, id, &attrs, &found, &getter, &setter) );
++
+ 	ASSERT( found );
+ 	// doc: JSPROP_SHARED: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
+ 	if ( (attrs & JSPROP_SHARED) == 0 ) // Has already been stored somewhere. The slot will be updated after JSPropertyOp returns.
+@@ -75,14 +79,14 @@
+ // because it is difficult to override properties by tinyId (JSPropertyOp) see. bz#526979
+ // note. PROPERTY_SWITCH uses enum values as tinyId
+ ALWAYS_INLINE bool FASTCALL
+-DefineClassProperties(JSContext *cx, JSObject *obj, JSPropertySpec *ps) {
++DefineClassProperties(JSContext *cx, IN JS::HandleObject obj, IN JSPropertySpec *ps) {
+ 
+ 	for ( ; ps->name; ++ps ) {
+ 
+ 		if ( ps->tinyid == jl::pv::NOTINYID )
+-			JL_CHK( JS_DefineProperty(cx, obj, ps->name, JSVAL_VOID, ps->getter.op, ps->setter.op, ps->flags) );
++			JL_CHK( JS_DefineProperty(cx, obj, ps->name, JSVAL_VOID, ps->getter.propertyOp.op, ps->setter.propertyOp.op, ps->flags) );
+ 		else
+-			JL_CHK( JS_DefinePropertyWithTinyId(cx, obj, ps->name, ps->tinyid, JSVAL_VOID, ps->getter.op, ps->setter.op, ps->flags) );
++			JL_CHK( JS_DefinePropertyWithTinyId(cx, obj, ps->name, ps->tinyid, JSVAL_VOID, ps->getter.propertyOp.op, ps->setter.propertyOp.op, ps->flags) );
+ 	}
+ 	return true;
+ 	JL_BAD;
+@@ -109,9 +113,9 @@
+ }
+ 
+ INLINE bool FASTCALL
+-InitStatic( JSContext *cx, JSObject *obj, ClassSpec *cs ) {
++InitStatic( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
+ 
+-	JL_CHK(obj);
++	JL_CHK( obj != NULL );
+ 
+ 	if ( cs->static_fs != NULL )
+ 		JL_CHK( DefineFunctions(cx, obj, cs->static_fs) );
+@@ -122,49 +126,51 @@
+ 	if ( cs->static_const != NULL )
+ 		JL_CHK( DefineConstValues(cx, obj, cs->static_const) );
+ 
+-	if ( JS_IsExtensible(obj) ) {
++	bool isExtensible;
++	JL_CHK( JS_IsExtensible(cx, obj, &isExtensible) );
++	if ( isExtensible ) {
+ 	
+ 		JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _sourceId), INT_TO_JSVAL(cs->sourceId), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+ 		JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _buildDate), DOUBLE_TO_JSVAL(cs->buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+ 	}
+ 
+ 	if ( cs->init )
+-		JL_CHK( cs->init(cx, cs, NULL, obj) );
++		JL_CHK( cs->init(cx, cs, JS::NullPtr(), obj) );
+ 
+ 	return true;
+ 	JL_BAD;
+ }
+ 
+ INLINE bool FASTCALL
+-InitClass( JSContext *cx, JSObject *obj, ClassSpec *cs ) {
++InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
+ 
+-	JL_CHK(obj);
++	JL_CHK( obj != NULL );
+ 
+ 	ASSERT( cs->clasp.name && cs->clasp.name[0] ); // Invalid class name.
+ 
+ 	HostPrivate *hpv;
+ 	hpv = JL_GetHostPrivate(cx);
+ 
+-	JSObject *parentProto;
++	{
++
++	JS::RootedObject parentProto(cx);
+ 	if ( cs->parentProtoName != NULL ) {
+ 
+-		parentProto = JL_GetCachedProto(hpv, cs->parentProtoName);
++		parentProto.set( JL_GetCachedProto(hpv, cs->parentProtoName) );
+ 		JL_CHKM( parentProto != NULL, E_STR(cs->parentProtoName), E_STR("prototype"), E_NOTFOUND );
+-	} else {
+-
+-		parentProto = NULL;
+ 	}
+ 
+-	JSObject *proto; // doc: object that is the prototype for the newly initialized class.
+-	JSObject *ctor;
+ 
+-	proto = JS_InitClass(cx, obj, parentProto, &cs->clasp, cs->constructor, cs->ctorNArgs, NULL, NULL, NULL, NULL);
++	// doc: object that is the prototype for the newly initialized class.
++	JS::RootedObject proto(cx, JS_InitClass(cx, obj, parentProto, &cs->clasp, cs->constructor, cs->ctorNArgs, NULL, NULL, NULL, NULL));
+ 
+ 	JL_ASSERT( proto != NULL, E_CLASS, E_NAME(cs->clasp.name), E_CREATE ); //RTE
+ 	ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(proto) == NULL );
+ 
+-	JL_CHKM( JL_CacheClassProto(hpv, cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
++	JL_CHKM( JL_CacheClassProto(cx, hpv, cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
+ 
++	JS::RootedObject ctor(cx);
++
+ 	if ( cs->constructor )
+ 		ctor = JL_GetConstructor(cx, proto);
+ 	else
+@@ -189,7 +195,9 @@
+ 
+ 
+ 	// info
+-	if ( JS_IsExtensible(ctor) ) {
++	bool isExtensible;
++	JL_CHK( JS_IsExtensible(cx, ctor, &isExtensible) );
++	if ( isExtensible ) {
+ 		
+ 		JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _sourceId), INT_TO_JSVAL(cs->sourceId), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+ 		JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _buildDate), DOUBLE_TO_JSVAL(cs->buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+@@ -200,6 +208,8 @@
+ 
+ 	ASSERT( JL_GetCachedClass(hpv, cs->clasp.name) == &cs->clasp );
+ 	ASSERT( JL_GetCachedProto(hpv, cs->clasp.name) == proto );
++	
++	}
+ 
+ 	return true;
+ 	JL_BAD;
+@@ -213,14 +223,14 @@
+ }
+ 
+ INLINE bool
+-DefaultInstanceof(JSContext *cx, JSObject *obj, const JS::Value *v, bool *bp) {
++DefaultInstanceof(JSContext *cx, IN JS::HandleObject obj, IN JS::HandleValue v, OUT bool *bp) {
+ 
+ 	// *bp = !JSVAL_IS_PRIMITIVE(*v) && js::GetObjectJSClass(JSVAL_TO_OBJECT(*v)) == js::GetObjectJSClass(obj); // incomplete
+ 
+-	if ( !JSVAL_IS_PRIMITIVE(*v) ) {
++	if ( !v.isPrimitive() ) {
+ 		
+-		JSClass *objClass = js::GetObjectJSClass(obj);
+-		JSObject *it = JSVAL_TO_OBJECT(*v);
++		const JSClass *objClass = js::GetObjectJSClass(obj);
++		JS::RootedObject it(cx, &v.toObject());
+ 		do {
+ 
+ 			if ( js::GetObjectJSClass(it) == objClass ) {
+@@ -408,16 +418,16 @@
+ #define DEFINE_RESOLVE() static bool Resolve(JSContext *cx, JSObject *obj, jsid id)
+ 
+ #define HAS_NEW_RESOLVE cs.clasp.flags |= JSCLASS_NEW_RESOLVE; JSNewResolveOp tmp = NewResolve; cs.clasp.resolve = (JSResolveOp)tmp;
+-#define DEFINE_NEW_RESOLVE() static bool NewResolve(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, unsigned flags, JS::MutableHandleObject objp)
++#define DEFINE_NEW_RESOLVE() static bool NewResolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, unsigned flags, JS::MutableHandleObject objp)
+ 
+ #define HAS_ENUMERATE cs.clasp.enumerate = Enumerate;
+-#define DEFINE_ENUMERATE() static bool Enumerate(JSContext *cx, JS::Handle<JSObject*> obj, JSIterateOp enum_op, JS::MutableHandle<JS::Value> statep, JS::MutableHandleId idp)
++#define DEFINE_ENUMERATE() static bool Enumerate(JSContext *cx, JS::HandleObject obj, JSIterateOp enum_op, JS::MutableValue statep, JS::MutableHandleId idp)
+ 
+ #define HAS_TRACER cs.clasp.trace = Tracer;
+ #define DEFINE_TRACER() static void Tracer(JSTracer *trc, JSObject *obj)
+ 
+ #define HAS_HAS_INSTANCE cs.clasp.hasInstance = HasInstance;
+-#define DEFINE_HAS_INSTANCE() static bool HasInstance(JSContext *cx, JS::Handle<JSObject*> obj, JS::MutableHandle<JS::Value> vp, bool *bp)
++#define DEFINE_HAS_INSTANCE() static bool HasInstance(JSContext *cx, JS::HandleObject obj, JS::MutableValue vp, bool *bp)
+ 
+ //#define HAS_EQUALITY_OP js::Valueify(&cs.clasp)->ext.equality = EqualityOp;
+ //#define DEFINE_EQUALITY_OP() static bool EqualityOp(JSContext *cx, JSObject *obj, const JS::Value *v, bool *bp)
+@@ -426,25 +436,25 @@
+ //#define DEFINE_WRAPPED_OBJECT() static JSObject* WrappedObject(JSContext *cx, JSObject *obj)
+ 
+ #define HAS_INIT cs.init = Init;
+-#define DEFINE_INIT() static bool Init(JSContext *cx, jl::ClassSpec *sc, JSObject *proto, JSObject *obj)
++#define DEFINE_INIT() static bool Init(JSContext *cx, jl::ClassSpec *sc, JS::HandleObject proto, JS::HandleObject obj)
+ 
+ #define HAS_ADD_PROPERTY cs.clasp.addProperty = AddProperty;
+-#define DEFINE_ADD_PROPERTY() static bool AddProperty(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp)
++#define DEFINE_ADD_PROPERTY() static bool AddProperty(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableValue vp)
+ 
+ #define HAS_DEL_PROPERTY cs.clasp.delProperty = DelProperty;
+-#define DEFINE_DEL_PROPERTY() static bool DelProperty(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, bool *succeeded)
++#define DEFINE_DEL_PROPERTY() static bool DelProperty(JSContext *cx, JS::HandleObject obj, JS::HandleId id, bool *succeeded)
+ 
+ #define HAS_GET_PROPERTY cs.clasp.getProperty = GetProperty;
+-#define DEFINE_GET_PROPERTY() static bool GetProperty(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp)
++#define DEFINE_GET_PROPERTY() static bool GetProperty(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableValue vp)
+ 
+ #define HAS_SET_PROPERTY cs.clasp.setProperty = SetProperty;
+-#define DEFINE_SET_PROPERTY() static bool SetProperty(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, bool strict, JS::MutableHandle<JS::Value> vp)
++#define DEFINE_SET_PROPERTY() static bool SetProperty(JSContext *cx, JS::HandleObject obj, JS::HandleId id, bool strict, JS::MutableValue vp)
+ 
+ #define HAS_GET_OBJECT_OPS cs.clasp.getObjectOps = GetObjectOps;
+ #define DEFINE_GET_OBJECT_OPS() static JSObjectOps* GetObjectOps(JSContext *cx, JSClass *clasp)
+ 
+ #define HAS_CHECK_ACCESS cs.clasp.checkAccess = CheckAccess;
+-#define DEFINE_CHECK_ACCESS() static bool CheckAccess(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JSAccessMode mode, JS::MutableHandle<JS::Value> vp)
++#define DEFINE_CHECK_ACCESS() static bool CheckAccess(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JSAccessMode mode, JS::MutableValue vp)
+ 
+ #define HAS_ITERATOR_OBJECT js::Valueify(&cs.clasp)->ext.iteratorObject = IteratorObject;
+ #define DEFINE_ITERATOR_OBJECT() static JSObject* IteratorObject(JSContext *cx, JS::HandleObject obj, bool keysonly)
+Index: common/jlclass3.h
+===================================================================
+--- common/jlclass3.h	(revision 3667)
++++ common/jlclass3.h	(working copy)
+@@ -338,7 +338,7 @@
+ 
+ 			ASSERT_IF( clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(proto) == NULL );
+ 
+-			JL_CHKM( JL_CacheClassProto(hpv, clasp.name, &clasp, proto), E_CLASS, E_NAME(clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
++			JL_CHKM( JL_CacheClassProto(cx, hpv, clasp.name, &clasp, proto), E_CLASS, E_NAME(clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
+ 
+ 			ASSERT( JL_GetCachedClass(hpv, clasp.name) == &clasp );
+ 			ASSERT( JL_GetCachedProto(hpv, clasp.name) == proto );
+@@ -356,7 +356,10 @@
+ 		JL_CHK( staticPropLink->Register(cx, &ctor) );
+ 		JL_CHK( staticConstLink->Register(cx, &ctor) );
+ 
+-		if ( JS_IsExtensible(ctor) ) {
++
++		bool isExtensible;
++		JL_CHK( JS_IsExtensible(cx, ctor, &isExtensible) );
++		if ( isExtensible ) {
+ 		
+ 			JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _sourceId), JS::NumberValue(sourceId), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+ 			JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _buildDate), JS::NumberValue(buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+Index: common/jlhelper.h
+===================================================================
+--- common/jlhelper.h	(revision 3667)
++++ common/jlhelper.h	(working copy)
+@@ -53,21 +53,21 @@
+ ALWAYS_INLINE bool FASTCALL
+ JL_MaybeRealloc( size_t requested, size_t received );
+ 
+-typedef bool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buffer, size_t *amount );
+-typedef bool (*NIBufferGet)( JSContext *cx, JSObject *obj, JLData *str );
+-typedef bool (*NIMatrix44Get)( JSContext *cx, JSObject *obj, float **pm );
++typedef bool (*NIStreamRead)( JSContext *cx, JS::HandleObject obj, char *buffer, size_t *amount );
++typedef bool (*NIBufferGet)( JSContext *cx, JS::HandleObject obj, JLData *str );
++typedef bool (*NIMatrix44Get)( JSContext *cx, JS::HandleObject obj, float **pm );
+ 
+ ALWAYS_INLINE NIBufferGet
+-BufferGetNativeInterface( JSContext *cx, JSObject *obj );
++BufferGetNativeInterface( JSContext *cx, JS::HandleObject obj );
+ 
+ ALWAYS_INLINE NIBufferGet
+-BufferGetInterface( JSContext *cx, JSObject *obj );
++BufferGetInterface( JSContext *cx, JS::HandleObject obj );
+ 
+ ALWAYS_INLINE NIMatrix44Get
+-Matrix44GetInterface( JSContext *cx, JSObject *obj );
++Matrix44GetInterface( JSContext *cx, JS::HandleObject obj );
+ 
+ ALWAYS_INLINE bool
+-SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBufferGet pFct );
++SetBufferGetInterface( JSContext *cx, JS::HandleObject obj, NIBufferGet pFct );
+ 
+ 
+ ///////////////////////////////////////////////////////////////////////////////
+@@ -235,12 +235,19 @@
+ ALWAYS_INLINE JSObject* FASTCALL
+ JL_GetPrototype(JSContext *cx, IN JS::HandleObject obj) {
+ 
+-    JS::RootedObject robj(cx, obj);
+-    JS::RootedObject rproto(cx);
++    JS::RootedObject robj(cx, obj), rproto(cx);
+     bool rv = js::GetObjectProto(cx, robj, &rproto);
+     return rv ? rproto.get() : NULL;
+ }
+ 
++ALWAYS_INLINE const JSClass* FASTCALL
++JL_GetClassOfPrototype(JSContext *cx, IN JS::HandleObject proto) {
++
++	JS::RootedObject obj(cx, JL_GetPrototype(cx, proto));
++	return JL_GetClass(obj);
++}
++
++
+ ALWAYS_INLINE JSObject* FASTCALL
+ JL_GetConstructor(JSContext *cx, IN JS::HandleObject obj) {
+ 
+@@ -291,7 +298,7 @@
+ 
+ 
+ ALWAYS_INLINE bool FASTCALL
+-JL_GetReservedSlot(IN JS::HandleObject obj, uint32_t slot, OUT JS::MutableHandleValue &vp) {
++JL_GetReservedSlot(IN JS::HandleObject obj, uint32_t slot, OUT JS::MutableHandleValue vp) {
+ 
+ 	ASSERT( slot < JSCLASS_RESERVED_SLOTS(JL_GetClass(obj)) );
+ 	ASSERT( JS_IsNative(obj) );
+@@ -312,7 +319,7 @@
+ */
+ 
+ ALWAYS_INLINE bool FASTCALL
+-JL_SetReservedSlot(JSObject *obj, unsigned slot, IN JS::HandleValue v) {
++JL_SetReservedSlot(JS::HandleObject obj, unsigned slot, IN JS::HandleValue v) {
+ 
+ 	ASSERT( JS_IsNative(obj) );
+ 	js::SetReservedSlot(obj, slot, v); // jsfriendapi
+@@ -443,7 +450,7 @@
+ 			const JS::CallArgs jsargs;
+ 			JSContext *_cx;
+ //			JSObject *_thisObj;
+-			JS::RootedObject _thisObj;
++			JS::PersistentRootedObject _thisObj;
+ 
+ 			Args(JSContext *cx, unsigned argc, JS::Value *vp)
+ 			: _cx(cx), _thisObj(cx), jsargs( JS::CallArgsFromVp(argc, vp) ) {
+@@ -496,6 +503,14 @@
+ 				}
+ 			}
+ 
++			JS::HandleValue thisObjVal() {
++
++				JS::RootedValue tmp(_cx);
++				tmp.setObject(*thisObj());
++				return tmp;
++			}
++
++
+ 		private:
+ 			void operator=( const Args & );
+ 		};
+@@ -506,8 +521,8 @@
+ 
+ 		struct PropArgs {
+ 
+-			JS::RootedObject _thisObj;
+-			JS::RootedValue _vp;
++			JS::PersistentRootedObject _thisObj;
++			JS::PersistentRootedValue _vp;
+ 
+ 			PropArgs(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleValue vp)
+ 			: _thisObj(cx, obj), _vp(cx, vp) {
+@@ -559,8 +574,13 @@
+ 		};
+ 	}
+ 
++/*
++	JS::HandleValue JL_THIS(JSContext *cx, JS::Value *vp) {
+ 
++		JS_THIS(cx, vp)
+ 
++	}
++*/
+ 
+ 	#define JL_ARGC (args.length())
+ 
+@@ -577,13 +597,14 @@
+ 	#define JL_ARG_ISDEF( n ) (args.hasDefined((n)-1))
+ 
+ // the return value
+-	#define JL_RVAL (args.rval().address())
++	#define JL_RVAL (args.rval()/*.address()*/)
+ 
+ 	// is the current obj (this)
+ 	#define JL_OBJ (args.thisObj())
+ 
+ 	// is the current obj (this) as a JS::Value. if this method returns null, an error has occurred and must be propagated or caught.
+-	#define JL_OBJVAL (argc, JS_THIS(cx, vp))
++	//#define JL_OBJVAL (argc, JS_THIS(cx, vp))
++	#define JL_OBJVAL (args.thisObjVal())
+ 
+ 
+ #endif // USE_JSHANDLES
+@@ -931,7 +952,7 @@
+ 	return cpc ? cpc->clasp : NULL;
+ }
+ 
+-ALWAYS_INLINE const JSObject * FASTCALL
++ALWAYS_INLINE JSObject * FASTCALL
+ JL_GetCachedProto( const HostPrivate * const hpv, const char * const className ) {
+ 	
+ 	const ClassProtoCache *cpc = JL_GetCachedClassProto(hpv, className);
+@@ -993,7 +1014,7 @@
+ ALWAYS_INLINE JSObject* FASTCALL
+ JL_ConstructObject( JSContext *cx, IN JS::HandleObject proto, unsigned argc, JS::Value *argv ) {
+ 	
+-	JSObject *ctor = JL_GetConstructor(cx, proto);
++	JS::RootedObject ctor(cx, JL_GetConstructor(cx, proto));
+ 	if ( ctor == NULL )
+ 		return NULL;
+ 	return JS_New(cx, ctor, argc, argv);
+@@ -1056,7 +1077,7 @@
+ 	return NULL;
+ }
+ 
+-
++/*
+ #ifndef USE_JSHANDLES
+ 
+ #define JL_DEFINE_FUNCTION_OBJ \
+@@ -1080,6 +1101,7 @@
+ }
+ 
+ #else // USE_JSHANDLES
++*/
+ 
+ #define JL_DEFINE_ARGS \
+ 	jl::Args args(ARGSARGS);
+@@ -1105,12 +1127,13 @@
+ 	}
+ }
+ 
+-#endif // USE_JSHANDLES
++// #endif // USE_JSHANDLES
+ 
+ 
+ 
+ // Initialise 'this' object (obj variable) for constructors native functions ( support constructing and non-constructing form, eg. |Stream()| and  |new Stream()| ).
+ // If JL_THIS_CLASS or JL_THIS_CLASS_PROTOTYPE are not available, use JS_NewObjectForConstructor(cx, vp) instead.
++/*
+ #ifndef USE_JSHANDLES
+ 
+ #define JL_DEFINE_CONSTRUCTOR_OBJ \
+@@ -1118,11 +1141,14 @@
+ 	obj = jlpv::CreateConstructorObject(cx, JL_THIS_CLASS, JL_THIS_CLASS_PROTOTYPE, vp)
+ 
+ #else // USE_JSHANDLES
++*/
+ 
++	//JS::RootedObject obj(cx, jlpv::CreateConstructorObject(cx, JL_THIS_CLASS, JL_THIS_CLASS_PROTOTYPE, args))
+ #define JL_DEFINE_CONSTRUCTOR_OBJ \
+-	JS::RootedObject obj(cx, jlpv::CreateConstructorObject(cx, JL_THIS_CLASS, JL_THIS_CLASS_PROTOTYPE, args))
++	JS::RootedObject obj(cx, JL_THIS_CLASS_PROTOTYPE); \
++	obj.set(jlpv::CreateConstructorObject(cx, JL_THIS_CLASS, obj, args));
+ 
+-#endif // USE_JSHANDLES
++// #endif // USE_JSHANDLES
+ 
+ 
+ ///////////////////////////////////////////////////////////////////////////////
+@@ -1147,7 +1173,7 @@
+ 
+ 	HostPrivate *hpv = JL_GetHostPrivate(cx);
+ 	ASSERT( hpv != NULL );
+-	JS::RootedId id(cx, hpv->ids[index]);
++	JS::RootedId id(cx, hpv->ids.Get(index));
+ //	jsid *id = hpv->ids[index];
+ 	return id != jspv::NullJsid() ? id : jlpv::GetPrivateJsidSlow(cx, &id, index, name);
+ }
+@@ -1305,7 +1331,7 @@
+ 
+ 
+ ALWAYS_INLINE bool FASTCALL
+-JL_ObjectIsArray( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
++JL_ObjectIsArray( JSContext * RESTRICT cx, JS::HandleObject obj ) {
+ 
+ 	return JS_IsArrayObject(cx, obj) == true;
+ }
+@@ -1313,7 +1339,8 @@
+ ALWAYS_INLINE bool FASTCALL
+ JL_ValueIsArray( JSContext *cx, IN JS::HandleValue val ) {
+ 
+-	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsArray(cx, JSVAL_TO_OBJECT(val));
++	JS::RootedObject obj(cx, &val.toObject());
++	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsArray(cx, obj);
+ }
+ 
+ 
+@@ -1338,7 +1365,7 @@
+ }
+ 
+ ALWAYS_INLINE bool FASTCALL
+-JL_ObjectIsData( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
++JL_ObjectIsData( JSContext * RESTRICT cx, JS::HandleObject obj ) {
+ 
+ 	return JS_IsArrayBufferObject(obj) || BufferGetInterface(cx, obj) != NULL || JL_ObjectIsArrayLike(cx, obj);
+ }
+@@ -1346,12 +1373,13 @@
+ ALWAYS_INLINE bool FASTCALL
+ JL_ValueIsData( JSContext *cx, IN JS::HandleValue val ) {
+ 
+-	return JSVAL_IS_STRING(val) || ( !JSVAL_IS_PRIMITIVE(val) && NOIL(JL_ObjectIsData)(cx, JSVAL_TO_OBJECT(val)) );
++	JS::RootedObject obj(cx, &val.toObject());
++	return JSVAL_IS_STRING(val) || ( !JSVAL_IS_PRIMITIVE(val) && NOIL(JL_ObjectIsData)(cx, obj) );
+ }
+ 
+ 
+ ALWAYS_INLINE bool FASTCALL
+-JL_ObjectIsIterable( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
++JL_ObjectIsIterable( JSContext * RESTRICT cx, JS::HandleObject obj ) {
+ 
+ 	bool found;
+ 	return JS_HasPropertyById(cx, obj, JLID(cx, next), &found) && found == true;
+@@ -1360,7 +1388,8 @@
+ ALWAYS_INLINE bool FASTCALL
+ JL_ValueIsIterable( JSContext * RESTRICT cx, JS::Value &val ) {
+ 
+-	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsIterable(cx, JSVAL_TO_OBJECT(val));
++	JS::RootedObject obj(cx, &val.toObject());
++	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsIterable(cx, obj);
+ }
+ 
+ ALWAYS_INLINE bool FASTCALL
+@@ -1654,10 +1683,10 @@
+ 
+ // note: JL_GetClass(JL_GetPrototype(... because |JL_ASSERT_THIS_INSTANCE( new Stream() )| must pass whereas |JL_ASSERT_THIS_INSTANCE( Stream.prototype )| must fail.
+ #define JL_ASSERT_INSTANCE( jsObject, jsClass ) \
+-	JL_ASSERT( JL_GetClass(JL_GetPrototype(cx, jsObject)) == jsClass, E_OBJ, E_INSTANCE, E_NAME((jsClass)->name) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
++	JL_ASSERT( JL_GetClassOfPrototype(cx, jsObject) == jsClass, E_OBJ, E_INSTANCE, E_NAME((jsClass)->name) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
+ 
+ #define JL_ASSERT_THIS_INSTANCE() \
+-	JL_ASSERT( JL_GetClass(JL_GetPrototype(cx, JL_OBJ)) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
++	JL_ASSERT( JL_GetClassOfPrototype(cx, JL_OBJ) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
+ 
+ #define JL_ASSERT_INHERITANCE( jsObject, jsClass ) \
+ 	JL_ASSERT( NOIL(JL_InheritFrom)(cx, JL_GetPrototype(cx, jsObject), (jsClass)), E_OBJ, E_INHERIT, E_NAME((jsClass)->name) )
+@@ -2131,14 +2160,14 @@
+ /*
+ template<class T>
+ ALWAYS_INLINE bool FASTCALL
+-JL_JsvalToNative( JSContext *cx, JS::MutableHandleValue &val, T nVal ) {
++JL_JsvalToNative( JSContext *cx, JS::MutableHandleValue val, T nVal ) {
+ 	
+ 	return JL_JsvalToNative(cx, *val.address(), nVal);
+ }
+ 
+ template<class T>
+ ALWAYS_INLINE bool FASTCALL
+-JL_NativeToJsval( JSContext *cx, T nVal, JS::MutableHandleValue &val ) {
++JL_NativeToJsval( JSContext *cx, T nVal, JS::MutableHandleValue val ) {
+ 	
+ 	return JL_NativeToJsval(cx, nVal, JL_NativeToJsval);
+ }
+@@ -2156,9 +2185,9 @@
+ 
+ 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, JS::HandleValue val, JLData *str )
+ 
+-	if (likely( !JSVAL_IS_PRIMITIVE(val) )) { // for NIBufferGet support
++	if (likely( !val.isPrimitive() )) { // for NIBufferGet support
+ 
+-		JSObject *obj = JSVAL_TO_OBJECT(val);
++		JS::RootedObject obj(cx, &val.toObject());
+ 		NIBufferGet fct = BufferGetInterface(cx, obj); // BufferGetNativeInterface
+ 		if ( fct )
+ 			return fct(cx, obj, str);
+@@ -3014,7 +3043,7 @@
+ 
+ 	ASSERT( vector );
+ 
+-	JS::Value tmp;
++	JS::RootedValue tmp(cx);
+ 	JSObject *arrayObj;
+ 	if (likely( useValArray )) {
+ 
+@@ -3060,7 +3089,7 @@
+ 
+ template <class T>
+ INLINE bool FASTCALL
+-JL_TypedArrayToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T * RESTRICT vector, unsigned maxLength, unsigned * RESTRICT actualLength ) {
++JL_TypedArrayToNativeVector( JSContext *cx, IN JS::HandleObject obj, OUT T * RESTRICT vector, IN unsigned maxLength, IN OUT unsigned *actualLength ) {
+ 
+ 	ASSERT( JS_IsTypedArrayObject(obj) );
+ 	JL_ASSERT( JS_GetArrayBufferViewType(obj) == JLNativeTypeToTypedArrayType(*vector), E_TY_TYPEDARRAY, E_TYPE, E_NAME(JLNativeTypeToString(*vector)) );
+@@ -3079,7 +3108,7 @@
+ 
+ template <class T>
+ INLINE bool FASTCALL
+-JL_ArrayBufferToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T * RESTRICT vector, unsigned maxLength, unsigned * RESTRICT actualLength ) {
++JL_ArrayBufferToNativeVector( JSContext * RESTRICT cx, JS::HandleObject obj, T * RESTRICT vector, unsigned maxLength, unsigned * RESTRICT actualLength ) {
+ 
+ 	JL_IGNORE(cx);
+ 	ASSERT( JS_IsArrayBufferObject(obj) );
+@@ -3098,13 +3127,14 @@
+ ALWAYS_INLINE bool FASTCALL
+ JL_JsvalToNativeVector( JSContext * RESTRICT cx, IN JS::HandleValue val, OUT T * RESTRICT vector, IN unsigned maxLength, OUT unsigned *actualLength ) {
+ 
+-	JS::Value tmp;
++	JS::RootedValue tmp(cx);
+ 
+ 	JL_ASSERT_IS_OBJECT(val, "vector");
+ 
+-	JSObject *arrayObj;
+-	arrayObj = JSVAL_TO_OBJECT(val);
++	{
+ 
++	JS::RootedObject arrayObj(cx, &val.toObject());
++
+ 	if (unlikely( JS_IsTypedArrayObject(arrayObj) ))
+ 		return JL_TypedArrayToNativeVector(cx, arrayObj, vector, maxLength, actualLength);
+ 
+@@ -3120,9 +3150,12 @@
+ 	maxLength = JL_MIN( *actualLength, maxLength );
+ 	for ( unsigned i = 0; i < maxLength; ++i ) {  // while ( maxLength-- ) { // avoid reverse walk (L1 cache issue)
+ 
+-		JL_CHK( JL_GetElement(cx, arrayObj, i, tmp) );
++		JL_CHK( JL_GetElement(cx, arrayObj, i, &tmp) );
+ 		JL_CHK( JL_JsvalToNative(cx, tmp, &vector[i]) );
+ 	}
++
++	}
++
+ 	return true;
+ 	JL_BAD;
+ }
+@@ -3134,10 +3167,10 @@
+ 
+ template <class T>
+ ALWAYS_INLINE bool FASTCALL
+-JL_NativeToReservedSlot( JSContext * RESTRICT cx, JSObject * RESTRICT obj, unsigned slot, T &value ) {
++JL_NativeToReservedSlot( JSContext * RESTRICT cx, JS::HandleObject obj, unsigned slot, T &value ) {
+ 
+-	JS::Value tmp;
+-	JL_CHK( JL_NativeToJsval(cx, value, tmp) );
++	JS::RootedValue tmp(cx);
++	JL_CHK( JL_NativeToJsval(cx, value, &tmp) );
+ 	JL_CHK( JL_SetReservedSlot(obj, slot, tmp) );
+ 	return true;
+ 	JL_BAD;
+@@ -3146,10 +3179,10 @@
+ 
+ template <class T>
+ ALWAYS_INLINE bool FASTCALL
+-JL_ReservedSlotToNative( JSContext * RESTRICT cx, JSObject * RESTRICT obj, unsigned slot, T * RESTRICT value ) {
++JL_ReservedSlotToNative( JSContext * RESTRICT cx, JS::HandleObject obj, unsigned slot, T * RESTRICT value ) {
+ 
+-	JS::Value tmp;
+-	JL_CHK( JL_GetReservedSlot(obj, slot, tmp) );
++	JS::RootedValue tmp(cx);
++	JL_CHK( JL_GetReservedSlot(obj, slot, &tmp) );
+ 	JL_CHK( JL_JsvalToNative(cx, tmp, value) );
+ 	return true;
+ 	JL_BAD;
+@@ -3165,7 +3198,7 @@
+ ALWAYS_INLINE bool FASTCALL
+ JL_NativeToProperty( JSContext *cx, JSObject *obj, const char *name, const T &cval ) {
+ 
+-	JS::Value tmp;
++	JS::RootedValue tmp(cx);
+ 	return JL_NativeToJsval(cx, cval, tmp) && JS_SetProperty(cx, obj, name, &tmp);
+ }
+ 
+@@ -3173,7 +3206,7 @@
+ ALWAYS_INLINE bool FASTCALL
+ JL_NativeToProperty( JSContext *cx, JSObject *obj, jsid id, const T &cval ) {
+ 
+-	JS::Value tmp;
++	JS::RootedValue tmp(cx);
+ 	return JL_NativeToJsval(cx, cval, tmp) && JS_SetPropertyById(cx, obj, id, &tmp);
+ }
+ 
+@@ -3184,7 +3217,7 @@
+ ALWAYS_INLINE bool FASTCALL
+ JL_DefineProperty( JSContext *cx, JSObject *obj, const char *name, const T &cval, bool visible = true, bool modifiable = true ) {
+ 
+-	JS::Value tmp;
++	JS::RootedValue tmp(cx);
+ 	return JL_NativeToJsval(cx, cval, tmp) && JS_DefineProperty(cx, obj, name, tmp, NULL, NULL, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
+ }
+ 
+@@ -3199,7 +3232,7 @@
+ ALWAYS_INLINE bool FASTCALL
+ JL_DefineProperty( JSContext *cx, JSObject *obj, jsid id, const T &cval, bool visible = true, bool modifiable = true ) {
+ 
+-	JS::Value tmp;
++	JS::RootedValue tmp(cx);
+ 	return JL_NativeToJsval(cx, cval, tmp) && JS_DefinePropertyById(cx, obj, id, tmp, NULL, NULL, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
+ }
+ 
+@@ -3216,7 +3249,7 @@
+ ALWAYS_INLINE bool FASTCALL
+ JL_PropertyToNative( JSContext *cx, JSObject *obj, const char *propertyName, T *cval ) {
+ 
+-	JS::Value tmp;
++	JS::RootedValue tmp(cx);
+ 	return JS_GetProperty(cx, obj, propertyName, &tmp) && JL_JsvalToNative(cx, tmp, cval);
+ }
+ 
+@@ -3224,7 +3257,7 @@
+ ALWAYS_INLINE bool FASTCALL
+ JL_PropertyToNative( JSContext *cx, JSObject *obj, jsid id, T *cval ) {
+ 
+-	JS::Value tmp;
++	JS::RootedValue tmp(cx);
+ 	return JS_GetPropertyById(cx, obj, id, &tmp) && JL_JsvalToNative(cx, tmp, cval);
+ }
+ 
+@@ -3234,7 +3267,7 @@
+ ALWAYS_INLINE bool FASTCALL
+ JL_LookupProperty( JSContext *cx, JSObject *obj, const char *propertyName, T *cval ) {
+ 
+-	JS::Value tmp;
++	JS::RootedValue tmp(cx);
+ 	return JS_LookupProperty(cx, obj, propertyName, &tmp) && JL_JsvalToNative(cx, tmp, cval);
+ }
+ 
+@@ -3242,7 +3275,7 @@
+ ALWAYS_INLINE bool FASTCALL
+ JL_LookupProperty( JSContext *cx, JSObject *obj, jsid id, T *cval ) {
+ 
+-	JS::Value tmp;
++	JS::RootedValue tmp(cx);
+ 	return JS_LookupPropertyById(cx, obj, id, &tmp) && JL_JsvalToNative(cx, tmp, cval);
+ }
+ 
+@@ -3299,27 +3332,31 @@
+ 
+ 
+ ALWAYS_INLINE bool FASTCALL
+-JL_JsvalToJsid( JSContext * RESTRICT cx, IN JS::HandleValue val, jsid * RESTRICT id ) {
++JL_JsvalToJsid( JSContext * RESTRICT cx, IN JS::HandleValue val, JS::MutableHandleId id ) {
+ 
+ 	if ( JSVAL_IS_STRING( val ) ) {
+ 
+ 		JS::RootedString str(cx, val.toString());
+-		*id = JL_StringToJsid(cx, str);
+-		ASSERT( JSID_IS_STRING( *id ) || JSID_IS_INT( *id ) ); // see AtomToId()
++		id.set(JL_StringToJsid(cx, str));
++		ASSERT( JSID_IS_STRING( id ) || JSID_IS_INT( id ) ); // see AtomToId()
+ 	} else
+ 	if ( JSVAL_IS_INT( val ) && INT_FITS_IN_JSID( JSVAL_TO_INT( val ) ) ) {
+ 
+-		*id = INT_TO_JSID( JSVAL_TO_INT( val ) );
++		id.set(INT_TO_JSID( val.toInt32() ));
+ 	} else
+-		if ( val.isObject() ) {
++	if ( val.isObject() ) {
+ 
+-		*id = OBJECT_TO_JSID( JSVAL_TO_OBJECT( val ) );
++		id.set(OBJECT_TO_JSID( &val.toObject() ));
+ 	} else
+ 	if ( JSVAL_IS_VOID( val ) ) {
+ 
+-		*id = JSID_VOID;
++		id.set(JSID_VOID);
+ 	} else
+-		return JS_ValueToId(cx, val, id);
++	if ( val.isNull() ) {
++
++		id.set(OBJECT_TO_JSID( val.toObjectOrNull() ));
++	} else
++		return JS_ValueToId(cx, val, id.address());
+ 	return true;
+ }
+ 
+@@ -3358,7 +3395,7 @@
+ 		 0.0f, 0.0f, 0.0f, 1.0f
+ 	};
+ 
+-	if ( JSVAL_IS_NULL(val) ) {
++	if ( val.isNull() ) {
+ 
+ 		jl::memcpy(*m, &Matrix44IdentityValue, sizeof(Matrix44IdentityValue));
+ 		return true;
+@@ -3366,8 +3403,8 @@
+ 
+ 	JL_ASSERT_IS_OBJECT(val, "matrix44");
+ 
+-	JSObject *matrixObj;
+-	matrixObj = JSVAL_TO_OBJECT(val);
++	{
++	JS::RootedObject matrixObj(cx, &val.toObject());
+ 
+ 	NIMatrix44Get Matrix44Get;
+ 	Matrix44Get = Matrix44GetInterface(cx, matrixObj);
+@@ -3387,23 +3424,24 @@
+ 
+ 		uint32_t length;
+ 		JS::RootedValue element(cx);
+-		JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(val), 0, element) );
++
++		JL_CHK( JL_GetElement(cx, matrixObj, 0, &element) );
+ 		if ( JL_ValueIsArrayLike(cx, element) ) { // support for [ [1,1,1,1], [2,2,2,2], [3,3,3,3], [4,4,4,4] ] matrix
+ 
+ 			JL_CHK( JL_JsvalToNativeVector(cx, element, (*m)+0, 4, &length ) );
+ 			JL_ASSERT( length == 4, E_VALUE, E_STR("matrix44[0]"), E_TYPE, E_TY_NVECTOR(4) );
+ 
+-			JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(val), 1, element) );
++			JL_CHK( JL_GetElement(cx, matrixObj, 1, &element) );
+ 			JL_CHK( JL_JsvalToNativeVector(cx, element, (*m)+4, 4, &length ) );
+ 			JL_ASSERT_IS_ARRAY( element, "matrix44[1]" );
+ 			JL_ASSERT( length == 4, E_VALUE, E_STR("matrix44[1]"), E_TYPE, E_TY_NVECTOR(4) );
+ 
+-			JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(val), 2, element) );
++			JL_CHK( JL_GetElement(cx, matrixObj, 2, &element) );
+ 			JL_CHK( JL_JsvalToNativeVector(cx, element, (*m)+8, 4, &length ) );
+ 			JL_ASSERT_IS_ARRAY( element, "matrix44[2]" );
+ 			JL_ASSERT( length == 4, E_VALUE, E_STR("matrix44[2]"), E_TYPE, E_TY_NVECTOR(4) );
+ 
+-			JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(val), 3, element) );
++			JL_CHK( JL_GetElement(cx, matrixObj, 3, &element) );
+ 			JL_CHK( JL_JsvalToNativeVector(cx, element, (*m)+12, 4, &length ) );
+ 			JL_ASSERT_IS_ARRAY( element, "matrix44[3]" );
+ 			JL_ASSERT( length == 4, E_VALUE, E_STR("matrix44[3]"), E_TYPE, E_TY_NVECTOR(4) );
+@@ -3415,6 +3453,8 @@
+ 		return true;
+ 	}
+ 
++	}
++
+ 	JL_ERR( E_VALUE, E_STR("matrix44"), E_INVALID );
+ 	JL_BAD;
+ }
+@@ -3514,13 +3554,13 @@
+ 
+ 
+ ALWAYS_INLINE uint8_t* FASTCALL
+-JL_ChangeBufferLength( JSContext *cx, JS::Value *vp, size_t nbytes ) {
++JL_ChangeBufferLength( JSContext *cx, IN OUT JS::MutableHandleValue vp, size_t nbytes ) {
+ 
+ 	// need to create a new buffer because ArrayBuffer does not support realloc nor length changing, then we copy it in a new one.
+ 	// see JS_ReallocateArrayBufferContents
+ 
+-	ASSERT( vp->isObject() );
+-	JSObject *arrayBufferObj = JSVAL_TO_OBJECT(*vp);
++	ASSERT( vp.isObject() );
++	JS::RootedObject arrayBufferObj(cx, &vp.toObject());
+ 	ASSERT( JS_IsArrayBufferObject(arrayBufferObj) );
+ 	uint32_t bufferLen = JS_GetArrayBufferByteLength(arrayBufferObj);
+ 	void *bufferData = JS_GetArrayBufferData(arrayBufferObj);
+@@ -3528,7 +3568,7 @@
+ 	if ( nbytes == bufferLen )
+ 		return (uint8_t*)bufferData;
+ 
+-	JSObject *newBufferObj;
++	JS::RootedObject newBufferObj(cx);
+ 	void *newBufferData;
+ 	if ( nbytes < bufferLen ) {
+ 
+@@ -3547,7 +3587,7 @@
+ 		newBufferData = JS_GetArrayBufferData(arrayBufferObj);
+ 		jl::memcpy(newBufferData, bufferData, bufferLen);
+ 	}
+-	vp->setObject(*newBufferObj);
++	vp.setObject(*newBufferObj);
+ 	return (uint8_t*)newBufferData;
+ }
+ 
+@@ -3879,7 +3919,7 @@
+ 
+ 
+ ALWAYS_INLINE bool FASTCALL
+-JL_InheritFrom( JSContext *cx, JSObject *obj, const JSClass *clasp ) {
++JL_InheritFrom( JSContext *cx, JS::HandleObject obj, const JSClass *clasp ) {
+ 
+ 	while ( obj != NULL ) {
+ 
+@@ -3892,7 +3932,7 @@
+ 
+ 
+ ALWAYS_INLINE bool FASTCALL
+-JL_CallFunctionId( JSContext *cx, JSObject *obj, jsid id, unsigned argc, IN JS::Value *argv, OUT JS::MutableHandleValue rval ) {
++JL_CallFunctionId( JSContext *cx, JS::HandleObject obj, jsid id, unsigned argc, IN JS::Value *argv, OUT JS::MutableHandleValue rval ) {
+ 
+ 	JS::RootedValue tmp(cx);
+ 	//return JS_GetMethodById(cx, obj, id, NULL, &tmp) && JS_CallFunctionValue(cx, obj, tmp, argc, argv, rval);
+@@ -3913,31 +3953,31 @@
+ // JL_CallFunctionVA (cx, obj, functionValue, rval, ... )
+ 
+ ALWAYS_INLINE bool FASTCALL
+-JL_CallFunctionVA( JSContext *cx, JSObject *obj, JS::Value &functionValue, JS::Value *rval ) {
++JL_CallFunctionVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleValue functionValue, OUT JS::MutableHandleValue rval ) {
+ 
+ 	ASSERT( JL_ValueIsCallable(cx, functionValue) );
+-	return JS_CallFunctionValue(cx, obj, functionValue, 0, NULL, rval);
++	return JS_CallFunctionValue(cx, obj, functionValue, 0, NULL, rval.address());
+ }
+ 
+ ALWAYS_INLINE bool FASTCALL
+-JL_CallFunctionVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, JS::Value &functionValue, JS::Value *rval, const JS::Value &arg1 ) {
++JL_CallFunctionVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleValue functionValue, OUT JS::MutableHandleValue rval, IN JS::HandleValue arg1 ) {
+ 
+ 	JS::Value args[] = { arg1 };
+-	return JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(args), args, rval);
++	return JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(args), args, rval.address());
+ }
+ 
+ ALWAYS_INLINE bool FASTCALL
+-JL_CallFunctionVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, JS::Value &functionValue, JS::Value *rval, const JS::Value &arg1, const JS::Value &arg2 ) {
++JL_CallFunctionVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleValue functionValue, OUT JS::MutableHandleValue rval, IN JS::HandleValue arg1, IN JS::HandleValue arg2 ) {
+ 
+ 	JS::Value args[] = { arg1, arg2 };
+-	return JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(args), args, rval);
++	return JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(args), args, rval.address());
+ }
+ 
+ ALWAYS_INLINE bool FASTCALL
+-JL_CallFunctionVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, JS::Value &functionValue, JS::Value *rval, const JS::Value &arg1, const JS::Value &arg2, const JS::Value &arg3 ) {
++JL_CallFunctionVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleValue functionValue, OUT JS::MutableHandleValue rval, IN JS::HandleValue arg1, IN JS::HandleValue arg2, IN JS::HandleValue arg3 ) {
+ 
+ 	JS::Value args[] = { arg1, arg2, arg3 };
+-	return JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(args), args, rval);
++	return JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(args), args, rval.address());
+ }
+ 
+ 
+@@ -3952,7 +3992,7 @@
+ 
+ 
+ ALWAYS_INLINE bool FASTCALL
+-JL_ArrayPush( JSContext * RESTRICT cx, JSObject * RESTRICT arr, IN JS::HandleValue value ) {
++JL_ArrayPush( JSContext * RESTRICT cx, IN JS::HandleObject arr, IN JS::HandleValue value ) {
+ 
+ 	unsigned length;
+ 	return JS_GetArrayLength(cx, arr, &length) && JL_SetElement(cx, arr, length, value);
+@@ -3960,14 +4000,14 @@
+ 
+ 
+ ALWAYS_INLINE bool FASTCALL
+-JL_ArrayPop( JSContext * RESTRICT cx, JSObject * RESTRICT arr, OUT JS::MutableHandleValue value ) {
++JL_ArrayPop( JSContext * RESTRICT cx, IN JS::HandleObject arr, OUT JS::MutableHandleValue value ) {
+ 
+ 	unsigned length;
+ 	return JS_GetArrayLength(cx, arr, &length) && JL_GetElement(cx, arr, --length, value) && JS_SetArrayLength(cx, arr, length); 
+ }
+ 
+ ALWAYS_INLINE bool FASTCALL
+-JL_ArrayReset( JSContext * RESTRICT cx, JSObject * RESTRICT arr ) {
++JL_ArrayReset( JSContext * RESTRICT cx, IN JS::HandleObject arr ) {
+ 
+ 	return JS_SetArrayLength(cx, arr, 0); 
+ }
+@@ -3981,7 +4021,8 @@
+ 		rval.set(val);
+ 		return true;
+ 	}
+-	JSObject *obj = JSVAL_TO_OBJECT(val);
++
++	JS::RootedObject obj(cx, &val.toObject());
+ 	//JSClass *clasp = JL_GetClass(obj);
+ 	//if ( clasp->convert ) // note that JS_ConvertStub calls js_TryValueOf
+ 	//	return clasp->convert(cx, obj, JSTYPE_VOID, rval);
+@@ -4371,7 +4412,7 @@
+ 
+ 
+ INLINE NEVER_INLINE bool FASTCALL
+-JL_ExceptionSetScriptLocation( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
++JL_ExceptionSetScriptLocation( JSContext * RESTRICT cx, IN OUT JS::MutableHandleObject obj ) {
+ 
+ 	 // see PopulateReportBlame()
+     //JSStackFrame *fp;
+@@ -4394,9 +4435,9 @@
+ 	if ( filename == NULL || *filename == '\0' )
+ 		filename = "<no_filename>";
+ 
+-	JL_CHK( JL_NativeToJsval(cx, filename, tmp) );
++	JL_CHK( JL_NativeToJsval(cx, filename, &tmp) );
+ 	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, fileName), tmp) );
+-	JL_CHK( JL_NativeToJsval(cx, lineno, tmp) );
++	JL_CHK( JL_NativeToJsval(cx, lineno, &tmp) );
+ 	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, lineNumber), tmp) );
+ 
+ 	return true;
+@@ -4409,7 +4450,7 @@
+ // NativeInterface API
+ 
+ ALWAYS_INLINE bool
+-ReserveNativeInterface( JSContext *cx, JSObject *obj, const jsid &id ) {
++ReserveNativeInterface( JSContext *cx, JS::HandleObject obj, const jsid &id ) {
+ 
+ 	ASSERT( id != jspv::NullJsid() );
+ 	return JS_DefinePropertyById(cx, obj, id, JSVAL_VOID, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
+@@ -4418,7 +4459,7 @@
+ 
+ template <class T>
+ ALWAYS_INLINE bool
+-SetNativeInterface( JSContext *cx, JSObject *obj, const jsid &id, const T nativeFct ) {
++SetNativeInterface( JSContext *cx, JS::HandleObject obj, const jsid &id, const T nativeFct ) {
+ 
+ 	ASSERT( id != jspv::NullJsid() );
+ 	if ( nativeFct != NULL ) {
+@@ -4435,14 +4476,17 @@
+ 
+ template <class T>
+ ALWAYS_INLINE const T
+-GetNativeInterface( JSContext *cx, JSObject *obj, const jsid &id ) {
++GetNativeInterface( JSContext *cx, JS::HandleObject obj, const jsid &id ) {
+ 
+ 	ASSERT( id != jspv::NullJsid() );
+-	//JSPropertyDescriptor desc;
+ 	JS::Rooted<JSPropertyDescriptor> desc(cx);
+-	if ( JS_GetPropertyDescriptorById(cx, obj, id, 0, desc.address()) )
++	if ( JS_GetPropertyDescriptorById(cx, obj, id, 0, &desc) ) {
++
+ 		return desc.object() == obj && desc.setter() != JS_StrictPropertyStub ? (const T)desc.setter() : NULL; // is JS_PropertyStub when eg. Stringify({_NI_BufferGet:function() {} })
+-	return NULL;
++	} else {
++
++		return NULL;
++	}
+ }
+ 
+ 
+@@ -4451,31 +4495,31 @@
+ // NativeInterface StreamRead
+ 
+ ALWAYS_INLINE bool
+-ReserveStreamReadInterface( JSContext *cx, JSObject *obj ) {
++ReserveStreamReadInterface( JSContext *cx, JS::HandleObject obj ) {
+ 
+ 	return ReserveNativeInterface(cx, obj, JLID(cx, _NI_StreamRead) );
+ }
+ 
+ 
+ ALWAYS_INLINE bool
+-SetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead pFct ) {
++SetStreamReadInterface( JSContext *cx, JS::HandleObject obj, NIStreamRead pFct ) {
+ 
+ 	return SetNativeInterface( cx, obj, JLID(cx, _NI_StreamRead), pFct );
+ }
+ 
+ 
+ ALWAYS_INLINE NIStreamRead
+-StreamReadNativeInterface( JSContext *cx, JSObject *obj ) {
++StreamReadNativeInterface( JSContext *cx, JS::HandleObject obj ) {
+ 
+ 	return GetNativeInterface<NIStreamRead>(cx, obj, JLID(cx, _NI_StreamRead));
+ }
+ 
+ 
+ INLINE bool
+-JSStreamRead( JSContext * RESTRICT cx, JSObject * RESTRICT obj, char * RESTRICT buffer, size_t * RESTRICT amount ) {
++JSStreamRead( JSContext * RESTRICT cx, JS::HandleObject obj, char * RESTRICT buffer, size_t * RESTRICT amount ) {
+ 
+ 	JS::RootedValue tmp(cx);
+-	JL_CHK( JL_NativeToJsval(cx, *amount, tmp) );
++	JL_CHK( JL_NativeToJsval(cx, *amount, &tmp) );
+ 	JL_CHK( JL_CallFunctionId(cx, obj, JLID(cx, read), 1, tmp.address(), &tmp) );
+ 	if ( JSVAL_IS_VOID(tmp) ) { // (TBD) with sockets, undefined mean 'closed', that is not supported by NIStreamRead.
+ 
+@@ -4495,7 +4539,7 @@
+ 
+ 
+ ALWAYS_INLINE NIStreamRead
+-StreamReadInterface( JSContext *cx, JSObject *obj ) {
++StreamReadInterface( JSContext *cx, JS::HandleObject obj ) {
+ 
+ 	NIStreamRead fct = StreamReadNativeInterface(cx, obj);
+ 	if (likely( fct != NULL ))
+@@ -4512,28 +4556,28 @@
+ // NativeInterface BufferGet
+ 
+ ALWAYS_INLINE bool
+-ReserveBufferGetInterface( JSContext *cx, JSObject *obj ) {
++ReserveBufferGetInterface( JSContext *cx, JS::HandleObject obj ) {
+ 
+ 	return ReserveNativeInterface(cx, obj, JLID(cx, _NI_BufferGet) );
+ }
+ 
+ 
+ ALWAYS_INLINE bool
+-SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBufferGet pFct ) {
++SetBufferGetInterface( JSContext *cx, JS::HandleObject obj, NIBufferGet pFct ) {
+ 
+ 	return SetNativeInterface( cx, obj, JLID(cx, _NI_BufferGet), pFct );
+ }
+ 
+ 
+ ALWAYS_INLINE NIBufferGet
+-BufferGetNativeInterface( JSContext *cx, JSObject *obj ) {
++BufferGetNativeInterface( JSContext *cx, JS::HandleObject obj ) {
+ 
+ 	return GetNativeInterface<NIBufferGet>(cx, obj, JLID(cx, _NI_BufferGet));
+ }
+ 
+ 
+ INLINE bool
+-JSBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
++JSBufferGet( JSContext *cx, JS::HandleObject obj, JLData *str ) {
+ 
+ 	JS::RootedValue tmp(cx);
+ 	return JL_CallFunctionId(cx, obj, JLID(cx, get), 0, NULL, &tmp) && JL_JsvalToNative(cx, tmp, str);
+@@ -4541,7 +4585,7 @@
+ 
+ 
+ ALWAYS_INLINE NIBufferGet
+-BufferGetInterface( JSContext *cx, JSObject *obj ) {
++BufferGetInterface( JSContext *cx, JS::HandleObject obj ) {
+ 
+ 	NIBufferGet fct = BufferGetNativeInterface(cx, obj);
+ 	if (likely( fct != NULL ))
+@@ -4558,28 +4602,28 @@
+ // NativeInterface Matrix44Get
+ 
+ ALWAYS_INLINE bool
+-ReserveMatrix44GetInterface( JSContext *cx, JSObject *obj ) {
++ReserveMatrix44GetInterface( JSContext *cx, JS::HandleObject obj ) {
+ 
+ 	return ReserveNativeInterface(cx, obj, JLID(cx, _NI_Matrix44Get) );
+ }
+ 
+ 
+ ALWAYS_INLINE bool
+-SetMatrix44GetInterface( JSContext *cx, JSObject *obj, NIMatrix44Get pFct ) {
++SetMatrix44GetInterface( JSContext *cx, JS::HandleObject obj, NIMatrix44Get pFct ) {
+ 
+ 	return SetNativeInterface( cx, obj, JLID(cx, _NI_Matrix44Get), pFct );
+ }
+ 
+ 
+ ALWAYS_INLINE NIMatrix44Get
+-Matrix44GetNativeInterface( JSContext *cx, JSObject *obj ) {
++Matrix44GetNativeInterface( JSContext *cx, JS::HandleObject obj ) {
+ 
+ 	return GetNativeInterface<NIMatrix44Get>(cx, obj, JLID(cx, _NI_Matrix44Get));
+ }
+ 
+ 
+ INLINE bool
+-JSMatrix44Get( JSContext *, JSObject *, float ** ) {
++JSMatrix44Get( JSContext *, JS::HandleObject , float ** ) {
+ 
+ 	ASSERT( false ); // ???
+ 
+@@ -4588,7 +4632,7 @@
+ 
+ 
+ ALWAYS_INLINE NIMatrix44Get
+-Matrix44GetInterface( JSContext *cx, JSObject *obj ) {
++Matrix44GetInterface( JSContext *cx, JS::HandleObject obj ) {
+ 
+ 	NIMatrix44Get fct = Matrix44GetNativeInterface(cx, obj);
+ 	if (likely( fct != NULL ))
+@@ -4605,8 +4649,8 @@
+ // ProcessEvent
+ 
+ struct ProcessEvent {
+-	bool (*prepareWait)( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ); // called before startWait() to allow one to prepare the blocking step
++	bool (*prepareWait)( volatile ProcessEvent *self, JSContext *cx, JS::HandleObject obj ); // called before startWait() to allow one to prepare the blocking step
+ 	void (*startWait)( volatile ProcessEvent *self ); // starts the blocking thread and call signalEvent() when an event has arrived.
+ 	bool (*cancelWait)( volatile ProcessEvent *self ); // unlock the blocking thread event if no event has arrived (mean that an event has arrived in another thread).
+-	bool (*endWait)( volatile ProcessEvent *self, bool *hasEvent, JSContext *cx, JSObject *obj ); // process the result
++	bool (*endWait)( volatile ProcessEvent *self, bool *hasEvent, JSContext *cx, JS::HandleObject obj ); // process the result
+ };
+Index: common/jlhostprivate.h
+===================================================================
+--- common/jlhostprivate.h	(revision 3667)
++++ common/jlhostprivate.h	(working copy)
+@@ -24,38 +24,59 @@
+ 
+ 	uint8_t data[ITEM_COUNT * sizeof(T)];
+ public:
+-	T& operator[](size_t slotIndex) {
+ 
++	T& Get(size_t slotIndex) {
++
+ 		ASSERT( slotIndex < ITEM_COUNT );
+-		return *((T*)data)[slotIndex];
++//		return *reinterpret_cast<T*>(data)[slotIndex];
++
++		T* tmp = (T*)data;
++
++		return (((T*)data)[slotIndex]);
+ 	}
+ 
++	const T& GetConst(size_t slotIndex) const {
++
++		ASSERT( slotIndex < ITEM_COUNT );
++		return (((T*)data)[slotIndex]);
++	}
++
+ 	void Destruct() {
+ 
+ 		for ( size_t i = 0; i < ITEM_COUNT; ++i ) {
+ 			
+-			(&this[i])::~T();
++			(&this->Get(i))::~T();
+ 		}
+ 	}
+ 
+-	template <class P1>
++	void Construct() {
++		
++		for ( size_t i = 0; i < ITEM_COUNT; ++i ) {
++			
++			::new (&this->Get(i)) T();
++		}
++	}
++
++	template <typename P1>
+ 	void Construct(P1 p1) {
+ 		
+ 		for ( size_t i = 0; i < ITEM_COUNT; ++i ) {
+ 			
+-			::new (&this[i])(p1);
++			::new (&this->Get(i)) T(p1);
+ 		}
+ 	}
+ 
+-	template <class P1, class P2>
++	template <typename P1, typename P2>
+ 	void Construct(P1 p1, P2 p2) {
+ 		
+ 		for ( size_t i = 0; i < ITEM_COUNT; ++i ) {
+ 			
+-			::new (&this[i])(p1, p2);
++			::new (&this->Get(i)) T(p1, p2);
+ 		}
+ 	}
+ 
++	// ...
++
+ };
+ 
+ 
+@@ -75,9 +96,10 @@
+ 
+ 	ProtoCache() {
+ 
++		// set all slots as 'unused'
+ 		for ( int i = 0; i < CACHE_LENGTH; ++i ) {
+ 			
+-			items[i].classp = NULL;
++			items.Get(i).clasp = NULL;
+ 		}
+ 	}
+ 
+@@ -98,11 +120,11 @@
+ 
+ 		for (;;) {
+ 
+-			ClassProtoCache &slot = items[slotIndex];
++			ClassProtoCache &slot = items.Get(slotIndex);
+ 
+ 			if ( slot.clasp == NULL ) {
+ 
+-				::new (&slot) ClassProtoCache(cx, proto);
++				::new (&slot) ClassProtoCache(cx, clasp, proto);
+ 				return true;
+ 			}
+ 
+@@ -125,7 +147,7 @@
+ 
+ 		for (;;) {
+ 
+-			const ClassProtoCache &slot = items[slotIndex];
++			const ClassProtoCache &slot = items.GetConst(slotIndex);
+ 		
+ 			// slot->clasp == NULL -> empty
+ 			// slot->clasp == jlpv::RemovedSlot() -> slot removed, but maybe next slot will match !
+Index: jslang/handlePub.h
+===================================================================
+--- jslang/handlePub.h	(revision 3667)
++++ jslang/handlePub.h	(working copy)
+@@ -49,7 +49,7 @@
+ 
+ template <class Struct>
+ INLINE bool FASTCALL
+-HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruct, HandleFinalizeCallback_t finalizeCallback, jsval *handleVal ) {
++HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruct, HandleFinalizeCallback_t finalizeCallback, OUT JS::MutableHandleValue handleVal ) {
+ 
+ 	ASSERT( handleType != JL_HANDLE_INVALID );
+ 
+@@ -77,13 +77,15 @@
+ 
+ 
+ INLINE bool
+-HandleClose( JSContext *cx, jsval handleVal ) { // see finalize
++HandleClose( JSContext *cx, JS::HandleValue handleVal ) { // see finalize
+ 	
+ 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
+-	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(handleVal), JL_HandleJSClass(cx) );
++	
++	{
+ 
+-	JSObject *handleObj;
+-	handleObj = JSVAL_TO_OBJECT(handleVal);
++	JS::RootedObject handleObj(cx, &handleVal.toObject());
++	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
++
+ 	HandlePrivate *pv;
+ 	pv = (HandlePrivate*)JL_GetPrivate(handleObj);
+ 	JL_ASSERT_OBJECT_STATE(pv, "Handle");
+@@ -93,87 +95,121 @@
+ 	jl_free(pv);
+ 	JL_SetPrivate( handleObj, NULL);
+ 
++	}
++
+ 	return true;
+ 	JL_BAD;
+ }
+ 
+ 
+ INLINE JL_HANDLE_TYPE
+-GetHandleType( JSContext *cx, jsval handleVal ) {
++GetHandleType( JSContext *cx, JS::HandleValue handleVal ) {
+ 
+ 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
+-	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(handleVal), JL_HandleJSClass(cx) );
+ 
+-	JSObject *handleObj;
+-	handleObj = JSVAL_TO_OBJECT(handleVal);
++	{
++
++	JS::RootedObject handleObj(cx, &handleVal.toObject());
++	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
++
+ 	HandlePrivate *pv;
+-	
+ 	pv = (HandlePrivate*)JL_GetPrivate(handleObj);
+ 	JL_CHK( pv != NULL );
+ 	return pv->handleType;
++	
++	}
++
+ bad:
+ 	return JL_HANDLE_INVALID;
+ }
+ 
+ 
+ ALWAYS_INLINE bool
+-IsHandle( JSContext *cx, jsval handleVal ) {
++IsHandle( JSContext *cx, JS::HandleValue handleVal ) {
+ 
+-	return JL_ValueIsClass(handleVal, JL_HandleJSClass(cx));
++	return JL_ValueIsClass(cx, handleVal, JL_HandleJSClass(cx));
+ }
+ 
+ ALWAYS_INLINE bool
+-IsHandleType( JSContext *, JSObject *handleObj, JL_HANDLE_TYPE handleType ) {
++IsHandle( JSContext *cx, JS::HandleObject handleObj ) {
+ 
++	return JL_GetClass(handleObj) == JL_HandleJSClass(cx);
++}
++
++
++ALWAYS_INLINE bool
++IsHandleType( JSContext *, JS::HandleObject handleObj, JL_HANDLE_TYPE handleType ) {
++
+ 	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(handleObj);
+ 	return pv != NULL && pv->handleType == handleType;
+ }
+ 
+ 
+ ALWAYS_INLINE bool
+-IsHandleType( JSContext *cx, jsval handleVal, JL_HANDLE_TYPE handleType ) {
++IsHandleType( JSContext *cx, JS::HandleValue handleVal, JL_HANDLE_TYPE handleType ) {
+ 
+-	if ( !JL_ValueIsClass(handleVal, JL_HandleJSClass(cx)) )
++	if ( !JL_ValueIsClass(cx, handleVal, JL_HandleJSClass(cx)) )
+ 		return false;
+-	JSObject *handleObj = JSVAL_TO_OBJECT(handleVal);
++	JS::RootedObject handleObj(cx, &handleVal.toObject());
+ 	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(handleObj);
+ 	return pv != NULL && pv->handleType == handleType;
+ }
+ 
+ 
+ INLINE void*
+-GetHandlePrivate( JSContext *cx, const jsval &handleVal ) {
++GetHandlePrivate( JSContext *cx, IN JS::HandleObject handleObj ) {
+ 
+-	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
+-	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(handleVal), JL_HandleJSClass(cx) );
++	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
+ 
+ 	HandlePrivate *pv;
+-	pv = (HandlePrivate*)JL_GetPrivate(JSVAL_TO_OBJECT(handleVal));
++	pv = (HandlePrivate*)JL_GetPrivate(handleObj);
+ 	JL_CHK( pv != NULL );
+ 	return (char*)pv + sizeof(HandlePrivate); // user data is just behind our private structure.
++
+ bad:
+ 	return NULL;
+ }
+ 
+ 
++INLINE void*
++GetHandlePrivate( JSContext *cx, IN JS::HandleValue handleVal ) {
++
++	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
++	{
++	JS::RootedObject handleObj(cx, &handleVal.toObject());
++	return GetHandlePrivate(cx, handleObj);
++	}
++bad:
++	return NULL;
++}
++
++
+ INLINE bool
+-SetHandleSlot( JSContext *cx, jsval handleVal, uint32_t slotIndex, jsval value ) {
++SetHandleSlot( JSContext *cx, JS::HandleValue handleVal, uint32_t slotIndex, IN JS::HandleValue value ) {
+ 
+ 	ASSERT( slotIndex < JL_HANDLE_PUBLIC_SLOT_COUNT );
+ 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
+-	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(handleVal), JL_HandleJSClass(cx) );
+-	return JL_SetReservedSlot( JSVAL_TO_OBJECT(handleVal), slotIndex, value);
++	{
++	JS::RootedObject handleObj(cx, &handleVal.toObject());
++
++	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
++	return JL_SetReservedSlot(handleObj, slotIndex, value);
++	}
+ 	JL_BAD;
+ }
+ 
+ 
+ INLINE bool
+-GetHandleSlot( JSContext *cx, jsval handleVal, uint32_t slotIndex, jsval &value ) {
++GetHandleSlot( JSContext *cx, JS::HandleValue handleVal, uint32_t slotIndex, OUT JS::MutableHandleValue value ) {
+ 
+ 	ASSERT( slotIndex < JL_HANDLE_PUBLIC_SLOT_COUNT );
+ 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
+-	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(handleVal), JL_HandleJSClass(cx) );
+-	return JL_GetReservedSlot( JSVAL_TO_OBJECT(handleVal), slotIndex, value);
++	{
++	JS::RootedObject handleObj(cx, &handleVal.toObject());
++
++	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
++	return JL_GetReservedSlot(handleObj, slotIndex, value);
++	}
+ 	JL_BAD;
+ }
+ 
+Index: jslang/static.cpp
+===================================================================
+--- jslang/static.cpp	(revision 3667)
++++ jslang/static.cpp	(working copy)
+@@ -63,7 +63,7 @@
+ 	JL_DEFINE_ARGS;
+ 	JL_ASSERT_ARGC(1);
+ 
+-	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_ValueIsCallable(cx, JL_ARG(1)) );
++	JL_RVAL.setBoolean( JL_ValueIsCallable(cx, JL_ARG(1)) );
+ 	return true;
+ 	JL_BAD;
+ }
+@@ -95,12 +95,12 @@
+ 
+ 	if ( JL_ARGC == 1 && JSVAL_IS_STRING(JL_ARG(1)) ) { // identity
+ 		
+-		*JL_RVAL = JL_ARG(1);
++		JL_RVAL.set(JL_ARG(1));
+ 		return true;
+ 	} else 
+ 	if ( JL_ARGC == 0 || (JL_ARGC == 1 && JSVAL_IS_VOID(JL_ARG(1))) ) { // undefined
+ 
+-		*JL_RVAL = JSVAL_VOID;
++		JL_RVAL.setUndefined();
+ 		return true;
+ 	}
+ 
+@@ -112,7 +112,7 @@
+ 
+ 	if ( !JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
+ 
+-		JSObject *sobj = JSVAL_TO_OBJECT( JL_ARG(1) );
++		JS::RootedObject sobj(cx, &JL_ARG(1).toObject() );
+ 
+ 		NIStreamRead read = StreamReadInterface(cx, sobj);
+ 		if ( read ) {
+@@ -130,12 +130,12 @@
+ 
+ 			if ( toArrayBuffer ) {
+ 
+-				JL_CHK( JL_NewBufferGetOwnership(cx, buf.GetDataOwnership(), buf.Length(), *JL_RVAL) );
++				JL_CHK( JL_NewBufferGetOwnership(cx, buf.GetDataOwnership(), buf.Length(), JL_RVAL) );
+ 			} else {
+ 
+ 				JSString *jsstr = JS_NewStringCopyN(cx, buf.GetData(), buf.Length());
+ 				JL_CHK( jsstr );
+-				*JL_RVAL = STRING_TO_JSVAL( jsstr );
++				JL_RVAL.setString(jsstr);
+ 			}
+ 
+ 			return true;
+@@ -145,7 +145,7 @@
+ 
+ 	// fallback:
+ 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+-	JL_CHK( toArrayBuffer ? str.GetArrayBuffer(cx, *JL_RVAL) : str.GetJSString(cx, *JL_RVAL) );
++	JL_CHK( toArrayBuffer ? str.GetArrayBuffer(cx, JL_RVAL) : str.GetJSString(cx, JL_RVAL) );
+ 
+ 	return true;
+ 	JL_BAD;
+@@ -187,37 +187,38 @@
+ 
+ 	JL_DEFINE_ARGS;
+ 
+-	js::AutoValueVector avr(cx);
++	JS::AutoValueVector avr(cx);
+ 	avr.reserve(16);
+ 
+ 	jl::Stack<JLData, jl::StaticAllocMedium> strList;
+ 	size_t length = 0;
+ 
+-	jsval val;
++	JS::RootedValue val(cx);
+ 
+ 	JL_ASSERT_ARGC_MIN(1);
+ 	JL_ASSERT_ARG_IS_OBJECT(1);
+ 
+-	JSObject *argObj;
+-	argObj = JSVAL_TO_OBJECT(JL_ARG(1));
++	{
+ 
++	JS::RootedObject argObj(cx, &JL_ARG(1).toObject());
++
+ 	if ( JL_ObjectIsArrayLike(cx, argObj) ) {
+ 
+ 		uint32_t arrayLen;
+ 		JL_CHK( JS_GetArrayLength(cx, argObj, &arrayLen) );
+ 		for ( unsigned i = 0; i < arrayLen; ++i ) {
+ 
+-			JL_CHK( JL_GetElement(cx, argObj, i, val) );
++			JL_CHK( JL_GetElement(cx, argObj, i, &val) );
+ 			JL_CHK( JL_JsvalToNative(cx, val, &*++strList) );
+ 			length += strList->Length();
+ 			avr.append(val);
+ 		}
+ 	} else {
+ 
+-		jsval nextFct;
++		JS::RootedValue nextFct(cx);
+ 		JL_CHK( JS_GetPropertyById(cx, argObj, JLID(cx, next), &nextFct) );
+ 		JL_ASSERT_IS_CALLABLE(nextFct, "iterator");
+-		while ( JS_CallFunctionValue(cx, argObj, nextFct, 0, NULL, &val) != false ) { // loop until StopIteration or error
++		while ( JS_CallFunctionValue(cx, argObj, nextFct, 0, NULL, val.address()) != false ) { // loop until StopIteration or error
+ 
+ 			JL_CHK( JL_JsvalToNative(cx, val, &*++strList) );
+ 			length += strList->Length();
+@@ -235,7 +236,7 @@
+ 
+ 	if ( toArrayBuffer ) {
+ 		
+-		uint8_t *buf = JL_NewBuffer(cx, length, *JL_RVAL);
++		uint8_t *buf = JL_NewBuffer(cx, length, JL_RVAL);
+ 		JL_CHK( buf );
+ 		buf += length;
+ 		while ( strList ) {
+@@ -259,9 +260,11 @@
+ 
+ 		JSString *jsstr = JL_NewUCString(cx, buf, length);
+ 		JL_ASSERT( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
+-		*JL_RVAL = STRING_TO_JSVAL(jsstr);
++		JL_RVAL.setString(jsstr);
+ 	}
+ 
++	}
++
+ 	return true;
+ 	JL_BAD;
+ }
+@@ -291,7 +294,7 @@
+ 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &start) );
+ 		if ( start > srcStr.Length() - patStr.Length() ) {
+ 			
+-			*JL_RVAL = INT_TO_JSVAL( -1 );
++			JL_RVAL.setInt32(-1);
+ 			return true;
+ 		}
+ 	} else {
+@@ -300,9 +303,9 @@
+ 	}
+ 
+ 	if ( srcStr.IsWide() )
+-		*JL_RVAL = INT_TO_JSVAL( jl::Match(srcStr.GetConstWStr()+start, srcStr.Length()-start, patStr.GetConstWStr(), patStr.Length()) );
++		JL_RVAL.setInt32( jl::Match(srcStr.GetConstWStr()+start, srcStr.Length()-start, patStr.GetConstWStr(), patStr.Length()) );
+ 	else
+-		*JL_RVAL = INT_TO_JSVAL( jl::Match(srcStr.GetConstStr()+start, srcStr.Length()-start, patStr.GetConstStr(), patStr.Length()) );
++		JL_RVAL.setInt32( jl::Match(srcStr.GetConstStr()+start, srcStr.Length()-start, patStr.GetConstStr(), patStr.Length()) );
+ 
+ 	return true;
+ 	JL_BAD;
+@@ -372,13 +375,15 @@
+ 	int st;
+ 	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, jslangModuleId);
+ 
++	JS::RootedObject handleObj(cx);
++
+ 	JL_ASSERT_ARGC_MAX( COUNTOF(mpv->processEventThreadInfo) );
+ 	
+ 	ProcessEvent *peList[COUNTOF(mpv->processEventThreadInfo)]; // cache to avoid calling GetHandlePrivate() too often.
+ 
+ 	if ( JL_ARGC == 0 ) {
+ 		
+-		*JL_RVAL = JSVAL_ZERO;
++		JL_RVAL.setInt32(0);
+ 		return true;
+ 	}
+ 
+@@ -386,9 +391,10 @@
+ 	unsigned int i;
+ 	for ( i = 0; i < argc; ++i ) {
+ 
+-		JL_ASSERT_ARG_TYPE( IsHandle(cx, JL_ARG(i+1)), i+1, "(pev) Handle" );
+-		JL_ASSERT_ARG_TYPE( IsHandleType(cx, JSVAL_TO_OBJECT(JL_ARG(i+1)), jl::CastCStrToUint32("pev")), i+1, "(pev) Handle" );
+-		ProcessEvent *pe = (ProcessEvent*)GetHandlePrivate(cx, JL_ARG(i+1));
++		handleObj.set(&JL_ARG(i+1).toObject());
++		JL_ASSERT_ARG_TYPE( IsHandle(cx, handleObj), i+1, "(pev) Handle" );
++		JL_ASSERT_ARG_TYPE( IsHandleType(cx, handleObj, jl::CastCStrToUint32("pev")), i+1, "(pev) Handle" );
++		ProcessEvent *pe = (ProcessEvent*)GetHandlePrivate(cx, handleObj);
+ 		JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_STATE ); //JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_ANINVALID, E_NAME("pev Handle") );
+ 
+ 		ASSERT( pe->prepareWait );
+@@ -396,7 +402,7 @@
+ 		ASSERT( pe->cancelWait );
+ 		ASSERT( pe->endWait );
+ 
+-		JL_CHK( pe->prepareWait(pe, cx, JSVAL_TO_OBJECT(JL_ARG(i+1))) );
++		JL_CHK( pe->prepareWait(pe, cx, handleObj) );
+ 
+ 		peList[i] = pe;
+ 	}
+@@ -481,7 +487,8 @@
+ 			JS_ClearPendingException(cx);
+ 		}
+ 
+-		if ( pe->endWait(pe, &hasEvent, cx, JSVAL_TO_OBJECT(JL_ARG(i+1))) != true )
++		handleObj.set(&JL_ARG(i+1).toObject());
++		if ( pe->endWait(pe, &hasEvent, cx, handleObj) != true )
+ 			ok = false; // report errors later
+ 
+ 		if ( exState )
+@@ -499,7 +506,7 @@
+ 	ASSERT( JLSemaphoreAcquire(mpv->processEventSignalEventSem, 0) == JLTIMEOUT ); // else invalid state
+ #endif // DEBUG
+ 
+-	*JL_RVAL = INT_TO_JSVAL(eventsMask);
++	JL_RVAL.setInt32(eventsMask);
+ 	return ok;
+ 	JL_BAD;
+ }
+@@ -529,13 +536,15 @@
+ 	unsigned int timeout;
+ 	JLEventHandler cancel;
+ 	bool canceled;
+-	jsval callbackFunction;
+-	JSObject *callbackFunctionThis;
++	//jsval callbackFunction;
++	JS::PersistentRootedValue callbackFunction;
++	//JSObject *callbackFunctionThis;
++	JS::PersistentRootedObject callbackFunctionThis;
+ };
+ 
+ S_ASSERT( offsetof(TimeoutProcessEvent, pe) == 0 );
+ 
+-static bool TimeoutPrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
++static bool TimeoutPrepareWait( volatile ProcessEvent *, JSContext *, JS::HandleObject ) {
+ 	
+ 	return true;
+ }
+@@ -562,7 +571,7 @@
+ 	return true;
+ }
+ 
+-static bool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
++static bool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS::HandleObject obj ) {
+ 
+ 	JL_IGNORE(obj);
+ 
+@@ -581,7 +590,7 @@
+ 	if ( JSVAL_IS_VOID( upe->callbackFunction ) )
+ 		return true;
+ 
+-	jsval rval;
++	JS::RootedValue rval(cx);
+ 	JL_CHK( JL_CallFunctionVA(cx, upe->callbackFunctionThis, upe->callbackFunction, &rval) );
+ 
+ 	return true;
+@@ -620,8 +629,8 @@
+ 
+ 		JL_ASSERT_ARG_IS_CALLABLE(2);
+ 
+-		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_OBJVAL) ); // GC protection only
+-		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_ARG(2)) ); // GC protection only
++		JL_CHK( SetHandleSlot(cx, JL_RVAL, 0, JL_OBJVAL) ); // GC protection only
++		JL_CHK( SetHandleSlot(cx, JL_RVAL, 1, JL_ARG(2)) ); // GC protection only
+ 
+ 		upe->callbackFunctionThis = JSVAL_TO_OBJECT(JL_OBJVAL); // store "this" object.
+ 		upe->callbackFunction = JL_ARG(2); // access to ->callbackFunction is faster than Handle slots.
+@@ -636,7 +645,7 @@
+ 
+ 
+ #if defined(DEBUG) // || 1
+-#define HAS_JL_API_TESTS
++//#define HAS_JL_API_TESTS
+ #endif
+ 
+ 
+@@ -655,6 +664,8 @@
+ 		_jsapiTests();
+ **/
+ 
++S_ASSERT(sizeof(wchar_t) == sizeof(jschar));
++
+ DEFINE_FUNCTION( _jsapiTests ) {
+ 
+ 	JL_IGNORE(cx, argc, vp);
+@@ -684,8 +695,7 @@
+ 	// Data issues 2 ////////////////////////////////////////////////
+ 	{
+ 	JLData path;
+-	jsval tmp;
+-	tmp = JSVAL_ONE;
++	JS::RootedValue tmp(cx, JSVAL_ONE);
+ 	JL_CHK( JL_JsvalToNative(cx, tmp, &path) );
+ 	const char *d1 = path.GetConstStrZ();
+ 	const char *d2 = path.GetConstStrZ();
+@@ -699,17 +709,18 @@
+ 	///////////////////////////////////////////////////////////////
+ 	// check JL_JsvalToJsid -> JL_JsidToJsval
+ 	//
+-	JSObject *o = JL_NewObj(cx);
+-	jsid id;
+-	jsval s;
+-	s = OBJECT_TO_JSVAL(o);
++	JS::RootedObject o(cx, JL_NewObj(cx));
++	JS::RootedId id(cx);
++	JS::RootedValue s(cx);
++	s.setObject(*o);
++
+ 	TEST( JL_JsvalToJsid(cx, s, &id) );
+ 	TEST( JSID_IS_OBJECT(id) );
+-	jsval r;
++	JS::RootedValue r(cx);
+ 	TEST( JL_JsidToJsval(cx, id, &r) );
+ 	TEST( JSVAL_TO_OBJECT(r) == o );
+ 
+-	TEST( JS_ValueToId(cx, OBJECT_TO_JSVAL(o), &id) );
++	TEST( JS_ValueToId(cx, OBJECT_TO_JSVAL(o), id.address()) );
+ 	TEST( !JSID_IS_OBJECT(id) );
+ 
+ 	bool found;
+@@ -718,8 +729,8 @@
+ 	TEST( found );
+ 
+ 	JSString *jsstr = JS_NewUCStringCopyZ(cx, L("testtesttesttesttesttesttesttesttesttesttesttest"));
+-	jsid pid;
+-	pid = JL_StringToJsid(cx, jsstr);
++	JS::RootedId pid(cx);
++	pid.set(JL_StringToJsid(cx, jsstr));
+ 
+ 	TEST( JL_JsvalToJsid(cx, OBJECT_TO_JSVAL(JS_NewObject(cx, NULL, NULL, NULL)), &id) );
+ 	TEST( JSID_IS_OBJECT(id) );
+@@ -861,7 +872,7 @@
+ 	{
+ 	void *ptr = (void*)0; // 00...00
+ 	
+-	jsval v;
++	JS::RootedValue v;
+ 	void *tmp = ptr;
+ 	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
+ 	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
+@@ -871,7 +882,7 @@
+ 	{
+ 	void *ptr = (void*)1; // 00...01
+ 	
+-	jsval v;
++	JS::RootedValue v;
+ 	void *tmp = ptr;
+ 	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
+ 	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
+@@ -881,7 +892,7 @@
+ 	{
+ 	void *ptr = (void*)-1; // ff...ff
+ 	
+-	jsval v;
++	JS::RootedValue v;
+ 	void *tmp = ptr;
+ 	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
+ 	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
+@@ -891,7 +902,7 @@
+ 	{
+ 	void *ptr = (void*)(size_t((void*)-1)-1); // ff...fe
+ 	
+-	jsval v;
++	JS::RootedValue v;
+ 	void *tmp = ptr;
+ 	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
+ 	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
+@@ -901,7 +912,7 @@
+ 	{
+ 	void *ptr = (void*)(size_t((void*)-1) >> 1); // 7f...ff
+ 	
+-	jsval v;
++	JS::RootedValue v;
+ 	void *tmp = ptr;
+ 	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
+ 	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
+@@ -911,7 +922,7 @@
+ 	{
+ 	void *ptr = (void*)((size_t((void*)-1)>>1) - 1); // 7f...fe
+ 	
+-	jsval v;
++	JS::RootedValue v;
+ 	void *tmp = ptr;
+ 	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
+ 	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
+@@ -937,7 +948,7 @@
+ 
+ 
+ #if defined(DEBUG)  //   || 1
+-#define JSLANG_TEST 
++//#define JSLANG_TEST
+ #endif
+ 
+ #ifdef JSLANG_TEST
+@@ -947,7 +958,7 @@
+ 	
+ 	JL_IGNORE(cx);
+ 
+-	static jsval tmp = JSVAL_ONE;
++//	static JS::RootedValue tmp = JSVAL_ONE;
+ /* 2000
+ 	static JSObject *o = JS_NewArrayObject(cx, 0, NULL);
+ 	JS_SetElement(cx, o, 1, &tmp); JS_SetElement(cx, o, 2, &tmp); JS_SetElement(cx, o, 3, &tmp); JS_SetElement(cx, o, 4, &tmp); JS_SetElement(cx, o, 5, &tmp); JS_SetElement(cx, o, 6, &tmp); JS_SetElement(cx, o, 7, &tmp); JS_SetElement(cx, o, 8, &tmp); JS_SetElement(cx, o, 9, &tmp); JS_SetElement(cx, o, 10, &tmp); JS_SetElement(cx, o, 11, &tmp); JS_SetElement(cx, o, 12, &tmp); JS_SetElement(cx, o, 13, &tmp); JS_SetElement(cx, o, 14, &tmp); JS_SetElement(cx, o, 15, &tmp); JS_SetElement(cx, o, 16, &tmp);
+@@ -989,7 +1000,7 @@
+ 
+ 	JS::RootedValue test1(cx);
+ 	__asm { nop }
+-	jsval v1 = test1;
++	JS::RootedValue v1 = test1;
+ 	__asm { nop }
+ 	test1 = v1;
+ 
+@@ -997,12 +1008,12 @@
+ 
+ 	JS::MutableHandleValue test2(&test1);
+ 	__asm { nop }
+-	jsval v2 = test2;
++	JS::RootedValue v2 = test2;
+ 	__asm { nop }
+ 	test2.set(v2);
+ 	
+ 	JS::HandleValue test3(test2);
+-	jsval v3 = test3;
++	JS::RootedValue v3 = test3;
+ 	JL_IGNORE(v3);
+ 
+ 	struct { void operator()(JS::MutableHandleValue m1) {
+@@ -1224,7 +1235,7 @@
+ DEFINE_INIT() {
+ 
+ 
+-	JS::RootedObject robj(cx, JL_GetGlobal(cx));
++	JS::RootedObject robj(cx, JL_GetGlobal(cx, obj));
+ 
+ 	//REGISTER_STATIC();
+ 	REGISTER_CLASS(FooBar);
+Index: jslang/stream.cpp
+===================================================================
+--- jslang/stream.cpp	(revision 3667)
++++ jslang/stream.cpp	(working copy)
+@@ -32,7 +32,7 @@
+ 
+ 	JS::RootedValue val(cx);
+ 
+-	JL_CHK( JL_GetReservedSlot(obj, SLOT_STREAM_SOURCE, val) );
++	JL_CHK( JL_GetReservedSlot(obj, SLOT_STREAM_SOURCE, &val) );
+ 	ASSERT( val.isObject() );
+ 	srcObj.set( &val.toObject() );
+ 	return true;
+@@ -45,11 +45,12 @@
+ 	if ( srcVal.isPrimitive() ) {
+ 
+ 		JS::RootedObject tmpObj(cx);
+-		JL_CHK( JS_ValueToObject(cx, srcVal, tmpObj.address()) );
+-		JL_CHK( JL_SetReservedSlot( obj, SLOT_STREAM_SOURCE, OBJECT_TO_JSVAL(tmpObj) ) );
++		JL_CHK( JS_ValueToObject(cx, srcVal, &tmpObj) );
++		JS::RootedValue tmpVal(cx, OBJECT_TO_JSVAL(tmpObj));
++		JL_CHK( JL_SetReservedSlot(obj, SLOT_STREAM_SOURCE, tmpVal) );
+ 	} else {
+ 
+-		JL_CHK( JL_SetReservedSlot( obj, SLOT_STREAM_SOURCE, srcVal) );
++		JL_CHK( JL_SetReservedSlot(obj, SLOT_STREAM_SOURCE, srcVal) );
+ 	}
+ 
+ 	return true;
+@@ -57,7 +58,7 @@
+ }
+ 
+ ALWAYS_INLINE bool
+-SetPosition(JSContext *cx, JSObject *obj, size_t position) {
++SetPosition(JSContext *cx, JS::HandleObject obj, size_t position) {
+ 
+ 	JL_CHK( JL_NativeToReservedSlot(cx, obj, SLOT_STREAM_POSITION, position) );
+ 	return true;
+@@ -65,7 +66,7 @@
+ }
+ 
+ ALWAYS_INLINE bool
+-GetPosition(JSContext *cx, JSObject *obj, size_t *position) {
++GetPosition(JSContext *cx, JS::HandleObject obj, size_t *position) {
+ 
+ 	JL_CHK( JL_ReservedSlotToNative(cx, obj, SLOT_STREAM_POSITION, position) );
+ 	return true;
+@@ -78,17 +79,19 @@
+ 
+ 	size_t position, length;
+ 	JS::RootedObject srcObj(cx);
++	JS::RootedValue val(cx);
++
+ 	JL_CHK( GetPosition(cx, obj, &position) );
+ 	JL_CHK( GetStreamSource(cx, obj, &srcObj) );
+ 
+ 	bool found;
+ 	JL_CHK( JS_HasPropertyById(cx, obj, JLID(cx, length), &found) );
+ 
+-	jsval val;
+-	JL_CHK( JS_GetPropertyByIdDefault(cx, obj, JLID(cx, length), JSVAL_VOID, &val) );
+ 
+-	if ( !JSVAL_IS_VOID(val) ) {
++	JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, length), &val) );
+ 
++	if ( !val.isUndefined() ) {
++
+ 		JL_CHK( JL_JsvalToNative(cx, val, &length) );
+ 	} else {
+ 
+@@ -106,16 +109,16 @@
+ 
+ 
+ ALWAYS_INLINE bool
+-StreamRead( JSContext *cx, JSObject *streamObj, char *buf, size_t *amount ) {
++StreamRead( JSContext *cx, JS::HandleObject streamObj, char *buf, size_t *amount ) {
+ 
+ 	JLData data;
+ 	size_t position;
+-	jsval source;
++	JS::RootedValue source(cx);
+ 
+ 	JL_ASSERT_INSTANCE(streamObj, JL_THIS_CLASS);
+ 
+ 	JL_CHK( GetPosition(cx, streamObj, &position) );
+-	JL_CHK( JL_GetReservedSlot( streamObj, SLOT_STREAM_SOURCE, source) );
++	JL_CHK( JL_GetReservedSlot(streamObj, SLOT_STREAM_SOURCE, &source) );
+ 	JL_CHK( JL_JsvalToNative(cx, source, &data) );
+ 
+ 	size_t length = data.Length();
+@@ -188,7 +191,7 @@
+ 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
+ 		if ( amount == 0 ) {
+ 
+-			JL_CHK( JL_NewEmptyBuffer(cx, *JL_RVAL) );
++			JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
+ 			return true;
+ 		}
+ 		if ( available < amount )
+@@ -200,11 +203,11 @@
+ 
+ 	if ( available == 0 ) {
+ 
+-		*JL_RVAL = JSVAL_VOID;
++		JL_RVAL.setUndefined();
+ 		return true;
+ 	}
+ 
+-	buffer = JL_NewBuffer(cx, amount, *JL_RVAL);
++	buffer = JL_NewBuffer(cx, amount, JL_RVAL);
+ 	JL_CHK( buffer );
+ 
+ 	size_t readAmount;
+@@ -214,7 +217,7 @@
+ 
+ 	if ( readAmount == 0 ) {
+ 
+-		*JL_RVAL = JSVAL_VOID;
++		JL_RVAL.setUndefined();
+ 		return true;
+ 	}
+ 
+Index: jsode/geom.h
+===================================================================
+--- jsode/geom.h	(revision 3667)
++++ jsode/geom.h	(working copy)
+@@ -49,24 +49,24 @@
+ 	return ode::dGeomGetData(geomId) != NULL;
+ }
+ 
+-ALWAYS_INLINE JSBool GeomToJsval( JSContext *cx, ode::dGeomID geomId, jsval *val ) {
++ALWAYS_INLINE bool GeomToJsval( JSContext *cx, ode::dGeomID geomId, jsval *val ) {
+ 
+ 	JSObject *obj = (JSObject*)ode::dGeomGetData(geomId);
+ 	if (unlikely( !obj ))
+ 		JL_CHK( ReconstructGeom(cx, geomId, &obj) );
+ 	JL_ASSERT_INHERITANCE(obj, JL_CLASS(Geom));
+ 	*val = OBJECT_TO_JSVAL( obj );
+-	return JS_TRUE;
++	return true;
+ 	JL_BAD;
+ }
+ 
+ 
+-ALWAYS_INLINE JSBool JL_JsvalToGeom( JSContext *cx, const jsval val, ode::dGeomID *geom ) {
++ALWAYS_INLINE bool JL_JsvalToGeom( JSContext *cx, const jsval val, ode::dGeomID *geom ) {
+ 
+ 	JL_ASSERT_IS_OBJECT(val, JL_CLASS_NAME(Geom));
+ 	JL_ASSERT_INSTANCE(JSVAL_TO_OBJECT(val), JL_CLASS(Geom));
+ 	*geom = (ode::dGeomID)JL_GetPrivate(JSVAL_TO_OBJECT(val));
+ 	JL_ASSERT_OBJECT_STATE( *geom, JL_CLASS_NAME(Geom) );
+-	return JS_TRUE;
++	return true;
+ 	JL_BAD;
+ }
+\ No newline at end of file

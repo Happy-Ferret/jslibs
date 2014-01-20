@@ -49,23 +49,22 @@ JL_HandleJSClass( JSContext *cx ) {
 
 template <class Struct>
 INLINE bool FASTCALL
-HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruct, HandleFinalizeCallback_t finalizeCallback, jsval *handleVal ) {
+HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruct, HandleFinalizeCallback_t finalizeCallback, OUT JS::MutableHandleValue handleVal ) {
 
 	ASSERT( handleType != JL_HANDLE_INVALID );
 
 	const ClassProtoCache *classProtoCache = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Handle");
 	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME("Handle"), E_NOTFOUND );
 
-	JSObject *handleObj;
-	handleObj = JL_NewObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto, NULL);
-	JL_CHK( handleObj );
-	*handleVal = OBJECT_TO_JSVAL(handleObj);
+	JS::RootedObject handleObj(cx, JL_NewObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto, JS::NullPtr()));
+	JL_CHK( handleObj != NULL );
+	handleVal.setObject(*handleObj);
 
 	HandlePrivate *pv;
 	pv = (HandlePrivate*)jl_malloc(sizeof(HandlePrivate) + sizeof(Struct));
 	JL_ASSERT_ALLOC( pv );
 	JL_updateMallocCounter(cx, sizeof(HandlePrivate) + sizeof(Struct));
-	JL_SetPrivate( handleObj, pv);
+	JL_SetPrivate(handleObj, pv);
 
 	pv->handleType = handleType;
 	pv->finalizeCallback = finalizeCallback;
@@ -77,13 +76,15 @@ HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruc
 
 
 INLINE bool
-HandleClose( JSContext *cx, jsval handleVal ) { // see finalize
+HandleClose( JSContext *cx, JS::HandleValue handleVal ) { // see finalize
 	
 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
-	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(handleVal), JL_HandleJSClass(cx) );
+	
+	{
 
-	JSObject *handleObj;
-	handleObj = JSVAL_TO_OBJECT(handleVal);
+	JS::RootedObject handleObj(cx, &handleVal.toObject());
+	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
+
 	HandlePrivate *pv;
 	pv = (HandlePrivate*)JL_GetPrivate(handleObj);
 	JL_ASSERT_OBJECT_STATE(pv, "Handle");
@@ -93,37 +94,50 @@ HandleClose( JSContext *cx, jsval handleVal ) { // see finalize
 	jl_free(pv);
 	JL_SetPrivate( handleObj, NULL);
 
+	}
+
 	return true;
 	JL_BAD;
 }
 
 
 INLINE JL_HANDLE_TYPE
-GetHandleType( JSContext *cx, jsval handleVal ) {
+GetHandleType( JSContext *cx, JS::HandleValue handleVal ) {
 
 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
-	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(handleVal), JL_HandleJSClass(cx) );
 
-	JSObject *handleObj;
-	handleObj = JSVAL_TO_OBJECT(handleVal);
+	{
+
+	JS::RootedObject handleObj(cx, &handleVal.toObject());
+	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
+
 	HandlePrivate *pv;
-	
 	pv = (HandlePrivate*)JL_GetPrivate(handleObj);
 	JL_CHK( pv != NULL );
 	return pv->handleType;
+	
+	}
+
 bad:
 	return JL_HANDLE_INVALID;
 }
 
 
 ALWAYS_INLINE bool
-IsHandle( JSContext *cx, jsval handleVal ) {
+IsHandle( JSContext *cx, JS::HandleValue handleVal ) {
 
-	return JL_ValueIsClass(handleVal, JL_HandleJSClass(cx));
+	return JL_ValueIsClass(cx, handleVal, JL_HandleJSClass(cx));
 }
 
 ALWAYS_INLINE bool
-IsHandleType( JSContext *, JSObject *handleObj, JL_HANDLE_TYPE handleType ) {
+IsHandle( JSContext *cx, JS::HandleObject handleObj ) {
+
+	return JL_GetClass(handleObj) == JL_HandleJSClass(cx);
+}
+
+
+ALWAYS_INLINE bool
+IsHandleType( JSContext *, JS::HandleObject handleObj, JL_HANDLE_TYPE handleType ) {
 
 	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(handleObj);
 	return pv != NULL && pv->handleType == handleType;
@@ -131,49 +145,70 @@ IsHandleType( JSContext *, JSObject *handleObj, JL_HANDLE_TYPE handleType ) {
 
 
 ALWAYS_INLINE bool
-IsHandleType( JSContext *cx, jsval handleVal, JL_HANDLE_TYPE handleType ) {
+IsHandleType( JSContext *cx, JS::HandleValue handleVal, JL_HANDLE_TYPE handleType ) {
 
-	if ( !JL_ValueIsClass(handleVal, JL_HandleJSClass(cx)) )
+	if ( !JL_ValueIsClass(cx, handleVal, JL_HandleJSClass(cx)) )
 		return false;
-	JSObject *handleObj = JSVAL_TO_OBJECT(handleVal);
+	JS::RootedObject handleObj(cx, &handleVal.toObject());
 	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(handleObj);
 	return pv != NULL && pv->handleType == handleType;
 }
 
 
 INLINE void*
-GetHandlePrivate( JSContext *cx, const jsval &handleVal ) {
+GetHandlePrivate( JSContext *cx, IN JS::HandleObject handleObj ) {
 
-	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
-	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(handleVal), JL_HandleJSClass(cx) );
+	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
 
 	HandlePrivate *pv;
-	pv = (HandlePrivate*)JL_GetPrivate(JSVAL_TO_OBJECT(handleVal));
+	pv = (HandlePrivate*)JL_GetPrivate(handleObj);
 	JL_CHK( pv != NULL );
 	return (char*)pv + sizeof(HandlePrivate); // user data is just behind our private structure.
+
+bad:
+	return NULL;
+}
+
+
+INLINE void*
+GetHandlePrivate( JSContext *cx, IN JS::HandleValue handleVal ) {
+
+	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
+	{
+	JS::RootedObject handleObj(cx, &handleVal.toObject());
+	return GetHandlePrivate(cx, handleObj);
+	}
 bad:
 	return NULL;
 }
 
 
 INLINE bool
-SetHandleSlot( JSContext *cx, jsval handleVal, uint32_t slotIndex, jsval value ) {
+SetHandleSlot( JSContext *cx, JS::HandleValue handleVal, uint32_t slotIndex, IN JS::HandleValue value ) {
 
 	ASSERT( slotIndex < JL_HANDLE_PUBLIC_SLOT_COUNT );
 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
-	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(handleVal), JL_HandleJSClass(cx) );
-	return JL_SetReservedSlot( JSVAL_TO_OBJECT(handleVal), slotIndex, value);
+	{
+	JS::RootedObject handleObj(cx, &handleVal.toObject());
+
+	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
+	return JL_SetReservedSlot(handleObj, slotIndex, value);
+	}
 	JL_BAD;
 }
 
 
 INLINE bool
-GetHandleSlot( JSContext *cx, jsval handleVal, uint32_t slotIndex, jsval &value ) {
+GetHandleSlot( JSContext *cx, JS::HandleValue handleVal, uint32_t slotIndex, OUT JS::MutableHandleValue value ) {
 
 	ASSERT( slotIndex < JL_HANDLE_PUBLIC_SLOT_COUNT );
 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
-	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(handleVal), JL_HandleJSClass(cx) );
-	return JL_GetReservedSlot( JSVAL_TO_OBJECT(handleVal), slotIndex, value);
+	{
+	JS::RootedObject handleObj(cx, &handleVal.toObject());
+
+	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
+	return JL_GetReservedSlot(handleObj, slotIndex, value);
+	}
 	JL_BAD;
 }
 

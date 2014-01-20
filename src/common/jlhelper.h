@@ -53,21 +53,21 @@ JL_NewBufferGetOwnership( JSContext *cx, void *src, size_t nbytes, OUT JS::Mutab
 ALWAYS_INLINE bool FASTCALL
 JL_MaybeRealloc( size_t requested, size_t received );
 
-typedef bool (*NIStreamRead)( JSContext *cx, JSObject *obj, char *buffer, size_t *amount );
-typedef bool (*NIBufferGet)( JSContext *cx, JSObject *obj, JLData *str );
-typedef bool (*NIMatrix44Get)( JSContext *cx, JSObject *obj, float **pm );
+typedef bool (*NIStreamRead)( JSContext *cx, JS::HandleObject obj, char *buffer, size_t *amount );
+typedef bool (*NIBufferGet)( JSContext *cx, JS::HandleObject obj, JLData *str );
+typedef bool (*NIMatrix44Get)( JSContext *cx, JS::HandleObject obj, float **pm );
 
 ALWAYS_INLINE NIBufferGet
-BufferGetNativeInterface( JSContext *cx, JSObject *obj );
+BufferGetNativeInterface( JSContext *cx, JS::HandleObject obj );
 
 ALWAYS_INLINE NIBufferGet
-BufferGetInterface( JSContext *cx, JSObject *obj );
+BufferGetInterface( JSContext *cx, JS::HandleObject obj );
 
 ALWAYS_INLINE NIMatrix44Get
-Matrix44GetInterface( JSContext *cx, JSObject *obj );
+Matrix44GetInterface( JSContext *cx, JS::HandleObject obj );
 
 ALWAYS_INLINE bool
-SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBufferGet pFct );
+SetBufferGetInterface( JSContext *cx, JS::HandleObject obj, NIBufferGet pFct );
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -235,11 +235,18 @@ JL_SetPrivate( IN JS::HandleObject obj, void *data ) {
 ALWAYS_INLINE JSObject* FASTCALL
 JL_GetPrototype(JSContext *cx, IN JS::HandleObject obj) {
 
-    JS::RootedObject robj(cx, obj);
-    JS::RootedObject rproto(cx);
+    JS::RootedObject robj(cx, obj), rproto(cx);
     bool rv = js::GetObjectProto(cx, robj, &rproto);
     return rv ? rproto.get() : NULL;
 }
+
+ALWAYS_INLINE const JSClass* FASTCALL
+JL_GetClassOfPrototype(JSContext *cx, IN JS::HandleObject proto) {
+
+	JS::RootedObject obj(cx, JL_GetPrototype(cx, proto));
+	return JL_GetClass(obj);
+}
+
 
 ALWAYS_INLINE JSObject* FASTCALL
 JL_GetConstructor(JSContext *cx, IN JS::HandleObject obj) {
@@ -291,7 +298,7 @@ JL_SetElement(JSContext *cx, IN JS::HandleObject obj, unsigned index, IN JS::Han
 
 
 ALWAYS_INLINE bool FASTCALL
-JL_GetReservedSlot(IN JS::HandleObject obj, uint32_t slot, OUT JS::MutableHandleValue &vp) {
+JL_GetReservedSlot(IN JS::HandleObject obj, uint32_t slot, OUT JS::MutableHandleValue vp) {
 
 	ASSERT( slot < JSCLASS_RESERVED_SLOTS(JL_GetClass(obj)) );
 	ASSERT( JS_IsNative(obj) );
@@ -312,7 +319,7 @@ JL_GetReservedSlot<JS::Value>(JSObject *obj, uint32_t slot, OUT JS::Value &vp) {
 */
 
 ALWAYS_INLINE bool FASTCALL
-JL_SetReservedSlot(JSObject *obj, unsigned slot, IN JS::HandleValue v) {
+JL_SetReservedSlot(JS::HandleObject obj, unsigned slot, IN JS::HandleValue v) {
 
 	ASSERT( JS_IsNative(obj) );
 	js::SetReservedSlot(obj, slot, v); // jsfriendapi
@@ -443,7 +450,7 @@ JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
 			const JS::CallArgs jsargs;
 			JSContext *_cx;
 //			JSObject *_thisObj;
-			JS::RootedObject _thisObj;
+			JS::PersistentRootedObject _thisObj;
 
 			Args(JSContext *cx, unsigned argc, JS::Value *vp)
 			: _cx(cx), _thisObj(cx), jsargs( JS::CallArgsFromVp(argc, vp) ) {
@@ -496,6 +503,14 @@ JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
 				}
 			}
 
+			JS::HandleValue thisObjVal() {
+
+				JS::RootedValue tmp(_cx);
+				tmp.setObject(*thisObj());
+				return tmp;
+			}
+
+
 		private:
 			void operator=( const Args & );
 		};
@@ -506,8 +521,8 @@ JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
 
 		struct PropArgs {
 
-			JS::RootedObject _thisObj;
-			JS::RootedValue _vp;
+			JS::PersistentRootedObject _thisObj;
+			JS::PersistentRootedValue _vp;
 
 			PropArgs(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleValue vp)
 			: _thisObj(cx, obj), _vp(cx, vp) {
@@ -559,8 +574,13 @@ JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
 		};
 	}
 
+/*
+	JS::HandleValue JL_THIS(JSContext *cx, JS::Value *vp) {
 
+		JS_THIS(cx, vp)
 
+	}
+*/
 
 	#define JL_ARGC (args.length())
 
@@ -577,13 +597,14 @@ JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
 	#define JL_ARG_ISDEF( n ) (args.hasDefined((n)-1))
 
 // the return value
-	#define JL_RVAL (args.rval().address())
+	#define JL_RVAL (args.rval()/*.address()*/)
 
 	// is the current obj (this)
 	#define JL_OBJ (args.thisObj())
 
 	// is the current obj (this) as a JS::Value. if this method returns null, an error has occurred and must be propagated or caught.
-	#define JL_OBJVAL (argc, JS_THIS(cx, vp))
+	//#define JL_OBJVAL (argc, JS_THIS(cx, vp))
+	#define JL_OBJVAL (args.thisObjVal())
 
 
 #endif // USE_JSHANDLES
@@ -931,7 +952,7 @@ JL_GetCachedClass( const HostPrivate * const hpv, const char * const className )
 	return cpc ? cpc->clasp : NULL;
 }
 
-ALWAYS_INLINE const JSObject * FASTCALL
+ALWAYS_INLINE JSObject * FASTCALL
 JL_GetCachedProto( const HostPrivate * const hpv, const char * const className ) {
 	
 	const ClassProtoCache *cpc = JL_GetCachedClassProto(hpv, className);
@@ -993,7 +1014,7 @@ JL_NewObjectWithGivenProtoKey( JSContext *cx, JSProtoKey protoKey, JSObject *par
 ALWAYS_INLINE JSObject* FASTCALL
 JL_ConstructObject( JSContext *cx, IN JS::HandleObject proto, unsigned argc, JS::Value *argv ) {
 	
-	JSObject *ctor = JL_GetConstructor(cx, proto);
+	JS::RootedObject ctor(cx, JL_GetConstructor(cx, proto));
 	if ( ctor == NULL )
 		return NULL;
 	return JS_New(cx, ctor, argc, argv);
@@ -1056,7 +1077,7 @@ JL_NewJslibsObject( JSContext *cx, const char *className ) {
 	return NULL;
 }
 
-
+/*
 #ifndef USE_JSHANDLES
 
 #define JL_DEFINE_FUNCTION_OBJ \
@@ -1080,6 +1101,7 @@ namespace jlpv {
 }
 
 #else // USE_JSHANDLES
+*/
 
 #define JL_DEFINE_ARGS \
 	jl::Args args(ARGSARGS);
@@ -1105,12 +1127,13 @@ namespace jlpv {
 	}
 }
 
-#endif // USE_JSHANDLES
+// #endif // USE_JSHANDLES
 
 
 
 // Initialise 'this' object (obj variable) for constructors native functions ( support constructing and non-constructing form, eg. |Stream()| and  |new Stream()| ).
 // If JL_THIS_CLASS or JL_THIS_CLASS_PROTOTYPE are not available, use JS_NewObjectForConstructor(cx, vp) instead.
+/*
 #ifndef USE_JSHANDLES
 
 #define JL_DEFINE_CONSTRUCTOR_OBJ \
@@ -1118,11 +1141,14 @@ namespace jlpv {
 	obj = jlpv::CreateConstructorObject(cx, JL_THIS_CLASS, JL_THIS_CLASS_PROTOTYPE, vp)
 
 #else // USE_JSHANDLES
+*/
 
+	//JS::RootedObject obj(cx, jlpv::CreateConstructorObject(cx, JL_THIS_CLASS, JL_THIS_CLASS_PROTOTYPE, args))
 #define JL_DEFINE_CONSTRUCTOR_OBJ \
-	JS::RootedObject obj(cx, jlpv::CreateConstructorObject(cx, JL_THIS_CLASS, JL_THIS_CLASS_PROTOTYPE, args))
+	JS::RootedObject obj(cx, JL_THIS_CLASS_PROTOTYPE); \
+	obj.set(jlpv::CreateConstructorObject(cx, JL_THIS_CLASS, obj, args));
 
-#endif // USE_JSHANDLES
+// #endif // USE_JSHANDLES
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1147,7 +1173,7 @@ JL_GetPrivateJsid( JSContext *cx, int index, const jschar *name ) {
 
 	HostPrivate *hpv = JL_GetHostPrivate(cx);
 	ASSERT( hpv != NULL );
-	JS::RootedId id(cx, hpv->ids[index]);
+	JS::RootedId id(cx, hpv->ids.Get(index));
 //	jsid *id = hpv->ids[index];
 	return id != jspv::NullJsid() ? id : jlpv::GetPrivateJsidSlow(cx, &id, index, name);
 }
@@ -1305,7 +1331,7 @@ JL_ObjectIsString( JSContext *cx, JS::HandleObject obj ) {
 
 
 ALWAYS_INLINE bool FASTCALL
-JL_ObjectIsArray( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
+JL_ObjectIsArray( JSContext * RESTRICT cx, JS::HandleObject obj ) {
 
 	return JS_IsArrayObject(cx, obj) == true;
 }
@@ -1313,7 +1339,8 @@ JL_ObjectIsArray( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 ALWAYS_INLINE bool FASTCALL
 JL_ValueIsArray( JSContext *cx, IN JS::HandleValue val ) {
 
-	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsArray(cx, JSVAL_TO_OBJECT(val));
+	JS::RootedObject obj(cx, &val.toObject());
+	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsArray(cx, obj);
 }
 
 
@@ -1338,7 +1365,7 @@ JL_ValueIsArrayLike( JSContext *cx, IN JS::HandleValue val ) {
 }
 
 ALWAYS_INLINE bool FASTCALL
-JL_ObjectIsData( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
+JL_ObjectIsData( JSContext * RESTRICT cx, JS::HandleObject obj ) {
 
 	return JS_IsArrayBufferObject(obj) || BufferGetInterface(cx, obj) != NULL || JL_ObjectIsArrayLike(cx, obj);
 }
@@ -1346,12 +1373,13 @@ JL_ObjectIsData( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 ALWAYS_INLINE bool FASTCALL
 JL_ValueIsData( JSContext *cx, IN JS::HandleValue val ) {
 
-	return JSVAL_IS_STRING(val) || ( !JSVAL_IS_PRIMITIVE(val) && NOIL(JL_ObjectIsData)(cx, JSVAL_TO_OBJECT(val)) );
+	JS::RootedObject obj(cx, &val.toObject());
+	return JSVAL_IS_STRING(val) || ( !JSVAL_IS_PRIMITIVE(val) && NOIL(JL_ObjectIsData)(cx, obj) );
 }
 
 
 ALWAYS_INLINE bool FASTCALL
-JL_ObjectIsIterable( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
+JL_ObjectIsIterable( JSContext * RESTRICT cx, JS::HandleObject obj ) {
 
 	bool found;
 	return JS_HasPropertyById(cx, obj, JLID(cx, next), &found) && found == true;
@@ -1360,7 +1388,8 @@ JL_ObjectIsIterable( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
 ALWAYS_INLINE bool FASTCALL
 JL_ValueIsIterable( JSContext * RESTRICT cx, JS::Value &val ) {
 
-	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsIterable(cx, JSVAL_TO_OBJECT(val));
+	JS::RootedObject obj(cx, &val.toObject());
+	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsIterable(cx, obj);
 }
 
 ALWAYS_INLINE bool FASTCALL
@@ -1654,10 +1683,10 @@ enum E_TXTID {
 
 // note: JL_GetClass(JL_GetPrototype(... because |JL_ASSERT_THIS_INSTANCE( new Stream() )| must pass whereas |JL_ASSERT_THIS_INSTANCE( Stream.prototype )| must fail.
 #define JL_ASSERT_INSTANCE( jsObject, jsClass ) \
-	JL_ASSERT( JL_GetClass(JL_GetPrototype(cx, jsObject)) == jsClass, E_OBJ, E_INSTANCE, E_NAME((jsClass)->name) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
+	JL_ASSERT( JL_GetClassOfPrototype(cx, jsObject) == jsClass, E_OBJ, E_INSTANCE, E_NAME((jsClass)->name) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
 
 #define JL_ASSERT_THIS_INSTANCE() \
-	JL_ASSERT( JL_GetClass(JL_GetPrototype(cx, JL_OBJ)) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
+	JL_ASSERT( JL_GetClassOfPrototype(cx, JL_OBJ) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
 
 #define JL_ASSERT_INHERITANCE( jsObject, jsClass ) \
 	JL_ASSERT( NOIL(JL_InheritFrom)(cx, JL_GetPrototype(cx, jsObject), (jsClass)), E_OBJ, E_INHERIT, E_NAME((jsClass)->name) )
@@ -2131,14 +2160,14 @@ public:
 /*
 template<class T>
 ALWAYS_INLINE bool FASTCALL
-JL_JsvalToNative( JSContext *cx, JS::MutableHandleValue &val, T nVal ) {
+JL_JsvalToNative( JSContext *cx, JS::MutableHandleValue val, T nVal ) {
 	
 	return JL_JsvalToNative(cx, *val.address(), nVal);
 }
 
 template<class T>
 ALWAYS_INLINE bool FASTCALL
-JL_NativeToJsval( JSContext *cx, T nVal, JS::MutableHandleValue &val ) {
+JL_NativeToJsval( JSContext *cx, T nVal, JS::MutableHandleValue val ) {
 	
 	return JL_NativeToJsval(cx, nVal, JL_NativeToJsval);
 }
@@ -2156,9 +2185,9 @@ JL_JsvalToNative( JSContext *cx, JS::HandleValue val, JLData *str ) {
 
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, JS::HandleValue val, JLData *str )
 
-	if (likely( !JSVAL_IS_PRIMITIVE(val) )) { // for NIBufferGet support
+	if (likely( !val.isPrimitive() )) { // for NIBufferGet support
 
-		JSObject *obj = JSVAL_TO_OBJECT(val);
+		JS::RootedObject obj(cx, &val.toObject());
 		NIBufferGet fct = BufferGetInterface(cx, obj); // BufferGetNativeInterface
 		if ( fct )
 			return fct(cx, obj, str);
@@ -3014,7 +3043,7 @@ JL_NativeVectorToJsval( JSContext * RESTRICT cx, const T * RESTRICT vector, unsi
 
 	ASSERT( vector );
 
-	JS::Value tmp;
+	JS::RootedValue tmp(cx);
 	JSObject *arrayObj;
 	if (likely( useValArray )) {
 
@@ -3060,7 +3089,7 @@ ALWAYS_INLINE const char * JLNativeTypeToString( const float64_t & ) { return "F
 
 template <class T>
 INLINE bool FASTCALL
-JL_TypedArrayToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T * RESTRICT vector, unsigned maxLength, unsigned * RESTRICT actualLength ) {
+JL_TypedArrayToNativeVector( JSContext *cx, IN JS::HandleObject obj, OUT T * RESTRICT vector, IN unsigned maxLength, IN OUT unsigned *actualLength ) {
 
 	ASSERT( JS_IsTypedArrayObject(obj) );
 	JL_ASSERT( JS_GetArrayBufferViewType(obj) == JLNativeTypeToTypedArrayType(*vector), E_TY_TYPEDARRAY, E_TYPE, E_NAME(JLNativeTypeToString(*vector)) );
@@ -3079,7 +3108,7 @@ JL_TypedArrayToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T
 
 template <class T>
 INLINE bool FASTCALL
-JL_ArrayBufferToNativeVector( JSContext * RESTRICT cx, JSObject * RESTRICT obj, T * RESTRICT vector, unsigned maxLength, unsigned * RESTRICT actualLength ) {
+JL_ArrayBufferToNativeVector( JSContext * RESTRICT cx, JS::HandleObject obj, T * RESTRICT vector, unsigned maxLength, unsigned * RESTRICT actualLength ) {
 
 	JL_IGNORE(cx);
 	ASSERT( JS_IsArrayBufferObject(obj) );
@@ -3098,12 +3127,13 @@ template <class T>
 ALWAYS_INLINE bool FASTCALL
 JL_JsvalToNativeVector( JSContext * RESTRICT cx, IN JS::HandleValue val, OUT T * RESTRICT vector, IN unsigned maxLength, OUT unsigned *actualLength ) {
 
-	JS::Value tmp;
+	JS::RootedValue tmp(cx);
 
 	JL_ASSERT_IS_OBJECT(val, "vector");
 
-	JSObject *arrayObj;
-	arrayObj = JSVAL_TO_OBJECT(val);
+	{
+
+	JS::RootedObject arrayObj(cx, &val.toObject());
 
 	if (unlikely( JS_IsTypedArrayObject(arrayObj) ))
 		return JL_TypedArrayToNativeVector(cx, arrayObj, vector, maxLength, actualLength);
@@ -3120,9 +3150,12 @@ JL_JsvalToNativeVector( JSContext * RESTRICT cx, IN JS::HandleValue val, OUT T *
 	maxLength = JL_MIN( *actualLength, maxLength );
 	for ( unsigned i = 0; i < maxLength; ++i ) {  // while ( maxLength-- ) { // avoid reverse walk (L1 cache issue)
 
-		JL_CHK( JL_GetElement(cx, arrayObj, i, tmp) );
+		JL_CHK( JL_GetElement(cx, arrayObj, i, &tmp) );
 		JL_CHK( JL_JsvalToNative(cx, tmp, &vector[i]) );
 	}
+
+	}
+
 	return true;
 	JL_BAD;
 }
@@ -3134,10 +3167,10 @@ JL_JsvalToNativeVector( JSContext * RESTRICT cx, IN JS::HandleValue val, OUT T *
 
 template <class T>
 ALWAYS_INLINE bool FASTCALL
-JL_NativeToReservedSlot( JSContext * RESTRICT cx, JSObject * RESTRICT obj, unsigned slot, T &value ) {
+JL_NativeToReservedSlot( JSContext * RESTRICT cx, JS::HandleObject obj, unsigned slot, T &value ) {
 
-	JS::Value tmp;
-	JL_CHK( JL_NativeToJsval(cx, value, tmp) );
+	JS::RootedValue tmp(cx);
+	JL_CHK( JL_NativeToJsval(cx, value, &tmp) );
 	JL_CHK( JL_SetReservedSlot(obj, slot, tmp) );
 	return true;
 	JL_BAD;
@@ -3146,10 +3179,10 @@ JL_NativeToReservedSlot( JSContext * RESTRICT cx, JSObject * RESTRICT obj, unsig
 
 template <class T>
 ALWAYS_INLINE bool FASTCALL
-JL_ReservedSlotToNative( JSContext * RESTRICT cx, JSObject * RESTRICT obj, unsigned slot, T * RESTRICT value ) {
+JL_ReservedSlotToNative( JSContext * RESTRICT cx, JS::HandleObject obj, unsigned slot, T * RESTRICT value ) {
 
-	JS::Value tmp;
-	JL_CHK( JL_GetReservedSlot(obj, slot, tmp) );
+	JS::RootedValue tmp(cx);
+	JL_CHK( JL_GetReservedSlot(obj, slot, &tmp) );
 	JL_CHK( JL_JsvalToNative(cx, tmp, value) );
 	return true;
 	JL_BAD;
@@ -3165,7 +3198,7 @@ template <class T>
 ALWAYS_INLINE bool FASTCALL
 JL_NativeToProperty( JSContext *cx, JSObject *obj, const char *name, const T &cval ) {
 
-	JS::Value tmp;
+	JS::RootedValue tmp(cx);
 	return JL_NativeToJsval(cx, cval, tmp) && JS_SetProperty(cx, obj, name, &tmp);
 }
 
@@ -3173,7 +3206,7 @@ template <class T>
 ALWAYS_INLINE bool FASTCALL
 JL_NativeToProperty( JSContext *cx, JSObject *obj, jsid id, const T &cval ) {
 
-	JS::Value tmp;
+	JS::RootedValue tmp(cx);
 	return JL_NativeToJsval(cx, cval, tmp) && JS_SetPropertyById(cx, obj, id, &tmp);
 }
 
@@ -3184,7 +3217,7 @@ template <class T>
 ALWAYS_INLINE bool FASTCALL
 JL_DefineProperty( JSContext *cx, JSObject *obj, const char *name, const T &cval, bool visible = true, bool modifiable = true ) {
 
-	JS::Value tmp;
+	JS::RootedValue tmp(cx);
 	return JL_NativeToJsval(cx, cval, tmp) && JS_DefineProperty(cx, obj, name, tmp, NULL, NULL, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
 }
 
@@ -3199,7 +3232,7 @@ template <class T>
 ALWAYS_INLINE bool FASTCALL
 JL_DefineProperty( JSContext *cx, JSObject *obj, jsid id, const T &cval, bool visible = true, bool modifiable = true ) {
 
-	JS::Value tmp;
+	JS::RootedValue tmp(cx);
 	return JL_NativeToJsval(cx, cval, tmp) && JS_DefinePropertyById(cx, obj, id, tmp, NULL, NULL, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
 }
 
@@ -3216,7 +3249,7 @@ template <class T>
 ALWAYS_INLINE bool FASTCALL
 JL_PropertyToNative( JSContext *cx, JSObject *obj, const char *propertyName, T *cval ) {
 
-	JS::Value tmp;
+	JS::RootedValue tmp(cx);
 	return JS_GetProperty(cx, obj, propertyName, &tmp) && JL_JsvalToNative(cx, tmp, cval);
 }
 
@@ -3224,7 +3257,7 @@ template <class T>
 ALWAYS_INLINE bool FASTCALL
 JL_PropertyToNative( JSContext *cx, JSObject *obj, jsid id, T *cval ) {
 
-	JS::Value tmp;
+	JS::RootedValue tmp(cx);
 	return JS_GetPropertyById(cx, obj, id, &tmp) && JL_JsvalToNative(cx, tmp, cval);
 }
 
@@ -3234,7 +3267,7 @@ template <class T>
 ALWAYS_INLINE bool FASTCALL
 JL_LookupProperty( JSContext *cx, JSObject *obj, const char *propertyName, T *cval ) {
 
-	JS::Value tmp;
+	JS::RootedValue tmp(cx);
 	return JS_LookupProperty(cx, obj, propertyName, &tmp) && JL_JsvalToNative(cx, tmp, cval);
 }
 
@@ -3242,7 +3275,7 @@ template <class T>
 ALWAYS_INLINE bool FASTCALL
 JL_LookupProperty( JSContext *cx, JSObject *obj, jsid id, T *cval ) {
 
-	JS::Value tmp;
+	JS::RootedValue tmp(cx);
 	return JS_LookupPropertyById(cx, obj, id, &tmp) && JL_JsvalToNative(cx, tmp, cval);
 }
 
@@ -3299,27 +3332,31 @@ JL_FunctionToJsval(JSContext *cx, IN JSNative call, IN unsigned nargs, IN unsign
 
 
 ALWAYS_INLINE bool FASTCALL
-JL_JsvalToJsid( JSContext * RESTRICT cx, IN JS::HandleValue val, jsid * RESTRICT id ) {
+JL_JsvalToJsid( JSContext * RESTRICT cx, IN JS::HandleValue val, JS::MutableHandleId id ) {
 
 	if ( JSVAL_IS_STRING( val ) ) {
 
 		JS::RootedString str(cx, val.toString());
-		*id = JL_StringToJsid(cx, str);
-		ASSERT( JSID_IS_STRING( *id ) || JSID_IS_INT( *id ) ); // see AtomToId()
+		id.set(JL_StringToJsid(cx, str));
+		ASSERT( JSID_IS_STRING( id ) || JSID_IS_INT( id ) ); // see AtomToId()
 	} else
 	if ( JSVAL_IS_INT( val ) && INT_FITS_IN_JSID( JSVAL_TO_INT( val ) ) ) {
 
-		*id = INT_TO_JSID( JSVAL_TO_INT( val ) );
+		id.set(INT_TO_JSID( val.toInt32() ));
 	} else
-		if ( val.isObject() ) {
+	if ( val.isObject() ) {
 
-		*id = OBJECT_TO_JSID( JSVAL_TO_OBJECT( val ) );
+		id.set(OBJECT_TO_JSID( &val.toObject() ));
 	} else
 	if ( JSVAL_IS_VOID( val ) ) {
 
-		*id = JSID_VOID;
+		id.set(JSID_VOID);
 	} else
-		return JS_ValueToId(cx, val, id);
+	if ( val.isNull() ) {
+
+		id.set(OBJECT_TO_JSID( val.toObjectOrNull() ));
+	} else
+		return JS_ValueToId(cx, val, id.address());
 	return true;
 }
 
@@ -3358,7 +3395,7 @@ JL_JsvalToMatrix44( JSContext * RESTRICT cx, IN JS::HandleValue val, OUT float *
 		 0.0f, 0.0f, 0.0f, 1.0f
 	};
 
-	if ( JSVAL_IS_NULL(val) ) {
+	if ( val.isNull() ) {
 
 		jl::memcpy(*m, &Matrix44IdentityValue, sizeof(Matrix44IdentityValue));
 		return true;
@@ -3366,8 +3403,8 @@ JL_JsvalToMatrix44( JSContext * RESTRICT cx, IN JS::HandleValue val, OUT float *
 
 	JL_ASSERT_IS_OBJECT(val, "matrix44");
 
-	JSObject *matrixObj;
-	matrixObj = JSVAL_TO_OBJECT(val);
+	{
+	JS::RootedObject matrixObj(cx, &val.toObject());
 
 	NIMatrix44Get Matrix44Get;
 	Matrix44Get = Matrix44GetInterface(cx, matrixObj);
@@ -3387,23 +3424,24 @@ JL_JsvalToMatrix44( JSContext * RESTRICT cx, IN JS::HandleValue val, OUT float *
 
 		uint32_t length;
 		JS::RootedValue element(cx);
-		JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(val), 0, element) );
+
+		JL_CHK( JL_GetElement(cx, matrixObj, 0, &element) );
 		if ( JL_ValueIsArrayLike(cx, element) ) { // support for [ [1,1,1,1], [2,2,2,2], [3,3,3,3], [4,4,4,4] ] matrix
 
 			JL_CHK( JL_JsvalToNativeVector(cx, element, (*m)+0, 4, &length ) );
 			JL_ASSERT( length == 4, E_VALUE, E_STR("matrix44[0]"), E_TYPE, E_TY_NVECTOR(4) );
 
-			JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(val), 1, element) );
+			JL_CHK( JL_GetElement(cx, matrixObj, 1, &element) );
 			JL_CHK( JL_JsvalToNativeVector(cx, element, (*m)+4, 4, &length ) );
 			JL_ASSERT_IS_ARRAY( element, "matrix44[1]" );
 			JL_ASSERT( length == 4, E_VALUE, E_STR("matrix44[1]"), E_TYPE, E_TY_NVECTOR(4) );
 
-			JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(val), 2, element) );
+			JL_CHK( JL_GetElement(cx, matrixObj, 2, &element) );
 			JL_CHK( JL_JsvalToNativeVector(cx, element, (*m)+8, 4, &length ) );
 			JL_ASSERT_IS_ARRAY( element, "matrix44[2]" );
 			JL_ASSERT( length == 4, E_VALUE, E_STR("matrix44[2]"), E_TYPE, E_TY_NVECTOR(4) );
 
-			JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(val), 3, element) );
+			JL_CHK( JL_GetElement(cx, matrixObj, 3, &element) );
 			JL_CHK( JL_JsvalToNativeVector(cx, element, (*m)+12, 4, &length ) );
 			JL_ASSERT_IS_ARRAY( element, "matrix44[3]" );
 			JL_ASSERT( length == 4, E_VALUE, E_STR("matrix44[3]"), E_TYPE, E_TY_NVECTOR(4) );
@@ -3413,6 +3451,8 @@ JL_JsvalToMatrix44( JSContext * RESTRICT cx, IN JS::HandleValue val, OUT float *
 		JL_CHK( JL_JsvalToNativeVector(cx, val, *m, 16, &length ) );  // support for [ 1,1,1,1, 2,2,2,2, 3,3,3,3, 4,4,4,4 ] matrix
 		JL_ASSERT( length == 16, E_VALUE, E_STR("matrix44"), E_TYPE, E_TY_NVECTOR(16) );
 		return true;
+	}
+
 	}
 
 	JL_ERR( E_VALUE, E_STR("matrix44"), E_INVALID );
@@ -3514,13 +3554,13 @@ JL_FreeBuffer( JSContext *, T & ) {
 
 
 ALWAYS_INLINE uint8_t* FASTCALL
-JL_ChangeBufferLength( JSContext *cx, JS::Value *vp, size_t nbytes ) {
+JL_ChangeBufferLength( JSContext *cx, IN OUT JS::MutableHandleValue vp, size_t nbytes ) {
 
 	// need to create a new buffer because ArrayBuffer does not support realloc nor length changing, then we copy it in a new one.
 	// see JS_ReallocateArrayBufferContents
 
-	ASSERT( vp->isObject() );
-	JSObject *arrayBufferObj = JSVAL_TO_OBJECT(*vp);
+	ASSERT( vp.isObject() );
+	JS::RootedObject arrayBufferObj(cx, &vp.toObject());
 	ASSERT( JS_IsArrayBufferObject(arrayBufferObj) );
 	uint32_t bufferLen = JS_GetArrayBufferByteLength(arrayBufferObj);
 	void *bufferData = JS_GetArrayBufferData(arrayBufferObj);
@@ -3528,7 +3568,7 @@ JL_ChangeBufferLength( JSContext *cx, JS::Value *vp, size_t nbytes ) {
 	if ( nbytes == bufferLen )
 		return (uint8_t*)bufferData;
 
-	JSObject *newBufferObj;
+	JS::RootedObject newBufferObj(cx);
 	void *newBufferData;
 	if ( nbytes < bufferLen ) {
 
@@ -3547,7 +3587,7 @@ JL_ChangeBufferLength( JSContext *cx, JS::Value *vp, size_t nbytes ) {
 		newBufferData = JS_GetArrayBufferData(arrayBufferObj);
 		jl::memcpy(newBufferData, bufferData, bufferLen);
 	}
-	vp->setObject(*newBufferObj);
+	vp.setObject(*newBufferObj);
 	return (uint8_t*)newBufferData;
 }
 
@@ -3879,7 +3919,7 @@ JL_GetFirstContext( JSRuntime *rt ) {
 
 
 ALWAYS_INLINE bool FASTCALL
-JL_InheritFrom( JSContext *cx, JSObject *obj, const JSClass *clasp ) {
+JL_InheritFrom( JSContext *cx, JS::HandleObject obj, const JSClass *clasp ) {
 
 	while ( obj != NULL ) {
 
@@ -3892,7 +3932,7 @@ JL_InheritFrom( JSContext *cx, JSObject *obj, const JSClass *clasp ) {
 
 
 ALWAYS_INLINE bool FASTCALL
-JL_CallFunctionId( JSContext *cx, JSObject *obj, jsid id, unsigned argc, IN JS::Value *argv, OUT JS::MutableHandleValue rval ) {
+JL_CallFunctionId( JSContext *cx, JS::HandleObject obj, jsid id, unsigned argc, IN JS::Value *argv, OUT JS::MutableHandleValue rval ) {
 
 	JS::RootedValue tmp(cx);
 	//return JS_GetMethodById(cx, obj, id, NULL, &tmp) && JS_CallFunctionValue(cx, obj, tmp, argc, argv, rval);
@@ -3913,31 +3953,31 @@ JL_CallFunctionId( JSContext *cx, JSObject *obj, jsid id, unsigned argc, IN JS::
 // JL_CallFunctionVA (cx, obj, functionValue, rval, ... )
 
 ALWAYS_INLINE bool FASTCALL
-JL_CallFunctionVA( JSContext *cx, JSObject *obj, JS::Value &functionValue, JS::Value *rval ) {
+JL_CallFunctionVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleValue functionValue, OUT JS::MutableHandleValue rval ) {
 
 	ASSERT( JL_ValueIsCallable(cx, functionValue) );
-	return JS_CallFunctionValue(cx, obj, functionValue, 0, NULL, rval);
+	return JS_CallFunctionValue(cx, obj, functionValue, 0, NULL, rval.address());
 }
 
 ALWAYS_INLINE bool FASTCALL
-JL_CallFunctionVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, JS::Value &functionValue, JS::Value *rval, const JS::Value &arg1 ) {
+JL_CallFunctionVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleValue functionValue, OUT JS::MutableHandleValue rval, IN JS::HandleValue arg1 ) {
 
 	JS::Value args[] = { arg1 };
-	return JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(args), args, rval);
+	return JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(args), args, rval.address());
 }
 
 ALWAYS_INLINE bool FASTCALL
-JL_CallFunctionVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, JS::Value &functionValue, JS::Value *rval, const JS::Value &arg1, const JS::Value &arg2 ) {
+JL_CallFunctionVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleValue functionValue, OUT JS::MutableHandleValue rval, IN JS::HandleValue arg1, IN JS::HandleValue arg2 ) {
 
 	JS::Value args[] = { arg1, arg2 };
-	return JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(args), args, rval);
+	return JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(args), args, rval.address());
 }
 
 ALWAYS_INLINE bool FASTCALL
-JL_CallFunctionVA( JSContext * RESTRICT cx, JSObject * RESTRICT obj, JS::Value &functionValue, JS::Value *rval, const JS::Value &arg1, const JS::Value &arg2, const JS::Value &arg3 ) {
+JL_CallFunctionVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleValue functionValue, OUT JS::MutableHandleValue rval, IN JS::HandleValue arg1, IN JS::HandleValue arg2, IN JS::HandleValue arg3 ) {
 
 	JS::Value args[] = { arg1, arg2, arg3 };
-	return JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(args), args, rval);
+	return JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(args), args, rval.address());
 }
 
 
@@ -3952,7 +3992,7 @@ JL_Eval( JSContext *cx, JSString *source, JS::Value *rval ) { // used in JS::Val
 
 
 ALWAYS_INLINE bool FASTCALL
-JL_ArrayPush( JSContext * RESTRICT cx, JSObject * RESTRICT arr, IN JS::HandleValue value ) {
+JL_ArrayPush( JSContext * RESTRICT cx, IN JS::HandleObject arr, IN JS::HandleValue value ) {
 
 	unsigned length;
 	return JS_GetArrayLength(cx, arr, &length) && JL_SetElement(cx, arr, length, value);
@@ -3960,14 +4000,14 @@ JL_ArrayPush( JSContext * RESTRICT cx, JSObject * RESTRICT arr, IN JS::HandleVal
 
 
 ALWAYS_INLINE bool FASTCALL
-JL_ArrayPop( JSContext * RESTRICT cx, JSObject * RESTRICT arr, OUT JS::MutableHandleValue value ) {
+JL_ArrayPop( JSContext * RESTRICT cx, IN JS::HandleObject arr, OUT JS::MutableHandleValue value ) {
 
 	unsigned length;
 	return JS_GetArrayLength(cx, arr, &length) && JL_GetElement(cx, arr, --length, value) && JS_SetArrayLength(cx, arr, length); 
 }
 
 ALWAYS_INLINE bool FASTCALL
-JL_ArrayReset( JSContext * RESTRICT cx, JSObject * RESTRICT arr ) {
+JL_ArrayReset( JSContext * RESTRICT cx, IN JS::HandleObject arr ) {
 
 	return JS_SetArrayLength(cx, arr, 0); 
 }
@@ -3981,7 +4021,8 @@ JL_JsvalToPrimitive( JSContext * RESTRICT cx, IN JS::HandleValue val, OUT JS::Mu
 		rval.set(val);
 		return true;
 	}
-	JSObject *obj = JSVAL_TO_OBJECT(val);
+
+	JS::RootedObject obj(cx, &val.toObject());
 	//JSClass *clasp = JL_GetClass(obj);
 	//if ( clasp->convert ) // note that JS_ConvertStub calls js_TryValueOf
 	//	return clasp->convert(cx, obj, JSTYPE_VOID, rval);
@@ -4371,7 +4412,7 @@ JL_DebugPrintScriptLocation( JSContext *cx ) {
 
 
 INLINE NEVER_INLINE bool FASTCALL
-JL_ExceptionSetScriptLocation( JSContext * RESTRICT cx, JSObject * RESTRICT obj ) {
+JL_ExceptionSetScriptLocation( JSContext * RESTRICT cx, IN OUT JS::MutableHandleObject obj ) {
 
 	 // see PopulateReportBlame()
     //JSStackFrame *fp;
@@ -4394,9 +4435,9 @@ JL_ExceptionSetScriptLocation( JSContext * RESTRICT cx, JSObject * RESTRICT obj 
 	if ( filename == NULL || *filename == '\0' )
 		filename = "<no_filename>";
 
-	JL_CHK( JL_NativeToJsval(cx, filename, tmp) );
+	JL_CHK( JL_NativeToJsval(cx, filename, &tmp) );
 	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, fileName), tmp) );
-	JL_CHK( JL_NativeToJsval(cx, lineno, tmp) );
+	JL_CHK( JL_NativeToJsval(cx, lineno, &tmp) );
 	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, lineNumber), tmp) );
 
 	return true;
@@ -4409,7 +4450,7 @@ JL_ExceptionSetScriptLocation( JSContext * RESTRICT cx, JSObject * RESTRICT obj 
 // NativeInterface API
 
 ALWAYS_INLINE bool
-ReserveNativeInterface( JSContext *cx, JSObject *obj, const jsid &id ) {
+ReserveNativeInterface( JSContext *cx, JS::HandleObject obj, const jsid &id ) {
 
 	ASSERT( id != jspv::NullJsid() );
 	return JS_DefinePropertyById(cx, obj, id, JSVAL_VOID, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
@@ -4418,7 +4459,7 @@ ReserveNativeInterface( JSContext *cx, JSObject *obj, const jsid &id ) {
 
 template <class T>
 ALWAYS_INLINE bool
-SetNativeInterface( JSContext *cx, JSObject *obj, const jsid &id, const T nativeFct ) {
+SetNativeInterface( JSContext *cx, JS::HandleObject obj, const jsid &id, const T nativeFct ) {
 
 	ASSERT( id != jspv::NullJsid() );
 	if ( nativeFct != NULL ) {
@@ -4435,14 +4476,17 @@ SetNativeInterface( JSContext *cx, JSObject *obj, const jsid &id, const T native
 
 template <class T>
 ALWAYS_INLINE const T
-GetNativeInterface( JSContext *cx, JSObject *obj, const jsid &id ) {
+GetNativeInterface( JSContext *cx, JS::HandleObject obj, const jsid &id ) {
 
 	ASSERT( id != jspv::NullJsid() );
-	//JSPropertyDescriptor desc;
 	JS::Rooted<JSPropertyDescriptor> desc(cx);
-	if ( JS_GetPropertyDescriptorById(cx, obj, id, 0, desc.address()) )
+	if ( JS_GetPropertyDescriptorById(cx, obj, id, 0, &desc) ) {
+
 		return desc.object() == obj && desc.setter() != JS_StrictPropertyStub ? (const T)desc.setter() : NULL; // is JS_PropertyStub when eg. Stringify({_NI_BufferGet:function() {} })
-	return NULL;
+	} else {
+
+		return NULL;
+	}
 }
 
 
@@ -4451,31 +4495,31 @@ GetNativeInterface( JSContext *cx, JSObject *obj, const jsid &id ) {
 // NativeInterface StreamRead
 
 ALWAYS_INLINE bool
-ReserveStreamReadInterface( JSContext *cx, JSObject *obj ) {
+ReserveStreamReadInterface( JSContext *cx, JS::HandleObject obj ) {
 
 	return ReserveNativeInterface(cx, obj, JLID(cx, _NI_StreamRead) );
 }
 
 
 ALWAYS_INLINE bool
-SetStreamReadInterface( JSContext *cx, JSObject *obj, NIStreamRead pFct ) {
+SetStreamReadInterface( JSContext *cx, JS::HandleObject obj, NIStreamRead pFct ) {
 
 	return SetNativeInterface( cx, obj, JLID(cx, _NI_StreamRead), pFct );
 }
 
 
 ALWAYS_INLINE NIStreamRead
-StreamReadNativeInterface( JSContext *cx, JSObject *obj ) {
+StreamReadNativeInterface( JSContext *cx, JS::HandleObject obj ) {
 
 	return GetNativeInterface<NIStreamRead>(cx, obj, JLID(cx, _NI_StreamRead));
 }
 
 
 INLINE bool
-JSStreamRead( JSContext * RESTRICT cx, JSObject * RESTRICT obj, char * RESTRICT buffer, size_t * RESTRICT amount ) {
+JSStreamRead( JSContext * RESTRICT cx, JS::HandleObject obj, char * RESTRICT buffer, size_t * RESTRICT amount ) {
 
 	JS::RootedValue tmp(cx);
-	JL_CHK( JL_NativeToJsval(cx, *amount, tmp) );
+	JL_CHK( JL_NativeToJsval(cx, *amount, &tmp) );
 	JL_CHK( JL_CallFunctionId(cx, obj, JLID(cx, read), 1, tmp.address(), &tmp) );
 	if ( JSVAL_IS_VOID(tmp) ) { // (TBD) with sockets, undefined mean 'closed', that is not supported by NIStreamRead.
 
@@ -4495,7 +4539,7 @@ JSStreamRead( JSContext * RESTRICT cx, JSObject * RESTRICT obj, char * RESTRICT 
 
 
 ALWAYS_INLINE NIStreamRead
-StreamReadInterface( JSContext *cx, JSObject *obj ) {
+StreamReadInterface( JSContext *cx, JS::HandleObject obj ) {
 
 	NIStreamRead fct = StreamReadNativeInterface(cx, obj);
 	if (likely( fct != NULL ))
@@ -4512,28 +4556,28 @@ StreamReadInterface( JSContext *cx, JSObject *obj ) {
 // NativeInterface BufferGet
 
 ALWAYS_INLINE bool
-ReserveBufferGetInterface( JSContext *cx, JSObject *obj ) {
+ReserveBufferGetInterface( JSContext *cx, JS::HandleObject obj ) {
 
 	return ReserveNativeInterface(cx, obj, JLID(cx, _NI_BufferGet) );
 }
 
 
 ALWAYS_INLINE bool
-SetBufferGetInterface( JSContext *cx, JSObject *obj, NIBufferGet pFct ) {
+SetBufferGetInterface( JSContext *cx, JS::HandleObject obj, NIBufferGet pFct ) {
 
 	return SetNativeInterface( cx, obj, JLID(cx, _NI_BufferGet), pFct );
 }
 
 
 ALWAYS_INLINE NIBufferGet
-BufferGetNativeInterface( JSContext *cx, JSObject *obj ) {
+BufferGetNativeInterface( JSContext *cx, JS::HandleObject obj ) {
 
 	return GetNativeInterface<NIBufferGet>(cx, obj, JLID(cx, _NI_BufferGet));
 }
 
 
 INLINE bool
-JSBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
+JSBufferGet( JSContext *cx, JS::HandleObject obj, JLData *str ) {
 
 	JS::RootedValue tmp(cx);
 	return JL_CallFunctionId(cx, obj, JLID(cx, get), 0, NULL, &tmp) && JL_JsvalToNative(cx, tmp, str);
@@ -4541,7 +4585,7 @@ JSBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
 
 
 ALWAYS_INLINE NIBufferGet
-BufferGetInterface( JSContext *cx, JSObject *obj ) {
+BufferGetInterface( JSContext *cx, JS::HandleObject obj ) {
 
 	NIBufferGet fct = BufferGetNativeInterface(cx, obj);
 	if (likely( fct != NULL ))
@@ -4558,28 +4602,28 @@ BufferGetInterface( JSContext *cx, JSObject *obj ) {
 // NativeInterface Matrix44Get
 
 ALWAYS_INLINE bool
-ReserveMatrix44GetInterface( JSContext *cx, JSObject *obj ) {
+ReserveMatrix44GetInterface( JSContext *cx, JS::HandleObject obj ) {
 
 	return ReserveNativeInterface(cx, obj, JLID(cx, _NI_Matrix44Get) );
 }
 
 
 ALWAYS_INLINE bool
-SetMatrix44GetInterface( JSContext *cx, JSObject *obj, NIMatrix44Get pFct ) {
+SetMatrix44GetInterface( JSContext *cx, JS::HandleObject obj, NIMatrix44Get pFct ) {
 
 	return SetNativeInterface( cx, obj, JLID(cx, _NI_Matrix44Get), pFct );
 }
 
 
 ALWAYS_INLINE NIMatrix44Get
-Matrix44GetNativeInterface( JSContext *cx, JSObject *obj ) {
+Matrix44GetNativeInterface( JSContext *cx, JS::HandleObject obj ) {
 
 	return GetNativeInterface<NIMatrix44Get>(cx, obj, JLID(cx, _NI_Matrix44Get));
 }
 
 
 INLINE bool
-JSMatrix44Get( JSContext *, JSObject *, float ** ) {
+JSMatrix44Get( JSContext *, JS::HandleObject , float ** ) {
 
 	ASSERT( false ); // ???
 
@@ -4588,7 +4632,7 @@ JSMatrix44Get( JSContext *, JSObject *, float ** ) {
 
 
 ALWAYS_INLINE NIMatrix44Get
-Matrix44GetInterface( JSContext *cx, JSObject *obj ) {
+Matrix44GetInterface( JSContext *cx, JS::HandleObject obj ) {
 
 	NIMatrix44Get fct = Matrix44GetNativeInterface(cx, obj);
 	if (likely( fct != NULL ))
@@ -4605,8 +4649,8 @@ Matrix44GetInterface( JSContext *cx, JSObject *obj ) {
 // ProcessEvent
 
 struct ProcessEvent {
-	bool (*prepareWait)( volatile ProcessEvent *self, JSContext *cx, JSObject *obj ); // called before startWait() to allow one to prepare the blocking step
+	bool (*prepareWait)( volatile ProcessEvent *self, JSContext *cx, JS::HandleObject obj ); // called before startWait() to allow one to prepare the blocking step
 	void (*startWait)( volatile ProcessEvent *self ); // starts the blocking thread and call signalEvent() when an event has arrived.
 	bool (*cancelWait)( volatile ProcessEvent *self ); // unlock the blocking thread event if no event has arrived (mean that an event has arrived in another thread).
-	bool (*endWait)( volatile ProcessEvent *self, bool *hasEvent, JSContext *cx, JSObject *obj ); // process the result
+	bool (*endWait)( volatile ProcessEvent *self, bool *hasEvent, JSContext *cx, JS::HandleObject obj ); // process the result
 };

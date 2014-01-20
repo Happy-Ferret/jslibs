@@ -338,7 +338,7 @@ struct Class {
 
 			ASSERT_IF( clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(proto) == NULL );
 
-			JL_CHKM( JL_CacheClassProto(hpv, clasp.name, &clasp, proto), E_CLASS, E_NAME(clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
+			JL_CHKM( JL_CacheClassProto(cx, hpv, clasp.name, &clasp, proto), E_CLASS, E_NAME(clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 
 			ASSERT( JL_GetCachedClass(hpv, clasp.name) == &clasp );
 			ASSERT( JL_GetCachedProto(hpv, clasp.name) == proto );
@@ -356,7 +356,10 @@ struct Class {
 		JL_CHK( staticPropLink->Register(cx, &ctor) );
 		JL_CHK( staticConstLink->Register(cx, &ctor) );
 
-		if ( JS_IsExtensible(ctor) ) {
+
+		bool isExtensible;
+		JL_CHK( JS_IsExtensible(cx, ctor, &isExtensible) );
+		if ( isExtensible ) {
 		
 			JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _sourceId), JS::NumberValue(sourceId), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 			JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _buildDate), JS::NumberValue(buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );

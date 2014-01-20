@@ -63,7 +63,7 @@ DEFINE_FUNCTION( isCallable ) {
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
 
-	*JL_RVAL = BOOLEAN_TO_JSVAL( JL_ValueIsCallable(cx, JL_ARG(1)) );
+	JL_RVAL.setBoolean( JL_ValueIsCallable(cx, JL_ARG(1)) );
 	return true;
 	JL_BAD;
 }
@@ -95,12 +95,12 @@ DEFINE_FUNCTION( stringify ) {
 
 	if ( JL_ARGC == 1 && JSVAL_IS_STRING(JL_ARG(1)) ) { // identity
 		
-		*JL_RVAL = JL_ARG(1);
+		JL_RVAL.set(JL_ARG(1));
 		return true;
 	} else 
 	if ( JL_ARGC == 0 || (JL_ARGC == 1 && JSVAL_IS_VOID(JL_ARG(1))) ) { // undefined
 
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 
@@ -112,7 +112,7 @@ DEFINE_FUNCTION( stringify ) {
 
 	if ( !JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
 
-		JSObject *sobj = JSVAL_TO_OBJECT( JL_ARG(1) );
+		JS::RootedObject sobj(cx, &JL_ARG(1).toObject() );
 
 		NIStreamRead read = StreamReadInterface(cx, sobj);
 		if ( read ) {
@@ -130,12 +130,12 @@ DEFINE_FUNCTION( stringify ) {
 
 			if ( toArrayBuffer ) {
 
-				JL_CHK( JL_NewBufferGetOwnership(cx, buf.GetDataOwnership(), buf.Length(), *JL_RVAL) );
+				JL_CHK( JL_NewBufferGetOwnership(cx, buf.GetDataOwnership(), buf.Length(), JL_RVAL) );
 			} else {
 
 				JSString *jsstr = JS_NewStringCopyN(cx, buf.GetData(), buf.Length());
 				JL_CHK( jsstr );
-				*JL_RVAL = STRING_TO_JSVAL( jsstr );
+				JL_RVAL.setString(jsstr);
 			}
 
 			return true;
@@ -145,7 +145,7 @@ DEFINE_FUNCTION( stringify ) {
 
 	// fallback:
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-	JL_CHK( toArrayBuffer ? str.GetArrayBuffer(cx, *JL_RVAL) : str.GetJSString(cx, *JL_RVAL) );
+	JL_CHK( toArrayBuffer ? str.GetArrayBuffer(cx, JL_RVAL) : str.GetJSString(cx, JL_RVAL) );
 
 	return true;
 	JL_BAD;
@@ -187,19 +187,20 @@ DEFINE_FUNCTION( join ) {
 
 	JL_DEFINE_ARGS;
 
-	js::AutoValueVector avr(cx);
+	JS::AutoValueVector avr(cx);
 	avr.reserve(16);
 
 	jl::Stack<JLData, jl::StaticAllocMedium> strList;
 	size_t length = 0;
 
-	jsval val;
+	JS::RootedValue val(cx);
 
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	JSObject *argObj;
-	argObj = JSVAL_TO_OBJECT(JL_ARG(1));
+	{
+
+	JS::RootedObject argObj(cx, &JL_ARG(1).toObject());
 
 	if ( JL_ObjectIsArrayLike(cx, argObj) ) {
 
@@ -207,17 +208,17 @@ DEFINE_FUNCTION( join ) {
 		JL_CHK( JS_GetArrayLength(cx, argObj, &arrayLen) );
 		for ( unsigned i = 0; i < arrayLen; ++i ) {
 
-			JL_CHK( JL_GetElement(cx, argObj, i, val) );
+			JL_CHK( JL_GetElement(cx, argObj, i, &val) );
 			JL_CHK( JL_JsvalToNative(cx, val, &*++strList) );
 			length += strList->Length();
 			avr.append(val);
 		}
 	} else {
 
-		jsval nextFct;
+		JS::RootedValue nextFct(cx);
 		JL_CHK( JS_GetPropertyById(cx, argObj, JLID(cx, next), &nextFct) );
 		JL_ASSERT_IS_CALLABLE(nextFct, "iterator");
-		while ( JS_CallFunctionValue(cx, argObj, nextFct, 0, NULL, &val) != false ) { // loop until StopIteration or error
+		while ( JS_CallFunctionValue(cx, argObj, nextFct, 0, NULL, val.address()) != false ) { // loop until StopIteration or error
 
 			JL_CHK( JL_JsvalToNative(cx, val, &*++strList) );
 			length += strList->Length();
@@ -235,7 +236,7 @@ DEFINE_FUNCTION( join ) {
 
 	if ( toArrayBuffer ) {
 		
-		uint8_t *buf = JL_NewBuffer(cx, length, *JL_RVAL);
+		uint8_t *buf = JL_NewBuffer(cx, length, JL_RVAL);
 		JL_CHK( buf );
 		buf += length;
 		while ( strList ) {
@@ -259,7 +260,9 @@ DEFINE_FUNCTION( join ) {
 
 		JSString *jsstr = JL_NewUCString(cx, buf, length);
 		JL_ASSERT( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
-		*JL_RVAL = STRING_TO_JSVAL(jsstr);
+		JL_RVAL.setString(jsstr);
+	}
+
 	}
 
 	return true;
@@ -291,7 +294,7 @@ DEFINE_FUNCTION( indexOf ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &start) );
 		if ( start > srcStr.Length() - patStr.Length() ) {
 			
-			*JL_RVAL = INT_TO_JSVAL( -1 );
+			JL_RVAL.setInt32(-1);
 			return true;
 		}
 	} else {
@@ -300,9 +303,9 @@ DEFINE_FUNCTION( indexOf ) {
 	}
 
 	if ( srcStr.IsWide() )
-		*JL_RVAL = INT_TO_JSVAL( jl::Match(srcStr.GetConstWStr()+start, srcStr.Length()-start, patStr.GetConstWStr(), patStr.Length()) );
+		JL_RVAL.setInt32( jl::Match(srcStr.GetConstWStr()+start, srcStr.Length()-start, patStr.GetConstWStr(), patStr.Length()) );
 	else
-		*JL_RVAL = INT_TO_JSVAL( jl::Match(srcStr.GetConstStr()+start, srcStr.Length()-start, patStr.GetConstStr(), patStr.Length()) );
+		JL_RVAL.setInt32( jl::Match(srcStr.GetConstStr()+start, srcStr.Length()-start, patStr.GetConstStr(), patStr.Length()) );
 
 	return true;
 	JL_BAD;
@@ -372,13 +375,15 @@ DEFINE_FUNCTION( processEvents ) {
 	int st;
 	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, jslangModuleId);
 
+	JS::RootedObject handleObj(cx);
+
 	JL_ASSERT_ARGC_MAX( COUNTOF(mpv->processEventThreadInfo) );
 	
 	ProcessEvent *peList[COUNTOF(mpv->processEventThreadInfo)]; // cache to avoid calling GetHandlePrivate() too often.
 
 	if ( JL_ARGC == 0 ) {
 		
-		*JL_RVAL = JSVAL_ZERO;
+		JL_RVAL.setInt32(0);
 		return true;
 	}
 
@@ -386,9 +391,10 @@ DEFINE_FUNCTION( processEvents ) {
 	unsigned int i;
 	for ( i = 0; i < argc; ++i ) {
 
-		JL_ASSERT_ARG_TYPE( IsHandle(cx, JL_ARG(i+1)), i+1, "(pev) Handle" );
-		JL_ASSERT_ARG_TYPE( IsHandleType(cx, JSVAL_TO_OBJECT(JL_ARG(i+1)), jl::CastCStrToUint32("pev")), i+1, "(pev) Handle" );
-		ProcessEvent *pe = (ProcessEvent*)GetHandlePrivate(cx, JL_ARG(i+1));
+		handleObj.set(&JL_ARG(i+1).toObject());
+		JL_ASSERT_ARG_TYPE( IsHandle(cx, handleObj), i+1, "(pev) Handle" );
+		JL_ASSERT_ARG_TYPE( IsHandleType(cx, handleObj, jl::CastCStrToUint32("pev")), i+1, "(pev) Handle" );
+		ProcessEvent *pe = (ProcessEvent*)GetHandlePrivate(cx, handleObj);
 		JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_STATE ); //JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_ANINVALID, E_NAME("pev Handle") );
 
 		ASSERT( pe->prepareWait );
@@ -396,7 +402,7 @@ DEFINE_FUNCTION( processEvents ) {
 		ASSERT( pe->cancelWait );
 		ASSERT( pe->endWait );
 
-		JL_CHK( pe->prepareWait(pe, cx, JSVAL_TO_OBJECT(JL_ARG(i+1))) );
+		JL_CHK( pe->prepareWait(pe, cx, handleObj) );
 
 		peList[i] = pe;
 	}
@@ -481,7 +487,8 @@ DEFINE_FUNCTION( processEvents ) {
 			JS_ClearPendingException(cx);
 		}
 
-		if ( pe->endWait(pe, &hasEvent, cx, JSVAL_TO_OBJECT(JL_ARG(i+1))) != true )
+		handleObj.set(&JL_ARG(i+1).toObject());
+		if ( pe->endWait(pe, &hasEvent, cx, handleObj) != true )
 			ok = false; // report errors later
 
 		if ( exState )
@@ -499,7 +506,7 @@ DEFINE_FUNCTION( processEvents ) {
 	ASSERT( JLSemaphoreAcquire(mpv->processEventSignalEventSem, 0) == JLTIMEOUT ); // else invalid state
 #endif // DEBUG
 
-	*JL_RVAL = INT_TO_JSVAL(eventsMask);
+	JL_RVAL.setInt32(eventsMask);
 	return ok;
 	JL_BAD;
 }
@@ -529,13 +536,15 @@ struct TimeoutProcessEvent {
 	unsigned int timeout;
 	JLEventHandler cancel;
 	bool canceled;
-	jsval callbackFunction;
-	JSObject *callbackFunctionThis;
+	//jsval callbackFunction;
+	JS::PersistentRootedValue callbackFunction;
+	//JSObject *callbackFunctionThis;
+	JS::PersistentRootedObject callbackFunctionThis;
 };
 
 S_ASSERT( offsetof(TimeoutProcessEvent, pe) == 0 );
 
-static bool TimeoutPrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
+static bool TimeoutPrepareWait( volatile ProcessEvent *, JSContext *, JS::HandleObject ) {
 	
 	return true;
 }
@@ -562,7 +571,7 @@ static bool TimeoutCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-static bool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+static bool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS::HandleObject obj ) {
 
 	JL_IGNORE(obj);
 
@@ -581,7 +590,7 @@ static bool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext
 	if ( JSVAL_IS_VOID( upe->callbackFunction ) )
 		return true;
 
-	jsval rval;
+	JS::RootedValue rval(cx);
 	JL_CHK( JL_CallFunctionVA(cx, upe->callbackFunctionThis, upe->callbackFunction, &rval) );
 
 	return true;
@@ -620,8 +629,8 @@ DEFINE_FUNCTION( timeoutEvents ) {
 
 		JL_ASSERT_ARG_IS_CALLABLE(2);
 
-		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_OBJVAL) ); // GC protection only
-		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_ARG(2)) ); // GC protection only
+		JL_CHK( SetHandleSlot(cx, JL_RVAL, 0, JL_OBJVAL) ); // GC protection only
+		JL_CHK( SetHandleSlot(cx, JL_RVAL, 1, JL_ARG(2)) ); // GC protection only
 
 		upe->callbackFunctionThis = JSVAL_TO_OBJECT(JL_OBJVAL); // store "this" object.
 		upe->callbackFunction = JL_ARG(2); // access to ->callbackFunction is faster than Handle slots.
@@ -636,7 +645,7 @@ DEFINE_FUNCTION( timeoutEvents ) {
 
 
 #if defined(DEBUG) // || 1
-#define HAS_JL_API_TESTS
+//#define HAS_JL_API_TESTS
 #endif
 
 
@@ -654,6 +663,8 @@ DEFINE_FUNCTION( timeoutEvents ) {
 	if ( typeof _jsapiTests != 'undefined' )
 		_jsapiTests();
 **/
+
+S_ASSERT(sizeof(wchar_t) == sizeof(jschar));
 
 DEFINE_FUNCTION( _jsapiTests ) {
 
@@ -684,8 +695,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	// Data issues 2 ////////////////////////////////////////////////
 	{
 	JLData path;
-	jsval tmp;
-	tmp = JSVAL_ONE;
+	JS::RootedValue tmp(cx, JSVAL_ONE);
 	JL_CHK( JL_JsvalToNative(cx, tmp, &path) );
 	const char *d1 = path.GetConstStrZ();
 	const char *d2 = path.GetConstStrZ();
@@ -699,17 +709,18 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	///////////////////////////////////////////////////////////////
 	// check JL_JsvalToJsid -> JL_JsidToJsval
 	//
-	JSObject *o = JL_NewObj(cx);
-	jsid id;
-	jsval s;
-	s = OBJECT_TO_JSVAL(o);
+	JS::RootedObject o(cx, JL_NewObj(cx));
+	JS::RootedId id(cx);
+	JS::RootedValue s(cx);
+	s.setObject(*o);
+
 	TEST( JL_JsvalToJsid(cx, s, &id) );
 	TEST( JSID_IS_OBJECT(id) );
-	jsval r;
+	JS::RootedValue r(cx);
 	TEST( JL_JsidToJsval(cx, id, &r) );
 	TEST( JSVAL_TO_OBJECT(r) == o );
 
-	TEST( JS_ValueToId(cx, OBJECT_TO_JSVAL(o), &id) );
+	TEST( JS_ValueToId(cx, OBJECT_TO_JSVAL(o), id.address()) );
 	TEST( !JSID_IS_OBJECT(id) );
 
 	bool found;
@@ -718,8 +729,8 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	TEST( found );
 
 	JSString *jsstr = JS_NewUCStringCopyZ(cx, L("testtesttesttesttesttesttesttesttesttesttesttest"));
-	jsid pid;
-	pid = JL_StringToJsid(cx, jsstr);
+	JS::RootedId pid(cx);
+	pid.set(JL_StringToJsid(cx, jsstr));
 
 	TEST( JL_JsvalToJsid(cx, OBJECT_TO_JSVAL(JS_NewObject(cx, NULL, NULL, NULL)), &id) );
 	TEST( JSID_IS_OBJECT(id) );
@@ -861,7 +872,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	{
 	void *ptr = (void*)0; // 00...00
 	
-	jsval v;
+	JS::RootedValue v;
 	void *tmp = ptr;
 	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
 	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
@@ -871,7 +882,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	{
 	void *ptr = (void*)1; // 00...01
 	
-	jsval v;
+	JS::RootedValue v;
 	void *tmp = ptr;
 	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
 	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
@@ -881,7 +892,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	{
 	void *ptr = (void*)-1; // ff...ff
 	
-	jsval v;
+	JS::RootedValue v;
 	void *tmp = ptr;
 	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
 	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
@@ -891,7 +902,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	{
 	void *ptr = (void*)(size_t((void*)-1)-1); // ff...fe
 	
-	jsval v;
+	JS::RootedValue v;
 	void *tmp = ptr;
 	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
 	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
@@ -901,7 +912,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	{
 	void *ptr = (void*)(size_t((void*)-1) >> 1); // 7f...ff
 	
-	jsval v;
+	JS::RootedValue v;
 	void *tmp = ptr;
 	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
 	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
@@ -911,7 +922,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	{
 	void *ptr = (void*)((size_t((void*)-1)>>1) - 1); // 7f...fe
 	
-	jsval v;
+	JS::RootedValue v;
 	void *tmp = ptr;
 	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
 	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
@@ -937,7 +948,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 
 #if defined(DEBUG)  //   || 1
-#define JSLANG_TEST 
+//#define JSLANG_TEST
 #endif
 
 #ifdef JSLANG_TEST
@@ -947,7 +958,7 @@ testFct( JSContext *cx ) {
 	
 	JL_IGNORE(cx);
 
-	static jsval tmp = JSVAL_ONE;
+//	static JS::RootedValue tmp = JSVAL_ONE;
 /* 2000
 	static JSObject *o = JS_NewArrayObject(cx, 0, NULL);
 	JS_SetElement(cx, o, 1, &tmp); JS_SetElement(cx, o, 2, &tmp); JS_SetElement(cx, o, 3, &tmp); JS_SetElement(cx, o, 4, &tmp); JS_SetElement(cx, o, 5, &tmp); JS_SetElement(cx, o, 6, &tmp); JS_SetElement(cx, o, 7, &tmp); JS_SetElement(cx, o, 8, &tmp); JS_SetElement(cx, o, 9, &tmp); JS_SetElement(cx, o, 10, &tmp); JS_SetElement(cx, o, 11, &tmp); JS_SetElement(cx, o, 12, &tmp); JS_SetElement(cx, o, 13, &tmp); JS_SetElement(cx, o, 14, &tmp); JS_SetElement(cx, o, 15, &tmp); JS_SetElement(cx, o, 16, &tmp);
@@ -989,7 +1000,7 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	JS::RootedValue test1(cx);
 	__asm { nop }
-	jsval v1 = test1;
+	JS::RootedValue v1 = test1;
 	__asm { nop }
 	test1 = v1;
 
@@ -997,12 +1008,12 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	JS::MutableHandleValue test2(&test1);
 	__asm { nop }
-	jsval v2 = test2;
+	JS::RootedValue v2 = test2;
 	__asm { nop }
 	test2.set(v2);
 	
 	JS::HandleValue test3(test2);
-	jsval v3 = test3;
+	JS::RootedValue v3 = test3;
 	JL_IGNORE(v3);
 
 	struct { void operator()(JS::MutableHandleValue m1) {
@@ -1224,7 +1235,7 @@ CLASS_END
 DEFINE_INIT() {
 
 
-	JS::RootedObject robj(cx, JL_GetGlobal(cx));
+	JS::RootedObject robj(cx, JL_GetGlobal(cx, obj));
 
 	//REGISTER_STATIC();
 	REGISTER_CLASS(FooBar);
@@ -1285,6 +1296,8 @@ CONFIGURE_STATIC
 END_STATIC
 
 
+
+/* test for jlclass3.h
 
 enum { status2, status3, status4 };
 
@@ -1437,3 +1450,5 @@ CLASS(FooBar)
 	}
 	
 CLASS_END
+
+*/

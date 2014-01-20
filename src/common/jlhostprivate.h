@@ -24,37 +24,58 @@ class StaticArray {
 
 	uint8_t data[ITEM_COUNT * sizeof(T)];
 public:
-	T& operator[](size_t slotIndex) {
+
+	T& Get(size_t slotIndex) {
 
 		ASSERT( slotIndex < ITEM_COUNT );
-		return *((T*)data)[slotIndex];
+//		return *reinterpret_cast<T*>(data)[slotIndex];
+
+		T* tmp = (T*)data;
+
+		return (((T*)data)[slotIndex]);
+	}
+
+	const T& GetConst(size_t slotIndex) const {
+
+		ASSERT( slotIndex < ITEM_COUNT );
+		return (((T*)data)[slotIndex]);
 	}
 
 	void Destruct() {
 
 		for ( size_t i = 0; i < ITEM_COUNT; ++i ) {
 			
-			(&this[i])::~T();
+			(&this->Get(i))::~T();
 		}
 	}
 
-	template <class P1>
+	void Construct() {
+		
+		for ( size_t i = 0; i < ITEM_COUNT; ++i ) {
+			
+			::new (&this->Get(i)) T();
+		}
+	}
+
+	template <typename P1>
 	void Construct(P1 p1) {
 		
 		for ( size_t i = 0; i < ITEM_COUNT; ++i ) {
 			
-			::new (&this[i])(p1);
+			::new (&this->Get(i)) T(p1);
 		}
 	}
 
-	template <class P1, class P2>
+	template <typename P1, typename P2>
 	void Construct(P1 p1, P2 p2) {
 		
 		for ( size_t i = 0; i < ITEM_COUNT; ++i ) {
 			
-			::new (&this[i])(p1, p2);
+			::new (&this->Get(i)) T(p1, p2);
 		}
 	}
+
+	// ...
 
 };
 
@@ -75,9 +96,10 @@ struct ProtoCache {
 
 	ProtoCache() {
 
+		// set all slots as 'unused'
 		for ( int i = 0; i < CACHE_LENGTH; ++i ) {
 			
-			items[i].classp = NULL;
+			items.Get(i).clasp = NULL;
 		}
 	}
 
@@ -98,11 +120,11 @@ struct ProtoCache {
 
 		for (;;) {
 
-			ClassProtoCache &slot = items[slotIndex];
+			ClassProtoCache &slot = items.Get(slotIndex);
 
 			if ( slot.clasp == NULL ) {
 
-				::new (&slot) ClassProtoCache(cx, proto);
+				::new (&slot) ClassProtoCache(cx, clasp, proto);
 				return true;
 			}
 
@@ -125,7 +147,7 @@ struct ProtoCache {
 
 		for (;;) {
 
-			const ClassProtoCache &slot = items[slotIndex];
+			const ClassProtoCache &slot = items.GetConst(slotIndex);
 		
 			// slot->clasp == NULL -> empty
 			// slot->clasp == jlpv::RemovedSlot() -> slot removed, but maybe next slot will match !
