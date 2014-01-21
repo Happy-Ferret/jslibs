@@ -148,9 +148,9 @@ JL_updateMallocCounter( JSContext *cx, size_t nbytes ) {
 }
 
 ALWAYS_INLINE JSObject * FASTCALL
-JL_GetGlobal( JSContext *cx, JS::HandleObject obj ) {
+JL_GetGlobal( JSContext *cx ) {
 
-	return JS_GetGlobalForObject(cx, obj);
+	return JS::CurrentGlobalOrNull(cx);//JS_GetGlobalForObject(cx, obj);
 }
 
 ALWAYS_INLINE bool FASTCALL
@@ -361,8 +361,8 @@ ALWAYS_INLINE jsid FASTCALL
 JL_StringToJsid( JSContext *cx, JS::HandleString jsstr ) {
 
 	ASSERT( jsstr != NULL );
-	jsstr = JS_InternJSString(cx, jsstr); // if ( !JS_StringHasBeenInterned(cx, jsstr) )
-	if ( jsstr == NULL )
+	JS::RootedString tmp(cx, JS_InternJSString(cx, jsstr)); // if ( !JS_StringHasBeenInterned(cx, jsstr) )
+	if ( tmp == NULL )
 		return jspv::NullJsid();
 	return INTERNED_STRING_TO_JSID(cx, jsstr);
 }
@@ -375,7 +375,7 @@ JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
 	JS::RootedString jsstr(cx, JS_InternUCString(cx, wstr));
 	if ( jsstr == NULL )
 		return jspv::NullJsid();
-	jsid id = JL_StringToJsid(cx, jsstr);
+	JS::RootedId id(cx, JL_StringToJsid(cx, jsstr));
 	ASSERT( JSID_IS_STRING(id) );
 	return id;
 }
@@ -413,6 +413,7 @@ JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
 
 #define JL_BAD bad:return(false)
 
+/*
 #ifndef USE_JSHANDLES // NOT using handles
 
 	#define JL_ARGC (argc)
@@ -440,7 +441,7 @@ JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
 
 
 #else // USE_JSHANDLES
-
+*/
 
 	#define ARGSARGS cx, argc, vp
 	namespace jl {
@@ -607,7 +608,7 @@ JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
 	#define JL_OBJVAL (args.thisObjVal())
 
 
-#endif // USE_JSHANDLES
+// #endif // USE_JSHANDLES
 
 
 
@@ -1028,7 +1029,7 @@ JL_NewObjectWithGivenProto( JSContext *cx, JSClass *clasp, JS::HandleObject prot
 
 	ASSERT_IF( proto != NULL, JL_GetParent(cx, proto) != NULL );
 	// Doc. JS_NewObject, JL_NewObjectWithGivenProto behaves exactly the same, except that if proto is NULL, it creates an object with no prototype.
-	JSObject *obj = JS_NewObjectWithGivenProto(cx, clasp, proto, parent);  // (TBD) test if parent is ok (see bug 688510)
+	JS::RootedObject obj(cx, JS_NewObjectWithGivenProto(cx, clasp, proto, parent));  // (TBD) test if parent is ok (see bug 688510)
 	ASSERT( JL_GetParent(cx, obj) != NULL );
 	return obj;
 }
@@ -1156,26 +1157,26 @@ namespace jlpv {
 
 namespace jlpv {
 
-	INLINE NEVER_INLINE jsid FASTCALL
-	GetPrivateJsidSlow( JSContext *cx, JS::MutableHandleId id, int index, const jschar * RESTRICT name ) {
+	INLINE NEVER_INLINE void FASTCALL
+	GetPrivateJsidSlow( JSContext *cx, JS::PersistentRootedId &id, int index, const jschar *name ) {
 
 		JS::RootedString jsstr(cx, JS_InternUCString(cx, name));
 		ASSERT( jsstr != NULL );
-//		if (unlikely( jsstr == NULL ))
-//			return jspv::NullJsid();
 		id.set(JL_StringToJsid(cx, jsstr));
-		return id;
 	}
 }
 
-ALWAYS_INLINE jsid FASTCALL
+ALWAYS_INLINE JS::HandleId FASTCALL
 JL_GetPrivateJsid( JSContext *cx, int index, const jschar *name ) {
 
 	HostPrivate *hpv = JL_GetHostPrivate(cx);
 	ASSERT( hpv != NULL );
-	JS::RootedId id(cx, hpv->ids.Get(index));
-//	jsid *id = hpv->ids[index];
-	return id != jspv::NullJsid() ? id : jlpv::GetPrivateJsidSlow(cx, &id, index, name);
+	JS::PersistentRootedId &id = hpv->ids.Get(index);
+	if ( JSID_IS_VOID(id) ) {
+
+		jlpv::GetPrivateJsidSlow(cx, id, index, name);
+	}
+	return id;
 }
 
 
@@ -1948,7 +1949,7 @@ public:
 	}
 
 	// other
-	ALWAYS_INLINE JLData( JSContext *cx, JSString *jsstr ) : _own(false), _nt(false), _w(true) {
+	ALWAYS_INLINE JLData( JSContext *cx, JS::HandleString jsstr ) : _own(false), _nt(false), _w(true) {
 	
 		_buf = (void*)JS_GetStringCharsAndLength(cx, jsstr, &_len); // see also JS_GetStringCharsZAndLength
 		IFDEBUG(Check());
@@ -2178,8 +2179,9 @@ ALWAYS_INLINE bool FASTCALL
 JL_JsvalToNative( JSContext *cx, JS::HandleValue val, JLData *str ) {
 
 	if (likely( val.isString() )) { // for string literals
-
-		*str = JLData(cx, val.toString());
+		
+		JS::RootedString tmp(cx, val.toString());
+		*str = JLData(cx, tmp);
 		return true;
 	}
 
@@ -2220,8 +2222,7 @@ JL_JsvalToNative( JSContext *cx, JS::HandleValue val, JLData *str ) {
 	}
 
 	// fallback
-	JSString *jsstr;
-	jsstr = JS::ToString(cx, val);
+	JS::RootedString jsstr(cx, JS::ToString(cx, val));
 	JL_CHKM( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
 //	val = STRING_TO_JSVAL(jsstr); // GC protection
 	*str = JLData(cx, jsstr);
@@ -2930,7 +2931,7 @@ JL_NativeToJsval( JSContext *, const bool &b, OUT JS::MutableHandleValue vp ) {
 ALWAYS_INLINE bool FASTCALL
 JL_JsvalToNative( JSContext *cx, IN JS::HandleValue val, bool *b ) {
 
-	if (likely( JSVAL_IS_BOOLEAN(val) )) {
+	if (likely( val.isBoolean() )) {
 
 		*b = (JSVAL_TO_BOOLEAN(val) == true);
 		return true;
@@ -3348,7 +3349,7 @@ JL_JsvalToJsid( JSContext * RESTRICT cx, IN JS::HandleValue val, JS::MutableHand
 
 		id.set(OBJECT_TO_JSID( &val.toObject() ));
 	} else
-	if ( JSVAL_IS_VOID( val ) ) {
+	if ( val.isUndefined() ) {
 
 		id.set(JSID_VOID);
 	} else
@@ -3940,18 +3941,6 @@ JL_CallFunctionId( JSContext *cx, JS::HandleObject obj, jsid id, unsigned argc, 
 }
 
 
-// JL_CallFunctionVA (cx, obj, function, rval, ... )
-
-// (TBD)
-
-
-// JL_CallFunctionVA (cx, obj, functionId, rval, ... )
-
-// (TBD)
-
-
-// JL_CallFunctionVA (cx, obj, functionValue, rval, ... )
-
 ALWAYS_INLINE bool FASTCALL
 JL_CallFunctionVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleValue functionValue, OUT JS::MutableHandleValue rval ) {
 
@@ -3979,6 +3968,38 @@ JL_CallFunctionVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleValue funct
 	JS::Value args[] = { arg1, arg2, arg3 };
 	return JS_CallFunctionValue(cx, obj, functionValue, COUNTOF(args), args, rval.address());
 }
+
+
+
+ALWAYS_INLINE bool FASTCALL
+JL_CallFunctionIdVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleId functionId, OUT JS::MutableHandleValue rval ) {
+
+	JS::RootedValue functionValue(cx);
+	return JS_GetPropertyById(cx, obj, functionId, &functionValue) && JL_CallFunctionVA(cx, obj, functionValue, rval);
+}
+
+ALWAYS_INLINE bool FASTCALL
+JL_CallFunctionIdVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleId functionId, OUT JS::MutableHandleValue rval, IN JS::HandleValue arg1 ) {
+
+	JS::RootedValue functionValue(cx);
+	return JS_GetPropertyById(cx, obj, functionId, &functionValue) && JL_CallFunctionVA(cx, obj, functionValue, rval, arg1);
+}
+
+ALWAYS_INLINE bool FASTCALL
+JL_CallFunctionIdVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleId functionId, OUT JS::MutableHandleValue rval, IN JS::HandleValue arg1, IN JS::HandleValue arg2 ) {
+
+	JS::RootedValue functionValue(cx);
+	return JS_GetPropertyById(cx, obj, functionId, &functionValue) && JL_CallFunctionVA(cx, obj, functionValue, rval, arg1, arg2);
+}
+
+ALWAYS_INLINE bool FASTCALL
+JL_CallFunctionIdVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleId functionId, OUT JS::MutableHandleValue rval, IN JS::HandleValue arg1, IN JS::HandleValue arg2, IN JS::HandleValue arg3 ) {
+
+	JS::RootedValue functionValue(cx);
+	return JS_GetPropertyById(cx, obj, functionId, &functionValue) && JL_CallFunctionVA(cx, obj, functionValue, rval, arg1, arg2, arg3);
+}
+
+
 
 
 /* no more used ?
@@ -4016,7 +4037,7 @@ JL_ArrayReset( JSContext * RESTRICT cx, IN JS::HandleObject arr ) {
 INLINE bool FASTCALL
 JL_JsvalToPrimitive( JSContext * RESTRICT cx, IN JS::HandleValue val, OUT JS::MutableHandleValue rval ) { // prev JL_ValueOf
 
-	if ( JSVAL_IS_PRIMITIVE(val) ) {
+	if ( val.isPrimitive() ) {
 
 		rval.set(val);
 		return true;
@@ -4521,7 +4542,7 @@ JSStreamRead( JSContext * RESTRICT cx, JS::HandleObject obj, char * RESTRICT buf
 	JS::RootedValue tmp(cx);
 	JL_CHK( JL_NativeToJsval(cx, *amount, &tmp) );
 	JL_CHK( JL_CallFunctionId(cx, obj, JLID(cx, read), 1, tmp.address(), &tmp) );
-	if ( JSVAL_IS_VOID(tmp) ) { // (TBD) with sockets, undefined mean 'closed', that is not supported by NIStreamRead.
+	if ( tmp.isUndefined() ) { // (TBD) with sockets, undefined mean 'closed', that is not supported by NIStreamRead.
 
 		*amount = 0;
 	} else {

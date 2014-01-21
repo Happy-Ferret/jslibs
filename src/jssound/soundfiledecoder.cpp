@@ -58,11 +58,11 @@ sf_count_t SfGetFilelen(void *user_data) {
 
 	ASSERT( pv->cx );
 	JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) );
-	if ( JSVAL_IS_VOID( tmpVal ) )
+	if ( tmpVal.isUndefined() )
 		return -1;
 	JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
 	JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, available), &tmpVal) );
-	if ( JSVAL_IS_VOID( tmpVal ) )
+	if ( tmpVal.isUndefined() )
 		return -1;
 	JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &available) );
 	return position + available;
@@ -89,7 +89,7 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 
 		case SEEK_CUR:
 			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
-			if ( JSVAL_IS_VOID( tmpVal ) )
+			if ( tmpVal.isUndefined() )
 				return -1;
 			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
 
@@ -100,12 +100,12 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 
 		case SEEK_END:
 			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, available), tmpVal.address()) );
-			if ( JSVAL_IS_VOID( tmpVal ) )
+			if ( tmpVal.isUndefined() )
 				return -1;
 			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &available) );
 
 			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
-			if ( JSVAL_IS_VOID( tmpVal ) )
+			if ( tmpVal.isUndefined() )
 				return -1;
 			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
 
@@ -129,7 +129,7 @@ sf_count_t SfTell(void *user_data) {
 
 	ASSERT( pv->cx );
 	JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) );
-	if ( JSVAL_IS_VOID( tmpVal ) )
+	if ( tmpVal.isUndefined() )
 		return -1;
 	JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
 	return position;

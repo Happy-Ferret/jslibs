@@ -109,7 +109,7 @@ void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 		else
 			func2 = JSVAL_VOID;
 
-		if ( !JSVAL_IS_VOID( func1 ) || !JSVAL_IS_VOID( func2 ) ) {
+		if ( !func1.isUndefined() || !func2.isUndefined() ) {
 
 //			int arity1 = JS_GetFunctionArity(JS_ValueToFunction(cx, func1));
 //			int arity2 = JS_GetFunctionArity(JS_ValueToFunction(cx, func2));
@@ -160,7 +160,7 @@ void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 					doContact = false;
 			}
 
-			if ( !JSVAL_IS_VOID( func2 ) ) {
+			if ( !func2.isUndefined() ) {
 
 				argv[1] = valGeom2;
 				argv[2] = valGeom1;

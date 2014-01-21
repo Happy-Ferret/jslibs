@@ -167,7 +167,7 @@ DEFINE_PROPERTY_SETTER( surface ) {
 
 	ode::dReal value;
 	bool set;
-	if ( JSVAL_IS_VOID( *vp ) ) {
+	if ( vp.isUndefined() ) {
 
 		set = false;
 		IFDEBUG( value = 0 ); // avoid "potentially uninitialized local variable" warning

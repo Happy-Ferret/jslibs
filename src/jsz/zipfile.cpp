@@ -100,7 +100,7 @@ bool PrepareReadCurrentFile( JSContext *cx, JSObject *obj ) {
 		JLData password;
 		jsval tmp;
 		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTPASSWORD, &tmp) );
-		if ( !JSVAL_IS_VOID(tmp) )
+		if ( !tmp.isUndefined() )
 			JL_CHK( JL_JsvalToNative(cx, tmp, &password) );
 		if ( !password.IsSet() )
 			return ThrowZipFileError(cx, JLERR_PASSWORDREQUIRED);
@@ -299,7 +299,7 @@ DEFINE_FUNCTION( close ) {
 		JLData comment;
 		jsval tmp;
 		JL_CHK( JL_GetReservedSlot( obj, SLOT_GLOBALCOMMENT, &tmp) );
-		if ( !JSVAL_IS_VOID(tmp) )
+		if ( !tmp.isUndefined() )
 			JL_CHK( JL_JsvalToNative(cx, tmp, &comment) );
 		ZIP_CHK( zipClose(pv->zf, comment.GetConstStrZOrNULL()) );
 	}
@@ -612,7 +612,7 @@ DEFINE_FUNCTION( write ) {
 
 		jsval tmp;
 		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTDATE, &tmp) );
-		if ( JSVAL_IS_VOID(tmp) ) {
+		if ( tmp.isUndefined() ) {
 
 			zipfi.tmz_date.tm_sec = 0;
 			zipfi.tmz_date.tm_min = 0;
@@ -635,14 +635,14 @@ DEFINE_FUNCTION( write ) {
 		}
 
 		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTEXTRAFIELD, &tmp) );
-		if ( !JSVAL_IS_VOID(tmp) )
+		if ( !tmp.isUndefined() )
 			JL_CHK( JL_JsvalToNative(cx, tmp, &currentExtraField) );
 
 		JL_CHK( JL_ReservedSlotToNative(cx, obj, SLOT_INZIPFILENAME, &inZipFilename) );
 
 		int level;
 		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTLEVEL, &tmp) );
-		if ( !JSVAL_IS_VOID(tmp) ) {
+		if ( !tmp.isUndefined() ) {
 
 			JL_CHK( JL_JsvalToNative(cx, tmp, &level) );
 			//JL_ASSERT_ARG_VAL_RANGE( level, Z_NO_COMPRESSION, Z_BEST_COMPRESSION, 2 );
@@ -873,7 +873,7 @@ DEFINE_PROPERTY_SETTER( level ) {
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
 
-	JL_ASSERT( JSVAL_IS_VOID(*vp) || JSVAL_IS_NUMBER(*vp), E_TYPE, E_TY_NUMBER );
+	JL_ASSERT( vp.isUndefined() || JSVAL_IS_NUMBER(*vp), E_TYPE, E_TY_NUMBER );
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_CURRENTLEVEL, *vp) );
 
 	return true;
@@ -949,7 +949,7 @@ DEFINE_PROPERTY_SETTER( date ) {
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
 
-	JL_ASSERT( JSVAL_IS_VOID(*vp) || !JSVAL_IS_PRIMITIVE(*vp) && JS_ObjectIsDate(cx, JSVAL_TO_OBJECT(*vp)), E_VALUE, E_INVALID );
+	JL_ASSERT( vp.isUndefined() || !JSVAL_IS_PRIMITIVE(*vp) && JS_ObjectIsDate(cx, JSVAL_TO_OBJECT(*vp)), E_VALUE, E_INVALID );
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_CURRENTDATE, *vp) );
 
 	return true;
@@ -1146,7 +1146,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 	JL_IGNORE(id);
 
 	JL_GetReservedSlot( obj, 0, vp);
-	if ( JSVAL_IS_VOID(*vp) )
+	if ( vp.isUndefined() )
 		return true;
 	int errorCode = JSVAL_TO_INT(*vp);
 	JSString *str = JS_NewStringCopyZ( cx, ZipFileErrorConstString(errorCode) );

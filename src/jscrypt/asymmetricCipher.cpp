@@ -179,7 +179,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 
 	if ( asymmetricCipher == rsa ) {
 
-		if ( JL_ARGC >= 4 && !JSVAL_IS_VOID( JL_ARG(4) ) ) {
+		if ( JL_ARGC >= 4 && !JL_ARG(4).isUndefined() ) {
 
 			JLData paddingName;
 			JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &paddingName) );
@@ -375,7 +375,7 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 //			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
 //				JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(2), &in, &inLength) );
 			JLData lparam;
-			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
+			if ( argc >= 2 && !JL_ARG(2).isUndefined() )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
 			// doc. When performing v1.5 encryption, the hash and lparam parameters are totally ignored and can be set to NULL or zero (respectively).
 			err = rsa_encrypt_key_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, pv->hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
@@ -393,7 +393,7 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 #ifdef MKAT
 		case katja: {
 			JLData lparam;
-			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
+			if ( argc >= 2 && !JL_ARG(2).isUndefined() )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
 			err = katja_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, pv->hashIndex, &pv->key.katjaKey );
 			break;
@@ -460,7 +460,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 		case rsa: {
 
 			JLData lparam;
-			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
+			if ( argc >= 2 && !JL_ARG(2).isUndefined() )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
 
 			int stat = 0; // default: failed
@@ -485,7 +485,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 		case katja: {
 
 			JLData lparam;
-			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
+			if ( argc >= 2 && !JL_ARG(2).isUndefined() )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lparam) );
 
 			int stat = 0; // default: failed
@@ -559,7 +559,7 @@ DEFINE_FUNCTION( sign ) { // ( data [, saltLength] )
 			// A good saltLength default value is between 8 and 16 octets. Strictly, it must be small than modulus len - hLen - 2 where modulus len is the size of the RSA modulus (in octets), and hLen is the length of the message digest produced by the chosen hash.
 			// int saltLength = 16; // OR saltLength = mp_unsigned_bin_size((mp_int*)(pv->key.rsaKey.N)) - hash_descriptor[hashIndex].hashsize - 2  -1;
 			int saltLength = RSA_SIGN_DEFAULT_SALT_LENGTH;
-			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
+			if ( argc >= 2 && !JL_ARG(2).isUndefined() )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &saltLength) );
 
 			err = rsa_sign_hash_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, LTC_LTC_PKCS_1_PSS, prngState, prngIndex, pv->hashIndex, saltLength, &pv->key.rsaKey );
@@ -632,7 +632,7 @@ DEFINE_FUNCTION( verifySignature ) { // ( data, signature [, saltLength] )
 	switch ( pv->cipher ) {
 		case rsa: {
 			int saltLength = RSA_SIGN_DEFAULT_SALT_LENGTH; // default
-			if ( argc >= 3 && !JSVAL_IS_VOID( JL_ARG(3) ) )
+			if ( argc >= 3 && !JL_ARG(3).isUndefined() )
 				JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &saltLength) );
 
 			rsa_verify_hash_ex( (const unsigned char *)sign.GetConstStr(), (unsigned long)sign.Length(), (const unsigned char *)data.GetConstStr(), (unsigned long)data.Length(), LTC_LTC_PKCS_1_PSS, pv->hashIndex, saltLength, &stat, &pv->key.rsaKey );

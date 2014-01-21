@@ -847,7 +847,7 @@ bool FillMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *hM
 
 		JL_CHK( NormalizeMenuInfo(cx, menuObj, INT_TO_JSVAL(i), &item) );
 
-		if ( JSVAL_IS_NULL(item) || JSVAL_IS_VOID(item) ) {
+		if ( item.isNull() || item.isUndefined() ) {
 
 			uFlags |= MF_SEPARATOR;
 		} else 
@@ -1123,7 +1123,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 		pv->nid.dwInfoFlags = NIIF_NONE;
 
 		JL_CHK( JS_GetProperty(cx, infoObj, "infoTitle", JL_RVAL) );
-		if ( !JSVAL_IS_VOID(*JL_RVAL) ) {
+		if ( !JL_RVAL.isUndefined() ) {
 
 			JLData infoTitle;
 			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &infoTitle) );
@@ -1134,7 +1134,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 		}
 
 		JL_CHK( JS_GetProperty(cx, infoObj, "info", JL_RVAL) );
-		if ( !JSVAL_IS_VOID(*JL_RVAL) ) {
+		if ( !JL_RVAL.isUndefined() ) {
 
 			JLData infoStr;
 			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &infoStr) );
@@ -1147,7 +1147,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 		}
 
 		JL_CHK( JS_GetProperty(cx, infoObj, "icon", JL_RVAL) );
-		if ( !JSVAL_IS_VOID(*JL_RVAL) ) {
+		if ( !JL_RVAL.isUndefined() ) {
 
 			JLData iconNameStr;
 			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &iconNameStr) );

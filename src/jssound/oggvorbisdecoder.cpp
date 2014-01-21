@@ -81,7 +81,7 @@ int seek_func(void *datasource, ogg_int64_t offset, int whence) {
 
 		case SEEK_CUR:
 			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) ); // (TBD) manage error
-			if ( JSVAL_IS_VOID( tmpVal ) ) //
+			if ( tmpVal.isUndefined() ) //
 				return -1;
 			if ( offset == 0 ) // no move, just tested, but let -1 to be return if no position property available.
 				return 0;
@@ -93,12 +93,12 @@ int seek_func(void *datasource, ogg_int64_t offset, int whence) {
 
 		case SEEK_END:
 			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, available), tmpVal.address()) );
-			if ( JSVAL_IS_VOID( tmpVal ) )
+			if ( tmpVal.isUndefined() )
 				return -1;
 			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &available) );
 
 			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
-			if ( JSVAL_IS_VOID( tmpVal ) )
+			if ( tmpVal.isUndefined() )
 				return -1;
 			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
 
@@ -122,7 +122,7 @@ long tell_func(void *datasource) {
 	int position;
 	ASSERT(pv->cx);
 	JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) );
-	if ( JSVAL_IS_VOID( tmpVal ) )
+	if ( tmpVal.isUndefined() )
 		return -1;
 	JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
 	return position;

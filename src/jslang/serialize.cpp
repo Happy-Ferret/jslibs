@@ -27,7 +27,7 @@ DEFINE_FINALIZE() {
 		return;
 
 	jl::Serializer *ser;
-	ser = static_cast<jl::Serializer*>(JL_GetPrivate(obj));
+	ser = static_cast<jl::Serializer*>(js::GetObjectPrivate(obj));
 	if ( !ser )
 		return;
 	delete ser;
@@ -65,7 +65,7 @@ DEFINE_FUNCTION( write ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
-	*JL_RVAL = OBJECT_TO_JSVAL(JL_OBJ);
+	JL_RVAL.setObject(*JL_OBJ);
 	jl::Serializer *ser;
 	ser = static_cast<jl::Serializer*>(JL_GetPrivate(JL_OBJ));
 	JL_ASSERT_THIS_OBJECT_STATE(ser);
@@ -97,7 +97,7 @@ DEFINE_FUNCTION( done ) {
 	delete ser;
 	JL_SetPrivate(JL_OBJ, NULL);
 	//JL_updateMallocCounter(cx, length);
-	JL_CHK( JL_NewBufferGetOwnership(cx, data, length, *vp) );
+	JL_CHK( JL_NewBufferGetOwnership(cx, data, length, JL_RVAL) );
 	return true;
 	JL_BAD;
 }
@@ -133,7 +133,7 @@ DEFINE_FINALIZE() {
 		return;
 
 	jl::Unserializer *unser;
-	unser = static_cast<jl::Unserializer*>(JL_GetPrivate(obj));
+	unser = static_cast<jl::Unserializer*>(js::GetObjectPrivate(obj));
 	if ( !unser )
 		return;
 	delete unser;
@@ -150,7 +150,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARG_IS_STRING(1);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-	unser = new jl::Unserializer(str.GetStrZOwnership(), str.Length(), OBJECT_TO_JSVAL(JL_OBJ));
+	unser = new jl::Unserializer(cx, str.GetStrZOwnership(), str.Length(), OBJECT_TO_JSVAL(JL_OBJ));
 	JL_ASSERT_ALLOC(unser);
 	jl::SourceId_t srcId;
 	JL_CHK( unser->Read(cx, srcId) );
@@ -178,7 +178,7 @@ DEFINE_FUNCTION( read ) {
 	jl::Unserializer *unser;
 	unser = static_cast<jl::Unserializer*>(JL_GetPrivate(JL_OBJ));
 	JL_ASSERT_THIS_OBJECT_STATE(unser);
-	JL_CHKM( unser->Read(cx, *JL_RVAL), E_MODULE, E_INTERNAL ); // "Unserializer read error."
+	JL_CHKM( unser->Read(cx, JL_RVAL), E_MODULE, E_INTERNAL ); // "Unserializer read error."
 	return true;
 	JL_BAD;
 }

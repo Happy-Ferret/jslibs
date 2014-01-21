@@ -201,7 +201,7 @@ protected:
 
 	inline jsval AssertDefined( jsval val ) {
 
-		if ( JSVAL_IS_VOID(val) )
+		if ( val.isUndefined() )
 			throw JsException(_cx, "value is undefined");
 		return val;
 	}

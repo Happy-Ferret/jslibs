@@ -178,13 +178,13 @@ sf_count_t SfGetFilelen(void *user_data) {
 
 	int position;
 	JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
-	if ( JSVAL_IS_VOID( tmpVal ) )
+	if ( tmpVal.isUndefined() )
 		return -1;
 	JL_JsvalToNative(pv->cx, tmpVal, &position); // (TBD) manage error
 
 	int available;
 	JS_GetProperty(pv->cx, pv->obj, "available", &tmpVal); // (TBD) manage error
-	if ( JSVAL_IS_VOID( tmpVal ) )
+	if ( tmpVal.isUndefined() )
 		return -1;
 	JL_JsvalToNative(pv->cx, tmpVal, &available); // (TBD) manage error
 
@@ -209,7 +209,7 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 
 		case SEEK_CUR:
 			JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
-			if ( JSVAL_IS_VOID( tmpVal ) )
+			if ( tmpVal.isUndefined() )
 				return -1;
 			JL_JsvalToNative(pv->cx, tmpVal, &position); // (TBD) manage error
 
@@ -220,12 +220,12 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 
 		case SEEK_END:
 			JS_GetProperty(pv->cx, pv->obj, "available", &tmpVal);
-			if ( JSVAL_IS_VOID( tmpVal ) )
+			if ( tmpVal.isUndefined() )
 				return -1;
 			JL_JsvalToNative(pv->cx, tmpVal, &available);
 
 			JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
-			if ( JSVAL_IS_VOID( tmpVal ) )
+			if ( tmpVal.isUndefined() )
 				return -1;
 			JL_JsvalToNative(pv->cx, tmpVal, &position);
 
@@ -247,7 +247,7 @@ sf_count_t SfTell(void *user_data) {
 
 	int position;
 	JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
-	if ( JSVAL_IS_VOID( tmpVal ) )
+	if ( tmpVal.isUndefined() )
 		return -1;
 	JL_JsvalToNative(pv->cx, tmpVal, &position);
 

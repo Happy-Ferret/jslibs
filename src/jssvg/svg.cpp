@@ -578,7 +578,7 @@ DEFINE_PROPERTY_SETTER( dpi ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
-	if ( JSVAL_IS_VOID(*vp) ) {
+	if ( vp.isUndefined() ) {
 
 		rsvg_handle_set_dpi(handle, -1);
 	} else

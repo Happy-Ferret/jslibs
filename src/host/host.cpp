@@ -167,7 +167,8 @@ void ErrorReporterBasic(JSContext *cx, const char *message, JSErrorReport *repor
 
 void StderrWrite(JSContext *cx, const char *message, size_t length) {
 
-	JSObject *globalObject = JL_GetGlobal(cx);
+	JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
+
 	ASSERT( globalObject );
 
 	jsval fct;

@@ -82,7 +82,7 @@ DEFINE_FUNCTION( open ) {
 
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, jsvalDirectoryName );
-	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
+	JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );
 //	const char *directoryName;
 //	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
@@ -191,7 +191,7 @@ DEFINE_FUNCTION( make ) {
 
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, jsvalDirectoryName );
-	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
+	JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );
 	
 //	const char *directoryName;
 //	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &directoryName) );
@@ -224,7 +224,7 @@ DEFINE_FUNCTION( remove ) {
 
 	jsval jsvalDirectoryName;
 	JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, jsvalDirectoryName );
-	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
+	JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
 
 	if ( PR_RmDir(str) != PR_SUCCESS ) { // PR_RmDir removes the directory specified by the pathname name. The directory must be empty. If the directory is not empty, PR_RmDir fails and PR_GetError returns the error code PR_DIRECTORY_NOT_EMPTY_ERROR.
@@ -262,7 +262,7 @@ DEFINE_PROPERTY_GETTER( exist ) {
 
 	jsval jsvalDirectoryName;
 	JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, jsvalDirectoryName ) );
-	JL_ASSERT_THIS_OBJECT_STATE( !JSVAL_IS_VOID(jsvalDirectoryName) );
+	JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );
 	JL_CHK( JL_JsvalToNative(cx, jsvalDirectoryName, &str) );
 
 	PRDir *dd;

@@ -56,6 +56,7 @@ HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruc
 	const ClassProtoCache *classProtoCache = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Handle");
 	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME("Handle"), E_NOTFOUND );
 
+	{
 	JS::RootedObject handleObj(cx, JL_NewObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto, JS::NullPtr()));
 	JL_CHK( handleObj != NULL );
 	handleVal.setObject(*handleObj);
@@ -69,6 +70,7 @@ HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruc
 	pv->handleType = handleType;
 	pv->finalizeCallback = finalizeCallback;
 	*userStruct = (Struct*)(pv+1);
+	}
 
 	return true;
 	JL_BAD;

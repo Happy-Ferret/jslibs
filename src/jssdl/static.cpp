@@ -479,7 +479,7 @@ DEFINE_PROPERTY_SETTER( icon ) {
 	JLData data;
 	jsval image = *vp;
 
-	if ( JSVAL_IS_VOID(image) ) {
+	if ( image.isUndefined() ) {
 
 		SDL_WM_SetIcon(NULL, NULL);
 		return true;
@@ -1306,7 +1306,7 @@ bool SurfaceReadyEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *
 	if ( !*hasEvent )
 		return true;
 
-	if ( JSVAL_IS_VOID(upe->callbackFctVal) )
+	if ( upe->callbackFctVal.isUndefined() )
 		return true;
 
 	jsval rval;

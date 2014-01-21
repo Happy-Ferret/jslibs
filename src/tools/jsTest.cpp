@@ -2,101 +2,70 @@
 
 #include <wchar.h>
 
+//#define USE_JL
+
+#ifdef USE_JL
+
+#include <../common/jlplatform.h>
 #include <../common/jlhelper.h>
 #include <../common/jlhelper.cpp>
 #include <../common/jslibsModule.cpp>
+
+#else
+#endif // USE_JL
 
 #include <jsapi.h>
 #include <string.h>
 #include <jsprf.h>
 
+
 #pragma warning(disable : 4100) // unreferenced formal parameter
 
-void StderrWrite(JSContext *cx, const char *message, size_t length) {
 
-	fwrite(message, 1, length, stderr);
-}
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <fcntl.h>
 
 
-void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
+#ifndef O_BINARY
+	#define O_BINARY 0
+#endif
 
-	// trap JSMSG_OUT_OF_MEMORY error to avoid calling ErrorReporter_stdErrRouter() that may allocate memory that will lead to nested call.
-	if (unlikely( report && report->errorNumber == JSMSG_OUT_OF_MEMORY )) { // (TBD) do something better
-		
-		fprintf(stderr, "%s (%s:%d)\n", message, report->filename, report->lineno);
-		return;
-	}
+#ifndef O_SEQUENTIAL
+	#define O_SEQUENTIAL 0
+#endif
 
-	bool reportWarnings = JL_IS_SAFE; // no warnings in unsafe mode.
+FILE *gErrFile = stdout;
+bool reportWarnings = true;
 
-	char buffer[1024];
-	char *buf = buffer;
 
-	#if defined(fprintf) || defined(fputs) || defined(fwrite) || defined(fputc)
-		#error CANNOT DEFINE MACROS fprintf, fputs, fwrite, fputc
-	#endif
 
-	#define fprintf(FILE, FORMAT, ...) \
-	JL_MACRO_BEGIN \
-		size_t remaining = sizeof(buffer)-(buf-buffer); \
-		if ( remaining == 0 ) break; \
-		int count = snprintf(buf, remaining, FORMAT, ##__VA_ARGS__); \
-		buf += count < 0 ? remaining : count; \
-	JL_MACRO_END
 
-	#define fputs(STR, FILE) \
-	JL_MACRO_BEGIN \
-		size_t remaining = sizeof(buffer)-(buf-buffer); \
-		if ( remaining == 0 ) break; \
-		size_t len = JL_MIN(strlen(STR), remaining); \
-		jl::memcpy(buf, STR, len); \
-		buf += len; \
-	JL_MACRO_END
-
-	#define fwrite(STR, SIZE, COUNT, FILE) \
-	JL_MACRO_BEGIN \
-		size_t remaining = sizeof(buffer)-(buf-buffer); \
-		if ( remaining == 0 ) break; \
-		size_t len = JL_MIN(size_t((SIZE)*(COUNT)), remaining); \
-		jl::memcpy(buf, (STR), len); \
-		buf += len; \
-	JL_MACRO_END
-
-	#define fputc(CHR, FILE) \
-	JL_MACRO_BEGIN \
-		size_t remaining = sizeof(buffer)-(buf-buffer); \
-		if ( remaining == 0 ) break; \
-		buf[0] = (CHR); \
-		buf += 1; \
-	JL_MACRO_END
-	
-
-// copy-paste from /js/src/js.cpp (my_ErrorReporter)
-//	 ---8<---
-
-    int i, j, k, n;
-    char *prefix, *tmp;
-    const char *ctmp;
-
+bool
+PrintError(JSContext *cx, FILE *file, const char *message, JSErrorReport *report,
+               bool reportWarnings)
+{
     if (!report) {
-        fprintf(gErrFile, "%s\n", message);
-        return;
+        fprintf(file, "%s\n", message);
+        fflush(file);
+        return false;
     }
 
     /* Conditionally ignore reported warnings. */
     if (JSREPORT_IS_WARNING(report->flags) && !reportWarnings)
-        return;
+        return false;
 
-    prefix = NULL;
+    char *prefix = nullptr;
     if (report->filename)
         prefix = JS_smprintf("%s:", report->filename);
     if (report->lineno) {
-        tmp = prefix;
-        prefix = JS_smprintf("%s%u: ", tmp ? tmp : "", report->lineno);
+        char *tmp = prefix;
+        prefix = JS_smprintf("%s%u:%u ", tmp ? tmp : "", report->lineno, report->column);
         JS_free(cx, tmp);
     }
     if (JSREPORT_IS_WARNING(report->flags)) {
-        tmp = prefix;
+        char *tmp = prefix;
         prefix = JS_smprintf("%s%swarning: ",
                              tmp ? tmp : "",
                              JSREPORT_IS_STRICT(report->flags) ? "strict " : "");
@@ -104,62 +73,72 @@ void ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
     }
 
     /* embedded newlines -- argh! */
+    const char *ctmp;
     while ((ctmp = strchr(message, '\n')) != 0) {
         ctmp++;
         if (prefix)
-            fputs(prefix, gErrFile);
-        fwrite(message, 1, ctmp - message, gErrFile);
+            fputs(prefix, file);
+        fwrite(message, 1, ctmp - message, file);
         message = ctmp;
     }
 
     /* If there were no filename or lineno, the prefix might be empty */
     if (prefix)
-        fputs(prefix, gErrFile);
-    fputs(message, gErrFile);
+        fputs(prefix, file);
+    fputs(message, file);
 
-    if (!report->linebuf) {
-        fputc('\n', gErrFile);
-        goto out;
-    }
-
-    /* report->linebuf usually ends with a newline. */
-    n = strlen(report->linebuf);
-    fprintf(gErrFile, ":\n%s%s%s%s",
-            prefix,
-            report->linebuf,
-            (n > 0 && report->linebuf[n-1] == '\n') ? "" : "\n",
-            prefix);
-    n = report->tokenptr - report->linebuf;
-    for (i = j = 0; i < n; i++) {
-        if (report->linebuf[i] == '\t') {
-            for (k = (j + 8) & ~7; j < k; j++) {
-                fputc('.', gErrFile);
+    if (report->linebuf) {
+        /* report->linebuf usually ends with a newline. */
+        int n = strlen(report->linebuf);
+        fprintf(file, ":\n%s%s%s%s",
+                prefix,
+                report->linebuf,
+                (n > 0 && report->linebuf[n-1] == '\n') ? "" : "\n",
+                prefix);
+        n = report->tokenptr - report->linebuf;
+        for (int i = 0, j = 0; i < n; i++) {
+            if (report->linebuf[i] == '\t') {
+                for (int k = (j + 8) & ~7; j < k; j++) {
+                    fputc('.', file);
+                }
+                continue;
             }
-            continue;
+            fputc('.', file);
+            j++;
         }
-        fputc('.', gErrFile);
-        j++;
+        fputc('^', file);
     }
-    fputs("^\n", gErrFile);
- out:
-    //if (!JSREPORT_IS_WARNING(report->flags)) {
-    //    if (report->errorNumber == JSMSG_OUT_OF_MEMORY) {
-    //        gExitCode = EXITCODE_OUT_OF_MEMORY;
-    //    } else {
-    //        gExitCode = EXITCODE_RUNTIME_ERROR;
-    //    }
-    //}
+    fputc('\n', file);
+    fflush(file);
     JS_free(cx, prefix);
-
-//	 ---8<---
-
-	#undef fprintf
-	#undef fputs
-	#undef fwrite
-	#undef fputc
-	 
-	StderrWrite(cx, buffer, buf-buffer);
+    return true;
 }
+
+static bool gGotError = false;
+static int gExitCode = 0;
+
+enum JSShellErrNum {
+#define MSG_DEF(name, number, count, exception, format) \
+    name = number,
+#include "js.msg"
+#undef MSG_DEF
+    JSShellErr_Limit
+};
+
+static void
+my_ErrorReporter(JSContext *cx, const char *message, JSErrorReport *report)
+{
+    gGotError = PrintError(cx, gErrFile, message, report, reportWarnings);
+    if (!JSREPORT_IS_WARNING(report->flags)) {
+        if (report->errorNumber == JSMSG_OUT_OF_MEMORY) {
+            gExitCode = 5;
+        } else {
+            gExitCode = 3;
+        }
+    }
+}
+
+
 
 JSClass global_class = {
 	"global", JSCLASS_GLOBAL_FLAGS,
@@ -167,15 +146,21 @@ JSClass global_class = {
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub
 };
 
+/*
 bool Print(JSContext *cx, unsigned argc, jsval *vp) {
-		
-	JSString *str = JS_ValueToString(cx, vp[2]);
 
-	_putws(JS_GetStringCharsZ(cx, str));
+	const JS::CallArgs args(JS::CallArgsFromVp(argc, vp));
+		
+	JS::RootedString str(cx, JS::ToString(cx, args[2]));
+
+	const jschar *s = JS_GetStringCharsZ(cx, str);
+	_putws((const wchar_t *)s);
 
 	return true;
 }
+*/
 
+/*
 
 int main_bz726429(int argc, char* argv[]) {
 
@@ -323,17 +308,16 @@ int main_testconstructor(int argc, char* argv[]) {
 
 	JSScript *script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), "<inline>", 1);
 	JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
-/*
-	jsval constructor;
-	JL_CHK( JS_GetProperty(cx, JL_GetGlobal(cx), "SyntaxError", &constructor) );
 
-	JSObject *err = JS_NewObjectForConstructor(cx, &constructor);
-	
-	
-	//bool r = JL_ObjectIsError(cx, JSVAL_TO_OBJECT(rval));
+	//jsval constructor;
+	//JL_CHK( JS_GetProperty(cx, JL_GetGlobal(cx), "SyntaxError", &constructor) );
 
-	JL_ObjectIsError(cx, err);
-*/
+	//JSObject *err = JS_NewObjectForConstructor(cx, &constructor);
+	//
+	//
+	////bool r = JL_ObjectIsError(cx, JSVAL_TO_OBJECT(rval));
+
+	//JL_ObjectIsError(cx, err);
 
 
 //	jl::Serializer *ser;
@@ -520,12 +504,13 @@ int main_NewObjectWithGivenProto_NewObject(int argc, char* argv[]) {
 	JS_InitStandardClasses(cx, globalObject);
 
 	
-/*
-parent = GetCurrentGlobal(cx);
 
-    JSObject *scopeChain = (cx->hasfp()) ? &cx->fp()->scopeChain() : cx->globalObject;
+//parent = GetCurrentGlobal(cx);
+//
+//    JSObject *scopeChain = (cx->hasfp()) ? &cx->fp()->scopeChain() : cx->globalObject;
     return scopeChain ? &scopeChain->global() : NULL;
-*/
+//
+
 // -> GetGlobalForScopeChain
 
 //	JSObject *o2 = JS_GetParent(JS_NewObject(cx, NULL, NULL, NULL));
@@ -545,22 +530,22 @@ bool test_perf(jsval &val) {
 
 	int i = sizeof(js::shadow::Object);
 
-/*
-	return JSVAL_IS_DOUBLE(val);
-004014E9  mov         eax,dword ptr [val] 
-004014EC  mov         ecx,dword ptr [eax] 
-004014EE  cmp         dword ptr [eax+4],0FFFFFF80h 
-004014F2  mov         dword ptr [esp],ecx 
-004014F5  setbe       al   
-*/
-/*
-	return val.isDouble();
-004014E3  mov         eax,dword ptr [esp+0Ch] 
-004014E7  mov         ecx,dword ptr [eax] 
-004014E9  cmp         dword ptr [eax+4],0FFFFFF80h 
-004014ED  mov         dword ptr [esp],ecx 
-004014F0  setbe       al  
-*/
+
+//	return JSVAL_IS_DOUBLE(val);
+//004014E9  mov         eax,dword ptr [val] 
+//004014EC  mov         ecx,dword ptr [eax] 
+//004014EE  cmp         dword ptr [eax+4],0FFFFFF80h 
+//004014F2  mov         dword ptr [esp],ecx 
+//004014F5  setbe       al   
+//
+//
+//	return val.isDouble();
+//004014E3  mov         eax,dword ptr [esp+0Ch] 
+//004014E7  mov         ecx,dword ptr [eax] 
+//004014E9  cmp         dword ptr [eax+4],0FFFFFF80h 
+//004014ED  mov         dword ptr [esp],ecx 
+//004014F0  setbe       al  
+
 	return !!i;
 }
 
@@ -790,7 +775,7 @@ int main_test_call(int argc, char* argv[]) {
 
 
 
-/*
+
 class NPropertySet {
 
 	DLLLOCAL static NPropertySet *last;
@@ -819,7 +804,7 @@ public:
 };
 
 NPropertySet *NPropertySet::last = NULL;
-*/
+
 
 ///////////
 
@@ -876,7 +861,7 @@ JL_CLASS( test, parentClass )
 
 
 
-/*
+
 #include "jlclass3.h"
 
 JL_CLASS( test ) {
@@ -897,7 +882,7 @@ JL_CLASS( test ) {
 		return true;
 	}
 };
-*/
+
 
 
 int main_test_class2(int argc, char* argv[]) {
@@ -919,13 +904,53 @@ int main_test_class2(int argc, char* argv[]) {
 	return EXIT_SUCCESS;
 }
 
-	
+*/	
 
+
+
+
+int main_min(int argc, char* argv[]) {
+
+	JSClass globalClass = {
+		"global", JSCLASS_GLOBAL_FLAGS,
+		JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
+		JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub
+	};
+
+	JS_Init();
+
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
+	JSContext *cx = JS_NewContext(rt, 8192L);
+	
+	{
+	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &globalClass, NULL, JS::FireOnNewGlobalHook));
+	JSAutoCompartment ac(cx, globalObject);
+
+
+
+
+	char *scriptText = "(function() { return 123 })";
+	JS::CompileOptions compileOptions(cx);
+	JS::RootedScript script(cx, JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), compileOptions));
+
+	JS::RootedValue rval(cx);
+	bool ok = JS_ExecuteScript(cx, globalObject, script, rval.address());
+	
+	}
+
+	JS_DestroyContext(cx);
+	JS_DestroyRuntime(rt);
+
+	JS_ShutDown();
+
+	return EXIT_SUCCESS;
+}
 
 
 int main(int argc, char* argv[]) {
 
-	return main_test_class2(argc, argv);
+	//return main_test_class2(argc, argv);
 	//return main_PerfTest(argc, argv);
 	//return main_test_call(argc, argv);
+	return main_min(argc, argv);
 }

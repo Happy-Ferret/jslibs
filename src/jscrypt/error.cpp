@@ -70,7 +70,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 	JL_IGNORE(id);
 
 	JL_CHK( JL_GetReservedSlot(  obj, 0, vp ) );
-	if ( JSVAL_IS_VOID(*vp) )
+	if ( vp.isUndefined() )
 		return true;
 	int errorCode;
 	errorCode = JSVAL_TO_INT(*vp);
@@ -87,7 +87,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 	JL_IGNORE(id);
 
 	JL_CHK( JL_GetReservedSlot(  obj, 0, vp ) );
-	if ( JSVAL_IS_VOID(*vp) )
+	if ( vp.isUndefined() )
 		return true;
 	int errorCode;
 	errorCode = JSVAL_TO_INT(*vp);

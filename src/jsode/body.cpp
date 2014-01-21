@@ -1133,7 +1133,7 @@ DEFINE_PROPERTY_SETTER( onMove ) {
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
-	if ( JSVAL_IS_VOID(*vp) )
+	if ( vp.isUndefined() )
 		ode::dBodySetMovedCallback(bodyId, NULL);
 	else
 		ode::dBodySetMovedCallback(bodyId, moveCallback);

@@ -131,7 +131,7 @@ DEFINE_FUNCTION( messageBox ) {
 	if ( argc >= 3 )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &type) );
 
-	if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
+	if ( argc >= 2 && !JL_ARG(2).isUndefined() )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &caption) );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &text) );
@@ -215,7 +215,7 @@ DEFINE_FUNCTION( fileOpenDialog ) {
 	char fileName[PATH_MAX];
 	char filter[255];
 
-	if ( argc >= 1 && !JSVAL_IS_VOID( JL_ARG(1) ) ) {
+	if ( argc >= 1 && !JL_ARG(1).isUndefined() ) {
 
 		JLData str;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
@@ -226,7 +226,7 @@ DEFINE_FUNCTION( fileOpenDialog ) {
 		ofn.lpstrFilter = filter;
 	}
 
-	if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) ) {
+	if ( argc >= 2 && !JL_ARG(2).isUndefined() ) {
 
 		JLData tmp;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &tmp) );
@@ -467,9 +467,9 @@ DEFINE_FUNCTION( registrySet ) {
 
 	value = JL_ARG(3);
 
-	if ( JSVAL_IS_VOID(JL_ARG(2)) ) {
+	if ( JL_ARG(2).isUndefined() ) {
 
-		if ( JSVAL_IS_VOID(value) ) {
+		if ( value.isUndefined() ) {
 
 			st = RegDeleteKey(rootHKey, subKey);
 			if ( st != ERROR_SUCCESS )
@@ -484,11 +484,11 @@ DEFINE_FUNCTION( registrySet ) {
 
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &valueNameStr) );
 
-		if ( JSVAL_IS_VOID(value) ) {
+		if ( value.isUndefined() ) {
 			
 			st = RegDeleteValue(hKey, valueNameStr);
 		} else
-		if ( JSVAL_IS_NULL(value) ) {
+		if ( value.isNull() ) {
 
 			st = RegSetValueEx(hKey, valueNameStr, 0, REG_NONE, NULL, 0);
 		} else
@@ -907,7 +907,7 @@ static bool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent, 
 	if ( !*hasEvent )
 		return true;
 
-	if ( JSVAL_IS_VOID(upe->callbackFunction) )
+	if ( upe->callbackFunction.isUndefined() )
 		return true;
 
 	jsval rval;

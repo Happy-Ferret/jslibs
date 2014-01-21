@@ -300,37 +300,37 @@ DEFINE_FUNCTION( drawString ) {
 	int letterSpacing;
 	letterSpacing = 0;
 	JL_CHK( JL_GetReservedSlot( obj, FONT_SLOT_LETTERSPACING, &tmp) );
-	if ( !JSVAL_IS_VOID( tmp ) )
+	if ( !tmp.isUndefined() )
 		JL_CHK( JL_JsvalToNative(cx, tmp, &letterSpacing) );
 
 	int horizontalPadding;
 	horizontalPadding = 0;
 	JL_CHK( JL_GetReservedSlot( obj, FONT_SLOT_HORIZONTALPADDING, &tmp) );
-	if ( !JSVAL_IS_VOID( tmp ) )
+	if ( !tmp.isUndefined() )
 		JL_CHK( JL_JsvalToNative(cx, tmp, &horizontalPadding) );
 
 	int verticalPadding;
 	verticalPadding = 0;
 	JL_CHK( JL_GetReservedSlot( obj, FONT_SLOT_VERTICALPADDING, &tmp) );
-	if ( !JSVAL_IS_VOID( tmp ) )
+	if ( !tmp.isUndefined() )
 		JL_CHK( JL_JsvalToNative(cx, tmp, &verticalPadding) );
 
 	bool useKerning;
 	useKerning = true;
 	JL_CHK( JL_GetReservedSlot( obj, FONT_SLOT_USEKERNING, &tmp) );
-	if ( !JSVAL_IS_VOID( tmp ) )
+	if ( !tmp.isUndefined() )
 		JL_CHK( JL_JsvalToNative(cx, tmp, &useKerning) );
 
 	bool isItalic;
 	isItalic = false;
 	JL_CHK( JL_GetReservedSlot( obj, FONT_SLOT_ITALIC, &tmp) );
-	if ( !JSVAL_IS_VOID( tmp ) )
+	if ( !tmp.isUndefined() )
 		JL_CHK( JL_JsvalToNative(cx, tmp, &isItalic) );
 
 	bool isBold;
 	isBold = false;
 	JL_CHK( JL_GetReservedSlot( obj, FONT_SLOT_BOLD, &tmp) );
-	if ( !JSVAL_IS_VOID( tmp ) )
+	if ( !tmp.isUndefined() )
 		JL_CHK( JL_JsvalToNative(cx, tmp, &isBold) );
 
 

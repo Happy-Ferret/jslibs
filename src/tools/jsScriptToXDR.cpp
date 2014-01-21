@@ -29,6 +29,9 @@
 #include <jsapi.h>
 #include <jsprf.h>
 
+#include <js/GCAPI.h>
+
+
 #ifdef _MSC_VER
 #pragma warning( pop )
 #endif // _MSC_VER
@@ -160,10 +163,23 @@ int main(int argc, char* argv[]) {
 
 	JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
 
-//	JS_SetGCParameter(rt, JSGC_MAX_BYTES, (uint32_t)-1);
+	JS_SetGCParameter(rt, JSGC_MAX_BYTES, 0xffffffff);
 //	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
-	JSContext *cx = JS_NewContext(rt, 8192L);
 	
+	JS::DisableIncrementalGC(rt);
+	JS::DisableGenerationalGC(rt);
+
+	//JSC::MacroAssembler::SetSSE3Disabled();
+
+	JS_SetGCParametersBasedOnAvailableMemory(rt, 1000000);
+	JS_SetNativeStackQuota(rt, 128 * sizeof(size_t) * 1024);
+
+	JSContext *cx = JS_NewContext(rt, 8192);
+	
+    //JS_SetGCParameter(rt, JSGC_MODE, JSGC_MODE_INCREMENTAL);
+    JS_SetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES, 16 * 1024 * 1024);
+
+
 	JS::ContextOptionsRef(cx).setVarObjFix(true);
 	
 //	JS_SetOptions(cx, JS_GetOptions(cx));
@@ -174,18 +190,17 @@ int main(int argc, char* argv[]) {
     JS::CompartmentOptions globalOptions;
     globalOptions.setVersion(JSVERSION_LATEST);
 
-	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &global_class, nullptr, JS::DontFireOnNewGlobalHook, globalOptions));
-	
 	{
 
+	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &global_class, nullptr, JS::DontFireOnNewGlobalHook, globalOptions));
 	JSAutoCompartment ac(cx, globalObject);
+
 	if ( !JS_InitStandardClasses(cx, globalObject) ) {
 
 		printf( "Unable to init standard classes\n");
 		return EXIT_FAILURE;
 	}
 	
-	}
 	JS_FireOnNewGlobalObject(cx, globalObject);
 
 
@@ -223,8 +238,7 @@ int main(int argc, char* argv[]) {
 		.setCompileAndGo(true)
 		.setVersion(JSVERSION_LATEST);
 
-	JS::RootedScript script(cx);
-	script = JS::Compile(cx, globalObject, options, srcCode, fileSize);
+	JS::RootedScript script(cx, JS::Compile(cx, globalObject, options, srcCode, fileSize));
 
 	free(srcCode);
 
@@ -257,10 +271,13 @@ int main(int argc, char* argv[]) {
 	}
 	close(file);
 
-	JS_DestroyContext(cx);
+	}
+
+	JS_DestroyContextNoGC(cx);
 	JS_DestroyRuntime(rt);
 	JS_ShutDown();
 
 	printf("Done.\n");
 	return EXIT_SUCCESS;
 }
+

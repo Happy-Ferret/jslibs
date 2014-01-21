@@ -102,7 +102,7 @@ public:
 class Serializer : public jl::CppAllocators {
 
 	//jsval _serializerObj;
-	JS::Heap<JS::Value> _serializerObj; // must be used to declare data members of heap classes only
+	JS::PersistentRootedValue _serializerObj; // must be used to declare data members of heap classes only
 
 	uint8_t *_start;
 	uint8_t *_pos;
@@ -132,8 +132,8 @@ public:
 			jl_free(_start); // jl_free(NULL) is legal, but this is an optimization, since usually one use GetBufferOwnership() that set _start to NULL
 	}
 
-	explicit Serializer( jsval serializerObj = JSVAL_NULL )
-	: _serializerObj(serializerObj), _start(NULL), _pos(NULL), _length(0) {
+	explicit Serializer( JSContext *cx, jsval serializerObj = JSVAL_NULL )
+	: _serializerObj(cx, serializerObj), _start(NULL), _pos(NULL), _length(0) {
 
 		PrepareBytes(JL_PAGESIZE / 2);
 	}
@@ -181,7 +181,7 @@ public:
 		return Write(cx, (const unsigned char)type);
 	}
 
-	bool Write( JSContext *cx, JSString *jsstr ) {
+	bool Write( JSContext *cx, JS::HandleString jsstr ) {
 
 		size_t length;
 		const jschar *chars;
@@ -217,9 +217,9 @@ public:
 
 			jsid item = JS_IdArrayGet(cx, idArray, i);
 			JL_CHK( JS_IdToValue(cx, item, name.address()) );
-			JSString *jsstr = JSVAL_IS_STRING(name) ? JSVAL_TO_STRING(name) : JS_ValueToString(cx, name);
-			JL_CHK( jsstr );
-			JL_CHK( JS_GetPropertyById(cx, obj, item, value.address()) );
+			JS::RootedString jsstr(cx, JSVAL_IS_STRING(name) ? JSVAL_TO_STRING(name) : JS::ToString(cx, name));
+			JL_CHK( jsstr != NULL );
+			JL_CHK( JS_GetPropertyById(cx, obj, item, &value) );
 			JL_CHK( Write(cx, jsstr) );
 			JL_CHK( Write(cx, value) );
 		}
@@ -261,7 +261,7 @@ public:
 		JL_CHK( Write(cx, reservedSlotsCount) );
 		for ( uint32_t i = 0; i < reservedSlotsCount; ++i ) {
 
-			JL_CHK( JL_GetReservedSlot( obj, i, value) );
+			JL_CHK( JL_GetReservedSlot( obj, i, &value) );
 			JL_CHK( Write(cx, value) );
 		}
 		return true;
@@ -286,11 +286,11 @@ public:
 				JL_CHK( Write(cx, JLSTString) );
 				JL_CHK( Write(cx, JSVAL_TO_STRING(val)) );
 			} else
-			if ( JSVAL_IS_VOID(val) ) {
+			if ( val.isUndefined() ) {
 
 				JL_CHK( Write(cx, JLSTVoid) );
 			} else
-			if ( JSVAL_IS_BOOLEAN(val) ) {
+			if ( val.isBoolean() ) {
 
 				JL_CHK( Write(cx, JLSTBool) );
 				JL_CHK( Write(cx, char(JSVAL_TO_BOOLEAN(val))) );
@@ -304,7 +304,7 @@ public:
 
 				JL_CHK( Write(cx, JLSTHole) );
 			} else
-			if ( JSVAL_IS_NULL(val) ) {
+			if ( val.isNull() ) {
 
 				JL_CHK( Write(cx, JLSTNull) );
 			} else {
@@ -316,7 +316,7 @@ public:
 
 		// objects
 		{
-		JS::RootedObject obj(cx, JSVAL_TO_OBJECT(val));
+		JS::RootedObject obj(cx, &val.toObject());
 
 		if ( JS_IsArrayBufferObject(obj) ) {
 
@@ -348,8 +348,8 @@ public:
 			JS::RootedValue tmp(cx);
 			for ( int i = 0; i < jl::SafeCast<int>(length); ++i ) {
 
-				JL_CHK( JL_GetElement(cx, obj, i, *tmp.address()) );
-				if ( JSVAL_IS_VOID(tmp) ) {
+				JL_CHK( JL_GetElement(cx, obj, i, &tmp) );
+				if ( tmp.isUndefined() ) {
 
 					JL_CHK( JS_HasElement(cx, obj, i, &found) );
 					if ( !found )
@@ -378,7 +378,7 @@ public:
 		}
 
 
-		JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, _serialize), serializeFctVal.address()) ); // JL_CHK( JS_GetProperty(cx, obj, "_serialize", &serializeFctVal) );
+		JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, _serialize), &serializeFctVal) ); // JL_CHK( JS_GetProperty(cx, obj, "_serialize", &serializeFctVal) );
 		if ( !serializeFctVal.isUndefined() ) {
 
 			JS::RootedValue arg(cx);
@@ -393,7 +393,7 @@ public:
 
 				JL_CHK( Write(cx, JLSTSerializableScriptObject) );
 				JS::RootedValue unserializeFctVal(cx);
-				JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, _unserialize), unserializeFctVal.address()) );
+				JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, _unserialize), &unserializeFctVal) );
 				JL_ASSERT( JL_ValueIsCallable(cx, &unserializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_unserialize"), E_DEFINED );
 				JL_CHK( Write(cx, unserializeFctVal) );
 			}
@@ -403,7 +403,7 @@ public:
 			JS::RootedObject serializerWrapper(cx, NULL);
 
 
-			if ( _serializerObj.isNull() ) {
+			if ( _serializerObj.get().isNull() ) {
 
 				// create a temporary wrapper to this serializer c++ object.
 
@@ -460,12 +460,12 @@ public:
 			JS::RootedObject constructor(cx, JL_GetConstructor(cx, obj));
 
 			JS::RootedValue constructorName(cx);
-			JL_CHK( JS_GetPropertyById(cx, constructor, JLID(cx, name), constructorName.address()) );
+			JL_CHK( JS_GetPropertyById(cx, constructor, JLID(cx, name), &constructorName) );
 			ASSERT( JSVAL_IS_STRING(constructorName) );
 
 			const jschar *str;
 			size_t length;
-			str = JS_GetStringCharsAndLength(cx, JS_ValueToString(cx, constructorName), &length);
+			str = JS_GetStringCharsAndLength(cx, JS::ToString(cx, constructorName), &length);
 
 			JL_CHK( Write(cx, JLSTErrorObject) );
 			JL_CHK( Write(cx, SerializerConstBufferInfo(str, length)) );
@@ -473,13 +473,13 @@ public:
 			//JL_CHK( Write(cx, SerializerObjectOwnProperties(obj)) ); // (TBD) why this don't work on error object => bug 724768
 			
 			JS::RootedValue tmp(cx);
-			JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, message), tmp.address()) );
+			JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, message), &tmp) );
 			JL_CHK( Write(cx, tmp) );
-			JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, fileName), tmp.address()) );
+			JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, fileName), &tmp) );
 			JL_CHK( Write(cx, tmp) );
-			JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, lineNumber), tmp.address()) );
+			JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, lineNumber), &tmp) );
 			JL_CHK( Write(cx, tmp) );
-			JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, stack), tmp.address()) );
+			JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, stack), &tmp) );
 			JL_CHK( Write(cx, tmp) );
 			return true;
 		}
@@ -487,7 +487,8 @@ public:
 		// fallback (Date, Number, String, ...)
 		
 		JS::RootedValue tmp(cx);
-		JL_CHK( JL_JsvalToPrimitive(cx, OBJECT_TO_JSVAL(obj), tmp.address()) );
+		tmp.setObject(*obj);
+		JL_CHK( JL_JsvalToPrimitive(cx, tmp, &tmp) );
 		JL_CHK( Write(cx, JLSTObjectValue) );
 		JL_CHK( Write(cx, JL_GetClass(obj)->name) );
 		JL_CHK( Write(cx, tmp) );
@@ -517,7 +518,7 @@ public:
 class Unserializer : public jl::CppAllocators {
 
 	//jsval _unserializerObj;
-	JS::Heap<JS::Value> _unserializerObj; // must be used to declare data members of heap classes only
+	JS::PersistentRootedValue _unserializerObj; // must be used to declare data members of heap classes only
 
 	uint8_t *_start;
 	uint8_t *_pos;
@@ -537,8 +538,8 @@ public:
 		jl_free(_start);
 	}
 	
-	explicit Unserializer( void *dataOwnership, size_t length, jsval unserializerObj = JSVAL_NULL )
-	: _unserializerObj(unserializerObj), _start((uint8_t*)dataOwnership), _pos(_start), _length(length) {
+	explicit Unserializer( JSContext *cx, void *dataOwnership, size_t length, jsval unserializerObj = JSVAL_NULL )
+	: _unserializerObj(cx, unserializerObj), _start((uint8_t*)dataOwnership), _pos(_start), _length(length) {
 
 	}
 
@@ -598,7 +599,7 @@ public:
 			JS::RootedValue value(cx);
 			JL_CHK( Read(cx, name) );
 			JL_CHK( Read(cx, *value.address()) );
-			JL_CHK( JS_SetUCProperty(cx, sop, (const jschar *)name.Data(), name.Length()/2, value.address()) );
+			JL_CHK( JS_SetUCProperty(cx, sop, (const jschar *)name.Data(), name.Length()/2, value) );
 		}
 
 		return true;
@@ -621,7 +622,7 @@ public:
 	}
 
 
-	bool Read( JSContext *cx, jsval &val ) {
+	bool Read( JSContext *cx, JS::MutableHandleValue val ) {
 
 		char type;
 		JL_CHK( Read(cx, type) );
@@ -695,7 +696,7 @@ public:
 
 					JL_CHK( Read(cx, tmp) );
 					if ( !tmp.isMagic(JS_ELEMENTS_HOLE) ) // if ( !JL_JSVAL_IS_ARRAY_HOLE(*avr.jsval_addr()) )
-						JL_CHK( JL_SetElement(cx, arr, i, &tmp) );
+						JL_CHK( JL_SetElement(cx, arr, i, tmp) );
 				}
 				break;
 			}
@@ -720,7 +721,7 @@ public:
 			case JLSTStopIteration: {
 
 				JS::RootedObject proto(cx);
-				JL_GetClassPrototype(cx, JL_GetGlobal(cx), JSProto_StopIteration, proto.address());
+				JL_GetClassPrototype(cx, JSProto_StopIteration, &proto);
 				val = OBJECT_TO_JSVAL(proto);
 				break;
 			}
@@ -731,8 +732,11 @@ public:
 				JS::RootedValue prop(cx);
 				JL_CHK( Read(cx, className) );
 				JL_CHK( Read(cx, value) );
-				JS::RootedObject scope(cx, JS_GetGlobalForScopeChain(cx)); //JS_GetScopeChain(cx);
-				JL_CHK( JS_GetProperty(cx, scope, className, prop.address()) );
+				
+				
+				JS::RootedObject scope(cx, JL_GetGlobal(cx)); //JS_GetScopeChain(cx);
+				JL_CHK( JS_GetProperty(cx, scope, className, &prop) );
+
 				JS::RootedObject newObj(cx, JS_New(cx, JSVAL_TO_OBJECT(prop), 1, value.address()));
 				JL_CHK( newObj != NULL );
 				val = OBJECT_TO_JSVAL(newObj);
@@ -746,13 +750,13 @@ public:
 				ASSERT(strlen(className) < 64);
 				const ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), className);
 				JL_CHKM( cpc != NULL, E_CLASS, E_NAME(className), E_NOTFOUND );
-				JS::RootedObject newObj(cx, JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL));
+				JS::RootedObject newObj(cx, JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, JS::NullPtr()));
 				JL_CHK( newObj != NULL );
 
 				JS::RootedValue arg(cx);
 
 				JS::RootedObject unserializerWrapper(cx);
-				if ( JSVAL_IS_NULL( _unserializerObj ) ) {
+				if ( _unserializerObj.get().isNull() ) {
 
 					// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
 					unserializerWrapper = JL_NewJslibsObject(cx, "Unserializer");
@@ -765,8 +769,13 @@ public:
 					arg = _unserializerObj;
 				}
 
-				jsval rval; // no root needed
-				bool ok = JL_CallFunctionId(cx, newObj, JLID(cx, _unserialize), 1, arg.address(), &rval); // rval not used
+				JS::RootedValue rval(cx); // note that no root needed
+
+				//bool ok = JL_CallFunctionId(cx, newObj, JLID(cx, _unserialize), 1, &arg, &rval); // rval not used
+				
+				bool ok = JL_CallFunctionIdVA(cx, newObj, JLID(cx, _unserialize), &rval, arg); // rval not used
+
+
 				if ( unserializerWrapper != NULL )
 					JL_SetPrivate( unserializerWrapper, NULL);
 				JL_CHK( ok );
@@ -783,7 +792,7 @@ public:
 				JS::RootedValue arg_1(cx);
 				JS::RootedObject unserializerWrapper(cx);
 
-				if ( JSVAL_IS_NULL( _unserializerObj ) ) {
+				if ( _unserializerObj.get().isNull() ) {
 
 					// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
 					unserializerWrapper = JL_NewJslibsObject(cx, "Unserializer");
@@ -795,8 +804,9 @@ public:
 					unserializerWrapper = NULL;
 					arg_1 = _unserializerObj;
 				}
-
-				bool ok = JL_CallFunctionVA(cx, JL_GetGlobal(cx), *funVal.address(), &val, arg_1);
+				
+				JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
+				bool ok = JL_CallFunctionVA(cx, globalObject, funVal, val, arg_1);
 				if ( unserializerWrapper != NULL )
 					JL_SetPrivate( unserializerWrapper, NULL);
 				JL_CHK( ok );
@@ -869,7 +879,8 @@ public:
 				JL_CHK( Read(cx, constructorName) );
 
 				// js_GetClassPrototype
-				JL_CHK( JS_GetUCProperty(cx, JL_GetGlobal(cx), (const jschar *)constructorName.Data(), constructorName.Length() / 2, constructor.address()) );
+				JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
+				JL_CHK( JS_GetUCProperty(cx, globalObject, (const jschar *)constructorName.Data(), constructorName.Length() / 2, &constructor) );
 				JL_ASSERT( constructor.isObject(), E_TY_ERROR, E_NOTCONSTRUCT );
 
 				//JSClass *cl = JL_GetErrorJSClassJSClassByProtoKey(cx, JSProto_Error, JL_GetGlobal(cx));
@@ -884,7 +895,7 @@ public:
 				JL_CHK( errorObj != NULL );
 				val = OBJECT_TO_JSVAL(errorObj);
 
-				JL_CHK( JS_SetPropertyById(cx, errorObj, JLID(cx, stack), stack.address()) );
+				JL_CHK( JS_SetPropertyById(cx, errorObj, JLID(cx, stack), stack) );
 				break;
 			}
 			case JLSTFunction: {
@@ -946,7 +957,7 @@ public:
 ALWAYS_INLINE bool
 JsvalIsSerializer( JSContext *cx, JS::HandleValue val ) {
 
-	return JL_ValueIsClass(val, JL_GetCachedClass(JL_GetHostPrivate(cx), "Serializer"));
+	return JL_ValueIsClass(cx, val, JL_GetCachedClass(JL_GetHostPrivate(cx), "Serializer"));
 }
 
 ALWAYS_INLINE Serializer*
@@ -959,7 +970,7 @@ JsvalToSerializer( JSContext *cx, JS::MutableHandleValue val ) {
 ALWAYS_INLINE bool
 JsvalIsUnserializer( JSContext *cx, JS::HandleValue val ) {
 
-	return JL_ValueIsClass(val, JL_GetCachedClass(JL_GetHostPrivate(cx), "Unserializer"));
+	return JL_ValueIsClass(cx, val, JL_GetCachedClass(JL_GetHostPrivate(cx), "Unserializer"));
 }
 
 ALWAYS_INLINE Unserializer*

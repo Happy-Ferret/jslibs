@@ -989,7 +989,7 @@ bool SandboxQueryFunction(JSContext *cx, unsigned argc, jsval *vp) {
 	JL_DEFINE_ARGS;
 
 	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(cx);
-	if ( JSVAL_IS_VOID( pv->queryFunctionValue ) ) {
+	if ( pv->queryFunctionValue.isUndefined() ) {
 
 		JL_RVAL->setUndefined();
 	} else {

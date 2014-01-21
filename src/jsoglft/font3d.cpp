@@ -577,7 +577,7 @@ DEFINE_PROPERTY_SETTER( colorCallback ) {
 //	poly = (OGLFT::Polygonal*)pv->face;
 	poly = static_cast<OGLFT::Polygonal*>(pv->face);
 
-	if ( JSVAL_IS_VOID(*vp) ) {
+	if ( vp.isUndefined() ) {
 
 		OGLFT::ColorTess *colorTess = poly->colorTess();
 		if ( colorTess != NULL ) {

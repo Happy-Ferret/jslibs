@@ -946,7 +946,7 @@ DEFINE_PROPERTY_SETTER( timeout ) {
 	JL_IGNORE(id, strict);
 	JL_ASSERT_THIS_INHERITANCE();
 
-	if ( !JSVAL_IS_VOID( vp ) ) {
+	if ( !vp.isUndefined() ) {
 
 		PRIntervalTime timeout;
 		if ( (JS::Value)vp == JSVAL_ZERO ) {

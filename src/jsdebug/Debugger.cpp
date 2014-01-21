@@ -512,7 +512,7 @@ DEFINE_PROPERTY_SETTER( interruptCounterLimit ) {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	if ( JSVAL_IS_VOID(*vp) ) {
+	if ( vp.isUndefined() ) {
 
 		pv->interruptCounterLimit = 0;
 	} else {

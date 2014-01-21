@@ -44,7 +44,7 @@ private:
 
 				JS_GetPendingException(_cx, &ex);
 				JS_CallFunctionValue(_cx, vstPlugin, fval, 1, &ex, &rval);
-				if ( JSVAL_IS_VOID(rval) )
+				if ( rval.isUndefined() )
 					JS_ClearPendingException(_cx);
 				else
 					JS_SetPendingException(_cx, rval);
@@ -316,12 +316,12 @@ private:
 
 			for ( int i = 0; i < events->numEvents; i++ ) {
 
-				if ( events->events[i]->type == kVstMidiType && !JSVAL_IS_VOID(jsProcessMidiEvent) ) {
+				if ( events->events[i]->type == kVstMidiType && !jsProcessMidiEvent.isUndefined() ) {
 
 					JSObject *jsMidiEvent = CreateMidiEventObject(_cx, (VstMidiEvent*)events->events[i]);
 					FunctionCall1(vstPlugin, jsProcessMidiEvent, OBJECT_TO_JSVAL(jsMidiEvent));
 				} else
-				if ( events->events[i]->type == kVstSysExType && !JSVAL_IS_VOID(jsSysExEvent) ) {
+				if ( events->events[i]->type == kVstSysExType && !jsSysExEvent.isUndefined() ) {
 
 					// (TBD)
 				}
@@ -528,7 +528,7 @@ private:
 			if ( JsvalIsCallable(fval) ) {
 
 				_rval = FunctionCall1(vstPlugin, fval, StringToJsval(text));
-				if ( JSVAL_IS_VOID(_rval) || _rval == JSVAL_ZERO )
+				if ( _rval.isUndefined() || _rval == JSVAL_ZERO )
 						return 0; // 0: don't know (default)
 				return JsvalToBool(_rval) ? 1 : -1; // 1: yes, -1: no
 			}
@@ -545,7 +545,7 @@ private:
 			if ( JsvalIsCallable(fval) ) {
 
 				_rval = FunctionCall2(vstPlugin, fval, IntToJsval(category), IntToJsval(index));
-				if ( JSVAL_IS_VOID(_rval) ) // end of list
+				if ( _rval.isUndefined() ) // end of list
 					return false;
 				CopyJsvalToString(_rval, text, kVstMaxProgNameLen);
 				return true;
@@ -617,13 +617,13 @@ private:
 					return 0;
 				CopyJsvalToString(GetProperty(jsMpn, "name"), mpn->name, kVstMaxNameLen);
 				_arg = GetProperty(jsMpn, "midiProgram");
-				mpn->midiProgram = JSVAL_IS_VOID(_arg) ? -1 : AssertRange( JsvalToInt(_arg), 0, 127);
+				mpn->midiProgram = _arg.isUndefined() ? -1 : AssertRange( JsvalToInt(_arg), 0, 127);
 				_arg = GetProperty(jsMpn, "midiBankMsb");
-				mpn->midiBankMsb = JSVAL_IS_VOID(_arg) ? -1 : AssertRange( JsvalToInt(_arg), 0, 127);
+				mpn->midiBankMsb = _arg.isUndefined() ? -1 : AssertRange( JsvalToInt(_arg), 0, 127);
 				_arg = GetProperty(jsMpn, "midiBankLsb");
-				mpn->midiBankLsb = JSVAL_IS_VOID(_arg) ? -1 : AssertRange( JsvalToInt(_arg), 0, 127);
+				mpn->midiBankLsb = _arg.isUndefined() ? -1 : AssertRange( JsvalToInt(_arg), 0, 127);
 				_arg = GetProperty(jsMpn, "parentCategoryIndex");
-				mpn->parentCategoryIndex = JSVAL_IS_VOID(_arg) ? -1 : JsvalToInt(_arg);
+				mpn->parentCategoryIndex = _arg.isUndefined() ? -1 : JsvalToInt(_arg);
 				mpn->flags = JsvalToBool(GetProperty(jsMpn, "isOmny")) ? kMidiIsOmni : 0;
 				return ret;
 			}
@@ -691,7 +691,7 @@ private:
 			if ( JsvalIsCallable(fval) ) {
 
 				_rval = FunctionCall3(vstPlugin, fval, IntToJsval(channel), IntToJsval(keyName->thisProgramIndex), IntToJsval(keyName->thisKeyNumber) );
-				if ( JSVAL_IS_VOID(_rval) )
+				if ( _rval.isUndefined() )
 					return false; // If 0 is returned, no MidiKeyNames are defined for 'thisProgramIndex'.
 				CopyJsvalToString(_rval, keyName->keyName, kVstMaxNameLen);
 				keyName->flags = 0;
@@ -734,7 +734,7 @@ private:
 
 				JSObject *tmpObj = JL_NewObj(_cx);
 				_rval = FunctionCall2(vstPlugin, fval, IntToJsval(index), OBJECT_TO_JSVAL(tmpObj));
-				if ( !JSVAL_IS_BOOLEAN(_rval) )
+				if ( !_rval.isBoolean() )
 					throw JsException(_cx, "invalid return value (need boolean)");
 				CopyJsvalToString(GetProperty(tmpObj, "label"), properties->label, kVstMaxLabelLen);
 				CopyJsvalToString(GetProperty(tmpObj, "shortLabel"), properties->shortLabel, kVstMaxShortLabelLen);
@@ -754,7 +754,7 @@ private:
 
 				JSObject *tmpObj = JL_NewObj(_cx);
 				_rval = FunctionCall2(vstPlugin, fval, IntToJsval(index), OBJECT_TO_JSVAL(tmpObj));
-				if ( !JSVAL_IS_BOOLEAN(_rval) )
+				if ( !_rval.isBoolean() )
 					throw JsException(_cx, "invalid return value (need boolean)");
 				CopyJsvalToString(GetProperty(tmpObj, "label"), properties->label, kVstMaxLabelLen);
 				CopyJsvalToString(GetProperty(tmpObj, "shortLabel"), properties->shortLabel, kVstMaxShortLabelLen);
@@ -816,7 +816,7 @@ DEFINE_PROPERTY_GETTER( directory ) {
 
 DEFINE_PROPERTY_GETTER( canProcessReplacing ) {
 
-	if ( JSVAL_IS_VOID(*vp) ) {
+	if ( vp.isUndefined() ) {
 
 		JsVst *vstPlugin = (JsVst *)JL_GetPrivate(obj);
 		JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );

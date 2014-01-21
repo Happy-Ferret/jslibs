@@ -855,7 +855,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 			}
 			break;
 		case JSTYPE_OBJECT: // beware: no break; because we use the JSTYPE_STRING's case JS_ValueToString conversion
-			if ( JSVAL_IS_NULL(argv[0]) ) {
+			if ( argv[0].isNull() ) {
 
 				sqlite3_result_null(sCx);
 				break;

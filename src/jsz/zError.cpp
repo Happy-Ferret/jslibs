@@ -64,7 +64,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 	JL_IGNORE(id);
 
 	JL_GetReservedSlot(  obj, 0, vp );
-	if ( JSVAL_IS_VOID(*vp) )
+	if ( vp.isUndefined() )
 		return true;
 	int errorCode = JSVAL_TO_INT(*vp);
 	JSString *str = JS_NewStringCopyZ( cx, ZConstString(errorCode) );

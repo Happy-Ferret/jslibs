@@ -301,7 +301,7 @@ DEFINE_PROPERTY_SETTER( offset ) {
 	JL_ASSERT_THIS_INHERITANCE();
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(geom);
-	if ( JSVAL_IS_VOID( *vp ) ) {
+	if ( vp.isUndefined() ) {
 
 		ode::dGeomClearOffset(geom);
 		return true;
@@ -390,7 +390,7 @@ DEFINE_PROPERTY_GETTER( space ) {
 */
 	
 	JL_CHK( JL_GetReservedSlot( obj, SLOT_GEOM_SPACEOBJECT, vp) );
-	if ( JSVAL_IS_VOID( *vp ) )
+	if ( vp.isUndefined() )
 		return true;
 
 //	JL_ASSERT_OBJECT( *vp );
@@ -546,7 +546,7 @@ DEFINE_PROPERTY( offsetPositionSetter ) {
 DEFINE_PROPERTY_SETTER( contact ) {
 	
 //	JL_ASSERT( JL_IsCallable(cx, *vp) || JSVAL_IS_VOID(*vp), "Invalid type." );
-	if ( !JSVAL_IS_VOID(*vp) )
+	if ( !vp.isUndefined() )
 		JL_ASSERT_IS_CALLABLE(*vp, "");
 	return JL_SetReservedSlot( obj, SLOT_GEOM_CONTACT_FUNCTION, *vp);
 	JL_BAD;

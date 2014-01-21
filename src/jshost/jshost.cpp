@@ -216,7 +216,7 @@ EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSOb
 	if ( !*hasEvent )
 		return true;
 
-	if ( JSVAL_IS_VOID( upe->callbackFunction ) )
+	if ( upe->callbackFunction.isUndefined() )
 		return true;
 
 	jsval rval;

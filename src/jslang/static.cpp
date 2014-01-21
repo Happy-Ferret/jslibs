@@ -98,7 +98,7 @@ DEFINE_FUNCTION( stringify ) {
 		JL_RVAL.set(JL_ARG(1));
 		return true;
 	} else 
-	if ( JL_ARGC == 0 || (JL_ARGC == 1 && JSVAL_IS_VOID(JL_ARG(1))) ) { // undefined
+	if ( JL_ARGC == 0 || (JL_ARGC == 1 && JL_ARG(1).isUndefined()) ) { // undefined
 
 		JL_RVAL.setUndefined();
 		return true;
@@ -587,7 +587,7 @@ static bool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext
 	JLEventReset(upe->cancel);
 	upe->canceled = false;
 
-	if ( JSVAL_IS_VOID( upe->callbackFunction ) )
+	if ( upe->callbackFunction.get().isUndefined() )
 		return true;
 
 	JS::RootedValue rval(cx);
@@ -1235,7 +1235,7 @@ CLASS_END
 DEFINE_INIT() {
 
 
-	JS::RootedObject robj(cx, JL_GetGlobal(cx, obj));
+	JS::RootedObject robj(cx, JL_GetGlobal(cx));
 
 	//REGISTER_STATIC();
 	REGISTER_CLASS(FooBar);

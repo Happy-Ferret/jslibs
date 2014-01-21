@@ -147,7 +147,7 @@ bool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj, 
 					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 				break;
 			case JSTYPE_OBJECT: // beware: no break; because we use the JSTYPE_STRING's case JS_ValueToString conversion
-				if ( JSVAL_IS_NULL(val) ) {
+				if ( val.isNull() ) {
 
 					if ( sqlite3_bind_null(pStmt, param) != SQLITE_OK )
 						return SqliteThrowError(cx, sqlite3_db_handle(pStmt));

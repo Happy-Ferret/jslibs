@@ -383,7 +383,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	if ( JSVAL_IS_VOID( vp ) ) {
+	if ( vp.isUndefined() ) {
 
 		JL_CHK( Lock(cx, pv) );
 		MemHeader *mh = (MemHeader*)pv->mem;

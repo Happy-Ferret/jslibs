@@ -181,17 +181,17 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &cipherName) ); // warning: GC on the returned buffer !
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &key) ); // warning: GC on the returned buffer !
 
-	if ( argc >= 4 && !JSVAL_IS_VOID( JL_ARG(4) ) )
+	if ( argc >= 4 && !JL_ARG(4).isUndefined() )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &IV) ); // warning: GC on the returned buffer !
 	else
 		IV = JLData::Empty();
 
-	if ( argc >= 5 && !JSVAL_IS_VOID( JL_ARG(5) ) )
+	if ( argc >= 5 && !JL_ARG(5).isUndefined() )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &optarg) ); // warning: GC on the returned buffer !
 
    int numRounds;
    numRounds = 0; // default value, us a default number of rounds.
-	if ( argc >= 6 && !JSVAL_IS_VOID( JL_ARG(6) ) )
+	if ( argc >= 6 && !JL_ARG(6).isUndefined() )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &numRounds) );
 
 	pv = (CipherPrivate*)jl_malloc(sizeof(CipherPrivate));

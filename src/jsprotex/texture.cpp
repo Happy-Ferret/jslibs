@@ -1380,7 +1380,7 @@ DEFINE_FUNCTION( mirrorLevels ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &threshold) );
 
 	bool mirrorTop;
-	if ( argc >= 2 && !JSVAL_IS_VOID(JL_ARG(2)) )
+	if ( argc >= 2 && !JL_ARG(2).isUndefined() )
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &mirrorTop) );
 	else
 		mirrorTop = true;

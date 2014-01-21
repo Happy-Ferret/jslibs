@@ -34,7 +34,7 @@ DEFINE_FINALIZE() {
 
 	jsval constructed;
 	JL_GetReservedSlot( obj, 0, &constructed);
-	if ( !JSVAL_IS_VOID( constructed ) )
+	if ( !constructed.isUndefined() )
 		JS_freeop(fop, pv);
 }
 
