@@ -1,12 +1,27 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="UserMacros">
+    <jslibsRootDir>$(SolutionDir)..\..\</jslibsRootDir>
+    <jslibsIntDir>$(Platform)_$(Configuration)\</jslibsIntDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <BuildMacro Include="jslibsRootDir">
+      <Value>$(jslibsRootDir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="jslibsIntDir">
+      <Value>$(jslibsIntDir)</Value>
+    </BuildMacro>
+  </ItemGroup>
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <_PropertySheetDisplayName>libs common properties</_PropertySheetDisplayName>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <_PropertySheetDisplayName>libs DBG common properties</_PropertySheetDisplayName>
+    <OutDir>$(jslibsIntDir)</OutDir>
+    <IntDir>$(jslibsIntDir)</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
+      <PreprocessorDefinitions>WIN32;_DEBUG;DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>
       </ExceptionHandling>
@@ -24,5 +39,8 @@
       </PrecompiledHeader>
       <ProgramDataBaseFileName>$(OutDir)$(ProjectName).pdb</ProgramDataBaseFileName>
     </ClCompile>
+    <Lib>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Lib>
   </ItemDefinitionGroup>
 </Project>
