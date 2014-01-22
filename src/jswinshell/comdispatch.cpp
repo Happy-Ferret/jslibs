@@ -46,7 +46,7 @@ bool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 	JSObject *funObj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp));
 	jsval dispidVal;
 	JL_CHK( JS_GetPropertyById(cx, funObj, JLID(cx, id), &dispidVal) );
-	DISPID dispid = JSVAL_TO_INT(dispidVal);
+	DISPID dispid = dispidVal.toInt32();
 
 	HRESULT hr;
 

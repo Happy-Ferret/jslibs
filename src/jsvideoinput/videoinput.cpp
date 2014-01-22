@@ -149,7 +149,7 @@ DEFINE_FUNCTION( close ) {
 	
 	vi->stopDevice(pv->deviceID);
 	
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

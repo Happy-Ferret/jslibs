@@ -137,7 +137,7 @@ DEFINE_FUNCTION( wait ) {
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -164,7 +164,7 @@ DEFINE_FUNCTION( post ) {
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

@@ -583,7 +583,7 @@ DEFINE_FUNCTION( free ) {
 	JL_ASSERT_THIS_OBJECT_STATE(tex);
 	TextureFreeBuffers(tex);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -4424,8 +4424,8 @@ DEFINE_FUNCTION( getPixelAt ) {
 	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	int sx, sy;
-	sx = JSVAL_TO_INT(JL_ARG(1));
-	sy = JSVAL_TO_INT(JL_ARG(2));
+	sx = JL_ARG(1).toInt32();
+	sy = JL_ARG(2).toInt32();
 
 	TextureStruct *tex;
 	tex = (TextureStruct*)JL_GetPrivate(JL_OBJ);
@@ -4439,7 +4439,7 @@ DEFINE_FUNCTION( getPixelAt ) {
 	if (likely( pos != NULL ))
 		return JL_NativeVectorToJsval(cx, pos, tex->channels, *JL_RVAL);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -4726,7 +4726,7 @@ DEFINE_FUNCTION( test ) {
 
 	JL_DEFINE_ARGS;
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 }
 #endif // _DEBUG

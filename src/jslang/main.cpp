@@ -36,7 +36,7 @@ $MODULE_FOOTER
 **/
 
 
-bool jslangModuleInit(JSContext *cx, JSObject *obj) {
+bool jslangModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	ModulePrivate *mpv = (ModulePrivate*)jl_calloc(sizeof(ModulePrivate), 1);
 	JL_CHKM( JL_SetModulePrivate(cx, jslangModuleId, mpv), E_MODULE, E_INIT );

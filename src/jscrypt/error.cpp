@@ -73,7 +73,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 	if ( vp.isUndefined() )
 		return true;
 	int errorCode;
-	errorCode = JSVAL_TO_INT(*vp);
+	errorCode = vp.toInt32();
 	JSString *str;
 	str = JS_NewStringCopyZ( cx, ConstString(errorCode) );
 	*vp = STRING_TO_JSVAL( str );
@@ -90,7 +90,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 	if ( vp.isUndefined() )
 		return true;
 	int errorCode;
-	errorCode = JSVAL_TO_INT(*vp);
+	errorCode = vp.toInt32();
 	JSString *str;
 	str = JS_NewStringCopyZ( cx, error_to_string(errorCode) );
 	*vp = STRING_TO_JSVAL( str );

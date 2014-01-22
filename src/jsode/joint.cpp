@@ -125,7 +125,7 @@ DEFINE_FUNCTION( destroy ) {
 	JL_SetPrivate( obj, NULL);
 	ode::dJointDestroy(jointId);
 	
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -141,7 +141,7 @@ DEFINE_FUNCTION( getBody ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &index) );
 	if ( index < 0 || index >= ode::dJointGetNumBodies(jointId) ) {
 		
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 

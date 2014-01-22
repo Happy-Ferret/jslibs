@@ -163,7 +163,7 @@ DEFINE_FUNCTION( addEntropy ) {
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -190,7 +190,7 @@ DEFINE_FUNCTION( autoEntropy ) {
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

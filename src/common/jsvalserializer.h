@@ -132,7 +132,7 @@ public:
 			jl_free(_start); // jl_free(NULL) is legal, but this is an optimization, since usually one use GetBufferOwnership() that set _start to NULL
 	}
 
-	explicit Serializer( JSContext *cx, jsval serializerObj = JSVAL_NULL )
+	explicit Serializer( JSContext *cx, JS::HandleValue serializerObj = JS::NullPtr() )
 	: _serializerObj(cx, serializerObj), _start(NULL), _pos(NULL), _length(0) {
 
 		PrepareBytes(JL_PAGESIZE / 2);
@@ -217,8 +217,8 @@ public:
 
 			jsid item = JS_IdArrayGet(cx, idArray, i);
 			JL_CHK( JS_IdToValue(cx, item, name.address()) );
-			JS::RootedString jsstr(cx, JSVAL_IS_STRING(name) ? JSVAL_TO_STRING(name) : JS::ToString(cx, name));
-			JL_CHK( jsstr != NULL );
+			JS::RootedString jsstr(cx, name.isString() ? name.toString() : JS::ToString(cx, name));
+			JL_CHK( jsstr );
 			JL_CHK( JS_GetPropertyById(cx, obj, item, &value) );
 			JL_CHK( Write(cx, jsstr) );
 			JL_CHK( Write(cx, value) );
@@ -268,6 +268,11 @@ public:
 		JL_BAD;
 	}
 	
+	bool Write( JSContext *cx, JS::MutableHandleValue mval ) {
+
+		JS::HandleValue val(mval);
+		return Write(cx, val);
+	}
 
 	bool Write( JSContext *cx, JS::HandleValue val ) {
 
@@ -279,7 +284,7 @@ public:
 			if ( JSVAL_IS_INT(val) ) {
 
 				JL_CHK( Write(cx, JLSTInt) );
-				JL_CHK( Write(cx, JSVAL_TO_INT(val)) );
+				JL_CHK( Write(cx, val.toInt32()) );
 			} else
 			if ( JSVAL_IS_STRING(val) ) {
 
@@ -409,7 +414,7 @@ public:
 
 				// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
 				serializerWrapper = JL_NewJslibsObject(cx, "Serializer");
-				JL_CHK( serializerWrapper != NULL );
+				JL_CHK( serializerWrapper );
 				arg.setObject(*serializerWrapper);
 				JL_SetPrivate( serializerWrapper, this);
 			} else {
@@ -639,26 +644,26 @@ public:
 
 				int i;
 				JL_CHK( Read(cx, i) );
-				val = INT_TO_JSVAL(i);
+				val.setInt32(i);
 				break;
 			}
 			case JLSTVoid: {
 
-				val = JSVAL_VOID;
+				val.setUndefined();
 				break;
 			}
 			case JLSTBool: {
 
 				char b;
 				JL_CHK( Read(cx, b) );
-				val = BOOLEAN_TO_JSVAL(b);
+				val.setBoolean(b);
 				break;
 			}
 			case JLSTDouble: {
 
 				double d;
 				JL_CHK( Read(cx, d) );
-				val = DOUBLE_TO_JSVAL(d);
+				val.setDouble(d);
 				break;
 			}
 			case JLSTHole: {
@@ -668,15 +673,15 @@ public:
 			}
 			case JLSTNull: {
 
-				val = JSVAL_NULL;
+				val.setNull();
 				break;
 			}
 
 			case JLSTString: {
 
-				JSString *jsstr;
+				JS::RootedString jsstr(cx);
 				JL_CHK( Read(cx, jsstr) );
-				val = STRING_TO_JSVAL(jsstr);
+				val.setString(jsstr);
 				break;
 			}
 			case JLSTArray: {
@@ -689,7 +694,7 @@ public:
 //				val = OBJECT_TO_JSVAL(arr);
 
 				JS::RootedObject arr(cx, JS_NewArrayObject(cx, length, NULL));
-				val = OBJECT_TO_JSVAL(arr);
+				val.setObject(*arr);
 
 				JS::RootedValue tmp(cx);
 				for ( unsigned i = 0; i < length; ++i ) {
@@ -703,8 +708,8 @@ public:
 			case JLSTObject: {
 
 				JS::RootedObject obj(cx, JL_NewObj(cx));
-				JL_CHK( obj != NULL );
-				val = OBJECT_TO_JSVAL(obj);
+				JL_CHK( obj );
+				val.setObject(*obj);
 				SerializerObjectOwnProperties sop(*obj.address());
 				JL_CHK( Read(cx, sop) );
 				break;
@@ -712,8 +717,8 @@ public:
 			case JLSTProtolessObject: {
 
 				JS::RootedObject obj(cx, JL_NewProtolessObj(cx));
-				JL_CHK( obj != NULL );
-				val = OBJECT_TO_JSVAL(obj);
+				JL_CHK( obj );
+				val.setObject(*obj);
 				SerializerObjectOwnProperties sop(*obj.address());
 				JL_CHK( Read(cx, sop) );
 				break;
@@ -722,7 +727,7 @@ public:
 
 				JS::RootedObject proto(cx);
 				JL_GetClassPrototype(cx, JSProto_StopIteration, &proto);
-				val = OBJECT_TO_JSVAL(proto);
+				val.setObject(*proto);
 				break;
 			}
 			case JLSTObjectValue: {
@@ -738,8 +743,8 @@ public:
 				JL_CHK( JS_GetProperty(cx, scope, className, &prop) );
 
 				JS::RootedObject newObj(cx, JS_New(cx, JSVAL_TO_OBJECT(prop), 1, value.address()));
-				JL_CHK( newObj != NULL );
-				val = OBJECT_TO_JSVAL(newObj);
+				JL_CHK( newObj );
+				val.setObject(*newObj);
 				break;
 			}
 			case JLSTSerializableNativeObject: {
@@ -751,7 +756,7 @@ public:
 				const ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), className);
 				JL_CHKM( cpc != NULL, E_CLASS, E_NAME(className), E_NOTFOUND );
 				JS::RootedObject newObj(cx, JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, JS::NullPtr()));
-				JL_CHK( newObj != NULL );
+				JL_CHK( newObj );
 
 				JS::RootedValue arg(cx);
 
@@ -760,13 +765,13 @@ public:
 
 					// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
 					unserializerWrapper = JL_NewJslibsObject(cx, "Unserializer");
-					JL_CHK( unserializerWrapper != NULL );
+					JL_CHK( unserializerWrapper );
 					JL_SetPrivate( unserializerWrapper, this);
 					arg = OBJECT_TO_JSVAL(unserializerWrapper);
 				} else {
 
-					unserializerWrapper = NULL;
-					arg = _unserializerObj;
+					//unserializerWrapper is null by default
+					arg.set( _unserializerObj );
 				}
 
 				JS::RootedValue rval(cx); // note that no root needed
@@ -780,7 +785,7 @@ public:
 					JL_SetPrivate( unserializerWrapper, NULL);
 				JL_CHK( ok );
 
-				val = OBJECT_TO_JSVAL(newObj);
+				val.setObject(*newObj);
 				break;
 			}
 			case JLSTSerializableScriptObject: {
@@ -796,7 +801,7 @@ public:
 
 					// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
 					unserializerWrapper = JL_NewJslibsObject(cx, "Unserializer");
-					JL_CHK( unserializerWrapper != NULL );
+					JL_CHK( unserializerWrapper );
 					JL_SetPrivate(unserializerWrapper, this);
 					arg_1 = OBJECT_TO_JSVAL(unserializerWrapper);
 				} else {
@@ -807,6 +812,7 @@ public:
 				
 				JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
 				bool ok = JL_CallFunctionVA(cx, globalObject, funVal, val, arg_1);
+
 				if ( unserializerWrapper != NULL )
 					JL_SetPrivate( unserializerWrapper, NULL);
 				JL_CHK( ok );
@@ -864,8 +870,8 @@ public:
 						typedArray = NULL;
 				}
 
-				JL_CHK( typedArray != NULL );
-				val = OBJECT_TO_JSVAL(typedArray);
+				JL_CHK( typedArray );
+				val.setObject(*typedArray);
 				break;
 			}
 			case JLSTErrorObject: {
@@ -892,8 +898,8 @@ public:
 				JL_CHK( Read(cx, stack) );
 
 				JS::RootedObject errorObj(cx, JS_New(cx, JSVAL_TO_OBJECT(constructor), constructorArgs.length(), constructorArgs.begin()));
-				JL_CHK( errorObj != NULL );
-				val = OBJECT_TO_JSVAL(errorObj);
+				JL_CHK( errorObj );
+				val.setObject(*errorObj);
 
 				JL_CHK( JS_SetPropertyById(cx, errorObj, JLID(cx, stack), stack) );
 				break;
@@ -929,7 +935,7 @@ public:
 				
 				fctObj = JS_CloneFunctionObject(cx, fctObj, JS_GetParent(fctObj)); // (TBD) remove this wen bz#741597 wil be fixed.
 				
-				val = OBJECT_TO_JSVAL(fctObj);
+				val.setObject(*fctObj);
 				break;
 			}
 			default:

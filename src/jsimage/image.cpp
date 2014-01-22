@@ -40,13 +40,13 @@ DEFINE_FUNCTION( alloc ) {
 		jl_free(data);
 
 	unsigned int size;
-	size = JSVAL_TO_INT(JL_ARG(1));
+	size = JL_ARG(1).toInt32();
 	data = jl_malloc(size);
 	JL_ASSERT_ALLOC( data );
 	JL_updateMallocCounter(cx, size);
 	JL_SetPrivate( obj, data);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -73,7 +73,7 @@ DEFINE_FUNCTION( free ) {
 
 	JL_IGNORE(argc);
 	JL_DEFINE_FUNCTION_OBJ;
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 	void *data = JL_GetPrivate(obj);
 	if ( data != NULL ) {
@@ -165,7 +165,7 @@ DEFINE_FUNCTION( gamma ) {
 
 	JL_ASSERT_ARGC_MIN(1);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

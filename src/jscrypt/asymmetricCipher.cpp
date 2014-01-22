@@ -230,7 +230,7 @@ DEFINE_FUNCTION( wipe ) {
 	JL_ASSERT_THIS_INSTANCE();
 	FinalizeAsymmetricCipher(obj, true);
 	JL_SetPrivate( obj, NULL);
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -323,7 +323,7 @@ DEFINE_FUNCTION( createKeys ) { // ( bitsSize )
 
 	pv->hasKey = true;
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -468,7 +468,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 			// doc: if all went well pt == pt2, l2 == 16, res == 1
 			if ( err == CRYPT_OK && stat != 1 ) {
 
-				*JL_RVAL = JSVAL_VOID;
+				JL_RVAL.setUndefined();
 				return true;
 			}
 			break;
@@ -493,7 +493,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 			// doc: if all went well pt == pt2, l2 == 16, res == 1
 			if ( err == CRYPT_OK && stat != 1 ) {
 
-				*JL_RVAL = JSVAL_VOID;
+				JL_RVAL.setUndefined();
 				return true;
 			}
 			break;

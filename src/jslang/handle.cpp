@@ -24,7 +24,7 @@ DEFINE_FINALIZE() { // see HandleClose()
 
 	JL_IGNORE( fop );
 
-	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(obj);
+	HandlePrivate *pv = (HandlePrivate*)js::GetObjectPrivate(obj);
 	if ( pv ) {
 
 		if ( pv->finalizeCallback ) // callback function is present
@@ -66,7 +66,7 @@ DEFINE_FUNCTION( toString ) {
 
 	handleStr = JS_NewStringCopyN(cx, str, sizeof(str)-1);
 	JL_CHK( handleStr );
-	*JL_RVAL = STRING_TO_JSVAL(handleStr);
+	JL_RVAL.setString(handleStr);
 
 	return true;
 	JL_BAD;

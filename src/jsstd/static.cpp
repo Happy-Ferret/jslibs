@@ -145,11 +145,11 @@ DEFINE_FUNCTION( expand ) {
 
 				if ( hasMapFct ) {
 
-					JL_CHK( JL_NativeToJsval(cx, key, keyEnd - key, value) );
-					JL_CHK( JS_CallFunctionValue(cx, obj, JL_ARG(2), 1, value.address(), value.address()) );
+					JL_CHK( JL_NativeToJsval(cx, key, keyEnd - key, &value) );
+					JL_CHK( JL_CallFunctionVA(cx, JL_OBJ, JL_ARG(2), &value, value) );
 				} else if ( JL_ARG(2).isObject() ) {
 
-					JL_CHK( JS_GetUCProperty(cx, &JL_ARG(2).toObject(), key, keyEnd - key, value.address()) );
+					JL_CHK( JS_GetUCProperty(cx, &JL_ARG(2).toObject(), key, keyEnd - key, &value) );
 				} else {
 					
 					continue;
@@ -162,7 +162,7 @@ DEFINE_FUNCTION( expand ) {
 
 				if ( !JSVAL_IS_STRING(value) ) { // 'convert to string' and 'root new string' if necessary.
 
-					stack->root = JS_ValueToString(cx, value);
+					stack->root = JS::ToString(cx, value);
 					JL_CHK( stack->root );
 					JL_CHK( JS_AddStringRoot(cx, &stack->root) );
 					stack->chars = JS_GetStringCharsAndLength(cx, stack->root, &stack->count);
@@ -228,7 +228,7 @@ DEFINE_FUNCTION( switchCase ) {
 
 	if ( argc <= 2 ) {
 		
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 
@@ -247,7 +247,7 @@ DEFINE_FUNCTION( switchCase ) {
 		return true;
 	}
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -264,23 +264,29 @@ DEFINE_FUNCTION( switchCase ) {
 	JL_ASSERT_ARG_IS_ARRAY(2);
 	JL_ASSERT_ARG_IS_ARRAY(3);
 
-	JSObject *caseArray;
+	{
+
+	JS::RootedObject caseArray(cx, &JL_ARG(2).toObject());
 	unsigned caseArrayLength;
-	caseArray = JSVAL_TO_OBJECT(JL_ARG(2));
 	JL_CHK( JS_GetArrayLength(cx, caseArray, &caseArrayLength) );
 
 	unsigned i;
 	for ( i = 0; i < caseArrayLength; ++i ) {
 	
-		JL_CHK( JL_GetElement(cx, caseArray, i, *JL_RVAL) );
+		JL_CHK( JL_GetElement(cx, caseArray, i, JL_RVAL) );
 		
 		bool same;
-		JL_CHK( JS_SameValue(cx, JL_ARG(1), *JL_RVAL, &same) );
-		if ( same )
-			return JL_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(3)), i, *JL_RVAL);
+		JL_CHK( JS_SameValue(cx, JL_ARG(1), JL_RVAL, &same) );
+		if ( same ) {
+			JS::RootedObject resultArrayObj(cx, &JL_ARG(3).toObject());
+			return JL_GetElement(cx, resultArrayObj, i, JL_RVAL);
+		}
 	}
 
-	*JL_RVAL = argc >= 4 ? JL_ARG(4) : JSVAL_VOID;
+	JL_RVAL.set( argc >= 4 ? JL_ARG(4) : JSVAL_VOID);
+	
+	}
+
 	return true;
 	JL_BAD;
 }
@@ -299,16 +305,19 @@ DEFINE_FUNCTION( internString ) {
 	
 	JL_ASSERT_ARGC(1);
 
-	JSString *str;
+	{
+
+	JS::RootedString str(cx);
 	if ( JSVAL_IS_STRING(JL_ARG(1)) )
 		str = JSVAL_TO_STRING(JL_ARG(1));
 	else
-		str = JS_ValueToString(cx, JL_ARG(1));
+		str = JS::ToString(cx, JL_ARG(1));
 	JL_CHK( str );
 	str = JS_InternJSString(cx, str);
 	JL_CHK( str );
-	*JL_RVAL = STRING_TO_JSVAL(str);
+	JL_RVAL.setString(str);
 	return true;
+	}
 	JL_BAD;
 }
 
@@ -336,9 +345,15 @@ DEFINE_FUNCTION( deepFreezeObject ) {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
+	{
+
+	JS::RootedObject objToFreeze(cx, &JL_ARG(1).toObject());
 	//JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &obj) );
-	*JL_RVAL = JSVAL_VOID;
-	return JS_DeepFreezeObject(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
+	JL_RVAL.setUndefined();
+	return JS_DeepFreezeObject(cx, objToFreeze);
+	
+	}
+
 	JL_BAD;
 }
 
@@ -358,7 +373,7 @@ DEFINE_FUNCTION( countProperties ) {
 
 	JSIdArray *arr;
 	arr = JS_Enumerate(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
-	*JL_RVAL = INT_TO_JSVAL(JS_IdArrayLength(cx, arr));
+	JL_RVAL.setInt32(JS_IdArrayLength(cx, arr));
 	JS_DestroyIdArray(cx, arr);
 
 	return true;
@@ -402,7 +417,7 @@ DEFINE_FUNCTION( clearObject ) {
 		JL_CHK( JS_DeletePropertyById(cx, argObj, JS_IdArrayGet(cx, list, i)) );
 	JS_DestroyIdArray(cx, list);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -501,7 +516,7 @@ DEFINE_FUNCTION( warning ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
 	JL_CHK( JS_ReportWarning(cx, "%s", str.GetConstStrZ()) );
 	
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -546,7 +561,7 @@ DEFINE_FUNCTION( assert ) {
 		return false;
 	}
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -566,7 +581,7 @@ DEFINE_FUNCTION( collectGarbage ) {
 	size_t gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES);
 	JS_GC(JL_GetRuntime(cx));
 	gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES) - gcBytesDiff;
-	return JL_NativeToJsval(cx, gcBytesDiff, *JL_RVAL);
+	return JL_NativeToJsval(cx, gcBytesDiff, JL_RVAL);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -585,7 +600,7 @@ DEFINE_FUNCTION( maybeCollectGarbage ) {
 	size_t gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES);
 	JS_MaybeGC( cx );
 	gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES) - gcBytesDiff;
-	return JL_NativeToJsval(cx, gcBytesDiff, *JL_RVAL);
+	return JL_NativeToJsval(cx, gcBytesDiff, JL_RVAL);
 }
 
 
@@ -615,7 +630,7 @@ DEFINE_FUNCTION( sleep ) {
 	else
 		jl::SleepMilliseconds(time);
 	
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -650,7 +665,7 @@ DEFINE_FUNCTION( timeCounter ) {
 	JL_DEFINE_ARGS;
 
 	JL_IGNORE(argc);
-	return JL_NativeToJsval(cx, jl::AccurateTimeCounter(), *JL_RVAL);
+	return JL_NativeToJsval(cx, jl::AccurateTimeCounter(), JL_RVAL);
 }
 
 
@@ -682,7 +697,7 @@ DEFINE_FUNCTION( stringRepeat ) {
 	}
 	if ( count == 1 ) {
 
-		*JL_RVAL = STRING_TO_JSVAL( JS_ValueToString(cx, JL_ARG(1)) ); // force string conversion because we must return a string.
+		*JL_RVAL = STRING_TO_JSVAL( JS::ToString(cx, JL_ARG(1)) ); // force string conversion because we must return a string.
 		return true;
 	}
 
@@ -720,7 +735,7 @@ DEFINE_FUNCTION( stringRepeat ) {
 	JL_updateMallocCounter(cx, sizeof(jschar) * newLen);
 	jsstr = JL_NewUCString(cx, newBuf, newLen);
 	JL_CHK( jsstr );
-	*JL_RVAL = STRING_TO_JSVAL( jsstr );
+	JL_RVAL.setString(jsstr);
 	return true;
 	JL_BAD;
 }
@@ -756,9 +771,9 @@ DEFINE_FUNCTION( print ) {
 
 	// print() => host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
 
-	jsval fval;
+	JS::RootedValue fval(cx);
 	JL_CHK( JS_GetPropertyById(cx, JL_GetHostPrivate(cx)->hostObject, JLID(cx, stdout), &fval) );
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	if (likely( JL_ValueIsCallable(cx, fval) ))
 		return JS_CallFunctionValue(cx, JL_GetGlobal(cx), fval, JL_ARGC, JS_ARGV(cx,vp), &fval);
 	return true;
@@ -793,7 +808,7 @@ DEFINE_FUNCTION( exec ) {
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	bool useAndSaveCompiledScripts;
-	useAndSaveCompiledScripts = !JL_ARG_ISDEF(2) || *JL_ARG(2).address() == JSVAL_TRUE;
+	useAndSaveCompiledScripts = !JL_ARG_ISDEF(2) || JL_ARG(2).isTrue();
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &fileName) );
 
 	JSScript *script;

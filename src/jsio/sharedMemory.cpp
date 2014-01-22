@@ -260,7 +260,7 @@ DEFINE_FUNCTION( write ) {
 
 	JL_CHK( Unlock(cx, pv) );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -335,7 +335,7 @@ DEFINE_FUNCTION( clear ) {
 	memset( (char *)pv->mem + sizeof(MemHeader), 0, pv->size - sizeof(MemHeader) );
 	JL_CHK( Unlock(cx, pv) );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -361,7 +361,7 @@ DEFINE_FUNCTION( close ) {
 		return ThrowIoError(cx);
 	JL_SetPrivate( JL_OBJ, NULL);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

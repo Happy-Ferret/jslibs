@@ -339,7 +339,7 @@ DEFINE_FUNCTION( draw ) {
 			pv->face->draw(str);
 	}
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -394,7 +394,7 @@ DEFINE_FUNCTION( setColor ) {
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	if ( JL_ARGC == 0 ) {
 
 		GLfloat color[4];
@@ -437,7 +437,7 @@ DEFINE_FUNCTION( setBackgroundColor ) {
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 	if ( JL_ARGC == 0 ) {
 
@@ -614,10 +614,10 @@ DEFINE_FUNCTION( setCharacterDisplayLists ) {
 
 		JL_CHK( JL_GetElement(cx, arrObj, i, JL_RVAL) );
 		JL_ASSERT_INT( *JL_RVAL );
-		lists.push_back(JSVAL_TO_INT( *JL_RVAL ));
+		lists.push_back(JL_RVAL.toInt32());
 	}
 	pv->face->setCharacterDisplayLists(lists);
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

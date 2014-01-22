@@ -269,7 +269,7 @@ DEFINE_FUNCTION( sleep ) {
 		timeout = 0;
 	PR_Sleep( PR_MillisecondsToInterval(timeout) );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -293,7 +293,7 @@ DEFINE_FUNCTION( getEnv ) {
 
 	if ( value == NULL || *value == '\0' ) { // this will cause an 'undefined' return value
 
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 	} else {
 
 		JL_CHK( JL_NativeToJsval(cx, value, *JL_RVAL) );
@@ -348,7 +348,7 @@ DEFINE_FUNCTION( getRandomNoise ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	PRSize rndSize;
-	rndSize = JSVAL_TO_INT( JL_ARG(1) );
+	rndSize = JL_ARG(1).toInt32();
 	uint8_t *buf;
 	buf = JL_NewBuffer(cx, rndSize, *JL_RVAL);
 	JL_CHK( buf );
@@ -445,7 +445,7 @@ DEFINE_FUNCTION( waitSemaphore ) {
 			return ThrowIoError(cx);
 	}
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -483,7 +483,7 @@ DEFINE_FUNCTION( postSemaphore ) {
 			return ThrowIoError(cx);
 	}
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -526,7 +526,7 @@ DEFINE_FUNCTION( createProcess ) {
 
 			jsval propVal;
 			JL_CHK( JS_IdToValue(cx, idArray->vector[i], &propVal ));
-			JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(2)), JSVAL_TO_INT(propVal), &propVal )); // (TBD) optimize
+			JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(2)), propVal.toInt32(), &propVal )); // (TBD) optimize
 
 			const char *tmp;
 			JL_CHK( JL_JsvalToNative(cx, &propVal, &tmp) ); // warning: GC on the returned buffer !
@@ -765,7 +765,7 @@ DEFINE_FUNCTION( configureSerialPort ) {
 #endif // XP_UNIX
 
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -1134,7 +1134,7 @@ DEFINE_FUNCTION( jsioTest ) {
 	double t = jl::AccurateTimeCounter() - t0;
 */
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

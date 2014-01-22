@@ -190,7 +190,7 @@ DEFINE_FUNCTION( write ) {
 		pv->inputLength += length;
 	}
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -262,7 +262,7 @@ DEFINE_FUNCTION( reset ) {
 	pv->inputLength = 0;
 	pv->isValid = true;
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -376,7 +376,7 @@ DEFINE_FUNCTION( cipherHash ) {
 	if ((err = chc_register(cipherIndex)) != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

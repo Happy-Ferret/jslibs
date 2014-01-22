@@ -58,7 +58,7 @@ HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruc
 
 	{
 	JS::RootedObject handleObj(cx, JL_NewObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto, JS::NullPtr()));
-	JL_CHK( handleObj != NULL );
+	JL_CHK( handleObj );
 	handleVal.setObject(*handleObj);
 
 	HandlePrivate *pv;
@@ -115,7 +115,7 @@ GetHandleType( JSContext *cx, JS::HandleValue handleVal ) {
 
 	HandlePrivate *pv;
 	pv = (HandlePrivate*)JL_GetPrivate(handleObj);
-	JL_CHK( pv != NULL );
+	JL_CHK( pv );
 	return pv->handleType;
 	
 	}
@@ -164,7 +164,7 @@ GetHandlePrivate( JSContext *cx, IN JS::HandleObject handleObj ) {
 
 	HandlePrivate *pv;
 	pv = (HandlePrivate*)JL_GetPrivate(handleObj);
-	JL_CHK( pv != NULL );
+	JL_CHK( pv );
 	return (char*)pv + sizeof(HandlePrivate); // user data is just behind our private structure.
 
 bad:

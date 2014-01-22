@@ -221,7 +221,7 @@ private:
 				_rval = FunctionCall0(vstPlugin, fval);
 				if ( JSVAL_IS_INT(_rval) ) {
 
-					int cat = JSVAL_TO_INT(_rval);
+					int cat = _rval.toInt32();
 					if ( cat < 0 || cat >= kPlugCategMaxCount )
 						return kPlugCategUnknown;
 					return (VstPlugCategory)cat;
@@ -836,7 +836,7 @@ DEFINE_PROPERTY_SETTER( numPrograms ) {
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	JL_ASSERT_IS_INTEGER(*vp, "");
-	vstPlugin->SetNumPrograms( JSVAL_TO_INT(*vp) );
+	vstPlugin->SetNumPrograms( vp.toInt32() );
 	return true;
 	JL_BAD;
 }
@@ -846,7 +846,7 @@ DEFINE_PROPERTY_SETTER( numParams ) {
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	JL_ASSERT_IS_INTEGER(*vp, "");
-	vstPlugin->SetNumParams( JSVAL_TO_INT(*vp) );
+	vstPlugin->SetNumParams( vp.toInt32() );
 	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
@@ -856,7 +856,7 @@ DEFINE_PROPERTY_SETTER( numInputs ) {
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	JL_ASSERT_IS_INTEGER(*vp, "");
-	vstPlugin->setNumInputs( JSVAL_TO_INT(*vp) );
+	vstPlugin->setNumInputs( vp.toInt32() );
 	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
@@ -866,7 +866,7 @@ DEFINE_PROPERTY_SETTER( numOutputs ) {
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	JL_ASSERT_IS_INTEGER(*vp, "");
-	vstPlugin->setNumOutputs( JSVAL_TO_INT(*vp) );
+	vstPlugin->setNumOutputs( vp.toInt32() );
 	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }
@@ -1066,7 +1066,7 @@ DEFINE_PROPERTY_SETTER( initialDelay ) {
 	JL_ASSERT_IS_INTEGER(*vp, "");
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
-	vstPlugin->setInitialDelay( JSVAL_TO_INT( *vp ) );
+	vstPlugin->setInitialDelay( vp.toInt32() );
 	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;
 }

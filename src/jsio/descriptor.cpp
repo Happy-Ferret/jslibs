@@ -138,7 +138,7 @@ DEFINE_FUNCTION( close ) {
 	JL_ASSERT_THIS_INHERITANCE();
 	JL_ASSERT_ARGC(0);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc*)JL_GetPrivate(obj);
@@ -362,7 +362,7 @@ DEFINE_FUNCTION( read ) {
 				//  This error may also result if a connection was broken due to keep-alive activity detecting a failure while one or more operations are in progress.
 				//  Operations that were in progress fail with WSAENETRESET. Subsequent operations fail with WSAECONNRESET.
 				JL_CHK( JL_FreeBuffer(cx, *JL_RVAL) );
-				*JL_RVAL = JSVAL_VOID;
+				JL_RVAL.setUndefined();
 				return true;
 
 			default:
@@ -378,7 +378,7 @@ DEFINE_FUNCTION( read ) {
 	if ( res == 0 ) { // doc: 0 means end of file is reached or the network connection is closed.
 
 		JL_CHK( JL_FreeBuffer(cx, *JL_RVAL) );
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 
@@ -458,7 +458,7 @@ DEFINE_FUNCTION( write ) {
 				// Subsequent operations fail with WSAECONNRESET.
 				// source: msdn, Winsock Error Codes
 
-				*JL_RVAL = JSVAL_VOID;
+				JL_RVAL.setUndefined();
 				return true;
 			default:
 				return ThrowIoError(cx);
@@ -509,7 +509,7 @@ DEFINE_FUNCTION( sync ) {
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	JL_CHKB( PR_Sync(fd) == PR_SUCCESS, bad_ioerror );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 
 bad_ioerror:

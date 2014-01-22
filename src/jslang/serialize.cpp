@@ -41,7 +41,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_ASSERT_ARGC(0);
 
-	ser = new jl::Serializer(OBJECT_TO_JSVAL(JL_OBJ));
+	ser = new jl::Serializer(cx, JL_OBJVAL);
 	JL_ASSERT_ALLOC(ser);
 	ser->Write(cx, JL_THIS_CLASS_REVISION);
 

@@ -372,7 +372,7 @@ DEFINE_PROPERTY_GETTER( hasIncompleteSequence ) {
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );	
-	JL_CHK(JL_NativeToJsval(cx, pv->remainderLen != 0, vp) );
+	JL_CHK( JL_NativeToJsval(cx, pv->remainderLen != 0, vp) );
 	return true;
 	JL_BAD;
 }

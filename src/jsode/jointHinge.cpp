@@ -90,7 +90,7 @@ DEFINE_FUNCTION( addTorque ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &torque) );
 	ode::dJointAddHingeTorque(jointId, (ode::dReal)torque);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

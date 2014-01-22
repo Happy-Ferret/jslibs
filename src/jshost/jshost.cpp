@@ -174,7 +174,7 @@ struct EndSignalProcessEvent {
 S_ASSERT( offsetof(EndSignalProcessEvent, pe) == 0 );
 
 static bool
-EndSignalPrepareWait( volatile ProcessEvent *pe, JSContext *, JSObject * ) {
+EndSignalPrepareWait( volatile ProcessEvent *pe, JSContext *, JS::HandleObject ) {
 	
 	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
 
@@ -207,7 +207,7 @@ EndSignalCancelWait( volatile ProcessEvent *pe ) {
 }
 
 static bool
-EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
+EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS::HandleObject ) {
 
 	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
 
@@ -243,8 +243,8 @@ EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
 	if ( JL_ARG_ISDEF(1) ) {
 
 		JL_ASSERT_ARG_IS_CALLABLE(1);
-		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_OBJVAL) ); // GC protection only
-		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_ARG(1)) ); // GC protection only
+		JL_CHK( SetHandleSlot(cx, JL_RVAL, 0, JL_OBJVAL) ); // GC protection only
+		JL_CHK( SetHandleSlot(cx, JL_RVAL, 1, JL_ARG(1)) ); // GC protection only
 
 		upe->callbackFunctionThis = JSVAL_TO_OBJECT(JL_OBJVAL); // store "this" object.
 		upe->callbackFunction = JL_ARG(1);
@@ -394,8 +394,6 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 #endif // XP_WIN
 
 	int exitValue;
-	jsval rval;
-	jsval arguments;
 
 	JSContext *cx = NULL;
 
@@ -542,14 +540,17 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 
 //	setvbuf(stderr, pBuffer, mode, buffer_size);
 	
-//	JS_Init();
+	JS_Init();
 	
 	cx = CreateHost(maxMem, maxAlloc, (uint32_t)(maybeGCInterval * 1000));
 	HOST_MAIN_ASSERT( cx != NULL, "Unable to initialize the JavaScript engine." );
 
 #ifdef DEBUG	
-	if ( debug )
-		JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_TYPE_INFERENCE));
+	if ( debug ) {
+
+		//JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_TYPE_INFERENCE));
+		JS::ContextOptionsRef(cx).setTypeInference(false);
+	}
 #endif // DEBUG	
 
 	HostPrivate *hpv;
@@ -563,7 +564,8 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 	hpv->alloc.msize = jl_msize;
 	hpv->alloc.free = jl_free;
 
-	JS_SetOptions(cx, JS_GetOptions(cx) | (warningsToErrors ? JSOPTION_WERROR : 0) ); // default, may be disabled in InitHost()
+	//JS_SetOptions(cx, JS_GetOptions(cx) | (warningsToErrors ? JSOPTION_WERROR : 0) ); // default, may be disabled in InitHost()
+	JS::ContextOptionsRef(cx).setWerror(warningsToErrors);
 
 	JL_CHKM( InitHost(cx, unsafeMode, HostStdin, HostStdout, HostStderr, NULL), E_HOST, E_INIT ); // "Unable to initialize the host."
 
@@ -609,7 +611,7 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 
 	char *hostName;
 	hostName = strrchr(hostFullPath, PATH_SEPARATOR);
-	JL_CHK( hostName != NULL );
+	JL_CHK( hostName );
 	hostName += 1;
 	int hostPathLength;
 	hostPathLength = hostName-hostFullPath;
@@ -618,14 +620,18 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 	strncpy(hostPath, hostFullPath, hostPathLength);
 	hostPath[hostPathLength] = '\0';
 
-	JSObject *hostObj;
-	hostObj = JL_GetHostPrivate(cx)->hostObject;
+	{
+
+	JS::RootedObject hostObj(cx, JL_GetHostPrivate(cx)->hostObject);
+	JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
+	JS::RootedValue rval(cx);
+	JS::RootedValue arguments(cx);
 
 	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, name), hostName) );
 	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, path), hostPath) );
 
-	JL_CHK( JL_NativeVectorToJsval(cx, argumentVector, argc - (argumentVector-argv), arguments) );
-	JL_CHK( JS_SetPropertyById(cx, hostObj, JLID(cx, arguments), &arguments) );
+	JL_CHK( JL_NativeVectorToJsval(cx, argumentVector, argc - (argumentVector-argv), &arguments) );
+	JL_CHK( JS_SetPropertyById(cx, hostObj, JLID(cx, arguments), arguments) );
 
 	JL_CHK( JS_DefineProperty(cx, hostObj, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED) ); // https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
 	JL_CHK( JS_DefineFunction(cx, hostObj, "endSignalEvents", EndSignalEvents, 1, 0) );
@@ -639,18 +645,22 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 	JL_CHK( JS_DefineProperty(cx, hostObj, "dbgAlloc", JSVAL_VOID, Tmp::dbgAllocGetter, NULL, JSPROP_SHARED) );
 #endif // DBG_ALLOC
 
-	rval = JSVAL_VOID;
 
 
 	// embedded bootstrap script
 
 	if ( sizeof(embeddedBootstrapScript)-1 > 0 ) {
 
-		uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
-		JSScript *script = JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL, NULL); // -1 because sizeof("") == 1
+		JS::AutoSaveContextOptions asco(cx);
+
+		//uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
+
+		JS::ContextOptionsRef(cx).setDontReportUncaught(false);
+
+		JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL, NULL) ); // -1 because sizeof("") == 1
 		JL_CHK( script );
-		JL_CHK( JS_ExecuteScript(cx, JL_GetGlobal(cx), script, &rval) );
-		JS_SetOptions(cx, prevOpt);
+		JL_CHK( JS_ExecuteScript(cx, globalObject, script, rval.address()) );
+
 	}
 
 
@@ -661,7 +671,7 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 		char bootstrapFilename[PATH_MAX];
 		strcpy(bootstrapFilename, hostFullPath);
 		strcat(bootstrapFilename, ".js");
-		JL_CHK( ExecuteScriptFileName(cx, bootstrapFilename, compileOnly, &rval) );
+		JL_CHK( ExecuteScriptFileName(cx, globalObject, bootstrapFilename, compileOnly, &rval) );
 	}
 
 
@@ -676,7 +686,7 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 
 	if ( inlineScript != NULL ) {
 
-		executeStatus = ExecuteScriptText(cx, inlineScript, compileOnly, &rval);
+		executeStatus = ExecuteScriptText(cx, globalObject, inlineScript, compileOnly, &rval);
 	}
 
 
@@ -684,26 +694,26 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 
 	if ( scriptName != NULL && executeStatus == true ) {
 
-		executeStatus = ExecuteScriptFileName(cx, scriptName, compileOnly, &rval);
+		executeStatus = ExecuteScriptFileName(cx, globalObject, scriptName, compileOnly, &rval);
 	}
 
 
 	if ( executeStatus == true ) {
 
-		if ( JSVAL_IS_INT(rval) && JSVAL_TO_INT(rval) >= 0 ) // (TBD) enhance this, use JL_JsvalToNative() ?
-			exitValue = JSVAL_TO_INT(rval);
+		if ( JSVAL_IS_INT(rval) && rval.toInt32() >= 0 ) // (TBD) enhance this, use JL_JsvalToNative() ?
+			exitValue = rval.toInt32();
 		else
 			exitValue = EXIT_SUCCESS;
 	} else {
 
 		if ( JL_IsExceptionPending(cx) ) { // see JSOPTION_DONT_REPORT_UNCAUGHT option.
 
-			jsval ex;
+			JS::RootedValue ex(cx);
 			JS_GetPendingException(cx, &ex);
 			JL_JsvalToPrimitive(cx, ex, &ex);
 			if ( JSVAL_IS_INT(ex) ) {
 
-				exitValue = JSVAL_TO_INT(ex);
+				exitValue = ex.toInt32();
 			} else {
 
 				JS_ReportPendingException(cx);
@@ -715,13 +725,15 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 		}
 	}
 
+	}
+
 	if ( useJslibsMemoryManager ) {
 	
 		disabledFree = true;
 		FinalizeMemoryManager(!disabledFree, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
 	}
 
-	JS_SetGCCallback(JL_GetRuntime(cx), NULL);
+	JS_SetGCCallback(JL_GetRuntime(cx), NULL, NULL);
 	DestroyHost(cx, disabledFree);
 	if ( !disabledFree ) {
 	
@@ -755,7 +767,7 @@ bad:
 
 		if ( useJslibsMemoryManager )
 			disabledFree = true;
-		JS_SetGCCallback(JL_GetRuntime(cx), NULL);
+		JS_SetGCCallback(JL_GetRuntime(cx), NULL, NULL);
 		DestroyHost(cx, true);
 	}
 	JS_ShutDown();

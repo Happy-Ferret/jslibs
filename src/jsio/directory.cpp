@@ -112,7 +112,7 @@ DEFINE_FUNCTION( close ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 	PRDir *dd;
 	dd = (PRDir *)JL_GetPrivate( obj );
@@ -164,7 +164,7 @@ DEFINE_FUNCTION( read ) {
 		PRErrorCode errorCode = PR_GetError();
 		if ( errorCode == PR_NO_MORE_FILES_ERROR ) {
 
-			*JL_RVAL = JSVAL_VOID;
+			JL_RVAL.setUndefined();
 			return true;
 		} else
 			return ThrowIoError(cx);
@@ -202,7 +202,7 @@ DEFINE_FUNCTION( make ) {
 	if ( PR_MkDir(str.GetConstStrZ(), mode) != PR_SUCCESS )
 		return ThrowIoError(cx);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

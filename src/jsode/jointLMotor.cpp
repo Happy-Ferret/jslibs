@@ -89,7 +89,7 @@ DEFINE_FUNCTION( setAxis ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 	int anum, rel;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &anum) );

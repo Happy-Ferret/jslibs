@@ -115,7 +115,7 @@ DefineConstValues(JSContext *cx, JSObject *obj, ConstValueSpec *cs) {
 INLINE bool FASTCALL
 InitStatic( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 
-	JL_CHK( obj != NULL );
+	JL_CHK( obj );
 
 	if ( cs->static_fs != NULL )
 		JL_CHK( DefineFunctions(cx, obj, cs->static_fs) );
@@ -144,7 +144,7 @@ InitStatic( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 INLINE bool FASTCALL
 InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 
-	JL_CHK( obj != NULL );
+	JL_CHK( obj );
 
 	ASSERT( cs->clasp.name && cs->clasp.name[0] ); // Invalid class name.
 

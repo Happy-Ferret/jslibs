@@ -219,7 +219,7 @@ struct HostPrivate {
 		void *privateData;
 	} modulePrivate[1<<8]; // does not support more than 256 modules.
 	jl::Queue moduleList;
-	JSClass *objectClass;
+	const JSClass *objectClass;
 	JS::PersistentRootedObject objectProto;
 	jl_allocators_t alloc;
 	ProtoCache<1 << JL_HOSTPRIVATE_MAX_CLASS_PROTO_CACHE_BIT> classProtoCache;

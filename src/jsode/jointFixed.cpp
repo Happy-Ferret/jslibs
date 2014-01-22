@@ -85,7 +85,7 @@ DEFINE_FUNCTION( set ) {
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dJointSetFixed(jointId);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

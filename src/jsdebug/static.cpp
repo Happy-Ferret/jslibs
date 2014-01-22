@@ -101,7 +101,7 @@ DumpScope(JSContext *cx, JSObject *obj)
 
         v = ID_TO_VALUE(sprop->id);
         if (JSID_IS_INT(sprop->id)) {
-            _printf(cx, "[%ld]", (long)JSVAL_TO_INT(v));
+            _printf(cx, "[%ld]", (long)v.toInt32());
         } else {
             if (JSID_IS_ATOM(sprop->id)) {
                 str = JSVAL_TO_STRING(v);
@@ -244,7 +244,7 @@ DEFINE_FUNCTION( dumpHeap )
     JS_ReportError(cx, "argument '%s' is not null or a heap-allocated thing",
                    badTraceArg);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return false;
 }
 
@@ -253,7 +253,7 @@ DEFINE_FUNCTION( dumpHeap )
 DEFINE_FUNCTION( dumpHeap ) {
 
 	JL_WARN( E_THISOPERATION, E_NOTSUPPORTED );
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -406,7 +406,7 @@ DEFINE_FUNCTION( disableJIT ) {
 
 	JS_SetOptions(cx, JS_GetOptions(cx) & ~(/*JSOPTION_JIT|*/JSOPTION_METHODJIT | JSOPTION_TYPE_INFERENCE));
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 }
 
@@ -445,7 +445,7 @@ DEFINE_FUNCTION( getObjectPrivate ) {
 
 	if ( !(JL_GetClass(obj)->flags & JSCLASS_HAS_PRIVATE) ) {
 
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 	unsigned long n;
@@ -678,7 +678,7 @@ DEFINE_FUNCTION( getActualLineno ) {
 	JL_CHK( GetScriptLocation(cx, &JL_ARG(1), lineno, &script, &pc) );
 	if ( script == NULL ) {
 
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 	*JL_RVAL = INT_TO_JSVAL(JS_PCToLineNumber(cx, script, pc));
@@ -732,7 +732,7 @@ DEFINE_FUNCTION( stackFrameInfo ) {
 	fp = JL_StackFrameByIndex(cx, frameIndex);
 	if ( fp == NULL ) {
 
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 
@@ -835,7 +835,7 @@ DEFINE_FUNCTION( evalInStackFrame ) {
 
 	if ( fp == NULL ) {
 
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 
@@ -904,7 +904,7 @@ DEFINE_FUNCTION( locate ) {
 
 	if ( fp == NULL ) {
 
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 
@@ -982,7 +982,7 @@ DEFINE_FUNCTION( definitionLocation ) {
 next:
 	if ( !script ) {
 
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 
@@ -1046,7 +1046,7 @@ DEFINE_FUNCTION( scriptByLocation ) {
 
 	if ( scrobj == NULL ) {
 
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 
@@ -1113,7 +1113,7 @@ DEFINE_FUNCTION( disassembleScript ) {
 #else // DEBUG
 
 	JL_WARN( E_THISOPERATION, E_NOTSUPPORTED );
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 
 #endif // DEBUG
@@ -1164,7 +1164,7 @@ DEFINE_FUNCTION( debugOutput ) {
 	JL_WARN( E_THISOPERATION, E_NOTSUPPORTED );
 #endif
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -1179,7 +1179,7 @@ DEFINE_FUNCTION( createLeak ) {
 
 	malloc(1234);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -1203,7 +1203,7 @@ DEFINE_FUNCTION( VALGRIND_DO_LEAK_CHECK ) {
 	// does a full memory leak check (like --leak-check=full) right now.
 	// This is useful for incrementally checking for leaks between arbitrary places in the program's execution. It has no return value.
 	VALGRIND_DO_LEAK_CHECK;
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -1213,7 +1213,7 @@ DEFINE_FUNCTION( VALGRIND_DO_QUICK_LEAK_CHECK ) {
 
 	// like VALGRIND_DO_LEAK_CHECK, except it produces only a leak summary (like --leak-check=summary). It has no return value.
 	VALGRIND_DO_QUICK_LEAK_CHECK;
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -1248,7 +1248,7 @@ DEFINE_FUNCTION( VALGRIND_COUNT_LEAKS ) {
 DEFINE_FUNCTION( debugBreak ) {
 
 	JL_Break();
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 }
 
@@ -1289,7 +1289,7 @@ DEFINE_FUNCTION( crashGuard ) {
 
 DEFINE_FUNCTION( setPerfTestMode ) {
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 #if defined(WIN32)
 
@@ -1330,13 +1330,13 @@ DEFINE_FUNCTION( testDebug ) {
 	bool isobjid = JSID_IS_OBJECT(id);
 
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 }
 
 DEFINE_FUNCTION( test2Debug ) {
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 
 //	JL_DEFINE_FUNCTION_OBJ;

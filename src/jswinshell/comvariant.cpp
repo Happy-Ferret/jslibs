@@ -550,7 +550,7 @@ DEFINE_FUNCTION( toDispatch ) {
 
 	if ( V_VT(variant) != VT_UNKNOWN ) {
 
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 

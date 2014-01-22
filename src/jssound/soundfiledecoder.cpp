@@ -318,7 +318,7 @@ DEFINE_FUNCTION( read ) {
 		} else
 		if ( total == 0 ) {
 		
-			*JL_RVAL = JSVAL_VOID; // EOF
+			JL_RVAL.setUndefined(); // EOF
 			return true;
 		} else {
 
@@ -348,7 +348,7 @@ DEFINE_FUNCTION( read ) {
 		if ( totalSize == 0 ) {
 
 			jl_free(buf);
-			*JL_RVAL = JSVAL_VOID;
+			JL_RVAL.setUndefined();
 		} else {
 
 			if ( JL_MaybeRealloc(amount, totalSize) )
@@ -378,7 +378,7 @@ DEFINE_FUNCTION( read ) {
 		if ( buffer.Length() )
 			JL_CHK( JL_NewByteAudioObjectOwner(cx, buffer.GetDataOwnership(), pv->bits, pv->sfInfo.channels, buffer.Length() / (pv->sfInfo.channels * pv->bits/8), pv->sfInfo.samplerate, *JL_RVAL) );
 		else
-			*JL_RVAL = JSVAL_VOID;
+			JL_RVAL.setUndefined();
 	}
 	pv->cx = NULL;
 

@@ -124,7 +124,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int ) {
 	JL_CHK( InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free) );
 
 	cx = CreateHost((uint32_t)-1, (uint32_t)-1, 30000); // 30 seconds
-	JL_CHK( cx != NULL );
+	JL_CHK( cx );
 
 	HostPrivate *hpv = JL_GetHostPrivate(cx);
 

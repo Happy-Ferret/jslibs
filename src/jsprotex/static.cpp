@@ -60,7 +60,7 @@ DEFINE_FUNCTION( randSeed ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &seed) );
 	init_genrand(seed);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -135,7 +135,7 @@ DEFINE_FUNCTION( perlinNoiseReinit ) {
 
 	InitNoise();
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

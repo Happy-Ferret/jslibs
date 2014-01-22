@@ -10,7 +10,8 @@ var loadModule = host.loadModule;
 
 
 
-host.loadModule('jsstd');
+host.stdout('test\n');
+//host.loadModule('jsstd');
 throw 0;
 
 

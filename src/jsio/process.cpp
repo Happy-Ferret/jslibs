@@ -255,7 +255,7 @@ DEFINE_FUNCTION( detach ) {
 	JL_ASSERT_THIS_OBJECT_STATE(process);
 	JL_CHK( PR_DetachProcess(process) == PR_SUCCESS );
 	JL_SetPrivate( obj, NULL); // On return, the value of process becomes an invalid pointer and should not be passed to other functions.
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -279,7 +279,7 @@ DEFINE_FUNCTION( kill ) {
 	JL_ASSERT_THIS_OBJECT_STATE(process);
 	JL_CHK( PR_KillProcess(process) == PR_SUCCESS );
 	JL_SetPrivate( obj, NULL); // Invalidates the current process pointer.
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

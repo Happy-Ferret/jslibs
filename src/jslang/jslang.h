@@ -35,6 +35,6 @@ struct ModulePrivate {
 };
 
 
-bool jslangModuleInit(JSContext *cx, JSObject *obj);
+bool jslangModuleInit(JSContext *cx, JS::HandleObject obj);
 bool jslangModuleRelease(JSContext *cx);
 void jslangModuleFree();

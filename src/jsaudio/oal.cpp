@@ -75,7 +75,7 @@ DEFINE_FUNCTION( open ) {
 
 	InitEfxApi();
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -113,7 +113,7 @@ DEFINE_FUNCTION( close ) {
 	if (!alcCloseDevice (device))
 		JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_CLOSE_DEVICE") );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -175,7 +175,7 @@ DEFINE_FUNCTION( dopplerFactor ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );
 	alDopplerFactor( value );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -200,7 +200,7 @@ DEFINE_FUNCTION( dopplerVelocity ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );
 	alDopplerVelocity( value );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -225,7 +225,7 @@ DEFINE_FUNCTION( speedOfSound ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );
 	alSpeedOfSound( value );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -249,7 +249,7 @@ DEFINE_FUNCTION( distanceModel ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &distanceModel) );
 	alDistanceModel( distanceModel );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -269,9 +269,9 @@ DEFINE_FUNCTION( enable ) {
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
-	alEnable( JSVAL_TO_INT(JL_ARG(1)) );
+	alEnable( JL_ARG(1).toInt32() );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -291,9 +291,9 @@ DEFINE_FUNCTION( disable ) {
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
-	alDisable( JSVAL_TO_INT(JL_ARG(1)) );
+	alDisable( JL_ARG(1).toInt32() );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -313,7 +313,7 @@ DEFINE_FUNCTION( isEnabled ) {
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
-	*JL_RVAL = BOOLEAN_TO_JSVAL( alIsEnabled( JSVAL_TO_INT(JL_ARG(1)) ) );
+	*JL_RVAL = BOOLEAN_TO_JSVAL( alIsEnabled( JL_ARG(1).toInt32() ) );
 
 	return true;
 	JL_BAD;
@@ -336,10 +336,10 @@ DEFINE_FUNCTION( getString ) {
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
-	const ALchar* str = alGetString(JSVAL_TO_INT(JL_ARG(1)));
+	const ALchar* str = alGetString(JL_ARG(1).toInt32());
 	if ( str == NULL ) {
 
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 	JSString *jsstr = JS_NewStringCopyZ(cx, str);
@@ -368,7 +368,7 @@ DEFINE_FUNCTION( getBoolean ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	ALboolean params;
-	alGetBooleanv(JSVAL_TO_INT(JL_ARG(1)), &params);
+	alGetBooleanv(JL_ARG(1).toInt32(), &params);
 	*JL_RVAL = BOOLEAN_TO_JSVAL(params);
 
 	return true;
@@ -395,12 +395,12 @@ DEFINE_FUNCTION( getInteger ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	ALint params[16];
-	alGetIntegerv(JSVAL_TO_INT( JL_ARG(1) ), params);
+	alGetIntegerv(JL_ARG(1).toInt32(), params);
 
 	if ( JL_ARG_ISDEF(2) ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(2);
-		int count = JSVAL_TO_INT( JL_ARG(2) );
+		int count = JL_ARG(2).toInt32();
 		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
@@ -437,12 +437,12 @@ DEFINE_FUNCTION( getDouble ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	ALdouble params[16];
-	alGetDoublev(JSVAL_TO_INT(JL_ARG(1)), params);
+	alGetDoublev(JL_ARG(1).toInt32(), params);
 
 	if ( JL_ARG_ISDEF(2) ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(2);
-		int count = JSVAL_TO_INT( JL_ARG(2) );
+		int count = JL_ARG(2).toInt32();
 		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
@@ -476,17 +476,17 @@ DEFINE_FUNCTION( listener ) {
 	JL_ASSERT_ARGC_MIN(2);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
 
-		alListeneri( JSVAL_TO_INT( JL_ARG(1) ), JSVAL_TO_INT( JL_ARG(2) ) );
+		alListeneri( JL_ARG(1).toInt32(), JL_ARG(2).toInt32() );
 		return true;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_ARG(2)) ) {
 
 		float param;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &param) );
-		alListenerf( JSVAL_TO_INT( JL_ARG(1) ), param );
+		alListenerf( JL_ARG(1).toInt32(), param );
 		return true;
 	}
 	if ( JL_ValueIsArrayLike(cx, JL_ARG(2)) ) {
@@ -495,7 +495,7 @@ DEFINE_FUNCTION( listener ) {
 		uint32_t length;
 //		J_JSVAL_TO_REAL_VECTOR( JL_ARG(2), params, length );
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, 16, &length) );
-		alListenerfv( JSVAL_TO_INT(JL_ARG(1)), params );
+		alListenerfv( JL_ARG(1).toInt32(), params );
 		return true;
 	}
 
@@ -523,12 +523,12 @@ DEFINE_FUNCTION( getListenerReal ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	ALfloat params[16];
-	alGetListenerfv(JSVAL_TO_INT(JL_ARG(1)), params);
+	alGetListenerfv(JL_ARG(1).toInt32(), params);
 
 	if ( JL_ARG_ISDEF(2) ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(2);
-		int count = JSVAL_TO_INT( JL_ARG(2) );
+		int count = JL_ARG(2).toInt32();
 		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
@@ -587,17 +587,17 @@ DEFINE_FUNCTION( source ) {
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	if ( JSVAL_IS_INT(JL_ARG(3)) ) {
 
-		alSourcei( sid, JSVAL_TO_INT( JL_ARG(2) ), JSVAL_TO_INT( JL_ARG(3) ) );
+		alSourcei( sid, JL_ARG(2).toInt32(), JL_ARG(3).toInt32() );
 		return true;
 	}
 	if ( JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
 
 		float param;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &param) );
-		alSourcef( sid, JSVAL_TO_INT( JL_ARG(2) ), param );
+		alSourcef( sid, JL_ARG(2).toInt32(), param );
 		return true;
 	}
 	if ( JL_ValueIsArrayLike(cx, JL_ARG(3)) ) {
@@ -605,7 +605,7 @@ DEFINE_FUNCTION( source ) {
 		ALfloat params[16];
 		uint32_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
-		alSourcefv( sid, JSVAL_TO_INT(JL_ARG(2)), params );
+		alSourcefv( sid, JL_ARG(2).toInt32(), params );
 		return true;
 	}
 
@@ -638,14 +638,14 @@ DEFINE_FUNCTION( getSourceReal ) {
 
 	ALfloat params[16];
 
-	ALenum pname = JSVAL_TO_INT(JL_ARG(2));
+	ALenum pname = JL_ARG(2).toInt32();
 	alGetSourcef(sid, pname, params);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
 	if ( JL_ARG_ISDEF(3) ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(3);
-		int count = JSVAL_TO_INT( JL_ARG(3) );
+		int count = JL_ARG(3).toInt32();
 		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
@@ -680,7 +680,7 @@ DEFINE_FUNCTION( getSourceInteger ) {
 
 	ALint params[16];
 
-	ALenum pname = JSVAL_TO_INT(JL_ARG(2));
+	ALenum pname = JL_ARG(2).toInt32();
 	alGetSourcei(sid, pname, params);
 
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -688,7 +688,7 @@ DEFINE_FUNCTION( getSourceInteger ) {
 	if ( JL_ARG_ISDEF(3) ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(3);
-		int count = JSVAL_TO_INT( JL_ARG(3) );
+		int count = JL_ARG(3).toInt32();
 		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
@@ -727,7 +727,7 @@ DEFINE_FUNCTION( deleteSource ) {
 	alDeleteSources(1, &sid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -751,7 +751,7 @@ DEFINE_FUNCTION( sourceQueueBuffers ) {
 
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) { // no array-like. We must exclude strings that may be converted in integer below.
 
@@ -790,7 +790,7 @@ DEFINE_FUNCTION( sourceUnqueueBuffers ) {
 
 	ALuint sid;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) { // no array-like. We must exclude strings that may be converted in integer below.
 
@@ -877,12 +877,12 @@ DEFINE_FUNCTION( getBufferReal ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	ALfloat params[16];
-	alGetBufferfv(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params);
+	alGetBufferfv(JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), params);
 
 	if ( JL_ARG_ISDEF(2) ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(2);
-		int count = JSVAL_TO_INT( JL_ARG(2) );
+		int count = JL_ARG(2).toInt32();
 		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
@@ -920,12 +920,12 @@ DEFINE_FUNCTION( getBufferInteger ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	ALint params[16];
-	alGetBufferiv(JSVAL_TO_INT(JL_ARG(1)), JSVAL_TO_INT(JL_ARG(2)), params);
+	alGetBufferiv(JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), params);
 
 	if ( JL_ARG_ISDEF(2) ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(2);
-		int count = JSVAL_TO_INT( JL_ARG(2) );
+		int count = JL_ARG(2).toInt32();
 		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
@@ -968,7 +968,7 @@ DEFINE_FUNCTION( deleteBuffer ) {
 //	alBufferData(bufferId, 0, NULL, 0, 0);
 	alDeleteBuffers(1, &bufferId);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -991,7 +991,7 @@ DEFINE_FUNCTION( playSource ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alSourcePlay(sid);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -1014,7 +1014,7 @@ DEFINE_FUNCTION( stopSource ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alSourceStop(sid);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -1037,7 +1037,7 @@ DEFINE_FUNCTION( pauseSource ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alSourcePause(sid);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -1060,7 +1060,7 @@ DEFINE_FUNCTION( rewindSource ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
 	alSourceRewind(sid);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -1176,7 +1176,7 @@ DEFINE_FUNCTION( playSound ) {
 	alDeleteBuffers(1, &bufferID);
 	alDeleteSources(1, &sourceID);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

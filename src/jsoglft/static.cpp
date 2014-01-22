@@ -76,7 +76,7 @@ DEFINE_FUNCTION( draw3DText ) {
 	} else {
 
 		face->draw(text);
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 	}
 
 	return true;

@@ -103,7 +103,7 @@ DEFINE_FUNCTION( alignToZAxis ) {
 	ode::dBodySetQuaternion(bodyId, quat);
 	ode::dBodySetAngularVel(bodyId, 0, 0, rot[2]);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

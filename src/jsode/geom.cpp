@@ -138,7 +138,7 @@ DEFINE_FUNCTION( destroy ) {
 	JL_SetPrivate( obj, NULL);
 	SetMatrix44GetInterface(cx, obj, NULL);
 	
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -182,7 +182,7 @@ DEFINE_FUNCTION( pointDepth ) {
 //			depth = ode::dGeomTrimeshPointDepth(geomId, point[0], point[1], point[2]);
 //			break;
 		default:
-			*JL_RVAL = JSVAL_VOID;
+			JL_RVAL.setUndefined();
 			JL_ERR( E_STR(JL_THIS_CLASS_NAME), E_NOTSUPPORTED );
 			return true;
 	}

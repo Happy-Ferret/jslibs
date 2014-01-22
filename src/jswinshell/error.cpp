@@ -31,7 +31,7 @@ DEFINE_PROPERTY_GETTER( code ) {
 	JL_GetReservedSlot( obj, SLOT_WIN_ERROR_CODE_HI, hi );
 	JL_GetReservedSlot( obj, SLOT_WIN_ERROR_CODE_LO, lo );
 	JL_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
-	JL_CHK( JL_NewNumberValue(cx, (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi)), vp) );
+	JL_CHK( JL_NewNumberValue(cx, (DWORD)MAKELONG(lo.toInt32(), hi.toInt32()), vp) );
 	return true;
 	JL_BAD;
 }
@@ -57,7 +57,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_LO, lo );
 	JL_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
 
-	vp.setString( JS_NewStringCopyZ(cx, ErrorToConstName( (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi)) )) );
+	vp.setString( JS_NewStringCopyZ(cx, ErrorToConstName( (DWORD)MAKELONG(lo.toInt32(), hi.toInt32()) )) );
 	return true;
 	JL_BAD;
 }
@@ -71,7 +71,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_HI, hi );
 	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_LO, lo );
 	JL_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
-	DWORD err = (DWORD)MAKELONG(JSVAL_TO_INT(lo), JSVAL_TO_INT(hi));
+	DWORD err = (DWORD)MAKELONG(lo.toInt32(), hi.toInt32());
 
 	LPVOID lpvMessageBuffer;
 	DWORD res = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&lpvMessageBuffer, 0, NULL);

@@ -365,7 +365,7 @@ DEFINE_FUNCTION( disconnect ) {
 	if ( JL_IsExceptionPending(cx) )
 		return false;
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -430,7 +430,7 @@ DEFINE_FUNCTION( sendMessage ) {
 
 	pv->client->send( message );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

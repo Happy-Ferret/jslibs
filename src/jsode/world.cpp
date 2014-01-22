@@ -355,7 +355,7 @@ DEFINE_FUNCTION( collide ) {
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 	ode::dJointGroupEmpty(pv->contactGroupId); // contactGroupId will be reused at the next step!
 
@@ -453,7 +453,7 @@ DEFINE_FUNCTION( step ) {
 	else
 		ode::dWorldQuickStep(pv->worldId, stepSize / 1000.f);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -490,7 +490,7 @@ DEFINE_FUNCTION( scaleImpulse ) {
 		JL_CHK( JL_SetElement(cx, objArr, i, JL_RVAL) );
 	}
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

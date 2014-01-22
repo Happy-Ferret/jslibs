@@ -66,7 +66,7 @@ DEFINE_FUNCTION( close ) {
 		return WinThrowError(cx, GetLastError());
 //	JL_ASSERT( res != 0, "Unable to free the console." );
 	
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 //	JL_BAD;
 }
@@ -95,7 +95,7 @@ DEFINE_FUNCTION( write ) {
 	if ( status == FALSE )
 		return WinThrowError(cx, GetLastError());
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -157,7 +157,7 @@ DEFINE_FUNCTION( setConsoleMode ) {
 	BOOL res = SetConsoleMode(hStdin, mode);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -224,7 +224,7 @@ DEFINE_FUNCTION( writeConsoleOutput ) {
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -292,7 +292,7 @@ DEFINE_FUNCTION( fillConsoleOutput ) {
 			return WinThrowError(cx, GetLastError());
 	}
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -340,7 +340,7 @@ DEFINE_FUNCTION( scrollY ) {
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -369,7 +369,7 @@ DEFINE_FUNCTION( readConsoleInput ) {
 
 	if ( numberOfEventsRead == 0 ) {
 		
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 
@@ -857,7 +857,7 @@ DEFINE_FUNCTION( setCursorPosition ) {
 	res = SetConsoleCursorPosition(hStdout, position);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

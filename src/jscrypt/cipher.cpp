@@ -316,7 +316,7 @@ DEFINE_FUNCTION( wipe ) {
 
 	FinalizeCipher(obj, true);
 	JL_SetPrivate( obj, NULL);
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

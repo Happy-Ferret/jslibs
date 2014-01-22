@@ -286,7 +286,7 @@ DEFINE_FUNCTION( open ) {
 	UpdateWindow(hWnd);
 	SetFocus(hWnd);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 }
 
@@ -295,7 +295,7 @@ DEFINE_FUNCTION( processEvents ) {
 
 	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( hWnd );
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 //	jsval functionVal;
 	int msgCount;
@@ -346,7 +346,7 @@ DEFINE_FUNCTION( close ) {
 	jl_free(cxobj);
 	UnregisterClass(WINDOW_CLASS_NAME, GetModuleHandle(NULL));
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 }
 
@@ -475,7 +475,7 @@ DEFINE_FUNCTION( createOpenGLContext ) {
 //  wglMakeCurrent(NULL,NULL); // This step is not required, but it can help find errors, especially when you are using multiple rendering contexts.
 //  wglDeleteContext(hRC);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 }
 
@@ -529,7 +529,7 @@ DEFINE_FUNCTION( mode ) {
 	}
 	JL_ASSERT( status == DISP_CHANGE_SUCCESSFUL, "Unable to ChangeDisplaySettings.(%d)", status);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 }
 

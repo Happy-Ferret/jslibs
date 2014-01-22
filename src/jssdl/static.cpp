@@ -237,7 +237,7 @@ DEFINE_FUNCTION( getVideoModeList ) {
 
 	if ( modes == (SDL_Rect **)-1 ) { // any dimension is okay for this format.
 		
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 
@@ -373,7 +373,7 @@ DEFINE_FUNCTION( setVideoMode ) {
  //	if ( !_surface )
 	//	return ThrowSdlError(cx);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -531,7 +531,7 @@ DEFINE_FUNCTION( toggleFullScreen ) {
 	SDL_Surface *surface = SDL_GetVideoSurface();
 	if ( surface == NULL ) {
 
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 
@@ -540,7 +540,7 @@ DEFINE_FUNCTION( toggleFullScreen ) {
 
 	bool hasFullscreen = (surface->flags & SDL_FULLSCREEN) != 0;
 	JLSetVideoMode(surface->w, surface->h, surface->format->BitsPerPixel, hasFullscreen ? surface->flags & ~SDL_FULLSCREEN : surface->flags | SDL_FULLSCREEN);
-  	*JL_RVAL = JSVAL_VOID;
+  	JL_RVAL.setUndefined();
 	return true;
 }
 */
@@ -569,7 +569,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( iconify ) {
 
 	SDL_WM_IconifyWindow();
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 }
 
@@ -593,7 +593,7 @@ DEFINE_FUNCTION( setGamma ) {
 	if ( SDL_SetGamma(r, g, b) != 0 )
 		return ThrowSdlError(cx);
 	
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -621,7 +621,7 @@ DEFINE_FUNCTION( glSwapBuffers ) {
 		return ThrowSdlError(cx);
 	
 	// (TBD) check error	*SDL_GetError() != '\0' ???
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -646,7 +646,7 @@ DEFINE_FUNCTION( glSetAttribute ) {
 	if ( SDL_GL_SetAttribute((SDL_GLattr)attr, value) == -1 )
 		return ThrowSdlError(cx);
 	
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -780,7 +780,7 @@ DEFINE_FUNCTION( setCursor ) {
 	JL_ASSERT_OBJECT_STATE( cursor, JL_CLASS_NAME(Cursor) );
 	SDL_SetCursor(cursor);
 	
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -877,7 +877,7 @@ DEFINE_FUNCTION( warpMouse ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &y) );
 	SDL_WarpMouse(x, y);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -975,7 +975,7 @@ DEFINE_FUNCTION( getKeyState ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	int key;
-	key = JSVAL_TO_INT( JL_ARG(1) );
+	key = JL_ARG(1).toInt32();
 	JL_ASSERT( key > SDLK_FIRST && key < SDLK_LAST, E_ARG, E_NUM(1), E_INVALID );
 	Uint8 *keystate = SDL_GetKeyState(NULL);
 	ASSERT( keystate != NULL );
@@ -996,7 +996,7 @@ DEFINE_FUNCTION( getKeyName ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	int key;
-	key = JSVAL_TO_INT( JL_ARG(1) );
+	key = JL_ARG(1).toInt32();
 	JL_ASSERT( key > SDLK_FIRST && key < SDLK_LAST, E_ARG, E_NUM(1), E_INVALID );
 	char *keyName = SDL_GetKeyName((SDLKey)key);
 	JSString *jsStr = JS_NewStringCopyZ(cx, keyName);

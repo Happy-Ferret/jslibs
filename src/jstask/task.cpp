@@ -488,7 +488,7 @@ DEFINE_FUNCTION( close ) {
 		JL_WARN( E_THISOBJ, E_CLOSED );
 	}
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -523,7 +523,7 @@ DEFINE_FUNCTION( request ) {
 	JLMutexRelease(pv->mutex); // ++
 	JLSemaphoreRelease(pv->requestSem); // +1 // signals a request
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -580,7 +580,7 @@ DEFINE_FUNCTION( response ) {
 	if ( QueueIsEmpty(&pv->responseList) ) { // || !JLThreadIsActive( pv->threadHandle ) ?
 
 		JLMutexRelease(pv->mutex); // ++
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 

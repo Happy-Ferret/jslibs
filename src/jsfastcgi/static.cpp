@@ -83,7 +83,7 @@ DEFINE_FUNCTION( getParam ) {
 			JL_CHK( jsstr );
 			*JL_RVAL = STRING_TO_JSVAL( jsstr );
 		} else
-			*JL_RVAL = JSVAL_VOID;
+			JL_RVAL.setUndefined();
 	} else {
 		
 		if ( !_request.envp ) {
@@ -161,7 +161,7 @@ DEFINE_FUNCTION( flush ) {
 
 	int result = FCGX_FFlush(_request.out);
 	JL_ASSERT( result != -1, E_LIB, E_INTERNAL ); // "fcgi flush"
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -177,7 +177,7 @@ DEFINE_FUNCTION( log ) {
 	result = FCGX_PutStr(str.GetConstStr(), (int)str.Length(), _request.err);
 	JL_ASSERT( result != -1, E_LIB, E_INTERNAL ); // "fcgi log write"
 	FCGX_FFlush(_request.err);
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -187,7 +187,7 @@ DEFINE_FUNCTION( shutdownPending ) {
 	JL_IGNORE( argc, cx );
 
 	FCGX_ShutdownPending();
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 }
 
@@ -297,7 +297,7 @@ DEFINE_FUNCTION( urlDecode ) {
 
 decoding_error:
 	JS_free(cx, dest);
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -483,15 +483,15 @@ DEFINE_FUNCTION( makeHeader ) { // type, requestId, contentLength
 	record->version = 1;
 
 	JL_ASSERT_INT(argv[0]);
-	record->type = JSVAL_TO_INT(argv[0]);
+	record->type = argv[0].toInt32();
 
 	JL_ASSERT_INT(argv[1]);
-	unsigned short requestId = JSVAL_TO_INT(argv[1]);
+	unsigned short requestId = argv[1].toInt32();
 	record->requestIdB0 = requestId & 0xFF;
 	record->requestIdB1 = (requestId >> 8) & 0xFF;
 
 	JL_ASSERT_INT(argv[2]);
-	unsigned short contentLength = JSVAL_TO_INT(argv[2]);
+	unsigned short contentLength = argv[2].toInt32();
 	record->contentLengthB0 = contentLength & 0xFF;
 	record->contentLengthB1 = (contentLength >> 8) & 0xFF;
 
@@ -521,7 +521,7 @@ DEFINE_FUNCTION( makeEndRequestBody ) {
 	body->appStatusB3 = (appStatus >> 24) & 0xFF;
 
 	JL_ASSERT_NUMBER(argv[1]);
-	body->protocolStatus = JSVAL_TO_INT(argv[1]);
+	body->protocolStatus = argv[1].toInt32();
 
 	JSString *jsstr = JL_NewString(cx, (char*)body, sizeof(FCGI_EndRequestRecord));
 	JL_CHK( jsstr );

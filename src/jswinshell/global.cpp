@@ -58,7 +58,7 @@ DEFINE_FUNCTION( extractIcon ) {
 
 //		if ( GetLastError() != 0 )
 //			return WinThrowError(cx, GetLastError());
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 	JSObject *icon = JL_NewObjectWithGivenProto(cx, JL_CLASS(Icon), JL_CLASS_PROTOTYPE(cx, Icon), NULL);
@@ -192,7 +192,7 @@ DEFINE_FUNCTION( createProcess ) {
 	CloseHandle(pi.hProcess);
 	CloseHandle(pi.hThread);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -297,7 +297,7 @@ DEFINE_FUNCTION( messageBeep ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &type) );
 	MessageBeep(type);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -320,7 +320,7 @@ DEFINE_FUNCTION( beep ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &duration) );
 	Beep(freq, duration);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -526,7 +526,7 @@ DEFINE_FUNCTION( registrySet ) {
 			return WinThrowError(cx, st);
 	}
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 	return true;
 	JL_BAD;
@@ -621,7 +621,7 @@ DEFINE_FUNCTION( registryGet ) {
 
 	if ( st == ERROR_FILE_NOT_FOUND ) {
 		
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		RegCloseKey(hKey);
 		return true;
 	}
@@ -1350,7 +1350,7 @@ DEFINE_FUNCTION( jswinshelltest ) {
 	JL_IGNORE( argc, cx );
 
 	JL_DEFINE_ARGS;
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 }
 #endif //DEBUG

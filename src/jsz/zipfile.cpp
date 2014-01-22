@@ -267,7 +267,7 @@ DEFINE_FUNCTION( open ) {
 
 	ASSERT( pv && !pv->uf == !!pv->zf );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -310,7 +310,7 @@ DEFINE_FUNCTION( close ) {
 	jl_free(pv);
 	JL_SetPrivate( obj, NULL);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -347,7 +347,7 @@ DEFINE_FUNCTION( select ) {
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 	if ( pv->uf ) {
 
@@ -419,7 +419,7 @@ DEFINE_FUNCTION( goFirst ) {
 	UNZ_CHK( unzGoToFirstFile(pv->uf) );
 	pv->eol = false;
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -441,7 +441,7 @@ DEFINE_FUNCTION( goNext ) {
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->uf, E_THISOPERATION, E_NOTSUPPORTED );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 	if ( pv->inZipOpened ) {
 
@@ -484,7 +484,7 @@ DEFINE_FUNCTION( goTo ) {
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->uf, E_THISOPERATION, E_NOTSUPPORTED );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 	uLong index;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &index) );
@@ -536,7 +536,7 @@ DEFINE_FUNCTION( read ) {
 
 	//if ( pv->eol ) {
 
-	//	*JL_RVAL = JSVAL_VOID;
+	//	JL_RVAL.setUndefined();
 	//	return true;
 	//}
 	if ( pv->eol )
@@ -549,7 +549,7 @@ DEFINE_FUNCTION( read ) {
 
 	if ( pv->remainingLength == 0 ) {
 
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 
@@ -661,7 +661,7 @@ DEFINE_FUNCTION( write ) {
 
 	ZIP_CHK( zipWriteInFileInZip(pv->zf, data.GetConstStr(), data.Length()) );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -1148,7 +1148,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 	JL_GetReservedSlot( obj, 0, vp);
 	if ( vp.isUndefined() )
 		return true;
-	int errorCode = JSVAL_TO_INT(*vp);
+	int errorCode = vp.toInt32();
 	JSString *str = JS_NewStringCopyZ( cx, ZipFileErrorConstString(errorCode) );
 	*vp = STRING_TO_JSVAL( str );
 	return true;

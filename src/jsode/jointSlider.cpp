@@ -89,7 +89,7 @@ DEFINE_FUNCTION( addForce ) {
 	JL_CHK( JsvalToODEReal(cx, JL_ARG(1), &real) );
 	ode::dJointAddSliderForce(jointId, real);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

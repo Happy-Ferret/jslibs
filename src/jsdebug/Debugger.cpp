@@ -287,7 +287,7 @@ JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakR
 		pv->pframe = fp;
 		JS_FrameIterator(cx, &pv->pframe); // gets the parent frame
 
-		switch (JSVAL_TO_INT( argv[0] )) {
+		switch (argv[0].toInt32()) {
 
 			case DO_CONTINUE:
 				if ( pv->interruptCounterLimit ) {
@@ -490,7 +490,7 @@ DEFINE_FUNCTION( clearBreakpoints ) {
 	//JS_ClearAllTraps(cx);
 	JS_ClearAllTrapsForCompartment(cx);
 	
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 }
 

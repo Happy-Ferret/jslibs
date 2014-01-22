@@ -518,7 +518,7 @@ DEFINE_FUNCTION( close ) {
 	JL_SetPrivate(obj, NULL);
 	CloseSystray(JL_GetRuntime(cx), pv);
 	
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -812,7 +812,7 @@ DEFINE_FUNCTION( focus ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	SetForegroundWindow(pv->nid.hWnd);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -1094,7 +1094,7 @@ DEFINE_FUNCTION( popupMenu ) {
 	st = PostMessage(pv->nid.hWnd, MSG_POPUP_MENU, 0, 0);
 	ASSERT( st );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -1174,7 +1174,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 	}
 	JL_ASSERT( status == TRUE, E_THISOBJ, E_INTERNAL );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

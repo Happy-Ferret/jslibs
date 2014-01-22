@@ -91,7 +91,7 @@ DEFINE_FUNCTION( addTorque0 ) {
 	JL_CHK( JsvalToODEReal(cx, JL_ARG(1), &real) );
 	ode::dJointAddAMotorTorques(jointId, real,0,0);
 	
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -112,7 +112,7 @@ DEFINE_FUNCTION( addTorque1 ) {
 	JL_CHK( JsvalToODEReal(cx, JL_ARG(1), &real) );
 	ode::dJointAddAMotorTorques(jointId, 0,real,0);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -133,7 +133,7 @@ DEFINE_FUNCTION( addTorque2 ) {
 	JL_CHK( JsvalToODEReal(cx, JL_ARG(1), &real) );
 	ode::dJointAddAMotorTorques(jointId, 0,0,real);
 	
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -153,7 +153,7 @@ DEFINE_FUNCTION( setAxis ) {
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 	int anum, rel;
 	JL_JsvalToNative(cx, JL_ARG(1), &anum);
@@ -200,7 +200,7 @@ DEFINE_FUNCTION( setAngle ) {
 
 	ode::dJointSetAMotorAngle(jointId, anum, angle);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

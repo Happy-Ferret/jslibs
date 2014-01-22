@@ -125,7 +125,7 @@ DEFINE_FUNCTION( read ) {
 
 	if ( available == 0 ) { // EOF
 
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 
@@ -297,7 +297,7 @@ DEFINE_CONSTRUCTOR() {
 	
 	int flags;
 	if ( JL_ARG_ISDEF(2) )
-		flags = JSVAL_TO_INT( JL_ARG(2) );
+		flags = JL_ARG(2).toInt32();
 	else
 		flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE; // default
 
@@ -445,7 +445,7 @@ DEFINE_FUNCTION( close ) {
 
 	jl_free(pv);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 
 bad:
@@ -696,7 +696,7 @@ DEFINE_FUNCTION( exec ) {
 			JL_CHK( SqliteToJsval(cx, sqlite3_column_value(pStmt, 0), *JL_RVAL) );
 			break;
 		case SQLITE_DONE: // means that the statement has finished executing successfully. sqlite3_step() should not be called again on this virtual machine without first calling sqlite3_reset() to reset the virtual machine back to its initial state.
-			*JL_RVAL = JSVAL_VOID;
+			JL_RVAL.setUndefined();
 			break;
 		case SQLITE_MISUSE: // means that the this routine was called inappropriately. Perhaps it was called on a virtual machine that had already been finalized or on one that had previously returned SQLITE_ERROR or SQLITE_DONE. Or it could be the case that a database connection is being used by a different thread than the one it was created it.
 			JL_ERR( E_LIB, E_OPERATION, E_SEP, E_CALL, E_INVALID ); // "this routine was called inappropriately"
@@ -843,7 +843,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 		case JSTYPE_NUMBER:
 			if ( JSVAL_IS_INT(argv[0]) ) {
 
-				sqlite3_result_int(sCx, JSVAL_TO_INT(argv[0]));
+				sqlite3_result_int(sCx, argv[0].toInt32());
 			} else {
 
 				double jd;

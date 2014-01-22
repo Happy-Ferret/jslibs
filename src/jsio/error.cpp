@@ -142,7 +142,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 	if ( vp.isUndefined() )
 		return true;
 	int errorCode;
-	errorCode = JSVAL_TO_INT(vp);
+	errorCode = vp.toInt32();
 	JSString *str;
 	str = JS_NewStringCopyZ( cx, ConstString(errorCode) );
 	JL_CHK( str );

@@ -186,7 +186,7 @@ DEFINE_FUNCTION( defineVertexBuffer ) {
 	pv  = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 	JSObject *arrayObj;
 	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
@@ -225,7 +225,7 @@ DEFINE_FUNCTION( defineNormalBuffer ) {
 	pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 	JSObject *arrayObj;
 	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
@@ -260,7 +260,7 @@ DEFINE_FUNCTION( defineTextureCoordinateBuffer ) {
 	pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 	JSObject *arrayObj;
 	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
@@ -295,7 +295,7 @@ DEFINE_FUNCTION( defineColorBuffer ) {
 	pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 	JSObject *arrayObj;
 	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
@@ -330,7 +330,7 @@ DEFINE_FUNCTION( defineIndexBuffer ) {
 	pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 
 	JSObject *arrayObj;
 	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));

@@ -206,7 +206,7 @@ DEFINE_FUNCTION( queueBuffers ) {
 		pv->totalTime = 0;
 	pv->totalTime += BufferSecTime(bid);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -259,7 +259,7 @@ DEFINE_FUNCTION( play ) {
 	alSourcePlay(pv->sid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -278,7 +278,7 @@ DEFINE_FUNCTION( pause ) {
 	alSourcePause(pv->sid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -297,7 +297,7 @@ DEFINE_FUNCTION( stop ) {
 	alSourceStop(pv->sid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -316,7 +316,7 @@ DEFINE_FUNCTION( rewind ) {
 	alSourceRewind(pv->sid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -523,7 +523,7 @@ DEFINE_FUNCTION( position ) {
 	alSource3f(pv->sid, AL_POSITION, pos[0], pos[1], pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -578,7 +578,7 @@ DEFINE_FUNCTION( velocity ) {
 	alSource3f(pv->sid, AL_VELOCITY, pos[0], pos[1], pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

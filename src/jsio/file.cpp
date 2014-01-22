@@ -289,7 +289,7 @@ DEFINE_FUNCTION( delete ) {
 	if ( PR_Delete(str.GetConstStrZ()) != PR_SUCCESS )
 		return ThrowIoError(cx);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -318,7 +318,7 @@ DEFINE_FUNCTION( lock ) {
 	if ( st != PR_SUCCESS )
 		return ThrowIoError(cx);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -372,7 +372,7 @@ DEFINE_FUNCTION( move ) {
 
 	JL_CHK( JL_SetReservedSlot(  obj, SLOT_JSIO_FILE_NAME, STRING_TO_JSVAL(jsstr) ) );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

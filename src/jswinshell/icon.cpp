@@ -50,7 +50,7 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( JSVAL_IS_INT(iconVal) ) {
 
-		switch ( JSVAL_TO_INT(iconVal) ) {
+		switch ( iconVal.toInt32() ) {
 			case 0:
 				hIcon = LoadIcon(NULL,MAKEINTRESOURCE(IDI_APPLICATION));
 				break;

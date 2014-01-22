@@ -65,7 +65,7 @@ DEFINE_FUNCTION( destroy ) {
 	ode::dJointGroupDestroy(groupId);
 	JL_SetPrivate( obj, NULL);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -83,7 +83,7 @@ DEFINE_FUNCTION( empty ) {
 	JL_ASSERT_THIS_OBJECT_STATE(groupId);
 	ode::dJointGroupEmpty(groupId);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

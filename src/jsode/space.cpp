@@ -133,7 +133,7 @@ DEFINE_FUNCTION( destroy ) {
 //		JL_SetPrivate( obj, NULL);
 	}
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

@@ -1269,7 +1269,7 @@ DEFINE_INIT() {
 
 CONFIGURE_STATIC
 
-	HAS_INIT
+//	HAS_INIT
 
 //	REVISION(jl::SvnRevToInt("$Revision$")) // avoid to set a sourceId property to the global context.
 	BEGIN_STATIC_FUNCTION_SPEC

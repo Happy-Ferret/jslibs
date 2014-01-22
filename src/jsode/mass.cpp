@@ -68,7 +68,7 @@ DEFINE_FUNCTION( translate ) {
 	ode::dMassTranslate(&mass, translation[0], translation[1], translation[2]);
 	ode::dBodySetMass(bodyID, &mass);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -92,7 +92,7 @@ DEFINE_FUNCTION( adjust ) {
 	ode::dMassAdjust(&mass, (ode::dReal)newMass);
 	ode::dBodySetMass(bodyID, &mass);
 	
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -113,7 +113,7 @@ DEFINE_FUNCTION( setZero ) {
 	ode::dMassSetZero(&mass);
 	ode::dBodySetMass(bodyID, &mass);
 	
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -148,7 +148,7 @@ DEFINE_FUNCTION( setBoxTotal ) {
 // set mass object
 	ode::dBodySetMass(bodyID, &mass);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

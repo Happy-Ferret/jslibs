@@ -89,7 +89,7 @@ DEFINE_FUNCTION( addForce ) {
 	JL_CHK( JsvalToODEReal(cx, JL_ARG(1), &real) );
 	ode::dJointAddPistonForce(jointId, real);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -115,7 +115,7 @@ DEFINE_FUNCTION( axisDelta ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &dz ) );
 	ode::dJointSetPistonAxisDelta(jointId, x,y,z, dx, dy, dz);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

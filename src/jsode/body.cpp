@@ -158,7 +158,7 @@ DEFINE_FUNCTION( destroy ) {
 	ode::dBodyDestroy(bodyId);
 	JL_CHK( SetMatrix44GetInterface(cx, obj, NULL) );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -180,7 +180,7 @@ DEFINE_FUNCTION( isConnectedTo ) {
 	JL_CHK( JL_JsvalToBody(cx, JL_ARG(1), &otherBodyId) );
 	ode::dAreConnected(thisBodyID, otherBodyId); // otherBodyId may be NULL
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -205,7 +205,7 @@ DEFINE_FUNCTION( getGeom ) {
 	for ( geomId = ode::dBodyGetFirstGeom(bodyId); geomId && index--; geomId = ode::dBodyGetNextGeom(geomId) );
 	if ( geomId == NULL ) {
 		
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 	return GeomToJsval(cx, geomId, JL_RVAL);
@@ -229,14 +229,14 @@ DEFINE_FUNCTION( getJoint ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &index) );
 	if ( index < 0 || index >= ode::dBodyGetNumJoints(bodyId) ) {
 		
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 	ode::dJointID jointId;
 	jointId = ode::dBodyGetJoint(bodyId, index);
 	if ( jointId == NULL ) {
 
-		*JL_RVAL = JSVAL_VOID;
+		JL_RVAL.setUndefined();
 		return true;
 	}
 	JSObject *jsJoint;
@@ -272,7 +272,7 @@ DEFINE_FUNCTION( addForce ) {
 	}
 	ode::dBodyAddForce(thisBodyID, forceVec[0], forceVec[1], forceVec[2] );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -296,7 +296,7 @@ DEFINE_FUNCTION( addTorque ) {
 	JL_ASSERT( length >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 	ode::dBodyAddTorque(thisBodyID, vector[0], vector[1], vector[2] );
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -315,7 +315,7 @@ DEFINE_FUNCTION( setDampingDefaults ) {
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 	ode::dBodySetDampingDefaults(bodyId);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }

@@ -14,6 +14,8 @@
 #else
 #endif // USE_JL
 
+#include <js/RequiredDefines.h>
+
 #include <jsapi.h>
 #include <string.h>
 #include <jsprf.h>
@@ -926,7 +928,11 @@ int main_min(int argc, char* argv[]) {
 	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &globalClass, NULL, JS::FireOnNewGlobalHook));
 	JSAutoCompartment ac(cx, globalObject);
 
+	JS::RootedObject test(cx);
+	JSObject *ptr = test;
 
+	 //JS_InternUCString(cx, (const wchar_t*)L"sdsadfsadf");
+	JS_NewUCStringCopyN(cx, (const wchar_t*)L"sdsadfsadf", 11);
 
 
 	char *scriptText = "(function() { return 123 })";

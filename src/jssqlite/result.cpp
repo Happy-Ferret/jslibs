@@ -133,7 +133,7 @@ bool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj, 
 			case JSTYPE_NUMBER:
 				if ( JSVAL_IS_INT(val) ) {
 
-					ret = sqlite3_bind_int(pStmt, param, JSVAL_TO_INT(val));
+					ret = sqlite3_bind_int(pStmt, param, val.toInt32());
 				} else {
 
 					double jd;
@@ -276,7 +276,7 @@ DEFINE_FUNCTION( close ) {
 	JL_CHK( JL_SetReservedSlot(obj, SLOT_RESULT_DATABASE, JSVAL_VOID) );
 	JL_SetPrivate(obj, NULL);
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -466,7 +466,7 @@ DEFINE_FUNCTION( row ) {
 	JL_CHK( DoStep(cx, obj, JL_RVAL) ); // if something goes wrong in Result_step ( error report has already been set )
 	if ( *JL_RVAL == JSVAL_FALSE ) { // the statement has finished executing successfully
 
-		*JL_RVAL = JSVAL_VOID; // return undefined
+		JL_RVAL.setUndefined(); // return undefined
 		return true;
 	}
 
@@ -555,7 +555,7 @@ DEFINE_FUNCTION( reset ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 	if ( sqlite3_reset(pStmt) != SQLITE_OK )
 		return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return JL_SetReservedSlot(obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_FALSE); // invalidate current bindings
 	JL_BAD;
 }

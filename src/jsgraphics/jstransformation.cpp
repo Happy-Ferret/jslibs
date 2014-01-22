@@ -551,7 +551,7 @@ DEFINE_FUNCTION( taitBryanRotation ) {
 	// (TBD)
 	pv->isIdentity = false;
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -1040,7 +1040,7 @@ DEFINE_NEW_RESOLVE() {
 
 	if (!JSVAL_IS_INT(id) || (flags & JSRESOLVE_ASSIGNING))
 		return true;
-	int slot = JSVAL_TO_INT( id );
+	int slot = id.toInt32();
 	JL_ASSERT( slot >= 0 && slot <= 15, "Out of range." );
 	JS_DefineProperty(cx, obj, (char*)slot, JSVAL_VOID, NULL, NULL, JSPROP_INDEX | JSPROP_SHARED );
 	*objp = obj;
@@ -1092,7 +1092,7 @@ DEFINE_SET_PROPERTY() {
 	JL_ASSERT_IS_NUMBER(vp, "");
 	JL_ASSERT_RANGE( slot, 0, 15, "[index]" );
 
-//	pv->mat->raw[slot] = JSVAL_IS_DOUBLE(*vp) ? JSVAL_TO_DOUBLE(*vp) : JSVAL_TO_INT(*vp);
+//	pv->mat->raw[slot] = JSVAL_IS_DOUBLE(*vp) ? JSVAL_TO_DOUBLE(*vp) : vp.toInt32();
 	JL_CHK( JL_JsvalToNative(cx, vp, &pv->mat->raw[slot]) );
 
 	pv->isIdentity = false;
@@ -1120,7 +1120,7 @@ DEFINE_FUNCTION( test ) {
 
 	JL_DEFINE_ARGS;
 
-	*JL_RVAL = JSVAL_VOID;
+	JL_RVAL.setUndefined();
 	return true;
 }
 #endif //DEBUG
