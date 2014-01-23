@@ -287,9 +287,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( list ) {
 
-	JSObject *listObj = JL_NewObj(cx);
+	JS::RootedObject listObj(cx, JL_NewObj(cx));
 	
-	jsval value;
+	JS::RootedValue value(cx);
 	int i;
 	LTC_MUTEX_LOCK(&ltc_prng_mutex);
 	for ( i=0; prng_is_valid(i) == CRYPT_OK; i++ ) {

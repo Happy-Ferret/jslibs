@@ -33,7 +33,7 @@ struct ClassPrivate {
 
 DEFINE_FINALIZE() {
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
+	ClassPrivate *pv = (ClassPrivate*)js::GetObjectPrivate(obj);
 	if ( !pv )
 		return;
 
@@ -212,12 +212,12 @@ struct SemProcessEvent {
 	PRSem *sem;
 	bool hasEvent;
 	jsval callbackFunction;
-	JSObject *callbackFunctionThis;
+	JS::PersistentRootedObject callbackFunctionThis;
 };
 
 S_ASSERT( offsetof(SemProcessEvent, pe) == 0 );
 
-static bool SemPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject *obj ) {
+static bool SemPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JS::HandleObject obj ) {
 
 	SemProcessEvent *upe = (SemProcessEvent*)pe;
 	return true;
@@ -241,7 +241,7 @@ static bool SemCancelWait( volatile ProcessEvent *pe ) {
 }
 
 
-static bool SemEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+static bool SemEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS::HandleObject obj ) {
 		
 	SemProcessEvent *upe = (SemProcessEvent*)pe;
 	*hasEvent = upe->hasEvent;
@@ -287,9 +287,8 @@ DEFINE_FUNCTION( events ) {
 	if ( JL_ARG_ISDEF(1) ) {
 
 		JL_ASSERT_ARG_IS_CALLABLE(1);
-
-		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(JL_OBJ)) ); // GC protection only
-		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_ARG(1)) ); // GC protection only
+		JL_CHK( SetHandleSlot(cx, JL_RVAL, 0, JL_OBJVAL ) ); // GC protection only
+		JL_CHK( SetHandleSlot(cx, JL_RVAL, 1, JL_ARG(1)) ); // GC protection only
 
 		upe->callbackFunctionThis = JL_OBJ; // store "this" object.
 		upe->callbackFunction = JL_ARG(1);

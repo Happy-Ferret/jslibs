@@ -627,7 +627,7 @@ JL_GetReservedSlot( obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
           *pVal = JSVAL_TO_INT( *vp );
         else {
           int32_t val;
-          JS_ValueToInt32( cx, *vp, &val ); // TODO: enhance this conversion
+          JS::ToInt32( cx, *vp, &val ); // TODO: enhance this conversion
           *pVal = (signed int)val;
         }
       }
@@ -649,7 +649,7 @@ JL_GetReservedSlot( obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 			  } else {
             if ( JSVAL_IS_DOUBLE( *vp ) ) {
               int32_t val;
-              JS_ValueToInt32( cx, *vp, &val ); // TODO: enhance this conversion
+              JS::ToInt32( cx, *vp, &val ); // TODO: enhance this conversion
               *pVal = (signed char)val;
             }
 			  }
@@ -664,7 +664,7 @@ JL_GetReservedSlot( obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
           *pVal = (unsigned char)JSVAL_TO_INT( *vp );
         else {
           uint16_t val;
-          JS_ValueToUint16( cx, *vp, &val ); // TODO: enhance this conversion
+          JS::ToUint16( cx, *vp, &val ); // TODO: enhance this conversion
           *pVal = (unsigned char)val;
         }
       }
@@ -677,7 +677,7 @@ JL_GetReservedSlot( obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
           *pVal = (signed short)JSVAL_TO_INT( *vp );
         else {
           int32_t val;
-          JS_ValueToInt32( cx, *vp, &val ); // TODO: enhance this conversion
+          JS::ToInt32( cx, *vp, &val ); // TODO: enhance this conversion
           *pVal = (signed short)val;
         }
       }
@@ -689,7 +689,7 @@ JL_GetReservedSlot( obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
         if ( JSVAL_IS_INT( *vp ) )
           *pVal = (unsigned short)JSVAL_TO_INT( *vp );
         else
-          JS_ValueToUint16( cx, *vp, pVal );
+          JS::ToUint16( cx, *vp, pVal );
       }
       break;
 
@@ -699,7 +699,7 @@ JL_GetReservedSlot( obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
         if ( JSVAL_IS_INT( *vp ) )
           *pVal = JSVAL_TO_INT( *vp );
         else
-          JS_ValueToInt32( cx, *vp, pVal );
+          JS::ToInt32( cx, *vp, pVal );
       }
       break;
 
@@ -883,7 +883,7 @@ bool NativeData_getter_String(JSContext *cx, JSObject *obj, jsid id, jsval *vp) 
 bool NativeData_setter_String(JSContext *cx, JSObject *obj, jsid id, bool strict, jsval *vp) { // note: *vp is converted into a js string
 
   if ( JS_TypeOfValue( cx, *vp ) != JSTYPE_STRING )
-    *vp = STRING_TO_JSVAL( JS_ValueToString( cx, *vp ) ); // convert any vp type to JS string
+    *vp = STRING_TO_JSVAL( JS::ToString( cx, *vp ) ); // convert any vp type to JS string
 
 //  size_t len = JS_GetStringLength( JSVAL_TO_STRING( *vp ) );
 //  const char* str = JL_GetStringBytesZ( cx, JSVAL_TO_STRING( *vp ) ); // this string is terminated with \0 or not? ( only thrust len )
@@ -918,7 +918,7 @@ bool NativeData_Data(JSContext *cx, unsigned argc, jsval *vp) {
 
   int32_t len;
   if ( JS_TypeOfValue( cx, JS_ARGV(cx, vp)[0] ) != JSTYPE_NUMBER )
-    JS_ValueToInt32( cx, JS_ARGV(cx, vp)[0], &len );
+    JS::ToInt32( cx, JS_ARGV(cx, vp)[0], &len );
   else
     len = JSVAL_TO_INT(JS_ARGV(cx, vp)[0]);
 
@@ -1063,10 +1063,10 @@ JSClass NativeProc = {
 // lazy... arg[3] : load style : immediate / lazy
 bool NativeModule_Construct(JSContext *cx, unsigned argc, jsval *vp) {
 
-//    char* str = JL_GetStringBytes( JS_ValueToString ( cx, OBJECT_TO_JSVAL(obj) ) );
+//    char* str = JL_GetStringBytes( JS::ToString ( cx, OBJECT_TO_JSVAL(obj) ) );
 
 	if ( !JSVAL_IS_STRING(JS_ARGV(cx, vp)[0]) )
-		JS_ARGV(cx, vp)[0] = STRING_TO_JSVAL( JS_ValueToString(cx, JS_ARGV(cx, vp)[0]) );
+		JS_ARGV(cx, vp)[0] = STRING_TO_JSVAL( JS::ToString(cx, JS_ARGV(cx, vp)[0]) );
 
 //  const char *libName = JL_GetStringBytesZ( cx, JSVAL_TO_STRING(JS_ARGV(cx, vp)[0]) ); // JL_GetStringBytes never returns NULL
 //  if ( libName == NULL || *libName == '\0' )

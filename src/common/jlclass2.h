@@ -26,7 +26,7 @@ namespace jl2 { //JL_BEGIN_NAMESPACE
 	struct ClassSpec;
 
 	typedef int32_t SourceId_t;
-	typedef bool (*ClassInit_t)(JSContext *cx, ClassSpec *sc, JSObject *proto, JSObject *obj);
+	typedef bool (*ClassInit_t)(JSContext *cx, ClassSpec *sc, JS::HandleObject proto, JS::HandleObject obj);
 
 
 	// const
@@ -338,9 +338,9 @@ namespace jl2 { //JL_BEGIN_NAMESPACE
 	const jl2::ReservedSlot _slot_##NAME(_classSpec.reservedSlotCount);
 
 #define JL_INIT() \
-	static bool _init(JSContext *cx, jl2::ClassSpec *sc, JSObject *proto, JSObject *obj); \
+	static bool _init(JSContext *cx, jl2::ClassSpec *sc, JS::HandleObject proto, JS::HandleObject obj); \
 	struct init_ { init_(jl2::ClassInit_t init) { _classSpec.init = init; } } const init_(_init); \
-	static bool _init(JSContext *cx, jl2::ClassSpec *sc, JSObject *proto, JSObject *obj)
+	static bool _init(JSContext *cx, jl2::ClassSpec *sc, JS::HandleObject proto, JSObject *obj)
 
 #define JL_CONSTRUCTOR(...) \
 	static bool _constructor(JSContext *cx, unsigned argc, JS::Value *vp); \

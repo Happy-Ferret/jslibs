@@ -44,7 +44,7 @@ $MODULE_FOOTER
 **/
 
 bool
-ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+ModuleInit(JSContext *cx, JS::HandleObject obj, uint32_t id) {
 
 	JL_CHK( InitJslibsModule(cx, id)  );
 

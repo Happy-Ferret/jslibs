@@ -184,33 +184,50 @@ bad:
 	return NULL;
 }
 
-
 INLINE bool
-SetHandleSlot( JSContext *cx, JS::HandleValue handleVal, uint32_t slotIndex, IN JS::HandleValue value ) {
+SetHandleSlot( JSContext *cx, JS::HandleObject handleObj, uint32_t slotIndex, IN JS::HandleValue val ) {
 
 	ASSERT( slotIndex < JL_HANDLE_PUBLIC_SLOT_COUNT );
-	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
-	{
-	JS::RootedObject handleObj(cx, &handleVal.toObject());
-
 	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
-	return JL_SetReservedSlot(handleObj, slotIndex, value);
-	}
+	return JL_SetReservedSlot(handleObj, slotIndex, val);
 	JL_BAD;
 }
 
+INLINE bool
+SetHandleSlot( JSContext *cx, JS::HandleValue handleVal, uint32_t slotIndex, IN JS::HandleValue val ) {
+
+	ASSERT( slotIndex < JL_HANDLE_PUBLIC_SLOT_COUNT );
+	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
+	
+	{
+	JS::RootedObject handleObj(cx, &handleVal.toObject());
+	return SetHandleSlot(cx, handleObj, slotIndex, val);
+	}
+	
+	JL_BAD;
+}
+
+
+INLINE bool
+GetHandleSlot( JSContext *cx, JS::HandleObject handleObj, uint32_t slotIndex, OUT JS::MutableHandleValue value ) {
+
+	ASSERT( slotIndex < JL_HANDLE_PUBLIC_SLOT_COUNT );
+	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
+	return JL_GetReservedSlot(handleObj, slotIndex, value);
+	JL_BAD;
+}
 
 INLINE bool
 GetHandleSlot( JSContext *cx, JS::HandleValue handleVal, uint32_t slotIndex, OUT JS::MutableHandleValue value ) {
 
 	ASSERT( slotIndex < JL_HANDLE_PUBLIC_SLOT_COUNT );
 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
+
 	{
 	JS::RootedObject handleObj(cx, &handleVal.toObject());
-
-	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
-	return JL_GetReservedSlot(handleObj, slotIndex, value);
+	return GetHandleSlot(cx, handleObj, slotIndex, value);
 	}
+
 	JL_BAD;
 }
 

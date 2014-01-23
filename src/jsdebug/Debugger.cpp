@@ -63,7 +63,7 @@ struct DebuggerPrivate {
 	uint32_t stackFrameIndex;
 	JSStackFrame *frame;
 	JSStackFrame *pframe;
-	JSScript *script;
+	JS::RootedScript script;
 	unsigned lineno;
 };
 
@@ -200,7 +200,7 @@ JSTrapStatus BreakHandler(JSContext *cx, JSObject *obj, JSStackFrame *fp, BreakR
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JSScript *script;
+	JS::RootedScript script;
 	script = JS_GetFrameScript(cx, fp);
 	const char *filename;
 	filename = script ? JS_GetScriptFilename(cx, script) : "<no_file>";
@@ -415,7 +415,7 @@ DEFINE_FUNCTION( toggleBreakpoint ) {
 	unsigned lineno;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &lineno) );
 
-	JSScript *script;
+	JS::RootedScript script;
 	jsbytecode *pc;
 	JL_CHK( GetScriptLocation(cx, &JL_ARG(2), lineno, &script, &pc) );
 	if ( script == NULL ) {
@@ -455,7 +455,7 @@ DEFINE_FUNCTION( hasBreakpoint ) {
 	unsigned lineno;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lineno) );
 
-	JSScript *script;
+	JS::RootedScript script;
 	jsbytecode *pc;
 	JL_CHK( GetScriptLocation(cx, &JL_ARG(1), lineno, &script, &pc) );
 	if ( script == NULL ) {

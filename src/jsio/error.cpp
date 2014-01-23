@@ -164,14 +164,14 @@ DEFINE_PROPERTY_GETTER( os ) {
 }
 
 
-bool GetErrorText(JSContext *cx, JSObject *obj, OUT JS::Value &rval) {
+bool GetErrorText(JSContext *cx, IN JS::HandleObject obj, OUT JS::MutableHandleValue rval) {
 
 	JL_CHK( JL_GetReservedSlot(obj, 0, rval) );  // (TBD) use the obj.name proprety directly instead of slot 0 ?
 	if ( rval.isUndefined() )
 		return true;
 	PRErrorCode errorCode;
 	errorCode = rval.toInt32();
-	JSString *str;
+	JS::RootedString str(cx);
 	str = JS_NewStringCopyZ( cx, PR_ErrorToString(errorCode, PR_LANGUAGE_EN) );
 	rval.setString(str);
 	return true;
@@ -281,7 +281,7 @@ END_CLASS
 NEVER_INLINE bool FASTCALL
 ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) {
 
-	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(IoError), JL_CLASS_PROTOTYPE(cx, IoError), NULL );
+	JS::RootedObject error(cx, JL_NewObjectWithGivenProto( cx, JL_CLASS(IoError), JL_CLASS_PROTOTYPE(cx, IoError), NULL ));
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JL_CHK( JL_SetReservedSlot(  error, 0, INT_TO_JSVAL(errorCode) ) );
 	JL_CHK( JL_SetReservedSlot(  error, 1, INT_TO_JSVAL(osError) ) );

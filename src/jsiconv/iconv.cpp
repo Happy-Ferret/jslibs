@@ -156,7 +156,7 @@ DEFINE_FUNCTION( process ) {
 
 	//if ( pv->wFrom ) { // source is wide.
 	//	
-	//	JSString *jsstr = JS_ValueToString(cx, JL_ARG(1));
+	//	JSString *jsstr = JS::ToString(cx, JL_ARG(1));
 	//	JL_ARG(1) = STRING_TO_JSVAL( jsstr );
 	//	inLen = JL_GetStringLength(jsstr) * 2;
 	//	inBuf = (char *)JS_GetStringChars(jsstr);
@@ -385,7 +385,7 @@ $TOC_MEMBER $INAME
 
 struct IteratorPrivate {
 	JSContext *cx;
-	JSObject *list;
+	JS::PersistentObject list;
 	int listLen;
 };
 
@@ -406,7 +406,7 @@ int do_one( unsigned int namescount, const char * const * names, void* data ) {
 #ifndef JL_NOT_HAS_ICONVLIST
 DEFINE_PROPERTY_GETTER( list ) {
 
-	JSObject *list = JS_NewArrayObject(cx, 0, NULL);
+	JS::RootedObject list(cx, JS_NewArrayObject(cx, 0, NULL));
 	JL_CHK( list );
 	vp.setObject(*list);
 	IteratorPrivate ipv;

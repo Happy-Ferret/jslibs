@@ -344,7 +344,7 @@ DEFINE_FUNCTION( createComObject ) {
 	JL_ASSERT_ARGC( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
 
-	JSString *idStr = JS_ValueToString(cx, JL_ARG(1));
+	JSString *idStr = JS::ToString(cx, JL_ARG(1));
 	LPOLESTR name = (LPOLESTR)JS_GetStringCharsZ(cx, idStr);
 
 	CLSID clsid;

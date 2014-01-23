@@ -598,7 +598,7 @@ DEFINE_FUNCTION( getMatrix ) {
 	float tmp[16], *m = tmp;
 
 	JL_ASSERT_ARG_IS_OBJECT(1);
-	JSObject *matrixObj = JSVAL_TO_OBJECT( JL_ARG(1) );
+	JS::RootedObject matrixObj(cx, &JL_ARG(1).toObject() );
 	NIMatrix44Get fct = Matrix44GetInterface(cx, matrixObj);
 	JL_CHKM( fct, E_ARG, E_NUM(1), E_SEP, E_INTERFACE, E_STR("Matrix44Get"), E_NOTSUPPORTED );
 

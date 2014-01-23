@@ -1356,7 +1356,7 @@ DEFINE_PROPERTY_SETTER( visible ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	bool state;
-	JL_CHK( JS_ValueToBoolean(cx, vp, &state ) );
+	JL_CHK( JS::ToBoolean(cx, vp, &state ) );
 	
 	BOOL status = Shell_NotifyIconA_retry( state == true ? NIM_ADD : NIM_DELETE, &pv->nid);
 	JL_ASSERT( status == TRUE, E_THISOBJ, E_INTERNAL );

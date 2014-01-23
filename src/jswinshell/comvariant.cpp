@@ -106,7 +106,7 @@ public:
 		JS_ContextIterator(_rt, &cx);
 		JS_ASSERT( cx != NULL );
 
-		js::AutoArrayRooter tvr(cx, argc+1, argv);
+		JS::AutoArrayRooter tvr(cx, argc+1, argv);
 
 		// try also JS::AutoValueVector argv(cx)
 
@@ -320,7 +320,7 @@ bool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *varia
 
 
 	// last resort
-	JSString *jsstr = JS_ValueToString(cx, value); // see JS_ConvertValue
+	JSString *jsstr = JS::ToString(cx, value); // see JS_ConvertValue
 	JL_ASSERT( jsstr, E_VALUE, E_CONVERT, E_TY_STRING );
 
 	V_VT(variant) = VT_BSTR;
@@ -672,7 +672,8 @@ DEFINE_FUNCTION( toTypeName ) {
 /*
 DEFINE_HAS_INSTANCE() {
 
-	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
+	//*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
+	*bp = JL_ValueIsClass(cx, vp, JL_THIS_CLASS);
 	return true;
 }
 */

@@ -15,7 +15,6 @@
 
 #pragma once
 
-
 #include <jlhelper.h>
 #include <jlclass.h>
 

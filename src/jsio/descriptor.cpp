@@ -26,7 +26,7 @@ bool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc );
 bool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int index );
 
 
-bool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
+bool NativeInterfaceStreamRead( JSContext *cx, JS::HandleObject obj, char *buf, size_t *amount ) {
 
 	JL_ASSERT_INHERITANCE(obj, JL_CLASS(Descriptor));
 	JL_ASSERT( *amount <= PR_INT32_MAX );
@@ -89,14 +89,14 @@ bool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t 
 
 
 
-void FinalizeDescriptor(JSFreeOp *, JSObject *obj) {
+void FinalizeDescriptor(JSFreeOp *fop, JSObject *obj) {
 
 	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( obj );
 	if ( !fd ) // check if not already closed
 		return;
 
-	jsval imported;
-	JL_CHK( JL_GetReservedSlot( obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, imported) );
+	JS::RootedValue imported(fop->runtime());
+	JL_CHK( JL_GetReservedSlot( obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, &imported) );
 	if ( imported == JSVAL_TRUE ) // Descriptor was inported, then do not close it
 		return;
 
@@ -141,7 +141,7 @@ DEFINE_FUNCTION( close ) {
 	JL_RVAL.setUndefined();
 
 	PRFileDesc *fd;
-	fd = (PRFileDesc*)JL_GetPrivate(obj);
+	fd = (PRFileDesc*)JL_GetPrivate(JL_OBJ);
 
 	JL_ASSERT_WARN( fd, E_NAME(JL_THIS_CLASS_NAME), E_CLOSED ); // see PublicApiRules (http://code.google.com/p/jslibs/wiki/PublicApiRules)
 	if ( !fd )
@@ -154,8 +154,8 @@ DEFINE_FUNCTION( close ) {
 		if ( PR_GetError() != PR_WOULD_BLOCK_ERROR ) // if non-blocking descriptor, this is a non-fatal error
 			return ThrowIoError(cx);
 	}
-	JL_SetPrivate( obj, NULL);
-	JL_CHK( SetStreamReadInterface(cx, obj, NULL) );
+	JL_SetPrivate(JL_OBJ, NULL);
+	JL_CHK( SetStreamReadInterface(cx, JL_OBJ, NULL) );
 
 	return true;
 	JL_BAD;
@@ -321,7 +321,7 @@ DEFINE_FUNCTION( read ) {
 
 
 	uint8_t *buf;
-	buf = JL_NewBuffer(cx, amount, *JL_RVAL);
+	buf = JL_NewBuffer(cx, amount, JL_RVAL);
 	JL_ASSERT_ALLOC( buf );
 
 	//PRIntervalTime timeout;
@@ -361,7 +361,7 @@ DEFINE_FUNCTION( read ) {
 				//  the host or remote network interface is disabled, or the remote host uses a hard close (see setsockopt for more information on the SO_LINGER option on the remote socket).
 				//  This error may also result if a connection was broken due to keep-alive activity detecting a failure while one or more operations are in progress.
 				//  Operations that were in progress fail with WSAENETRESET. Subsequent operations fail with WSAECONNRESET.
-				JL_CHK( JL_FreeBuffer(cx, *JL_RVAL) );
+				JL_CHK( JL_FreeBuffer(cx, JL_RVAL) );
 				JL_RVAL.setUndefined();
 				return true;
 
@@ -377,7 +377,7 @@ DEFINE_FUNCTION( read ) {
 
 	if ( res == 0 ) { // doc: 0 means end of file is reached or the network connection is closed.
 
-		JL_CHK( JL_FreeBuffer(cx, *JL_RVAL) );
+		JL_CHK( JL_FreeBuffer(cx, JL_RVAL) );
 		JL_RVAL.setUndefined();
 		return true;
 	}
@@ -472,19 +472,19 @@ DEFINE_FUNCTION( write ) {
 
 	if (likely( sentAmount == str.Length() )) { // nothing remains
 
-		JL_CHK( JL_NewEmptyBuffer(cx, *JL_RVAL) );
+		JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
 	} else if ( sentAmount == 0 ) { // nothing has been sent
 
 		if ( JSVAL_IS_STRING( JL_ARG(1) ) ) { // optimization (string are immutable)
 
-			*JL_RVAL = JL_ARG(1);
+			JL_RVAL.set(JL_ARG(1));
 		} else {
 
-			JL_CHK( str.GetArrayBuffer(cx, *JL_RVAL) );
+			JL_CHK( str.GetArrayBuffer(cx, JL_RVAL) );
 		}
 	} else { // return unsent data
 
-		JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, *JL_RVAL) );
+		JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
 	}
 
 	return true;
@@ -529,7 +529,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( available ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	PRFileDesc *fd;
 	JL_ASSERT_THIS_INHERITANCE();
@@ -549,7 +549,7 @@ DEFINE_PROPERTY_GETTER( available ) {
 		return ThrowIoError(cx);
 	}
 
-	return JL_NativeToJsval(cx, available, vp);
+	return JL_NativeToJsval(cx, available, JL_RVAL);
 	JL_BAD;
 }
 
@@ -561,14 +561,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( type ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INHERITANCE();
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd ); //	JL_ASSERT_THIS_INSTANCE();
-	vp.setInt32( (int32_t)PR_GetDescType(fd) );
+	JL_RVAL.setInt32( (int32_t)PR_GetDescType(fd) );
 	return true;
 	JL_BAD;
 }
@@ -583,13 +583,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( closed ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INHERITANCE();
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate( obj );
-	vp.setBoolean( fd == NULL );
+	JL_RVAL.setBoolean( fd == NULL );
 	return true;
 	JL_BAD;
 }
@@ -646,27 +646,27 @@ DEFINE_FUNCTION( import ) {
 	type = (PRDescType)descType;
 
 	PRFileDesc *fd;
-	JSObject *descriptorObject;
+	JS::RootedObject descriptorObject(cx);
 
 	switch ( type ) {
 		case PR_DESC_FILE:
 			fd = PR_ImportFile(osfd);
-			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_CLASS_PROTOTYPE(cx, File), NULL);
+			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_CLASS_PROTOTYPE(cx, File));
 			break;
 		case PR_DESC_SOCKET_TCP:
 			fd = PR_ImportTCPSocket(osfd);
-			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_CLASS_PROTOTYPE(cx, Socket), NULL);
+			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_CLASS_PROTOTYPE(cx, Socket));
 			break;
 		case PR_DESC_SOCKET_UDP:
 			fd = PR_ImportUDPSocket(osfd);
-			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_CLASS_PROTOTYPE(cx, Socket), NULL);
+			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_CLASS_PROTOTYPE(cx, Socket));
 			break;
 		case PR_DESC_LAYERED:
 			JL_ERR(E_THISOPERATION, E_NOTSUPPORTED);
 			break;
 		case PR_DESC_PIPE:
 			fd = PR_ImportPipe(osfd);
-			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe), NULL);
+			descriptorObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe));
 			break;
 		default:
 			JL_ERR( E_MODULE, E_INTERNAL );
@@ -676,9 +676,11 @@ DEFINE_FUNCTION( import ) {
 
 	JL_CHK( descriptorObject );
 	JL_SetPrivate( descriptorObject, (void*)fd);
-	JL_CHK( JL_SetReservedSlot( descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_TRUE) );
 
-	*JL_RVAL = OBJECT_TO_JSVAL(descriptorObject);
+	JS::RootedValue tmp(cx, JS::BooleanValue(true));
+	JL_CHK( JL_SetReservedSlot(descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, tmp) );
+
+	JL_RVAL.setObject(*descriptorObject);
 	return true;
 	JL_BAD;
 }
@@ -709,15 +711,17 @@ struct IOProcessEvent {
 S_ASSERT( offsetof(IOProcessEvent, pe) == 0 );
 
 
-static bool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject *obj ) {
+static bool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JS::HandleObject obj ) {
 
 	IOProcessEvent *upe = (IOProcessEvent*)pe;
 
-	jsval fdArrayVal;
-	JSObject *fdArrayObj;
+	JS::RootedValue fdArrayVal(cx);
+	JS::RootedObject fdArrayObj(cx);
 	unsigned fdCount;
 
-	JL_CHK( GetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 0, fdArrayVal) );
+
+
+	JL_CHK( GetHandleSlot(cx, obj, 0, &fdArrayVal) );
 	fdArrayObj = JSVAL_TO_OBJECT(fdArrayVal);
 	JL_CHK( JS_GetArrayLength(cx, fdArrayObj, &fdCount) );
 
@@ -746,9 +750,9 @@ static bool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JSObject *o
 
 	// (TBD) find a better solution to root fdArray content
 	// (TBD) use AutoValueVector avr(cx); avr.reserve(16); avr.append(val);
-	JSObject *rootedValues;
-	rootedValues = JS_NewArrayObject(cx, fdCount, NULL);
-	JL_CHK( SetHandleSlot(cx, OBJECT_TO_JSVAL(obj), 1, OBJECT_TO_JSVAL(rootedValues)) );
+	JS::RootedObject rootedValues(cx, JS_NewArrayObject(cx, fdCount, NULL));
+
+	JL_CHK( SetHandleSlot(cx, obj, 1, OBJECT_TO_JSVAL(rootedValues)) );
 
 	jsval *descriptor;
 	for ( unsigned int i = 0; i < fdCount; ++i ) {
@@ -783,7 +787,7 @@ static bool IOCancelWait( volatile ProcessEvent *pe ) {
 	return true;
 }
 
-static bool IOEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
+static bool IOEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS::HandleObject obj ) {
 
 	JL_IGNORE(obj);
 
@@ -946,27 +950,27 @@ DEFINE_PROPERTY_SETTER( timeout ) {
 	JL_IGNORE(id, strict);
 	JL_ASSERT_THIS_INHERITANCE();
 
-	if ( !vp.isUndefined() ) {
+	if ( !JL_RVAL.isUndefined() ) {
 
 		PRIntervalTime timeout;
-		if ( (JS::Value)vp == JSVAL_ZERO ) {
+		if ( (JS::Value)JL_RVAL == JSVAL_ZERO ) {
 
 			timeout = PR_INTERVAL_NO_WAIT;
 		} else
-		if ( JL_ValueIsPInfinity(cx, vp) ) {
+		if ( JL_ValueIsPInfinity(cx, JL_RVAL) ) {
 
 			timeout = PR_INTERVAL_NO_TIMEOUT;
 		} else {
 
 			PRUint32 milli;
-			JL_CHK( JL_JsvalToNative(cx, vp, &milli) );
+			JL_CHK( JL_JsvalToNative(cx, JL_RVAL, &milli) );
 			timeout = PR_MillisecondsToInterval(milli);
 		}
-		JL_CHK( JL_NativeToJsval(cx, timeout, vp) );
+		JL_CHK( JL_NativeToJsval(cx, timeout, JL_RVAL) );
 	}
 
-	JL_CHK( JL_SetReservedSlot( obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, vp) );
-	JL_CHK( jl::StoreProperty(cx, obj, id, vp, false) );
+	JL_CHK( JL_SetReservedSlot( obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, JL_RVAL) );
+	JL_CHK( jl::StoreProperty(cx, obj, id, JL_RVAL, false) );
 	return true;
 	JL_BAD;
 }

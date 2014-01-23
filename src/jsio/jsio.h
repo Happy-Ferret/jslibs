@@ -31,19 +31,19 @@ struct JsioPrivate {
 #define SLOT_JSIO_DIR_NAME 0
 
 
-void FinalizeDescriptor(JSFreeOp *fop, JSObject *obj);
+void FinalizeDescriptor(JSFreeOp *fop, JSObject *obj); // in finalize() Handle* must not be used
 
-bool NativeInterfaceStreamRead(JSContext *cx, JSObject *obj, char *buf, size_t *amount);
+bool NativeInterfaceStreamRead(JSContext *cx, JS::HandleObject obj, char *buf, size_t *amount);
 
 
 
 ALWAYS_INLINE bool
-GetTimeoutInterval(JSContext *cx, JSObject *obj, PRIntervalTime *timeout, PRIntervalTime defaultTimeout = PR_INTERVAL_NO_TIMEOUT) {
+GetTimeoutInterval(JSContext *cx, JS::HandleObject obj, PRIntervalTime *timeout, PRIntervalTime defaultTimeout = PR_INTERVAL_NO_TIMEOUT) {
 
 	JL_IGNORE(cx);
 
-	jsval timeoutValue;
-	JL_CHK( JL_GetReservedSlot(obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, timeoutValue) );
+	JS::RootedValue timeoutValue(cx);
+	JL_CHK( JL_GetReservedSlot(obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, &timeoutValue) );
 	
 	if ( timeoutValue.isUndefined() ) {
 		

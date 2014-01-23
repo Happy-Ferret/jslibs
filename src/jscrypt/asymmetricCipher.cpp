@@ -44,7 +44,7 @@ struct AsymmetricCipherPrivate {
 };
 
 
-bool SlotGetPrng(JSContext *cx, JSObject *obj, int *prngIndex, prng_state **prngState) {
+bool SlotGetPrng(JSContext *cx, JS::HandleObject obj, int *prngIndex, prng_state **prngState) {
 
 	jsval prngVal;
 	JL_CHK( JL_GetReservedSlot( obj, ASYMMETRIC_CIPHER_PRNG_SLOT, &prngVal) );
@@ -68,7 +68,7 @@ $SVN_REVISION $Revision$
 BEGIN_CLASS( AsymmetricCipher )
 
 ALWAYS_INLINE void
-FinalizeAsymmetricCipher( JSObject *obj, bool wipe ) {
+FinalizeAsymmetricCipher( JS::HandleObject obj, bool wipe ) {
 
 	AsymmetricCipherPrivate *pv = (AsymmetricCipherPrivate*)JL_GetPrivate(obj);
 	if ( pv ) {

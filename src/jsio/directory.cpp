@@ -153,7 +153,7 @@ DEFINE_FUNCTION( read ) {
 	if ( JL_ARG_ISDEF(1) ) {
 
 		int32_t tmp;
-		JS_ValueToInt32( cx, JL_ARG(1), &tmp );
+		JS::ToInt32( cx, JL_ARG(1), &tmp );
 		flags = (PRDirFlags)tmp;
 	}
 
@@ -368,8 +368,7 @@ DEFINE_FUNCTION( list ) {
 	else
 		showDirectoryChar = false;
 
-	JSObject *addrJsObj;
-	addrJsObj = JS_NewArrayObject(cx, 0, NULL);
+	JS::RootedObject addrJsObj(cx, JS_NewArrayObject(cx, 0, NULL));
 	JL_CHK( addrJsObj );
 	*JL_RVAL = OBJECT_TO_JSVAL( addrJsObj );
 

@@ -28,7 +28,7 @@ read this: http://egachine.berlios.de/embedding-sm-best-practice/embedding-sm-be
 
 typedef struct {
 	JSContext *cx;
-	JSObject *obj;
+	JS::PermanentObject obj;
 } CxObj;
 
 
@@ -64,7 +64,7 @@ LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		return DefWindowProc(hWnd, message, wParam, lParam);
 
 	JSContext *cx = cxobj->cx;
-	JSObject *obj = cxobj->obj;
+	JS::RootedObject obj(cx, cxobj->obj);
 
 	jsval rval;
 	jsval functionVal;
@@ -364,7 +364,7 @@ DEFINE_FUNCTION( waitForMessage ) {
 	JL_ASSERT_ARGC_MIN(1);
 
 	int32 val;
-	JS_ValueToInt32(cx, argv[0], &val);
+	JS::ToInt32(cx, argv[0], &val);
 
 	DWORD status = MsgWaitForMultipleObjects(0, NULL, FALSE, val, QS_ALLEVENTS);
 	//*rval = (status == WAIT_TIMEOUT) ? JSVAL_FALSE : JSVAL_TRUE;
@@ -510,8 +510,8 @@ DEFINE_FUNCTION( mode ) {
 		size_t length;
 		JL_CHK( JL_JsvalToNativeVector(cx, argv[0], size, 2, &length) );
 		JL_ASSERT( length == 2, "Invalid array size." );
-		JL_CHK( JS_ValueToInt32(cx, argv[1], &bits) );
-		JL_CHK( JS_ValueToBoolean(cx, argv[2], &fullscreen) );
+		JL_CHK( JS::ToInt32(cx, argv[1], &bits) );
+		JL_CHK( JS::ToBoolean(cx, argv[2], &fullscreen) );
 
 		DEVMODE dmScreenSettings;
 		memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));
@@ -539,7 +539,7 @@ DEFINE_PROPERTY( clipCursor ) {
 	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT(hWnd != NULL, "Uninitialized data");
 	bool clip;
-	JS_ValueToBoolean(cx, *vp, &clip);
+	JS::ToBoolean(cx, *vp, &clip);
 	RECT r;
 	GetWindowRect(hWnd, &r);
 	BOOL sysStatus = ClipCursor( clip ? &r : NULL );
@@ -560,7 +560,7 @@ DEFINE_PROPERTY( absoluteClipCursor ) {
 		JL_ASSERT( length == 4, "Invalid array size." );
 
 		bool clip;
-		JS_ValueToBoolean(cx, *vp, &clip);
+		JS::ToBoolean(cx, *vp, &clip);
 		RECT r = { v[0], v[1], v[2], v[3] };
 		sysStatus = ClipCursor( &r );
 	} else {
@@ -575,7 +575,7 @@ DEFINE_PROPERTY( absoluteClipCursor ) {
 DEFINE_PROPERTY( showCursor ) {
 
 	bool show;
-	JS_ValueToBoolean(cx, *vp, &show);
+	JS::ToBoolean(cx, *vp, &show);
 	ShowCursor( show ? TRUE : FALSE );
 	return true;
 }
@@ -737,7 +737,7 @@ DEFINE_PROPERTY( showFrame ) {
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
 
 	bool show;
-	JS_ValueToBoolean(cx, *vp, &show);
+	JS::ToBoolean(cx, *vp, &show);
 
 	DWORD s = GetWindowLong(hWnd, GWL_STYLE);
 	if ( show ) {
@@ -771,7 +771,7 @@ DEFINE_PROPERTY( captureMouse ) {
 	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
 	bool capture;
-	JS_ValueToBoolean(cx, *vp, &capture);
+	JS::ToBoolean(cx, *vp, &capture);
 
 	// Only the foreground window can capture the mouse.
 	// When a background window attempts to do so, the window receives messages only for mouse events that occur when the cursor hot spot is within the visible portion of the window.
@@ -795,7 +795,7 @@ DEFINE_PROPERTY( activeSetter ) {
 	HWND hWnd = (HWND)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(hWnd);
 	bool active;
-	JS_ValueToBoolean(cx, *vp, &active);
+	JS::ToBoolean(cx, *vp, &active);
 	if ( active )
 		SetActiveWindow(hWnd);
 	return true;

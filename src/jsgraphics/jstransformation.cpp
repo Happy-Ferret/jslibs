@@ -37,7 +37,7 @@ ALWAYS_INLINE float RAD_TO_DEG( const float rad ) {
 jl::Pool matrixPool; // (TBD) manage thread safety / use modulePrivate
 
 
-int GetMatrix(JSContext *cx, JSObject *obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
+int GetMatrix(JSContext *cx, JS::HandleObject obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
 	JL_IGNORE( cx );
 

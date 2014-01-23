@@ -19,13 +19,13 @@
 extern uint32_t _moduleId;
 
 struct JSContext;
-class JSObject;
+//class JSObject;
 
-typedef bool (*ModuleInitFunction)(JSContext *, JSObject *, uint32_t id);
+typedef bool (*ModuleInitFunction)(JSContext *, JS::HandleObject, uint32_t id);
 typedef bool (*ModuleReleaseFunction)(JSContext *);
 typedef void (*ModuleFreeFunction)();
 
-EXTERN_C DLLEXPORT bool ModuleInit(JSContext *cx, JSObject *obj, uint32_t id);
+EXTERN_C DLLEXPORT bool ModuleInit(JSContext *cx, JS::HandleObject obj, uint32_t id);
 EXTERN_C DLLEXPORT bool ModuleRelease(JSContext *cx);
 EXTERN_C DLLEXPORT void ModuleFree();
 

@@ -94,7 +94,7 @@ DefineClassProperties(JSContext *cx, IN JS::HandleObject obj, IN JSPropertySpec 
 
 
 ALWAYS_INLINE bool FASTCALL
-DefineFunctions(JSContext *cx, JSObject *obj, JSFunctionSpec *fs) {
+DefineFunctions(JSContext *cx, JS::HandleObject obj, JSFunctionSpec *fs) {
 
 	for ( ; fs->name; fs++ )
 		JL_CHK( JS_DefineFunction(cx, obj, fs->name, fs->call.op, fs->nargs, fs->flags) );
@@ -104,7 +104,7 @@ DefineFunctions(JSContext *cx, JSObject *obj, JSFunctionSpec *fs) {
 
 
 ALWAYS_INLINE bool FASTCALL
-DefineConstValues(JSContext *cx, JSObject *obj, ConstValueSpec *cs) {
+DefineConstValues(JSContext *cx, JS::HandleObject obj, ConstValueSpec *cs) {
 
     for ( ; cs->name; cs++ )
 		JL_CHK( JS_DefineProperty(cx, obj, cs->name, cs->val, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
@@ -401,7 +401,7 @@ JL_END_NAMESPACE
 
 #define HAS_FINALIZE cs.clasp.finalize = Finalize;
 // make Finalize able to return a value ( good for bad: ):
-//  #define DEFINE_FINALIZE() Finalize_withReturnValue(JSContext *cx, JSObject *obj); static void Finalize(JSContext *cx, JSObject *obj) { Finalize_withReturnValue(cx, obj) } ALWAYS_INLINE bool Finalize_withReturnValue(JSContext *cx, JSObject *obj)
+//  #define DEFINE_FINALIZE() Finalize_withReturnValue(JSContext *cx, JS::HandleObject obj); static void Finalize(JSContext *cx, JS::HandleObject obj) { Finalize_withReturnValue(cx, obj) } ALWAYS_INLINE bool Finalize_withReturnValue(JSContext *cx, JS::HandleObject obj)
 #define DEFINE_FINALIZE() static void Finalize(JSFreeOp *fop, JSObject *obj)
 
 #define HAS_OBJECT_CONSTRUCTOR cs.clasp.construct = ObjectConstructor;
@@ -412,10 +412,10 @@ JL_END_NAMESPACE
 // see also JL_DEFINE_CALL_FUNCTION_OBJ
 
 #define HAS_CONVERT cs.clasp.convert = Convert;
-#define DEFINE_CONVERT() static bool Convert(JSContext *cx, JSObject *obj, JSType type, JS::Value *vp)
+#define DEFINE_CONVERT() static bool Convert(JSContext *cx, JS::HandleObject obj, JSType type, JS::Value *vp)
 
 #define HAS_RESOLVE cs.clasp.resolve = Resolve;
-#define DEFINE_RESOLVE() static bool Resolve(JSContext *cx, JSObject *obj, jsid id)
+#define DEFINE_RESOLVE() static bool Resolve(JSContext *cx, JS::HandleObject obj, jsid id)
 
 #define HAS_NEW_RESOLVE cs.clasp.flags |= JSCLASS_NEW_RESOLVE; JSNewResolveOp tmp = NewResolve; cs.clasp.resolve = (JSResolveOp)tmp;
 #define DEFINE_NEW_RESOLVE() static bool NewResolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, unsigned flags, JS::MutableHandleObject objp)
@@ -424,16 +424,16 @@ JL_END_NAMESPACE
 #define DEFINE_ENUMERATE() static bool Enumerate(JSContext *cx, JS::HandleObject obj, JSIterateOp enum_op, JS::MutableValue statep, JS::MutableHandleId idp)
 
 #define HAS_TRACER cs.clasp.trace = Tracer;
-#define DEFINE_TRACER() static void Tracer(JSTracer *trc, JSObject *obj)
+#define DEFINE_TRACER() static void Tracer(JSTracer *trc, JS::HandleObject obj)
 
 #define HAS_HAS_INSTANCE cs.clasp.hasInstance = HasInstance;
-#define DEFINE_HAS_INSTANCE() static bool HasInstance(JSContext *cx, JS::HandleObject obj, JS::MutableValue vp, bool *bp)
+#define DEFINE_HAS_INSTANCE() static bool HasInstance(JSContext *cx, JS::Handle<JSObject*> obj, JS::MutableHandle<JS::Value> vp, bool *bp)
 
 //#define HAS_EQUALITY_OP js::Valueify(&cs.clasp)->ext.equality = EqualityOp;
-//#define DEFINE_EQUALITY_OP() static bool EqualityOp(JSContext *cx, JSObject *obj, const JS::Value *v, bool *bp)
+//#define DEFINE_EQUALITY_OP() static bool EqualityOp(JSContext *cx, JS::HandleObject obj, const JS::Value *v, bool *bp)
 
 //#define HAS_WRAPPED_OBJECT js::Valueify(&cs.clasp)->ext.wrappedObject = WrappedObject;
-//#define DEFINE_WRAPPED_OBJECT() static JSObject* WrappedObject(JSContext *cx, JSObject *obj)
+//#define DEFINE_WRAPPED_OBJECT() static JSObject* WrappedObject(JSContext *cx, JS::HandleObject obj)
 
 #define HAS_INIT cs.init = Init;
 #define DEFINE_INIT() static bool Init(JSContext *cx, jl::ClassSpec *sc, JS::HandleObject proto, JS::HandleObject obj)

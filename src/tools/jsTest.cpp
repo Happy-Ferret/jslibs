@@ -172,7 +172,7 @@ JSContext *cx = JS_NewContext(rt, 8192L);
 JSObject *globalObject = JS_NewGlobalObject(cx, &global_class, NULL);
 JS_InitStandardClasses(cx, globalObject);
 
-JSString *jsstr = JS_ValueToString(cx, INT_TO_JSVAL(10));
+JSString *jsstr = JS::ToString(cx, INT_TO_JSVAL(10));
 jsval tmp = STRING_TO_JSVAL(jsstr);
 JS_SetProperty(cx, globalObject, "rootme", &tmp);
 _putws(JS_GetStringCharsZ(cx, jsstr));
@@ -570,8 +570,8 @@ int main_PerfTest(int argc, char* argv[]) {
 	bool b = NOIL(test_perf)(v);
 	JL_IGNORE(b);
 	
-	//class JSString * JS_ValueToString(struct JSContext *,class JS::Value) => ?JS_ValueToString@@YAPAVJSString@@PAUJSContext@@VValue@JS@@@Z
-	//JS_ValueToString
+	//class JSString * JS::ToString(struct JSContext *,class JS::Value) => ?JS::ToString@@YAPAVJSString@@PAUJSContext@@VValue@JS@@@Z
+	//JS::ToString
 
 	return 0;
 }
@@ -908,6 +908,12 @@ int main_test_class2(int argc, char* argv[]) {
 
 */	
 
+inline __declspec(noinline) __declspec(naked) size_t 
+GetEIP() {
+
+	__asm pop eax;
+	__asm jmp eax;
+}
 
 
 
@@ -925,7 +931,22 @@ int main_min(int argc, char* argv[]) {
 	JSContext *cx = JS_NewContext(rt, 8192L);
 	
 	{
-	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &globalClass, NULL, JS::FireOnNewGlobalHook));
+
+	size_t p1 = GetEIP();
+	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &globalClass, NULL, JS::FireOnNewGlobalHook) );
+	size_t p2 = GetEIP() - p1;
+	printf("%d\n", p2);
+
+/*
+//	AutoVectorRooter
+	JS::AutoArrayRooter rt(cx, 10, JS::NullPtr());
+	JS::RootedValue valTmp(cx);
+	valTmp = rt.handleAt(9);
+	printf("%d\n", valTmp.toInt32());
+*/
+
+	JS::RootedVector<JS::Value> arr;
+
 	JSAutoCompartment ac(cx, globalObject);
 
 	JS::RootedObject test(cx);

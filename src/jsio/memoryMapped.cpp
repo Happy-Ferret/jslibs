@@ -27,7 +27,7 @@ struct MemoryMappedPrivate {
 	void *addr;
 };
 
-bool MemoryMappedBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
+bool MemoryMappedBufferGet( JSContext *cx, JS::HandleObject obj, JLData *str ) {
 
 	JL_IGNORE( cx );
 
@@ -44,7 +44,7 @@ BEGIN_CLASS( MemoryMapped )
 
 DEFINE_FINALIZE() {
 
-	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(obj);
+	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)js::GetObjectPrivate(obj);
 	if ( !pv )
 		return;
 
@@ -69,9 +69,9 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_CONSTRUCTING();
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
-
-	JSObject *fdObj;
-	fdObj = JSVAL_TO_OBJECT( JL_ARG(1) );
+	
+	{
+	JS::RootedObject fdObj(cx, &JL_ARG(1).toObject());
 	JL_ASSERT_INSTANCE( fdObj, JL_CLASS(File) );
 	JL_CHK( JL_SetReservedSlot( obj, MEMORYMAPPED_SLOT_FILE, JL_ARG(1)) ); // avoid the file to be GCed while being used by MemoryMapped
 
@@ -116,10 +116,14 @@ DEFINE_CONSTRUCTOR() {
 	if ( pv->addr == NULL )
 		return ThrowIoError(cx);
 
-	JL_CHK( SetBufferGetInterface(cx, obj, MemoryMappedBufferGet) );
+	JL_CHK( SetBufferGetInterface(cx, JL_OBJ, MemoryMappedBufferGet) );
 
-	JL_SetPrivate(obj, pv);
+	JL_SetPrivate(JL_OBJ, pv);
+
+	}
+
 	return true;
+
 bad:
 	if ( pv ) {
 

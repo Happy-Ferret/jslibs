@@ -401,7 +401,7 @@ DEFINE_FUNCTION( getInteger ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(2);
 		int count = JL_ARG(2).toInt32();
-		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
+		JS::RootedObject arrayObj(cx, JS_NewArrayObject(cx, count, NULL));
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
@@ -443,7 +443,7 @@ DEFINE_FUNCTION( getDouble ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(2);
 		int count = JL_ARG(2).toInt32();
-		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
+		JS::RootedObject arrayObj(cx, JS_NewArrayObject(cx, count, NULL));
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
@@ -529,7 +529,7 @@ DEFINE_FUNCTION( getListenerReal ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(2);
 		int count = JL_ARG(2).toInt32();
-		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
+		JS::RootedObject arrayObj(JS_NewArrayObject(cx, count, NULL));
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
@@ -646,7 +646,7 @@ DEFINE_FUNCTION( getSourceReal ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(3);
 		int count = JL_ARG(3).toInt32();
-		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
+		JS::RootedObject arrayObj(cx, JS_NewArrayObject(cx, count, NULL));
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
@@ -689,7 +689,7 @@ DEFINE_FUNCTION( getSourceInteger ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(3);
 		int count = JL_ARG(3).toInt32();
-		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
+		JS::RootedObject arrayObj(cx, JS_NewArrayObject(cx, count, NULL));
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
@@ -883,7 +883,7 @@ DEFINE_FUNCTION( getBufferReal ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(2);
 		int count = JL_ARG(2).toInt32();
-		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
+		JS::RootedObject arrayObj(cx, JS_NewArrayObject(cx, count, NULL));
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
@@ -926,7 +926,7 @@ DEFINE_FUNCTION( getBufferInteger ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(2);
 		int count = JL_ARG(2).toInt32();
-		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
+		JS::RootedObject arrayObj(cx, JS_NewArrayObject(cx, count, NULL));
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;

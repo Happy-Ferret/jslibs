@@ -50,7 +50,7 @@ typedef struct {
 	struct jpeg_source_mgr pub;	// public fields
 	JOCTET *buffer;
 	JSContext *cx;
-	JSObject *obj;
+	JS::PersistentObject obj;
 } SourceMgr;
 
 
@@ -417,7 +417,7 @@ struct PngReadUserStruct {
 	png_structp png;
 	png_infop info;
 	JSContext *cx;
-	JSObject *obj;
+	JS::PersistentObject obj;
 };
 
 

@@ -11,7 +11,7 @@ var loadModule = host.loadModule;
 
 
 host.stdout('test\n');
-//host.loadModule('jsstd');
+host.loadModule('jsstd');
 throw 0;
 
 

@@ -52,7 +52,7 @@ static glGetProcAddress_t glGetProcAddress = NULL;
 NEVER_INLINE double JsvalToDouble_Slow(JSContext * RESTRICT cx, const jsval &val) {
 
 	double doubleValue;
-	if ( JS_ValueToNumber(cx, val, &doubleValue) )
+	if ( JS::ToNumber(cx, val, &doubleValue) )
 		return doubleValue;
 	return 0;
 }
@@ -871,7 +871,7 @@ DEFINE_FUNCTION( getInteger ) {
 	if ( JL_ARG_ISDEF(2) ) {
 
 		unsigned count;
-		JSObject *arrayObj;
+		JS::RootedObject arrayObj(cx);
 
 		if ( JSVAL_IS_INT(JL_ARG(2)) ) {
 
@@ -946,7 +946,7 @@ DEFINE_FUNCTION( getDouble ) {
 	if ( JL_ARG_ISDEF(2) ) {
 
 		unsigned count;
-		JSObject *arrayObj;
+		JS::RootedObject arrayObj(cx);
 
 		if ( JSVAL_IS_INT(JL_ARG(2)) ) {
 
@@ -2055,10 +2055,10 @@ DEFINE_FUNCTION( getLight ) {
 
 	if ( count > 1 ) {
 
-		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
+		JS::RootedObject arrayObj(cx, JS_NewArrayObject(cx, count, NULL));
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
-		jsval tmpValue;
+		JS::RootedValue tmpValue(cx);
 		while ( count-- ) {
 
 			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
@@ -3290,7 +3290,7 @@ DEFINE_FUNCTION( callList ) {
 
 	if ( JL_ValueIsArray(cx, JL_ARG(1)) ) { // no array-like. convert a string into an array of calllist does not make sense here.
 
-		JSObject *jsArray = JSVAL_TO_OBJECT(JL_ARG(1));
+		JS::RootedObject jsArray(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
 		unsigned length;
 		JL_CHK( JS_GetArrayLength(cx, jsArray, &length) );
 
@@ -4686,7 +4686,7 @@ DEFINE_FUNCTION( getUniformInfo ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &program) );
 	glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &activeUniform);  OGL_ERR_CHK;
 
-	JSObject *info = JL_NewObj(cx);
+	JS::RootedObject info(cx, JL_NewObj(cx));
 	JL_CHK( info );
 	*JL_RVAL = OBJECT_TO_JSVAL(info);
 
@@ -4712,7 +4712,7 @@ DEFINE_FUNCTION( getUniformInfo ) {
 			if ( location == -1 )
 				continue;
 
-			JSObject *obj = JL_NewObj(cx);
+			JS::RootedObject obj(cx, JL_NewObj(cx));
 			JL_CHK( obj );
 
 			tmp = OBJECT_TO_JSVAL(obj);
@@ -4880,7 +4880,7 @@ DEFINE_FUNCTION( uniform ) {
 	int count;
 	if ( JL_ARGC == 2 && JL_ValueIsArrayLike(cx, JL_ARG(2)) ) { // (TBD) check if array-like make sense here.
 
-		JSObject *arr = JSVAL_TO_OBJECT(JL_ARG(2));
+		JS::RootedObject arr(cx, &JL_ARG(2).toObject());
 		unsigned tmp;
 		JL_CHK( JS_GetArrayLength(cx, arr, &tmp) );
 		count = tmp;
@@ -5005,7 +5005,7 @@ DEFINE_FUNCTION( uniform ) {
 
 	if ( JL_IsArray(cx, arg2) ) {
 
-		JSObject *arrayObj;
+		JS::RootedObject arrayObj;
 		arrayObj = JSVAL_TO_OBJECT(JL_ARG(2));
 		uint32_t currentLength;
 		JL_CHK( JS_GetArrayLength(cx, arrayObj, &currentLength) );
@@ -5090,7 +5090,7 @@ DEFINE_FUNCTION( uniformFloatVector ) {
 
 		JL_ASSERT_ARG_IS_ARRAY(2);
 		GLfloat val[4]; // max for *4fv
-//		JSObject *arr = JSVAL_TO_OBJECT(JL_ARG(2));
+//		JS::RootedObject arr = JSVAL_TO_OBJECT(JL_ARG(2));
 		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), val, COUNTOF(val), &len) );
 		JL_ASSERT_RANGE(len, (unsigned)0, (unsigned)4, "vec.length" );
 
@@ -5288,7 +5288,7 @@ DEFINE_FUNCTION( getObjectParameter ) {
 		jsval tmpValue;
 		count = JL_MIN(count, (int)COUNTOF(params));
 
-		JSObject *arrayObj = JS_NewArrayObject(cx, count, NULL);
+		JS::RootedObject arrayObj(cx, JS_NewArrayObject(cx, count, NULL));
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 
@@ -5976,7 +5976,7 @@ DEFINE_FUNCTION( drawImage ) {
 	int channels;
 	const GLvoid *data;
 
-	JSObject *tObj = JSVAL_TO_OBJECT( JL_ARG(1) );
+	JS::RootedObject tObj(cx, &JL_ARG(1).toObject() );
 
 	if ( JL_GetClass(tObj) == JL_TextureJSClass(cx) ) {
 
@@ -6232,7 +6232,7 @@ DEFINE_FUNCTION( loadTrimesh ) {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	JSObject *trimeshObj = JSVAL_TO_OBJECT(JL_ARG(1));
+	JS::RootedObject trimeshObj(cx, &JL_ARG(1).toObject());
 
 	JL_ASSERT( JL_JsvalIsTrimesh(cx, JL_ARG(1)), E_ARG, E_NUM(1), E_TYPE, E_STR("Trimesh") );
 
@@ -6497,7 +6497,7 @@ DEFINE_FUNCTION( defineTextureImage ) {
 	int channels;
 	const GLvoid *data;
 
-	JSObject *tObj = JSVAL_TO_OBJECT(JL_ARG(3));
+	JS::RootedObject tObj(cx, &JL_ARG(3).toObject());
 
 	if ( JL_GetClass(tObj) == JL_TextureJSClass(cx) ) {
 
@@ -7178,7 +7178,7 @@ DEFINE_PROPERTY_GETTER( error ) {
 
 
 
-bool MatrixGet(JSContext *cx, JSObject *obj, float **m) {
+bool MatrixGet(JSContext *cx, JS::HandleObject obj, float **m) {
 
 	JL_IGNORE(obj, cx);
 

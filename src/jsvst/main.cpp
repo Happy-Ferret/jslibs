@@ -1077,7 +1077,7 @@ DEFINE_PROPERTY_SETTER( uniqueID ) {
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 	JL_ASSERT_IS_STRING(*vp, "");
-	JSString *jsstr = JS_ValueToString(cx, *vp);
+	JSString *jsstr = JS::ToString(cx, *vp);
 	{
 	JLData str(cx, jsstr);
 	JL_ASSERT( str.Length() == 4, E_VALUELENGTH, E_EQUALS, E_NUM(1) );
@@ -1127,7 +1127,8 @@ DEFINE_FUNCTION( sendVstEventToHost ) {
 /*
 DEFINE_HAS_INSTANCE() {
 
-	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
+	//*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
+	*bp = JL_ValueIsClass(cx, vp, JL_THIS_CLASS);
 	return true;
 }
 */

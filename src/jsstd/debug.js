@@ -3,13 +3,13 @@ var loadModule = host.loadModule;
 
 loadModule('jsstd');
 
-print(privateMemoryUsage, '\n');
-//collectGarbage();
-print(privateMemoryUsage, '\n');
+host.stdout('press ctrl-c');
+processEvents(timeoutEvents(2000), host.endSignalEvents());
+host.stdout('done.');
 
-//host.stdin();
 
 throw 0;
+
 
 loadModule('jsstd');
 
@@ -18,11 +18,16 @@ sleep(1000);
 print( processTime, '\n' );
 var d1 = Date.now(); while ( Date.now() - d1 < 1000 );
 print( processTime, '\n' );
-
-
-
-
 throw 0;
+
+
+loadModule('jsstd');
+print(privateMemoryUsage, '\n');
+collectGarbage();
+print(privateMemoryUsage, '\n');
+//host.stdin();
+throw 0;
+
 
 
 sleep(1);

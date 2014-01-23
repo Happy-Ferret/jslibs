@@ -37,7 +37,7 @@ $MODULE_FOOTER
 **/
 
 bool
-ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+ModuleInit(JSContext *cx, JS::HandleObject obj, uint32_t id) {
 
 //malloc=jl_malloc;calloc=jl_calloc;realloc=jl_realloc;free=jl_free
 //malloc=((void*(*)(size_t))jl_malloc);calloc=((void*(*)(size_t))jl_calloc);realloc=((void*(*)(void*,size_t))jl_realloc);free=((void(*)(void*))jl_free)

@@ -30,7 +30,7 @@ inline bool GetMatrixHelper( JSContext *cx, JS::MutableHandleValue val, float **
 
 	if ( val.isObject() ) {
 
-		JSObject *matrixObj = &val.toObject();
+		JS::RootedObject matrixObj(cx, &val.toObject());
 		if ( JL_GetClass(matrixObj) == JL_CLASS(Transformation) ) {
 
 			TransformationPrivate *pv = (TransformationPrivate *)JL_GetPrivate(matrixObj);

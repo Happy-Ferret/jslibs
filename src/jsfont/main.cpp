@@ -71,7 +71,7 @@ void* JsfontRealloc( FT_Memory, long, long new_size, void* block ) {
 }
 
 bool
-ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+ModuleInit(JSContext *cx, JS::HandleObject obj, uint32_t id) {
 
 	JsfontModulePrivate *mpv = (JsfontModulePrivate*)ModulePrivateAlloc(sizeof(JsfontModulePrivate));
 

@@ -692,12 +692,12 @@ DEFINE_FUNCTION( stringRepeat ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &count) );
 	if ( count == 0 ) {
 
-		*JL_RVAL = JL_GetEmptyStringValue(cx);
+		JL_RVAL.set(JL_GetEmptyStringValue(cx));
 		return true;
 	}
 	if ( count == 1 ) {
 
-		*JL_RVAL = STRING_TO_JSVAL( JS::ToString(cx, JL_ARG(1)) ); // force string conversion because we must return a string.
+		JL_RVAL.setString( JS::ToString(cx, JL_ARG(1)) ); // force string conversion because we must return a string.
 		return true;
 	}
 
@@ -707,7 +707,7 @@ DEFINE_FUNCTION( stringRepeat ) {
 
 	if ( len == 0 ) {
 
-		*JL_RVAL = JL_GetEmptyStringValue(cx);
+		JL_RVAL.set(JL_GetEmptyStringValue(cx));
 		return true;
 	}
 
@@ -774,8 +774,10 @@ DEFINE_FUNCTION( print ) {
 	JS::RootedValue fval(cx);
 	JL_CHK( JS_GetPropertyById(cx, JL_GetHostPrivate(cx)->hostObject, JLID(cx, stdout), &fval) );
 	JL_RVAL.setUndefined();
-	if (likely( JL_ValueIsCallable(cx, fval) ))
-		return JS_CallFunctionValue(cx, JL_GetGlobal(cx), fval, JL_ARGC, JS_ARGV(cx,vp), &fval);
+	if (likely( JL_ValueIsCallable(cx, fval) )) {
+
+		return JS_CallFunctionValue(cx, JL_GetGlobal(cx), fval, JL_ARGC, JS_ARGV(cx,vp), fval.address());
+	}
 	return true;
 	JL_BAD;
 }
@@ -811,12 +813,15 @@ DEFINE_FUNCTION( exec ) {
 	useAndSaveCompiledScripts = !JL_ARG_ISDEF(2) || JL_ARG(2).isTrue();
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &fileName) );
 
-	JSScript *script;
-	script = JL_LoadScript(cx, obj, fileName, jl::ENC_UNKNOWN, useAndSaveCompiledScripts, useAndSaveCompiledScripts);
+	{
+
+	JS::RootedScript script(cx, JL_LoadScript(cx, JL_OBJ, fileName, jl::ENC_UNKNOWN, useAndSaveCompiledScripts, useAndSaveCompiledScripts));
 	JL_CHK( script );
 
 	// doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
-	JL_CHK( JS_ExecuteScript(cx, obj, script, JL_RVAL) );
+	JL_CHK( JS_ExecuteScript(cx, JL_OBJ, script, JL_RVAL.address()) );
+	
+	}
 
 	return true;
 	JL_BAD;
@@ -897,7 +902,8 @@ BEGIN_CLASS( OperationLimit )
 DEFINE_HAS_INSTANCE() {
 
 	JL_IGNORE(obj, cx);
-	*bp = !JSVAL_IS_PRIMITIVE(vp) && JL_GetClass(JSVAL_TO_OBJECT(vp)) == JL_THIS_CLASS;
+//	*bp = !JSVAL_IS_PRIMITIVE(vp) && JL_GetClass(JSVAL_TO_OBJECT(vp)) == JL_THIS_CLASS;
+	*bp = JL_ValueIsClass(cx, vp, JL_THIS_CLASS);
 	return true;
 }
 
@@ -955,10 +961,13 @@ static JSClass sandbox_class = {
 
 struct SandboxContextPrivate {
 
+	SandboxContextPrivate(JSContext *cx) : queryFunctionValue(cx) {
+	}
+
 	JLSemaphoreHandler semEnd;
 	unsigned int maxExecutionTime;
 	volatile bool expired;
-	jsval queryFunctionValue;
+	JS::PersistentRootedValue queryFunctionValue; //jsval queryFunctionValue;
 	JSOperationCallback prevOperationCallback;
 };
 
@@ -967,7 +976,8 @@ bool SandboxMaxOperationCallback(JSContext *cx) {
 	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(cx);
 	if ( pv->expired && !JL_IsExceptionPending(cx) ) {
 
-		JSOperationCallback tmp = JS_SetOperationCallback(cx, NULL);
+		JS::RootedValue branchLimitExceptionVal(cx);
+		JSOperationCallback tmp = JS_SetOperationCallback(JL_GetRuntime(cx), NULL);
 		const ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), JL_CLASS_NAME(OperationLimit));
 		ASSERT( cpc );
 		JSCompartment *oldCompartment;
@@ -975,11 +985,13 @@ bool SandboxMaxOperationCallback(JSContext *cx) {
 		oldCompartment = JS_EnterCompartment(cx, cpc->proto);
 		JL_CHK( oldCompartment );
 		JSObject *branchLimitExceptionObj;
-		branchLimitExceptionObj = JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
-		JS_SetPendingException(cx, OBJECT_TO_JSVAL( branchLimitExceptionObj ));
+		branchLimitExceptionObj = JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, JS::NullPtr());
+		
+		branchLimitExceptionVal.setObject(*branchLimitExceptionObj);
+		JS_SetPendingException(cx, branchLimitExceptionVal);
 		JS_LeaveCompartment(cx, oldCompartment);
 		JL_CHK( branchLimitExceptionObj );
-		JS_SetOperationCallback(cx, tmp);
+		JS_SetOperationCallback(JL_GetRuntime(cx), tmp);
 		JL_BAD;
 	}
 	return pv->prevOperationCallback(cx);
@@ -1004,15 +1016,15 @@ bool SandboxQueryFunction(JSContext *cx, unsigned argc, jsval *vp) {
 	JL_DEFINE_ARGS;
 
 	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(cx);
-	if ( pv->queryFunctionValue.isUndefined() ) {
+	if ( pv->queryFunctionValue.get().isUndefined() ) {
 
-		JL_RVAL->setUndefined();
+		JL_RVAL.setUndefined();
 	} else {
 
 		JSObject *obj = JS_THIS_OBJECT(cx, vp);
 		JL_CHK( obj );
-		JL_CHK( JS_CallFunctionValue(cx, obj, pv->queryFunctionValue, JL_ARGC, JS_ARGV(cx,vp), JL_RVAL) );
-		JL_CHKM( JSVAL_IS_PRIMITIVE(*JL_RVAL), E_RETURNVALUE, E_TYPE, E_TY_PRIMITIVE );
+		JL_CHK( JS_CallFunctionValue(cx, obj, pv->queryFunctionValue, JL_ARGC, JS_ARGV(cx,vp), JL_RVAL.address()) );
+		JL_CHKM( JL_RVAL.isPrimitive(), E_RETURNVALUE, E_TYPE, E_TY_PRIMITIVE );
 	}
 	return true;
 	JL_BAD;
@@ -1022,12 +1034,13 @@ DEFINE_FUNCTION( sandboxEval ) {
 
 	JL_DEFINE_ARGS;
 
-	SandboxContextPrivate pv;
+	SandboxContextPrivate pv(cx);
+	JS::RootedScript script(cx);
 
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
 	JSString *jsstr;
-	jsstr = JS_ValueToString(cx, JL_ARG(1));
+	jsstr = JS::ToString(cx, JL_ARG(1));
 	JL_CHK( jsstr );
 	size_t srclen;
 	const jschar *src;
@@ -1048,7 +1061,6 @@ DEFINE_FUNCTION( sandboxEval ) {
 		pv.maxExecutionTime = 1000; // default value
 
 
-	JSScript *script;
 	unsigned lineno;
 	JL_CHK( JS_DescribeScriptedCaller(cx, &script, &lineno) );
 	const char *filename;
@@ -1065,12 +1077,10 @@ DEFINE_FUNCTION( sandboxEval ) {
 	prevCxPrivate = JS_GetContextPrivate(cx);
 	JS_SetContextPrivate(cx, &pv);
 
-	JSObject *globalObj;
-	globalObj = JS_NewGlobalObject(cx, &sandbox_class, NULL);
+	{
 
-	JSCompartment *oldCompartment;
-	oldCompartment = JS_EnterCompartment(cx, globalObj);
-	JL_CHK( oldCompartment );
+	JS::RootedObject globalObj(cx, JS_NewGlobalObject(cx, &sandbox_class, NULL, JS::DontFireOnNewGlobalHook));
+	JSAutoCompartment ac(cx, globalObj);
 
 	if ( pv.queryFunctionValue != JSVAL_VOID ) {
 
@@ -1080,18 +1090,18 @@ DEFINE_FUNCTION( sandboxEval ) {
 
 	JS_SetNativeStackQuota(JL_GetRuntime(cx), 32000);
 
-	pv.prevOperationCallback = JS_SetOperationCallback(cx, SandboxMaxOperationCallback);
+	pv.prevOperationCallback = JS_SetOperationCallback(JL_GetRuntime(cx), SandboxMaxOperationCallback);
+
+	JS_FireOnNewGlobalObject(cx, globalObj);
 
 	bool ok;
 	ok = JS_EvaluateUCScript(cx, globalObj, src, srclen, filename, lineno, vp);
 
 	JSOperationCallback tmp;
-	tmp = JS_SetOperationCallback(cx, pv.prevOperationCallback);
+	tmp = JS_SetOperationCallback(JL_GetRuntime(cx), pv.prevOperationCallback);
 	ASSERT( tmp == SandboxMaxOperationCallback );
 
 	JS_SetNativeStackQuota(JL_GetRuntime(cx), 0); // (TBD) any way to restore the previous value ?
-
-	JS_LeaveCompartment(cx, oldCompartment);
 
 	JLSemaphoreRelease(pv.semEnd);
 	JLThreadWait(sandboxWatchDogThread);
@@ -1103,8 +1113,12 @@ DEFINE_FUNCTION( sandboxEval ) {
 	// JL_CHK( JS_DeleteProperty(scx, globalObject, "query") ); // (TBD) needed ? also check of the deletion is successful using JS_HasProperty...
 
 	if ( ok )
-		return JS_WrapValue(cx, vp);
+		return JS_WrapValue(cx, JL_RVAL);
+
 	ASSERT( JL_IsExceptionPending(cx) ); // JL_REPORT_ERROR_NUM( JLSMSG_RUNTIME_ERROR, "exception is expected");
+
+	}
+
 	JL_BAD;
 }
 
@@ -1129,7 +1143,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 		pv.maxExecutionTime = 1000; // default value
 
 	JSString *jsstr;
-	jsstr = JS_ValueToString(cx, JL_ARG(1));
+	jsstr = JS::ToString(cx, JL_ARG(1));
 	JL_CHK( jsstr );
 
 //	size_t srclen;
@@ -1146,7 +1160,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 	JSStackFrame *fp;
 	fp = JS_GetScriptedCaller(cx, NULL);
 	JL_CHK( fp );
-	JSScript *script;
+	JS::RootedScript script;
 	script = JS_GetFrameScript(cx, fp);
 	JL_CHK( script );
 	const char *filename;
@@ -1247,7 +1261,7 @@ DEFINE_FUNCTION( isStatementValid ) {
 	//size_t length;
 	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) );
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-	JL_CHK( JL_NativeToJsval(cx, JS_BufferIsCompilableUnit(cx, obj, str.GetConstStr(), str.Length()) == true, *JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, JS_BufferIsCompilableUnit(cx, JL_OBJ, str.GetConstStr(), str.Length()), JL_RVAL) );
 	return true;
 	JL_BAD;
 }
@@ -1595,7 +1609,7 @@ DEFINE_PROPERTY_GETTER( currentFilename ) {
 	
 	JL_IGNORE(id, obj);
 
-	JSScript *script;
+	JS::RootedScript script(cx);
 	JL_CHK( JS_DescribeScriptedCaller(cx, &script, NULL) );
 	const char *filename;
 	filename = JS_GetScriptFilename(cx, script);
@@ -1619,7 +1633,8 @@ DEFINE_PROPERTY_GETTER( currentLineNumber ) {
 	JL_IGNORE(id, obj);
 
 	unsigned lineno;
-	JL_CHK( JS_DescribeScriptedCaller(cx, NULL, &lineno) );
+	JS::RootedScript script(cx);
+	JL_CHK( JS_DescribeScriptedCaller(cx, &script, &lineno) );
 	JL_CHK( JL_NativeToJsval(cx, lineno, vp) );
 	return true;
 	JL_BAD;

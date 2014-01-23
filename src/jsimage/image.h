@@ -30,7 +30,7 @@ ALWAYS_INLINE JSClass* JL_ImageJSClass( JSContext *cx ) {
 inline JSObject* NewImage( JSContext *cx, int width, int height, int channels, void *data ) {
 
 	const ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Image");
-	JSObject *image = JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, NULL);
+	JSObject *image = JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto);
 	if ( image == NULL )
 		return NULL;
 	JS_DefineProperty(cx, image, "width", INT_TO_JSVAL(width), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );

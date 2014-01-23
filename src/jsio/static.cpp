@@ -13,7 +13,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-//#include "jscntxt.h" // need AutoArrayRooter class
 #include <jslibsModule.h>
 #include "../jslang/handlePub.h"
 
@@ -46,7 +45,7 @@ bool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc ) {
 		return true;
 	}
 
-	JSObject *fdObj = JSVAL_TO_OBJECT( descVal );
+	JS::RootedObject fdObj(cx, &descVal.toObject());
 	JL_ASSERT_INHERITANCE( fdObj, JL_CLASS(Descriptor) );
 
 	// doc:
@@ -79,65 +78,67 @@ bool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc ) {
 }
 
 
-bool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int index ) {
-
-	jsval tmp, cbArgv[3];
+bool PollDescNotify( JSContext *cx, JS::HandleValue descVal, PRPollDesc *pollDesc, int index ) {
 
 	if ( JSVAL_IS_PRIMITIVE( descVal ) )
 		return true;
 
-	JSObject *fdObj;
-	fdObj = JSVAL_TO_OBJECT( descVal );
-	JL_ASSERT_INHERITANCE(JSVAL_TO_OBJECT( descVal ), JL_CLASS(Descriptor));
+	JS::RootedValue tmp(cx);
 
-	PRInt16 outFlag;
-	outFlag = pollDesc->out_flags;
+	JS::RootedObject fdObj(cx, &descVal.toObject());
+	JL_ASSERT_INHERITANCE(fdObj, JL_CLASS(Descriptor));
 
-	cbArgv[0] = descVal;
-	cbArgv[1] = INT_TO_JSVAL(index);
-	cbArgv[2] = BOOLEAN_TO_JSVAL(outFlag & PR_POLL_HUP);
+	{
+
+	PRInt16 outFlag = pollDesc->out_flags;
+
+	//JS::RootedValue arg0(cx, descVal);
+	JS::RootedValue arg1(cx, JS::Int32Value(index));
+	JS::RootedValue arg2(cx, JS::BooleanValue(outFlag & PR_POLL_HUP));
 
 	if ( outFlag & PR_POLL_ERR ) {
 
-		JL_CHK( JS_GetProperty( cx, fdObj, "error", &descVal ) ); // (TBD) use JS_HasPropertyById
-		if ( JL_ValueIsCallable(cx, descVal) )
-			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
+		JL_CHK( JS_GetProperty( cx, fdObj, "error", &tmp ) ); // (TBD) use JS_HasPropertyById
+		if ( JL_ValueIsCallable(cx, tmp) )
+			JL_CHK( JL_CallFunctionVA(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
 	}
 
 	if ( outFlag & PR_POLL_EXCEPT ) {
 
-		JL_CHK( JS_GetProperty( cx, fdObj, "exception", &descVal ) );
+		JL_CHK( JS_GetProperty( cx, fdObj, "exception", &tmp ) );
 		if ( JL_ValueIsCallable(cx, descVal) )
-			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
+			JL_CHK( JL_CallFunctionVA(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
 	}
 
 	if ( outFlag & PR_POLL_HUP ) {
 
-		JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &descVal ) );
+		JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &tmp ) );
 		if ( JL_ValueIsCallable(cx, descVal) )
-			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
+			JL_CHK( JL_CallFunctionVA(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
 	}
 
 	if ( outFlag & PR_POLL_READ ) {
 
-		JL_CHK( JS_GetProperty( cx, fdObj, "readable", &descVal ) );
+		JL_CHK( JS_GetProperty( cx, fdObj, "readable", &tmp ) );
 		if ( JL_ValueIsCallable(cx, descVal) )
-			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
+			JL_CHK( JL_CallFunctionVA(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
 	}
 
 	if ( outFlag & PR_POLL_WRITE ) {
 
-		JL_CHK( JS_GetProperty( cx, fdObj, "writable", &descVal ) );
+		JL_CHK( JS_GetProperty( cx, fdObj, "writable", &tmp ) );
 		if ( JL_ValueIsCallable(cx, descVal) )
-			JL_CHK( JS_CallFunctionValue( cx, fdObj, descVal, COUNTOF(cbArgv), cbArgv, &tmp ) );
+			JL_CHK( JL_CallFunctionVA(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
+	}
+	
 	}
 
 	return true;
 	JL_BAD;
 }
 
-
-/**doc
+// see processEvents( descriptor.events )...
+/* *doc
 $TOC_MEMBER $INAME
  $INT $INAME( _descriptorArray_ [, _timeout_ = undefined ] )
   This function listen for a readable, writable or exception event on each descriptor in _descriptorArray_.
@@ -161,7 +162,7 @@ $TOC_MEMBER $INAME
   if ( count == 0 )
     print( 'Nothing has been recived' );
   }}}
-**/
+** /
 DEFINE_FUNCTION( poll ) {
 
 	PRInt32 result;
@@ -174,7 +175,7 @@ DEFINE_FUNCTION( poll ) {
 	JL_ASSERT_ARGC_RANGE( 1, 2 );
 	JL_ASSERT_ARG_IS_ARRAY(1);
 
-	JSObject *fdArrayObj;
+	JS::RootedObject fdArrayObj(cx);
 	fdArrayObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 
 	if ( JL_ARG_ISDEF(2) && !JL_ValueIsPInfinity(cx, JL_ARG(2)) ) {
@@ -195,7 +196,7 @@ DEFINE_FUNCTION( poll ) {
 		result = PR_Poll(NULL, 0, pr_timeout); // we can replace this by a delay, but the function is Pool, not Sleep.
 		if ( result == -1 )
 			return ThrowIoError(cx);
-		*JL_RVAL = JSVAL_ZERO;
+		JL_RVAL.setInt32(0);
 		return true;
 	}
 
@@ -209,7 +210,7 @@ DEFINE_FUNCTION( poll ) {
 	ASSERT( JSVAL_IS_PRIMITIVE(*props) );
 
 	{
-		js::AutoArrayRooter tvr(cx, propsCount, props);
+		JS::AutoArrayRooter tvr(cx, propsCount, props);
 		for ( i = 0; i < propsCount; ++i ) {
 
 			JL_CHK( JL_GetElement(cx, fdArrayObj, i, props[i]) );
@@ -235,7 +236,7 @@ bad:
 bad1:
 	return false;
 }
-
+*/
 
 /**doc
 $TOC_MEMBER $INAME
@@ -248,7 +249,7 @@ DEFINE_FUNCTION( intervalNow ) {
 	JL_ASSERT_ARGC(0);
 
 	// (TBD) Check if it may wrap around in about 12 hours. Is it related to the data type ???
-	JL_CHK( JL_NativeToJsval(cx, PR_IntervalToMilliseconds( PR_IntervalNow() ), *JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, PR_IntervalToMilliseconds( PR_IntervalNow() ), JL_RVAL) );
 	return true;
 	JL_BAD;
 }
@@ -296,7 +297,7 @@ DEFINE_FUNCTION( getEnv ) {
 		JL_RVAL.setUndefined();
 	} else {
 
-		JL_CHK( JL_NativeToJsval(cx, value, *JL_RVAL) );
+		JL_CHK( JL_NativeToJsval(cx, value, JL_RVAL) );
 	}
 	return true;
 	JL_BAD;
@@ -350,7 +351,7 @@ DEFINE_FUNCTION( getRandomNoise ) {
 	PRSize rndSize;
 	rndSize = JL_ARG(1).toInt32();
 	uint8_t *buf;
-	buf = JL_NewBuffer(cx, rndSize, *JL_RVAL);
+	buf = JL_NewBuffer(cx, rndSize, JL_RVAL);
 	JL_CHK( buf );
 	PRSize size;
 	size = PR_GetRandomNoise(buf, rndSize);
@@ -643,7 +644,7 @@ DEFINE_FUNCTION( availableSpace ) {
 	available = (double)fsd.f_bsize * (double)fsd.f_bavail;
 #endif // XP_WIN
 
-	*JL_RVAL = DOUBLE_TO_JSVAL( available );
+	JL_RVAL.setDouble(available);
 
 	return true;
 	JL_BAD;
@@ -683,12 +684,15 @@ DEFINE_FUNCTION( configureSerialPort ) {
 	JL_ASSERT_ARGC_RANGE(1,2);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	
-	JSObject *fileObj;
+	PRFileDesc *fd;
+
+	{
+	JS::RootedObject fileObj(cx);
 	fileObj = JSVAL_TO_OBJECT( JL_ARG(1) );
 	JL_ASSERT_INHERITANCE( fileObj, JL_CLASS(File) );
 
-	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate(fileObj);
+	}
 
 	JL_ASSERT( fd, E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_CLASS_NAME(File)), E_CLOSED );
 
@@ -1150,7 +1154,7 @@ CONFIGURE_STATIC
 		FUNCTION( jsioTest )
 		#endif // HAS_JSIOTEST
 
-		FUNCTION( poll ) // Do not turn it in FAST NATIVE because we need a stack frame for debuging
+//		FUNCTION( poll ) // Do not turn it in FAST NATIVE because we need a stack frame for debuging
 //		FUNCTION( iOEvents ) // moved do Descriptor.Events()
 		FUNCTION( intervalNow )
 //		FUNCTION( uIntervalNow )

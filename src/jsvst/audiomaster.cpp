@@ -29,7 +29,8 @@ BEGIN_CLASS( AudioMaster )
 /*
 DEFINE_HAS_INSTANCE() {
 
-	*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
+	//*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
+	*bp = JL_ValueIsClass(cx, vp, JL_THIS_CLASS);
 	return true;
 }
 */

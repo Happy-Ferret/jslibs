@@ -755,7 +755,7 @@ public:
 				ASSERT(strlen(className) < 64);
 				const ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), className);
 				JL_CHKM( cpc != NULL, E_CLASS, E_NAME(className), E_NOTFOUND );
-				JS::RootedObject newObj(cx, JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, JS::NullPtr()));
+				JS::RootedObject newObj(cx, JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto));
 				JL_CHK( newObj );
 
 				JS::RootedValue arg(cx);

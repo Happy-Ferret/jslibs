@@ -54,7 +54,7 @@ protected:
 	inline int 	JsvalToInt( jsval val ) {
 
 		int32_t i;
-		if ( !JS_ValueToInt32(_cx, val, &i) )
+		if ( !JS::ToInt32(_cx, val, &i) )
 			throw JsException(_cx, "cannot convert to an integer");
 		return i;
 	}
@@ -92,7 +92,7 @@ protected:
 	inline bool JsvalToBool( jsval val ) {
 
 		bool b;
-		if ( !JS_ValueToBoolean(_cx, val, &b) )
+		if ( !JS::ToBoolean(_cx, val, &b) )
 			throw JsException(_cx, "cannot convert the value to a boolean");
 		return b == true;
 	}
@@ -104,7 +104,7 @@ protected:
 
 	inline JLData JsvalToString( jsval &val ) { // beware: val is a reference !
 
-		JSString *jsstr = JS_ValueToString(_cx, val);
+		JSString *jsstr = JS::ToString(_cx, val);
 		val = STRING_TO_JSVAL(jsstr);
 		if ( jsstr == NULL )
 			throw JsException(_cx, "cannot convert the value to a string");
@@ -119,7 +119,7 @@ protected:
 			str[0] = '\0';
 			return;
 		}
-		JSString *jsstr = JS_ValueToString(_cx, val);
+		JSString *jsstr = JS::ToString(_cx, val);
 		if ( jsstr == NULL )
 			throw JsException(_cx, "cannot convert the value to a string");
 		size_t len = JL_GetStringLength(jsstr);

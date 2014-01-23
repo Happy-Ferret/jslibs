@@ -170,7 +170,7 @@ DEFINE_FUNCTION( getCharOutline ) {
 	funcs.shift = 0;
 
 	JSString *jsstr;
-	jsstr = JS_ValueToString(cx, JL_ARG(1));
+	jsstr = JS::ToString(cx, JL_ARG(1));
 	JL_ASSERT( jsstr != NULL, "Invalid string." );
 	JL_ASSERT( JL_GetStringLength(jsstr) == 1, "Invalid char" );
 	jschar *str;
@@ -212,7 +212,7 @@ DEFINE_FUNCTION( drawChar ) {
 	ASSERT( pv->face->size->metrics.height > 0 ); // JL_ASSERT_ERROR_NUM( pv->face->size->metrics.height > 0, JLSMSG_VALUE_OUTOFRANGE, "height > 0" );
 
 	JSString *jsstr;
-	jsstr = JS_ValueToString(cx, JL_ARG(1));
+	jsstr = JS::ToString(cx, JL_ARG(1));
 	JL_ASSERT( jsstr, E_ARG, E_NUM(1), E_TYPE, E_TY_CHAR );
 	
 //	JL_ASSERT( JL_GetStringLength(jsstr) == 1, "Invalid char" );
@@ -269,7 +269,7 @@ DEFINE_FUNCTION( drawString ) {
 //	ASSERT( pv->face->size->metrics.height > 0 ); // JL_ASSERT_ERROR_NUM( pv->face->size->metrics.height > 0, JLSMSG_VALUE_OUTOFRANGE, "height > 0" );
 
 	JSString *jsstr;
-	jsstr = JS_ValueToString(cx, JL_ARG(1));
+	jsstr = JS::ToString(cx, JL_ARG(1));
 	JL_ASSERT( jsstr, E_ARG, E_NUM(1), E_TYPE, E_TY_STRING );
 
 	//jschar *str;

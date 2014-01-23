@@ -50,7 +50,7 @@ bool Unlock( JSContext *cx, ClassPrivate *pv ) {
 }
 
 
-bool SharedMemoryBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
+bool SharedMemoryBufferGet( JSContext *cx, JS::HandleObject obj, JLData *str ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(SharedMemory) );
@@ -67,7 +67,7 @@ bool SharedMemoryBufferGet( JSContext *cx, JSObject *obj, JLData *str ) {
 
 bool CloseSharedMemory( JSObject *obj ) {
 
-	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
+	ClassPrivate *pv = (ClassPrivate*)js::GetObjectPrivate(obj);
 
 	JL_CHK( PR_WaitSemaphore( pv->accessSem ) == PR_SUCCESS );
 
@@ -111,7 +111,7 @@ DEFINE_FINALIZE() {
 
 	JL_IGNORE( fop );
 
-	if ( !JL_GetPrivate(JL_OBJ) )
+	if ( !js::GetObjectPrivate(obj) )
 		return;
 	CloseSharedMemory(obj);
 }
@@ -298,7 +298,7 @@ DEFINE_FUNCTION( read ) {
 
 	uint8_t *data;
 	//data = (char*)jl_malloc(dataLength +1);
-	data = JL_NewBuffer(cx, dataLength, *JL_RVAL);
+	data = JL_NewBuffer(cx, dataLength, JL_RVAL);
 	JL_CHK( data );
 
 	memmove( data, (char *)pv->mem + sizeof(MemHeader) + offset, dataLength );
@@ -355,9 +355,9 @@ DEFINE_FUNCTION( close ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	ClassPrivate *pv;
-	pv = (ClassPrivate*)JL_GetPrivate(obj);
+	pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	if ( !CloseSharedMemory(obj) )
+	if ( !CloseSharedMemory(JL_OBJ) )
 		return ThrowIoError(cx);
 	JL_SetPrivate( JL_OBJ, NULL);
 

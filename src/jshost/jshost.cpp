@@ -167,8 +167,8 @@ struct EndSignalProcessEvent {
 	
 	ProcessEvent pe;
 	bool cancel;
-	jsval callbackFunction;
-	JSObject *callbackFunctionThis;
+	JS::PersistentRootedValue callbackFunction;
+	JS::PersistentRootedObject callbackFunctionThis;
 };
 
 S_ASSERT( offsetof(EndSignalProcessEvent, pe) == 0 );
@@ -216,7 +216,7 @@ EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS::
 	if ( !*hasEvent )
 		return true;
 
-	if ( upe->callbackFunction.isUndefined() )
+	if ( upe->callbackFunction.get().isUndefined() )
 		return true;
 
 	jsval rval;
@@ -639,6 +639,7 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 #ifdef DBG_ALLOC
 	struct Tmp {
 		static bool dbgAllocGetter(JSContext *cx, JSObject *, jsid, jsval *vp) {
+
 			return JL_NativeToJsval(cx, (int32_t)allocAmount, vp);
 		}
 	};

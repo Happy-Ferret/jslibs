@@ -107,7 +107,7 @@ DumpScope(JSContext *cx, JSObject *obj)
                 str = JSVAL_TO_STRING(v);
             } else {
                 JS_ASSERT(JSID_IS_OBJECT(sprop->id));
-                str = js_ValueToString(cx, v);
+                str = JS::ToString(cx, v);
                 _puts(cx, "object ");
             }
             if (!str)
@@ -166,7 +166,7 @@ DEFINE_FUNCTION( dumpHeap )
         if ( !JSVAL_IS_NULL( v ) ) {
             JSString *str;
 
-            str = JS_ValueToString(cx, v);
+            str = JS::ToString(cx, v);
             if (!str)
                 return false;
             JS_ARGV(cx, vp)[0] = STRING_TO_JSVAL(str);
@@ -461,7 +461,7 @@ DEFINE_FUNCTION( getObjectPrivate ) {
 JSScript *
 ValueToScript(JSContext *cx, jsval v)
 {
-    JSScript *script;
+    JS::RootedScript script;
     JSFunction *fun;
 
     if (!JSVAL_IS_PRIMITIVE(v) &&
@@ -482,7 +482,7 @@ GetTrapArgs(JSContext *cx, unsigned argc, jsval *argv, JSScript **scriptp,
 {
     jsval v;
     unsigned intarg;
-    JSScript *script;
+    JS::RootedScript script;
 
     *scriptp = JS_GetScriptedCaller(cx, NULL)->script;
     *ip = 0;
@@ -499,7 +499,7 @@ GetTrapArgs(JSContext *cx, unsigned argc, jsval *argv, JSScript **scriptp,
             intarg++;
         }
         if (argc > intarg) {
-            if (!JS_ValueToInt32(cx, argv[intarg], ip))
+            if (!JS::ToInt32(cx, argv[intarg], ip))
                 return false;
         }
     }
@@ -534,13 +534,13 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( trap )
 {
     JSString *str;
-    JSScript *script;
+    JS::RootedScript script;
     int32 i;
 
 	 JL_ASSERT_ARGC_MIN( 1 );
 
     argc--;
-    str = JS_ValueToString(cx, argv[argc]);
+    str = JS::ToString(cx, argv[argc]);
     if (!str)
         return false;
     argv[argc] = STRING_TO_JSVAL(str);
@@ -557,7 +557,7 @@ $TOC_MEMBER $INAME
 ** /
 DEFINE_FUNCTION( untrap )
 {
-    JSScript *script;
+    JS::RootedScript script;
     int32 i;
 
     if (!GetTrapArgs(cx, argc, argv, &script, &i))
@@ -573,7 +573,7 @@ $TOC_MEMBER $INAME
 ** /
 DEFINE_FUNCTION( lineToPC )
 {
-    JSScript *script;
+    JS::RootedScript script;
     int32 i;
     unsigned lineno;
     jsbytecode *pc;
@@ -599,7 +599,7 @@ $TOC_MEMBER $INAME
 ** /
 DEFINE_FUNCTION( pCToLine )
 {
-    JSScript *script;
+    JS::RootedScript script;
     int32 i;
     unsigned lineno;
 
@@ -673,7 +673,7 @@ DEFINE_FUNCTION( getActualLineno ) {
 	unsigned lineno;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lineno) );
 
-	JSScript *script;
+	JS::RootedScript script;
 	jsbytecode *pc;
 	JL_CHK( GetScriptLocation(cx, &JL_ARG(1), lineno, &script, &pc) );
 	if ( script == NULL ) {
@@ -741,7 +741,7 @@ DEFINE_FUNCTION( stackFrameInfo ) {
 	JL_CHK( frameInfo );
 	*JL_RVAL = OBJECT_TO_JSVAL(frameInfo);
 
-	JSScript *script;
+	JS::RootedScript script;
 	script = JS_GetFrameScript(cx, fp);
 	if ( script )
 		JL_CHK( JL_NativeToJsval(cx, JS_GetScriptFilename(cx, script), &tmp) );
@@ -809,7 +809,7 @@ DEFINE_FUNCTION( stackFrameInfo ) {
 //	JL_CHK( JS_SetProperty(cx, frameInfo, "isAssigning", &tmp) );
 
 //	JL_CHK( JS_DefineProperty(cx, frameInfo, "opnd", fp->regs->sp[-1], NULL, NULL, JSPROP_ENUMERATE) );
-//	char * s = JL_GetStringBytes(JS_ValueToString(cx, fp->regs->sp[-1]));
+//	char * s = JL_GetStringBytes(JS::ToString(cx, fp->regs->sp[-1]));
 
 	return true;
 	JL_BAD;
@@ -839,7 +839,7 @@ DEFINE_FUNCTION( evalInStackFrame ) {
 		return true;
 	}
 
-	JSScript *script;
+	JS::RootedScript script;
 	script = JS_GetFrameScript(cx, fp);
 
 	jsbytecode *pc;
@@ -908,7 +908,7 @@ DEFINE_FUNCTION( locate ) {
 		return true;
 	}
 
-	JSScript *script;
+	JS::RootedScript script;
 	script = JS_GetFrameScript(cx, fp); // because we are in a fast native function, this frame is ok.
 	unsigned lineno;
 	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
@@ -946,7 +946,7 @@ DEFINE_FUNCTION( definitionLocation ) {
 	jsval values[2];
 	JL_ASSERT_ARGC_MIN( 1 );
 
-	JSScript *script;
+	JS::RootedScript script;
 	script = NULL;
 
 	if ( JL_ValueIsCallable(cx, JL_ARG(1)) ) {
@@ -1081,7 +1081,7 @@ DEFINE_FUNCTION( disassembleScript ) {
 
 	scriptFileList = &((ModulePrivate*)JL_GetModulePrivate(cx, _moduleId))->scriptFileList;
 
-	JSScript *script;
+	JS::RootedScript script;
 	script = ScriptByLocation(cx, scriptFileList, filename, lineno);
 	JL_CHK( script );
 

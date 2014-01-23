@@ -459,7 +459,7 @@ DEFINE_FUNCTION( parsePairs ) { // arguments: data [, paramObject ]
 		name[nameLength] = '\0';
 		jl::memcpy(name, data, nameLength);
 		data += nameLength;
-		JSString *value = JS_NewDependentString(cx, JS_ValueToString(cx, argv[0]), data-start, valueLength);
+		JSString *value = JS_NewDependentString(cx, JS::ToString(cx, argv[0]), data-start, valueLength);
 		JS_DefineProperty(cx, params, name, STRING_TO_JSVAL( value ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE);
 		if ( nameLength > sizeof(buf)-1 )
 			JS_free(cx, name);
@@ -699,7 +699,7 @@ DEFINE_FUNCTION( parseRecord ) {
 				name[nameLength] = '\0';
 				jl::memcpy(name, data, nameLength);
 				data += nameLength;
-				JSString *value = JS_NewDependentString(cx, JS_ValueToString(cx, argv[0]), data-start, valueLength);
+				JSString *value = JS_NewDependentString(cx, JS::ToString(cx, argv[0]), data-start, valueLength);
 				JS_DefineProperty(cx, params, name, STRING_TO_JSVAL( value ), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_ENUMERATE);
 				if ( nameLength > sizeof(buf)-1 )
 					JS_free(cx, name);

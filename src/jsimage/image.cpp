@@ -60,8 +60,7 @@ DEFINE_CONSTRUCTOR() {
 	JSFunction *allocFunction;
 	allocFunction = JS_NewFunction(cx, _alloc, 0, 0, NULL, "alloc");
 	JL_ASSERT_ALLOC( allocFunction ); // "Unable to create allocation function."
-	JSObject *functionObject;
-	functionObject = JS_GetFunctionObject(allocFunction);
+	JS::RootedObject functionObject(cx, JS_GetFunctionObject(allocFunction));
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_FUNCTION_ALLOC, OBJECT_TO_JSVAL(functionObject)) );
 
 	return true;
@@ -116,7 +115,7 @@ DEFINE_FUNCTION( trim ) {
 	bool reuseBuffer;
 	reuseBuffer = false; // default
 	if ( argc >= 2 )
-		JS_ValueToBoolean(cx, JL_ARG(2), &reuseBuffer);
+		JS::ToBoolean(cx, JL_ARG(2), &reuseBuffer);
 
 	char *data;
 	data = (char*)JL_GetPrivate(obj);

@@ -34,7 +34,7 @@ DEFINE_FINALIZE() {
 	JL_IGNORE(fop);
 
 	PRProcess *process;
-	process = (PRProcess*)JL_GetPrivate(obj);
+	process = (PRProcess*)js::GetObjectPrivate(obj);
 	if ( process )
 		PR_DetachProcess(process); // may crash ?
 }
@@ -75,17 +75,17 @@ DEFINE_CONSTRUCTOR() {
 	const char **processArgv;
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JSObject *argObj = JSVAL_TO_OBJECT(JL_ARG(2));
+		JS::RootedObject argObj(cx, &JL_ARG(2).toObject());
 		JL_CHK( JS_GetArrayLength(cx, argObj, &processArgc) );
 		processArgc++; // +1 is argv[0]
 		processArgv = (const char**)alloca(sizeof(char**) * (processArgc +1)); // +1 because the NULL list terminator.
 		JL_ASSERT_ALLOC( processArgv );
 
+		JS::RootedValue propVal(cx);
 		for ( uint32_t i = 1; i < processArgc; ++i ) {
 
 			JLData tmp;
-			jsval propVal;
-			JL_CHK( JL_GetElement(cx, argObj, i -1, propVal) ); // -1 because 0 is reserved to argv[0]
+			JL_CHK( JL_GetElement(cx, argObj, i -1, &propVal) ); // -1 because 0 is reserved to argv[0]
 			JL_CHK( JL_JsvalToNative(cx, propVal, &tmp) ); // warning: GC on the returned buffer !
 			processArgv[i] = tmp.GetStrZOwnership();
 		}
@@ -172,19 +172,22 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( stdioRedirect ) {
 
-		JSObject *fdInObj;
-		fdInObj = JL_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe), NULL );
-		JL_CHK( JL_SetReservedSlot( obj, SLOT_PROCESS_STDIN, OBJECT_TO_JSVAL(fdInObj)) );
+		JS::RootedObject pipeProto(cx, JL_CLASS_PROTOTYPE(cx, Pipe));
+		JS::RootedValue tmp(cx);
+
+		JS::RootedObject fdInObj(cx, JL_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), pipeProto));
+		tmp.setObject(*fdInObj);
+		JL_CHK( JL_SetReservedSlot( obj, SLOT_PROCESS_STDIN, tmp) );
 		JL_SetPrivate(  fdInObj, stdin_parent );
 
-		JSObject *fdOutObj;
-		fdOutObj = JL_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe), NULL );
-		JL_CHK( JL_SetReservedSlot( obj, SLOT_PROCESS_STDOUT, OBJECT_TO_JSVAL(fdOutObj)) );
+		JS::RootedObject fdOutObj(cx, JL_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), pipeProto));
+		tmp.setObject(*fdOutObj);
+		JL_CHK( JL_SetReservedSlot( obj, SLOT_PROCESS_STDOUT, tmp) );
 		JL_SetPrivate(  fdOutObj, stdout_parent );
 
-		JSObject *fdErrObj;
-		fdErrObj = JL_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe), NULL );
-		JL_CHK( JL_SetReservedSlot( obj, SLOT_PROCESS_STDERR, OBJECT_TO_JSVAL(fdErrObj)) );
+		JS::RootedObject fdErrObj(cx, JL_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), pipeProto));
+		tmp.setObject(*fdErrObj);
+		JL_CHK( JL_SetReservedSlot( obj, SLOT_PROCESS_STDERR, tmp) );
 		JL_SetPrivate(  fdErrObj, stderr_parent );
 	}
 
@@ -226,12 +229,12 @@ DEFINE_FUNCTION( wait ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	PRProcess *process;
-	process = (PRProcess*)JL_GetPrivate(obj);
+	process = (PRProcess*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(process);
 	PRInt32 exitValue;
 	JL_CHK( PR_WaitProcess(process, &exitValue) == PR_SUCCESS );
-	JL_SetPrivate( obj, NULL);
-	JL_CHK( JL_NativeToJsval(cx, exitValue, *JL_RVAL) );
+	JL_SetPrivate(JL_OBJ, NULL);
+	JL_CHK( JL_NativeToJsval(cx, exitValue, JL_RVAL) );
 	return true;
 	JL_BAD;
 }
@@ -251,10 +254,10 @@ DEFINE_FUNCTION( detach ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	PRProcess *process;
-	process = (PRProcess*)JL_GetPrivate(obj);
+	process = (PRProcess*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(process);
 	JL_CHK( PR_DetachProcess(process) == PR_SUCCESS );
-	JL_SetPrivate( obj, NULL); // On return, the value of process becomes an invalid pointer and should not be passed to other functions.
+	JL_SetPrivate(JL_OBJ, NULL); // On return, the value of process becomes an invalid pointer and should not be passed to other functions.
 	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
@@ -275,10 +278,10 @@ DEFINE_FUNCTION( kill ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	PRProcess *process;
-	process = (PRProcess*)JL_GetPrivate(obj);
+	process = (PRProcess*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(process);
 	JL_CHK( PR_KillProcess(process) == PR_SUCCESS );
-	JL_SetPrivate( obj, NULL); // Invalidates the current process pointer.
+	JL_SetPrivate(JL_OBJ, NULL); // Invalidates the current process pointer.
 	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
@@ -297,11 +300,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( stdin ) {
 
-	JL_IGNORE( id );
-
+	JL_DEFINE_PROP_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
 
-	JL_CHK( JL_GetReservedSlot( obj, SLOT_PROCESS_STDIN, vp) );
+	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_PROCESS_STDIN, JL_RVAL) );
 	return true;
 	JL_BAD;
 }
@@ -313,11 +315,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( stdout ) {
 
-	JL_IGNORE( id );
-
+	JL_DEFINE_PROP_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
 
-	JL_CHK( JL_GetReservedSlot( obj, SLOT_PROCESS_STDOUT, vp) );
+	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_PROCESS_STDOUT, JL_RVAL) );
 	return true;
 	JL_BAD;
 }
@@ -329,11 +330,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( stderr ) {
 
-	JL_IGNORE( id );
-
+	JL_DEFINE_PROP_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
 
-	JL_CHK( JL_GetReservedSlot( obj, SLOT_PROCESS_STDERR, vp) );
+	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_PROCESS_STDERR, JL_RVAL) );
 	return true;
 	JL_BAD;
 }
