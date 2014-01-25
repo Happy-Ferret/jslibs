@@ -127,7 +127,7 @@ bool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JSObject *argObj, 
 					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 				break;
 			case JSTYPE_BOOLEAN:
-				if ( sqlite3_bind_int(pStmt, param, JSVAL_TO_BOOLEAN(val) == true ? 1 : 0 ) != SQLITE_OK )
+				if ( sqlite3_bind_int(pStmt, param, val.toBoolean() ? 1 : 0 ) != SQLITE_OK )
 					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 				break;
 			case JSTYPE_NUMBER:

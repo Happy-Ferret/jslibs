@@ -81,7 +81,7 @@ END_CLASS
 
 bool NewComEnum( JSContext *cx, IEnumVARIANT *ienumv, OUT JS::MutableHandleValue rval ) {
 
-	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComEnum), JL_CLASS_PROTOTYPE(cx, ComEnum), NULL);
+	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComEnum), JL_CLASS_PROTOTYPE(cx, ComEnum));
 	JL_CHK( varObj );
 	rval.setObject( *varObj );
 	JL_SetPrivate( varObj, ienumv);

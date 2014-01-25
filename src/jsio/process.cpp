@@ -172,20 +172,19 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( stdioRedirect ) {
 
-		JS::RootedObject pipeProto(cx, JL_CLASS_PROTOTYPE(cx, Pipe));
 		JS::RootedValue tmp(cx);
 
-		JS::RootedObject fdInObj(cx, JL_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), pipeProto));
+		JS::RootedObject fdInObj(cx, JL_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe)));
 		tmp.setObject(*fdInObj);
 		JL_CHK( JL_SetReservedSlot( obj, SLOT_PROCESS_STDIN, tmp) );
 		JL_SetPrivate(  fdInObj, stdin_parent );
 
-		JS::RootedObject fdOutObj(cx, JL_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), pipeProto));
+		JS::RootedObject fdOutObj(cx, JL_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe)));
 		tmp.setObject(*fdOutObj);
 		JL_CHK( JL_SetReservedSlot( obj, SLOT_PROCESS_STDOUT, tmp) );
 		JL_SetPrivate(  fdOutObj, stdout_parent );
 
-		JS::RootedObject fdErrObj(cx, JL_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), pipeProto));
+		JS::RootedObject fdErrObj(cx, JL_NewObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe)));
 		tmp.setObject(*fdErrObj);
 		JL_CHK( JL_SetReservedSlot( obj, SLOT_PROCESS_STDERR, tmp) );
 		JL_SetPrivate(  fdErrObj, stderr_parent );

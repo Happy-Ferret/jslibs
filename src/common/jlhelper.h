@@ -376,6 +376,20 @@ JL_TRUE() {
 	return JS::HandleValue::fromMarkedLocation(&JS::TrueValue());
 }
 
+/*
+ALWAYS_INLINE JS::HandleValue FASTCALL
+JL_ArrayToAutoArrayRooter(JSContext *cx, JS::HandleObject *arrayObj) {
+
+	uint32_t length;
+	JS_GetArrayLength(cx, arrayObj, &length);
+
+	JS::AutoArrayRooter aar(cx, length, 
+
+
+		JS_GetElement
+}
+*/
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Safe Mode tools
@@ -953,14 +967,14 @@ JL_GetCachedClass( const HostPrivate * const hpv, const char * const className )
 	return cpc ? cpc->clasp : NULL;
 }
 
-ALWAYS_INLINE JSObject * FASTCALL
+ALWAYS_INLINE JS::HandleObject FASTCALL
 JL_GetCachedProto( const HostPrivate * const hpv, const char * const className ) {
 	
 	const ClassProtoCache *cpc = JL_GetCachedClassProto(hpv, className);
 	if ( cpc != NULL )
 		return cpc->proto;
 	else
-		return NULL;
+		return JS::NullPtr();
 
 }
 
@@ -2944,12 +2958,6 @@ JL_NativeToJsval( JSContext *, const bool &b, OUT JS::MutableHandleValue vp ) {
 ALWAYS_INLINE bool FASTCALL
 JL_JsvalToNative( JSContext *cx, IN JS::HandleValue val, bool *b ) {
 
-	if (likely( val.isBoolean() )) {
-
-		*b = (JSVAL_TO_BOOLEAN(val) == true);
-		return true;
-	}
-
 	*b = JS::ToBoolean(val);
 	return true;
 }
@@ -3214,7 +3222,7 @@ ALWAYS_INLINE bool FASTCALL
 JL_NativeToProperty( JSContext *cx, IN JS::HandleObject obj, const char *name, const T &cval ) {
 
 	JS::RootedValue tmp(cx);
-	return JL_NativeToJsval(cx, cval, tmp) && JS_SetProperty(cx, obj, name, &tmp);
+	return JL_NativeToJsval(cx, cval, &tmp) && JS_SetProperty(cx, obj, name, tmp);
 }
 
 template <class T>

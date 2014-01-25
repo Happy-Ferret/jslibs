@@ -125,7 +125,7 @@ namespace jl2 { //JL_BEGIN_NAMESPACE
 
 			for ( PropertyItem *it = this; it; it = it->prev_ ) {
 
-				JL_CHK( JS_DefineProperty(cx, obj, it->name_, JS::UndefinedValue(), it->getter_, it->setter_, it->attrs_) );
+				JL_CHK( JS_DefineProperty(cx, obj, it->name_, JS::UndefinedHandleValue(), it->getter_, it->setter_, it->attrs_) );
 			}
 			return true;
 			bad: return false;

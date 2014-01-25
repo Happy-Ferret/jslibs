@@ -37,31 +37,31 @@ bool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj ) { 
 
 	switch( ode::dJointGetType(jointId) ) {
 		case ode::dJointTypeBall:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(JointBall), JL_CLASS_PROTOTYPE(cx, JointBall), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(JointBall), JL_CLASS_PROTOTYPE(cx, JointBall));
 			break;
 		case ode::dJointTypeHinge:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(JointHinge), JL_CLASS_PROTOTYPE(cx, JointHinge), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(JointHinge), JL_CLASS_PROTOTYPE(cx, JointHinge));
 			break;
 		case ode::dJointTypeSlider:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(JointSlider), JL_CLASS_PROTOTYPE(cx, JointSlider), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(JointSlider), JL_CLASS_PROTOTYPE(cx, JointSlider));
 			break;
 		case ode::dJointTypeUniversal:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(JointUniversal), JL_CLASS_PROTOTYPE(cx, JointUniversal), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(JointUniversal), JL_CLASS_PROTOTYPE(cx, JointUniversal));
 			break;
 		case ode::dJointTypePiston:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(JointPiston), JL_CLASS_PROTOTYPE(cx, JointPiston), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(JointPiston), JL_CLASS_PROTOTYPE(cx, JointPiston));
 			break;
 		case ode::dJointTypeFixed:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(JointFixed), JL_CLASS_PROTOTYPE(cx, JointFixed), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(JointFixed), JL_CLASS_PROTOTYPE(cx, JointFixed));
 			break;
 		case ode::dJointTypeAMotor:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(JointAMotor), JL_CLASS_PROTOTYPE(cx, JointAMotor), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(JointAMotor), JL_CLASS_PROTOTYPE(cx, JointAMotor));
 			break;
 		case ode::dJointTypeLMotor:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(JointLMotor), JL_CLASS_PROTOTYPE(cx, JointLMotor), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(JointLMotor), JL_CLASS_PROTOTYPE(cx, JointLMotor));
 			break;
 		case ode::dJointTypePlane2D:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(JointPlane), JL_CLASS_PROTOTYPE(cx, JointPlane), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(JointPlane), JL_CLASS_PROTOTYPE(cx, JointPlane));
 			break;
 		default:
 			ASSERT(false);

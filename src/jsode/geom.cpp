@@ -77,28 +77,28 @@ bool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) { // (T
 
 	switch( ode::dGeomGetClass(geomId) ) {
 		case ode::dSphereClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomSphere), JL_CLASS_PROTOTYPE(cx, GeomSphere), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomSphere), JL_CLASS_PROTOTYPE(cx, GeomSphere));
 			break;
 		case ode::dBoxClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomBox), JL_CLASS_PROTOTYPE(cx, GeomBox), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomBox), JL_CLASS_PROTOTYPE(cx, GeomBox));
 			break;
 		case ode::dCapsuleClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomCapsule), JL_CLASS_PROTOTYPE(cx, GeomCapsule), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomCapsule), JL_CLASS_PROTOTYPE(cx, GeomCapsule));
 			break;
 		case ode::dCylinderClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomCylinder), JL_CLASS_PROTOTYPE(cx, GeomCylinder), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomCylinder), JL_CLASS_PROTOTYPE(cx, GeomCylinder));
 			break;
 		case ode::dPlaneClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomPlane), JL_CLASS_PROTOTYPE(cx, GeomPlane), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomPlane), JL_CLASS_PROTOTYPE(cx, GeomPlane));
 			break;
 		case ode::dRayClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomRay), JL_CLASS_PROTOTYPE(cx, GeomRay), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomRay), JL_CLASS_PROTOTYPE(cx, GeomRay));
 			break;
 		case ode::dConvexClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomConvex), JL_CLASS_PROTOTYPE(cx, GeomConvex), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomConvex), JL_CLASS_PROTOTYPE(cx, GeomConvex));
 			break;
 		case ode::dTriMeshClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomTrimesh), JL_CLASS_PROTOTYPE(cx, GeomTrimesh), NULL);
+			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomTrimesh), JL_CLASS_PROTOTYPE(cx, GeomTrimesh));
 			break;
 		default:
 			ASSERT(false);

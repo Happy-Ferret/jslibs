@@ -91,13 +91,12 @@ bool NativeInterfaceStreamRead( JSContext *cx, JS::HandleObject obj, char *buf, 
 
 void FinalizeDescriptor(JSFreeOp *fop, JSObject *obj) {
 
-	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( obj );
+	PRFileDesc *fd = (PRFileDesc*)js::GetObjectPrivate(obj);
 	if ( !fd ) // check if not already closed
 		return;
 
-	JS::RootedValue imported(fop->runtime());
-	JL_CHK( JL_GetReservedSlot( obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, &imported) );
-	if ( imported == JSVAL_TRUE ) // Descriptor was inported, then do not close it
+	JS::RootedValue imported(fop->runtime(), JS_GetReservedSlot(obj, SLOT_JSIO_DESCRIPTOR_IMPORTED));
+	if ( imported.toBoolean() ) // Descriptor was inported, then do not close it
 		return;
 
 	PRStatus status;
@@ -645,6 +644,7 @@ DEFINE_FUNCTION( import ) {
 	PRDescType type;
 	type = (PRDescType)descType;
 
+	{
 	PRFileDesc *fd;
 	JS::RootedObject descriptorObject(cx);
 
@@ -677,10 +677,11 @@ DEFINE_FUNCTION( import ) {
 	JL_CHK( descriptorObject );
 	JL_SetPrivate( descriptorObject, (void*)fd);
 
-	JS::RootedValue tmp(cx, JS::BooleanValue(true));
-	JL_CHK( JL_SetReservedSlot(descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, tmp) );
+	JL_CHK( JL_SetReservedSlot(descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JL_TRUE()) );
 
 	JL_RVAL.setObject(*descriptorObject);
+	}
+
 	return true;
 	JL_BAD;
 }
@@ -715,14 +716,14 @@ static bool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JS::HandleO
 
 	IOProcessEvent *upe = (IOProcessEvent*)pe;
 
-	JS::RootedValue fdArrayVal(cx);
-	JS::RootedObject fdArrayObj(cx);
 	unsigned fdCount;
 
-
+	JS::RootedValue fdArrayVal(cx);
+	JS::RootedObject fdArrayObj(cx);
 
 	JL_CHK( GetHandleSlot(cx, obj, 0, &fdArrayVal) );
-	fdArrayObj = JSVAL_TO_OBJECT(fdArrayVal);
+	fdArrayObj.set(&fdArrayVal.toObject());
+
 	JL_CHK( JS_GetArrayLength(cx, fdArrayObj, &fdCount) );
 
 	upe->pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * (1 + fdCount)); // pollDesc[0] is the event fd
@@ -751,8 +752,9 @@ static bool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JS::HandleO
 	// (TBD) find a better solution to root fdArray content
 	// (TBD) use AutoValueVector avr(cx); avr.reserve(16); avr.append(val);
 	JS::RootedObject rootedValues(cx, JS_NewArrayObject(cx, fdCount, NULL));
-
-	JL_CHK( SetHandleSlot(cx, obj, 1, OBJECT_TO_JSVAL(rootedValues)) );
+	JS::RootedValue rootedValuesVal(cx);
+	rootedValuesVal.setObject(*rootedValues);
+	JL_CHK( SetHandleSlot(cx, obj, 1, rootedValuesVal) );
 
 	jsval *descriptor;
 	for ( unsigned int i = 0; i < fdCount; ++i ) {

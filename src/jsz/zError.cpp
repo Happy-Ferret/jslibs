@@ -153,7 +153,7 @@ END_CLASS
 NEVER_INLINE bool FASTCALL
 ThrowZError( JSContext *cx, int errorCode, const char *errorMessage ) {
 
-	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(ZError), JL_CLASS_PROTOTYPE(cx, ZError), NULL );
+	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(ZError), JL_CLASS_PROTOTYPE(cx, ZError) );
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JL_CHK( JL_SetReservedSlot(  error, 0, INT_TO_JSVAL(errorCode) ) );
 	JL_CHK( JL_SetReservedSlot(  error, 1, STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage != NULL ? errorMessage : ZConstString(errorCode) )) ) );

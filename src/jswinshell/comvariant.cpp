@@ -698,7 +698,7 @@ END_CLASS
 // acquire the ownership of the variant
 bool NewComVariant( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rval ) {
 
-	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComVariant), JL_CLASS_PROTOTYPE(cx, ComVariant), NULL);
+	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComVariant), JL_CLASS_PROTOTYPE(cx, ComVariant));
 	JL_CHK( varObj );
 	rval.setObject( *varObj );
 	JL_SetPrivate( varObj, variant);

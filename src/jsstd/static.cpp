@@ -985,7 +985,7 @@ bool SandboxMaxOperationCallback(JSContext *cx) {
 		oldCompartment = JS_EnterCompartment(cx, cpc->proto);
 		JL_CHK( oldCompartment );
 		JSObject *branchLimitExceptionObj;
-		branchLimitExceptionObj = JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto, JS::NullPtr());
+		branchLimitExceptionObj = JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto);
 		
 		branchLimitExceptionVal.setObject(*branchLimitExceptionObj);
 		JS_SetPendingException(cx, branchLimitExceptionVal);

@@ -57,7 +57,7 @@ HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruc
 	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME("Handle"), E_NOTFOUND );
 
 	{
-	JS::RootedObject handleObj(cx, JL_NewObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto, JS::NullPtr()));
+	JS::RootedObject handleObj(cx, JL_NewObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto));
 	JL_CHK( handleObj );
 	handleVal.setObject(*handleObj);
 

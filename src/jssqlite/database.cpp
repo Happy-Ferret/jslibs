@@ -497,7 +497,7 @@ DEFINE_FUNCTION( openBlobStream ) {
 	blobStreamPv->position = 0;
 
 	JSObject *blobStreamBoj;
-	blobStreamBoj = JL_NewObjectWithGivenProto(cx, JL_CLASS(BlobStream), JL_CLASS_PROTOTYPE(cx, BlobStream), NULL);
+	blobStreamBoj = JL_NewObjectWithGivenProto(cx, JL_CLASS(BlobStream), JL_CLASS_PROTOTYPE(cx, BlobStream));
 	JL_CHK( blobStreamBoj );
 
 	JL_SetPrivate(blobStreamBoj, blobStreamPv);
@@ -602,7 +602,7 @@ DEFINE_FUNCTION( query ) {
 	// create the Result (statement) object
 	JSObject *dbStatement;
 	
-	dbStatement = JL_NewObjectWithGivenProto(cx, JL_CLASS(Result), JL_CLASS_PROTOTYPE(cx, Result), NULL);
+	dbStatement = JL_NewObjectWithGivenProto(cx, JL_CLASS(Result), JL_CLASS_PROTOTYPE(cx, Result));
 	JL_CHK( dbStatement );
 
 	JL_SetPrivate( dbStatement, pStmt);

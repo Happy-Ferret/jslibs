@@ -96,7 +96,7 @@ DEFINE_PROPERTY_SETTER( realtime ) {
 	VstMidiEvent *pv = (VstMidiEvent*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_ASSERT_IS_BOOLEAN(*vp, "");
-	pv->flags = JSVAL_TO_BOOLEAN( *vp ) == true ? pv->flags & kVstMidiEventIsRealtime : pv->flags | ~kVstMidiEventIsRealtime;
+	pv->flags = vp.toBoolean() ? pv->flags & kVstMidiEventIsRealtime : pv->flags | ~kVstMidiEventIsRealtime;
 	return true;
 	JL_BAD;
 }
@@ -349,7 +349,7 @@ END_CLASS
 
 JSObject* CreateMidiEventObject( JSContext *cx, VstMidiEvent *midiEvent ) {
 
-	JSObject *midiEventObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(MidiEvent), JL_CLASS_PROTOTYPE(cx, MidiEvent), NULL);
+	JSObject *midiEventObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(MidiEvent), JL_CLASS_PROTOTYPE(cx, MidiEvent));
 	if ( midiEventObject == NULL )
 		return NULL;
 	JL_SetPrivate( midiEventObject, midiEvent);

@@ -283,8 +283,7 @@ DEFINE_FUNCTION( accept ) {
 		return ThrowIoError(cx);
 
 	{
-	JS::RootedObject proto(cx, JL_CLASS_PROTOTYPE(cx, Socket));
-	JS::RootedObject object(cx, JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), proto));
+	JS::RootedObject object(cx, JL_NewObjectWithGivenProto(cx, JL_CLASS(Socket), JL_CLASS_PROTOTYPE(cx, Socket)));
 	JL_SetPrivate(object, newFd);
 //	JL_CHK( JL_SetReservedSlot( descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_FALSE) );
 

@@ -821,7 +821,7 @@ DEFINE_PROPERTY_GETTER( canProcessReplacing ) {
 		JsVst *vstPlugin = (JsVst *)JL_GetPrivate(obj);
 		JL_ASSERT_THIS_OBJECT_STATE( vstPlugin );
 		JL_ASSERT_IS_BOOLEAN(*vp, "");
-		vstPlugin->canProcessReplacing( JSVAL_TO_BOOLEAN(*vp) == true ? true : false );
+		vstPlugin->canProcessReplacing(vp.toBoolean());
 	}
 	return true;
 	JL_BAD;

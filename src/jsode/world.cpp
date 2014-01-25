@@ -732,7 +732,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( env ) {
 
 	JL_ASSERT_THIS_INSTANCE();
-	JSObject *staticBody = JL_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_CLASS_PROTOTYPE(cx, Body), NULL);
+	JSObject *staticBody = JL_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_CLASS_PROTOTYPE(cx, Body));
 	JL_CHK(staticBody);
 	JL_SetPrivate( staticBody, (ode::dBodyID)0);
 	*vp = OBJECT_TO_JSVAL(staticBody);

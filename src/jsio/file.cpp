@@ -737,7 +737,7 @@ DEFINE_PROPERTY_GETTER( info ) {
 		vp.setObject( *fileInfoObj );
 	}
 
-	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "type", fileInfo.type) );
+	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "type", (int)fileInfo.type) );
 	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "size", fileInfo.size) );
 	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "creationTime", fileInfo.creationTime / (double)1000) );
 	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "modifyTime", fileInfo.modifyTime / (double)1000) );
@@ -816,8 +816,7 @@ DEFINE_PROPERTY( standard ) {
 		int i;
 		//JS::ToInt32( cx, id, &i );
 		i = JSID_TO_INT(id);
-		JS::RootedObject proto(cx, JL_CLASS_PROTOTYPE(cx, File));
-		JS::RootedObject obj(cx, JL_NewObjectWithGivenProto(cx, JL_CLASS(File), proto)); // no need to use classDescriptor as proto.
+		JS::RootedObject obj(cx, JL_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_CLASS_PROTOTYPE(cx, File))); // no need to use classDescriptor as proto.
 		vp.setObject( *obj );
 
 		PRFileDesc *fd = PR_GetSpecialFD((PRSpecialFD)i); // beware: cast !

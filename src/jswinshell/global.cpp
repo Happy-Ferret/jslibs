@@ -61,7 +61,7 @@ DEFINE_FUNCTION( extractIcon ) {
 		JL_RVAL.setUndefined();
 		return true;
 	}
-	JSObject *icon = JL_NewObjectWithGivenProto(cx, JL_CLASS(Icon), JL_CLASS_PROTOTYPE(cx, Icon), NULL);
+	JSObject *icon = JL_NewObjectWithGivenProto(cx, JL_CLASS(Icon), JL_CLASS_PROTOTYPE(cx, Icon));
 	HICON *phIcon = (HICON*)jl_malloc(sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
 	JL_ASSERT_ALLOC( phIcon );
 	*phIcon = hIcon;

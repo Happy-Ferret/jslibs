@@ -55,7 +55,7 @@ bool ReconstructBody(JSContext *cx, ode::dBodyID bodyId, JSObject **obj) { // (T
 
 	if (unlikely( bodyId == (ode::dBodyID)0 )) { // bodyId may be null if body is world.env
 
-		*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_CLASS_PROTOTYPE(cx, Body), NULL);
+		*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_CLASS_PROTOTYPE(cx, Body));
 		JL_CHK( *obj );
 	} else {
 
@@ -1058,7 +1058,7 @@ DEFINE_PROPERTY_GETTER( mass ) {
 
 	JL_ASSERT_THIS_INSTANCE();
 	
-	JSObject *massObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Mass), JL_CLASS_PROTOTYPE(cx, Mass), NULL);
+	JSObject *massObject = JL_NewObjectWithGivenProto(cx, JL_CLASS(Mass), JL_CLASS_PROTOTYPE(cx, Mass));
 	//JL_ASSERT(massObject != NULL, "Unable to create the Mass object.");
 	JL_ASSERT_ALLOC( massObject );
 

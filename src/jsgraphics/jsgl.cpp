@@ -2368,7 +2368,7 @@ DEFINE_FUNCTION( depthMask ) {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_BOOLEAN(1);
 
-	glDepthMask( JSVAL_TO_BOOLEAN( JL_ARG(1) ) != 0 );  OGL_ERR_CHK;
+	glDepthMask( JL_ARG(1).toBoolean() );  OGL_ERR_CHK;
 
 	JL_RVAL.setUndefined();
 	return true;
@@ -2692,7 +2692,7 @@ DEFINE_FUNCTION( colorMask ) {
 	JL_ASSERT_ARG_IS_BOOLEAN(3);
 	JL_ASSERT_ARG_IS_BOOLEAN(4);
 
-	glColorMask( JSVAL_TO_BOOLEAN(JL_ARG(1)) != 0, JSVAL_TO_BOOLEAN(JL_ARG(2)) != 0, JSVAL_TO_BOOLEAN(JL_ARG(3)) != 0, JSVAL_TO_BOOLEAN(JL_ARG(4)) != 0 );  OGL_ERR_CHK;
+	glColorMask( JL_ARG(1).toBoolean(), JL_ARG(2).toBoolean(), JL_ARG(3).toBoolean(), JL_ARG(4).toBoolean() );  OGL_ERR_CHK;
 
 	return true;
 	JL_BAD;

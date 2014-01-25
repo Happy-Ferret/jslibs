@@ -448,7 +448,7 @@ END_CLASS
 
 bool NewComDispatch( JSContext *cx, IDispatch *pdisp, OUT JS::MutableHandleValue rval ) {
 
-	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComDispatch), JL_CLASS_PROTOTYPE(cx, ComDispatch), NULL);
+	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComDispatch), JL_CLASS_PROTOTYPE(cx, ComDispatch));
 	JL_CHK(varObj);
 	rval.setObject( *varObj );
 	JL_SetPrivate( varObj, pdisp);

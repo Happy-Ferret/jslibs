@@ -298,7 +298,7 @@ public:
 			if ( val.isBoolean() ) {
 
 				JL_CHK( Write(cx, JLSTBool) );
-				JL_CHK( Write(cx, char(JSVAL_TO_BOOLEAN(val))) );
+				JL_CHK( Write(cx, char(val.toBoolean())) );
 			} else
 			if ( JSVAL_IS_DOUBLE(val) ) {
 
