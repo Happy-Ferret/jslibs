@@ -873,7 +873,7 @@ DEFINE_PROPERTY_SETTER( level ) {
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
 
-	JL_ASSERT( vp.isUndefined() || JSVAL_IS_NUMBER(*vp), E_TYPE, E_TY_NUMBER );
+	JL_ASSERT( vp.isUndefined() || vp.isNumber(), E_TYPE, E_TY_NUMBER );
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_CURRENTLEVEL, *vp) );
 
 	return true;

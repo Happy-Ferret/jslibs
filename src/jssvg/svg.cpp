@@ -582,7 +582,7 @@ DEFINE_PROPERTY_SETTER( dpi ) {
 
 		rsvg_handle_set_dpi(handle, -1);
 	} else
-	if ( JSVAL_IS_NUMBER(*vp) ) {
+	if ( vp.isNumber() ) {
 
 		size_t dpi;
 		JL_CHK( JL_JsvalToNative(cx, *vp, &dpi) );

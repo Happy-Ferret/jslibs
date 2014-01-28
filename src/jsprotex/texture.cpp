@@ -271,7 +271,7 @@ InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, PTYPE *l
 	
 	unsigned int i;
 
-	if ( JSVAL_IS_NUMBER(value) ) {
+	if ( value.isNumber() ) {
 
 		PTYPE val;
 		JL_CHK( JL_JsvalToNative(cx, value, &val) );
@@ -280,7 +280,7 @@ InitLevelData( JSContext* cx, jsval value, unsigned int levelMaxLength, PTYPE *l
 		return true;
 	}
 
-	if ( JSVAL_IS_STRING(value) ) {
+	if ( value.isString() ) {
 
 		JLData colorStr;
 		const char *color;
@@ -377,7 +377,7 @@ InitCurveData( IN JSContext* cx, IN jsval value, IN size_t length, OUT float *cu
 		return true;
 	}
 
-	if ( JSVAL_IS_NUMBER(value) ) {
+	if ( value.isNumber() ) {
 
 		double dval;
 		JL_CHK( JL_JsvalToNative(cx, value, &dval) );
@@ -1667,7 +1667,7 @@ DEFINE_FUNCTION( add ) {
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
-	if ( JSVAL_IS_NUMBER(JL_ARG(1)) ) {
+	if ( JL_ARG(1).isNumber() ) {
 
 		PTYPE value;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );
@@ -1752,7 +1752,7 @@ DEFINE_FUNCTION( mult ) {
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
-	if ( JSVAL_IS_NUMBER(JL_ARG(1)) ) {
+	if ( JL_ARG(1).isNumber() ) {
 
 		PTYPE value;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );

@@ -161,7 +161,7 @@ DEFINE_FUNCTION( open ) {
 	PRIntn flags;
 	if ( JL_ARG_ISDEF(1) ) {
 
-		if ( JSVAL_IS_NUMBER( JL_ARG(1) ) ) {
+		if ( JL_ARG(1).isNumber() ) {
 
 			JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &flags) );
 		} else {
@@ -178,7 +178,7 @@ DEFINE_FUNCTION( open ) {
 	PRIntn mode;
 	if ( JL_ARG_ISDEF(2) ) {
 
-		if ( JSVAL_IS_NUMBER( JL_ARG(2) ) ) {
+		if ( JL_ARG(2).isNumber() ) {
 
 			JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &mode) );
 		} else {

@@ -93,7 +93,7 @@ DEFINE_FUNCTION( stringify ) {
 	JL_DEFINE_ARGS;
 	JLData str;
 
-	if ( JL_ARGC == 1 && JSVAL_IS_STRING(JL_ARG(1)) ) { // identity
+	if ( JL_ARGC == 1 && JL_ARG(1).isString() ) { // identity
 		
 		JL_RVAL.set(JL_ARG(1));
 		return true;

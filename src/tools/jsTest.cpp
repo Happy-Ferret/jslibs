@@ -945,8 +945,14 @@ int main_min(int argc, char* argv[]) {
 	printf("%d\n", valTmp.toInt32());
 */
 
-	JS::RootedVector<JS::Value> arr;
+	JS::RootedValue tmp(cx);
 
+	mozilla::Vector<JS::PersistentRootedValue,8> descVal;
+
+	descVal.append(JS::PersistentRootedValue(cx, tmp));
+
+
+//	JS::RootedVector<JS::Value> arr;
 	JSAutoCompartment ac(cx, globalObject);
 
 	JS::RootedObject test(cx);

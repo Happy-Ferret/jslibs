@@ -465,7 +465,7 @@ DEFINE_FUNCTION( sendTo ) {
 		JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
 	} else if ( sentAmount == 0 ) { // nothing has been sent
 
-		if ( JSVAL_IS_STRING( JL_ARG(3) ) ) {
+		if ( JL_ARG(3).isString() ) {
 			
 			JL_RVAL.set(JL_ARG(3));
 		} else {

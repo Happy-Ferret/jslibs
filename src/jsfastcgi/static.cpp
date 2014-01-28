@@ -144,7 +144,7 @@ DEFINE_FUNCTION( write ) {
 	result = FCGX_PutStr(str.GetConstStr(), (int)str.Length(), _request.out);
 	if ( result >= 0 && (size_t)result < str.Length() ) { // returns unwritten data
 
-		JSString *jsstr = JS_NewDependentString(cx, JSVAL_TO_STRING(JL_ARG(1)), result, str.Length() - result);
+		JSString *jsstr = JS_NewDependentString(cx, JL_ARG(1).toString(), result, str.Length() - result);
 		JL_ASSERT_ALLOC( jsstr );
 		*JL_RVAL = STRING_TO_JSVAL( jsstr );
 	} else

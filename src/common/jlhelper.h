@@ -1266,7 +1266,7 @@ JL_ValueIsNumberObject( JSContext * RESTRICT cx, IN JS::HandleValue value ) {
 ALWAYS_INLINE bool FASTCALL
 JL_ValueIsNumber( JSContext * RESTRICT cx, IN JS::HandleValue value ) {
 
-	return JSVAL_IS_NUMBER(value) || JL_ValueIsNumberObject(cx, value);
+	return value.isNumber() || JL_ValueIsNumberObject(cx, value);
 }
 
 /*
@@ -1316,7 +1316,7 @@ JL_ValueIsPositive( JSContext *cx, IN JS::HandleValue val ) {
 	// handle string conversion and valueOf ?
 
 	return ( val.toInt32() && val.toInt32() > 0 )
-	    || ( JSVAL_IS_DOUBLE(val) && JSVAL_TO_DOUBLE(val) > 0 )
+		|| ( val.isDouble() && val.toDouble() > 0 )
 	    || JL_ValueIsPInfinity(cx, val);
 }
 
@@ -1326,7 +1326,7 @@ JL_ValueIsNegative( JSContext *cx, IN JS::HandleValue val ) {
 	// handle string conversion and valueOf ?
 
 	return ( val.toInt32() && val.toInt32() < 0 )
-	    || ( JSVAL_IS_DOUBLE(val) && jl::DoubleIsNeg(JSVAL_TO_DOUBLE(val)) ) // handle NEGZERO ?
+	    || ( val.isDouble() && jl::DoubleIsNeg(val.toDouble()) ) // handle NEGZERO ?
 	    || JL_ValueIsNInfinity(cx, val);
 }
 
@@ -2897,7 +2897,7 @@ JL_JsvalToNative( JSContext *cx, IN JS::HandleValue val, double *num ) {
 	UNLIKELY_SPLIT_BEGIN( JSContext *cx, JS::HandleValue val, double *num )
 
 	JL_CHK( JS::ToNumber(cx, val, num) );
-	ASSERT( mozilla::IsNaN(JSVAL_TO_DOUBLE(JL_GetNaNValue(cx))) );
+	ASSERT( mozilla::IsNaN(JL_GetNaNValue(cx).toDouble()) );
 	JL_CHKM( !mozilla::IsNaN(*num), E_VALUE, E_TYPE, E_TY_NUMBER );
 	return true;
 	JL_BAD;
@@ -2919,9 +2919,9 @@ JL_NativeToJsval( JSContext *, const float &num, OUT JS::MutableHandleValue vp )
 ALWAYS_INLINE bool FASTCALL
 JL_JsvalToNative( JSContext *cx, IN JS::HandleValue val, float *num ) {
 
-	if (likely( JSVAL_IS_DOUBLE(val) )) {
+	if (likely( val.isDouble() )) {
 
-		*num = float(JSVAL_TO_DOUBLE(val));
+		*num = float(val.toDouble());
 		return true;
 	}
 	if (likely( JSVAL_IS_INT(val) )) {
@@ -2935,7 +2935,7 @@ JL_JsvalToNative( JSContext *cx, IN JS::HandleValue val, float *num ) {
 	double tmp;
 	if ( !JS::ToNumber(cx, val, &tmp) )
 		return false;
-	ASSERT( mozilla::IsNaN(JSVAL_TO_DOUBLE(JL_GetNaNValue(cx))) );
+	ASSERT( mozilla::IsNaN(JL_GetNaNValue(cx).toDouble()) );
 	JL_CHKM( !mozilla::IsNaN(tmp), E_VALUE, E_TYPE, E_TY_NUMBER );
 	*num = float(tmp);
 	return true;
@@ -3013,7 +3013,7 @@ JL_JsvalToNative( JSContext *cx, IN JS::HandleValue val, void **ptr ) {
 
 	if ( !val.isObject() ) {
 
-		JL_CHKM( JSVAL_IS_DOUBLE(val), E_JSLIBS, E_INTERNAL );
+		JL_CHKM( val.isDouble(), E_JSLIBS, E_INTERNAL );
 		*ptr = JSVAL_TO_PRIVATE(val);
 	} else {
 
@@ -3357,7 +3357,7 @@ JL_FunctionToJsval(JSContext *cx, IN JSNative call, IN unsigned nargs, IN unsign
 ALWAYS_INLINE bool FASTCALL
 JL_JsvalToJsid( JSContext * RESTRICT cx, IN JS::HandleValue val, JS::MutableHandleId id ) {
 
-	if ( JSVAL_IS_STRING( val ) ) {
+	if ( val.isString() ) {
 
 		JS::RootedString str(cx, val.toString());
 		id.set(JL_StringToJsid(cx, str));
@@ -4705,4 +4705,13 @@ struct ProcessEvent {
 	void (*startWait)( volatile ProcessEvent *self ); // starts the blocking thread and call signalEvent() when an event has arrived.
 	bool (*cancelWait)( volatile ProcessEvent *self ); // unlock the blocking thread event if no event has arrived (mean that an event has arrived in another thread).
 	bool (*endWait)( volatile ProcessEvent *self, bool *hasEvent, JSContext *cx, JS::HandleObject obj ); // process the result
+};
+
+
+class ProcessEvent2 {
+public:
+	virtual bool prepareWait(JSContext *cx, JS::HandleObject obj) = 0; // called before startWait() to allow one to prepare the blocking step
+	virtual void startWait(JSContext *cx, JS::HandleObject obj) = 0; // starts the blocking thread and call signalEvent() when an event has arrived.
+	virtual bool cancelWait(JSContext *cx, JS::HandleObject obj) = 0; // unlock the blocking thread event if no event has arrived (mean that an event has arrived in another thread).
+	virtual bool endWait(bool *hasEvent, JSContext *cx, JS::HandleObject obj) = 0; // process the result
 };

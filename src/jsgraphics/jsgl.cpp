@@ -1284,7 +1284,7 @@ DEFINE_FUNCTION( fog ) {
 
 		return true;
 	}
-	if ( JSVAL_IS_DOUBLE(JL_ARG(2)) ) {
+	if ( JL_ARG(2).isDouble() ) {
 
 		float param;
 		JL_JsvalToNative(cx, JL_ARG(2), &param);
@@ -1356,7 +1356,7 @@ DEFINE_FUNCTION( vertex ) {
 
 	JL_RVAL.setUndefined();
 
-	if ( argc > 1 && JSVAL_IS_NUMBER(JL_ARG(1)) ) {
+	if ( argc > 1 && JL_ARG(1).isNumber() ) {
 
 		JL_ASSERT_ARGC_RANGE(2,4);
 
@@ -1448,7 +1448,7 @@ DEFINE_FUNCTION( color ) {
 	JL_ASSERT_ARGC_MIN(1);
 	JL_RVAL.setUndefined();
 
-	if ( argc > 1 || JSVAL_IS_NUMBER(JL_ARG(1)) ) {
+	if ( argc > 1 || JL_ARG(1).isNumber() ) {
 
 		JL_ASSERT_ARGC_MAX(4);
 
@@ -1602,7 +1602,7 @@ DEFINE_FUNCTION( texParameter ) {
 
 		return true;
 	}
-	if ( JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
+	if ( JL_ARG(3).isDouble() ) {
 
 		float param;
 		JL_JsvalToNative(cx, JL_ARG(3), &param);
@@ -1656,7 +1656,7 @@ DEFINE_FUNCTION( texEnv ) {
 
 		return true;
 	}
-	if ( argc == 3 && JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
+	if ( argc == 3 && JL_ARG(3).isDouble() ) {
 
 		float param;
 		JL_JsvalToNative(cx, JL_ARG(3), &param);
@@ -1718,7 +1718,7 @@ DEFINE_FUNCTION( texGen ) {
 
 		return true;
 	}
-	if ( argc == 3 && JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
+	if ( argc == 3 && JL_ARG(3).isDouble() ) {
 
 		double param;
 		JL_JsvalToNative(cx, JL_ARG(3), &param);
@@ -1918,7 +1918,7 @@ DEFINE_FUNCTION( lightModel ) {
 		return true;
 	}
 
-	if ( JSVAL_IS_DOUBLE(JL_ARG(2)) ) {
+	if ( JL_ARG(2).isDouble() ) {
 
 		float param;
 		JL_JsvalToNative(cx, JL_ARG(2), &param);
@@ -1968,7 +1968,7 @@ DEFINE_FUNCTION( light ) {
 		return true;
 	}
 
-	if ( argc == 3 && JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
+	if ( argc == 3 && JL_ARG(3).isDouble() ) {
 
 		float param;
 		JL_JsvalToNative(cx, JL_ARG(3), &param);
@@ -2136,7 +2136,7 @@ DEFINE_FUNCTION( material ) {
 		;
 		return true;
 	}
-	if ( argc == 3 && JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
+	if ( argc == 3 && JL_ARG(3).isDouble() ) {
 
 		float param;
 		JL_JsvalToNative(cx, JL_ARG(3), &param);
@@ -4897,7 +4897,7 @@ DEFINE_FUNCTION( uniform ) {
 
 	JL_CHKM( count >= 1 && count <= 4, E_ARGC, E_RANGE, E_INTERVAL_NUM(1, 4) );
 
-	if ( JSVAL_IS_DOUBLE(aargs[0]) ) {
+	if ( aargs[0].isDouble() ) {
 
 		float v1, v2, v3, v4;
 		JL_CHK( JL_JsvalToNative(cx, aargs[0], &v1) );
@@ -4969,7 +4969,7 @@ DEFINE_FUNCTION( uniform ) {
 			glUniform1iARB(uniformLocation, arg2.toInt32());  OGL_ERR_CHK;
 			return true;
 		}
-		if ( JSVAL_IS_BOOLEAN(arg2) ) {
+		if ( arg2.isBoolean() ) {
 
 			glUniform1iARB(uniformLocation, arg2 == JSVAL_TRUE ? 1 : 0);  OGL_ERR_CHK;
 			return true;
@@ -5167,7 +5167,7 @@ DEFINE_FUNCTION( uniformFloat ) {
 	jsval arg2;
 	arg2 = JL_ARG(2);
 	float v1, v2, v3, v4;
-	if ( JSVAL_IS_NUMBER(arg2) ) {
+	if ( arg2.isNumber() ) {
 
 		JL_CHK( JL_JsvalToNative(cx, arg2, &v1) );
 		if ( JL_ARGC >= 3 ) {
@@ -5226,7 +5226,7 @@ DEFINE_FUNCTION( uniformInteger ) {
 	arg2 = JL_ARG(2);
 	int v1, v2, v3, v4;
 
-	if ( JSVAL_IS_NUMBER(arg2) ) {
+	if ( arg2.isNumber() ) {
 
 		JL_CHK( JL_JsvalToNative(cx, arg2, &v1) );
 		if ( JL_ARGC >= 3 ) {
@@ -5403,7 +5403,7 @@ DEFINE_FUNCTION( vertexAttrib ) {
 		return true;
 	}
 
-	if ( JSVAL_IS_NUMBER(arg2) ) {
+	if ( arg2.isNumber() ) {
 
 		JL_CHK( JL_JsvalToNative(cx, arg2, &v1) );
 		if ( JL_ARGC >= 3 ) {
@@ -5554,7 +5554,7 @@ DEFINE_FUNCTION( pointParameter ) {
 		;
 		return true;
 	}
-	if ( JSVAL_IS_DOUBLE(JL_ARG(2)) ) {
+	if ( JL_ARG(2).isDouble() ) {
 
 		float param;
 		JL_JsvalToNative(cx, JL_ARG(2), &param);

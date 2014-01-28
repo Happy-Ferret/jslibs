@@ -68,7 +68,7 @@ DEFINE_CONSTRUCTOR() {
 
 	int numDevices = videoInput::listDevices(true);
 
-	if ( !JSVAL_IS_STRING(JL_ARG(1)) ) {
+	if ( !JL_ARG(1).isString() ) {
 		
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pv->deviceID) );
 		JL_ASSERT_ARG_VAL_RANGE( pv->deviceID, 0, numDevices-1, 1 );

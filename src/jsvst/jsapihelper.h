@@ -154,7 +154,7 @@ protected:
 
 	inline bool JsvalIsString( jsval val ) {
 
-		if ( JSVAL_IS_STRING(val) )
+		if ( val.isString() )
 			return true;
 		if ( !JSVAL_IS_PRIMITIVE(val) )
 			return false;
@@ -168,7 +168,7 @@ protected:
 
 	inline bool jsvalIsReal( jsval val ) {
 
-		return JSVAL_IS_DOUBLE(val) != 0;
+		return val.isDouble();
 	}
 
 	inline int AssertRange( int value, int min, int max ) {
@@ -194,7 +194,7 @@ protected:
 
 	inline jsval AssertNumber( jsval val ) {
 
-		if ( !JSVAL_IS_NUMBER(val) )
+		if ( !val.isNumber() )
 			throw JsException(_cx, "value is not a number");
 		return val;
 	}

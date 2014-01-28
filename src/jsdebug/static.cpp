@@ -846,7 +846,7 @@ DEFINE_FUNCTION( evalInStackFrame ) {
 	pc = JS_GetFramePC(cx, fp);
 
 	JSString *jsstr;
-	jsstr = JSVAL_TO_STRING( JL_ARG(1) );
+	jsstr = JL_ARG(1).toString();
 
 	size_t strlen;
 	const jschar *str;

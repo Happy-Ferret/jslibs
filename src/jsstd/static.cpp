@@ -160,7 +160,7 @@ DEFINE_FUNCTION( expand ) {
 
 				++stack;
 
-				if ( !JSVAL_IS_STRING(value) ) { // 'convert to string' and 'root new string' if necessary.
+				if ( !value.isString() ) { // 'convert to string' and 'root new string' if necessary.
 
 					stack->root = JS::ToString(cx, value);
 					JL_CHK( stack->root );
@@ -169,7 +169,7 @@ DEFINE_FUNCTION( expand ) {
 			} else {
 
 					stack->root = NULL;
-					stack->chars = JS_GetStringCharsAndLength(cx, JSVAL_TO_STRING(value), &stack->count);
+					stack->chars = JS_GetStringCharsAndLength(cx, value.toString(), &stack->count);
 				}
 
 				total += stack->count;
@@ -308,8 +308,8 @@ DEFINE_FUNCTION( internString ) {
 	{
 
 	JS::RootedString str(cx);
-	if ( JSVAL_IS_STRING(JL_ARG(1)) )
-		str = JSVAL_TO_STRING(JL_ARG(1));
+	if ( JL_ARG(1).isString() )
+		str = JL_ARG(1).toString();
 	else
 		str = JS::ToString(cx, JL_ARG(1));
 	JL_CHK( str );

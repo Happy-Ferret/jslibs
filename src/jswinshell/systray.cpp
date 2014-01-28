@@ -851,7 +851,7 @@ bool FillMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *hM
 
 			uFlags |= MF_SEPARATOR;
 		} else 
-			if ( JSVAL_IS_STRING(item) || (!JSVAL_IS_PRIMITIVE(item) && JL_ObjectIsString(cx, JSVAL_TO_OBJECT(item))) ) {
+			if ( item.isString() || (!JSVAL_IS_PRIMITIVE(item) && JL_ObjectIsString(cx, JSVAL_TO_OBJECT(item))) ) {
 
 			label = item;
 			cmdid = item;

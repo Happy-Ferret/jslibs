@@ -64,6 +64,7 @@ HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruc
 	HandlePrivate *pv;
 	pv = (HandlePrivate*)jl_malloc(sizeof(HandlePrivate) + sizeof(Struct));
 	JL_ASSERT_ALLOC( pv );
+
 	JL_updateMallocCounter(cx, sizeof(HandlePrivate) + sizeof(Struct));
 	JL_SetPrivate(handleObj, pv);
 
@@ -93,6 +94,8 @@ HandleClose( JSContext *cx, JS::HandleValue handleVal ) { // see finalize
 
 	if ( pv->finalizeCallback )
 		pv->finalizeCallback(pv+1);
+
+	//pv::~
 	jl_free(pv);
 	JL_SetPrivate( handleObj, NULL);
 

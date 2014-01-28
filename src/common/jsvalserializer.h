@@ -286,10 +286,10 @@ public:
 				JL_CHK( Write(cx, JLSTInt) );
 				JL_CHK( Write(cx, val.toInt32()) );
 			} else
-			if ( JSVAL_IS_STRING(val) ) {
+			if ( val.isString() ) {
 
 				JL_CHK( Write(cx, JLSTString) );
-				JL_CHK( Write(cx, JSVAL_TO_STRING(val)) );
+				JL_CHK( Write(cx, val.toString()) );
 			} else
 			if ( val.isUndefined() ) {
 
@@ -300,10 +300,10 @@ public:
 				JL_CHK( Write(cx, JLSTBool) );
 				JL_CHK( Write(cx, char(val.toBoolean())) );
 			} else
-			if ( JSVAL_IS_DOUBLE(val) ) {
+			if ( val.isDouble() ) {
 
 				JL_CHK( Write(cx, JLSTDouble) );
-				JL_CHK( Write(cx, JSVAL_TO_DOUBLE(val)) );
+				JL_CHK( Write(cx, val.toDouble()) );
 			} else
 				if ( val.isMagic(JS_ELEMENTS_HOLE) ) {
 
@@ -466,7 +466,7 @@ public:
 
 			JS::RootedValue constructorName(cx);
 			JL_CHK( JS_GetPropertyById(cx, constructor, JLID(cx, name), &constructorName) );
-			ASSERT( JSVAL_IS_STRING(constructorName) );
+			ASSERT( constructorName.isString() );
 
 			const jschar *str;
 			size_t length;

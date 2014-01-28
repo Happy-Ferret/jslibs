@@ -98,16 +98,14 @@ void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 		JL_CHK( GeomToJsval(cx, geom1, &valGeom1) );
 		JL_CHK( GeomToJsval(cx, geom2, &valGeom2) );
 
-		jsval func1, func2;
+		JS::RootedValue func1(cx);
+		JS::RootedValue func2(cx);
+
 		if ( geom1HasObj )
 			JL_CHK( JL_GetReservedSlot( JSVAL_TO_OBJECT(valGeom1), SLOT_GEOM_CONTACT_FUNCTION, &func1) );
-		else
-			func1 = JSVAL_VOID;
 
 		if ( geom2HasObj )
 			JL_CHK( JL_GetReservedSlot( JSVAL_TO_OBJECT(valGeom2), SLOT_GEOM_CONTACT_FUNCTION, &func2) );
-		else
-			func2 = JSVAL_VOID;
 
 		if ( !func1.isUndefined() || !func2.isUndefined() ) {
 
@@ -148,7 +146,7 @@ void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 			JL_CHK(JL_NativeToJsval(cx, contact.geom.pos[1], &argv[5]) );
 			JL_CHK(JL_NativeToJsval(cx, contact.geom.pos[2], &argv[6]) );
 
-			if ( !JSVAL_IS_VOID( func1 ) ) {
+			if ( !func1.isUndefined() ) {
 
 				argv[1] = valGeom1;
 				argv[2] = valGeom2;

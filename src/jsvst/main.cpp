@@ -377,7 +377,7 @@ private:
 				if ( text == NULL )
 					return JsvalToBool(_rval);
 
-				if ( JSVAL_IS_NUMBER(_rval) ) {
+				if ( _rval.isNumber() ) {
 					setParameter(index, (float)JsvalToReal(_rval));
 					return true;
 				} else

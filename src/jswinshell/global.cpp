@@ -498,13 +498,13 @@ DEFINE_FUNCTION( registrySet ) {
 			JL_CHK( JL_JsvalToNative(cx, value, &num) );
 			st = RegSetValueEx(hKey, valueNameStr, 0, REG_DWORD, (LPBYTE)&num, sizeof(DWORD));
 		} else
-		if ( JSVAL_IS_DOUBLE(value) ) {
+		if ( value.isDouble() ) {
 
 			uint64_t num;
 			JL_CHK( JL_JsvalToNative(cx, value, &num) );
 			st = RegSetValueEx(hKey, valueNameStr, 0, REG_QWORD, (LPBYTE)&num, sizeof(uint64_t));
 		} else
-		if ( JSVAL_IS_STRING(value) ) {
+		if ( value.isString() ) {
 
 			JLData tmp;
 			JL_CHK( JL_JsvalToNative(cx, value, &tmp) );

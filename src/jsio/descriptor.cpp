@@ -474,7 +474,7 @@ DEFINE_FUNCTION( write ) {
 		JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
 	} else if ( sentAmount == 0 ) { // nothing has been sent
 
-		if ( JSVAL_IS_STRING( JL_ARG(1) ) ) { // optimization (string are immutable)
+		if ( JL_ARG(1).isString() ) { // optimization (string are immutable)
 
 			JL_RVAL.set(JL_ARG(1));
 		} else {
@@ -699,6 +699,8 @@ $TOC_MEMBER $INAME
 }}}
 **/
 
+
+
 struct IOProcessEvent {
 
 	ProcessEvent pe;
@@ -710,6 +712,35 @@ struct IOProcessEvent {
 };
 
 S_ASSERT( offsetof(IOProcessEvent, pe) == 0 );
+
+
+
+
+
+
+class IOProcessEvent2 : protected ProcessEvent2 {
+
+	PRInt32 pollResult;
+	int fdCount;
+	PRPollDesc *pollDesc;
+	
+	//mozilla::Vector<JS::Heap<JS::Value>,8> descVal;
+
+	mozilla::Vector<JS::PersistentRootedValue,8> descVal;
+
+
+public:
+	bool prepareWait(JSContext *cx, JS::HandleObject obj) {
+
+		//descVal.append(JS::PersistentRootedValue(cx, tmp));
+
+
+		return true;
+	}
+
+};
+
+
 
 
 static bool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JS::HandleObject obj ) {
@@ -732,7 +763,13 @@ static bool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JS::HandleO
 	upe->descVal = (jsval*)jl_malloc(sizeof(jsval) * (fdCount));
 	JL_ASSERT_ALLOC( upe->descVal );
 
+	JS::AutoArrayRooter aar(cx, fdCount, upe->descVal);
+
+
 	JL_updateMallocCounter(cx, (sizeof(PRPollDesc) + sizeof(jsval)) * fdCount); // approximately (pollDesc + descVal)
+
+
+
 
 	JsioPrivate *mpv;
 	mpv = (JsioPrivate*)JL_GetModulePrivate(cx, _moduleId);
@@ -832,6 +869,7 @@ DEFINE_FUNCTION( events ) {
 
 	IOProcessEvent *upe;
 	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, IOWaitFinalize, JL_RVAL) );
+
 	upe->pe.prepareWait = IOPrepareWait;
 	upe->pe.startWait = IOStartWait;
 	upe->pe.cancelWait = IOCancelWait;

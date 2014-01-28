@@ -36,7 +36,7 @@ bool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 #ifdef DEBUG
 	jsval dbg_funNameVal;
 	JS_GetPropertyById(cx, JSVAL_TO_OBJECT(JS_CALLEE(cx, vp)), JLID(cx, name), &dbg_funNameVal);
-	const jschar *dbg_name = JS_GetStringCharsZ(cx, JSVAL_TO_STRING( dbg_funNameVal ));
+	const jschar *dbg_name = JS_GetStringCharsZ(cx, dbg_funNameVal.toString());
 	JL_IGNORE(dbg_name);
 #endif
 
@@ -87,8 +87,8 @@ bool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 		jsid funNameId;
 		JL_CHK( JS_GetPropertyById(cx, funObj, JLID(cx, name), &funNameVal) );
 		//JL_CHK( JL_JsvalToJsid(cx, &funNameVal, &funNameId) );
-		ASSERT( JSVAL_IS_STRING(funNameVal) );
-		funNameId = JL_StringToJsid(cx, JSVAL_TO_STRING( funNameVal ));
+		ASSERT( funNameVal.isString() );
+		funNameId = JL_StringToJsid(cx, funNameVal.toString());
 		ASSERT( JSID_IS_STRING(funNameId) );
 		//JL_CHK( JL_RemovePropertyById(cx, JL_OBJ, funNameId) );
 		JL_CHK( JS_DeletePropertyById(cx, JL_OBJ, funNameId) ); // beware: permanant properties cannot be removed.

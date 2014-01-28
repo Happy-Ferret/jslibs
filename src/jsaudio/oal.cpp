@@ -482,7 +482,7 @@ DEFINE_FUNCTION( listener ) {
 		alListeneri( JL_ARG(1).toInt32(), JL_ARG(2).toInt32() );
 		return true;
 	}
-	if ( JSVAL_IS_DOUBLE(JL_ARG(2)) ) {
+	if ( JL_ARG(2).isDouble() ) {
 
 		float param;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &param) );
@@ -593,7 +593,7 @@ DEFINE_FUNCTION( source ) {
 		alSourcei( sid, JL_ARG(2).toInt32(), JL_ARG(3).toInt32() );
 		return true;
 	}
-	if ( JSVAL_IS_DOUBLE(JL_ARG(3)) ) {
+	if ( JL_ARG(3).isDouble() ) {
 
 		float param;
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &param) );

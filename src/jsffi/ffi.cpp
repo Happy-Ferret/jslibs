@@ -639,7 +639,7 @@ JL_GetReservedSlot( obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
         if ( JSVAL_IS_INT( *vp ) )
           *pVal = (signed char)JSVAL_TO_INT( *vp );
         else
-			  if ( JSVAL_IS_STRING( *vp ) ) {
+			  if ( vp.isString() ) {
 
 				  size_t length;
 				  const jschar *s = JS_GetStringCharsAndLength(cx, JSVAL_TO_STRING(*vp), &length);
@@ -647,7 +647,7 @@ JL_GetReservedSlot( obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 					  return JS_ReportError( cx, "this conversion is not implemented yet !" ), false;
             *pVal = (char)s[0];
 			  } else {
-            if ( JSVAL_IS_DOUBLE( *vp ) ) {
+            if ( vp.isDouble() ) {
               int32_t val;
               JS::ToInt32( cx, *vp, &val ); // TODO: enhance this conversion
               *pVal = (signed char)val;
@@ -1065,7 +1065,7 @@ bool NativeModule_Construct(JSContext *cx, unsigned argc, jsval *vp) {
 
 //    char* str = JL_GetStringBytes( JS::ToString ( cx, OBJECT_TO_JSVAL(obj) ) );
 
-	if ( !JSVAL_IS_STRING(JS_ARGV(cx, vp)[0]) )
+	if ( !JS_ARGV(cx, vp)[0].isString() )
 		JS_ARGV(cx, vp)[0] = STRING_TO_JSVAL( JS::ToString(cx, JS_ARGV(cx, vp)[0]) );
 
 //  const char *libName = JL_GetStringBytesZ( cx, JSVAL_TO_STRING(JS_ARGV(cx, vp)[0]) ); // JL_GetStringBytes never returns NULL
@@ -1096,7 +1096,7 @@ bool NativeModule_Construct(JSContext *cx, unsigned argc, jsval *vp) {
 	JSObject *obj = JS_THIS_OBJECT(cx, vp);
   JL_SetPrivate(  obj, (void*)module );
 
-  if ( argc <= 1 || JSVAL_TO_BOOLEAN( JS_ARGV(cx, vp)[1] ) != true ) { // if automatic mode
+  if ( argc <= 1 || JS_ARGV(cx, vp)[1].toBoolean() ) { // if automatic mode
 
     JSObject **rt = (JSObject **)jl_malloc( sizeof(JSObject*) );
     *rt = obj;
