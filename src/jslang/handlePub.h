@@ -244,3 +244,5 @@ GetHandleSlot( JSContext *cx, JS::HandleValue handleVal, uint32_t slotIndex, OUT
 	bool c = IsIdType(cx, *JL_RVAL, 'TEST');
 	bool d = (data == GetHandlePrivate(cx, *JL_RVAL));
 */
+
+

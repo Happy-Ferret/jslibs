@@ -1469,13 +1469,14 @@ JL_ValueIsCallable( JSContext *cx, IN JS::HandleValue value ) {
 	return !value.isPrimitive() && JL_ObjectIsCallable(cx, obj);
 }
 
+/*
 ALWAYS_INLINE bool FASTCALL
 JL_ValueIsCallable( JSContext *cx, IN JS::MutableHandleValue value ) {
 
 	JS::RootedObject obj(cx, &value.toObject());
 	return !value.isPrimitive() && JL_ObjectIsCallable(cx, obj);
 }
-
+*/
 
 ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsClass( IN JS::HandleObject obj, const JSClass *clasp ) {
@@ -3932,19 +3933,22 @@ JL_GetFirstContext( JSRuntime *rt ) {
 	return cx;
 }
 
-/*
+
 ALWAYS_INLINE bool FASTCALL
 JL_InheritFrom( JSContext *cx, JS::HandleObject obj, const JSClass *clasp ) {
 
-	while ( obj != NULL ) {
+	JS::RootedObject proto(cx, obj);
+	while ( proto != NULL ) {
 
-		if ( JL_GetClass(obj) == clasp )
+		if ( JL_GetClass(proto) == clasp )
 			return true;
-		obj = JL_GetPrototype(cx, obj);
+
+		if ( !JS_GetPrototype(cx, proto, &proto) )
+			return false;
 	}
 	return false;
 }
-*/
+
 
 ALWAYS_INLINE bool FASTCALL
 JL_ProtoOfInheritFrom( JSContext *cx, JS::HandleObject obj, const JSClass *clasp ) {
@@ -3954,7 +3958,7 @@ JL_ProtoOfInheritFrom( JSContext *cx, JS::HandleObject obj, const JSClass *clasp
 		return false;
 	while ( proto != NULL ) {
 
-		if ( JL_GetClass(obj) == clasp )
+		if ( JL_GetClass(proto) == clasp )
 			return true;
 		if ( !JS_GetPrototype(cx, proto, &proto) )
 			return false;

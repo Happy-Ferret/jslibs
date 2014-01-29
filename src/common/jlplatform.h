@@ -199,10 +199,9 @@
 #if defined DEBUG
 #define NOIL(f) f
 #else
-//template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
-#define NOIL(f) f
+template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
+//#define NOIL(f) f
 #endif
-
 
 #ifndef ASSUME
 # if defined _MSC_VER

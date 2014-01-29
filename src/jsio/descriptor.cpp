@@ -22,8 +22,8 @@ DECLARE_CLASS( File )
 DECLARE_CLASS( Socket )
 
 
-bool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc );
-bool PollDescNotify( JSContext *cx, jsval descVal, PRPollDesc *pollDesc, int index );
+bool InitPollDesc( JSContext *cx, JS::HandleValue descVal, PRPollDesc *pollDesc );
+bool PollDescNotify( JSContext *cx, JS::HandleValue descVal, PRPollDesc *pollDesc, int index );
 
 
 bool NativeInterfaceStreamRead( JSContext *cx, JS::HandleObject obj, char *buf, size_t *amount ) {
@@ -707,38 +707,14 @@ struct IOProcessEvent {
 
 	int fdCount;
 	PRPollDesc *pollDesc;
-	jsval *descVal;
+	//jsval *descVal;
+
+	JS::PersistentRootedObject *descArray;
 	PRInt32 pollResult;
 };
 
 S_ASSERT( offsetof(IOProcessEvent, pe) == 0 );
 
-
-
-
-
-
-class IOProcessEvent2 : protected ProcessEvent2 {
-
-	PRInt32 pollResult;
-	int fdCount;
-	PRPollDesc *pollDesc;
-	
-	//mozilla::Vector<JS::Heap<JS::Value>,8> descVal;
-
-	mozilla::Vector<JS::PersistentRootedValue,8> descVal;
-
-
-public:
-	bool prepareWait(JSContext *cx, JS::HandleObject obj) {
-
-		//descVal.append(JS::PersistentRootedValue(cx, tmp));
-
-
-		return true;
-	}
-
-};
 
 
 
@@ -760,15 +736,13 @@ static bool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JS::HandleO
 	upe->pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * (1 + fdCount)); // pollDesc[0] is the event fd
 	JL_ASSERT_ALLOC( upe->pollDesc );
 
-	upe->descVal = (jsval*)jl_malloc(sizeof(jsval) * (fdCount));
-	JL_ASSERT_ALLOC( upe->descVal );
-
-	JS::AutoArrayRooter aar(cx, fdCount, upe->descVal);
 
 
-	JL_updateMallocCounter(cx, (sizeof(PRPollDesc) + sizeof(jsval)) * fdCount); // approximately (pollDesc + descVal)
+//	upe->descVal = (jsval*)jl_malloc(sizeof(jsval) * (fdCount));
+//	JL_ASSERT_ALLOC( upe->descVal );
 
 
+	JL_updateMallocCounter(cx, (sizeof(PRPollDesc) /*+ sizeof(jsval)*/) * fdCount); // approximately (pollDesc + descVal)
 
 
 	JsioPrivate *mpv;
@@ -788,18 +762,28 @@ static bool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JS::HandleO
 
 	// (TBD) find a better solution to root fdArray content
 	// (TBD) use AutoValueVector avr(cx); avr.reserve(16); avr.append(val);
-	JS::RootedObject rootedValues(cx, JS_NewArrayObject(cx, fdCount, NULL));
-	JS::RootedValue rootedValuesVal(cx);
-	rootedValuesVal.setObject(*rootedValues);
-	JL_CHK( SetHandleSlot(cx, obj, 1, rootedValuesVal) );
 
-	jsval *descriptor;
+
+	upe->descArray = new JS::PersistentRootedObject(cx, JS_NewArrayObject(cx, fdCount, NULL));
+	
+
+//	JS::RootedValue rootedValuesVal(cx);
+//	rootedValuesVal.setObject(*rootedValues);
+//	JL_CHK( SetHandleSlot(cx, obj, 1, rootedValuesVal) );
+
+	{
+
+	JS::RootedValue descriptor(cx);
 	for ( unsigned int i = 0; i < fdCount; ++i ) {
 
-		descriptor = &upe->descVal[i]; // get the slot addr
-		JL_CHK( JL_GetElement(cx, fdArrayObj, i, *descriptor) ); // read the item
-		JL_CHK( JL_SetElement(cx, rootedValues, i, *descriptor) ); // root the item
-		JL_CHK( InitPollDesc(cx, *descriptor, &upe->pollDesc[1 + i]) ); // upe->pollDesc[0] is reserved for mpv->peCancel
+		//descriptor = &upe->descVal[i]; // get the slot addr
+
+
+		JL_CHK( JL_GetElement(cx, fdArrayObj, i, &descriptor) ); // read the item
+		JL_CHK( JL_SetElement(cx, *(upe->descArray), i, descriptor) ); // root the item
+		JL_CHK( InitPollDesc(cx, descriptor, &upe->pollDesc[1 + i]) ); // upe->pollDesc[0] is reserved for mpv->peCancel
+	}
+	
 	}
 
 	return true;
@@ -840,24 +824,34 @@ static bool IOEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx,
 	if ( !*hasEvent ) // optimization
 		goto end;
 
-	for ( int i = 0; i < upe->fdCount; ++i )
-		JL_CHK( PollDescNotify(cx, upe->descVal[i], &upe->pollDesc[1 + i], i) );
+	{
+
+	JS::RootedValue descriptor(cx);
+	for ( int i = 0; i < upe->fdCount; ++i ) {
+
+		JL_CHK( JL_GetElement(cx, *upe->descArray, i, &descriptor) ); // read the item
+		JL_CHK( PollDescNotify(cx, descriptor, &upe->pollDesc[1 + i], i) );
+	}
+
+	}
 
 end:
 	jl_free(upe->pollDesc);
-	jl_free(upe->descVal);
+//	jl_free(upe->descVal);
 	return true;
 
 bad:
 	jl_free(upe->pollDesc);
-	jl_free(upe->descVal);
+//	jl_free(upe->descVal);
 	return false;
 }
 
 
-static void IOWaitFinalize( void* ) {
+static void IOWaitFinalize( void* data ) {
 
-//	IOProcessEvent *upe = (IOProcessEvent*)data;
+	IOProcessEvent *upe = (IOProcessEvent*)data;
+
+	delete upe->descArray;
 }
 
 
@@ -875,7 +869,7 @@ DEFINE_FUNCTION( events ) {
 	upe->pe.cancelWait = IOCancelWait;
 	upe->pe.endWait = IOEndWait;
 
-	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_ARG(1)) );
+	JL_CHK( SetHandleSlot(cx, JL_RVAL, 0, JL_ARG(1)) );
 
 	return true;
 	JL_BAD;
@@ -925,7 +919,7 @@ DEFINE_FUNCTION( isReadable ) {
 	result = PR_Poll(&desc, 1, timeout);
 	if ( result == -1 ) // error
 		return ThrowIoError(cx);
-	*JL_RVAL = BOOLEAN_TO_JSVAL( result == 1 && (desc.out_flags & PR_POLL_READ) != 0 );
+	JL_RVAL.setBoolean( result == 1 && (desc.out_flags & PR_POLL_READ) != 0 );
 	return true;
 	JL_BAD;
 }
@@ -973,7 +967,7 @@ DEFINE_FUNCTION( isWritable ) {
 	result = PR_Poll(&desc, 1, timeout);
 	if ( result == -1 ) // error
 		return ThrowIoError(cx);
-	*JL_RVAL = BOOLEAN_TO_JSVAL( result == 1 && (desc.out_flags & PR_POLL_WRITE) != 0 );
+	JL_RVAL.setBoolean( result == 1 && (desc.out_flags & PR_POLL_WRITE) != 0 );
 	return true;
 	JL_BAD;
 }
@@ -987,7 +981,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( timeout ) {
 
-	JL_IGNORE(id, strict);
+	JL_DEFINE_PROP_ARGS;
 	JL_ASSERT_THIS_INHERITANCE();
 
 	if ( !JL_RVAL.isUndefined() ) {

@@ -47,8 +47,10 @@ DEFINE_CONSTRUCTOR() {
 	PRFileDesc *fd = NULL;
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_ASSERT_CONSTRUCTING();
+
+	{
+	JL_DEFINE_CONSTRUCTOR_OBJ;
 
 	int descType;
 	if ( JL_ARG_ISDEF(1) )
@@ -69,6 +71,9 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( ReserveStreamReadInterface(cx, obj) );
 
 	JL_SetPrivate(obj, fd);
+
+	}
+
 	return true;
 
 bad:

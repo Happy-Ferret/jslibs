@@ -915,6 +915,13 @@ GetEIP() {
 	__asm jmp eax;
 }
 
+void Finalize(JSFreeOp *fop, JSObject *obj) {
+	printf("fin\n");
+}
+
+bool Constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
+
+}
 
 
 int main_min(int argc, char* argv[]) {
@@ -925,17 +932,28 @@ int main_min(int argc, char* argv[]) {
 		JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub
 	};
 
+	JSClass myClass = {
+		"myClass", 0,
+		JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
+		JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub,
+		Finalize
+	};
+
 	JS_Init();
 
     JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
 	JSContext *cx = JS_NewContext(rt, 8192L);
-	
+
 	{
 
 	size_t p1 = GetEIP();
 	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &globalClass, NULL, JS::FireOnNewGlobalHook) );
 	size_t p2 = GetEIP() - p1;
 	printf("%d\n", p2);
+
+	JS_InitClass(cx, globalObject, NULL, &myClass, NULL, 0, NULL, NULL, NULL, NULL);
+
+
 
 /*
 //	AutoVectorRooter

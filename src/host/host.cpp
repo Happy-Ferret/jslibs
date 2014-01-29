@@ -903,6 +903,10 @@ DestroyHost( JSContext *cx, bool skipCleanup ) {
 	//    The last JS_DestroyContext* API call will run a GC, no matter which API of that form you call on the last context in the runtime. /be
 	JS_LeaveCompartment(cx, NULL); // Leave the context that as been entered in CreateHost()
 	JS_DestroyContext(cx);
+
+
+	JS_DumpHeap(rt, fopen("dump.txt", "w"), NULL, JSTRACE_OBJECT, NULL, 1, NULL);
+
 	JS_DestroyRuntime(rt);
 	cx = NULL;
 

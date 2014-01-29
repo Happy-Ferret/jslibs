@@ -4,7 +4,7 @@ var loadModule = host.loadModule;
 loadModule('jsstd');
 
 host.stdout('press ctrl-c');
-processEvents(timeoutEvents(2000), host.endSignalEvents());
+processEvents(timeoutEvents(1000), host.endSignalEvents());
 host.stdout('done.');
 
 

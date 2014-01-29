@@ -34,7 +34,7 @@ BEGIN_STATIC
 === Static functions ===
 **/
 
-bool InitPollDesc( JSContext *cx, jsval descVal, PRPollDesc *pollDesc ) {
+bool InitPollDesc( JSContext *cx, JS::HandleValue descVal, PRPollDesc *pollDesc ) {
 
 	pollDesc->in_flags = 0;
 	pollDesc->out_flags = 0;

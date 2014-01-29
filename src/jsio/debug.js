@@ -10,6 +10,25 @@ loadModule('jsstd');
 loadModule('jsio');
 
 
+new Socket();
+
+
+
+throw 0;
+
+
+	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
+	var cl = new Socket(); cl.connect('127.0.0.1', 9999);
+	var io = Descriptor.events([rdv]);
+
+	processEvents( io );
+	processEvents( io );
+
+
+throw 0;
+
+
+
 var sockdata=''; 
 try
 { 
@@ -72,15 +91,6 @@ throw 0;
 
 
 var s = new Semaphore('test');
-
-
-throw 0;
-
-	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
-	var cl = new Socket(); cl.connect('127.0.0.1', 9999);
-	var io = Descriptor.events([rdv]);
-	processEvents( io );
-	processEvents( io );
 
 
 throw 0;

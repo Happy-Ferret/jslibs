@@ -20,6 +20,7 @@
     <LocalDebuggerEnvironment>PATH=$(jslibsRootDir)libs\js\$(jslibsIntDir)dist\bin;$(jslibsRootDir)\libs\nspr\$(jslibsIntDir)dist\bin;$(jslibsRootDir)$(jslibsIntDir)</LocalDebuggerEnvironment>
     <LocalDebuggerCommand>$(jslibsRootDir)$(jslibsIntDir)jshost.exe</LocalDebuggerCommand>
     <LocalDebuggerCommandArguments>debug.js</LocalDebuggerCommandArguments>
+    <EmbedManifest>false</EmbedManifest>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
