@@ -538,7 +538,7 @@ JL_AssertFailure( const char *message, const char *location ) {
     ( (!(cond) || (expr)) ? (void)0 : JL_AssertFailure(#expr, JL_CODE_LOCATION) )
 #else // DEBUG
 // beware. Use __assume in an ASSERT only when the assert is not recoverable.
-#define ASSERT(expr) (ASSUME(expr))
+#define ASSERT(expr) ((void)0) // (ASSUME(expr))
 #define ASSERT_IF(cond, expr) ((void)0)
 #endif // DEBUG
 

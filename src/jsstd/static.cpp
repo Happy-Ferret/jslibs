@@ -372,7 +372,7 @@ DEFINE_FUNCTION( countProperties ) {
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	JSIdArray *arr;
-	arr = JS_Enumerate(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
+	arr = JS_Enumerate(cx, &JL_ARG(1).toObject());
 	JL_RVAL.setInt32(JS_IdArrayLength(cx, arr));
 	JS_DestroyIdArray(cx, arr);
 
@@ -407,7 +407,7 @@ DEFINE_FUNCTION( clearObject ) {
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	JSObject *argObj;
-	argObj = JSVAL_TO_OBJECT(JL_ARG(1));
+	argObj = &JL_ARG(1).toObject();
 
 	JSIdArray *list;
 	list = JS_Enumerate(cx, argObj); // JS_NewPropertyIterator, JS_NextProperty ?

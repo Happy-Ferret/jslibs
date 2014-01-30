@@ -881,7 +881,7 @@ DEFINE_FUNCTION( getInteger ) {
 		} else {
 
 			JL_ASSERT_ARG_IS_ARRAY(2);
-			arrayObj = JSVAL_TO_OBJECT(JL_ARG(2));
+			arrayObj = &JL_ARG(2).toObject();
 			JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 		}
 
@@ -956,7 +956,7 @@ DEFINE_FUNCTION( getDouble ) {
 		} else {
 
 			JL_ASSERT_ARG_IS_ARRAY(2);
-			arrayObj = JSVAL_TO_OBJECT(JL_ARG(2));
+			arrayObj = &JL_ARG(2).toObject();
 			JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 		}
 
@@ -3290,7 +3290,7 @@ DEFINE_FUNCTION( callList ) {
 
 	if ( JL_ValueIsArray(cx, JL_ARG(1)) ) { // no array-like. convert a string into an array of calllist does not make sense here.
 
-		JS::RootedObject jsArray(cx, JSVAL_TO_OBJECT(JL_ARG(1)));
+		JS::RootedObject jsArray(cx, &JL_ARG(1).toObject());
 		unsigned length;
 		JL_CHK( JS_GetArrayLength(cx, jsArray, &length) );
 
@@ -3734,7 +3734,7 @@ DEFINE_FUNCTION( pixelMap ) {
 	JL_ASSERT_ARG_IS_ARRAY(2);
 
 	unsigned mapsize;
-	JL_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(JL_ARG(2)), &mapsize) );
+	JL_CHK( JS_GetArrayLength(cx, &JL_ARG(2).toObject(), &mapsize) );
 	GLfloat *values = (GLfloat*)alloca(mapsize * sizeof(*values));
 	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), values, mapsize, &mapsize ) );
 	glPixelMapfv(JL_ARG(1).toInt32(), mapsize, values);  OGL_ERR_CHK;

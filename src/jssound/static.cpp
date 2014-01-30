@@ -92,7 +92,7 @@ DEFINE_FUNCTION( decodeOggVorbis ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	JSObject *streamObj = JSVAL_TO_OBJECT( JL_ARG(1) );
+	JSObject *streamObj = &JL_ARG(1).toObject();
 
 	StreamReadInfo pv; // = { cx, StreamObj };
 	pv.cx = cx;
@@ -289,7 +289,7 @@ DEFINE_FUNCTION( decodeSound ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	JSObject *streamObj = JSVAL_TO_OBJECT( JL_ARG(1) );
+	JSObject *streamObj = &JL_ARG(1).toObject();
 
 	StreamReadInfo pv;// = { cx, streamObj };
 	pv.cx = cx;

@@ -24,54 +24,93 @@ class StaticArray {
 
 	uint8_t data[ITEM_COUNT * sizeof(T)];
 public:
+	enum {
+		length = ITEM_COUNT
+	};
 
 	T& Get(size_t slotIndex) {
 
-		ASSERT( slotIndex < ITEM_COUNT );
+		ASSERT( slotIndex < length );
 //		return *reinterpret_cast<T*>(data)[slotIndex];
-
 		T* tmp = (T*)data;
-
-		return (((T*)data)[slotIndex]);
+		return ((T*)data)[slotIndex];
 	}
 
 	const T& GetConst(size_t slotIndex) const {
 
-		ASSERT( slotIndex < ITEM_COUNT );
-		return (((T*)data)[slotIndex]);
+		ASSERT( slotIndex < length );
+		return ((T*)data)[slotIndex];
 	}
 
-	void Destruct() {
 
-		for ( size_t i = 0; i < ITEM_COUNT; ++i ) {
+	void Destruct(size_t item) {
+
+		(&Get(item))->T::~T();
+	}
+
+	void Construct(size_t item) {
+		
+		::new (&Get(item)) T();
+	}
+
+	template <typename P1>
+	void Construct(size_t item, P1 p1) {
+		
+		::new (&Get(item)) T(p1);
+	}
+
+	template <typename P1, typename P2>
+	void Construct(size_t item, P1 p1, P2 p2) {
+		
+		::new (&Get(item)) T(p1, p2);
+	}
+
+	template <typename P1, typename P2, typename P3>
+	void Construct(size_t item, P1 p1, P2 p2, P3 p3) {
+		
+		::new (&Get(item)) T(p1, p2, p3);
+	}
+
+	void DestructAll() {
+
+		for ( size_t i = 0; i < length; ++i ) {
 			
-			(&this->Get(i))::~T();
+			(&Get(i))->T::~T();
 		}
 	}
 
-	void Construct() {
+	void ConstructAll() {
 		
-		for ( size_t i = 0; i < ITEM_COUNT; ++i ) {
+		for ( size_t i = 0; i < length; ++i ) {
 			
-			::new (&this->Get(i)) T();
+			::new (&Get(i)) T();
 		}
 	}
 
 	template <typename P1>
-	void Construct(P1 p1) {
+	void ConstructAll(P1 p1) {
 		
-		for ( size_t i = 0; i < ITEM_COUNT; ++i ) {
+		for ( size_t i = 0; i < length; ++i ) {
 			
-			::new (&this->Get(i)) T(p1);
+			::new (&Get(i)) T(p1);
 		}
 	}
 
 	template <typename P1, typename P2>
-	void Construct(P1 p1, P2 p2) {
+	void ConstructAll(P1 p1, P2 p2) {
 		
-		for ( size_t i = 0; i < ITEM_COUNT; ++i ) {
+		for ( size_t i = 0; i < length; ++i ) {
 			
-			::new (&this->Get(i)) T(p1, p2);
+			::new (&Get(i)) T(p1, p2);
+		}
+	}
+
+	template <typename P1, typename P2, typename P3>
+	void ConstructAll(P1 p1, P2 p2, P3 p3) {
+		
+		for ( size_t i = 0; i < length; ++i ) {
+			
+			::new (&Get(i)) T(p1, p2, p3);
 		}
 	}
 
@@ -80,10 +119,14 @@ public:
 };
 
 
-struct ClassProtoCache {
+class ClassProtoCache {
+public:
 	JSClass *clasp;
 	JS::PersistentRootedObject proto;
-		
+
+	ClassProtoCache(JSContext *cx) : clasp(NULL), proto(cx) {
+	}
+
 	ClassProtoCache(JSContext *cx, JSClass *c, JS::HandleObject p) : clasp(c), proto(cx, p) {
 	}
 };
@@ -93,17 +136,30 @@ template <const size_t CACHE_LENGTH>
 struct ProtoCache {
 	
 	StaticArray<ClassProtoCache, CACHE_LENGTH> items;
+	
+	~ProtoCache() {
+
+//		items.Destruct();
+
+		for ( int i = 0; i < items.length; ++i ) {
+			
+			if ( items.Get(i).clasp != NULL && items.Get(i).clasp != (JSClass*)jlpv::RemovedSlot() ) {
+
+				items.Destruct(i);
+			}
+		}
+	}
 
 	ProtoCache() {
 
 		// set all slots as 'unused'
-		for ( int i = 0; i < CACHE_LENGTH; ++i ) {
+		for ( int i = 0; i < items.length; ++i ) {
 			
 			items.Get(i).clasp = NULL;
 		}
 	}
 
-	bool Add(JSContext *cx, const char * const className, JSClass * const clasp, IN JS::HandleObject proto ) {
+	bool Add(JSContext *cx, const char * const className, JSClass * const clasp, IN JS::HandleObject proto) {
 
 		ASSERT( jlpv::RemovedSlot() != NULL );
 		ASSERT( className != NULL );
@@ -124,7 +180,8 @@ struct ProtoCache {
 
 			if ( slot.clasp == NULL ) {
 
-				::new (&slot) ClassProtoCache(cx, clasp, proto);
+				items.Construct(slotIndex, cx, clasp, proto);
+				//::new (&slot) ClassProtoCache(cx, clasp, proto);
 				return true;
 			}
 
@@ -181,8 +238,9 @@ struct ProtoCache {
 
 			if ( slot.clasp == NULL || ( slot.clasp != (JSClass*)jlpv::RemovedSlot() && ( slot.clasp->name == className || strcmp(slot.clasp->name, className) == 0 ) ) ) {
 			
+				items.Destruct(slotIndex);
 				slot.clasp = (JSClass*)jlpv::RemovedSlot();
-				slot.~ClassProtoCache();
+				//slot.~ClassProtoCache();
 				return;
 			}
 
@@ -195,10 +253,16 @@ struct ProtoCache {
 };
 
 
-struct HostPrivate {
+class HostPrivate {
+public:
+	~HostPrivate() {
+		
+		ids.DestructAll();
+	}
+
 	HostPrivate(JSContext *cx) : hostObject(cx), objectProto(cx) {
 		
-		ids.Construct(cx);
+		ids.ConstructAll(cx);
 	}
 
 	uint32_t versionKey; // used to ensure compatibility between host and modules. see JL_HOSTPRIVATE_KEY macro.

@@ -202,7 +202,7 @@ DEFINE_CONSTRUCTOR() {
 	pv->ofInfo = NULL;
 
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_INPUT_STREAM, JL_ARG(1)) );
-	pv->streamObject = JSVAL_TO_OBJECT(JL_ARG(1));
+	pv->streamObject = &JL_ARG(1).toObject();
 
 	pv->cx = cx;
 	int result = ov_open_callbacks(pv, &pv->ofDescriptor, NULL, 0, ovCallbacks); // doc: 0 for success

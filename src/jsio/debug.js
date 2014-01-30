@@ -10,7 +10,7 @@ loadModule('jsstd');
 loadModule('jsio');
 
 
-new Socket();
+var a = new Socket();
 
 
 

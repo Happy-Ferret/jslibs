@@ -851,14 +851,14 @@ bool FillMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *hM
 
 			uFlags |= MF_SEPARATOR;
 		} else 
-			if ( item.isString() || (!JSVAL_IS_PRIMITIVE(item) && JL_ObjectIsString(cx, JSVAL_TO_OBJECT(item))) ) {
+			if ( item.isString() || (item.isObject() && JL_ObjectIsString(cx, &item.toObject())) ) {
 
 			label = item;
 			cmdid = item;
 		} else
-		if ( !JSVAL_IS_PRIMITIVE(item) ) {
+		if ( item.isObject() ) {
 
-			JSObject *itemObj = JSVAL_TO_OBJECT(item);
+			JSObject *itemObj = &item.toObject();
 			jsval key, value;
 			JSIdArray *list = JS_Enumerate(cx, itemObj);
 			JL_CHK( list );
@@ -931,7 +931,7 @@ bool FillMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *hM
 
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					JL_ASSERT_IS_OBJECT(value, keyStr);
-					JSObject *iconObj = JSVAL_TO_OBJECT(value);
+					JSObject *iconObj = &value.toObject();
 					JL_ASSERT_INSTANCE( iconObj, JL_CLASS(Icon) );
 					HICON *phIcon = (HICON*)JL_GetPrivate(iconObj);
 					JL_ASSERT_OBJECT_STATE(phIcon, JL_CLASS_NAME(Icon));
@@ -945,7 +945,7 @@ bool FillMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *hM
 					JL_ASSERT_IS_OBJECT(value, keyStr);
 					uFlags |= MF_POPUP;
 					popupMenu = CreatePopupMenu();
-					JL_CHK( FillMenu(cx, systrayObj, JSVAL_TO_OBJECT(value), &popupMenu) );
+					JL_CHK( FillMenu(cx, systrayObj, &value.toObject(), &popupMenu) );
 					continue;
 				}
 			}
@@ -963,10 +963,10 @@ bool FillMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *hM
 			
 			lpNewItem = NULL;
 		} else
-		if ( !JSVAL_IS_PRIMITIVE(label) && JL_GetClass(JSVAL_TO_OBJECT(label)) == JL_CLASS(Icon) ) {
+		if ( label.isObject() && JL_GetClass(&label.toObject()) == JL_CLASS(Icon) ) {
 
 			uFlags |= MF_BITMAP;
-			HICON *phIcon = (HICON*)JL_GetPrivate(JSVAL_TO_OBJECT(label));
+			HICON *phIcon = (HICON*)JL_GetPrivate(&label.toObject());
 			JL_ASSERT_OBJECT_STATE(phIcon, JL_CLASS_NAME(Icon));
 			hBMP = MenuItemBitmapFromIcon(*phIcon);
 			JL_ASSERT( hBMP != NULL, E_STR("icon"), E_CREATE );
@@ -1089,7 +1089,7 @@ DEFINE_FUNCTION( popupMenu ) {
 	
 	// there is no way to detect the menu popup has been closed. Here we free previous items.
 	FreePopupMenuRoots(pv);
-	JL_CHK( FillMenu(cx, obj, JSVAL_TO_OBJECT( JL_ARG(1) ), &hMenu) );
+	JL_CHK( FillMenu(cx, obj, &JL_ARG(1).toObject(), &hMenu) );
 
 	st = PostMessage(pv->nid.hWnd, MSG_POPUP_MENU, 0, 0);
 	ASSERT( st );
@@ -1118,7 +1118,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 	if ( JL_ARG_ISDEF(1) ) {
 	
 		JL_ASSERT_ARG_IS_OBJECT(1);
-		JSObject *infoObj = JSVAL_TO_OBJECT(JL_ARG(1));
+		JSObject *infoObj = &JL_ARG(1).toObject();
 
 		pv->nid.dwInfoFlags = NIIF_NONE;
 
@@ -1238,7 +1238,7 @@ DEFINE_FUNCTION( position ) {
 	JSObject *point;
 	if ( argc >= 1 && !JL_ARG(1).isPrimitive() ) { // reuse
 
-		point = JSVAL_TO_OBJECT(JL_ARG(1)); // (TBD) check this
+		point = &JL_ARG(1).toObject(); // (TBD) check this
 
 		JL_CHK( JL_SetElement(cx, point, 0, v[0]) );
 		JL_CHK( JL_SetElement(cx, point, 1, v[1]) );
@@ -1276,7 +1276,7 @@ DEFINE_FUNCTION( rect ) {
 	JSObject *point;
 	if ( argc >= 1 && !JL_ARG(1).isPrimitive() ) { // reuse
 
-		point = JSVAL_TO_OBJECT(JL_ARG(1)); // (TBD) check this
+		point = &JL_ARG(1).toObject(); // (TBD) check this
 
 		JL_CHK( JL_SetElement(cx, point, 0, v[0]) );
 		JL_CHK( JL_SetElement(cx, point, 1, v[1]) );

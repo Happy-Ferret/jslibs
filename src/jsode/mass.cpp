@@ -29,9 +29,9 @@ bool GetBodyAndMass(JSContext *cx, JSObject *massObject, ode::dBodyID *pBodyID, 
 
 	jsval bodyVal;
 	JL_CHK( JL_GetReservedSlot( massObject, MASS_SLOT_BODY, &bodyVal) );
-	JL_ASSERT_THIS_OBJECT_STATE( JSVAL_IS_OBJECT(bodyVal) );
+	JL_ASSERT_THIS_OBJECT_STATE( bodyVal.isObject() );
 	JSObject *bodyObject;
-	bodyObject = JSVAL_TO_OBJECT(bodyVal);
+	bodyObject = &bodyVal.toObject();
 	JL_ASSERT_INSTANCE(bodyObject, JL_CLASS(Body));
 	*pBodyID = (ode::dBodyID)JL_GetPrivate(bodyObject);
 	ASSERT(*pBodyID);

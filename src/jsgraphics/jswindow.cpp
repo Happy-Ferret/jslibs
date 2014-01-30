@@ -598,7 +598,7 @@ DEFINE_PROPERTY( clientRect ) {
 		*vp = OBJECT_TO_JSVAL(arrayObj);
 	} else { // reusing the stored array is a good idea.
 
-		arrayObj = JSVAL_TO_OBJECT(*vp);
+		arrayObj = &vp.toObject();
 	}
 
 	jsval value;

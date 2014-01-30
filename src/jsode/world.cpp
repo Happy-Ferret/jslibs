@@ -102,10 +102,10 @@ void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 		JS::RootedValue func2(cx);
 
 		if ( geom1HasObj )
-			JL_CHK( JL_GetReservedSlot( JSVAL_TO_OBJECT(valGeom1), SLOT_GEOM_CONTACT_FUNCTION, &func1) );
+			JL_CHK( JL_GetReservedSlot( &valGeom1.toObject(), SLOT_GEOM_CONTACT_FUNCTION, &func1) );
 
 		if ( geom2HasObj )
-			JL_CHK( JL_GetReservedSlot( JSVAL_TO_OBJECT(valGeom2), SLOT_GEOM_CONTACT_FUNCTION, &func2) );
+			JL_CHK( JL_GetReservedSlot( &valGeom2.toObject(), SLOT_GEOM_CONTACT_FUNCTION, &func2) );
 
 		if ( !func1.isUndefined() || !func2.isUndefined() ) {
 
@@ -153,7 +153,7 @@ void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 				//...
 				argv[7] = INT_TO_JSVAL( contact.geom.side1 ); // TriIndex
 				argv[8] = INT_TO_JSVAL( contact.geom.side2 );
-				JL_CHK( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom1), func1, COUNTOF(argv)-1, argv+1, argv) );
+				JL_CHK( JS_CallFunctionValue(cx, &valGeom1.toObject(), func1, COUNTOF(argv)-1, argv+1, argv) );
 				if ( *argv == JSVAL_FALSE )
 					doContact = false;
 			}
@@ -165,7 +165,7 @@ void nearCallback(void *data, ode::dGeomID geom1, ode::dGeomID geom2) {
 				//...
 				argv[7] = INT_TO_JSVAL( contact.geom.side2 ); // TriIndex
 				argv[8] = INT_TO_JSVAL( contact.geom.side1 );
-				JL_CHK( JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(valGeom2), func2, COUNTOF(argv)-1, argv+1, argv) );
+				JL_CHK( JS_CallFunctionValue(cx, &valGeom2.toObject(), func2, COUNTOF(argv)-1, argv+1, argv) );
 				if ( *argv == JSVAL_FALSE )
 					doContact = false;
 			}
@@ -374,7 +374,7 @@ DEFINE_FUNCTION( collide ) {
 			JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(2), (ode::dSpaceID*)&sg2Id) );
 		} else {
 
-			JL_ASSERT_INSTANCE(JSVAL_TO_OBJECT(JL_ARG(2)), JL_CLASS(Geom));
+			JL_ASSERT_INSTANCE(&JL_ARG(2).toObject(), JL_CLASS(Geom));
 			JL_CHK( JL_JsvalToGeom(cx, JL_ARG(2), (ode::dGeomID*)&sg2Id) );
 		}
 	} else {
@@ -388,7 +388,7 @@ DEFINE_FUNCTION( collide ) {
 		JL_ASSERT_ARG_IS_OBJECT(1);
 		if ( sg2Id == NULL ) {
 
-			JL_ASSERT_INSTANCE(JSVAL_TO_OBJECT(JL_ARG(1)), JL_CLASS(Space));
+			JL_ASSERT_INSTANCE(&JL_ARG(1).toObject(), JL_CLASS(Space));
 			JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), (ode::dSpaceID*)&sg1Id) );
 		} else {
 
@@ -397,7 +397,7 @@ DEFINE_FUNCTION( collide ) {
 				JL_CHK( JL_JsvalToSpaceID(cx, JL_ARG(1), (ode::dSpaceID*)&sg1Id) );
 			} else {
 
-				JL_ASSERT_INSTANCE(JSVAL_TO_OBJECT(JL_ARG(1)), JL_CLASS(Geom));
+				JL_ASSERT_INSTANCE(&JL_ARG(1).toObject(), JL_CLASS(Geom));
 				JL_CHK( JL_JsvalToGeom(cx, JL_ARG(1), (ode::dGeomID*)&sg1Id) );
 			}
 		}
@@ -410,8 +410,9 @@ DEFINE_FUNCTION( collide ) {
 
 	jsval defaultSurfaceParametersVal;
 	JL_GetReservedSlot( obj, SLOT_WORLD_DEFAULTSURFACEPARAMETERS, &defaultSurfaceParametersVal);
+	JL_ASSERT( defaultSurfaceParametersVal.isObject() );
 	//	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(defaultSurfaceParametersObject), JL_CLASS(SurfaceParameters) ); // (TBD) simplify RT_ASSERT
-	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JL_GetPrivate(JSVAL_TO_OBJECT(defaultSurfaceParametersVal)); // beware: local variable !
+	ode::dSurfaceParameters *defaultSurfaceParameters = (ode::dSurfaceParameters*)JL_GetPrivate(&defaultSurfaceParametersVal.toObject()); // beware: local variable !
 	JL_ASSERT_OBJECT_STATE( defaultSurfaceParameters, JL_CLASS_NAME(SurfaceParameters) );
 
 	ColideContextPrivate ccp;
@@ -468,6 +469,7 @@ DEFINE_FUNCTION( scaleImpulse ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -481,7 +483,7 @@ DEFINE_FUNCTION( scaleImpulse ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &stepSize) );
 	ode::dWorldImpulseToForce(pv->worldId, stepSize / 1000, force[0], force[1], force[2], force);
 	
-	JSObject *objArr = JSVAL_TO_OBJECT(JL_ARG(1));
+	JSObject *objArr = &JL_ARG(1).toObject();
 	for ( int i = 0; i < 3; i++ ) {
 
 		JL_CHK( JL_NativeToJsval(cx, force[i], JL_RVAL) );

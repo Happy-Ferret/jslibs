@@ -30,7 +30,7 @@ ALWAYS_INLINE bool JL_JsvalToBody( JSContext *cx, jsval val, ode::dBodyID *bodyI
 	//JL_ASSERT_OBJECT_STATE( JSVAL_IS_OBJECT(val), JL_CLASS_NAME(Body) );
 	JL_ASSERT_IS_OBJECT(val, JL_CLASS_NAME(Body));
 
-	JSObject *obj = JSVAL_TO_OBJECT(val);
+	JSObject *obj = &val.toObject();
 	JL_ASSERT_INSTANCE(obj, JL_CLASS(Body));
 	
 	*bodyId = (ode::dBodyID)JL_GetPrivate(obj); // may be null if body is world.env

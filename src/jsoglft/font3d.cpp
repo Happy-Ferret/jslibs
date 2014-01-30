@@ -133,7 +133,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JSObject *fontObj = JSVAL_TO_OBJECT( JL_ARG(1) );
+	JSObject *fontObj = &JL_ARG(1).toObject();
 
 	JL_ASSERT_INSTANCE( fontObj, JL_GetCachedClass(JL_GetHostPrivate(cx), "Font") );
 

@@ -265,9 +265,10 @@ DEFINE_FUNCTION( close ) {
 
 	jsval v;
 	JL_CHK( JL_GetReservedSlot(obj, SLOT_RESULT_DATABASE, v) );
+	JL_ASSERT( v.isObject() );
 	DatabasePrivate *dbpv;
-	dbpv = (DatabasePrivate*)JL_GetPrivate(JSVAL_TO_OBJECT(v));
-	JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(JSVAL_TO_OBJECT(v)) );
+	dbpv = (DatabasePrivate*)JL_GetPrivate(&v.toObject());
+	JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(&v.toObject()) );
 
 	if ( sqlite3_finalize(pStmt) != SQLITE_OK )
 		JL_CHK( SqliteThrowError(cx, dbpv->db) );
@@ -346,9 +347,10 @@ bool DoStep(JSContext *cx, JSObject *obj, jsval *rval) {
 
 	jsval dbVal;
 	JL_CHK( JL_GetReservedSlot(obj, SLOT_RESULT_DATABASE, dbVal) );
+	JL_ASSERT( dbVal.isObject() );
 	DatabasePrivate *dbpv;
-	dbpv = (DatabasePrivate*)JL_GetPrivate(JSVAL_TO_OBJECT(dbVal));
-	JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(JSVAL_TO_OBJECT(dbVal)));
+	dbpv = (DatabasePrivate*)JL_GetPrivate(&dbVal.toObject());
+	JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(&dbVal.toObject()));
 
 	sqlite3 *db;
 	db = dbpv->db;
@@ -362,7 +364,7 @@ bool DoStep(JSContext *cx, JSObject *obj, jsval *rval) {
 
 		jsval queryArgument;
 		JL_CHK( JL_GetReservedSlot(obj, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, queryArgument) );
-		JL_CHK( SqliteSetupBindings(cx, pStmt, JSVAL_IS_PRIMITIVE( queryArgument ) ? NULL : JSVAL_TO_OBJECT( queryArgument ), obj) ); // ":" use result object. "@" is the object passed to Query()
+		JL_CHK( SqliteSetupBindings(cx, pStmt, !queryArgument.isObject() ? NULL : &queryArgument.toObject(), obj) ); // ":" use result object. "@" is the object passed to Query()
 		JL_CHK( JL_SetReservedSlot(obj, SLOT_RESULT_BINDING_UP_TO_DATE, JSVAL_TRUE) );
 		// doc: The sqlite3_bind_*() routines must be called AFTER sqlite3_prepare() or sqlite3_reset() and BEFORE sqlite3_step().
 		//      Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.

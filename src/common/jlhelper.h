@@ -1128,7 +1128,7 @@ namespace jlpv {
 	// JS::RootedObject obj(cx, args.computeThis(cx).toObjectOrNull());
 
 #define JL_DEFINE_CALL_FUNCTION_OBJ \
-	JS::RootedObject obj(cx, JSVAL_TO_OBJECT(JS_CALLEE(cx, vp));
+	JS::RootedObject obj(cx, JS_CALLEE(cx, vp).toObjectOrNull();
 
 /*
 namespace jlpv {
@@ -1223,7 +1223,7 @@ JL_ValueIsBooleanObject( IN JSContext *cx, IN JS::HandleValue value ) {
 
 	if ( value.isObject() ) {
 
-		JS::RootedObject obj(cx, JSVAL_TO_OBJECT(value));
+		JS::RootedObject obj(cx, &value.toObject());
 		return JL_ObjectIsBoolean(cx, obj);
 	} else {
 		return false;
@@ -1255,7 +1255,7 @@ JL_ValueIsNumberObject( JSContext * RESTRICT cx, IN JS::HandleValue value ) {
 
 	if ( value.isObject() ) {
 
-		JS::RootedObject obj(cx, JSVAL_TO_OBJECT(value));
+		JS::RootedObject obj(cx, &value.toObject());
 		return JL_ObjectIsNumber(cx, obj);
 	} else {
 		
@@ -1440,7 +1440,7 @@ JL_ValueIsGenerator( JSContext *cx, JS::Value &val ) {
 	return val.isObject()
 		&& JL_GetClassPrototype(cx, JSProto_Function, &proto) 
 	    && JS_GetPropertyById(cx, proto, JLID(cx, isGenerator), &fct)
-		&& JS_CallFunctionValue(cx, JSVAL_TO_OBJECT(val), fct, 0, NULL, &rval.get())
+		&& JS_CallFunctionValue(cx, &val.toObject(), fct, 0, NULL, &rval.get())
 		&& rval == JSVAL_TRUE;
 }
 
@@ -3532,17 +3532,14 @@ ALWAYS_INLINE bool FASTCALL
 JL_NewBufferCopyN( JSContext *cx, IN const void *src, IN size_t nbytes, OUT JS::MutableHandleValue vp ) {
 
 	JS::RootedObject bufferObj(cx, JS_NewArrayBuffer(cx, nbytes));
-	void *data = JS_GetArrayBufferData(bufferObj);
-	jl::memcpy(data, src, nbytes);
-
-	if ( bufferObj ) {
-
-		vp.setObject(*bufferObj);
-		return true;
-	} else {
-
+	if ( !bufferObj )
 		return false;
-	}
+	void *data = JS_GetArrayBufferData(bufferObj);
+	if ( !data )
+		return false;
+	jl::memcpy(data, src, nbytes);
+	vp.setObject(*bufferObj);
+	return true;
 }
 
 ALWAYS_INLINE bool FASTCALL

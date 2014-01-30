@@ -941,11 +941,13 @@ DEFINE_FUNCTION( transformVector ) {
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
+	JS::RootedObject vectorObj(cx, &JL_ARG(1).toObject());
+
 	uint32_t length;
 //	J_JSVAL_TO_ARRAY_LENGTH( JL_ARG(1), length );
-	JL_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(JL_ARG(1)), &length) );
+	JL_CHK( JS_GetArrayLength(cx, vectorObj, &length) );
 
-	jsval tmpValue;
+	JS::RootedValue tmpValue(cx);
 	if ( length >= 3 ) {
 
 		Vector3 src, dst;
@@ -954,13 +956,13 @@ DEFINE_FUNCTION( transformVector ) {
 		Matrix44MultVector3(pv->mat, &dst, &src);
 
 		JL_CHK( JL_NativeToJsval(cx, dst.x, tmpValue) );
-		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 0, tmpValue) );
+		JL_CHK( JL_SetElement(cx, vectorObj, 0, tmpValue) );
 
 		JL_CHK( JL_NativeToJsval(cx, dst.y, tmpValue) );
-		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 1, tmpValue) );
+		JL_CHK( JL_SetElement(cx, vectorObj, 1, tmpValue) );
 
 		JL_CHK( JL_NativeToJsval(cx, dst.z, tmpValue) );
-		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 2, tmpValue) );
+		JL_CHK( JL_SetElement(cx, vectorObj, 2, tmpValue) );
 	} else
 	if ( length == 4 ) {
 
@@ -970,16 +972,16 @@ DEFINE_FUNCTION( transformVector ) {
 		Matrix44MultVector4(pv->mat, &dst, &src);
 
 		JL_CHK( JL_NativeToJsval(cx, dst.x, tmpValue) );
-		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 0, tmpValue) );
+		JL_CHK( JL_SetElement(cx, vectorObj, 0, tmpValue) );
 
 		JL_CHK( JL_NativeToJsval(cx, dst.y, tmpValue) );
-		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 1, tmpValue) );
+		JL_CHK( JL_SetElement(cx, vectorObj, 1, tmpValue) );
 
 		JL_CHK( JL_NativeToJsval(cx, dst.z, tmpValue) );
-		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 2, tmpValue) );
+		JL_CHK( JL_SetElement(cx, vectorObj, 2, tmpValue) );
 
 		JL_CHK( JL_NativeToJsval(cx, dst.w, tmpValue) );
-		JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT( JL_ARG(1) ), 3, tmpValue) );
+		JL_CHK( JL_SetElement(cx, vectorObj, 3, tmpValue) );
 	} else {
 
 		JL_ERR( E_ARG, E_NUM(1), E_LENGTH, E_INTERVAL_NUM(3, 4) ); // "Invalid vector length"

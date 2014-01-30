@@ -182,7 +182,6 @@ void StderrWrite(JSContext *cx, const char *message, size_t length) {
 	JS::RootedValue rval(cx);
 	JS::RootedValue text(cx);
 	JL_CHKB( JL_NativeToJsval(cx, message, length, &text), bad1 ); // beware out of memory case !
-//	JL_CHKB( JS_CallFunctionValue(cx, globalObject, fct, 1, &text, &rval), bad1 );
 	JL_CHKB( JL_CallFunctionVA(cx, globalObject, fct, &rval, text), bad1 );
 
 	JS_SetErrorReporter(cx, prevErrorReporter);
@@ -678,7 +677,6 @@ CONFIGURE_CLASS
 END_CLASS
 
 
-
 // default: CreateHost(-1, -1, 0);
 JSContext*
 CreateHost( uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInterval ) {
@@ -743,9 +741,10 @@ CreateHost( uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInterval ) {
 	JL_CHK( JS_InitStandardClasses(cx, globalObject) );
 	JL_CHK( JS_DefineDebuggerObject(cx, globalObject) ); // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
 	JL_CHK( JS_InitReflect(cx, globalObject) );
-#ifdef JS_HAS_CTYPES
+	
+	#ifdef JS_HAS_CTYPES
 	JL_CHK( JS_InitCTypesClass(cx, globalObject) );
-#endif
+	#endif
 
 	JS_FireOnNewGlobalObject(cx, globalObject);
 
@@ -905,7 +904,9 @@ DestroyHost( JSContext *cx, bool skipCleanup ) {
 	JS_DestroyContext(cx);
 
 
-	JS_DumpHeap(rt, fopen("dump.txt", "w"), NULL, JSTRACE_OBJECT, NULL, 1, NULL);
+#ifdef DEBUG
+	JS_DumpHeap(rt, fopen("dump.txt", "w"), NULL, JSTRACE_OBJECT, NULL, 2, NULL);
+#endif
 
 	JS_DestroyRuntime(rt);
 	cx = NULL;
@@ -1166,3 +1167,293 @@ stat2.sort(function(a,b) b[1]-a[1]);
 for each ( var i in stat2 )
      print( i[1] + ' x ' + i[0] )
 */
+
+
+
+
+// (TBD)
+class HostRuntime : public jl::CppAllocators {
+
+// global object
+// doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
+// note: global_class is a global variable, but this is not an issue even if several runtimes share the same JSClass.
+	static JSClass globalClass;
+
+	uint32_t _maybeGCInterval;
+	JLSemaphoreHandler _watchDogSemEnd;
+	JLThreadHandler _watchDogThread;
+
+	JSRuntime *_rt;
+	JSContext *_cx;
+
+	bool _isEnding;
+	bool _canSkipCleanup;
+
+	static bool
+	OperationCallback(JSContext *cx) {
+
+		JSOperationCallback tmp = JS_SetOperationCallback(JL_GetRuntime(cx), NULL);
+		JS_MaybeGC(cx);
+		JS_SetOperationCallback(JL_GetRuntime(cx), tmp);
+		return true;
+	}
+
+
+public:
+	HostRuntime() : _rt(NULL), _cx(NULL), _isEnding(false), _canSkipCleanup(false) {
+	}
+
+	bool Create( uint32_t maxMem, uint32_t maxAlloc, uint32_t maybeGCInterval ) {
+
+		_rt = JS_NewRuntime(maxAlloc, JS_NO_HELPER_THREADS); // JSGC_MAX_MALLOC_BYTES
+		JL_CHK( _rt );
+
+		// Number of JS_malloc bytes before last ditch GC.
+		ASSERT( JS_GetGCParameter(_rt, JSGC_MAX_MALLOC_BYTES) == maxAlloc ); // JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc);
+
+		// doc: maxMem specifies the number of allocated bytes after which garbage collection is run. Maximum nominal heap before last ditch GC.
+		JS_SetGCParameter(_rt, JSGC_MAX_BYTES, maxMem); 
+
+		//JS_SetGCParametersBasedOnAvailableMemory
+
+		_cx = JS_NewContext(_rt, 8192); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
+		JL_CHK( _cx ); //, "unable to create the context." );
+
+		// Info: Increasing JSContext stack size slows down my scripts:
+		//   http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
+
+		JS::ContextOptionsRef(_cx)
+			.setVarObjFix(true)
+			.setTypeInference(true)
+			.setIon(true);
+
+		//JS_SetNativeStackQuota(cx, DEFAULT_MAX_STACK_SIZE); // see https://developer.mozilla.org/En/SpiderMonkey/JSAPI_User_Guide
+
+		JS_SetGCParameter(_rt, JSGC_MODE, JSGC_MODE_INCREMENTAL); // JSGC_MODE_GLOBAL
+
+		JS_SetErrorReporter(_cx, ErrorReporter);
+
+		// JSOPTION_ANONFUNFIX: https://bugzilla.mozilla.org/show_bug.cgi?id=376052 
+		// JS_SetOptions doc: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_SetOptions
+
+		//JS_SetOptions(cx, JSOPTION_VAROBJFIX | JSOPTION_TYPE_INFERENCE); // beware: avoid using JSOPTION_COMPILE_N_GO here.
+
+		{
+
+		JS::CompartmentOptions options;
+		options.setVersion(JSVERSION_LATEST);
+
+		JS::RootedObject globalObject(_cx, JS_NewGlobalObject(_cx, &globalClass, NULL, JS::DontFireOnNewGlobalHook, options));
+		JL_CHK( globalObject ); // "unable to create the global object." );
+
+		JSCompartment *prevCompartment = JS_EnterCompartment(_cx, globalObject);
+		JL_CHK( prevCompartment == nullptr );
+
+		//	doc: As a side effect, JS_InitStandardClasses establishes obj as the global object for cx, if one is not already established.
+		// JS_SetGlobalObject(cx, globalObject); // no call to JS_InitStandardClasses(), then JS_SetGlobalObject() is required (see also LAZY_STANDARD_CLASSES).
+
+		JL_CHK( JS_InitStandardClasses(_cx, globalObject) );
+		JL_CHK( JS_DefineDebuggerObject(_cx, globalObject) ); // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
+		JL_CHK( JS_InitReflect(_cx, globalObject) );
+		#ifdef JS_HAS_CTYPES
+		JL_CHK( JS_InitCTypesClass(_cx, globalObject) );
+		#endif
+
+		JS_FireOnNewGlobalObject(_cx, globalObject);
+
+		}
+
+		// setup WatchDog
+		if ( maybeGCInterval ) {
+
+			JSOperationCallback prevOperationCallback = JS_SetOperationCallback(JL_GetRuntime(_cx), OperationCallback);
+			ASSERT( prevOperationCallback == NULL );
+			_watchDogSemEnd = JLSemaphoreCreate(0);
+			_watchDogThread = JLThreadStart(WatchDogThreadProc, _cx);
+			JL_ASSERT( JLSemaphoreOk(_watchDogSemEnd) && JLThreadOk(_watchDogThread), E_HOST, E_CREATE ); // "Unable to create the GC thread."
+		}
+		return true;
+
+	bad:
+		return false;
+	}
+
+	bool Destroy(bool skipCleanup) {
+
+		ASSERT( _isEnding == false );
+
+		_isEnding = true;
+		_canSkipCleanup = skipCleanup;
+
+		if ( JLThreadOk(_watchDogThread) ) {
+
+			// beware: it is important to destroy the watchDogThread BEFORE destroying the cx or hpv !!!
+			JLSemaphoreRelease(_watchDogSemEnd);
+			JLThreadWait(_watchDogThread);
+			JLThreadFree(&_watchDogThread);
+			JLSemaphoreFree(&_watchDogSemEnd);
+		}
+
+		for ( jl::QueueCell *it = jl::QueueBegin(&hpv->moduleList); it; it = jl::QueueNext(it) ) {
+
+			JLLibraryHandler module = (JLLibraryHandler)jl::QueueGetData(it);
+			ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_RELEASE);
+			if ( moduleRelease != NULL ) {
+		
+				if ( !moduleRelease(cx) ) {
+
+					char filename[PATH_MAX];
+					JLDynamicLibraryName((void*)moduleRelease, filename, sizeof(filename));
+					JL_WARN( E_MODULE, E_NAME(filename), E_FIN ); // "Fail to release module \"%s\".", filename
+				}
+			}
+		}
+
+		if ( !jslangModuleRelease(cx) ) {
+		
+			JL_WARN( E_MODULE, E_NAME("jslang"), E_FIN ); // "Fail to release static module jslang."
+		}
+
+		//	don't try to break linked objects with JS_GC(cx) !
+
+	//	jsval tmp;
+	//	JL_CHK( GetConfigurationValue(cx, JLID_NAME(_getErrorMessage), &tmp) );
+	//	if ( tmp != JSVAL_VOID && JSVAL_TO_PRIVATE(tmp) )
+	//		jl_free( JSVAL_TO_PRIVATE(tmp) );
+
+
+	// cleanup
+
+		// doc:
+		//  - Is the only side effect of JS_DestroyContextNoGC that any finalizers I may have specified in custom objects will not get called ?
+		//  - Not if you destroy all contexts (whether by NoGC or not), destroy all runtimes, and call JS_ShutDown before exiting or hibernating.
+		//    The last JS_DestroyContext* API call will run a GC, no matter which API of that form you call on the last context in the runtime. /be
+		JS_LeaveCompartment(cx, NULL); // Leave the context that as been entered in CreateHost()
+		JS_DestroyContext(cx);
+
+
+	#ifdef DEBUG
+		JS_DumpHeap(rt, fopen("dump.txt", "w"), NULL, JSTRACE_OBJECT, NULL, 2, NULL);
+	#endif
+
+		JS_DestroyRuntime(rt);
+		cx = NULL;
+
+		// Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
+
+		while ( !jl::QueueIsEmpty(&hpv->moduleList) ) {
+
+			JLLibraryHandler module = (JLLibraryHandler)jl::QueueShift(&hpv->moduleList);
+			ModuleFreeFunction moduleFree = (ModuleFreeFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_FREE);
+			if ( moduleFree != NULL )
+				moduleFree();
+	//#ifndef DEBUG // else the memory block was allocated in a DLL that was unloaded prior to the _CrtMemDumpAllObjectsSince() call.
+			JLDynamicLibraryClose(&module);
+	//#endif
+		}
+
+		jslangModuleFree();
+
+		DestructHostPrivate(hpv);
+
+		return true;
+
+	bad:
+		// on error, do the minimum.
+		if ( cx ) {
+
+			JS_LeaveCompartment(cx, NULL);
+			JS_DestroyContext(cx);
+			JS_DestroyRuntime(rt);
+		}
+		return false;
+	}
+};
+
+JSClass Host::globalClass = {
+	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS,
+	JS_PropertyStub, JS_DeletePropertyStub,
+	JS_PropertyStub, JS_StrictPropertyStub,
+	JS_EnumerateStub, JS_ResolveStub,
+	JS_ConvertStub
+};
+
+
+
+
+class Host {
+
+	HostRuntime &hostRuntime;
+
+public:
+	Host( HostRuntime &hr ) : hostRuntime(hr) {
+	}
+
+	// init the host for jslibs usage (modules, errors, ...)
+	bool
+	Create( bool unsafeMode, HostInput stdIn, HostOutput stdOut, HostOutput stdErr, void* userPrivateData ) {
+
+		_unsafeMode = unsafeMode;
+		HostPrivate *hpv = JL_GetHostPrivate(cx);
+
+			hpv = ConstructHostPrivate(cx);
+			JL_ASSERT_ALLOC( hpv );
+			hpv->versionKey = JL_HOSTPRIVATE_KEY;
+			JL_SetHostPrivate(cx, hpv);
+		}
+
+		hpv->privateData = userPrivateData;
+
+		jl::QueueInitialize(&hpv->moduleList);
+
+		hpv->unsafeMode = unsafeMode;
+
+		if ( unsafeMode ) {
+
+			//JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_STRICT_MODE));
+			JS::ContextOptionsRef(cx).setStrictMode(false);
+		}
+
+
+		hpv->report = Report;
+
+		hpv->hostStdErr = stdErr;
+		hpv->hostStdOut = stdOut;
+		hpv->hostStdIn = stdIn;
+
+		{
+
+		JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
+		ASSERT( globalObject != NULL ); // "Global object not found."
+
+		//JSObject *newObject = JS_NewObject(cx, NULL, NULL, NULL);
+		//hpv->objectClass = JL_GetClass(newObject);
+		//hpv->objectProto = JL_GetPrototype(cx, newObject);
+		JL_CHK( JL_GetClassPrototype(cx, JSProto_Object, &hpv->objectProto) );
+		hpv->objectClass = JL_GetClass(hpv->objectProto);
+		ASSERT( hpv->objectClass );
+		ASSERT( hpv->objectProto );
+	
+		// global functions & properties
+		JL_CHKM( JS_DefinePropertyById(cx, globalObject, JLID(cx, global), OBJECT_TO_JSVAL(globalObject), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
+
+		JL_CHK( jl::InitClass(cx, globalObject, host::classSpec) ); // INIT_CLASS( host );
+
+		// init static modules
+		if ( !jslangModuleInit(cx, globalObject) )
+
+			JL_ERR( E_MODULE, E_NAME("jslang"), E_INIT );
+		}
+
+		return true;
+	bad:
+		return false;
+	}
+
+	bool
+	DestroyHost( JSContext *cx, bool skipCleanup ) {
+	}
+};
+
+
+

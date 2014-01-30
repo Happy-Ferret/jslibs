@@ -164,7 +164,7 @@ ALWAYS_INLINE bool FASTCALL
 IsTexture( JSContext *cx, jsval val ) {
 	
 	JL_IGNORE(cx);
-	return !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT(val)) == JL_CLASS(Texture);
+	return val.isObject() && JL_GetClass(&val.toObject()) == JL_CLASS(Texture);
 }
 
 
@@ -172,8 +172,8 @@ ALWAYS_INLINE bool FASTCALL
 ValueToTexture( JSContext* cx, jsval value, TextureStruct **tex ) {
 
 	JL_ASSERT( IsTexture(cx, value), E_VALUE, E_TYPE, E_NAME(JL_CLASS_NAME(Texture)) );
-	*tex = (TextureStruct*)JL_GetPrivate(JSVAL_TO_OBJECT( value ));
-	JL_ASSERT_OBJECT_STATE(tex, JL_GetClassName(JSVAL_TO_OBJECT(value)) );
+	*tex = (TextureStruct*)JL_GetPrivate(&value.toObject());
+	JL_ASSERT_OBJECT_STATE(tex, JL_GetClassName(&value.toObject()) );
 	return true;
 	JL_BAD;
 }
@@ -366,7 +366,7 @@ InitCurveData( IN JSContext* cx, IN jsval value, IN size_t length, OUT float *cu
 	if ( JL_ValueIsArray(cx, value) ) { // do not manage array-like here since string are handeled below.
 
 		unsigned curveArrayLength;
-		JL_CHK( JS_GetArrayLength(cx, JSVAL_TO_OBJECT(value), &curveArrayLength) );
+		JL_CHK( JS_GetArrayLength(cx, &value.toObject(), &curveArrayLength) );
 		JL_ASSERT( curveArrayLength >= 1, E_ARRAYLENGTH, E_MIN, E_NUM(1) );
 		PTYPE *curveArray;
 		curveArray = (PTYPE*)alloca(curveArrayLength * sizeof(PTYPE));
@@ -393,7 +393,7 @@ InitCurveData( IN JSContext* cx, IN jsval value, IN size_t length, OUT float *cu
 		JLData curveData;
 
 		JSObject *bstrObj;
-		bstrObj = JSVAL_TO_OBJECT(value);
+		bstrObj = &value.toObject();
 		size_t bstrLen;
 		const uint8_t *bstrData;
 //		JL_CHK( JL_JsvalToStringAndLength( cx, &value, (const char **)&bstrData, &bstrLen ) );
@@ -522,8 +522,8 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( IsTexture(cx, JL_ARG(1)) ) { // copy constructor
 
-		TextureStruct *srcTex = (TextureStruct *)JL_GetPrivate(JSVAL_TO_OBJECT(JL_ARG(1)));
-		JL_ASSERT_OBJECT_STATE(srcTex, JL_GetClassName(JSVAL_TO_OBJECT(JL_ARG(1))) );
+		TextureStruct *srcTex = (TextureStruct *)JL_GetPrivate(&JL_ARG(1).toObject());
+		JL_ASSERT_OBJECT_STATE(srcTex, JL_GetClassName(&JL_ARG(1).toObject()) );
 
 		JL_CHK( TextureInit(tex, srcTex->width, srcTex->height, srcTex->channels) );
 		jl::memcpy( tex->cbuffer, srcTex->cbuffer, srcTex->width * srcTex->height * srcTex->channels * sizeof(PTYPE) );
@@ -616,7 +616,7 @@ DEFINE_FUNCTION( swap ) {
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	JSObject *texObj;
-	texObj = JSVAL_TO_OBJECT( JL_ARG(1) );
+	texObj = &JL_ARG(1).toObject();
 	JL_ASSERT_INSTANCE( texObj, JL_THIS_CLASS );
 	void *tmp;
 	tmp = JL_GetPrivate(obj);
@@ -2345,8 +2345,10 @@ DEFINE_FUNCTION( convolution ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
+
 	// (TBD) accumulate precalculated pixels ? ( like BoxBlur )
 	JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	TextureStruct *tex;
 	tex = (TextureStruct *)JL_GetPrivate(obj);
@@ -2357,7 +2359,7 @@ DEFINE_FUNCTION( convolution ) {
 
 	unsigned count;
 	// JL_CHK( ArrayLength(cx, &count, JL_ARG(1)) );
-	JL_CHK( JS_GetArrayLength( cx, JSVAL_TO_OBJECT(JL_ARG(1)), &count ) );
+	JL_CHK( JS_GetArrayLength( cx, &JL_ARG(1).toObject(), &count ) );
 	float *kernel;
 	kernel = (float*)alloca(sizeof(float) * count);
 	JL_ASSERT_ALLOC( kernel );
@@ -3467,7 +3469,7 @@ DEFINE_FUNCTION( import ) { // (Blob)image, (int)x, (int)y
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
 
 	JSObject *bstr;
-	bstr = JSVAL_TO_OBJECT( JL_ARG(1) );
+	bstr = &JL_ARG(1).toObject();
 	//JL_ASSERT_INSTANCE( bstr, JL_BlobJSClass(cx) ); // (TBD) String object should also work.
 
 	int px, py;

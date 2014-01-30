@@ -919,41 +919,30 @@ void Finalize(JSFreeOp *fop, JSObject *obj) {
 	printf("fin\n");
 }
 
+
+/*
 bool Constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 
+	return true;
 }
 
+JSClass myClass = {
+	"myClass", 0,
+	JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub,
+	Finalize
+};
 
-int main_min(int argc, char* argv[]) {
+JS_InitClass(cx, globalObject, NULL, &myClass, Constructor, 0, NULL, NULL, NULL, NULL);
+*/
 
-	JSClass globalClass = {
-		"global", JSCLASS_GLOBAL_FLAGS,
-		JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
-		JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub
-	};
+int main_min_run(JSContext *cx, JSClass *globalClasp) {
 
-	JSClass myClass = {
-		"myClass", 0,
-		JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
-		JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub,
-		Finalize
-	};
+//	size_t p1 = GetEIP();
+//	size_t p2 = GetEIP() - p1;
+//	printf("%d\n", p2);
 
-	JS_Init();
-
-    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
-	JSContext *cx = JS_NewContext(rt, 8192L);
-
-	{
-
-	size_t p1 = GetEIP();
-	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &globalClass, NULL, JS::FireOnNewGlobalHook) );
-	size_t p2 = GetEIP() - p1;
-	printf("%d\n", p2);
-
-	JS_InitClass(cx, globalObject, NULL, &myClass, NULL, 0, NULL, NULL, NULL, NULL);
-
-
+	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, globalClasp, NULL, JS::FireOnNewGlobalHook) );
 
 /*
 //	AutoVectorRooter
@@ -962,13 +951,11 @@ int main_min(int argc, char* argv[]) {
 	valTmp = rt.handleAt(9);
 	printf("%d\n", valTmp.toInt32());
 */
-
+/*
 	JS::RootedValue tmp(cx);
-
 	mozilla::Vector<JS::PersistentRootedValue,8> descVal;
-
 	descVal.append(JS::PersistentRootedValue(cx, tmp));
-
+*/
 
 //	JS::RootedVector<JS::Value> arr;
 	JSAutoCompartment ac(cx, globalObject);
@@ -986,10 +973,31 @@ int main_min(int argc, char* argv[]) {
 
 	JS::RootedValue rval(cx);
 	bool ok = JS_ExecuteScript(cx, globalObject, script, rval.address());
-	
-	}
 
+	return true;
+}
+
+
+int main_min(int argc, char* argv[]) {
+
+	JSClass globalClass = {
+		"global", JSCLASS_GLOBAL_FLAGS,
+		JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
+		JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub
+	};
+
+
+	JS_Init();
+
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
+	JSContext *cx = JS_NewContext(rt, 8192L);
+
+	main_min_run(cx, &globalClass);
+	
 	JS_DestroyContext(cx);
+
+	JS_DumpHeap(rt, fopen("dump.txt", "w"), NULL, JSTRACE_OBJECT, NULL, 1, NULL);
+
 	JS_DestroyRuntime(rt);
 
 	JS_ShutDown();

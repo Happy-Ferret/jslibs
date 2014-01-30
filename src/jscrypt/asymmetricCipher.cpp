@@ -49,9 +49,9 @@ bool SlotGetPrng(JSContext *cx, JS::HandleObject obj, int *prngIndex, prng_state
 	jsval prngVal;
 	JL_CHK( JL_GetReservedSlot( obj, ASYMMETRIC_CIPHER_PRNG_SLOT, &prngVal) );
 	JL_ASSERT_OBJECT_STATE( JSVAL_IS_OBJECT(prngVal), JL_CLASS_NAME(Prng) );
-	JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(prngVal), JL_CLASS(Prng) );
+	JL_ASSERT_INSTANCE( &prngVal.toObject(), JL_CLASS(Prng) );
 	PrngPrivate *prngPrivate;
-	prngPrivate = (PrngPrivate *)JL_GetPrivate(JSVAL_TO_OBJECT(prngVal));
+	prngPrivate = (PrngPrivate *)JL_GetPrivate(&prngVal.toObject());
 	JL_ASSERT_OBJECT_STATE( prngPrivate, JL_CLASS_NAME(Prng) );
 	*prngState = &prngPrivate->state;
 	*prngIndex = find_prng(prngPrivate->prng.name);
@@ -170,7 +170,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 	if ( argc >= 3 ) {
 
 		JL_ASSERT_ARG_IS_OBJECT(3);
-		JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT(JL_ARG(3)), JL_CLASS(Prng) );
+		JL_ASSERT_INSTANCE( &JL_ARG(3).toObject(), JL_CLASS(Prng) );
 		JL_CHK( JL_SetReservedSlot( obj, ASYMMETRIC_CIPHER_PRNG_SLOT, JL_ARG(3)) );
 	} else {
 

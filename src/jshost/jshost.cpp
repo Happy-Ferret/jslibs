@@ -246,7 +246,7 @@ EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
 		JL_CHK( SetHandleSlot(cx, JL_RVAL, 0, JL_OBJVAL) ); // GC protection only
 		JL_CHK( SetHandleSlot(cx, JL_RVAL, 1, JL_ARG(1)) ); // GC protection only
 
-		upe->callbackFunctionThis = JSVAL_TO_OBJECT(JL_OBJVAL); // store "this" object.
+		upe->callbackFunctionThis = JL_OBJ; // store "this" object.
 		upe->callbackFunction = JL_ARG(1);
 	} else {
 	
@@ -382,33 +382,55 @@ EXTERN_C void jl_free_count( void *ptr ) {
 	}
 **/
 
-int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])| for wide char
 
-//	BOOL st = SetProcessAffinityMask(GetCurrentProcess(), 1);
+bool EnableLowFragmentationHeap() {
 
 #ifdef XP_WIN
 	// enable low fragmentation heap
 	HANDLE heap = GetProcessHeap();
 	ULONG enable = 2;
-	HeapSetInformation(heap, HeapCompatibilityInformation, &enable, sizeof(enable));
+	return HeapSetInformation(heap, HeapCompatibilityInformation, &enable, sizeof(enable)) == TRUE;
 #endif // XP_WIN
+
+	return true; // not implemented
+}
+
+void SetJslibsMemoryAllocators(jl_malloc_t malloc, jl_calloc_t calloc, jl_memalign_t memalign, jl_realloc_t realloc, jl_msize_t msize, jl_free_t free) {
+
+	jl_malloc = malloc;
+	jl_calloc = calloc;
+	jl_memalign = memalign;
+	jl_realloc = realloc;
+	jl_msize = msize;
+	jl_free = free;
+}
+
+
+
+uint32_t maxMem = (uint32_t)-1; // by default, there are no limit
+uint32_t maxAlloc = (uint32_t)-1; // by default, there are no limit
+bool warningsToErrors = false;
+bool unsafeMode = false;
+bool compileOnly = false;
+float maybeGCInterval = 10; // seconds
+bool useFileBootstrapScript = false;
+const char *inlineScript = NULL;
+const char *scriptName = NULL;
+#ifdef DEBUG
+bool debug = false;
+#endif DEBUG
+
+
+
+int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])| for wide char
+
+//	BOOL st = SetProcessAffinityMask(GetCurrentProcess(), 1);
+	
+	EnableLowFragmentationHeap();
 
 	int exitValue;
 
 	JSContext *cx = NULL;
-
-	uint32_t maxMem = (uint32_t)-1; // by default, there are no limit
-	uint32_t maxAlloc = (uint32_t)-1; // by default, there are no limit
-	bool warningsToErrors = false;
-	bool unsafeMode = false;
-	bool compileOnly = false;
-	float maybeGCInterval = 10; // seconds
-	bool useFileBootstrapScript = false;
-	const char *inlineScript = NULL;
-	const char *scriptName = NULL;
-#ifdef DEBUG
-	bool debug = false;
-#endif
 
 	// (TBD) use getopt instead ?
 	char** argumentVector = argv;
@@ -478,30 +500,18 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 
 		#ifdef HAS_JL_ALLOCATORS
 		#ifdef USE_NEDMALLOC
-		jl_malloc = nedmalloc;
-		jl_calloc = nedcalloc;
-		jl_memalign = nedmemalign;
-		jl_realloc = nedrealloc;
-		jl_msize = nedblksize_msize;
-		jl_free = nedfree_handlenull;
+		SetJslibsMemoryAllocators(nedmalloc, nedcalloc, nedmemalign, nedrealloc, nedblksize_msize, nedfree_handlenull);
 		#endif // USE_NEDMALLOC
 		#endif // HAS_JL_ALLOCATORS
 
-
 		#ifdef DBG_ALLOC
-		jl_malloc = jl_malloc_count;
-		jl_calloc = jl_calloc_count;
-		jl_memalign = jl_memalign_count;
-		jl_realloc = jl_realloc_count;
-		jl_msize = jl_msize_count;
-		jl_free = jl_free_count;
+		SetJslibsMemoryAllocators(jl_malloc_count, jl_calloc_count, jl_memalign_count, jl_realloc_count, jl_msize_count, jl_free_count);
 		#endif // DBG_ALLOC
-		
 
 		JL_CHK( InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free) );
 		
 
-	// jslibs and spidermonkey allocator should be the same, else JL_NewString() and JL_NewUCString() should be fixed !
+		// jslibs and spidermonkey allocator should be the same, else JL_NewString() and JL_NewUCString() should be fixed !
 		#ifdef HAS_JL_ALLOCATORS
 
 		js_jl_malloc = jl_malloc;
@@ -513,21 +523,10 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 
 	} else {
 
-		jl_malloc = malloc;
-		jl_calloc = calloc;
-		jl_memalign = memalign;
-		jl_realloc = realloc;
-		jl_msize = msize;
-		jl_free = free;
+		SetJslibsMemoryAllocators(malloc, calloc, memalign, realloc, msize, free);
 
 		#ifdef DBG_ALLOC
-		
-		jl_malloc = jl_malloc_count;
-		jl_calloc = jl_calloc_count;
-		jl_memalign = jl_memalign_count;
-		jl_realloc = jl_realloc_count;
-		jl_msize = jl_msize_count;
-		jl_free = jl_free_count;
+		SetJslibsMemoryAllocators(jl_malloc_count, jl_calloc_count, jl_memalign_count, jl_realloc_count, jl_msize_count, jl_free_count);
 
 		js_jl_malloc = jl_malloc;
 		js_jl_calloc = jl_calloc;
@@ -572,6 +571,7 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 	gEndSignalCond = JLCondCreate();
 	gEndSignalLock = JLMutexCreate();
 
+
 #if defined(XP_WIN)
 	JL_CHKM( SetProcessShutdownParameters(0x100, SHUTDOWN_NORETRY), E_HOST, E_INTERNAL );
 	JL_CHKM( SetConsoleCtrlHandler(Interrupt, TRUE) != 0, E_HOST, E_INTERNAL );
@@ -591,7 +591,6 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 		
 		JL_WARN( E_SCRIPT, E_NOTFOUND );
 	}
-
 
 	char hostFullPath[PATH_MAX];
 
@@ -622,9 +621,11 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 
 	{
 
-	JS::RootedObject hostObj(cx, JL_GetHostPrivate(cx)->hostObject);
 	JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
 	JS::RootedValue rval(cx);
+
+	{
+	JS::RootedObject hostObj(cx, JL_GetHostPrivate(cx)->hostObject);
 	JS::RootedValue arguments(cx);
 
 	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, name), hostName) );
@@ -646,7 +647,9 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 	JL_CHK( JS_DefineProperty(cx, hostObj, "dbgAlloc", JSVAL_VOID, Tmp::dbgAllocGetter, NULL, JSPROP_SHARED) );
 #endif // DBG_ALLOC
 
-
+	arguments.set(JS::UndefinedHandleValue);
+	hostObj.set(NULL);
+	}
 
 	// embedded bootstrap script
 
@@ -698,6 +701,9 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 		executeStatus = ExecuteScriptFileName(cx, globalObject, scriptName, compileOnly, &rval);
 	}
 
+	globalObject.set(NULL);
+
+
 
 	if ( executeStatus == true ) {
 
@@ -727,6 +733,7 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 	}
 
 	}
+
 
 	if ( useJslibsMemoryManager ) {
 	

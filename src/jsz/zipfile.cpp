@@ -622,10 +622,10 @@ DEFINE_FUNCTION( write ) {
 			zipfi.tmz_date.tm_year = 1980;
 		} else {
 
-			ASSERT( !JSVAL_IS_PRIMITIVE(tmp) && JS_ObjectIsDate(cx, JSVAL_TO_OBJECT(tmp)) );
+			ASSERT( tmp.isObject() && JS_ObjectIsDate(cx, &tmp.toObject()) );
 
 			JSObject *dateObj;
-			dateObj = JSVAL_TO_OBJECT(tmp);
+			dateObj = &tmp.toObject();
 			zipfi.tmz_date.tm_sec = js_DateGetSeconds(cx, dateObj);
 			zipfi.tmz_date.tm_min = js_DateGetMinutes(cx, dateObj);
 			zipfi.tmz_date.tm_hour = js_DateGetHours(cx, dateObj);
@@ -949,7 +949,7 @@ DEFINE_PROPERTY_SETTER( date ) {
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
 
-	JL_ASSERT( vp.isUndefined() || !JSVAL_IS_PRIMITIVE(*vp) && JS_ObjectIsDate(cx, JSVAL_TO_OBJECT(*vp)), E_VALUE, E_INVALID );
+	JL_ASSERT( vp.isUndefined() || vp.isObject() && JS_ObjectIsDate(cx, &vp.toObject()), E_VALUE, E_INVALID );
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_CURRENTDATE, *vp) );
 
 	return true;

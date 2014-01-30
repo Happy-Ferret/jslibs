@@ -774,7 +774,7 @@ DEFINE_FUNCTION( setCursor ) {
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	JSObject *cursorObj = JSVAL_TO_OBJECT( JL_ARG(1) );
+	JSObject *cursorObj = &JL_ARG(1).toObject();
 	JL_ASSERT_INSTANCE( cursorObj, JL_CLASS(Cursor) );
 	SDL_Cursor *cursor = (SDL_Cursor *)JL_GetPrivate(cursorObj);
 	JL_ASSERT_OBJECT_STATE( cursor, JL_CLASS_NAME(Cursor) );
@@ -850,7 +850,7 @@ DEFINE_FUNCTION( pollEvent ) {
 		
 		bool fired;
 		JL_ASSERT_ARG_IS_OBJECT(1);
-		JL_CHK( FireListener(cx, obj, JSVAL_TO_OBJECT(JL_ARG(1)), &ev, JL_RVAL, &fired) );
+		JL_CHK( FireListener(cx, obj, &JL_ARG(1).toObject(), &ev, JL_RVAL, &fired) );
 	}
 
 	*JL_RVAL = JSVAL_TRUE;
@@ -1332,7 +1332,7 @@ DEFINE_FUNCTION( surfaceReadyEvents ) {
 		JL_ASSERT_ARG_IS_CALLABLE(1);
 
 		upe->callbackFctVal = JL_ARG(1);
-		upe->callbackFctThis = JSVAL_TO_OBJECT(JL_OBJVAL); // store "this" object.
+		upe->callbackFctThis = JL_OBJ; // store "this" object.
 
 		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, upe->callbackFctVal) ); // GC protection
 		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_OBJVAL) ); // GC protection
@@ -1445,8 +1445,8 @@ DEFINE_FUNCTION( sdlEvents ) {
 	upe->pe.cancelWait = SDLCancelWait;
 	upe->pe.endWait = SDLEndWait;
 
-	upe->thisObj = JSVAL_TO_OBJECT(JL_OBJVAL); // store "this" object.
-	upe->listenersObj = JSVAL_TO_OBJECT( JL_ARG(1) );
+	upe->thisObj = JL_OBJ; // store "this" object.
+	upe->listenersObj = &JL_ARG(1).toObject();
 
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_OBJVAL) ); // GC protection
 	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_ARG(1)) ); // GC protection

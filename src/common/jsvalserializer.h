@@ -741,8 +741,9 @@ public:
 				
 				JS::RootedObject scope(cx, JL_GetGlobal(cx)); //JS_GetScopeChain(cx);
 				JL_CHK( JS_GetProperty(cx, scope, className, &prop) );
+				JL_CHK( prop.isObject() );
 
-				JS::RootedObject newObj(cx, JS_New(cx, JSVAL_TO_OBJECT(prop), 1, value.address()));
+				JS::RootedObject newObj(cx, JS_New(cx, &prop.toObject(), 1, value.address()));
 				JL_CHK( newObj );
 				val.setObject(*newObj);
 				break;
@@ -838,31 +839,31 @@ public:
 				JS::RootedObject typedArray(cx);
 				switch ( type ) {
 					case js::ArrayBufferView::TYPE_INT8:
-						typedArray = JS_NewInt8ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+						typedArray = JS_NewInt8ArrayWithBuffer(cx, &val.toObject(), 0, -1);
 						break;
 					case js::ArrayBufferView::TYPE_UINT8:
-						typedArray = JS_NewUint8ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+						typedArray = JS_NewUint8ArrayWithBuffer(cx, &val.toObject(), 0, -1);
 						break;
 					case js::ArrayBufferView::TYPE_INT16:
-						typedArray = JS_NewInt16ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+						typedArray = JS_NewInt16ArrayWithBuffer(cx, &val.toObject(), 0, -1);
 						break;
 					case js::ArrayBufferView::TYPE_UINT16:
-						typedArray = JS_NewUint16ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+						typedArray = JS_NewUint16ArrayWithBuffer(cx, &val.toObject(), 0, -1);
 						break;
 					case js::ArrayBufferView::TYPE_INT32:
-						typedArray = JS_NewInt32ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+						typedArray = JS_NewInt32ArrayWithBuffer(cx, &val.toObject(), 0, -1);
 						break;
 					case js::ArrayBufferView::TYPE_UINT32:
-						typedArray = JS_NewUint32ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+						typedArray = JS_NewUint32ArrayWithBuffer(cx, &val.toObject(), 0, -1);
 						break;
 					case js::ArrayBufferView::TYPE_FLOAT32:
-						typedArray = JS_NewFloat32ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+						typedArray = JS_NewFloat32ArrayWithBuffer(cx, &val.toObject(), 0, -1);
 						break;
 					case js::ArrayBufferView::TYPE_FLOAT64:
-						typedArray = JS_NewFloat64ArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+						typedArray = JS_NewFloat64ArrayWithBuffer(cx, &val.toObject(), 0, -1);
 						break;
 					case js::ArrayBufferView::TYPE_UINT8_CLAMPED:
-						typedArray = JS_NewUint8ClampedArrayWithBuffer(cx, JSVAL_TO_OBJECT(val), 0, -1);
+						typedArray = JS_NewUint8ClampedArrayWithBuffer(cx, &val.toObject(), 0, -1);
 						break;
 					default:
 						typedArray = NULL;
@@ -895,7 +896,7 @@ public:
 				JL_CHK( Read(cx, constructorArgs[2]) ); // lineNumber
 				JL_CHK( Read(cx, stack) );
 
-				JS::RootedObject errorObj(cx, JS_New(cx, JSVAL_TO_OBJECT(constructor), constructorArgs.length(), constructorArgs.begin()));
+				JS::RootedObject errorObj(cx, JS_New(cx, &constructor.toObject(), constructorArgs.length(), constructorArgs.begin()));
 				JL_CHK( errorObj );
 				val.setObject(*errorObj);
 

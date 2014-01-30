@@ -35,7 +35,7 @@ bool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 
 #ifdef DEBUG
 	jsval dbg_funNameVal;
-	JS_GetPropertyById(cx, JSVAL_TO_OBJECT(JS_CALLEE(cx, vp)), JLID(cx, name), &dbg_funNameVal);
+	JS_GetPropertyById(cx, &JS_CALLEE(cx, vp).toObject(), JLID(cx, name), &dbg_funNameVal);
 	const jschar *dbg_name = JS_GetStringCharsZ(cx, dbg_funNameVal.toString());
 	JL_IGNORE(dbg_name);
 #endif
@@ -43,7 +43,7 @@ bool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( disp );
 
-	JSObject *funObj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp));
+	JSObject *funObj = &JS_CALLEE(cx, vp).toObject();
 	jsval dispidVal;
 	JL_CHK( JS_GetPropertyById(cx, funObj, JLID(cx, id), &dispidVal) );
 	DISPID dispid = dispidVal.toInt32();
@@ -288,7 +288,7 @@ DEFINE_FUNCTION( functionList ) {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	IDispatch *disp = (IDispatch*)JL_GetPrivate(JSVAL_TO_OBJECT(JL_ARG(1)));
+	IDispatch *disp = (IDispatch*)JL_GetPrivate(&JL_ARG(1).toObject());
 	JL_ASSERT_OBJECT_STATE( disp, JL_THIS_CLASS_NAME );
 
 //	JSObject *memberList = JL_NewProtolessObj(cx);
@@ -398,8 +398,10 @@ DEFINE_ITERATOR_OBJECT() {
 		JS::RootedValue tmp(cx);
 		bool st = NewComEnum(cx, pEnum, &tmp);
 		JL_CHK(st);
+		JL_ASSERT( tmp.isObject() );
 		pEnum->Release();
-		return JSVAL_TO_OBJECT(tmp);
+		JS::RootedObject tmpObj(cx, &tmp.toObject());
+		return tmpObj;
 	}
 
 bad:

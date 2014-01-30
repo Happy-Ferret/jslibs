@@ -948,7 +948,7 @@ DEFINE_FUNCTION( directoryChangesEvents ) {
 		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_ARG(1)) ); // GC protection only
 		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 2, JL_ARG(2) ) ); // GC protection only
 
-		upe->callbackFunctionThis = JSVAL_TO_OBJECT(JL_OBJVAL); // store "this" object.
+		upe->callbackFunctionThis = JL_OBJ; // store "this" object.
 		upe->callbackFunction = JL_ARG(2);
 		upe->dcVal = JL_ARG(1); // dmon handle (argument 1 of the callback function)
 	} else {

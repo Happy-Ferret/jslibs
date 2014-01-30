@@ -307,11 +307,11 @@ DEFINE_PROPERTY_SETTER( offset ) {
 		return true;
 	}
 
-	if ( !JSVAL_IS_PRIMITIVE(*vp) ) {
+	if ( vp.isObject() ) {
 
 // (TBD)! use jsval to matrix44 helper
 
-		JSObject *srcObj = JSVAL_TO_OBJECT(*vp);
+		JSObject *srcObj = &vp.toObject();
 		float tmp[16], *m = tmp;
 
 		NIMatrix44Get matrixGet = Matrix44GetInterface(cx, srcObj);
@@ -347,11 +347,11 @@ DEFINE_PROPERTY_SETTER( tansformation ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(geom);
 
-	if ( !JSVAL_IS_PRIMITIVE(*vp) ) {
+	if ( vp.isObject) ) {
 
 // (TBD)! use jsval to matrix44 helper
 
-		JSObject *srcObj = JSVAL_TO_OBJECT(*vp);
+		JSObject *srcObj = vp.toObject();
 		float tmp[16], *m = tmp;
 
 		NIMatrix44Get matrixGet = Matrix44GetInterface(cx, srcObj);
@@ -497,7 +497,7 @@ DEFINE_PROPERTY_GETTER( boundarySphere ) {
 	JL_CHK( ODERealVectorToJsval(cx, center.raw, 3, vp) );
 	jsval tmpVal;
 	JL_CHK( JL_NativeToJsval(cx, radius, &tmpVal) );
-	JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT(*vp), 3, &tmpVal) );
+	JL_CHK( JL_SetElement(cx, &vp.toObject(), 3, &tmpVal) );
 
 	return true;
 	JL_BAD;

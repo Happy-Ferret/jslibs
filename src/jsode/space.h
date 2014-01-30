@@ -19,13 +19,13 @@ DECLARE_CLASS( Space );
 
 ALWAYS_INLINE bool JL_JsvalIsSpace( const jsval val ) {
 
-	return !JSVAL_IS_PRIMITIVE(val) && JL_GetClass(JSVAL_TO_OBJECT( val )) == JL_CLASS(Space);
+	return val.isObject() && JL_GetClass(&val.toObject()) == JL_CLASS(Space);
 }
 
 ALWAYS_INLINE bool JL_JsvalToSpaceID( JSContext *cx, jsval val, ode::dSpaceID *spaceId ) {
 
 	JL_ASSERT_IS_OBJECT(val, JL_CLASS_NAME(Space));
-	JSObject *obj = JSVAL_TO_OBJECT(val);
+	JSObject *obj = &val.toObject();
 	JL_ASSERT_INSTANCE(obj, JL_CLASS(Space));
 	*spaceId = (ode::dSpaceID)JL_GetPrivate(obj);
 	return true;

@@ -688,7 +688,7 @@ DEFINE_FUNCTION( configureSerialPort ) {
 
 	{
 	JS::RootedObject fileObj(cx);
-	fileObj = JSVAL_TO_OBJECT( JL_ARG(1) );
+	fileObj = &JL_ARG(1).toObject();
 	JL_ASSERT_INHERITANCE( fileObj, JL_CLASS(File) );
 
 	fd = (PRFileDesc *)JL_GetPrivate(fileObj);

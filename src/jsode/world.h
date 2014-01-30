@@ -30,7 +30,7 @@ struct WorldPrivate {
 ALWAYS_INLINE bool JL_JsvalToWorldID( JSContext *cx, jsval val, ode::dWorldID *worldId ) {
 
 	JL_ASSERT_IS_OBJECT(val, JL_CLASS_NAME(World));
-	JSObject *worldObject = JSVAL_TO_OBJECT(val);
+	JSObject *worldObject = &val.toObject();
 	JL_ASSERT_INSTANCE(worldObject, JL_CLASS(World));
 	*worldId = ((WorldPrivate*)JL_GetPrivate(worldObject))->worldId;
 	JL_ASSERT( *worldId, E_OBJ, E_STR(JL_CLASS_NAME(World)), E_INVALID ); // "Invalid world object."

@@ -67,9 +67,10 @@ DEFINE_FUNCTION( close ) {
 
 	jsval v;
 	JL_CHK( JL_GetReservedSlot(obj, SLOT_DATABASE, v) );
+	JL_ASSERT( v.isObject() );
 	DatabasePrivate *dbpv;
-	dbpv = (DatabasePrivate*)JL_GetPrivate(JSVAL_TO_OBJECT(v));
-	JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(JSVAL_TO_OBJECT(v)) );
+	dbpv = (DatabasePrivate*)JL_GetPrivate(&v.toObject());
+	JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(&v.toObject()) );
 
 	if ( sqlite3_blob_close(pv->pBlob) != SQLITE_OK )
 		JL_CHK( SqliteThrowError(cx, dbpv->db) );
@@ -680,7 +681,7 @@ DEFINE_FUNCTION( exec ) {
 
 	// (TBD) support multiple statements
 
-	JL_CHK( SqliteSetupBindings(cx, pStmt, argc < 2 || JSVAL_IS_PRIMITIVE( JL_ARG(2) ) ? NULL : JSVAL_TO_OBJECT( JL_ARG(2) ), obj) ); // "@" : the the argument passed to exec(), ":" nothing
+	JL_CHK( SqliteSetupBindings(cx, pStmt, argc < 2 || !JL_ARG(2).isObject() ? NULL : &JL_ARG(2).toObject(), obj) ); // "@" : the the argument passed to exec(), ":" nothing
 
 	pv->tmpcx = cx;
 	int status;

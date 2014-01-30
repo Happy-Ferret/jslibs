@@ -206,7 +206,7 @@ DEFINE_CONSTRUCTOR() {
 	pv->sfDescriptor = NULL; // see bad:
 
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_INPUT_STREAM, JL_ARG(1) ) );
-	pv->streamObject = JSVAL_TO_OBJECT(JL_ARG(1));
+	pv->streamObject = &JL_ARG(1).toObject();
 
 	SF_INFO tmp; // = {0};
 	memset(&tmp, 0, sizeof(SF_INFO));

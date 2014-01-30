@@ -41,7 +41,7 @@ DEFINE_FUNCTION( draw3DText ) {
 	JL_ASSERT_ARGC_RANGE( 2, 4 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	JSObject *fontObj = JSVAL_TO_OBJECT(JL_ARG(1));
+	JSObject *fontObj = &JL_ARG(1).toObject();
 
 	FT_Face ftface = GetJsfontPrivate(cx, fontObj)->face;
 

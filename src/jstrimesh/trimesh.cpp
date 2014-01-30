@@ -189,7 +189,7 @@ DEFINE_FUNCTION( defineVertexBuffer ) {
 	JL_RVAL.setUndefined();
 
 	JSObject *arrayObj;
-	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
+	arrayObj = &JL_ARG(1).toObject();
 	unsigned count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
@@ -228,7 +228,7 @@ DEFINE_FUNCTION( defineNormalBuffer ) {
 	JL_RVAL.setUndefined();
 
 	JSObject *arrayObj;
-	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
+	arrayObj = &JL_ARG(1).toObject();
 	unsigned count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
@@ -263,7 +263,7 @@ DEFINE_FUNCTION( defineTextureCoordinateBuffer ) {
 	JL_RVAL.setUndefined();
 
 	JSObject *arrayObj;
-	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
+	arrayObj = &JL_ARG(1).toObject();
 	unsigned count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
@@ -298,7 +298,7 @@ DEFINE_FUNCTION( defineColorBuffer ) {
 	JL_RVAL.setUndefined();
 
 	JSObject *arrayObj;
-	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
+	arrayObj = &JL_ARG(1).toObject();
 	unsigned count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 
@@ -333,7 +333,7 @@ DEFINE_FUNCTION( defineIndexBuffer ) {
 	JL_RVAL.setUndefined();
 
 	JSObject *arrayObj;
-	arrayObj = JSVAL_TO_OBJECT(JL_ARG(1));
+	arrayObj = &JL_ARG(1).toObject();
 	unsigned count;
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &count) );
 

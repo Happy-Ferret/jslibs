@@ -344,7 +344,7 @@ DEFINE_FUNCTION( frustumSphere ) {
 
 	jsval tmpVal;
 	JL_CHK( JL_NativeToJsval(cx, radius, tmpVal) );
-	JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT(*JL_RVAL), 3, tmpVal) );
+	JL_CHK( JL_SetElement(cx, &JL_RVAL.toObject(), 3, tmpVal) );
 
 	return true;
 	JL_BAD;
@@ -382,7 +382,7 @@ DEFINE_FUNCTION( boxToCircumscribedSphere ) {
 	JL_CHK( JL_NativeVectorToJsval(cx, center.raw, 3, *JL_RVAL, true) );
 	jsval tmpVal;
 	JL_CHK( JL_NativeToJsval(cx, radius, tmpVal) );
-	JL_CHK( JL_SetElement(cx, JSVAL_TO_OBJECT(*JL_RVAL), 3, tmpVal) );
+	JL_CHK( JL_SetElement(cx, &JL_RVAL.toObject(), 3, tmpVal) );
 
 	return true;
 	JL_BAD;

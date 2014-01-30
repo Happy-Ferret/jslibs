@@ -632,7 +632,7 @@ DEFINE_FUNCTION( timeoutEvents ) {
 		JL_CHK( SetHandleSlot(cx, JL_RVAL, 0, JL_OBJVAL) ); // GC protection only
 		JL_CHK( SetHandleSlot(cx, JL_RVAL, 1, JL_ARG(2)) ); // GC protection only
 
-		upe->callbackFunctionThis = JSVAL_TO_OBJECT(JL_OBJVAL); // store "this" object.
+		upe->callbackFunctionThis = JL_OBJ; // store "this" object.
 		upe->callbackFunction = JL_ARG(2); // access to ->callbackFunction is faster than Handle slots.
 	} else {
 

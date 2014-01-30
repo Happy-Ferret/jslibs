@@ -66,7 +66,7 @@ DEFINE_CONSTRUCTOR() {
 	trimeshVal = JL_ARG(1);
 	JL_ASSERT( JL_JsvalIsTrimesh(cx, trimeshVal), E_ARG, E_NUM(1), E_TYPE, E_STR("Trimesh") );
 
-	JSObject *trimesh = JSVAL_TO_OBJECT(trimeshVal);
+	JSObject *trimesh = &trimeshVal.toObject();
 	Surface *srf = GetTrimeshSurface(cx, trimesh);
 	JL_ASSERT_OBJECT_STATE( srf, JL_GetClassName(trimesh) );
 

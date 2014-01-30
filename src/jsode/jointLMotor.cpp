@@ -45,8 +45,8 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(2) ) {
 		
 		JL_ASSERT_ARG_IS_OBJECT(2);
-		JL_ASSERT_INSTANCE( JSVAL_TO_OBJECT( JL_ARG(2) ), JL_CLASS(JointGroup) );
-		groupId = (ode::dJointGroupID)JL_GetPrivate(JSVAL_TO_OBJECT(JL_ARG(2)));
+		JL_ASSERT_INSTANCE( &JL_ARG(2).toObject(), JL_CLASS(JointGroup) );
+		groupId = (ode::dJointGroupID)JL_GetPrivate(&JL_ARG(2).toObject());
 	} else {
 
 		groupId = 0;
