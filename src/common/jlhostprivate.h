@@ -18,7 +18,6 @@
 #define JL_HOSTPRIVATE_MAX_CLASS_PROTO_CACHE_BIT (9)
 
 
-
 template <class T, const size_t ITEM_COUNT>
 class StaticArray {
 

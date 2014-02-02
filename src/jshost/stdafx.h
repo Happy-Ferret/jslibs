@@ -12,7 +12,6 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-
 #pragma once
 
 #include <jlhelper.h>
@@ -22,3 +21,4 @@
 #include <signal.h>
 
 #include "../host/host.h"
+#include "../host/host2.h"

@@ -275,7 +275,7 @@ JL_END_NAMESPACE
 	} \
 
 #define INIT_CLASS(CLASSNAME) \
-	JL_CHK( jl::InitClass(cx, obj, ::CLASSNAME::classSpec ) ); \
+	JL_CHK( jl::InitClass(cx, obj, CLASSNAME::classSpec ) ); \
 
 
 #define BEGIN_CLASS(CLASSNAME) \
@@ -307,15 +307,15 @@ JL_END_NAMESPACE
 //jorendorff>	The best way is to keep the result of JS_InitClass around somewhere.
 //jorendorff>	Then just compare with == to see if you're finalizing that object.
 
-#define JL_CLASS(CLASSNAME) (&(::CLASSNAME::classSpec->clasp))
+#define JL_CLASS(CLASSNAME) (&(CLASSNAME::classSpec->clasp))
 #define JL_THIS_CLASS (&(classSpec->clasp))
 
-#define JL_CLASS_NAME(CLASSNAME) (::CLASSNAME::className)
+#define JL_CLASS_NAME(CLASSNAME) (CLASSNAME::className)
 #define JL_THIS_CLASS_NAME (className)
 
 #define JL_THIS_CLASS_REVISION (classSpec->sourceId)
 
-#define JL_CLASS_PROTOTYPE(cx, CLASSNAME) (JL_GetCachedProto(JL_GetHostPrivate(cx), ::CLASSNAME::className))
+#define JL_CLASS_PROTOTYPE(cx, CLASSNAME) (JL_GetCachedProto(JL_GetHostPrivate(cx), CLASSNAME::className))
 #define JL_THIS_CLASS_PROTOTYPE (JL_GetCachedProto(JL_GetHostPrivate(cx), className))
 
 #define _NULL NULL // because in _##getter and _##setter, getter or setter can be NULL.

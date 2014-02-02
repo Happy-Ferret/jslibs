@@ -394,8 +394,8 @@ JL_ArrayToAutoArrayRooter(JSContext *cx, JS::HandleObject *arrayObj) {
 ///////////////////////////////////////////////////////////////////////////////
 // Safe Mode tools
 
-#define JL_IS_SAFE (unlikely(!_unsafeMode))
-#define JL_IS_UNSAFE (likely(_unsafeMode))
+#define JL_IS_SAFE (unlikely(!::_unsafeMode))
+#define JL_IS_UNSAFE (likely(::_unsafeMode))
 
 #define JL_SAFE_BEGIN if (JL_IS_SAFE) {
 #define JL_SAFE_END }

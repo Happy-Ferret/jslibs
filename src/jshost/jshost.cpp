@@ -969,3 +969,57 @@ extern "C" __declspec(dllexport) bool ModuleInit(JSContext *cx, JSObject *obj) {
  # [jslibsBuild Compile jslibs] (or only jshost if jslibs has already been compiled once)
 }}}
 **/
+
+void test() {
+
+	using namespace jl;
+
+	class HostStd : public Std {
+		int stdin_fileno;
+		int stdout_fileno;
+		int stderr_fileno;
+	public:
+
+		HostStd() : stdin_fileno(-1), stdout_fileno(-1), stderr_fileno(-1) {
+		}
+
+		int
+		stdInput( char *buffer, size_t bufferLength ) {
+	
+			if (unlikely( stdin_fileno == -1 ))
+				stdin_fileno = fileno(stdin);
+			return read(stdin_fileno, (void*)buffer, bufferLength);
+		}
+
+		int
+		stdOutput( const char *buffer, size_t length ) {
+		
+			if (unlikely( stdout_fileno == -1 ))
+				stdout_fileno = fileno(stdout);
+			return write(stdout_fileno, buffer, length);
+		}
+
+		int
+		stdError( const char *buffer, size_t length ) {
+		
+			if (unlikely( stderr_fileno == -1 ))
+				stderr_fileno = fileno(stderr);
+			return write(stderr_fileno, buffer, length);
+		}
+	};
+
+	JS_Init();
+	{
+	HostRuntime hostRuntime;
+	hostRuntime.create();
+	Host host(hostRuntime, HostStd());
+	host.create();
+
+
+	host.destroy();
+	hostRuntime.destroy();
+	}
+	JS_ShutDown();
+
+}
+
