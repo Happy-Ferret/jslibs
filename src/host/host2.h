@@ -42,6 +42,36 @@ public:
 };
 
 
+typedef void* (*malloc_t)( size_t );
+typedef void* (*calloc_t)( size_t, size_t );
+typedef void* (*memalign_t)( size_t, size_t );
+typedef void* (*realloc_t)( void*, size_t );
+typedef size_t (*msize_t)( void* );
+typedef void (*free_t)( void* );
+
+
+class Allocators {
+public:
+	jl_malloc_t _malloc;
+	jl_calloc_t _calloc;
+	jl_memalign_t _memalign;
+	jl_realloc_t _realloc;
+	jl_msize_t _msize;
+	jl_free_t _free;
+
+	Allocators(jl_malloc_t malloc, jl_calloc_t calloc, jl_memalign_t memalign, jl_realloc_t realloc, jl_msize_t msize, jl_free_t free )
+	: _malloc(malloc), _calloc(calloc), _memalign(memalign), _realloc(realloc), _msize(msize), _free(free) {
+	}
+};
+
+
+class StdAllocators : public Allocators {
+public:
+	StdAllocators()
+	: Allocators(::malloc, ::calloc, ::memalign, ::realloc, ::msize, ::free) {
+	}
+};
+
 
 class AutoExceptionState {
 	
@@ -92,94 +122,137 @@ public:
 template <class T, const size_t ITEM_COUNT>
 class StaticArray {
 	uint8_t data[ITEM_COUNT * sizeof(T)];
+	T* items; // for easy debug
+
 public:
 	enum {
 		length = ITEM_COUNT
 	};
 
-	T& Get(size_t slotIndex) {
-
-		ASSERT( slotIndex < length );
-//		return *reinterpret_cast<T*>(data)[slotIndex];
-		T* tmp = (T*)data;
-		return ((T*)data)[slotIndex];
+	StaticArray()
+	: items(reinterpret_cast<T*>(data)) {
 	}
 
-	const T& GetConst(size_t slotIndex) const {
+	StaticArray(bool construct)
+	: items(reinterpret_cast<T*>(data)) {
 
-		ASSERT( slotIndex < length );
-		return ((T*)data)[slotIndex];
-	}
-
-
-	void Destruct(size_t item) {
-
-		(&Get(item))->T::~T();
-	}
-
-	void Construct(size_t item) {
-		
-		::new (&Get(item)) T();
+		constructAll();
 	}
 
 	template <typename P1>
-	void Construct(size_t item, P1 p1) {
-		
-		::new (&Get(item)) T(p1);
+	StaticArray(bool construct, P1 p1)
+	: items(reinterpret_cast<T*>(data)) {
+
+		constructAll(p1);
 	}
 
 	template <typename P1, typename P2>
-	void Construct(size_t item, P1 p1, P2 p2) {
-		
-		::new (&Get(item)) T(p1, p2);
+	StaticArray(bool construct, P1 p1, P2 p2)
+	: items(reinterpret_cast<T*>(data)) {
+
+		constructAll(p1, p2);
 	}
 
 	template <typename P1, typename P2, typename P3>
-	void Construct(size_t item, P1 p1, P2 p2, P3 p3) {
-		
-		::new (&Get(item)) T(p1, p2, p3);
+	StaticArray(bool construct, P1 p1, P2 p2, P3 p3)
+	: items(reinterpret_cast<T*>(data)) {
+
+		constructAll(p1, p2, p3);
 	}
 
-	void DestructAll() {
+	T&
+	get(size_t slotIndex) {
+
+		ASSERT( slotIndex < length );
+		return items[slotIndex];
+	}
+
+	const T&
+	getConst(size_t slotIndex) const {
+
+		ASSERT( slotIndex < length );
+		return items[slotIndex];
+	}
+
+
+	void
+	destruct(size_t item) {
+
+		(&get(item))->T::~T();
+	}
+
+	void
+	construct(size_t item) {
+		
+		::new (&get(item)) T();
+	}
+
+	template <typename P1>
+	void
+	construct(size_t item, P1 p1) {
+		
+		::new (&get(item)) T(p1);
+	}
+
+	template <typename P1, typename P2>
+	void
+	construct(size_t item, P1 p1, P2 p2) {
+		
+		::new (&get(item)) T(p1, p2);
+	}
+
+	template <typename P1, typename P2, typename P3>
+	void
+	construct(size_t item, P1 p1, P2 p2, P3 p3) {
+		
+		::new (&get(item)) T(p1, p2, p3);
+	}
+
+	void
+	destructAll() {
 
 		for ( size_t i = 0; i < length; ++i ) {
 			
-			(&Get(i))->T::~T();
+			(&get(i))->T::~T();
 		}
 	}
 
-	void ConstructAll() {
+	void
+	constructAll() {
 		
 		for ( size_t i = 0; i < length; ++i ) {
 			
-			::new (&Get(i)) T();
+			::new (&get(i)) T();
 		}
 	}
 
 	template <typename P1>
-	void ConstructAll(P1 p1) {
+	void
+	constructAll(P1 p1) {
 		
 		for ( size_t i = 0; i < length; ++i ) {
 			
-			::new (&Get(i)) T(p1);
+			::new (&get(i)) T(p1);
 		}
 	}
 
 	template <typename P1, typename P2>
-	void ConstructAll(P1 p1, P2 p2) {
+	void
+	constructAll(P1 p1, P2 p2) {
 		
 		for ( size_t i = 0; i < length; ++i ) {
 			
-			::new (&Get(i)) T(p1, p2);
+			::new (&get(i)) T(p1, p2);
 		}
 	}
 
 	template <typename P1, typename P2, typename P3>
-	void ConstructAll(P1 p1, P2 p2, P3 p3) {
+	void
+	constructAll(P1 p1, P2 p2, P3 p3) {
 		
 		for ( size_t i = 0; i < length; ++i ) {
 			
-			::new (&Get(i)) T(p1, p2, p3);
+			::new (&get(i)) T(p1, p2, p3);
 		}
 	}
 
@@ -302,6 +375,8 @@ class HostRuntime : public RuntimeAccess, public jl::CppAllocators {
 	JSRuntime *rt;
 	JSContext *cx;
 
+	Allocators _allocators;
+
 	uint32_t _maybeGCInterval;
 
 	WatchDog _watchDog;
@@ -309,18 +384,20 @@ class HostRuntime : public RuntimeAccess, public jl::CppAllocators {
 	bool _isEnding;
 	bool _skipCleanup;
 
-	static bool
-	OperationCallback(JSContext *cx) {
-
-		JSOperationCallback tmp = JS_SetOperationCallback(JL_GetRuntime(cx), NULL);
-		JS_MaybeGC(cx);
-		JS_SetOperationCallback(JL_GetRuntime(cx), tmp);
-		return true;
-	}
 
 public:
+
 	static void
-	ErrorReporterBasic(JSContext *cx, const char *message, JSErrorReport *report) {
+	setJSEngineAllocators(Allocators allocators) {
+
+		js_jl_malloc = allocators._malloc;
+		js_jl_calloc = allocators._calloc;
+		js_jl_realloc = allocators._realloc;
+		js_jl_free = allocators._free;
+	}
+
+	static void
+	errorReporterBasic(JSContext *cx, const char *message, JSErrorReport *report) {
 
 		JL_IGNORE( cx );
 		if ( !report )
@@ -330,8 +407,8 @@ public:
 	}
 
 
-	HostRuntime(uint32_t maybeGCInterval = 10)
-		: rt(NULL), cx(NULL), _isEnding(false), _skipCleanup(false), _watchDog(*this, maybeGCInterval) {
+	HostRuntime(Allocators allocators = StdAllocators(), uint32_t maybeGCInterval = 10)
+		: _allocators(allocators), rt(NULL), cx(NULL), _isEnding(false), _skipCleanup(false), _watchDog(*this, maybeGCInterval) {
 	}
 
 	JSRuntime *runtime() const {
@@ -344,7 +421,8 @@ public:
 		return cx;
 	}
 
-	bool create( uint32_t maxMem = (uint32_t)-1, uint32_t maxAlloc = (uint32_t)-1, uint32_t maybeGCInterval = 0 ) {
+	bool
+	create( uint32_t maxMem = (uint32_t)-1, uint32_t maxAlloc = (uint32_t)-1, uint32_t maybeGCInterval = 0 ) {
 
 		rt = JS_NewRuntime(maxAlloc, JS_NO_HELPER_THREADS); // JSGC_MAX_MALLOC_BYTES
 		JL_CHK( rt );
@@ -363,7 +441,7 @@ public:
 		// Info: Increasing JSContext stack size slows down my scripts:
 		//   http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 
-		JS_SetErrorReporter(cx, ErrorReporterBasic);
+		JS_SetErrorReporter(cx, errorReporterBasic);
 
 		JS::ContextOptionsRef(cx)
 			.setVarObjFix(true)
@@ -411,7 +489,8 @@ public:
 	}
 
 
-	bool destroy(bool skipCleanup = false) {
+	bool
+	destroy(bool skipCleanup = false) {
 
 		ASSERT( _isEnding == false );
 		_isEnding = true;
@@ -501,7 +580,6 @@ public:
 		jl::QueueUnshift(&_moduleList, module);
 	}
 
-	
 	bool loadModule(const char *libFileName, JS::HandleObject obj, JS::MutableHandleValue rval) {
 
 		JSContext *cx = _hostRuntime.context();
@@ -616,6 +694,152 @@ public:
 };
 
 
+
+class ClassProtoCache {
+public:
+	const JSClass *clasp;
+	JS::PersistentRootedObject proto;
+
+	ClassProtoCache(JSRuntime *rt)
+	: clasp(NULL), proto(rt) {
+	}
+
+	ClassProtoCache(JSRuntime *rt, const JSClass *c, JS::HandleObject p)
+	: clasp(c), proto(rt, p) {
+	}
+};
+
+
+// does not support more than (1<<MAX_CLASS_PROTO_CACHE_BIT)-1 proto.
+template <const size_t CACHE_LENGTH>
+class ProtoCache {
+
+	const JSClass*
+	removedSlotClasp() const {
+
+		return reinterpret_cast<JSClass*>(-1);
+	}
+
+public:
+	StaticArray<ClassProtoCache, CACHE_LENGTH> items;
+	
+	~ProtoCache() {
+
+		// destruct only items that has been constructed.
+		for ( int i = 0; i < items.length; ++i ) {
+			
+			if ( items.getConst(i).clasp != NULL && items.getConst(i).clasp != removedSlotClasp() ) {
+
+				items.destruct(i);
+			}
+		}
+	}
+
+	ProtoCache() {
+
+		// set all slots as 'unused' (aka. NULL) and let them unconstructed.
+		for ( int i = 0; i < items.length; ++i ) {
+			
+			items.get(i).clasp = NULL;
+		}
+	}
+
+	bool
+	add( JSRuntime *rt, const char * const className, JSClass * const clasp, IN JS::HandleObject proto ) {
+
+		ASSERT( removedSlotClasp() != NULL );
+		ASSERT( className != NULL );
+		ASSERT( className[0] != '\0' );
+		ASSERT( clasp != NULL );
+		ASSERT( clasp != removedSlotClasp() );
+		ASSERT( proto != NULL );
+		ASSERT( JL_GetClass(proto) == clasp );
+
+		size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
+		size_t first = slotIndex;
+
+	//	ASSERT( slotIndex < COUNTOF(hpv->classProtoCache) );
+
+		for (;;) {
+
+			const ClassProtoCache &slot = items.getConst(slotIndex);
+
+			if ( slot.clasp == NULL ) {
+
+				items.construct(slotIndex, rt, clasp, proto);
+				return true;
+			}
+
+			if ( slot.clasp == clasp ) // already cached
+				return false;
+
+			slotIndex = (slotIndex + 1) % CACHE_LENGTH;
+
+			if ( slotIndex == first ) // no more free slot
+				return false;
+		}
+	}
+
+
+	const ClassProtoCache*
+	get( const char * const className ) const {
+
+		size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
+		const size_t first = slotIndex;
+
+		ASSERT( slotIndex < CACHE_LENGTH );
+
+		for (;;) {
+
+			const ClassProtoCache &slot = items.getConst(slotIndex);
+		
+			// slot->clasp == NULL -> empty
+			// slot->clasp == removedSlotClasp() -> slot removed, but maybe next slot will match !
+
+			if ( slot.clasp == NULL ) // not found
+				return NULL;
+
+			if ( slot.clasp != removedSlotClasp() && ( slot.clasp->name == className || !strcmp(slot.clasp->name, className) ) ) // see "Enable String Pooling"
+				return &slot;
+
+			slotIndex = (slotIndex + 1) % CACHE_LENGTH;
+
+			if ( slotIndex == first ) // not found
+				return NULL;
+		}
+	}
+
+	
+	void
+	remove( const char *const className ) {
+
+		ASSERT( removedSlotClasp() != NULL );
+
+		size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
+		size_t first = slotIndex;
+		
+		ASSERT( slotIndex < CACHE_LENGTH );
+
+		for (;;) {
+
+			ClassProtoCache &slot = items.get(slotIndex);
+
+			if ( slot.clasp == NULL || ( slot.clasp != removedSlotClasp() && ( slot.clasp->name == className || strcmp(slot.clasp->name, className) == 0 ) ) ) {
+			
+				items.destruct(slotIndex);
+				slot.clasp = removedSlotClasp();
+				return;
+			}
+
+			slotIndex = (slotIndex + 1) % CACHE_LENGTH;
+
+			if ( slotIndex == first ) // not found
+				return;
+		}
+	}
+};
+
+
 struct {
 	JSExnType exn;
 	const char *msg;
@@ -644,8 +868,8 @@ class Host : public jl::CppAllocators {
 	ModuleManager _modules;
 	JS::PersistentRootedObject _hostObject;
 
-	ProtoCache< 1<<JL_HOSTPRIVATE_MAX_CLASS_PROTO_CACHE_BIT > classProtoCache;
-	StaticArray< JS::PersistentRootedId, LAST_JSID > ids;
+	ProtoCache< 1<<JL_HOSTPRIVATE_MAX_CLASS_PROTO_CACHE_BIT > _classProtoCache;
+	StaticArray< JS::PersistentRootedId, LAST_JSID > _ids;
 
 
 	static void
@@ -665,7 +889,7 @@ class Host : public jl::CppAllocators {
 		// trap JSMSG_OUT_OF_MEMORY error to avoid calling ErrorReporter_stdErrRouter() that may allocate memory that will lead to nested call.
 		if (unlikely( report && report->errorNumber == JSMSG_OUT_OF_MEMORY )) {
 		
-			HostRuntime::ErrorReporterBasic(cx, message, report);
+			HostRuntime::errorReporterBasic(cx, message, report);
 			return;
 		}
 
@@ -829,19 +1053,20 @@ class Host : public jl::CppAllocators {
 public:
 
 	static Host&
-	getHostPrivate(JSRuntime *rt) {
+	getHostPrivate( JSRuntime *rt ) {
 
 		return *static_cast<Host*>(JL_GetRuntimePrivate(rt));
 	}
 
 	static Host&
-	getHostPrivate(JSContext *cx) {
+	getHostPrivate( JSContext *cx ) {
 
 		return getHostPrivate(JL_GetRuntime(cx));
 	}
 
+
 	Host( RuntimeAccess &hr, Std hostStd = Std(), bool unsafeMode = false )
-		: _hostRuntime(hr), _modules(hr), _versionId((jl::SvnRevToInt("$Revision: 3524 $") << 16) | (sizeof(Host) & 0xFFFF)), _unsafeMode(unsafeMode), _hostStd(hostStd), _hostObject(hr.runtime()) {
+	: _hostRuntime(hr), _modules(hr), _versionId((jl::SvnRevToInt("$Revision: 3524 $") << 16) | (sizeof(Host) & 0xFFFF)), _unsafeMode(unsafeMode), _hostStd(hostStd), _hostObject(hr.runtime()), _ids(true, hr.runtime()) {
 	}
 
 	~Host() {
@@ -1030,6 +1255,34 @@ public:
 		return true;
 		JL_BAD;
 	}
+
+
+	ALWAYS_INLINE const ClassProtoCache*
+	getCachedClassProto( const char * const className ) {
+
+		return _classProtoCache.get(className);
+	}
+
+
+
+
+	void
+	__test__() {
+
+		JSRuntime *rt = _hostRuntime.runtime();
+
+		_classProtoCache.add(rt, "Socket", NULL, JS::NullPtr());
+		_classProtoCache.get("Socket");
+		_classProtoCache.remove("Socket");
+
+	}
+};
+
+
+namespace ThreadedAllocator {
+
+
+
 
 };
 

@@ -1008,17 +1008,31 @@ void test() {
 		}
 	};
 
-	JS_Init();
-	{
-	HostRuntime hostRuntime;
-	hostRuntime.create();
-	Host host(hostRuntime, HostStd());
-	host.create();
 
+	StdAllocators stdAlloc;
+	ThreadedAllocator alloc(stdAlloc);
+
+	HostRuntime::setJSEngineAllocators(stdAlloc);
+
+	JS_Init();
+
+	{
+	HostRuntime hostRuntime(stdAlloc);
+	JL_CHK( hostRuntime.create() );
+	Host host(hostRuntime, HostStd());
+	JL_CHK( host.create() );
+
+	JSContext *cx = hostRuntime.context();
+
+
+	host.getCachedClassProto("Socket");
+
+	host.__test__();
 
 	host.destroy();
 	hostRuntime.destroy();
 	}
+
 	JS_ShutDown();
 
 }
