@@ -106,7 +106,7 @@ public:
 		JS_ContextIterator(_rt, &cx);
 		JS_ASSERT( cx != NULL );
 
-		JS::AutoArrayRooter tvr(cx, argc+1, argv);
+		JS::AutoArrayRooter tvr(cx, argc+1, argv); // see HandleArrayValue 
 
 		// try also JS::AutoValueVector argv(cx)
 

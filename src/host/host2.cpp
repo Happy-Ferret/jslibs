@@ -454,4 +454,23 @@ bad:
 }
 */
 
+
+	Allocators ThreadedAllocator::_base;
+
+	// block-to-free chain
+	void *ThreadedAllocator::_head;
+
+	// thread stats
+	volatile int32_t ThreadedAllocator::_headLength;
+	volatile int ThreadedAllocator::_load;
+
+	// thread handler
+	JLThreadHandler ThreadedAllocator::_memoryFreeThread;
+
+	volatile ThreadedAllocator::MemThreadAction ThreadedAllocator::_threadAction;
+	JLSemaphoreHandler ThreadedAllocator::_memoryFreeThreadSem;
+
+	bool ThreadedAllocator::_canTriggerFreeThread;
+
+
 JL_END_NAMESPACE

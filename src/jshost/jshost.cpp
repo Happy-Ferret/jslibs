@@ -424,6 +424,11 @@ bool debug = false;
 
 int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])| for wide char
 
+	int test();
+	test();
+	exit(0);
+
+
 //	BOOL st = SetProcessAffinityMask(GetCurrentProcess(), 1);
 	
 	EnableLowFragmentationHeap();
@@ -970,9 +975,33 @@ extern "C" __declspec(dllexport) bool ModuleInit(JSContext *cx, JSObject *obj) {
 }}}
 **/
 
-void test() {
+
+int test() {
 
 	using namespace jl;
+
+	class NedAllocators : public Allocators {
+	public:
+
+		static NOALIAS void
+		nedfree_handlenull(void *mem) NOTHROW {
+
+			if ( mem != NULL && !disabledFree )
+				nedfree(mem);
+		}
+
+		static NOALIAS size_t
+		nedblksize_msize(void *mem) NOTHROW {
+
+			return nedblksize(0, mem);
+		}
+
+		NedAllocators()
+		: Allocators(nedmalloc, nedcalloc, nedmemalign, nedrealloc, nedblksize_msize, nedfree_handlenull) {
+		}
+	};
+
+
 
 	class HostStd : public Std {
 		int stdin_fileno;
@@ -1009,21 +1038,23 @@ void test() {
 	};
 
 
-	StdAllocators stdAlloc;
-	ThreadedAllocator alloc(stdAlloc);
 
-	HostRuntime::setJSEngineAllocators(stdAlloc);
+
+	StdAllocators allocators;
+	
+	ThreadedAllocator alloc(allocators);
+
+	HostRuntime::setJSEngineAllocators(allocators);
 
 	JS_Init();
 
 	{
-	HostRuntime hostRuntime(stdAlloc);
+	HostRuntime hostRuntime(allocators);
 	JL_CHK( hostRuntime.create() );
 	Host host(hostRuntime, HostStd());
 	JL_CHK( host.create() );
 
 	JSContext *cx = hostRuntime.context();
-
 
 	host.getCachedClassProto("Socket");
 
@@ -1035,5 +1066,6 @@ void test() {
 
 	JS_ShutDown();
 
+	JL_BAD;
 }
 

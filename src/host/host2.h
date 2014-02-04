@@ -52,15 +52,18 @@ typedef void (*free_t)( void* );
 
 class Allocators {
 public:
-	jl_malloc_t _malloc;
-	jl_calloc_t _calloc;
-	jl_memalign_t _memalign;
-	jl_realloc_t _realloc;
-	jl_msize_t _msize;
-	jl_free_t _free;
+	jl_malloc_t malloc;
+	jl_calloc_t calloc;
+	jl_memalign_t memalign;
+	jl_realloc_t realloc;
+	jl_msize_t msize;
+	jl_free_t free;
+
+	Allocators() {
+	}
 
 	Allocators(jl_malloc_t malloc, jl_calloc_t calloc, jl_memalign_t memalign, jl_realloc_t realloc, jl_msize_t msize, jl_free_t free )
-	: _malloc(malloc), _calloc(calloc), _memalign(memalign), _realloc(realloc), _msize(msize), _free(free) {
+	: malloc(malloc), calloc(calloc), memalign(memalign), realloc(realloc), msize(msize), free(free) {
 	}
 };
 
@@ -390,10 +393,10 @@ public:
 	static void
 	setJSEngineAllocators(Allocators allocators) {
 
-		js_jl_malloc = allocators._malloc;
-		js_jl_calloc = allocators._calloc;
-		js_jl_realloc = allocators._realloc;
-		js_jl_free = allocators._free;
+		js_jl_malloc = allocators.malloc;
+		js_jl_calloc = allocators.calloc;
+		js_jl_realloc = allocators.realloc;
+		js_jl_free = allocators.free;
 	}
 
 	static void
@@ -428,7 +431,7 @@ public:
 		JL_CHK( rt );
 
 		// Number of JS_malloc bytes before last ditch GC.
-		ASSERT( JS_GetGCParameter(rt, JSGC_MAX_MALLOC_BYTES) == maxAlloc ); // JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc);
+		// ASSERT( JS_GetGCParameter(rt, JSGC_MAX_MALLOC_BYTES) == maxAlloc ); // JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc);
 
 		// doc: maxMem specifies the number of allocated bytes after which garbage collection is run. Maximum nominal heap before last ditch GC.
 		JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem); 
@@ -469,7 +472,7 @@ public:
 		JL_CHK( globalObject ); // "unable to create the global object." );
 
 		// set globalObject as current global object.
-		JL_CHK( JS_EnterCompartment(cx, globalObject) );
+		JL_CHK( JS_EnterCompartment(cx, globalObject) == nullptr );
 
 		JL_CHK( JS_InitStandardClasses(cx, globalObject) );
 		JL_CHK( JS_DefineDebuggerObject(cx, globalObject) ); // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
@@ -1279,11 +1282,188 @@ public:
 };
 
 
-namespace ThreadedAllocator {
+//////////////////////////////////////////////////////////////////////////////
+// Threaded memory deallocator
 
 
+// the "load" increase by one each time the thread loop without freeing the whole memory chunk list. When MAX_LOAD is reached, memory is freed synchronously.
+#define MAX_LOAD 7
+
+// memory chunks bigger than BIG_ALLOC are freed synchronously.
+#define BIG_ALLOC 8192
 
 
+class ThreadedAllocator {
+
+	static Allocators _base;
+	Allocators &_current;
+
+	// block-to-free chain
+	static void *_head;
+
+	// thread stats
+	static volatile int32_t _headLength;
+	static volatile int _load;
+
+	// thread actions
+	enum MemThreadAction {
+		memThreadExit,
+		memThreadProcess
+	};
+
+	// thread handler
+	static JLThreadHandler _memoryFreeThread;
+
+	static volatile MemThreadAction _threadAction;
+	static JLSemaphoreHandler _memoryFreeThreadSem;
+
+	static bool _canTriggerFreeThread;
+
+	static
+	ALWAYS_INLINE void FASTCALL
+	freeHead() {
+
+		_headLength = 0;
+
+		void *next = _head;
+		void *it = *(void**)next;
+		*(void**)next = NULL;
+
+		while ( it ) {
+
+			ASSERT( it != *(void**)it );
+			next = *(void**)it;
+			_base.free(it);
+			it = next;
+		}
+	}
+
+	// the thread proc
+	static
+	JLThreadFuncDecl
+	memoryFreeThreadProc( void * ) {
+
+		for (;;) {
+
+			_canTriggerFreeThread = true;
+			if ( JLSemaphoreAcquire(_memoryFreeThreadSem) == JLOK ) {
+				switch ( _threadAction ) {
+					case memThreadExit:
+						goto end;
+					case memThreadProcess:
+						break;
+				}
+			}
+
+			Sleep(5);
+
+			for ( _load = 1; _headLength; ++_load )
+				freeHead();
+		}
+	
+	end:
+		_canTriggerFreeThread = false;
+		JLThreadExit(0);
+		return 0;
+	}
+
+
+	// alloc functions
+	static
+	RESTRICT_DECL void*
+	_malloc( size_t size ) {
+
+		if (likely( size >= sizeof(void*) ))
+			return _base.malloc(size);
+		return _base.malloc(sizeof(void*));
+	}
+
+	static
+	RESTRICT_DECL void* 
+	_calloc( size_t num, size_t size ) {
+
+		size *= num;
+		if (likely( size >= sizeof(void*) ))
+			return _base.calloc(size, 1);
+		return _base.calloc(sizeof(void*), 1);
+	}
+
+	static
+	RESTRICT_DECL void* 
+	_memalign( size_t alignment, size_t size ) {
+
+		if (likely( size >= sizeof(void*) ))
+			return _base.memalign(alignment, size);
+		return _base.memalign(alignment, sizeof(void*));
+	}
+
+	static
+	void*
+	_realloc( void *ptr, size_t size ) {
+
+		if (likely( size >= sizeof(void*) ))
+			return _base.realloc(ptr, size);
+		return _base.realloc(ptr, sizeof(void*));
+	}
+
+	static
+	size_t 
+	_msize( void *ptr ) {
+
+		return _base.msize(ptr);
+	}
+
+	static
+	void
+	_free( void *ptr ) {
+	
+		if (unlikely( ptr == NULL )) // issue with nedmalloc free(NULL)
+			return;
+
+		ASSERT( ptr > (void*)0x1000 );
+
+		if (unlikely( _load >= MAX_LOAD || _base.msize(ptr) >= BIG_ALLOC )) { // if blocks is big OR too many things to free, the thread can not keep pace.
+
+			_base.free(ptr);
+			return;
+		}
+
+		*(void**)ptr = _head;
+		_head = ptr;
+		JLAtomicIncrement(&_headLength);
+
+		if ( _canTriggerFreeThread ) {
+		
+			_canTriggerFreeThread = false;
+			_threadAction = memThreadProcess;
+			ASSERT( JLSemaphoreOk(_memoryFreeThreadSem) );
+			JLSemaphoreRelease(_memoryFreeThreadSem);
+		}
+	}
+
+public:
+	~ThreadedAllocator() {
+
+		_current = _base;
+	}
+
+	ThreadedAllocator(Allocators &allocators) : _current(allocators) {
+
+		_base = allocators;
+		allocators = Allocators(_malloc, _calloc, _memalign, _realloc, _msize, _free);
+		
+		_load = 0;
+		_headLength = 0;
+		_head = NULL;
+		_memoryFreeThreadSem = JLSemaphoreCreate(0);
+		_memoryFreeThread = JLThreadStart(memoryFreeThreadProc);
+		_canTriggerFreeThread = false;
+		_free(_malloc(0)); // make head non-NULL (TBD) why?
+	}
 };
+
+
+
+
 
 JL_END_NAMESPACE
