@@ -407,19 +407,6 @@ void SetJslibsMemoryAllocators(jl_malloc_t malloc, jl_calloc_t calloc, jl_memali
 
 
 
-uint32_t maxMem = (uint32_t)-1; // by default, there are no limit
-uint32_t maxAlloc = (uint32_t)-1; // by default, there are no limit
-bool warningsToErrors = false;
-bool unsafeMode = false;
-bool compileOnly = false;
-float maybeGCInterval = 10; // seconds
-bool useFileBootstrapScript = false;
-const char *inlineScript = NULL;
-const char *scriptName = NULL;
-#ifdef DEBUG
-bool debug = false;
-#endif DEBUG
-
 
 
 int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])| for wide char
@@ -434,6 +421,20 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 	EnableLowFragmentationHeap();
 
 	int exitValue;
+
+	uint32_t maxMem = (uint32_t)-1; // by default, there are no limit
+	uint32_t maxAlloc = (uint32_t)-1; // by default, there are no limit
+	bool warningsToErrors = false;
+	bool unsafeMode = false;
+	bool compileOnly = false;
+	float maybeGCInterval = 10; // seconds
+	bool useFileBootstrapScript = false;
+	const char *inlineScript = NULL;
+	const char *scriptName = NULL;
+	#ifdef DEBUG
+	bool debug = false;
+	#endif DEBUG
+
 
 	JSContext *cx = NULL;
 
@@ -981,7 +982,6 @@ int test() {
 	using namespace jl;
 
 	class NedAllocators : public Allocators {
-	public:
 
 		static NOALIAS void
 		nedfree_handlenull(void *mem) NOTHROW {
@@ -996,11 +996,11 @@ int test() {
 			return nedblksize(0, mem);
 		}
 
+	public:
 		NedAllocators()
 		: Allocators(nedmalloc, nedcalloc, nedmemalign, nedrealloc, nedblksize_msize, nedfree_handlenull) {
 		}
 	};
-
 
 
 	class HostStd : public Std {
@@ -1038,19 +1038,34 @@ int test() {
 	};
 
 
-
+	enableLowFragmentationHeap();
 
 	StdAllocators allocators;
-	
+	CountedAlloc countAlloc(allocators);
 	ThreadedAllocator alloc(allocators);
-
+	
 	HostRuntime::setJSEngineAllocators(allocators);
+	//alloc.setSkipCleanup(true);
+	//allocators.free( allocators.malloc(123) );
+
 
 	JS_Init();
 
 	{
-	HostRuntime hostRuntime(allocators);
+	
+	HostRuntime hostRuntime(allocators, 100);
 	JL_CHK( hostRuntime.create() );
+
+	{
+
+	JSContext *cx = hostRuntime.context();
+
+	JS::RootedValue tmpVal(cx);
+	JS::RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
+	JL_CHK( ExecuteScriptText(cx, global, "(function() { for (var i = 0; i < 100000; ++i); })()", false, &tmpVal) );
+
+
+/*
 	Host host(hostRuntime, HostStd());
 	JL_CHK( host.create() );
 
@@ -1058,11 +1073,16 @@ int test() {
 
 	host.getCachedClassProto("Socket");
 
-	host.__test__();
+//	host.__test__();
 
 	host.destroy();
-	hostRuntime.destroy();
+*/
 	}
+
+	hostRuntime.destroy();
+
+	}
+
 
 	JS_ShutDown();
 
