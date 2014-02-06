@@ -359,6 +359,7 @@ WatchDog::operationCallback(JSContext *cx) {
 	return true;
 }
 
+
 JLThreadFuncDecl
 WatchDog::watchDogThreadProc(void *threadArg) {
 
@@ -369,7 +370,10 @@ WatchDog::watchDogThreadProc(void *threadArg) {
 		// used as a breakable Sleep instead of SleepMilliseconds (see SandboxEval).
 		if ( JLSemaphoreAcquire(watchDog._watchDogSemEnd, watchDog._maybeGCInterval) != JLTIMEOUT )
 			break;
-		JS_TriggerOperationCallback(watchDog._hostRuntime.runtime());
+		JSRuntime *rt = watchDog._hostRuntime.runtime();
+
+		ASSERT( JS_GetOperationCallback(rt) );
+		JS_TriggerOperationCallback(rt);
 	}
 	JLThreadExit(0);
 	return 0;
@@ -413,30 +417,32 @@ WatchDog::stop() {
 // HostRuntime
 
 static bool
-global_enumerate(JSContext *cx, JS::HandleObject obj) {
+_globalClass_lazy_enumerate(JSContext *cx, JS::HandleObject obj) {
 
-    return JS_EnumerateStandardClasses(cx, obj);
+	return JS_EnumerateStandardClasses(cx, obj);
 }
 
 static bool
-global_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, unsigned flags, JS::MutableHandleObject objp) {
+_globalClass_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, unsigned flags, JS::MutableHandleObject objp) {
 
-    bool resolved;
+	bool resolved;
 
-    if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
-        return false;
-    if (resolved) {
-        objp.set(obj);
-        return true;
-    }
-    return true;
+	if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
+		return false;
+
+	if (resolved) {
+
+		objp.set(obj);
+		return true;
+	}
+	return true;
 }
 
 const JSClass HostRuntime::_globalClass_lazy = {
 	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS,
 	JS_PropertyStub, JS_DeletePropertyStub,
 	JS_PropertyStub, JS_StrictPropertyStub,
-	global_enumerate, (JSResolveOp)global_resolve,
+	_globalClass_lazy_enumerate, (JSResolveOp)_globalClass_lazy_resolve,
 	JS_ConvertStub
 };
 

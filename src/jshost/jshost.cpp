@@ -1053,7 +1053,7 @@ int test() {
 
 	{
 	
-	HostRuntime hostRuntime(allocators, 100);
+	HostRuntime hostRuntime(allocators, 1);
 	JL_CHK( hostRuntime.create() );
 
 	{
@@ -1062,7 +1062,7 @@ int test() {
 
 	JS::RootedValue tmpVal(cx);
 	JS::RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
-	JL_CHK( ExecuteScriptText(cx, global, "(function() { for (var i = 0; i < 100000; ++i); })()", false, &tmpVal) );
+	JL_CHK( ExecuteScriptText(cx, global, "(function() { for (var i = 0; i < 1000000; ++i); })()", false, &tmpVal) );
 
 
 /*
