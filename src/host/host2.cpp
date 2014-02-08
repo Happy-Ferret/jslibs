@@ -387,12 +387,15 @@ WatchDog::WatchDog(RuntimeAccess &hostRuntime, uint32_t maybeGCInterval)
 bool
 WatchDog::start() {
 
-	JSContext *cx = _hostRuntime.context();
-	JSOperationCallback prevOperationCallback = JS_SetOperationCallback(_hostRuntime.runtime(), operationCallback);
-	ASSERT( prevOperationCallback == NULL );
-	_watchDogSemEnd = JLSemaphoreCreate(0);
-	_watchDogThread = JLThreadStart(watchDogThreadProc, this);
-	JL_ASSERT( JLSemaphoreOk(_watchDogSemEnd) && JLThreadOk(_watchDogThread), E_HOST, E_CREATE ); // "Unable to create the GC thread."
+	if ( _maybeGCInterval ) {
+
+		JSContext *cx = _hostRuntime.context();
+		JSOperationCallback prevOperationCallback = JS_SetOperationCallback(_hostRuntime.runtime(), operationCallback);
+		ASSERT( prevOperationCallback == NULL );
+		_watchDogSemEnd = JLSemaphoreCreate(0);
+		_watchDogThread = JLThreadStart(watchDogThreadProc, this);
+		JL_ASSERT( JLSemaphoreOk(_watchDogSemEnd) && JLThreadOk(_watchDogThread), E_HOST, E_CREATE ); // "Unable to create the GC thread."
+	}	
 	return true;
 	JL_BAD;
 }
@@ -402,12 +405,15 @@ WatchDog::stop() {
 
 	// beware: it is important to destroy the watchDogThread BEFORE destroying the cx !!!
 
-	JSOperationCallback prevOperationCallback = JS_SetOperationCallback(_hostRuntime.runtime(), NULL);
-	ASSERT( prevOperationCallback == operationCallback );
-	JLSemaphoreRelease(_watchDogSemEnd);
-	JLThreadWait(_watchDogThread);
-	JLThreadFree(&_watchDogThread);
-	JLSemaphoreFree(&_watchDogSemEnd);
+	if ( _maybeGCInterval ) {
+
+		JSOperationCallback prevOperationCallback = JS_SetOperationCallback(_hostRuntime.runtime(), NULL);
+		ASSERT( prevOperationCallback == operationCallback );
+		JLSemaphoreRelease(_watchDogSemEnd);
+		JLThreadWait(_watchDogThread);
+		JLThreadFree(&_watchDogThread);
+		JLSemaphoreFree(&_watchDogSemEnd);
+	}
 	return true;
 }
 
@@ -589,7 +595,7 @@ HostRuntime::destroy(bool skipCleanup) {
 	cx = NULL;
 
 	#ifdef DEBUG
-	JS_DumpHeap(rt, fopen("dump.txt", "w"), NULL, JSTRACE_OBJECT, NULL, 2, NULL);
+	JS_DumpHeap(rt, fopen("dump.txt", "w"), NULL, JSTRACE_OBJECT, NULL, 1, NULL);
 	#endif
 
 	JS_DestroyRuntime(rt);

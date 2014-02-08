@@ -456,7 +456,7 @@ public:
 	static void
 	errorReporterBasic(JSContext *cx, const char *message, JSErrorReport *report);
 
-	HostRuntime(Allocators allocators = StdAllocators(), uint32_t maybeGCInterval = 10000);
+	HostRuntime(Allocators allocators = StdAllocators(), uint32_t maybeGCInterval = 0);
 
 	JSRuntime *
 	runtime() const;

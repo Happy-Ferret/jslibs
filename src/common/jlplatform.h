@@ -1036,6 +1036,22 @@ INLINE void GetAbsoluteModulePath( char* moduleFileName, size_t size, char *modu
 #endif //XP_UNIX
 
 
+ALWAYS_INLINE bool
+ModuleFileName(char *hostFullPath) {
+#if defined(XP_WIN)
+// get hostpath and hostname
+	return GetModuleFileName((HINSTANCE)GetModuleHandle(NULL), hostFullPath, PATH_MAX) != 0;
+#elif defined(XP_UNIX)
+//	jl::GetAbsoluteModulePath(hostFullPath, PATH_MAX, argv0);
+	int len = readlink("/proc/self/exe", moduleFileName, sizeof(moduleFileName)); // doc: readlink does not append a NUL character to buf.
+	moduleFileName[len] = '\0';
+//	strcpy(hostFullPath, argv[0]);
+	return true;
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Platform tools

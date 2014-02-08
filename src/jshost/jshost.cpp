@@ -409,11 +409,12 @@ void SetJslibsMemoryAllocators(jl_malloc_t malloc, jl_calloc_t calloc, jl_memali
 
 
 
+
 int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])| for wide char
 
-	int test();
-	test();
-	exit(0);
+	int test(int argc, char* argv[]);
+	return test(argc, argv);
+
 
 
 //	BOOL st = SetProcessAffinityMask(GetCurrentProcess(), 1);
@@ -977,7 +978,202 @@ extern "C" __declspec(dllexport) bool ModuleInit(JSContext *cx, JSObject *obj) {
 **/
 
 
-int test() {
+
+struct CmdLineArguments {
+
+	int help;
+	uint32_t maxMem;
+	uint32_t maxAlloc;
+	bool warningsToErrors;
+	bool unsafeMode;
+	bool compileOnly;
+	float maybeGCInterval;
+	bool useFileBootstrapScript;
+	const char *inlineScript;
+	const char *scriptName;
+	#ifdef DEBUG
+	bool debug;
+	#endif DEBUG
+
+	int jsArgc;
+	char** jsArgv;
+
+	bool
+	parse(int argc, char* argv[]) {
+
+		maxMem = (uint32_t)-1; // by default, there are no limit
+		maxAlloc = (uint32_t)-1; // by default, there are no limit
+		warningsToErrors = false;
+		unsafeMode = false;
+		compileOnly = false;
+		maybeGCInterval = 10; // seconds
+		useFileBootstrapScript = false;
+		inlineScript = NULL;
+		scriptName = NULL;
+		help = false;
+
+		#ifdef DEBUG
+		debug = false;
+		#endif DEBUG
+
+		char** argumentVector = argv;
+		for ( argumentVector++; argumentVector[0] && argumentVector[0][0] == '-'; argumentVector++ )
+			switch ( argumentVector[0][1] ) {
+				case 'm': // maxbytes (GC)
+					argumentVector++;
+					HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
+					maxMem = atol( *argumentVector ) * 1024L * 1024L;
+					break;
+				case 'n': // maxAlloc (GC)
+					argumentVector++;
+					HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
+					maxAlloc = atol( *argumentVector ) * 1024L * 1024L;
+					break;
+				case 'u': // avoid any runtime checks
+					unsafeMode = true;
+					break;
+				case 'w': // convert warnings to errors
+					warningsToErrors = true;
+					break;
+				case 'g': // operationLimitGC
+					argumentVector++;
+					HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
+					maybeGCInterval = (float)atof(*argumentVector);
+					break;
+				case 'c': // compileOnly
+					compileOnly = true;
+					break;
+				case 'b': // bootstrap
+					useFileBootstrapScript = true;
+					break;
+				case 'i': // inline script
+					argumentVector++; // keep the script as argument[0]
+					HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
+					inlineScript = *(argumentVector);
+					break;
+				case '?': // help
+				case 'h': //
+					help = true;
+					break;
+	
+			#ifdef DEBUG
+				case 'd': // debug
+					debug = true;
+					break;
+			#endif // DEBUG
+		}
+
+		jsArgc = argc - (argumentVector-argv);
+		jsArgv = argumentVector;
+
+		return true;
+		JL_BAD;
+	}
+};
+
+
+class HostStdIO : public jl::Std {
+	int stdin_fileno;
+	int stdout_fileno;
+	int stderr_fileno;
+public:
+
+	HostStdIO() : stdin_fileno(-1), stdout_fileno(-1), stderr_fileno(-1) {
+	}
+
+	int
+	stdInput( char *buffer, size_t bufferLength ) {
+	
+		if (unlikely( stdin_fileno == -1 ))
+			stdin_fileno = fileno(stdin);
+		return read(stdin_fileno, (void*)buffer, bufferLength);
+	}
+
+	int
+	stdOutput( const char *buffer, size_t length ) {
+		
+		if (unlikely( stdout_fileno == -1 ))
+			stdout_fileno = fileno(stdout);
+		return write(stdout_fileno, buffer, length);
+	}
+
+	int
+	stdError( const char *buffer, size_t length ) {
+		
+		if (unlikely( stderr_fileno == -1 ))
+			stderr_fileno = fileno(stderr);
+		return write(stderr_fileno, buffer, length);
+	}
+};
+
+
+bool run(jl::HostRuntime &hostRuntime, CmdLineArguments &args, int &exitValue) {
+
+	JSContext *cx = hostRuntime.context();
+/*
+	JS::RootedValue tmpVal(cx);
+	JS::RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
+	JL_CHK( ExecuteScriptText(cx, global, "(function() { for (var i = 0; i < 10000; ++i); })()", false, &tmpVal) );
+*/
+
+	jl::Host host(hostRuntime, HostStdIO());
+	JL_CHK( host.create() );
+
+	char hostFullPath[PATH_MAX];
+	JL_CHK( jl::ModuleFileName(hostFullPath) );
+
+	char *hostName;
+	hostName = strrchr(hostFullPath, PATH_SEPARATOR);
+	JL_CHK( hostName );
+	hostName += 1;
+	int hostPathLength;
+	hostPathLength = hostName-hostFullPath;
+
+	char hostPath[PATH_MAX];
+	strncpy(hostPath, hostFullPath, hostPathLength);
+	hostPath[hostPathLength] = '\0';
+
+	host.setHostName(hostPath, hostName);
+	host.setHostArguments(args.jsArgv, args.jsArgc);
+
+	{
+
+	JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
+	JS::RootedValue rval(cx);
+
+	// file script
+
+	bool executeStatus = true;
+
+
+
+	if ( args.scriptName != NULL && executeStatus == true ) {
+
+		executeStatus = ExecuteScriptFileName(cx, globalObject, args.jsArgv[0], args.compileOnly, &rval);
+	}
+
+	}
+
+
+	host.destroy();
+
+	return true;
+	JL_BAD;
+}
+
+class AutoShutdownEngine {
+public:
+	~AutoShutdownEngine() {
+
+		JS_ShutDown();
+	}
+};
+
+
+
+
+
+int test(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])| for wide char
 
 	using namespace jl;
 
@@ -1003,89 +1199,37 @@ int test() {
 	};
 
 
-	class HostStd : public Std {
-		int stdin_fileno;
-		int stdout_fileno;
-		int stderr_fileno;
-	public:
 
-		HostStd() : stdin_fileno(-1), stdout_fileno(-1), stderr_fileno(-1) {
-		}
+	int exitValue;
+	CmdLineArguments args;
+	JL_CHK( args.parse(argc, argv) );
 
-		int
-		stdInput( char *buffer, size_t bufferLength ) {
-	
-			if (unlikely( stdin_fileno == -1 ))
-				stdin_fileno = fileno(stdin);
-			return read(stdin_fileno, (void*)buffer, bufferLength);
-		}
+	if ( args.help ) {
 
-		int
-		stdOutput( const char *buffer, size_t length ) {
-		
-			if (unlikely( stdout_fileno == -1 ))
-				stdout_fileno = fileno(stdout);
-			return write(stdout_fileno, buffer, length);
-		}
+		fprintf( stderr, "Help: http://code.google.com/p/jslibs/wiki/jshost#Command_line_options\n" );
+		exitValue = EXIT_SUCCESS;
+	} else {
 
-		int
-		stdError( const char *buffer, size_t length ) {
-		
-			if (unlikely( stderr_fileno == -1 ))
-				stderr_fileno = fileno(stderr);
-			return write(stderr_fileno, buffer, length);
-		}
-	};
+		enableLowFragmentationHeap();
 
+		StdAllocators allocators;
+		CountedAlloc countAlloc(allocators);
+		ThreadedAllocator alloc(allocators);
+		HostRuntime::setJSEngineAllocators(allocators);
 
-	enableLowFragmentationHeap();
+		JL_CHK( JS_Init() );
+		AutoShutdownEngine ase;
 
-	StdAllocators allocators;
-	CountedAlloc countAlloc(allocators);
-	ThreadedAllocator alloc(allocators);
-	
-	HostRuntime::setJSEngineAllocators(allocators);
-	//alloc.setSkipCleanup(true);
-	//allocators.free( allocators.malloc(123) );
+		//alloc.setSkipCleanup(true);
 
+		HostRuntime hostRuntime(allocators);
+		JL_CHK( hostRuntime.create() );
 
-	JS_Init();
+		JL_CHK( run(hostRuntime, args, exitValue) );
 
-	{
-	
-	HostRuntime hostRuntime(allocators, 1);
-	JL_CHK( hostRuntime.create() );
-
-	{
-
-	JSContext *cx = hostRuntime.context();
-
-	JS::RootedValue tmpVal(cx);
-	JS::RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
-	JL_CHK( ExecuteScriptText(cx, global, "(function() { for (var i = 0; i < 1000000; ++i); })()", false, &tmpVal) );
-
-
-/*
-	Host host(hostRuntime, HostStd());
-	JL_CHK( host.create() );
-
-	JSContext *cx = hostRuntime.context();
-
-	host.getCachedClassProto("Socket");
-
-//	host.__test__();
-
-	host.destroy();
-*/
+		hostRuntime.destroy();
 	}
 
-	hostRuntime.destroy();
-
-	}
-
-
-	JS_ShutDown();
-
+	return exitValue;
 	JL_BAD;
 }
-
