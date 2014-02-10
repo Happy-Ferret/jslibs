@@ -1146,6 +1146,10 @@ bool run(jl::HostRuntime &hostRuntime, CmdLineArguments &args, int &exitValue) {
 	bool executeStatus = true;
 
 
+	//jl::Host::getHost(cx).addCachedClassProto(className, clasp, proto);
+	//return hpv->classProtoCache.Add(cx, className, clasp, proto);
+
+
 
 	if ( args.scriptName != NULL && executeStatus == true ) {
 

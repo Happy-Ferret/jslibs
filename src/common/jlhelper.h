@@ -725,6 +725,7 @@ JL_SetContextPrivate( const JSContext *cx, JLContextPrivate *ContextPrivate ) {
 
 // Using a separate file allow a better versioning of the HostPrivate structure (see JL_HOSTPRIVATE_KEY).
 #include "jlhostprivate.h"
+//#include "../host/host2.h"
 
 ALWAYS_INLINE HostPrivate*
 JL_GetHostPrivate( JSRuntime *rt ) {
@@ -924,6 +925,7 @@ JL_CacheClassProto( JSContext *cx, HostPrivate * RESTRICT hpv, const char * cons
 	}
 */
 
+//	return jl::Host::getHostPrivate(cx);
 	return hpv->classProtoCache.Add(cx, className, clasp, proto);
 }
 

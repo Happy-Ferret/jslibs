@@ -777,7 +777,7 @@ struct {
 const uint32_t Host::versionId = 0;
 
 const JSErrorFormatString *
-Host::ErrorCallback(void *userRef, const char *, const unsigned) {
+Host::errorCallback(void *userRef, const char *, const unsigned) {
 
 	return (JSErrorFormatString*)userRef;
 }
@@ -927,7 +927,7 @@ Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 	#undef fputc
 	#undef fflush
 	
-	Host::getHostPrivate(cx).hostStderrWrite(buffer, buf-buffer);
+	Host::getHost(cx).hostStderrWrite(buffer, buf-buffer);
 }
 
 
@@ -1104,7 +1104,7 @@ Host::report( bool isWarning, ... ) {
 	va_end(vl);
 
 	JSErrorFormatString format = { message, 0, (int16_t)exn };
-	return JS_ReportErrorFlagsAndNumber( _hostRuntime.context(), isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, ErrorCallback, (void*)&format, 0);
+	return JS_ReportErrorFlagsAndNumber( _hostRuntime.context(), isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, errorCallback, (void*)&format, 0);
 
 //bad:
 //	va_end(vl);
@@ -1149,7 +1149,7 @@ DEFINE_PROPERTY_GETTER( unsafeMode ) {
 
 	JL_IGNORE( id, obj );
 
-	JL_CHK( JL_NativeToJsval(cx, Host::getHostPrivate(cx).unsafeMode(), vp) );
+	JL_CHK( JL_NativeToJsval(cx, Host::getHost(cx).unsafeMode(), vp) );
 	return true;
 	JL_BAD;
 }
@@ -1204,7 +1204,7 @@ DEFINE_FUNCTION( stdout ) {
 	JL_DEFINE_ARGS;
 	JL_RVAL.setUndefined();
 	JLData str;
-	Host &host(Host::getHostPrivate(cx));
+	Host &host(Host::getHost(cx));
 	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(i+1), &str) );
@@ -1225,7 +1225,7 @@ DEFINE_FUNCTION( stderr ) {
 	JL_DEFINE_ARGS;
 	JL_RVAL.setUndefined();
 	JLData str;
-	Host &host(Host::getHostPrivate(cx));
+	Host &host(Host::getHost(cx));
 	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(i+1), &str) );
@@ -1244,7 +1244,7 @@ DEFINE_FUNCTION( stdin ) {
 
 	JL_DEFINE_ARGS;
 
-	Host &host(Host::getHostPrivate(cx));
+	Host &host(Host::getHost(cx));
 
 	char buffer[8192];
 	int status = host.stdInput(buffer, COUNTOF(buffer));

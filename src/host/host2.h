@@ -670,7 +670,7 @@ class Host : public jl::CppAllocators {
 	StaticArray< JS::PersistentRootedId, LAST_JSID > _ids;
 
 	static const JSErrorFormatString *
-	ErrorCallback(void *userRef, const char *, const unsigned);
+	errorCallback(void *userRef, const char *, const unsigned);
 
 	static void
 	errorReporterBasic(JSContext *cx, const char *message, JSErrorReport *report);
@@ -684,15 +684,15 @@ class Host : public jl::CppAllocators {
 public:
 
 	static ALWAYS_INLINE Host&
-	getHostPrivate( JSRuntime *rt ) {
+	getHost( JSRuntime *rt ) {
 
 		return *static_cast<Host*>(JL_GetRuntimePrivate(rt));
 	}
 
 	static ALWAYS_INLINE Host&
-	getHostPrivate( JSContext *cx ) {
+	getHost( JSContext *cx ) {
 
-		return getHostPrivate(JL_GetRuntime(cx));
+		return getHost(JL_GetRuntime(cx));
 	}
 
 
@@ -745,6 +745,13 @@ public:
 
 		return _classProtoCache.get(className);
 	}
+
+	ALWAYS_INLINE bool
+	addCachedClassProto( const char * const className, JSClass * const clasp, IN JS::HandleObject proto ) {
+
+		return _classProtoCache.add(_hostRuntime.runtime(), className, clasp, proto);
+	}
+
 };
 
 
