@@ -14,11 +14,6 @@
 
 #pragma once
 
-#include <jsprf.h> // JS_smprintf in ErrorReporter
-
-#include <jlclass.h>
-#include <jslibsModule.h>
-#include "../jslang/jslang.h"
 
 #define NAME_MODULE_INIT "ModuleInit"
 #define NAME_MODULE_RELEASE "ModuleRelease"
@@ -30,18 +25,90 @@
 #define NAME_GLOBAL_FUNCTION_UNLOAD_MODULE "unloadModule"
 
 
+#define JL_HOSTPRIVATE_MAX_CLASS_PROTO_CACHE_BIT (9)
+
+	
+///////////////////////////////////////////////////////////////////////////////
+// IDs cache
+
+// defined here because required by jlhostprivate.h
+#define JLID_SPEC(name) JLID_##name
+enum {
+	JLID_SPEC( global ),
+	JLID_SPEC( get ),
+	JLID_SPEC( read ),
+	JLID_SPEC( getMatrix44 ),
+	JLID_SPEC( _NI_BufferGet ),
+	JLID_SPEC( _NI_StreamRead ),
+	JLID_SPEC( _NI_Matrix44Get ),
+	JLID_SPEC( name ),
+	JLID_SPEC( length ),
+	JLID_SPEC( id ),
+	JLID_SPEC( valueOf ),
+	JLID_SPEC( toString ),
+	JLID_SPEC( next ),
+	JLID_SPEC( iterator ),
+	JLID_SPEC( arguments ),
+	JLID_SPEC( unsafeMode ),
+	JLID_SPEC( stdin ),
+	JLID_SPEC( stdout ),
+	JLID_SPEC( stderr ),
+	JLID_SPEC( width ),
+	JLID_SPEC( height ),
+	JLID_SPEC( channels ),
+	JLID_SPEC( bits ),
+	JLID_SPEC( rate ),
+	JLID_SPEC( frames ),
+	JLID_SPEC( sourceId ),
+	JLID_SPEC( _sourceId ),
+	JLID_SPEC( buildDate ),
+	JLID_SPEC( _buildDate ),
+	JLID_SPEC( path ),
+	JLID_SPEC( isFirstInstance ),
+	JLID_SPEC( bootstrapScript ),
+	JLID_SPEC( _serialize ),
+	JLID_SPEC( _unserialize ),
+	JLID_SPEC( eval ),
+	JLID_SPEC( push ),
+	JLID_SPEC( pop ),
+	JLID_SPEC( toXMLString ),
+	JLID_SPEC( fileName ),
+	JLID_SPEC( lineNumber ),
+	JLID_SPEC( stack ),
+	JLID_SPEC( message ),
+	JLID_SPEC( Reflect ),
+	JLID_SPEC( Debugger ),
+	JLID_SPEC( isGenerator ),
+	JLID_SPEC( writable ),
+	JLID_SPEC( readable ),
+	JLID_SPEC( hangup ),
+	JLID_SPEC( exception ),
+	JLID_SPEC( error ),
+	JLID_SPEC( position ),
+	JLID_SPEC( available ),
+	JLID_SPEC( data ),
+	JLID_SPEC( type ),
+	JLID_SPEC( doc ),
+
+	LAST_JSID // see HostPrivate::ids[]
+};
+#undef JLID_SPEC
+// examples:
+//   JLID(cx, _unserialize) -> jsid
+//   JLID_NAME(cx, _unserialize) -> w_char
+
+
+
 JL_BEGIN_NAMESPACE
 
 bool enableLowFragmentationHeap();
 
 
-DECLARE_CLASS(host2);
-
 class Std {
 public:
-	virtual int	stdInput( char *buffer, size_t bufferLength ) { return 0; };
-	virtual int	stdOutput( const char *buffer, size_t length ) { return 0; };
-	virtual int	stdError( const char *buffer, size_t length ) { return 0; };
+	virtual int	stdInput( char *buffer, size_t bufferLength ) { JL_IGNORE(buffer, bufferLength); return 0; };
+	virtual int	stdOutput( const char *buffer, size_t length ) { JL_IGNORE(buffer, length); return 0; };
+	virtual int	stdError( const char *buffer, size_t length ) { JL_IGNORE(buffer, length); return 0; };
 };
 
 
@@ -270,7 +337,7 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 // Threaded memory deallocator
 
-class ThreadedAllocator : public CppNoAlloc {
+class ThreadedAllocator {
 
 	enum Constants {
 		MAX_LOAD = 7, // the "load" increase by one each time the thread loop without freeing the whole memory chunk list. When MAX_LOAD is reached, memory is freed synchronously.
@@ -504,6 +571,82 @@ public:
 
 	bool
 	freeModules();
+
+
+
+
+
+	static ALWAYS_INLINE uint8_t
+	moduleHash( const uint32_t moduleId ) {
+
+		ASSERT( moduleId != 0 );
+		//	return ((uint8_t*)&moduleId)[0] ^ ((uint8_t*)&moduleId)[1] ^ ((uint8_t*)&moduleId)[2] ^ ((uint8_t*)&moduleId)[3] << 1;
+		uint32_t a = moduleId ^ (moduleId >> 16);
+		return (a ^ a >> 8) & 0xFF;
+	}
+
+
+	ALWAYS_INLINE bool
+	setModulePrivate( const uint32_t moduleId, void *modulePrivate ) {
+
+		ASSERT( moduleId != 0 );
+		ASSERT( modulePrivate );
+
+		uint8_t id = moduleHash(moduleId);
+
+		while ( _modulePrivate[id].moduleId != 0 ) { // assumes that modulePrivate struct is init to 0
+
+			if ( _modulePrivate[id].moduleId == moduleId )
+				return false; // module private already exist or moduleId not unique
+			++id; // uses unsigned char overflow
+		}
+		_modulePrivate[id].moduleId = moduleId;
+		_modulePrivate[id].privateData = modulePrivate;
+		return true;
+	}
+
+
+	ALWAYS_INLINE void* FASTCALL
+	getModulePrivateOrNULL( uint32_t moduleId ) {
+
+		ASSERT( moduleId != 0 );
+
+		uint8_t id = moduleHash(moduleId);
+		uint8_t id0 = id;
+
+		while ( _modulePrivate[id].moduleId != moduleId ) {
+
+			++id; // uses unsigned char overflow
+			if ( id == id0 )
+				return NULL;
+		}
+		return _modulePrivate[id].privateData;
+	}
+
+
+	ALWAYS_INLINE void* FASTCALL
+	getModulePrivate( uint32_t moduleId ) {
+
+		ASSERT( moduleId != 0 );
+		uint8_t id = moduleHash(moduleId);
+
+	#ifdef DEBUG
+		uint8_t maxid = id;
+	#endif // DEBUG
+
+		while ( _modulePrivate[id].moduleId != moduleId ) {
+
+			++id; // uses unsigned char overflow
+
+	#ifdef DEBUG
+			ASSERT( id != maxid );
+	#endif // DEBUG
+
+		}
+		return _modulePrivate[id].privateData;
+	}
+	
+
 };
 
 
@@ -560,6 +703,46 @@ public:
 		}
 	}
 
+	// see:
+	//   SuperFastHash (http://www.azillionmonkeys.com/qed/hash.html)
+	//   FNV variants (http://isthe.com/chongo/tech/comp/fnv/)
+	//   MurmurHash 1.0 (https://sites.google.com/site/murmurhash/)
+	static ALWAYS_INLINE uint32_t FASTCALL
+	slotHash( const char * const n ) {
+
+		ASSERT( n != NULL );
+		ASSERT( strlen(n) <= 24 );
+
+		register uint32_t h = 0;
+		if ( n[ 0] ) { h ^= n[ 0]<<0;
+		if ( n[ 1] ) { h ^= n[ 1]<<4;
+		if ( n[ 2] ) { h ^= n[ 2]<<1;
+		if ( n[ 3] ) { h ^= n[ 3]<<5;
+		if ( n[ 4] ) { h ^= n[ 4]<<2;
+		if ( n[ 5] ) { h ^= n[ 5]<<6;
+		if ( n[ 6] ) { h ^= n[ 6]<<3;
+		if ( n[ 7] ) { h ^= n[ 7]<<7;
+		if ( n[ 8] ) { h ^= n[ 8]<<4;
+		if ( n[ 9] ) { h ^= n[ 9]<<8;
+		if ( n[10] ) { h ^= n[10]<<5;
+		if ( n[11] ) { h ^= n[11]<<0;
+		if ( n[12] ) { h ^= n[12]<<6;
+		if ( n[13] ) { h ^= n[13]<<1;
+		if ( n[14] ) { h ^= n[14]<<7;
+		if ( n[15] ) { h ^= n[15]<<2;
+		if ( n[16] ) { h ^= n[16]<<8;
+		if ( n[17] ) { h ^= n[17]<<3;
+		if ( n[18] ) { h ^= n[18]<<0;
+		if ( n[19] ) { h ^= n[19]<<4;
+		if ( n[20] ) { h ^= n[20]<<1;
+		if ( n[21] ) { h ^= n[21]<<5;
+		if ( n[22] ) { h ^= n[22]<<2;
+		if ( n[23] ) { h ^= n[23]<<6;
+		}}}}}}}}}}}}}}}}}}}}}}}}
+		return ((h >> 7) ^ h) & ((1<<JL_HOSTPRIVATE_MAX_CLASS_PROTO_CACHE_BIT) - 1);
+	}
+
+
 	bool
 	add( JSRuntime *rt, const char * const className, JSClass * const clasp, IN JS::HandleObject proto ) {
 
@@ -571,7 +754,7 @@ public:
 		ASSERT( proto != NULL );
 		ASSERT( JL_GetClass(proto) == clasp );
 
-		size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
+		size_t slotIndex = slotHash(className);
 		size_t first = slotIndex;
 
 	//	ASSERT( slotIndex < COUNTOF(hpv->classProtoCache) );
@@ -597,20 +780,21 @@ public:
 	}
 
 
-	const ClassProtoCache*
+	ALWAYS_INLINE const ClassProtoCache*
 	get( const char * const className ) const {
 
-		size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
+		size_t slotIndex = slotHash(className);
 		const size_t first = slotIndex;
 
 		ASSERT( slotIndex < CACHE_LENGTH );
 
 		for (;;) {
 
+			// note:
+			//   slot->clasp == NULL -> empty
+			//   slot->clasp == removedSlotClasp() -> slot removed, but maybe next slot will match !
+
 			const ClassProtoCache &slot = items.getConst(slotIndex);
-		
-			// slot->clasp == NULL -> empty
-			// slot->clasp == removedSlotClasp() -> slot removed, but maybe next slot will match !
 
 			if ( slot.clasp == NULL ) // not found
 				return NULL;
@@ -631,7 +815,7 @@ public:
 
 		ASSERT( removedSlotClasp() != NULL );
 
-		size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
+		size_t slotIndex = slotHash(className);
 		size_t first = slotIndex;
 		
 		ASSERT( slotIndex < CACHE_LENGTH );
@@ -658,13 +842,18 @@ public:
 
 class Host : public jl::CppAllocators {
 
+//	JSRuntime *rt;
+
 	bool _unsafeMode;
 	static const uint32_t versionId;
 	RuntimeAccess &_hostRuntime;
 	Std &_hostStd;
 	uint32_t _versionId; // used to ensure compatibility between host and modules. see JL_HOSTPRIVATE_KEY macro.
-	ModuleManager _modules;
+	ModuleManager _moduleManager;
 	JS::PersistentRootedObject _hostObject;
+	
+	JS::PersistentRootedObject _objectProto;
+	const JSClass *_objectClasp;
 
 	ProtoCache< 1<<JL_HOSTPRIVATE_MAX_CLASS_PROTO_CACHE_BIT > _classProtoCache;
 	StaticArray< JS::PersistentRootedId, LAST_JSID > _ids;
@@ -680,6 +869,7 @@ class Host : public jl::CppAllocators {
 
 	bool
 	hostStderrWrite(const char *message, size_t length);
+
 
 public:
 
@@ -738,21 +928,68 @@ public:
 	setHostArguments(char **hostArgv, size_t hostArgc);
 
 	bool
-	setHostName(const char *hostPath, const char *hostName);
+	setHostName( const char *hostPath, const char *hostName );
 
-	ALWAYS_INLINE const ClassProtoCache*
-	getCachedClassProto( const char * const className ) {
 
-		return _classProtoCache.get(className);
-	}
+	JSObject *
+	newObject();
 
-	ALWAYS_INLINE bool
+
+	// CachedClassProto
+
+	bool
 	addCachedClassProto( const char * const className, JSClass * const clasp, IN JS::HandleObject proto ) {
 
 		return _classProtoCache.add(_hostRuntime.runtime(), className, clasp, proto);
 	}
 
+	ALWAYS_INLINE const ClassProtoCache*
+	getCachedClassProto( IN const char * const className ) {
+
+		return _classProtoCache.get(className);
+	}
+
+	ALWAYS_INLINE const JS::HandleObject
+	getCachedProto( IN const char * const className ) {
+
+		const ClassProtoCache * cpc = getCachedClassProto(className);
+		if ( cpc )
+			return JS::HandleObject::fromMarkedLocation(cpc->proto.address());
+		else
+			return JS::NullPtr();
+	}
+	
+	ALWAYS_INLINE const JSClass*
+	getCachedClasp( IN const char * const className ) {
+
+		return getCachedClassProto(className)->clasp;
+	}
+
+
+	// ids
+
+	static INLINE NEVER_INLINE void FASTCALL
+	getPrivateJsidSlow( JSContext *cx, JS::PersistentRootedId &id, int index, const jschar *name ) {
+
+		JS::RootedString jsstr(cx, JS_InternUCString(cx, name));
+		ASSERT( jsstr != NULL );
+		id.set(JL_StringToJsid(cx, jsstr));
+	}
+
+		
+	ALWAYS_INLINE JS::HandleId
+	getId( int index, const jschar *name ) {
+
+		JS::PersistentRootedId &id = _ids.get(index);
+		if ( JSID_IS_VOID(id) ) {
+
+			getPrivateJsidSlow(_hostRuntime.context(), id, index, name);
+		}
+		return JS::HandleId::fromMarkedLocation(id.address());
+	}
 };
 
 
 JL_END_NAMESPACE
+
+

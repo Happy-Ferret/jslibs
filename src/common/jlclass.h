@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include "../host/host2.h"
+
 
 JL_BEGIN_NAMESPACE
 
@@ -147,16 +149,14 @@ InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 	JL_CHK( obj );
 
 	ASSERT( cs->clasp.name && cs->clasp.name[0] ); // Invalid class name.
-
-	HostPrivate *hpv;
-	hpv = JL_GetHostPrivate(cx);
+	jl::Host &host = jl::Host::getHost(cx);
 
 	{
 
 	JS::RootedObject parentProto(cx);
 	if ( cs->parentProtoName != NULL ) {
 
-		parentProto.set( JL_GetCachedProto(hpv, cs->parentProtoName) );
+		parentProto.set( host.getCachedProto(cs->parentProtoName) );
 		JL_CHKM( parentProto != NULL, E_STR(cs->parentProtoName), E_STR("prototype"), E_NOTFOUND );
 	}
 
@@ -168,7 +168,7 @@ InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 	ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(proto) == NULL );
 
 	
-	JL_CHKM( jl::Host::getHost(cx).addCachedClassProto(cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
+	JL_CHKM( host.addCachedClassProto(cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 	//JL_CHKM( JL_CacheClassProto(cx, hpv, cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 
 	JS::RootedObject ctor(cx);
@@ -208,8 +208,8 @@ InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 	if ( cs->init )
 		JL_CHK( cs->init(cx, cs, proto, ctor) );
 
-	ASSERT( JL_GetCachedClass(hpv, cs->clasp.name) == &cs->clasp );
-	ASSERT( JL_GetCachedProto(hpv, cs->clasp.name) == proto );
+	ASSERT( host.getCachedClasp(cs->clasp.name) == &cs->clasp );
+	ASSERT( host.getCachedProto(cs->clasp.name) == proto );
 	
 	}
 

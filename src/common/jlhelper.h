@@ -18,7 +18,6 @@
 
 #include "jlplatform.h"
 
-
 #include "jlalloc.h"
 #include "queue.h"
 
@@ -169,7 +168,9 @@ JL_NewNumberValue( JSContext *cx, double d, OUT JS::MutableHandleValue rval ) {
 	//d = JS::CanonicalizeNaN(d);
 	//rval.setNumber(JS_CANONICALIZE_NAN(d));
 	//rval.setNumber(d);
-	rval.set(DOUBLE_TO_JSVAL(d));
+	
+	//rval.set(DOUBLE_TO_JSVAL(d));
+	rval.setDouble(d);
 
 	return true;
 }
@@ -332,7 +333,7 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 }
 
 
-namespace jspv {
+namespace jlpv {
 
 	// useful for structure with jsid initialized to 0, (see HostPrivate ids)
 	ALWAYS_INLINE const jsid
@@ -351,9 +352,10 @@ JL_StringToJsid( JSContext *cx, JS::HandleString jsstr ) {
 
 	ASSERT( jsstr != NULL );
 	JS::RootedString tmp(cx, JS_InternJSString(cx, jsstr)); // if ( !JS_StringHasBeenInterned(cx, jsstr) )
-	if ( tmp == NULL )
-		return jspv::NullJsid();
-	return INTERNED_STRING_TO_JSID(cx, jsstr);
+	if ( !tmp )
+		return jlpv::NullJsid();
+	JS::RootedId id(cx, INTERNED_STRING_TO_JSID(cx, jsstr));
+	return id;
 }
 
 
@@ -363,7 +365,7 @@ JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
 	ASSERT( wstr != NULL );
 	JS::RootedString jsstr(cx, JS_InternUCString(cx, wstr));
 	if ( jsstr == NULL )
-		return jspv::NullJsid();
+		return jlpv::NullJsid();
 	JS::RootedId id(cx, JL_StringToJsid(cx, jsstr));
 	ASSERT( JSID_IS_STRING(id) );
 	return id;
@@ -375,6 +377,8 @@ JL_TRUE() {
 		
 	return JS::HandleValue::fromMarkedLocation(&JS::TrueValue());
 }
+
+
 
 /*
 ALWAYS_INLINE JS::HandleValue FASTCALL
@@ -389,6 +393,9 @@ JL_ArrayToAutoArrayRooter(JSContext *cx, JS::HandleObject *arrayObj) {
 		JS_GetElement
 }
 */
+
+
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -626,76 +633,6 @@ JL_ArrayToAutoArrayRooter(JSContext *cx, JS::HandleObject *arrayObj) {
 
 
 
-///////////////////////////////////////////////////////////////////////////////
-// IDs cache
-
-// defined here because required by jlhostprivate.h
-#define JLID_SPEC(name) JLID_##name
-enum {
-	JLID_SPEC( global ),
-	JLID_SPEC( get ),
-	JLID_SPEC( read ),
-	JLID_SPEC( getMatrix44 ),
-	JLID_SPEC( _NI_BufferGet ),
-	JLID_SPEC( _NI_StreamRead ),
-	JLID_SPEC( _NI_Matrix44Get ),
-	JLID_SPEC( name ),
-	JLID_SPEC( length ),
-	JLID_SPEC( id ),
-	JLID_SPEC( valueOf ),
-	JLID_SPEC( toString ),
-	JLID_SPEC( next ),
-	JLID_SPEC( iterator ),
-	JLID_SPEC( arguments ),
-	JLID_SPEC( unsafeMode ),
-	JLID_SPEC( stdin ),
-	JLID_SPEC( stdout ),
-	JLID_SPEC( stderr ),
-	JLID_SPEC( width ),
-	JLID_SPEC( height ),
-	JLID_SPEC( channels ),
-	JLID_SPEC( bits ),
-	JLID_SPEC( rate ),
-	JLID_SPEC( frames ),
-	JLID_SPEC( sourceId ),
-	JLID_SPEC( _sourceId ),
-	JLID_SPEC( buildDate ),
-	JLID_SPEC( _buildDate ),
-	JLID_SPEC( path ),
-	JLID_SPEC( isFirstInstance ),
-	JLID_SPEC( bootstrapScript ),
-	JLID_SPEC( _serialize ),
-	JLID_SPEC( _unserialize ),
-	JLID_SPEC( eval ),
-	JLID_SPEC( push ),
-	JLID_SPEC( pop ),
-	JLID_SPEC( toXMLString ),
-	JLID_SPEC( fileName ),
-	JLID_SPEC( lineNumber ),
-	JLID_SPEC( stack ),
-	JLID_SPEC( message ),
-	JLID_SPEC( Reflect ),
-	JLID_SPEC( Debugger ),
-	JLID_SPEC( isGenerator ),
-	JLID_SPEC( writable ),
-	JLID_SPEC( readable ),
-	JLID_SPEC( hangup ),
-	JLID_SPEC( exception ),
-	JLID_SPEC( error ),
-	JLID_SPEC( position ),
-	JLID_SPEC( available ),
-	JLID_SPEC( data ),
-	JLID_SPEC( type ),
-	JLID_SPEC( doc ),
-
-	LAST_JSID // see HostPrivate::ids[]
-};
-#undef JLID_SPEC
-// examples:
-//   JLID(cx, _unserialize) -> jsid
-//   JLID_NAME(cx, _unserialize) -> w_char
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Context private
@@ -719,13 +656,12 @@ JL_SetContextPrivate( const JSContext *cx, JLContextPrivate *ContextPrivate ) {
 }
 */
 
-
+/*
 ///////////////////////////////////////////////////////////////////////////////
 // Host private
 
 // Using a separate file allow a better versioning of the HostPrivate structure (see JL_HOSTPRIVATE_KEY).
 #include "jlhostprivate.h"
-//#include "../host/host2.h"
 
 ALWAYS_INLINE HostPrivate*
 JL_GetHostPrivate( JSRuntime *rt ) {
@@ -753,11 +689,12 @@ JL_SetHostPrivate( JSContext *cx, HostPrivate *hostPrivate ) {
 
 	JL_SetRuntimePrivate(JL_GetRuntime(cx), static_cast<void*>(hostPrivate));
 }
-
+*/
 
 ///////////////////////////////////////////////////////////////////////////////
 // Module private
 
+/*
 ALWAYS_INLINE uint8_t
 JL_ModulePrivateHash( const uint32_t moduleId ) {
 
@@ -773,7 +710,7 @@ JL_SetModulePrivate( JSContext *cx, const uint32_t moduleId, void *modulePrivate
 	ASSERT( modulePrivate );
 	ASSERT( moduleId != 0 );
 	uint8_t id = JL_ModulePrivateHash(moduleId);
-	HostPrivate::ModulePrivate *mpv = JL_GetHostPrivate(cx)->modulePrivate;
+	jl::Host::ModuleManager::ModulePrivate *mpv = JL_GetHostPrivate(cx)->modulePrivate;
 	while ( mpv[id].moduleId != 0 ) { // assumes that modulePrivate struct is init to 0
 
 		if ( mpv[id].moduleId == moduleId )
@@ -835,8 +772,10 @@ JL_GetModulePrivate( JSContext *cx, uint32_t moduleId ) {
 
 // example of use: static uint32_t moduleId = 'dbug'; SetModulePrivate(cx, moduleId, mpv);
 
+*/
 
 
+/*
 ///////////////////////////////////////////////////////////////////////////////
 // cached class and proto
 
@@ -891,39 +830,39 @@ namespace jlpv {
 INLINE bool FASTCALL
 JL_CacheClassProto( JSContext *cx, HostPrivate * RESTRICT hpv, const char * const RESTRICT className, JSClass * const RESTRICT clasp, IN JS::HandleObject proto ) {
 
-/*
-	ASSERT( jlpv::RemovedSlot() != NULL );
-	ASSERT( className != NULL );
-	ASSERT( className[0] != '\0' );
-	ASSERT( clasp != NULL );
-	ASSERT( clasp != jlpv::RemovedSlot() );
-	ASSERT( proto != NULL );
-	ASSERT( JL_GetClass(proto) == clasp );
 
-	size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
-	size_t first = slotIndex;
-//	ASSERT( slotIndex < COUNTOF(hpv->classProtoCache) );
+//	ASSERT( jlpv::RemovedSlot() != NULL );
+//	ASSERT( className != NULL );
+//	ASSERT( className[0] != '\0' );
+//	ASSERT( clasp != NULL );
+//	ASSERT( clasp != jlpv::RemovedSlot() );
+//	ASSERT( proto != NULL );
+//	ASSERT( JL_GetClass(proto) == clasp );
+//
+//	size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
+//	size_t first = slotIndex;
+////	ASSERT( slotIndex < COUNTOF(hpv->classProtoCache) );
+//
+//	for (;;) {
+//
+//		ClassProtoCache *slot = &hpv->classProtoCache[slotIndex];
+//
+//		if ( slot->clasp == NULL ) {
+//
+//			slot->clasp = clasp;
+//			slot->proto = proto;
+//			return true;
+//		}
+//
+//		if ( slot->clasp == clasp ) // already cached
+//			return false;
+//
+//		slotIndex = (slotIndex + 1) % COUNTOF(hpv->classProtoCache);
+//
+//		if ( slotIndex == first ) // no more free slot
+//			return false;
+//	}
 
-	for (;;) {
-
-		ClassProtoCache *slot = &hpv->classProtoCache[slotIndex];
-
-		if ( slot->clasp == NULL ) {
-
-			slot->clasp = clasp;
-			slot->proto = proto;
-			return true;
-		}
-
-		if ( slot->clasp == clasp ) // already cached
-			return false;
-
-		slotIndex = (slotIndex + 1) % COUNTOF(hpv->classProtoCache);
-
-		if ( slotIndex == first ) // no more free slot
-			return false;
-	}
-*/
 
 //	return jl::Host::getHostPrivate(cx);
 	return hpv->classProtoCache.Add(cx, className, clasp, proto);
@@ -932,32 +871,32 @@ JL_CacheClassProto( JSContext *cx, HostPrivate * RESTRICT hpv, const char * cons
 
 ALWAYS_INLINE const ClassProtoCache* FASTCALL
 JL_GetCachedClassProto( const HostPrivate * const hpv, const char * const className ) {
-/*
-	ASSERT( jlpv::RemovedSlot() != NULL );
 
-	size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
-	const size_t first = slotIndex;
-	ASSERT( slotIndex < COUNTOF(hpv->classProtoCache) );
+	//ASSERT( jlpv::RemovedSlot() != NULL );
 
-	for (;;) {
+	//size_t slotIndex = JL_ClassNameToClassProtoCacheSlot(className);
+	//const size_t first = slotIndex;
+	//ASSERT( slotIndex < COUNTOF(hpv->classProtoCache) );
 
-		const ClassProtoCache *slot = &hpv->classProtoCache[slotIndex];
-		
-		// slot->clasp == NULL -> empty
-		// slot->clasp == jlpv::RemovedSlot() -> slot removed, but maybe next slot will match !
+	//for (;;) {
 
-		if ( slot->clasp == NULL ) // not found
-			return NULL;
+	//	const ClassProtoCache *slot = &hpv->classProtoCache[slotIndex];
+	//	
+	//	// slot->clasp == NULL -> empty
+	//	// slot->clasp == jlpv::RemovedSlot() -> slot removed, but maybe next slot will match !
 
-		if ( slot->clasp != (JSClass*)jlpv::RemovedSlot() && ( slot->clasp->name == className || !strcmp(slot->clasp->name, className) ) ) // see "Enable String Pooling"
-			return slot;
+	//	if ( slot->clasp == NULL ) // not found
+	//		return NULL;
 
-		slotIndex = (slotIndex + 1) % COUNTOF(hpv->classProtoCache);
+	//	if ( slot->clasp != (JSClass*)jlpv::RemovedSlot() && ( slot->clasp->name == className || !strcmp(slot->clasp->name, className) ) ) // see "Enable String Pooling"
+	//		return slot;
 
-		if ( slotIndex == first ) // not found
-			return NULL;
-	}
-*/
+	//	slotIndex = (slotIndex + 1) % COUNTOF(hpv->classProtoCache);
+
+	//	if ( slotIndex == first ) // not found
+	//		return NULL;
+	//}
+
 	return hpv->classProtoCache.Get(className);
 }
 
@@ -980,7 +919,7 @@ JL_GetCachedProto( const HostPrivate * const hpv, const char * const className )
 
 }
 
-/*
+
 ALWAYS_INLINE void FASTCALL
 JL_RemoveCachedClassProto( HostPrivate * const hpv, const char *const className ) {
 
@@ -1053,7 +992,7 @@ JL_NewObjectWithGivenProto( JSContext *cx, JSClass *clasp, JS::HandleObject prot
 #else // USE_JSHANDLES
 */
 ALWAYS_INLINE JSObject* FASTCALL
-JL_NewObjectWithGivenProto( JSContext *cx, JSClass *clasp, IN JS::HandleObject proto, IN JS::HandleObject parent = JS::NullPtr()) {
+JL_NewObjectWithGivenProto( JSContext *cx, const JSClass *clasp, IN JS::HandleObject proto, IN JS::HandleObject parent = JS::NullPtr()) {
 
 	ASSERT_IF( proto != NULL, JL_GetParent(cx, proto) != NULL );
 	// Doc. JS_NewObject, JL_NewObjectWithGivenProto behaves exactly the same, except that if proto is NULL, it creates an object with no prototype.
@@ -1073,7 +1012,7 @@ JL_NewProtolessObj( JSContext *cx ) {
 	return obj;
 }
 
-
+/*
 ALWAYS_INLINE JSObject* FASTCALL
 JL_NewObj( JSContext *cx ) {
 
@@ -1083,7 +1022,7 @@ JL_NewObj( JSContext *cx ) {
 	ASSERT( pv->objectProto );
 	return JS_NewObject(cx, pv->objectClass, pv->objectProto, NULL); // JL_GetGlobal(cx)
 }
-
+*/
 
 ALWAYS_INLINE JSObject* FASTCALL
 JL_NewJslibsObject( JSContext *cx, const char *className ) {
@@ -1204,7 +1143,9 @@ JL_GetPrivateJsid( JSContext *cx, int index, const jschar *name ) {
 #define JLID_NAME(cx, name) (#name)
 #endif // DEBUG
 
-#define JLID(cx, name) JL_GetPrivateJsid(cx, JLID_##name, (jschar*)L(#name))
+//#define JLID(cx, name) JL_GetPrivateJsid(cx, JLID_##name, (jschar*)L(#name))
+#define JLID(cx, name) jl::Host::getHost(cx).getId(JLID_##name, (jschar*)L(#name))
+
 // eg: jsid cfg = JLID(cx, fileName); const char *name = JLID_NAME(fileName);
 
 
@@ -4507,7 +4448,7 @@ JL_ExceptionSetScriptLocation( JSContext * RESTRICT cx, IN OUT JS::MutableHandle
 ALWAYS_INLINE bool
 ReserveNativeInterface( JSContext *cx, JS::HandleObject obj, const jsid &id ) {
 
-	ASSERT( id != jspv::NullJsid() );
+	ASSERT( id != jlpv::NullJsid() );
 	return JS_DefinePropertyById(cx, obj, id, JSVAL_VOID, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 }
 
@@ -4516,7 +4457,7 @@ template <class T>
 ALWAYS_INLINE bool
 SetNativeInterface( JSContext *cx, JS::HandleObject obj, const jsid &id, const T nativeFct ) {
 
-	ASSERT( id != jspv::NullJsid() );
+	ASSERT( id != jlpv::NullJsid() );
 	if ( nativeFct != NULL ) {
 
 		JL_CHK( JS_DefinePropertyById(cx, obj, id, JSVAL_TRUE, NULL, (JSStrictPropertyOp)nativeFct, JSPROP_READONLY | JSPROP_PERMANENT) ); // hacking the setter of a read-only property seems safe.
@@ -4533,7 +4474,7 @@ template <class T>
 ALWAYS_INLINE const T
 GetNativeInterface( JSContext *cx, JS::HandleObject obj, const jsid &id ) {
 
-	ASSERT( id != jspv::NullJsid() );
+	ASSERT( id != jlpv::NullJsid() );
 	JS::Rooted<JSPropertyDescriptor> desc(cx);
 	if ( JS_GetPropertyDescriptorById(cx, obj, id, 0, &desc) ) {
 

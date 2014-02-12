@@ -14,13 +14,22 @@
 
 #include "stdafx.h"
 
-#include "host2.h"
-
 #include "js/GCAPI.h"
 
+#include <jsprf.h> // JS_smprintf in ErrorReporter
+
+#include "host2.h"
+
+#include <jslibsModule.h>
+
+#include "../jslang/jslang.h"
 
 
 JL_BEGIN_NAMESPACE
+
+
+DECLARE_CLASS(host2);
+
 
 //////////////////////////////////////////////////////////////////////////////
 // 
@@ -962,7 +971,7 @@ bad:
 
 
 Host::Host( RuntimeAccess &hr, Std hostStd, bool unsafeMode )
-: _hostRuntime(hr), _modules(hr), _versionId((jl::SvnRevToInt("$Revision: 3524 $") << 16) | (sizeof(Host) & 0xFFFF)), _unsafeMode(unsafeMode), _hostStd(hostStd), _hostObject(hr.runtime()), _ids(true, hr.runtime()) {
+: _hostRuntime(hr), _modules(hr), _versionId((jl::SvnRevToInt("$Revision: 3524 $") << 16) | (sizeof(Host) & 0xFFFF)), _unsafeMode(unsafeMode), _hostStd(hostStd), _objectProto(hr.runtime()), _hostObject(hr.runtime()), _ids(true, hr.runtime()) {
 }
 
 Host::~Host() {
@@ -985,6 +994,9 @@ Host::create() {
 
 	JS::RootedObject obj(cx, JL_GetGlobal(cx));
 	ASSERT( obj != NULL ); // "Global object not found."
+
+	_objectProto.set(JS_GetObjectPrototype(cx, obj));
+	_objectClasp = JL_GetClass(_objectProto);
 
 	//JSObject *newObject = JS_NewObject(cx, NULL, NULL, NULL);
 	//hpv->objectClass = JL_GetClass(newObject);
@@ -1132,6 +1144,13 @@ Host::setHostName(const char *hostPath, const char *hostName) {
 	JL_CHK( JL_NativeToProperty(cx, _hostObject, JLID(cx, path), hostPath) );
 	return true;
 	JL_BAD;
+}
+
+
+JSObject *
+Host::newObject() {
+
+	return JS_NewObject(cx, _objectClasp, _objectProto, NULL); // JL_GetGlobal(cx)
 }
 
 

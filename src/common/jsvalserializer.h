@@ -754,7 +754,13 @@ public:
 				JL_CHK( Read(cx, className) );
 				ASSERT(strlen(className) > 0);
 				ASSERT(strlen(className) < 64);
-				const ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), className);
+
+				jl::Host &host = jl::Host::getHost(cx);
+				const jl::ClassProtoCache* cpc = host.getCachedClassProto(className);
+
+
+				//const ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), className);
+
 				JL_CHKM( cpc != NULL, E_CLASS, E_NAME(className), E_NOTFOUND );
 				JS::RootedObject newObj(cx, JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto));
 				JL_CHK( newObj );

@@ -18,4 +18,3 @@
 #include <jlhelper.h>
 #include <jlclass.h>
 
-#include <jsprf.h> // JS_smprintf in ErrorReporter

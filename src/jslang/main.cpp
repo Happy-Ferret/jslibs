@@ -56,6 +56,7 @@ bool jslangModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 bool jslangModuleRelease(JSContext *cx) {
 
+
 	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivateOrNULL(cx, jslangModuleId);
 	if ( !mpv )
 		return false;

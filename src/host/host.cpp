@@ -14,6 +14,8 @@
 
 #include "stdafx.h"
 
+#include <jsprf.h> // JS_smprintf in ErrorReporter
+
 #include <jslibsModule.h>
 
 #include "host.h"
