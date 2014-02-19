@@ -174,7 +174,7 @@ void StderrWrite(JSContext *cx, const char *message, size_t length) {
 	ASSERT( globalObject );
 
 	JS::RootedValue fct(cx);
-	if (unlikely( JS_GetPropertyById(cx, JL_GetHostPrivate(cx)->hostObject, JLID(cx, stderr), &fct) != true || !JL_ValueIsCallable(cx, fct) ))
+	if (unlikely( JS_GetPropertyById(cx, JL_GetHostPrivate(cx).hostObject(), JLID(cx, stderr), &fct) != true || !JL_ValueIsCallable(cx, fct) ))
 		return;
 		
 	JSExceptionState *exs = JS_SaveExceptionState(cx);
@@ -393,7 +393,7 @@ DEFINE_PROPERTY_GETTER( unsafeMode ) {
 
 	JL_IGNORE( id, obj );
 
-	JL_CHK( JL_NativeToJsval(cx, JL_GetHostPrivate(cx)->unsafeMode, vp) );
+	JL_CHK( JL_NativeToJsval(cx, JL_GetHostPrivate(cx).unsafeMode(), vp) );
 	return true;
 	JL_BAD;
 }

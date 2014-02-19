@@ -373,7 +373,11 @@ DEFINE_FUNCTION( processEvents ) {
 
 	JL_DEFINE_ARGS;
 	int st;
-	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, jslangModuleId);
+	//ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, jslangModuleId);
+
+	ModulePrivate *mpv = (ModulePrivate*)jl::Host::getHost(cx).modulePrivate(jslangModuleId);
+
+
 
 	JS::RootedObject handleObj(cx);
 

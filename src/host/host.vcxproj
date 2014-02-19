@@ -50,7 +50,6 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="host.cpp" />
     <ClCompile Include="host2.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">Create</PrecompiledHeader>
@@ -58,11 +57,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="host.h" />
     <ClInclude Include="..\common\jlalloc.h" />
     <ClInclude Include="..\common\jlclass.h" />
     <ClInclude Include="..\common\jlhelper.h" />
-    <ClInclude Include="..\common\jlhostprivate.h" />
     <ClInclude Include="..\common\jlplatform.h" />
     <ClInclude Include="..\common\jsvalserializer.h" />
     <ClInclude Include="host2.h" />

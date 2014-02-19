@@ -37,12 +37,12 @@ struct HandlePrivate {
 };
 
 
-ALWAYS_INLINE JSClass*
+ALWAYS_INLINE const JSClass*
 JL_HandleJSClass( JSContext *cx ) {
 
-	static JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
+	static const JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
 	if (unlikely( clasp == NULL ))
-		clasp = JL_GetCachedClass(JL_GetHostPrivate(cx), "Handle");
+		clasp = jl::Host::getHost(cx).getCachedClasp("Handle");  //clasp = JL_GetCachedClass(JL_GetHostPrivate(cx), "Handle");
 	return clasp;
 }
 
@@ -53,7 +53,7 @@ HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruc
 
 	ASSERT( handleType != JL_HANDLE_INVALID );
 
-	const ClassProtoCache *classProtoCache = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Handle");
+	const jl::ProtoCache::Item *classProtoCache = jl::Host::getHost(cx).getCachedClassProto("Handle");
 	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME("Handle"), E_NOTFOUND );
 
 	{

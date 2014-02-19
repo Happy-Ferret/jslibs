@@ -389,7 +389,7 @@ WatchDog::watchDogThreadProc(void *threadArg) {
 }
 
 
-WatchDog::WatchDog(RuntimeAccess &hostRuntime, uint32_t maybeGCInterval)
+WatchDog::WatchDog(HostRuntime &hostRuntime, uint32_t maybeGCInterval)
 : _hostRuntime(hostRuntime), _maybeGCInterval(maybeGCInterval) {
 }
 
@@ -494,17 +494,6 @@ HostRuntime::HostRuntime(Allocators allocators, uint32_t maybeGCInterval)
 : _allocators(allocators), rt(NULL), cx(NULL), _isEnding(false), _skipCleanup(false), _watchDog(*this, maybeGCInterval) {
 }
 
-JSRuntime *
-HostRuntime::runtime() const {
-
-	return rt;
-}
-	
-JSContext *
-HostRuntime::context() const {
-
-	return cx;
-}
 
 bool
 HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, bool lazyStandardClasses ) {
@@ -627,8 +616,10 @@ bad:
 //////////////////////////////////////////////////////////////////////////////
 // ModuleManager
 
-ModuleManager::ModuleManager(RuntimeAccess &hostRuntime)
+ModuleManager::ModuleManager(HostRuntime &hostRuntime)
 : _hostRuntime(hostRuntime) {
+
+
 
 	jl::QueueInitialize(&_moduleList);
 }
@@ -783,7 +774,6 @@ struct {
 };
 
 
-const uint32_t Host::versionId = 0;
 
 const JSErrorFormatString *
 Host::errorCallback(void *userRef, const char *, const unsigned) {
@@ -970,13 +960,13 @@ bad:
 }
 
 
-Host::Host( RuntimeAccess &hr, Std hostStd, bool unsafeMode )
-: _hostRuntime(hr), _modules(hr), _versionId((jl::SvnRevToInt("$Revision: 3524 $") << 16) | (sizeof(Host) & 0xFFFF)), _unsafeMode(unsafeMode), _hostStd(hostStd), _objectProto(hr.runtime()), _hostObject(hr.runtime()), _ids(true, hr.runtime()) {
+Host::Host( HostRuntime &hr, Std hostStd, bool unsafeMode )
+: _hostRuntime(hr), _moduleManager(hr), _versionId(JL_HOST_VERSIONID), _unsafeMode(unsafeMode), _hostStd(hostStd), _objectProto(hr.runtime()), _hostObject(hr.runtime()), _ids(true, hr.runtime()) {
 }
 
 Host::~Host() {
 
-	_modules.freeModules();
+	_moduleManager.freeModules();
 }
 
 // init the host for jslibs usage (modules, errors, ...)
@@ -1023,11 +1013,11 @@ Host::create() {
 bool
 Host::destroy() {
 		
-	return _modules.releaseModules();
+	return _moduleManager.releaseModules();
 }
 
 bool
-Host::report( bool isWarning, ... ) {
+Host::report( bool isWarning, ... ) const {
 
 	va_list vl;
 	va_start(vl, isWarning);
@@ -1146,11 +1136,17 @@ Host::setHostName(const char *hostPath, const char *hostName) {
 	JL_BAD;
 }
 
+void
+Host::setHostObject(JS::HandleObject hostObj) {
+	
+	_hostObject.set(hostObj);
+}
 
-JSObject *
-Host::newObject() {
 
-	return JS_NewObject(cx, _objectClasp, _objectProto, NULL); // JL_GetGlobal(cx)
+JS::HandleObject
+Host::hostObject() {
+
+	return JS::HandleObject::fromMarkedLocation(_hostObject.address());
 }
 
 
@@ -1332,9 +1328,8 @@ DEFINE_FUNCTION( loadModule ) {
 	}
 */
 
-	HostPrivate *hpv;
-	hpv = JL_GetHostPrivate(cx);
-	JL_ASSERT( hpv, E_HOST, E_STATE, E_COMMENT("context private") );
+
+//	JL_ASSERT( hpv, E_HOST, E_STATE, E_COMMENT("context private") );
 	JL_ASSERT( libFileName != NULL && *libFileName != '\0', E_ARG, E_NUM(1), E_DEFINED );
 
 	module = JLDynamicLibraryOpen(libFileName);
@@ -1350,6 +1345,7 @@ DEFINE_FUNCTION( loadModule ) {
 		return true;
 	}
 
+/*
 	for ( jl::QueueCell *it = jl::QueueBegin(&hpv->moduleList); it; it = jl::QueueNext(it) ) {
 
 		if ( (JLLibraryHandler)jl::QueueGetData(it) == module ) {
@@ -1358,6 +1354,16 @@ DEFINE_FUNCTION( loadModule ) {
 			JL_RVAL.setNull(); // already loaded
 			return true;
 		}
+	}
+*/
+
+	Host &host = Host::getHost(cx);
+
+	if ( host.moduleManager().hasModule(module) ) {
+
+		JLDynamicLibraryClose(&module);
+		JL_RVAL.setNull(); // already loaded
+		return true;
 	}
 
 	uint32_t uid;
@@ -1378,7 +1384,7 @@ DEFINE_FUNCTION( loadModule ) {
 
 //	CHKHEAP();
 
-	jl::QueueUnshift( &hpv->moduleList, module ); // store the module (LIFO)
+	host.moduleManager().storeModule(module);
 	
 	//JL_CHK( JL_NewNumberValue(cx, uid, JL_RVAL) ); // really needed ? yes, UnloadModule will need this ID, ... but UnloadModule is too complicated to implement and will never exist.
 	JL_RVAL.setObject(*JL_OBJ);
@@ -1394,9 +1400,10 @@ bad:
 
 DEFINE_INIT() {
 
-	JL_IGNORE( proto, sc );
+	JL_IGNORE( proto, cs );
 
-	JL_GetHostPrivate(cx)->hostObject = obj;
+	Host::getHost(cx).setHostObject(obj);
+
 	return true;
 }
 

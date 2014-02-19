@@ -84,7 +84,7 @@ DEFINE_FUNCTION( valueOf ) {
 
 DEFINE_INIT() {
 
-	JL_IGNORE(cx, sc, proto, obj);
+	JL_IGNORE(cx, cs, proto, obj);
 	JL_SAFE( globalKey = jl::SessionId() );
 	return true;
 }

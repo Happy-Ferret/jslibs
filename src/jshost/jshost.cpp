@@ -73,189 +73,6 @@ static const unsigned char embeddedBootstrapScript[] =
 	#include "embeddedBootstrapScript.js.xdr.cres"
 ;
 
-static volatile int32_t gEndSignalState = 0;
-static JLCondHandler gEndSignalCond;
-static JLMutexHandler gEndSignalLock;
-
-bool
-EndSignalGetter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp) {
-
-	JL_IGNORE(id, obj);
-
-	JL_CHK( JL_NativeToJsval(cx, (int32_t)gEndSignalState, vp) );
-
-	return true;
-	JL_BAD;
-}
-
-bool
-EndSignalSetter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, bool strict, JS::MutableHandle<JS::Value> vp) {
-
-	JL_IGNORE(strict, id, obj);
-
-	int tmp;
-	JL_CHK( JL_JsvalToNative(cx, vp, &tmp) );
-
-	JLMutexAcquire(gEndSignalLock);
-	gEndSignalState = tmp;
-	JLCondBroadcast(gEndSignalCond);
-	JLMutexRelease(gEndSignalLock);
-
-	return true;
-	JL_BAD;
-}
-
-
-#if defined(XP_WIN)
-
-BOOL WINAPI
-Interrupt( DWORD CtrlType ) {
-
-// see. http://msdn2.microsoft.com/en-us/library/ms683242.aspx
-//	if (CtrlType == CTRL_LOGOFF_EVENT || CtrlType == CTRL_SHUTDOWN_EVENT) // CTRL_C_EVENT, CTRL_BREAK_EVENT, CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, CTRL_SHUTDOWN_EVENT
-//		return FALSE;
-
-	//JL_IGNORE(CtrlType);
-	JLMutexAcquire(gEndSignalLock);
-	switch ( CtrlType ) {
-		case CTRL_C_EVENT:
-		case CTRL_BREAK_EVENT:
-		case CTRL_CLOSE_EVENT:
-			gEndSignalState = 1;
-			break;
-		case CTRL_LOGOFF_EVENT:
-		case CTRL_SHUTDOWN_EVENT:
-			gEndSignalState = 2;
-			break;
-		default:
-			ASSERT(false);
-	}
-	JLCondBroadcast(gEndSignalCond);
-	JLMutexRelease(gEndSignalLock);
-	return TRUE;
-}
-
-#elif defined(XP_UNIX)
-
-void
-Interrupt( int CtrlType ) {
-
-	JLMutexAcquire(gEndSignalLock);
-	switch ( CtrlType ) {
-		case SIGINT:
-		case SIGTERM:
-			gEndSignalState = 1;
-			break;
-		case SIGKILL:
-			gEndSignalState = 2;
-			break;
-		default:
-			ASSERT(false);
-	}
-	JLCondBroadcast(gEndSignalCond);
-	JLMutexRelease(gEndSignalLock);
-}
-
-#else
-
-	#error NOT IMPLEMENTED YET	// (TBD)
-
-#endif
-
-
-struct EndSignalProcessEvent {
-	
-	ProcessEvent pe;
-	bool cancel;
-	JS::PersistentRootedValue callbackFunction;
-	JS::PersistentRootedObject callbackFunctionThis;
-};
-
-S_ASSERT( offsetof(EndSignalProcessEvent, pe) == 0 );
-
-static bool
-EndSignalPrepareWait( volatile ProcessEvent *pe, JSContext *, JS::HandleObject ) {
-	
-	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
-
-	upe->cancel = false;
-	return true;
-}
-
-static void
-EndSignalStartWait( volatile ProcessEvent *pe ) {
-
-	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
-
-	JLMutexAcquire(gEndSignalLock);
-	while ( gEndSignalState == 0 && !upe->cancel )
-		JLCondWait(gEndSignalCond, gEndSignalLock);
-	JLMutexRelease(gEndSignalLock);
-}
-
-static bool
-EndSignalCancelWait( volatile ProcessEvent *pe ) {
-
-	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
-
-	JLMutexAcquire(gEndSignalLock);
-	upe->cancel = true;
-	JLCondBroadcast(gEndSignalCond);
-	JLMutexRelease(gEndSignalLock);
-
-	return true;
-}
-
-static bool
-EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS::HandleObject ) {
-
-	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
-
-	*hasEvent = (gEndSignalState != 0);
-
-	if ( !*hasEvent )
-		return true;
-
-	if ( upe->callbackFunction.get().isUndefined() )
-		return true;
-
-	jsval rval;
-	JL_CHK( JS_CallFunctionValue(cx, upe->callbackFunctionThis, upe->callbackFunction, 0, NULL, &rval) );
-
-	return true;
-	JL_BAD;
-}
-
-bool
-EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
-
-	JL_DEFINE_ARGS;
-
-	JL_ASSERT_ARGC_RANGE(0, 1);
-
-	EndSignalProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
-	upe->pe.prepareWait = EndSignalPrepareWait;
-	upe->pe.startWait = EndSignalStartWait;
-	upe->pe.cancelWait = EndSignalCancelWait;
-	upe->pe.endWait = EndSignalEndWait;
-
-	if ( JL_ARG_ISDEF(1) ) {
-
-		JL_ASSERT_ARG_IS_CALLABLE(1);
-		JL_CHK( SetHandleSlot(cx, JL_RVAL, 0, JL_OBJVAL) ); // GC protection only
-		JL_CHK( SetHandleSlot(cx, JL_RVAL, 1, JL_ARG(1)) ); // GC protection only
-
-		upe->callbackFunctionThis = JL_OBJ; // store "this" object.
-		upe->callbackFunction = JL_ARG(1);
-	} else {
-	
-		upe->callbackFunction = JSVAL_VOID;
-	}
-
-	return true;
-	JL_BAD;
-}
 
 
 static int stdin_fileno = -1;
@@ -577,7 +394,6 @@ int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 
 	gEndSignalCond = JLCondCreate();
 	gEndSignalLock = JLMutexCreate();
-
 
 #if defined(XP_WIN)
 	JL_CHKM( SetProcessShutdownParameters(0x100, SHUTDOWN_NORETRY), E_HOST, E_INTERNAL );
@@ -1107,6 +923,232 @@ public:
 };
 
 
+
+
+static volatile int32_t gEndSignalState = 0;
+static JLCondHandler gEndSignalCond;
+static JLMutexHandler gEndSignalLock;
+
+bool
+initInterrupt() {
+
+	gEndSignalLock = JLMutexCreate();
+	gEndSignalCond = JLCondCreate();
+
+#if defined(XP_WIN)
+	JL_CHKM( SetProcessShutdownParameters(0x100, SHUTDOWN_NORETRY), E_HOST, E_INTERNAL );
+	JL_CHKM( SetConsoleCtrlHandler(Interrupt, TRUE) != 0, E_HOST, E_INTERNAL );
+#elif defined(XP_UNIX)
+	signal(SIGINT, Interrupt);
+	signal(SIGTERM, Interrupt);
+	signal(SIGKILL, Interrupt);
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
+
+}
+
+bool
+freeInterrupt() {
+
+#if defined(XP_WIN)
+	SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, FALSE);
+#elif defined(XP_UNIX)
+	signal(SIGINT, SIG_DFL);
+	signal(SIGTERM, SIG_DFL);
+	signal(SIGKILL, SIG_DFL);
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
+
+	JLCondFree(&gEndSignalCond);
+	JLMutexFree(&gEndSignalLock);
+}
+
+bool
+EndSignalGetter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp) {
+
+	JL_IGNORE(id, obj);
+
+	JL_CHK( JL_NativeToJsval(cx, (int32_t)gEndSignalState, vp) );
+	return true;
+	JL_BAD;
+}
+
+bool
+EndSignalSetter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, bool strict, JS::MutableHandle<JS::Value> vp) {
+
+	JL_IGNORE(strict, id, obj);
+
+	int tmp;
+	JL_CHK( JL_JsvalToNative(cx, vp, &tmp) );
+
+	JLMutexAcquire(gEndSignalLock);
+	gEndSignalState = tmp;
+	JLCondBroadcast(gEndSignalCond);
+	JLMutexRelease(gEndSignalLock);
+	return true;
+	JL_BAD;
+}
+
+#if defined(XP_WIN)
+
+BOOL WINAPI
+Interrupt( DWORD CtrlType ) {
+
+// see. http://msdn2.microsoft.com/en-us/library/ms683242.aspx
+//	if (CtrlType == CTRL_LOGOFF_EVENT || CtrlType == CTRL_SHUTDOWN_EVENT) // CTRL_C_EVENT, CTRL_BREAK_EVENT, CTRL_CLOSE_EVENT, CTRL_LOGOFF_EVENT, CTRL_SHUTDOWN_EVENT
+//		return FALSE;
+
+	//JL_IGNORE(CtrlType);
+	JLMutexAcquire(gEndSignalLock);
+	switch ( CtrlType ) {
+		case CTRL_C_EVENT:
+		case CTRL_BREAK_EVENT:
+		case CTRL_CLOSE_EVENT:
+			gEndSignalState = 1;
+			break;
+		case CTRL_LOGOFF_EVENT:
+		case CTRL_SHUTDOWN_EVENT:
+			gEndSignalState = 2;
+			break;
+		default:
+			ASSERT(false);
+	}
+	JLCondBroadcast(gEndSignalCond);
+	JLMutexRelease(gEndSignalLock);
+	return TRUE;
+}
+
+#elif defined(XP_UNIX)
+
+void
+Interrupt( int CtrlType ) {
+
+	JLMutexAcquire(gEndSignalLock);
+	switch ( CtrlType ) {
+		case SIGINT:
+		case SIGTERM:
+			gEndSignalState = 1;
+			break;
+		case SIGKILL:
+			gEndSignalState = 2;
+			break;
+		default:
+			ASSERT(false);
+	}
+	JLCondBroadcast(gEndSignalCond);
+	JLMutexRelease(gEndSignalLock);
+}
+
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
+
+struct EndSignalProcessEvent {
+	
+	ProcessEvent pe;
+	bool cancel;
+	JS::PersistentRootedValue callbackFunction;
+	JS::PersistentRootedObject callbackFunctionThis;
+};
+
+S_ASSERT( offsetof(EndSignalProcessEvent, pe) == 0 );
+
+static bool
+EndSignalPrepareWait( volatile ProcessEvent *pe, JSContext *, JS::HandleObject ) {
+	
+	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
+
+	upe->cancel = false;
+	return true;
+}
+
+static void
+EndSignalStartWait( volatile ProcessEvent *pe ) {
+
+	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
+
+	JLMutexAcquire(gEndSignalLock);
+	while ( gEndSignalState == 0 && !upe->cancel )
+		JLCondWait(gEndSignalCond, gEndSignalLock);
+	JLMutexRelease(gEndSignalLock);
+}
+
+static bool
+EndSignalCancelWait( volatile ProcessEvent *pe ) {
+
+	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
+
+	JLMutexAcquire(gEndSignalLock);
+	upe->cancel = true;
+	JLCondBroadcast(gEndSignalCond);
+	JLMutexRelease(gEndSignalLock);
+
+	return true;
+}
+
+static bool
+EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS::HandleObject ) {
+
+	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
+
+	*hasEvent = (gEndSignalState != 0);
+
+	if ( !*hasEvent )
+		return true;
+
+	if ( upe->callbackFunction.get().isUndefined() )
+		return true;
+
+	jsval rval;
+	JL_CHK( JS_CallFunctionValue(cx, upe->callbackFunctionThis, upe->callbackFunction, 0, NULL, &rval) );
+
+	return true;
+	JL_BAD;
+}
+
+bool
+EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
+
+	JL_DEFINE_ARGS;
+
+	JL_ASSERT_ARGC_RANGE(0, 1);
+
+	EndSignalProcessEvent *upe;
+	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, NULL, JL_RVAL) );
+	upe->pe.prepareWait = EndSignalPrepareWait;
+	upe->pe.startWait = EndSignalStartWait;
+	upe->pe.cancelWait = EndSignalCancelWait;
+	upe->pe.endWait = EndSignalEndWait;
+
+	if ( JL_ARG_ISDEF(1) ) {
+
+		JL_ASSERT_ARG_IS_CALLABLE(1);
+		JL_CHK( SetHandleSlot(cx, JL_RVAL, 0, JL_OBJVAL) ); // GC protection only
+		JL_CHK( SetHandleSlot(cx, JL_RVAL, 1, JL_ARG(1)) ); // GC protection only
+
+		upe->callbackFunctionThis = JL_OBJ; // store "this" object.
+		upe->callbackFunction = JL_ARG(1);
+	} else {
+	
+		upe->callbackFunction = JSVAL_VOID;
+	}
+
+	return true;
+	JL_BAD;
+}
+
+/*
+template <typename FCT>
+class Auto {
+	~Auto() {
+		FCT();
+	}
+};
+*/
+
+
 bool run(jl::HostRuntime &hostRuntime, CmdLineArguments &args, int &exitValue) {
 
 	JSContext *cx = hostRuntime.context();
@@ -1116,8 +1158,11 @@ bool run(jl::HostRuntime &hostRuntime, CmdLineArguments &args, int &exitValue) {
 	JL_CHK( ExecuteScriptText(cx, global, "(function() { for (var i = 0; i < 10000; ++i); })()", false, &tmpVal) );
 */
 
+
 	jl::Host host(hostRuntime, HostStdIO());
 	JL_CHK( host.create() );
+
+	JL_CHKM( initInterrupt(), E_HOST, E_INTERNAL );
 
 	char hostFullPath[PATH_MAX];
 	JL_CHK( jl::ModuleFileName(hostFullPath) );
@@ -1161,6 +1206,8 @@ bool run(jl::HostRuntime &hostRuntime, CmdLineArguments &args, int &exitValue) {
 
 	host.destroy();
 
+	freeInterrupt();
+
 	return true;
 	JL_BAD;
 }
@@ -1172,8 +1219,6 @@ public:
 		JS_ShutDown();
 	}
 };
-
-
 
 
 

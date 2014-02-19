@@ -41,7 +41,7 @@ struct ClassSpec {
 	JSFunctionSpec *fs;
 	JSFunctionSpec *static_fs;
 	ConstValueSpec *static_const;
-	bool (*init)(JSContext *cx, ClassSpec *sc, JS::HandleObject proto, JS::HandleObject obj);
+	bool (*init)(JSContext *cx, ClassSpec *cs, JS::HandleObject proto, JS::HandleObject obj);
 	SourceId_t sourceId;
 	double buildDate;
 };
@@ -317,8 +317,8 @@ JL_END_NAMESPACE
 
 #define JL_THIS_CLASS_REVISION (classSpec->sourceId)
 
-#define JL_CLASS_PROTOTYPE(cx, CLASSNAME) (JL_GetCachedProto(JL_GetHostPrivate(cx), CLASSNAME::className))
-#define JL_THIS_CLASS_PROTOTYPE (JL_GetCachedProto(JL_GetHostPrivate(cx), className))
+#define JL_CLASS_PROTOTYPE(cx, CLASSNAME) (jl::Host::getHost(cx).getCachedProto(CLASSNAME::className) /*JL_GetCachedProto(JL_GetHostPrivate(cx), CLASSNAME::className)*/)
+#define JL_THIS_CLASS_PROTOTYPE (jl::Host::getHost(cx).getCachedProto(className) /*JL_GetCachedProto(JL_GetHostPrivate(cx), className)*/)
 
 #define _NULL NULL // because in _##getter and _##setter, getter or setter can be NULL.
 
@@ -438,7 +438,7 @@ JL_END_NAMESPACE
 //#define DEFINE_WRAPPED_OBJECT() static JSObject* WrappedObject(JSContext *cx, JS::HandleObject obj)
 
 #define HAS_INIT cs.init = Init;
-#define DEFINE_INIT() static bool Init(JSContext *cx, jl::ClassSpec *sc, JS::HandleObject proto, JS::HandleObject obj)
+#define DEFINE_INIT() static bool Init(JSContext *cx, jl::ClassSpec *cs, JS::HandleObject proto, JS::HandleObject obj)
 
 #define HAS_ADD_PROPERTY cs.clasp.addProperty = AddProperty;
 #define DEFINE_ADD_PROPERTY() static bool AddProperty(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableValue vp)

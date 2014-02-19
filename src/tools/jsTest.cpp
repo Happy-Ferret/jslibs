@@ -996,7 +996,9 @@ int main_min(int argc, char* argv[]) {
 	
 	JS_DestroyContext(cx);
 
+#ifdef DEBUG
 	JS_DumpHeap(rt, fopen("dump.txt", "w"), NULL, JSTRACE_OBJECT, NULL, 1, NULL);
+#endif // DEBUG
 
 	JS_DestroyRuntime(rt);
 
@@ -1006,7 +1008,28 @@ int main_min(int argc, char* argv[]) {
 }
 
 
+
+
+template <class T>
+class Auto {
+
+	T _fct;
+public:
+	Auto(T fct) : _fct(fct) {
+	}
+
+	~Auto() {
+		_fct();
+	}
+};
+
+
+int test() {
+}
+
 int main(int argc, char* argv[]) {
+
+	Auto abc(test);
 
 	//return main_test_class2(argc, argv);
 	//return main_PerfTest(argc, argv);

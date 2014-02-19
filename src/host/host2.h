@@ -25,13 +25,11 @@
 #define NAME_GLOBAL_FUNCTION_UNLOAD_MODULE "unloadModule"
 
 
-#define JL_HOSTPRIVATE_MAX_CLASS_PROTO_CACHE_BIT (9)
+#define JL_HOST_VERSIONID (uint32_t((jl::SvnRevToInt("$Revision: 3524 $") << 16) | (sizeof(jl::Host) & 0xFFFF)))
 
-	
-///////////////////////////////////////////////////////////////////////////////
-// IDs cache
+#define JL_MAX_CLASS_PROTO_CACHE_BIT (9)
 
-// defined here because required by jlhostprivate.h
+
 #define JLID_SPEC(name) JLID_##name
 enum {
 	JLID_SPEC( global ),
@@ -89,14 +87,9 @@ enum {
 	JLID_SPEC( data ),
 	JLID_SPEC( type ),
 	JLID_SPEC( doc ),
-
 	LAST_JSID // see HostPrivate::ids[]
 };
 #undef JLID_SPEC
-// examples:
-//   JLID(cx, _unserialize) -> jsid
-//   JLID_NAME(cx, _unserialize) -> w_char
-
 
 
 JL_BEGIN_NAMESPACE
@@ -453,22 +446,19 @@ public:
 };
 
 
-//////////////////////////////////////////////////////////////////////////////
-// 
 
-class RuntimeAccess {
-public:
-	virtual JSRuntime* runtime() const = 0;
-	virtual JSContext* context() const = 0;
-};
+// end of tools
+
 
 
 //////////////////////////////////////////////////////////////////////////////
 // WatchDog
 
+class HostRuntime;
+
 class WatchDog {
 
-	RuntimeAccess &_hostRuntime;
+	HostRuntime &_hostRuntime;
 
 	JLSemaphoreHandler _watchDogSemEnd;
 	JLThreadHandler _watchDogThread;
@@ -482,7 +472,7 @@ class WatchDog {
 
 public:
 
-	WatchDog(RuntimeAccess &hostRuntime, uint32_t maybeGCInterval);
+	WatchDog(HostRuntime &hostRuntime, uint32_t maybeGCInterval);
 
 	bool
 	start();
@@ -495,7 +485,7 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 // HostRuntime
 
-class HostRuntime : public RuntimeAccess, public jl::CppAllocators {
+class HostRuntime : public jl::CppAllocators {
 
 	// global object
 	// doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
@@ -503,8 +493,8 @@ class HostRuntime : public RuntimeAccess, public jl::CppAllocators {
 	static const JSClass _globalClass;
 	static const JSClass _globalClass_lazy;
 
-	JSRuntime *rt;
 	JSContext *cx;
+	JSRuntime *rt;
 
 	Allocators _allocators;
 
@@ -526,10 +516,28 @@ public:
 	HostRuntime(Allocators allocators = StdAllocators(), uint32_t maybeGCInterval = 0);
 
 	JSRuntime *
-	runtime() const;
+	runtime() const {
+
+		return rt;
+	}
 	
 	JSContext *
-	context() const;
+	context() const {
+
+		return cx;
+	}
+
+	ALWAYS_INLINE const Allocators &
+	allocators() {
+	
+		return _allocators;
+	}
+
+	ALWAYS_INLINE bool
+	canSkipCleanup() const {
+		
+		return _skipCleanup;
+	}
 
 	bool
 	create(uint32_t maxMem = (uint32_t)-1, uint32_t maxAlloc = (uint32_t)-1, bool lazyStandardClasses = true);
@@ -544,18 +552,19 @@ public:
 
 class ModuleManager {
 
-	RuntimeAccess &_hostRuntime;
+	HostRuntime &_hostRuntime;
 
 	struct ModulePrivate {
 		uint32_t moduleId;
 		void *privateData;
+		ModulePrivate() : moduleId(0), privateData(NULL) {}
 	} _modulePrivate[1<<8]; // does not support more than 256 modules.
 
 	jl::Queue _moduleList;
 
 public:
 
-	ModuleManager(RuntimeAccess &hostRuntime);
+	ModuleManager(HostRuntime &hostRuntime);
 
 	bool
 	hasModule(JLLibraryHandler module);
@@ -571,8 +580,6 @@ public:
 
 	bool
 	freeModules();
-
-
 
 
 
@@ -645,7 +652,27 @@ public:
 		}
 		return _modulePrivate[id].privateData;
 	}
-	
+
+
+	/*
+	 * return a reference to the module-private slot
+	 */
+	ALWAYS_INLINE void**
+	modulePrivate( uint32_t moduleId ) {
+
+		ASSERT( moduleId != 0 ); // reserved value for unused slots
+
+		uint8_t id = moduleHash(moduleId);
+		uint8_t id0 = id;
+
+		while ( _modulePrivate[id].moduleId != moduleId ) {
+
+			++id; // uses unsigned char overflow
+			if ( id == id0 )
+				return NULL;
+		}
+		return &_modulePrivate[id].privateData;
+	}
 
 };
 
@@ -654,23 +681,8 @@ public:
 // 
 
 
-class ClassProtoCache {
-public:
-	const JSClass *clasp;
-	JS::PersistentRootedObject proto;
-
-	ClassProtoCache(JSRuntime *rt)
-	: clasp(NULL), proto(rt) {
-	}
-
-	ClassProtoCache(JSRuntime *rt, const JSClass *c, JS::HandleObject p)
-	: clasp(c), proto(rt, p) {
-	}
-};
-
-
 // does not support more than (1<<MAX_CLASS_PROTO_CACHE_BIT)-1 proto.
-template <const size_t CACHE_LENGTH>
+
 class ProtoCache {
 
 	const JSClass*
@@ -680,7 +692,22 @@ class ProtoCache {
 	}
 
 public:
-	StaticArray<ClassProtoCache, CACHE_LENGTH> items;
+
+	class Item {
+	public:
+		const JSClass *clasp;
+		JS::PersistentRootedObject proto;
+
+		Item(JSRuntime *rt)
+		: clasp(NULL), proto(rt) {
+		}
+
+		Item(JSRuntime *rt, const JSClass *c, JS::HandleObject p)
+		: clasp(c), proto(rt, p) {
+		}
+	};
+
+	StaticArray< Item, 1<<JL_MAX_CLASS_PROTO_CACHE_BIT > items;
 	
 	~ProtoCache() {
 
@@ -739,12 +766,12 @@ public:
 		if ( n[22] ) { h ^= n[22]<<2;
 		if ( n[23] ) { h ^= n[23]<<6;
 		}}}}}}}}}}}}}}}}}}}}}}}}
-		return ((h >> 7) ^ h) & ((1<<JL_HOSTPRIVATE_MAX_CLASS_PROTO_CACHE_BIT) - 1);
+		return ((h >> 7) ^ h) & (( 1<<JL_MAX_CLASS_PROTO_CACHE_BIT ) - 1);
 	}
 
 
 	bool
-	add( JSRuntime *rt, const char * const className, JSClass * const clasp, IN JS::HandleObject proto ) {
+	add( JSRuntime *rt, const char * const className, const JSClass * const clasp, IN JS::HandleObject proto ) {
 
 		ASSERT( removedSlotClasp() != NULL );
 		ASSERT( className != NULL );
@@ -761,7 +788,7 @@ public:
 
 		for (;;) {
 
-			const ClassProtoCache &slot = items.getConst(slotIndex);
+			const ProtoCache::Item &slot = items.getConst(slotIndex);
 
 			if ( slot.clasp == NULL ) {
 
@@ -772,7 +799,7 @@ public:
 			if ( slot.clasp == clasp ) // already cached
 				return false;
 
-			slotIndex = (slotIndex + 1) % CACHE_LENGTH;
+			slotIndex = (slotIndex + 1) % (1<<JL_MAX_CLASS_PROTO_CACHE_BIT);
 
 			if ( slotIndex == first ) // no more free slot
 				return false;
@@ -780,13 +807,13 @@ public:
 	}
 
 
-	ALWAYS_INLINE const ClassProtoCache*
+	ALWAYS_INLINE const Item*
 	get( const char * const className ) const {
 
 		size_t slotIndex = slotHash(className);
 		const size_t first = slotIndex;
 
-		ASSERT( slotIndex < CACHE_LENGTH );
+		ASSERT( slotIndex < (1<<JL_MAX_CLASS_PROTO_CACHE_BIT) );
 
 		for (;;) {
 
@@ -794,7 +821,7 @@ public:
 			//   slot->clasp == NULL -> empty
 			//   slot->clasp == removedSlotClasp() -> slot removed, but maybe next slot will match !
 
-			const ClassProtoCache &slot = items.getConst(slotIndex);
+			const ProtoCache::Item &slot = items.getConst(slotIndex);
 
 			if ( slot.clasp == NULL ) // not found
 				return NULL;
@@ -802,7 +829,7 @@ public:
 			if ( slot.clasp != removedSlotClasp() && ( slot.clasp->name == className || !strcmp(slot.clasp->name, className) ) ) // see "Enable String Pooling"
 				return &slot;
 
-			slotIndex = (slotIndex + 1) % CACHE_LENGTH;
+			slotIndex = (slotIndex + 1) % (1<<JL_MAX_CLASS_PROTO_CACHE_BIT);
 
 			if ( slotIndex == first ) // not found
 				return NULL;
@@ -818,11 +845,11 @@ public:
 		size_t slotIndex = slotHash(className);
 		size_t first = slotIndex;
 		
-		ASSERT( slotIndex < CACHE_LENGTH );
+		ASSERT( slotIndex < (1<<JL_MAX_CLASS_PROTO_CACHE_BIT) );
 
 		for (;;) {
 
-			ClassProtoCache &slot = items.get(slotIndex);
+			ProtoCache::Item &slot = items.get(slotIndex);
 
 			if ( slot.clasp == NULL || ( slot.clasp != removedSlotClasp() && ( slot.clasp->name == className || strcmp(slot.clasp->name, className) == 0 ) ) ) {
 			
@@ -831,7 +858,7 @@ public:
 				return;
 			}
 
-			slotIndex = (slotIndex + 1) % CACHE_LENGTH;
+			slotIndex = (slotIndex + 1) % (1<<JL_MAX_CLASS_PROTO_CACHE_BIT);
 
 			if ( slotIndex == first ) // not found
 				return;
@@ -845,17 +872,16 @@ class Host : public jl::CppAllocators {
 //	JSRuntime *rt;
 
 	bool _unsafeMode;
-	static const uint32_t versionId;
-	RuntimeAccess &_hostRuntime;
+	HostRuntime &_hostRuntime;
 	Std &_hostStd;
-	uint32_t _versionId; // used to ensure compatibility between host and modules. see JL_HOSTPRIVATE_KEY macro.
+	const uint32_t _versionId; // used to ensure compatibility between host and modules. see JL_HOST_VERSIONID macro.
 	ModuleManager _moduleManager;
 	JS::PersistentRootedObject _hostObject;
 	
 	JS::PersistentRootedObject _objectProto;
 	const JSClass *_objectClasp;
 
-	ProtoCache< 1<<JL_HOSTPRIVATE_MAX_CLASS_PROTO_CACHE_BIT > _classProtoCache;
+	ProtoCache _classProtoCache;
 	StaticArray< JS::PersistentRootedId, LAST_JSID > _ids;
 
 	static const JSErrorFormatString *
@@ -872,21 +898,7 @@ class Host : public jl::CppAllocators {
 
 
 public:
-
-	static ALWAYS_INLINE Host&
-	getHost( JSRuntime *rt ) {
-
-		return *static_cast<Host*>(JL_GetRuntimePrivate(rt));
-	}
-
-	static ALWAYS_INLINE Host&
-	getHost( JSContext *cx ) {
-
-		return getHost(JL_GetRuntime(cx));
-	}
-
-
-	Host( RuntimeAccess &hr, Std hostStd = Std(), bool unsafeMode = false );
+	Host( HostRuntime &hr, Std hostStd = Std(), bool unsafeMode = false );
 
 	~Host();
 
@@ -902,6 +914,20 @@ public:
 
 		return _unsafeMode;
 	}
+
+	bool
+	checkCompatId(uint32_t compatId) const {
+
+		return compatId != 0 && _versionId == compatId;
+	}
+
+
+	HostRuntime &
+	hostRuntime() {
+			
+		return _hostRuntime;
+	}
+
 
 	int
 	stdInput( char *buffer, size_t bufferLength ) const {
@@ -922,29 +948,75 @@ public:
 	}
 
 	bool
-	report( bool isWarning, ... );
+	report( bool isWarning, ... ) const;
 
 	bool
-	setHostArguments(char **hostArgv, size_t hostArgc);
+	setHostArguments( char **hostArgv, size_t hostArgc );
 
 	bool
 	setHostName( const char *hostPath, const char *hostName );
 
+	void
+	setHostObject(JS::HandleObject hostObj);
 
-	JSObject *
-	newObject();
+	JS::HandleObject
+	hostObject();
+		
 
+
+	ALWAYS_INLINE JSObject *
+	newObject() {
+
+		return JL_NewObjectWithGivenProto(_hostRuntime.context(), _objectClasp, _objectProto); // JL_GetGlobal(cx)
+	}
+
+
+	ALWAYS_INLINE JSObject *
+	newJLObject( const char *className ) {
+
+		const ProtoCache::Item *cpc = _classProtoCache.get(className);
+		if ( cpc != NULL )
+			return JL_NewObjectWithGivenProto(_hostRuntime.context(), cpc->clasp, cpc->proto);
+		else
+			return NULL;
+	}
+
+	// modules
+	ALWAYS_INLINE ModuleManager&
+	moduleManager() {
+
+		return _moduleManager;
+	}
+
+
+	ALWAYS_INLINE void**
+	modulePrivate( uint32_t moduleId ) {
+		
+		return _moduleManager.modulePrivate(moduleId);
+	}
+
+	ALWAYS_INLINE void
+	getAllocators( jl_malloc_t &malloc, jl_calloc_t &calloc, jl_memalign_t &memalign, jl_realloc_t &realloc, jl_msize_t &msize, jl_free_t &free ) {
+	
+		const Allocators &alloc = _hostRuntime.allocators();
+		malloc = alloc.malloc;
+		calloc = alloc.calloc;
+		memalign = alloc.memalign;
+		realloc = alloc.realloc;
+		msize = alloc.msize;
+		free = alloc.free;
+	}
 
 	// CachedClassProto
 
 	bool
-	addCachedClassProto( const char * const className, JSClass * const clasp, IN JS::HandleObject proto ) {
+	addCachedClassProto( const char * const className, const JSClass * const clasp, IN JS::HandleObject proto ) {
 
 		return _classProtoCache.add(_hostRuntime.runtime(), className, clasp, proto);
 	}
 
-	ALWAYS_INLINE const ClassProtoCache*
-	getCachedClassProto( IN const char * const className ) {
+	ALWAYS_INLINE const ProtoCache::Item*
+	getCachedClassProto( IN const char * const className ) const {
 
 		return _classProtoCache.get(className);
 	}
@@ -952,7 +1024,7 @@ public:
 	ALWAYS_INLINE const JS::HandleObject
 	getCachedProto( IN const char * const className ) {
 
-		const ClassProtoCache * cpc = getCachedClassProto(className);
+		const ProtoCache::Item * cpc = getCachedClassProto(className);
 		if ( cpc )
 			return JS::HandleObject::fromMarkedLocation(cpc->proto.address());
 		else
@@ -960,7 +1032,7 @@ public:
 	}
 	
 	ALWAYS_INLINE const JSClass*
-	getCachedClasp( IN const char * const className ) {
+	getCachedClasp( IN const char * const className ) const {
 
 		return getCachedClassProto(className)->clasp;
 	}
@@ -987,9 +1059,89 @@ public:
 		}
 		return JS::HandleId::fromMarkedLocation(id.address());
 	}
+
+
+public: // static
+
+	static ALWAYS_INLINE Host&
+	getHost( JSRuntime *rt ) {
+
+		return *static_cast<Host*>(JL_GetRuntimePrivate(rt));
+	}
+
+	static ALWAYS_INLINE Host&
+	getHost( JSContext *cx ) {
+
+		return getHost(JL_GetRuntime(cx));
+	}
+
 };
 
 
 JL_END_NAMESPACE
 
+
+
+
+	
+///////////////////////////////////////////////////////////////////////////////
+// IDs cache
+
+
+// examples:
+//   JLID(cx, _unserialize) -> jsid
+//   JLID_NAME(cx, _unserialize) -> w_char
+
+
+
+#ifdef DEBUG
+#define JLID_NAME(cx, name) (JL_IGNORE(cx), JL_IGNORE(JLID_##name), L(#name))
+#else
+#define JLID_NAME(cx, name) (#name)
+#endif // DEBUG
+
+//#define JLID(cx, name) JL_GetPrivateJsid(cx, JLID_##name, (jschar*)L(#name))
+#define JLID(cx, name) jl::Host::getHost(cx).getId(JLID_##name, (jschar*)L(#name))
+
+// eg: jsid cfg = JLID(cx, fileName); const char *name = JLID_NAME(fileName);
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+// the following helper functions depends on the host object
+
+
+ALWAYS_INLINE jl::Host&
+JL_GetHostPrivate( JSRuntime *rt ) {
+
+	return jl::Host::getHost(rt);
+}
+
+ALWAYS_INLINE jl::Host&
+JL_GetHostPrivate( JSContext *cx ) {
+
+	return jl::Host::getHost(cx);
+}
+
+ALWAYS_INLINE const JSClass * FASTCALL
+JL_GetCachedClass( const jl::Host & const hpv, const char * const className ) {
+	
+	return hpv.getCachedClasp(className);
+}
+
+
+
+ALWAYS_INLINE JSObject* FASTCALL
+JL_NewObj( JSContext *cx ) {
+
+	return jl::Host::getHost(cx).newObject();
+}
+
+
+ALWAYS_INLINE JSObject* FASTCALL
+JL_NewJslibsObject( JSContext *cx, const char *className ) {
+
+	return jl::Host::getHost(cx).newJLObject(className);
+}
 

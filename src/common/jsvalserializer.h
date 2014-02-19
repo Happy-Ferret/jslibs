@@ -756,7 +756,7 @@ public:
 				ASSERT(strlen(className) < 64);
 
 				jl::Host &host = jl::Host::getHost(cx);
-				const jl::ClassProtoCache* cpc = host.getCachedClassProto(className);
+				const jl::ProtoCache::Item* cpc = host.getCachedClassProto(className);
 
 
 				//const ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), className);

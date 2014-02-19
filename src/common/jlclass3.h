@@ -316,13 +316,15 @@ struct Class {
 
 			ASSERT( clasp.name && clasp.name[0] ); // Invalid class name.
 
-			HostPrivate *hpv;
-			hpv = JL_GetHostPrivate(cx);
+			//HostPrivate *hpv;
+			//hpv = JL_GetHostPrivate(cx);
+
+			jl::Host &host = jl::Host::getHost(cx);
 
 			JSObject *parentProto;
 			if ( parentProtoName != NULL ) {
 
-				parentProto = JL_GetCachedProto(hpv, parentProtoName);
+				parentProto = host.getCachedProto(parentProtoName);  //JL_GetCachedProto(hpv, parentProtoName);
 				JL_CHKM( parentProto != NULL, E_STR(parentProtoName), E_STR("prototype"), E_NOTFOUND );
 			} else {
 
@@ -338,10 +340,10 @@ struct Class {
 
 			ASSERT_IF( clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(proto) == NULL );
 
-			JL_CHKM( JL_CacheClassProto(cx, hpv, clasp.name, &clasp, proto), E_CLASS, E_NAME(clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
+			JL_CHKM( host.addCachedClassProto(clasp.name, &clasp, proto), E_CLASS, E_NAME(clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 
-			ASSERT( JL_GetCachedClass(hpv, clasp.name) == &clasp );
-			ASSERT( JL_GetCachedProto(hpv, clasp.name) == proto );
+			ASSERT( host.getCachedClasp(clasp.name) == &clasp );
+			ASSERT( host.getCachedProto(clasp.name) == proto );
 
 			ctor = constructor ? JL_GetConstructor(cx, proto) : proto;
 		}

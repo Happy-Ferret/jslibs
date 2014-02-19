@@ -31,13 +31,12 @@
 #include <jsapi.h>
 #include <jsfriendapi.h>
 #include <js/OldDebugAPI.h> // JS_GetScriptVersion, JS_GetScriptFilename, JS_GetScriptFilename
-#include "polyfill.h"
-
 
 #ifdef _MSC_VER
 #pragma warning( pop )
 #endif // _MSC_VER
 
+#include "polyfill.h"
 
 #include <sys/stat.h> // stat() used by JL_LoadScript()
 
@@ -70,6 +69,9 @@ Matrix44GetInterface( JSContext *cx, JS::HandleObject obj );
 
 ALWAYS_INLINE bool
 SetBufferGetInterface( JSContext *cx, JS::HandleObject obj, NIBufferGet pFct );
+
+
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -112,6 +114,8 @@ js_strchr_limit(const jschar *s, jschar c, const jschar *limit)
     }
     return NULL;
 }
+
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -331,6 +335,11 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 
 	return JS_NewUCString(cx, chars, length); // doc. https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_NewString
 }
+
+
+
+
+
 
 
 namespace jlpv {
@@ -1012,26 +1021,10 @@ JL_NewProtolessObj( JSContext *cx ) {
 	return obj;
 }
 
-/*
-ALWAYS_INLINE JSObject* FASTCALL
-JL_NewObj( JSContext *cx ) {
 
-	HostPrivate *pv = JL_GetHostPrivate(cx);
-	ASSERT( pv );
-	ASSERT( pv->objectClass );
-	ASSERT( pv->objectProto );
-	return JS_NewObject(cx, pv->objectClass, pv->objectProto, NULL); // JL_GetGlobal(cx)
-}
-*/
 
-ALWAYS_INLINE JSObject* FASTCALL
-JL_NewJslibsObject( JSContext *cx, const char *className ) {
+#include "../host/host2.h"
 
-	const ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), className);
-	if ( cpc != NULL )
-		return JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto);
-	return NULL;
-}
 
 /*
 #ifndef USE_JSHANDLES
@@ -1100,7 +1093,8 @@ namespace jlpv {
 #else // USE_JSHANDLES
 */
 
-	//JS::RootedObject obj(cx, jlpv::CreateConstructorObject(cx, JL_THIS_CLASS, JL_THIS_CLASS_PROTOTYPE, args))
+//JS::RootedObject obj(cx, jlpv::CreateConstructorObject(cx, JL_THIS_CLASS, JL_THIS_CLASS_PROTOTYPE, args))
+
 #define JL_DEFINE_CONSTRUCTOR_OBJ \
 	JS::RootedObject obj(cx, JL_THIS_CLASS_PROTOTYPE); \
 	obj.set(JL_NewObjectWithGivenProto(cx, JL_THIS_CLASS, obj)); \
@@ -1109,6 +1103,9 @@ namespace jlpv {
 // #endif // USE_JSHANDLES
 
 
+
+
+/*
 ///////////////////////////////////////////////////////////////////////////////
 // IDs cache management
 
@@ -1147,6 +1144,10 @@ JL_GetPrivateJsid( JSContext *cx, int index, const jschar *name ) {
 #define JLID(cx, name) jl::Host::getHost(cx).getId(JLID_##name, (jschar*)L(#name))
 
 // eg: jsid cfg = JLID(cx, fileName); const char *name = JLID_NAME(fileName);
+*/
+
+
+
 
 
 
@@ -1484,14 +1485,14 @@ enum E_TXTID {
 // note: Support for variadic macros was introduced in Visual C++ 2005
 #define JL_ERR( ... ) \
 	JL_MACRO_BEGIN \
-		JL_GetHostPrivate(cx)->report(cx, false, ##__VA_ARGS__, JL__REPORT_END_ARG); \
+		jl::Host::getHost(cx).report(cx, false, ##__VA_ARGS__, JL__REPORT_END_ARG); \
 		goto bad; \
 	JL_MACRO_END
 
 
 #define JL_WARN( ... ) \
 	JL_MACRO_BEGIN \
-		if ( JL_IS_SAFE && !JL_GetHostPrivate(cx)->report(cx, true, ##__VA_ARGS__, JL__REPORT_END_ARG) ) \
+		if ( JL_IS_SAFE && !jl::Host::getHost(cx).report(cx, true, ##__VA_ARGS__, JL__REPORT_END_ARG) ) \
 			goto bad; \
 	JL_MACRO_END
 

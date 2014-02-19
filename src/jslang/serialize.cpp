@@ -23,7 +23,7 @@ BEGIN_CLASS( Serializer )
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime()).hostRuntime().canSkipCleanup() )
 		return;
 
 	jl::Serializer *ser;
@@ -129,7 +129,7 @@ BEGIN_CLASS( Unserializer )
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime()).hostRuntime().canSkipCleanup() )
 		return;
 
 	jl::Unserializer *unser;

@@ -55,23 +55,28 @@ InitJslibsModule( JSContext *cx, uint32_t id ) {
 	ASSERT(st);
 #endif // XP_WIN
 
-	HostPrivate *hpv = JL_GetHostPrivate(cx);
-	if ( hpv && hpv->versionKey != 0 && hpv->versionKey != JL_HOSTPRIVATE_KEY )
+	jl::Host &host = jl::Host::getHost(cx);
+	if ( !host.checkCompatId(JL_HOST_VERSIONID) )
 		JL_ERR( E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 
-	_unsafeMode = hpv ? hpv->unsafeMode : _unsafeMode;
+	//_unsafeMode = hpv ? hpv->unsafeMode : _unsafeMode;
+	_unsafeMode = host.unsafeMode();
 
 	ASSERT( _moduleId == 0 || _moduleId == id );
 
 	if ( _moduleId == 0 )
 		_moduleId = id;
 
+	host.getAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free);
+
+/*
 	jl_malloc = hpv && hpv->alloc.malloc ? hpv->alloc.malloc : jl_malloc; // ie. if we have a host and if the host has custom allocators, else keep the current one.
 	jl_calloc = hpv && hpv->alloc.calloc ? hpv->alloc.calloc : jl_calloc;
 	jl_memalign = hpv && hpv->alloc.memalign ? hpv->alloc.memalign : jl_memalign;
 	jl_realloc = hpv && hpv->alloc.realloc ? hpv->alloc.realloc : jl_realloc;
 	jl_msize = hpv && hpv->alloc.msize ? hpv->alloc.msize : jl_msize;
 	jl_free = hpv && hpv->alloc.free ? hpv->alloc.free : jl_free;
+*/
 
 	return true;
 	JL_BAD;
