@@ -97,11 +97,11 @@ JL_BEGIN_NAMESPACE
 bool enableLowFragmentationHeap();
 
 
-class Std {
+class StdIO {
 public:
-	virtual int	stdInput( char *buffer, size_t bufferLength ) { JL_IGNORE(buffer, bufferLength); return 0; };
-	virtual int	stdOutput( const char *buffer, size_t length ) { JL_IGNORE(buffer, length); return 0; };
-	virtual int	stdError( const char *buffer, size_t length ) { JL_IGNORE(buffer, length); return 0; };
+	virtual int	input( char *buffer, size_t bufferLength ) { JL_IGNORE(buffer, bufferLength); return 0; };
+	virtual int	output( const char *buffer, size_t length ) { JL_IGNORE(buffer, length); return 0; };
+	virtual int	error( const char *buffer, size_t length ) { JL_IGNORE(buffer, length); return 0; };
 };
 
 
@@ -340,7 +340,7 @@ class ThreadedAllocator {
 	Allocators &_current;
 	static Allocators _base;
 
-	static bool _skipCleanup;
+	static volatile bool _skipCleanup;
 
 	// block-to-free chain
 	static void *_head;
@@ -564,6 +564,8 @@ class ModuleManager {
 
 public:
 
+	~ModuleManager();
+
 	ModuleManager(HostRuntime &hostRuntime);
 
 	bool
@@ -594,7 +596,7 @@ public:
 
 
 	ALWAYS_INLINE bool
-	setModulePrivate( const uint32_t moduleId, void *modulePrivate ) {
+	initModulePrivate( const uint32_t moduleId, void *modulePrivate ) {
 
 		ASSERT( moduleId != 0 );
 		ASSERT( modulePrivate );
@@ -652,28 +654,6 @@ public:
 		}
 		return _modulePrivate[id].privateData;
 	}
-
-
-	/*
-	 * return a reference to the module-private slot
-	 */
-	ALWAYS_INLINE void**
-	modulePrivate( uint32_t moduleId ) {
-
-		ASSERT( moduleId != 0 ); // reserved value for unused slots
-
-		uint8_t id = moduleHash(moduleId);
-		uint8_t id0 = id;
-
-		while ( _modulePrivate[id].moduleId != moduleId ) {
-
-			++id; // uses unsigned char overflow
-			if ( id == id0 )
-				return NULL;
-		}
-		return &_modulePrivate[id].privateData;
-	}
-
 };
 
 
@@ -869,12 +849,10 @@ public:
 
 class Host : public jl::CppAllocators {
 
-//	JSRuntime *rt;
-
 	bool _unsafeMode;
 	HostRuntime &_hostRuntime;
-	Std &_hostStd;
-	const uint32_t _versionId; // used to ensure compatibility between host and modules. see JL_HOST_VERSIONID macro.
+	StdIO &_hostStdIO;
+	const uint32_t _compatId; // used to ensure compatibility between host and modules. see JL_HOST_VERSIONID macro.
 	ModuleManager _moduleManager;
 	JS::PersistentRootedObject _hostObject;
 	
@@ -898,9 +876,9 @@ class Host : public jl::CppAllocators {
 
 
 public:
-	Host( HostRuntime &hr, Std hostStd = Std(), bool unsafeMode = false );
-
 	~Host();
+
+	Host( HostRuntime &hr, StdIO &hostStdIO, bool unsafeMode = false );
 
 	// init the host for jslibs usage (modules, errors, ...)
 	bool
@@ -909,42 +887,29 @@ public:
 	bool
 	destroy();
 
-	bool
+	ALWAYS_INLINE bool
 	unsafeMode() const {
 
 		return _unsafeMode;
 	}
 
-	bool
+	ALWAYS_INLINE bool
 	checkCompatId(uint32_t compatId) const {
 
-		return compatId != 0 && _versionId == compatId;
+		return compatId != 0 && _compatId == compatId;
 	}
 
 
-	HostRuntime &
-	hostRuntime() {
+	ALWAYS_INLINE HostRuntime &
+	hostRuntime() const {
 			
 		return _hostRuntime;
 	}
 
+	ALWAYS_INLINE StdIO &
+	stdIO() const {
 
-	int
-	stdInput( char *buffer, size_t bufferLength ) const {
-		
-		return _hostStd.stdInput(buffer, bufferLength);
-	}
-
-	int
-	stdOutput( const char *buffer, size_t length ) const {
-
-		return _hostStd.stdOutput(buffer, length);
-	}
-
-	int
-	stdError( const char *buffer, size_t length ) const {
-
-		return _hostStd.stdError(buffer, length);
+		return _hostStdIO;
 	}
 
 	bool
@@ -961,7 +926,6 @@ public:
 
 	JS::HandleObject
 	hostObject();
-		
 
 
 	ALWAYS_INLINE JSObject *
@@ -972,7 +936,7 @@ public:
 
 
 	ALWAYS_INLINE JSObject *
-	newJLObject( const char *className ) {
+	newJLObject( const char *className ) const {
 
 		const ProtoCache::Item *cpc = _classProtoCache.get(className);
 		if ( cpc != NULL )
@@ -981,7 +945,9 @@ public:
 			return NULL;
 	}
 
+
 	// modules
+	
 	ALWAYS_INLINE ModuleManager&
 	moduleManager() {
 
@@ -989,23 +955,20 @@ public:
 	}
 
 
-	ALWAYS_INLINE void**
-	modulePrivate( uint32_t moduleId ) {
-		
-		return _moduleManager.modulePrivate(moduleId);
-	}
+	// alloc
 
 	ALWAYS_INLINE void
-	getAllocators( jl_malloc_t &malloc, jl_calloc_t &calloc, jl_memalign_t &memalign, jl_realloc_t &realloc, jl_msize_t &msize, jl_free_t &free ) {
+	getAllocators( jl_malloc_t &mallocRef, jl_calloc_t &callocRef, jl_memalign_t &memalignRef, jl_realloc_t &reallocRef, jl_msize_t &msizeRef, jl_free_t &freeRef ) {
 	
 		const Allocators &alloc = _hostRuntime.allocators();
-		malloc = alloc.malloc;
-		calloc = alloc.calloc;
-		memalign = alloc.memalign;
-		realloc = alloc.realloc;
-		msize = alloc.msize;
-		free = alloc.free;
+		mallocRef = alloc.malloc;
+		callocRef = alloc.calloc;
+		memalignRef = alloc.memalign;
+		reallocRef = alloc.realloc;
+		msizeRef = alloc.msize;
+		freeRef = alloc.free;
 	}
+
 
 	// CachedClassProto
 
@@ -1022,7 +985,7 @@ public:
 	}
 
 	ALWAYS_INLINE const JS::HandleObject
-	getCachedProto( IN const char * const className ) {
+	getCachedProto( IN const char * const className ) const {
 
 		const ProtoCache::Item * cpc = getCachedClassProto(className);
 		if ( cpc )
@@ -1041,10 +1004,10 @@ public:
 	// ids
 
 	static INLINE NEVER_INLINE void FASTCALL
-	getPrivateJsidSlow( JSContext *cx, JS::PersistentRootedId &id, int index, const jschar *name ) {
+	getPrivateJsidSlow( JSContext *cx, JS::PersistentRootedId &id, const jschar *name ) {
 
 		JS::RootedString jsstr(cx, JS_InternUCString(cx, name));
-		ASSERT( jsstr != NULL );
+		ASSERT( jsstr );
 		id.set(JL_StringToJsid(cx, jsstr));
 	}
 
@@ -1055,7 +1018,7 @@ public:
 		JS::PersistentRootedId &id = _ids.get(index);
 		if ( JSID_IS_VOID(id) ) {
 
-			getPrivateJsidSlow(_hostRuntime.context(), id, index, name);
+			getPrivateJsidSlow(_hostRuntime.context(), id, name);
 		}
 		return JS::HandleId::fromMarkedLocation(id.address());
 	}

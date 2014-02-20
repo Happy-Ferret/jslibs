@@ -8,15 +8,16 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
 
+/*
 loadModule('jsstd');
 loadModule('jsio');
-
 var a = new Socket();
-
 throw 0;
+*/
+
 
 host.stdout('press ctrl-c');
-processEvents(timeoutEvents(2000), host.endSignalEvents());
+processEvents(timeoutEvents(4000), host.endSignalEvents());
 host.stdout('done.');
 
 

@@ -37,7 +37,7 @@ ModuleInit(JSContext *cx, JS::HandleObject obj, uint32_t id) {
 	ModulePrivate *mpv;
 	mpv = (ModulePrivate*)jl_malloc(sizeof(ModulePrivate));
 	JL_ASSERT_ALLOC( mpv );
-	JL_CHKM( JL_SetModulePrivate(cx, _moduleId, mpv), E_MODULE, E_INIT ); // "Module id already in use."
+	JL_CHKM( jl::Host::getHost(cx).moduleManager().initModulePrivate(_moduleId, mpv), E_MODULE, E_INIT ); // "Module id already in use."
 
 	mpv->objIdList = NULL;
 	mpv->lastObjectId = 0;
@@ -55,10 +55,11 @@ ModuleInit(JSContext *cx, JS::HandleObject obj, uint32_t id) {
 bool
 ModuleRelease(JSContext *cx) {
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // do not cleanup in unsafe mode.
+	jl::Host &host = jl::Host::getHost(cx);
+	if ( host.hostRuntime().canSkipCleanup() ) // do not cleanup in unsafe mode.
 		return true;
 
-	ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, _moduleId);
+	ModulePrivate *mpv = (ModulePrivate*)host.moduleManager().getModulePrivate(_moduleId);
 
 	if ( mpv->objIdList )
 		jl_free(mpv->objIdList);

@@ -28,23 +28,7 @@
 JL_BEGIN_NAMESPACE
 
 
-DECLARE_CLASS(host2);
-
-
-//////////////////////////////////////////////////////////////////////////////
-// 
-
-bool enableLowFragmentationHeap() {
-
-#ifdef XP_WIN
-	// enable low fragmentation heap
-	HANDLE heap = GetProcessHeap();
-	ULONG enable = 2;
-	return HeapSetInformation(heap, HeapCompatibilityInformation, &enable, sizeof(enable)) == TRUE;
-#endif // XP_WIN
-
-	return true; // not implemented
-}
+DECLARE_CLASS(host);
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -54,7 +38,7 @@ ThreadedAllocator *ThreadedAllocator::_owner = NULL;
 
 Allocators ThreadedAllocator::_base;
 
-bool ThreadedAllocator::_skipCleanup;
+volatile bool ThreadedAllocator::_skipCleanup;
 
 // block-to-free chain
 void *ThreadedAllocator::_head;
@@ -616,10 +600,13 @@ bad:
 //////////////////////////////////////////////////////////////////////////////
 // ModuleManager
 
+ModuleManager::~ModuleManager() {
+
+	jl::QueueEmpty(&_moduleList);
+}
+
 ModuleManager::ModuleManager(HostRuntime &hostRuntime)
 : _hostRuntime(hostRuntime) {
-
-
 
 	jl::QueueInitialize(&_moduleList);
 }
@@ -960,12 +947,15 @@ bad:
 }
 
 
-Host::Host( HostRuntime &hr, Std hostStd, bool unsafeMode )
-: _hostRuntime(hr), _moduleManager(hr), _versionId(JL_HOST_VERSIONID), _unsafeMode(unsafeMode), _hostStd(hostStd), _objectProto(hr.runtime()), _hostObject(hr.runtime()), _ids(true, hr.runtime()) {
+Host::Host( HostRuntime &hr, StdIO &hostStdIO, bool unsafeMode )
+: _hostRuntime(hr), _moduleManager(hr), _compatId(JL_HOST_VERSIONID), _unsafeMode(unsafeMode), _hostStdIO(hostStdIO), _objectProto(hr.runtime()), _hostObject(hr.runtime()), _ids() {
+
+	_ids.constructAll(hr.runtime());
 }
 
 Host::~Host() {
 
+	_ids.destructAll();
 	_moduleManager.freeModules();
 }
 
@@ -978,7 +968,7 @@ Host::create() {
 	JL_SetRuntimePrivate(_hostRuntime.runtime(), static_cast<void*>(this));
 
 	JS::ContextOptionsRef(cx)
-		.setStrictMode(!_unsafeMode);
+		.setStrictMode(_unsafeMode);
 	
 	JS_SetErrorReporter(cx, errorReporter);
 
@@ -1000,7 +990,7 @@ Host::create() {
 	JL_CHKM( JS_DefinePropertyById(cx, obj, JLID(cx, global), OBJECT_TO_JSVAL(obj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
 
 	//JL_CHK( jl::InitClass(cx, globalObject, host2::classSpec) ); // 
-	INIT_CLASS( host2 );
+	INIT_CLASS( host );
 
 	// init static modules
 	if ( !jslangModuleInit(cx, obj) )
@@ -1115,7 +1105,7 @@ Host::report( bool isWarning, ... ) const {
 
 
 bool
-Host::setHostArguments(char **hostArgv, size_t hostArgc) {
+Host::setHostArguments( char **hostArgv, size_t hostArgc ) {
 
 	JSContext *cx = _hostRuntime.context();
 	JS::RootedValue argumentsVal(_hostRuntime.runtime());
@@ -1127,7 +1117,7 @@ Host::setHostArguments(char **hostArgv, size_t hostArgc) {
 }
 
 bool
-Host::setHostName(const char *hostPath, const char *hostName) {
+Host::setHostName( const char *hostPath, const char *hostName ) {
 
 	JSContext *cx = _hostRuntime.context();
 	JL_CHK( JL_NativeToProperty(cx, _hostObject, JLID(cx, name), hostName) );
@@ -1137,7 +1127,7 @@ Host::setHostName(const char *hostPath, const char *hostName) {
 }
 
 void
-Host::setHostObject(JS::HandleObject hostObj) {
+Host::setHostObject( JS::HandleObject hostObj ) {
 	
 	_hostObject.set(hostObj);
 }
@@ -1151,10 +1141,10 @@ Host::hostObject() {
 
 
 //////////////////////////////////////////////////////////////////////////////
-// host2
+// host
 
 
-BEGIN_CLASS( host2 )
+BEGIN_CLASS( host )
 
 /**doc
 $TOC_MEMBER $INAME
@@ -1223,7 +1213,7 @@ DEFINE_FUNCTION( stdout ) {
 	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(i+1), &str) );
-		int status = host.stdOutput(str.GetConstStr(), str.Length());
+		int status = host.stdIO().output(str.GetConstStr(), str.Length());
 		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdout"), E_WRITE );
 	}
 	return true;
@@ -1244,7 +1234,7 @@ DEFINE_FUNCTION( stderr ) {
 	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(i+1), &str) );
-		int status = host.stdError(str.GetConstStr(), str.Length());
+		int status = host.stdIO().error(str.GetConstStr(), str.Length());
 		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stderr"), E_WRITE );
 	}
 	return true;
@@ -1262,7 +1252,7 @@ DEFINE_FUNCTION( stdin ) {
 	Host &host(Host::getHost(cx));
 
 	char buffer[8192];
-	int status = host.stdInput(buffer, COUNTOF(buffer));
+	int status = host.stdIO().input(buffer, COUNTOF(buffer));
 	if ( status > 0 ) {
 		
 		JS::RootedString jsstr(cx, JS_NewStringCopyN(cx, buffer, status));
@@ -1345,18 +1335,6 @@ DEFINE_FUNCTION( loadModule ) {
 		return true;
 	}
 
-/*
-	for ( jl::QueueCell *it = jl::QueueBegin(&hpv->moduleList); it; it = jl::QueueNext(it) ) {
-
-		if ( (JLLibraryHandler)jl::QueueGetData(it) == module ) {
-
-			JLDynamicLibraryClose(&module);
-			JL_RVAL.setNull(); // already loaded
-			return true;
-		}
-	}
-*/
-
 	Host &host = Host::getHost(cx);
 
 	if ( host.moduleManager().hasModule(module) ) {
@@ -1372,8 +1350,6 @@ DEFINE_FUNCTION( loadModule ) {
 	moduleInit = (ModuleInitFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_INIT);
 	JL_ASSERT( moduleInit, E_MODULE, E_NAME(libFileName), E_INIT ); // "Invalid module."
 	
-//	CHKHEAP();
-
 	if ( !moduleInit(cx, JL_OBJ, uid) ) {
 
 		JL_CHK( !JL_IsExceptionPending(cx) );
@@ -1381,8 +1357,6 @@ DEFINE_FUNCTION( loadModule ) {
 		JLDynamicLibraryName((void*)moduleInit, filename, sizeof(filename));
 		JL_ERR( E_MODULE, E_NAME(filename), E_INIT );
 	}
-
-//	CHKHEAP();
 
 	host.moduleManager().storeModule(module);
 	

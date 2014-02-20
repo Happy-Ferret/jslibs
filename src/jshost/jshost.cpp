@@ -35,29 +35,8 @@
 #include "../jslang/handlePub.h"
 
 
-static volatile bool disabledFree = false;
+//static volatile bool disabledFree = false;
 
-
-#ifdef USE_NEDMALLOC
-
-#define NO_NED_NAMESPACE
-#define NO_MALLINFO 1
-#include "../../libs/nedmalloc/nedmalloc.h"
-
-static NOALIAS void
-nedfree_handlenull(void *mem) NOTHROW {
-
-	if ( mem != NULL && !disabledFree )
-		nedfree(mem);
-}
-
-static NOALIAS size_t
-nedblksize_msize(void *mem) NOTHROW {
-
-	return nedblksize(0, mem);
-}
-
-#endif // USE_NEDMALLOC
 
 
 #define HOST_MAIN_ASSERT( CONDITION, ERROR_MESSAGE ) \
@@ -74,7 +53,7 @@ static const unsigned char embeddedBootstrapScript[] =
 ;
 
 
-
+/*
 static int stdin_fileno = -1;
 static int stdout_fileno = -1;
 static int stderr_fileno = -1;
@@ -102,7 +81,7 @@ HostStderr( void *, const char *buffer, size_t length ) {
 		stderr_fileno = fileno(stderr);
 	return write(stderr_fileno, buffer, length);
 }
-
+*/
 
 //void NewScriptHook(JSContext *cx, const char *filename, unsigned lineno, JSScript *script, JSFunction *fun, void *callerdata) {
 //	printf( "add - %s:%d - %s - %d - %p\n", filename, lineno, fun ? JS_GetFunctionName(fun):"", script->staticDepth, script );
@@ -116,6 +95,7 @@ HostStderr( void *, const char *buffer, size_t length ) {
 //#define DBG_ALLOC 1
 
 
+/*
 #ifdef DBG_ALLOC
 
 static volatile int32_t allocCount = 0;
@@ -184,7 +164,7 @@ EXTERN_C void jl_free_count( void *ptr ) {
 }
 
 #endif // DBG_ALLOC
-
+*/
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -199,7 +179,7 @@ EXTERN_C void jl_free_count( void *ptr ) {
 	}
 **/
 
-
+/*
 bool EnableLowFragmentationHeap() {
 
 #ifdef XP_WIN
@@ -221,18 +201,15 @@ void SetJslibsMemoryAllocators(jl_malloc_t malloc, jl_calloc_t calloc, jl_memali
 	jl_msize = msize;
 	jl_free = free;
 }
+*/
 
 
-
-
-
+/*
 
 int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])| for wide char
 
 	int test(int argc, char* argv[]);
 	return test(argc, argv);
-
-
 
 //	BOOL st = SetProcessAffinityMask(GetCurrentProcess(), 1);
 	
@@ -617,6 +594,9 @@ struct DBG_ALLOC_dummyClass {
 #endif // DBG_ALLOC
 
 
+*/
+
+
 /**doc
 #summary jshost executable
 #labels doc
@@ -806,7 +786,6 @@ struct CmdLineArguments {
 	float maybeGCInterval;
 	bool useFileBootstrapScript;
 	const char *inlineScript;
-	const char *scriptName;
 	#ifdef DEBUG
 	bool debug;
 	#endif DEBUG
@@ -825,7 +804,6 @@ struct CmdLineArguments {
 		maybeGCInterval = 10; // seconds
 		useFileBootstrapScript = false;
 		inlineScript = NULL;
-		scriptName = NULL;
 		help = false;
 
 		#ifdef DEBUG
@@ -888,7 +866,7 @@ struct CmdLineArguments {
 };
 
 
-class HostStdIO : public jl::Std {
+class HostStdIO : public jl::StdIO {
 	int stdin_fileno;
 	int stdout_fileno;
 	int stderr_fileno;
@@ -898,7 +876,7 @@ public:
 	}
 
 	int
-	stdInput( char *buffer, size_t bufferLength ) {
+	input( char *buffer, size_t bufferLength ) {
 	
 		if (unlikely( stdin_fileno == -1 ))
 			stdin_fileno = fileno(stdin);
@@ -906,7 +884,7 @@ public:
 	}
 
 	int
-	stdOutput( const char *buffer, size_t length ) {
+	output( const char *buffer, size_t length ) {
 		
 		if (unlikely( stdout_fileno == -1 ))
 			stdout_fileno = fileno(stdout);
@@ -914,7 +892,7 @@ public:
 	}
 
 	int
-	stdError( const char *buffer, size_t length ) {
+	error( const char *buffer, size_t length ) {
 		
 		if (unlikely( stderr_fileno == -1 ))
 			stderr_fileno = fileno(stderr);
@@ -928,42 +906,6 @@ public:
 static volatile int32_t gEndSignalState = 0;
 static JLCondHandler gEndSignalCond;
 static JLMutexHandler gEndSignalLock;
-
-bool
-initInterrupt() {
-
-	gEndSignalLock = JLMutexCreate();
-	gEndSignalCond = JLCondCreate();
-
-#if defined(XP_WIN)
-	JL_CHKM( SetProcessShutdownParameters(0x100, SHUTDOWN_NORETRY), E_HOST, E_INTERNAL );
-	JL_CHKM( SetConsoleCtrlHandler(Interrupt, TRUE) != 0, E_HOST, E_INTERNAL );
-#elif defined(XP_UNIX)
-	signal(SIGINT, Interrupt);
-	signal(SIGTERM, Interrupt);
-	signal(SIGKILL, Interrupt);
-#else
-	#error NOT IMPLEMENTED YET	// (TBD)
-#endif
-
-}
-
-bool
-freeInterrupt() {
-
-#if defined(XP_WIN)
-	SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, FALSE);
-#elif defined(XP_UNIX)
-	signal(SIGINT, SIG_DFL);
-	signal(SIGTERM, SIG_DFL);
-	signal(SIGKILL, SIG_DFL);
-#else
-	#error NOT IMPLEMENTED YET	// (TBD)
-#endif
-
-	JLCondFree(&gEndSignalCond);
-	JLMutexFree(&gEndSignalLock);
-}
 
 bool
 EndSignalGetter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp) {
@@ -1139,17 +1081,49 @@ EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
 	JL_BAD;
 }
 
-/*
-template <typename FCT>
-class Auto {
-	~Auto() {
-		FCT();
-	}
-};
-*/
+
+bool
+initInterrupt() {
+
+	gEndSignalLock = JLMutexCreate();
+	gEndSignalCond = JLCondCreate();
+
+#if defined(XP_WIN)
+	JL_CHK( SetProcessShutdownParameters(0x100, SHUTDOWN_NORETRY) );
+	JL_CHK( SetConsoleCtrlHandler(Interrupt, TRUE) );
+#elif defined(XP_UNIX)
+	signal(SIGINT, Interrupt);
+	signal(SIGTERM, Interrupt);
+	signal(SIGKILL, Interrupt);
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
+	return true;
+	JL_BAD;
+}
+
+bool
+freeInterrupt() {
+
+#if defined(XP_WIN)
+	SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, FALSE);
+#elif defined(XP_UNIX)
+	signal(SIGINT, SIG_DFL);
+	signal(SIGTERM, SIG_DFL);
+	signal(SIGKILL, SIG_DFL);
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
+
+	JLCondFree(&gEndSignalCond);
+	JLMutexFree(&gEndSignalLock);
+	return true;
+	JL_BAD;
+}
 
 
-bool run(jl::HostRuntime &hostRuntime, CmdLineArguments &args, int &exitValue) {
+int
+run(jl::HostRuntime &hostRuntime, CmdLineArguments &args, int &exitValue) {
 
 	JSContext *cx = hostRuntime.context();
 /*
@@ -1158,11 +1132,16 @@ bool run(jl::HostRuntime &hostRuntime, CmdLineArguments &args, int &exitValue) {
 	JL_CHK( ExecuteScriptText(cx, global, "(function() { for (var i = 0; i < 10000; ++i); })()", false, &tmpVal) );
 */
 
+	HostStdIO hostIO;
 
-	jl::Host host(hostRuntime, HostStdIO());
+	jl::Host host(hostRuntime, hostIO);
 	JL_CHK( host.create() );
 
 	JL_CHKM( initInterrupt(), E_HOST, E_INTERNAL );
+
+	JL_CHK( JS_DefineProperty(cx, host.hostObject(), "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED) ); // https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
+	JL_CHK( JS_DefineFunction(cx, host.hostObject(), "endSignalEvents", EndSignalEvents, 1, 0) );
+
 
 	char hostFullPath[PATH_MAX];
 	JL_CHK( jl::ModuleFileName(hostFullPath) );
@@ -1186,23 +1165,85 @@ bool run(jl::HostRuntime &hostRuntime, CmdLineArguments &args, int &exitValue) {
 	JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
 	JS::RootedValue rval(cx);
 
+
+	// embedded bootstrap script
+
+	if ( sizeof(embeddedBootstrapScript)-1 > 0 ) {
+
+		JS::AutoSaveContextOptions asco(cx);
+		JS::ContextOptionsRef(cx).setDontReportUncaught(false);
+
+		JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL, NULL) ); // -1 because sizeof("") == 1
+		JL_CHK( script );
+		JL_CHK( JS_ExecuteScript(cx, globalObject, script, rval.address()) );
+	}
+
+
+	// file bootstrap script
+
+	if ( args.useFileBootstrapScript ) {
+
+		char bootstrapFilename[PATH_MAX];
+		strcpy(bootstrapFilename, hostFullPath);
+		strcat(bootstrapFilename, ".js");
+		JL_CHK( ExecuteScriptFileName(cx, globalObject, bootstrapFilename, args.compileOnly, &rval) );
+	}
+
+
+	ASSERT( !JL_IsExceptionPending(cx) );
+
+
+	bool executeStatus;
+	executeStatus = true;
+
+	// inline (command-line) script
+
+	if ( args.inlineScript != NULL ) {
+
+		executeStatus = ExecuteScriptText(cx, globalObject, args.inlineScript, args.compileOnly, &rval);
+	}
+
+
 	// file script
-
-	bool executeStatus = true;
-
 
 	//jl::Host::getHost(cx).addCachedClassProto(className, clasp, proto);
 	//return hpv->classProtoCache.Add(cx, className, clasp, proto);
 
-
-
-	if ( args.scriptName != NULL && executeStatus == true ) {
+	if ( args.jsArgc == 1 && executeStatus == true ) {
 
 		executeStatus = ExecuteScriptFileName(cx, globalObject, args.jsArgv[0], args.compileOnly, &rval);
 	}
 
+
+
+	if ( executeStatus == true ) {
+
+		if ( JSVAL_IS_INT(rval) && rval.toInt32() >= 0 ) // (TBD) enhance this, use JL_JsvalToNative() ?
+			exitValue = rval.toInt32();
+		else
+			exitValue = EXIT_SUCCESS;
+	} else {
+
+		if ( JL_IsExceptionPending(cx) ) { // see JSOPTION_DONT_REPORT_UNCAUGHT option.
+
+			JS::RootedValue ex(cx);
+			JS_GetPendingException(cx, &ex);
+			JL_JsvalToPrimitive(cx, ex, &ex);
+			if ( JSVAL_IS_INT(ex) ) {
+
+				exitValue = ex.toInt32();
+			} else {
+
+				JS_ReportPendingException(cx);
+				exitValue = EXIT_FAILURE;
+			}
+		} else {
+
+			exitValue = EXIT_FAILURE;
+		}
 	}
 
+	}
 
 	host.destroy();
 
@@ -1212,9 +1253,16 @@ bool run(jl::HostRuntime &hostRuntime, CmdLineArguments &args, int &exitValue) {
 	JL_BAD;
 }
 
-class AutoShutdownEngine {
+class AutoJSEngineInit {
 public:
-	~AutoShutdownEngine() {
+
+	AutoJSEngineInit() {
+
+		bool st = JS_Init();
+		ASSERT(st);
+	}
+
+	~AutoJSEngineInit() {
 
 		JS_ShutDown();
 	}
@@ -1222,32 +1270,51 @@ public:
 
 
 
-int test(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])| for wide char
+#ifdef USE_NEDMALLOC
+
+#define NO_NED_NAMESPACE
+#define NO_MALLINFO 1
+#include "../../libs/nedmalloc/nedmalloc.h"
+
+
+class NedAllocators : public jl::Allocators {
+	static volatile bool _skipCleanup;
+
+	static NOALIAS void
+	nedfree_handlenull(void *mem) NOTHROW {
+
+		if ( !_skipCleanup && mem != NULL )
+			nedfree(mem);
+	}
+
+	static NOALIAS size_t
+	nedblksize_msize(void *mem) NOTHROW {
+
+		return nedblksize(0, mem);
+	}
+
+public:
+	NedAllocators()
+	: Allocators(nedmalloc, nedcalloc, nedmemalign, nedrealloc, nedblksize_msize, nedfree_handlenull) {
+	}
+
+	void
+	setSkipCleanup(bool skipCleanup) {
+
+		_skipCleanup = skipCleanup;
+	}
+};
+
+volatile bool NedAllocators::_skipCleanup = false;
+
+#endif // USE_NEDMALLOC
+
+
+
+// see |int wmain(int argc, wchar_t* argv[])| for wide char
+int main(int argc, char* argv[]) {
 
 	using namespace jl;
-
-	class NedAllocators : public Allocators {
-
-		static NOALIAS void
-		nedfree_handlenull(void *mem) NOTHROW {
-
-			if ( mem != NULL && !disabledFree )
-				nedfree(mem);
-		}
-
-		static NOALIAS size_t
-		nedblksize_msize(void *mem) NOTHROW {
-
-			return nedblksize(0, mem);
-		}
-
-	public:
-		NedAllocators()
-		: Allocators(nedmalloc, nedcalloc, nedmemalign, nedrealloc, nedblksize_msize, nedfree_handlenull) {
-		}
-	};
-
-
 
 	int exitValue;
 	CmdLineArguments args;
@@ -1259,17 +1326,25 @@ int test(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])|
 		exitValue = EXIT_SUCCESS;
 	} else {
 
-		enableLowFragmentationHeap();
+		JL_enableLowFragmentationHeap();
 
+		#ifdef USE_NEDMALLOC
+		NedAllocators allocators;
+		#else
 		StdAllocators allocators;
+		#endif // USE_NEDMALLOC
+
+		#ifdef DEBUG
 		CountedAlloc countAlloc(allocators);
+		#endif // DEBUG
+
 		ThreadedAllocator alloc(allocators);
 		HostRuntime::setJSEngineAllocators(allocators);
 
-		JL_CHK( JS_Init() );
-		AutoShutdownEngine ase;
+		AutoJSEngineInit ase;
 
 		//alloc.setSkipCleanup(true);
+		//nedAlloc.setSkipCleanup(true);
 
 		HostRuntime hostRuntime(allocators);
 		JL_CHK( hostRuntime.create() );

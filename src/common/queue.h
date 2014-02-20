@@ -34,6 +34,18 @@ inline void QueueInitialize( Queue *queue ) {
 	queue->end = NULL;
 }
 
+inline void QueueEmpty( Queue *queue ) {
+
+	QueueCell *it = queue->begin;
+	while ( it != NULL ) {
+
+		QueueCell *next = it->next;
+		jl_free(it);
+		it = next;
+	}
+}
+
+
 inline Queue *QueueConstruct() {
 
 	Queue *queue = (Queue*)jl_malloc(sizeof(Queue));
@@ -43,13 +55,7 @@ inline Queue *QueueConstruct() {
 
 inline void QueueDestruct( Queue *queue ) {
 
-	QueueCell *it = queue->begin;
-	while ( it != NULL ) {
-
-		QueueCell *next = it->next;
-		jl_free(it);
-		it = next;
-	}
+	QueueEmpty(queue);
 	jl_free(queue);
 }
 

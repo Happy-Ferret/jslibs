@@ -40,12 +40,8 @@ bool jslangModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	ModulePrivate *mpv = (ModulePrivate*)jl_calloc(sizeof(ModulePrivate), 1);
 
-
-//	JL_CHKM( JL_SetModulePrivate(cx, jslangModuleId, mpv), E_MODULE, E_INIT );
-
-
-	*jl::Host::getHost(cx).modulePrivate(jslangModuleId) = mpv;
-
+	JL_CHKM( jl::Host::getHost(cx).moduleManager().initModulePrivate(jslangModuleId, mpv), E_MODULE, E_INIT );
+	
 	mpv->processEventSignalEventSem = JLSemaphoreCreate(0);
 
 	INIT_CLASS( Handle );
@@ -61,10 +57,9 @@ bool jslangModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 bool jslangModuleRelease(JSContext *cx) {
 
-	void **slot = jl::Host::getHost(cx).modulePrivate(jslangModuleId);
-	if ( !slot )
+	ModulePrivate *mpv = (ModulePrivate*)jl::Host::getHost(cx).moduleManager().getModulePrivate(jslangModuleId);
+	if ( !mpv )
 		return false;
-	ModulePrivate *mpv = (ModulePrivate*)*slot;
 
 	for ( size_t i = 0; i < COUNTOF(mpv->processEventThreadInfo); ++i ) {
 

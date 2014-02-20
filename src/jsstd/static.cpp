@@ -18,6 +18,7 @@
 
 #include <jsvalserializer.h>
 
+#include <../host/host2.h>"
 
 #ifdef XP_WIN
 #include <Psapi.h>
@@ -772,7 +773,7 @@ DEFINE_FUNCTION( print ) {
 	// print() => host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
 
 	JS::RootedValue fval(cx);
-	JL_CHK( JS_GetPropertyById(cx, JL_GetHostPrivate(cx)->hostObject, JLID(cx, stdout), &fval) );
+	JL_CHK( JS_GetPropertyById(cx, jl::Host::getHost(cx).hostObject(), JLID(cx, stdout), &fval) );
 	JL_RVAL.setUndefined();
 	if (likely( JL_ValueIsCallable(cx, fval) )) {
 
@@ -978,8 +979,10 @@ bool SandboxMaxOperationCallback(JSContext *cx) {
 
 		JS::RootedValue branchLimitExceptionVal(cx);
 		JSOperationCallback tmp = JS_SetOperationCallback(JL_GetRuntime(cx), NULL);
-		const ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), JL_CLASS_NAME(OperationLimit));
+
+		const jl::ProtoCache::Item* cpc = jl::Host::getHost(cx).getCachedClassProto(JL_CLASS_NAME(OperationLimit));
 		ASSERT( cpc );
+
 		JSCompartment *oldCompartment;
 
 		oldCompartment = JS_EnterCompartment(cx, cpc->proto);
@@ -1852,7 +1855,7 @@ DEFINE_FUNCTION( jsstdTest ) {
 
 DEFINE_INIT() {
 
-	JL_IGNORE(proto, sc);
+	JL_IGNORE(proto, cs);
 
 	INIT_CLASS( OperationLimit );
 	return true;

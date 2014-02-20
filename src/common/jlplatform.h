@@ -1863,6 +1863,28 @@ JL_END_NAMESPACE
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 
+///////////////////////////////////////////////////////////////////////////////
+// memory
+//
+
+ALWAYS_INLINE bool
+JL_enableLowFragmentationHeap() {
+
+#ifdef XP_WIN
+	// enable low fragmentation heap
+	HANDLE heap = GetProcessHeap();
+	ULONG enable = 2;
+	return HeapSetInformation(heap, HeapCompatibilityInformation, &enable, sizeof(enable)) == TRUE;
+#endif // XP_WIN
+
+	return true; // not implemented
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// system interrupt
+//
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // system errors
