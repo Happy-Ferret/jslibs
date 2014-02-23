@@ -16,4 +16,5 @@
 
 // by default, we run in unsafe mode.
 // mixing safe and unsafe is not allowed.
-DLLLOCAL int _unsafeMode = true;
+
+// DLLLOCAL int _unsafeMode = true;

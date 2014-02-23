@@ -1328,7 +1328,8 @@ int main(int argc, char* argv[]) {
 
 		JL_enableLowFragmentationHeap();
 
-		#ifdef USE_NEDMALLOC
+		// js engine and jslibs low-level allocators must the same
+		#if defined(USE_NEDMALLOC) && defined(HAS_JL_ALLOCATORS)
 		NedAllocators allocators;
 		#else
 		StdAllocators allocators;
@@ -1339,7 +1340,10 @@ int main(int argc, char* argv[]) {
 		#endif // DEBUG
 
 		ThreadedAllocator alloc(allocators);
+
 		HostRuntime::setJSEngineAllocators(allocators);
+		Host::setHostAllocators(allocators);
+
 
 		AutoJSEngineInit ase;
 

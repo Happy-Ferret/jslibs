@@ -17,6 +17,7 @@
 
 #include "jlplatform.h"
 
+
 typedef void* (*jl_malloc_t)( size_t );
 typedef void* (*jl_calloc_t)( size_t, size_t );
 typedef void* (*jl_memalign_t)( size_t, size_t );
@@ -24,6 +25,25 @@ typedef void* (*jl_realloc_t)( void*, size_t );
 typedef size_t (*jl_msize_t)( void* );
 typedef void (*jl_free_t)( void* );
 
+
+extern DLLAPI jl_malloc_t jl_malloc;
+extern DLLAPI jl_calloc_t jl_calloc;
+extern DLLAPI jl_memalign_t jl_memalign;
+extern DLLAPI jl_realloc_t jl_realloc;
+extern DLLAPI jl_msize_t jl_msize;
+extern DLLAPI jl_free_t jl_free;
+
+
+// provide functions to access jl allocators (external libraries are using these symbols)
+EXTERN_C INLINE void* jl_malloc_fct( size_t size ) { return jl_malloc(size); }
+EXTERN_C INLINE void* jl_calloc_fct( size_t num, size_t size ) { return jl_calloc(num, size); }
+EXTERN_C INLINE void* jl_memalign_fct( size_t alignment, size_t size ) { return jl_memalign(alignment, size); }
+EXTERN_C INLINE void* jl_realloc_fct( void *ptr, size_t size ) { return jl_realloc(ptr, size); }
+EXTERN_C INLINE size_t jl_msize_fct( void *ptr ) { return jl_msize(ptr); }
+EXTERN_C INLINE void jl_free_fct( void *ptr ) { jl_free(ptr); }
+
+
+/*
 typedef struct {
 	jl_malloc_t malloc;
 	jl_calloc_t calloc;
@@ -32,14 +52,18 @@ typedef struct {
 	jl_msize_t msize;
 	jl_free_t free;
 } jl_allocators_t;
+*/
 
+/*
 extern jl_malloc_t jl_malloc;
 extern jl_calloc_t jl_calloc;
 extern jl_memalign_t jl_memalign;
 extern jl_realloc_t jl_realloc;
 extern jl_msize_t jl_msize;
 extern jl_free_t jl_free;
+*/
 
+/*
 ALWAYS_INLINE char *
 JL_strdup(const char * src) {
 
@@ -52,7 +76,7 @@ JL_strdup(const char * src) {
 	jl::memcpy(dst, src, size);
 	return dst;
 }
-
+*/
 
 ///////////////////////////////////////////////////////////////////////////////
 // alloc wrappers

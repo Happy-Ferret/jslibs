@@ -25,6 +25,17 @@
 #include "../jslang/jslang.h"
 
 
+DLLAPI int _unsafeMode = true;
+
+DLLAPI jl_malloc_t jl_malloc = NULL;
+DLLAPI jl_calloc_t jl_calloc = NULL;
+DLLAPI jl_memalign_t jl_memalign = NULL;
+DLLAPI jl_realloc_t jl_realloc = NULL;
+DLLAPI jl_msize_t jl_msize = NULL;
+DLLAPI jl_free_t jl_free = NULL;
+
+
+
 JL_BEGIN_NAMESPACE
 
 

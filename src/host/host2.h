@@ -29,6 +29,10 @@
 
 #define JL_MAX_CLASS_PROTO_CACHE_BIT (9)
 
+extern DLLAPI int _unsafeMode;
+
+#include <jlalloc.h>
+
 
 #define JLID_SPEC(name) JLID_##name
 enum {
@@ -292,13 +296,6 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 // Alloc
-	
-typedef void* (*malloc_t)( size_t ) NOTHROW;
-typedef void* (*calloc_t)( size_t, size_t ) NOTHROW;
-typedef void* (*memalign_t)( size_t, size_t ) NOTHROW;
-typedef void* (*realloc_t)( void*, size_t ) NOTHROW;
-typedef size_t (*msize_t)( void* ) NOTHROW;
-typedef void (*free_t)( void* ) NOTHROW;
 
 class Allocators {
 public:
@@ -330,7 +327,7 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 // Threaded memory deallocator
 
-class ThreadedAllocator {
+class DLLAPI ThreadedAllocator {
 
 	enum Constants {
 		MAX_LOAD = 7, // the "load" increase by one each time the thread loop without freeing the whole memory chunk list. When MAX_LOAD is reached, memory is freed synchronously.
@@ -409,7 +406,7 @@ public:
 //
 // - Helps to detect memory leaks (alloc/free balance)
 
-class CountedAlloc {
+class DLLAPI CountedAlloc {
 
 	Allocators &_current;
 	static Allocators _base;
@@ -485,7 +482,7 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 // HostRuntime
 
-class HostRuntime : public jl::CppAllocators {
+class DLLAPI HostRuntime : public jl::CppAllocators {
 
 	// global object
 	// doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
@@ -550,7 +547,7 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 // ModuleManager
 
-class ModuleManager {
+class DLLAPI ModuleManager {
 
 	HostRuntime &_hostRuntime;
 
@@ -663,7 +660,7 @@ public:
 
 // does not support more than (1<<MAX_CLASS_PROTO_CACHE_BIT)-1 proto.
 
-class ProtoCache {
+class DLLAPI ProtoCache {
 
 	const JSClass*
 	removedSlotClasp() const {
@@ -847,7 +844,7 @@ public:
 };
 
 
-class Host : public jl::CppAllocators {
+class DLLAPI Host : public jl::CppAllocators {
 
 	bool _unsafeMode;
 	HostRuntime &_hostRuntime;
@@ -1025,6 +1022,17 @@ public:
 
 
 public: // static
+
+	static void
+	setHostAllocators(Allocators allocators) {
+
+		jl_malloc = allocators.malloc;
+		jl_calloc = allocators.calloc;
+		jl_memalign = allocators.memalign;
+		jl_realloc = allocators.realloc;
+		jl_msize = allocators.msize;
+		jl_free = allocators.free;
+	}
 
 	static ALWAYS_INLINE Host&
 	getHost( JSRuntime *rt ) {

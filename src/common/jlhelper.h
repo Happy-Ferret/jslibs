@@ -41,8 +41,6 @@
 #include <sys/stat.h> // stat() used by JL_LoadScript()
 
 
-extern int _unsafeMode;
-
 class JLData;
 
 ALWAYS_INLINE bool FASTCALL
@@ -1023,8 +1021,6 @@ JL_NewProtolessObj( JSContext *cx ) {
 
 
 
-#include "../host/host2.h"
-
 
 /*
 #ifndef USE_JSHANDLES
@@ -1051,6 +1047,12 @@ namespace jlpv {
 
 #else // USE_JSHANDLES
 */
+
+
+
+#include "../host/host2.h"
+
+
 
 #define JL_DEFINE_ARGS \
 	jl::Args args(ARGSARGS);
@@ -1444,6 +1446,10 @@ JL_ObjectIsInstanceOf( JSContext *, JS::HandleObject obj, JSClass *clasp ) {
 
 	return obj && JL_GetClass(obj) == clasp;
 }
+
+
+
+
 
 
 

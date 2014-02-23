@@ -245,10 +245,14 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 #endif
 
 
+
+
+
 #if defined(_MSC_VER)
+	#define DLLIMPORT __declspec(dllimport)
 	#define DLLEXPORT __declspec(dllexport)
 	#define DLLLOCAL
-#elif defined(__GNUC__)
+#elif defined( __GNUC__ )
 	// info. http://gcc.gnu.org/wiki/Visibility
 	// Support of visibility attribute is mandatory to manage _moduleId scope (must be private but global for the .so).
 	// If visibility hidden is not set for _moduleId,
@@ -257,13 +261,23 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 	//   000168a8 B _moduleId   => uppercase B = global
 	// and should be:
 	//   000168a8 b _moduleId   => lowercase b = local
+	#define DLLIMPORT
 	#define DLLEXPORT __attribute__ ((visibility("default")))
 	#define DLLLOCAL __attribute__ ((visibility("hidden")))
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
+	#define DLLIMPORT
 	#define DLLEXPORT
 	#define DLLLOCAL
 #endif
+
+#if defined( BUILD_DLL )
+	#define DLLAPI DLLEXPORT
+#else
+	#define DLLAPI DLLIMPORT
+#endif
+
+
 
 
 #if defined(_MSC_VER) && _MSC_VER >= 1100
@@ -2002,6 +2016,22 @@ JLTemporaryFilename(char *path) {
 
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+// system misc
+
+ALWAYS_INLINE bool FASTCALL
+JLDisableThreadNotifications() {
+
+#ifdef XP_WIN
+	// doc:
+	//   Disables the DLL_THREAD_ATTACH and DLL_THREAD_DETACH notifications for the specified dynamic-link library (DLL).
+	//   This can reduce the size of the working set for some applications.
+	BOOL st = ::DisableThreadLibraryCalls(jl::GetCurrentModule());
+	return !!st;
+#endif // XP_WIN
+	return true;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////

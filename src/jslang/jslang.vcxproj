@@ -39,9 +39,15 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">
     <ClCompile />
+    <ClCompile>
+      <PreprocessorDefinitions>BUILD_DLL;WIN32;_DEBUG;_USRDLL;DEBUG;JS_HASHMETER;JS_GC_ZEAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">
     <ClCompile />
+    <ClCompile>
+      <PreprocessorDefinitions>BUILD_DLL;WIN32;NDEBUG;_USRDLL;_SECURE_SCL_THROWS=0;_SECURE_SCL=0;_HAS_ITERATOR_DEBUGGING=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="handle.cpp" />

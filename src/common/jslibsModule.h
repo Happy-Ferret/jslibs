@@ -16,7 +16,7 @@
 
 #include "jlplatform.h"
 
-extern uint32_t _moduleId;
+extern DLLLOCAL uint32_t _moduleId;
 
 struct JSContext;
 //class JSObject;
