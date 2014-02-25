@@ -14,19 +14,30 @@
 
 #pragma once
 
-#include "jlplatform.h"
-
-extern DLLLOCAL uint32_t _moduleId;
-
 struct JSContext;
-//class JSObject;
 
-typedef bool (*ModuleInitFunction)(JSContext *, JS::HandleObject, uint32_t id);
+#define SYM_MODULE_INIT ModuleInit
+#define SYM_MODULE_RELEASE ModuleRelease
+#define SYM_MODULE_FREE ModuleFree
+
+#define NAME_MODULE_INIT JL_TOSTRING(SYM_MODULE_INIT)
+#define NAME_MODULE_RELEASE JL_TOSTRING(SYM_MODULE_RELEASE)
+#define NAME_MODULE_FREE JL_TOSTRING(SYM_MODULE_FREE)
+
+typedef bool (*ModuleInitFunction)(JSContext *, JS::HandleObject);
 typedef bool (*ModuleReleaseFunction)(JSContext *);
 typedef void (*ModuleFreeFunction)();
 
-EXTERN_C DLLEXPORT bool ModuleInit(JSContext *cx, JS::HandleObject obj, uint32_t id);
+EXTERN_C DLLEXPORT bool ModuleInit(JSContext *cx, JS::HandleObject obj);
 EXTERN_C DLLEXPORT bool ModuleRelease(JSContext *cx);
 EXTERN_C DLLEXPORT void ModuleFree();
 
-bool InitJslibsModule( JSContext *cx );
+
+typedef ptrdiff_t moduleId_t;
+
+// call from inside a module
+ALWAYS_INLINE const moduleId_t
+moduleId() {
+
+	return reinterpret_cast<moduleId_t>(SYM_MODULE_INIT);
+}

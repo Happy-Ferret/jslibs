@@ -1491,14 +1491,14 @@ enum E_TXTID {
 // note: Support for variadic macros was introduced in Visual C++ 2005
 #define JL_ERR( ... ) \
 	JL_MACRO_BEGIN \
-		jl::Host::getHost(cx).report(cx, false, ##__VA_ARGS__, JL__REPORT_END_ARG); \
+		jl::Host::getHost(cx).report(false, ##__VA_ARGS__, JL__REPORT_END_ARG); \
 		goto bad; \
 	JL_MACRO_END
 
 
 #define JL_WARN( ... ) \
 	JL_MACRO_BEGIN \
-		if ( JL_IS_SAFE && !jl::Host::getHost(cx).report(cx, true, ##__VA_ARGS__, JL__REPORT_END_ARG) ) \
+		if ( JL_IS_SAFE && !jl::Host::getHost(cx).report(true, ##__VA_ARGS__, JL__REPORT_END_ARG) ) \
 			goto bad; \
 	JL_MACRO_END
 

@@ -3,6 +3,9 @@ var loadModule = host.loadModule;
 
 loadModule('jsstd');
 
+
+jsstdTest();
+
 host.stdout('press ctrl-c');
 processEvents(timeoutEvents(1000), host.endSignalEvents());
 host.stdout('done.');

@@ -612,47 +612,25 @@ bad:
 // ModuleManager
 
 ModuleManager::~ModuleManager() {
-
-	jl::QueueEmpty(&_moduleList);
 }
+
 
 ModuleManager::ModuleManager(HostRuntime &hostRuntime)
-: _hostRuntime(hostRuntime) {
-
-	jl::QueueInitialize(&_moduleList);
+: _hostRuntime(hostRuntime), _moduleCount(0) {
 }
 
-bool
-ModuleManager::hasModule(JLLibraryHandler module) {
-
-	for ( jl::QueueCell *it = jl::QueueBegin(&_moduleList); it; it = jl::QueueNext(it) ) {
-
-		if ( (JLLibraryHandler)jl::QueueGetData(it) == module ) {
-
-			return true;
-		}
-	}
-	return false;
-}
-
-bool
-ModuleManager::storeModule(JLLibraryHandler module) {
-
-	// store the module (LIFO)
-	jl::QueueUnshift(&_moduleList, module);
-	return true;
-}
 
 bool
 ModuleManager::loadModule(const char *libFileName, JS::HandleObject obj, JS::MutableHandleValue rval) {
 
 	JSContext *cx = _hostRuntime.context();
 
-	JLLibraryHandler module = JLDynamicLibraryNullHandler;
+	JLLibraryHandler moduleHandle = JLDynamicLibraryNullHandler;
 	JL_ASSERT( libFileName != NULL && *libFileName != '\0', E_ARG, E_NUM(1), E_DEFINED );
+	JL_ASSERT( _moduleCount < MAX_MODULES, E_MODULE, E_COUNT, E_MAX, E_NUM(MAX_MODULES) );
 
-	module = JLDynamicLibraryOpen(libFileName);
-	if ( !JLDynamicLibraryOk(module) ) {
+	moduleHandle = JLDynamicLibraryOpen(libFileName);
+	if ( !JLDynamicLibraryOk(moduleHandle) ) {
 
 		JL_SAFE_BEGIN
 		char errorBuffer[256];
@@ -663,69 +641,73 @@ ModuleManager::loadModule(const char *libFileName, JS::HandleObject obj, JS::Mut
 		rval.setBoolean(false);
 		return true;
 	}
-		
-	if ( hasModule(module) ) {
 
-		JLDynamicLibraryClose(&module);
-		rval.setNull(); // already loaded
+	ModuleInitFunction moduleInit;
+	moduleInit = (ModuleInitFunction)JLDynamicLibrarySymbol(moduleHandle, NAME_MODULE_INIT);
+	JL_ASSERT( moduleInit, E_MODULE, E_NAME(libFileName), E_INIT ); // "Invalid module."
+
+	moduleId_t moduleId;
+	moduleId = reinterpret_cast<moduleId_t>(moduleInit); // JLDynamicLibraryId(module); // module unique ID
+
+	Module &module = moduleSlot(moduleId);
+	
+	if ( !isSlotFree(module) ) {  // already loaded ?
+		
+		ASSERT( module.moduleHandle == moduleHandle );
+		JLDynamicLibraryClose(&moduleHandle);
+		rval.setNull();
 		return true;
 	}
 
-	uint32_t uid;
-	uid = JLDynamicLibraryId(module); // module unique ID
-	ModuleInitFunction moduleInit;
-	moduleInit = (ModuleInitFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_INIT);
-	JL_ASSERT( moduleInit, E_MODULE, E_NAME(libFileName), E_INIT ); // "Invalid module."
-	
-	// CHKHEAP();
+	ASSERT( module.moduleHandle == JLDynamicLibraryNullHandler );
 
-	if ( !moduleInit(cx, obj, uid) ) {
+	module.moduleHandle = moduleHandle;
+	module.moduleId = moduleId;
+
+	if ( !moduleInit(cx, obj) ) {
+
+		module = Module();
 
 		JL_CHK( !JL_IsExceptionPending(cx) );
 		char filename[PATH_MAX];
 		JLDynamicLibraryName((void*)moduleInit, filename, sizeof(filename));
 		JL_ERR( E_MODULE, E_NAME(filename), E_INIT );
 	}
-
-	// CHKHEAP();
-
-	storeModule(module);
 	
 	//JL_CHK( JL_NewNumberValue(cx, uid, JL_RVAL) ); // really needed ? yes, UnloadModule will need this ID, ... but UnloadModule is too complicated to implement and will never exist.
 	rval.setObject(*obj);
-
+	
+	++_moduleCount;
 	return true;
 
 bad:
-	if ( JLDynamicLibraryOk(module) )
-		JLDynamicLibraryClose(&module);
+	if ( JLDynamicLibraryOk(moduleHandle) )
+		JLDynamicLibraryClose(&moduleHandle);
 	return false;
 
 }
 
 bool
 ModuleManager::releaseModules() {
-		
+
 	JSContext *cx = _hostRuntime.context();
 
-	for ( jl::QueueCell *it = jl::QueueBegin(&_moduleList); it; it = jl::QueueNext(it) ) {
-
-		JLLibraryHandler module = (JLLibraryHandler)jl::QueueGetData(it);
-		ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_RELEASE);
-		if ( moduleRelease != NULL ) {
+	for ( uint16_t i = 0; i < MAX_MODULES; ++i ) {
 		
-			if ( !moduleRelease(cx) ) {
+		Module &module = _moduleList[i];
+		if ( module.moduleId ) {
 
-				char filename[PATH_MAX];
-				JLDynamicLibraryName((void*)moduleRelease, filename, sizeof(filename));
-				JL_WARN( E_MODULE, E_NAME(filename), E_FIN ); // "Fail to release module \"%s\".", filename
+			ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)JLDynamicLibrarySymbol(module.moduleHandle, NAME_MODULE_RELEASE);
+			if ( moduleRelease != NULL ) {
+
+				if ( !moduleRelease(cx) ) {
+
+					char filename[PATH_MAX];
+					JLDynamicLibraryName((void*)moduleRelease, filename, sizeof(filename));
+					JL_WARN( E_MODULE, E_NAME(filename), E_FIN ); // "Fail to release module \"%s\".", filename
+				}
 			}
 		}
-	}
-
-	if ( !jslangModuleRelease(cx) ) {
-		
-		JL_WARN( E_MODULE, E_NAME("jslang"), E_FIN ); // "Fail to release static module jslang."
 	}
 
 	return true;
@@ -737,21 +719,27 @@ ModuleManager::freeModules() {
 
 	// Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
 
-	while ( !jl::QueueIsEmpty(&_moduleList) ) {
+	for ( uint16_t i = 0; i < MAX_MODULES; ++i ) {
+		
+		ModuleManager::Module &module = _moduleList[i];
+		if ( module.moduleId ) {
 
-		JLLibraryHandler module = (JLLibraryHandler)jl::QueueShift(&_moduleList);
-		ModuleFreeFunction moduleFree = (ModuleFreeFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_FREE);
-		if ( moduleFree != NULL ) {
+			ModuleFreeFunction moduleFree = (ModuleFreeFunction)JLDynamicLibrarySymbol(module.moduleHandle, NAME_MODULE_FREE);
+			if ( moduleFree != NULL ) {
+		
+				moduleFree();
+			}
 
-			moduleFree();
+			//#ifndef DEBUG // else the memory block was allocated in a DLL that was unloaded prior to the _CrtMemDumpAllObjectsSince() call.
+			if ( JLDynamicLibraryOk(module.moduleHandle) )
+				JLDynamicLibraryClose(&module.moduleHandle);
+			//#endif
+
+			#ifdef DEBUG
+			module = Module();
+			#endif
 		}
-
-		//#ifndef DEBUG // else the memory block was allocated in a DLL that was unloaded prior to the _CrtMemDumpAllObjectsSince() call.
-		JLDynamicLibraryClose(&module);
-		//#endif
 	}
-
-	jslangModuleFree();
 
 	return true;
 }
@@ -968,6 +956,9 @@ Host::~Host() {
 
 	_ids.destructAll();
 	_moduleManager.freeModules();
+
+	jslangModuleFree();
+
 }
 
 // init the host for jslibs usage (modules, errors, ...)
@@ -1003,7 +994,12 @@ Host::create() {
 	//JL_CHK( jl::InitClass(cx, globalObject, host2::classSpec) ); // 
 	INIT_CLASS( host );
 
+
 	// init static modules
+	ModuleManager::Module &module = moduleManager().moduleSlot(jslangModuleId);
+	ASSERT( moduleManager().isSlotFree(module) ); // free slot
+	module.moduleHandle = JLDynamicLibraryNullHandler;
+	module.moduleId = jslangModuleId;
 	if ( !jslangModuleInit(cx, obj) )
 		JL_ERR( E_MODULE, E_NAME("jslang"), E_INIT );
 
@@ -1013,8 +1009,18 @@ Host::create() {
 
 bool
 Host::destroy() {
+	
+	JSContext *cx = _hostRuntime.context();
 		
-	return _moduleManager.releaseModules();
+	JL_CHK( _moduleManager.releaseModules() );
+
+	if ( !jslangModuleRelease(cx) ) {
+		
+		JL_WARN( E_MODULE, E_NAME("jslang"), E_FIN ); // "Fail to release static module jslang."
+	}
+
+	return true;
+	JL_BAD;
 }
 
 bool
@@ -1210,7 +1216,6 @@ DEFINE_PROPERTY_SETTER( incrementalGarbageCollector ) {
 }
 
 
-
 /**doc
 $TOC_MEMBER $INAME
  $BOOL $INAME()
@@ -1329,8 +1334,13 @@ DEFINE_FUNCTION( loadModule ) {
 	}
 */
 
+	JL_CHK( Host::getHost(cx).moduleManager().loadModule(libFileName, JL_OBJ, JL_RVAL) );
+
 
 //	JL_ASSERT( hpv, E_HOST, E_STATE, E_COMMENT("context private") );
+
+
+/*
 	JL_ASSERT( libFileName != NULL && *libFileName != '\0', E_ARG, E_NUM(1), E_DEFINED );
 
 	module = JLDynamicLibraryOpen(libFileName);
@@ -1361,7 +1371,7 @@ DEFINE_FUNCTION( loadModule ) {
 	moduleInit = (ModuleInitFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_INIT);
 	JL_ASSERT( moduleInit, E_MODULE, E_NAME(libFileName), E_INIT ); // "Invalid module."
 	
-	if ( !moduleInit(cx, JL_OBJ, uid) ) {
+	if ( !moduleInit(cx, JL_OBJ) ) {
 
 		JL_CHK( !JL_IsExceptionPending(cx) );
 		char filename[PATH_MAX];
@@ -1380,6 +1390,10 @@ bad:
 	if ( JLDynamicLibraryOk(module) )
 		JLDynamicLibraryClose(&module);
 	return false;
+*/
+
+	return true;
+	JL_BAD;
 }
 
 

@@ -375,7 +375,9 @@ DEFINE_FUNCTION( processEvents ) {
 	int st;
 	//ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, jslangModuleId);
 
-	ModulePrivate *mpv = (ModulePrivate*)jl::Host::getHost(cx).moduleManager().getModulePrivateOrNULL(jslangModuleId);
+	//ModulePrivate *mpv = (ModulePrivate*)jl::Host::getHost(cx).moduleManager().getModulePrivateOrNULL(jslangModuleId);
+
+	ModulePrivate *mpv = (ModulePrivate*)jl::Host::getHost(cx).moduleManager().modulePrivate(jslangModuleId);
 
 	ASSERT( JLSemaphoreOk(mpv->processEventSignalEventSem) );
 

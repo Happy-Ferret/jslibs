@@ -15,9 +15,12 @@ var a = new Socket();
 throw 0;
 */
 
-
 host.stdout('press ctrl-c');
-processEvents(timeoutEvents(4000), host.endSignalEvents());
+
+loadModule('jsstd');
+loadModule('jsstd');
+
+processEvents(timeoutEvents(1000), host.endSignalEvents());
 host.stdout('done.');
 
 

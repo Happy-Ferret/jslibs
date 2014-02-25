@@ -42,7 +42,7 @@
       <AdditionalIncludeDirectories>../../libs/nspr/$(Platform)_$(Configuration)/dist/include/nspr;../../libs/nspr/$(Platform)_$(Configuration)/dist/include/nspr/private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>../../libs/nspr/$(Platform)_$(Configuration)/dist/lib/nspr4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>../../libs/nspr/$(Platform)_$(Configuration)/dist/lib/nspr4.lib;$(jslibsRootDir)src\host\$(jslibsIntDir)host.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">
@@ -50,7 +50,7 @@
       <AdditionalIncludeDirectories>../../libs/nspr/$(Platform)_$(Configuration)/dist/include/nspr;../../libs/nspr/$(Platform)_$(Configuration)/dist/include/nspr/private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>../../libs/nspr/$(Platform)_$(Configuration)/dist/lib/nspr4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>../../libs/nspr/$(Platform)_$(Configuration)/dist/lib/nspr4.lib;$(jslibsRootDir)src\host\$(jslibsIntDir)host.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

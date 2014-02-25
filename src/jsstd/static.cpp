@@ -1776,10 +1776,12 @@ bool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 }
 
 
-
 DEFINE_FUNCTION( jsstdTest ) {
 
 	JL_IGNORE(vp, argc, cx);
+
+
+	void *test = &ModuleInit;
 
 
 /*

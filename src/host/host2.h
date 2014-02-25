@@ -14,10 +14,7 @@
 
 #pragma once
 
-
-#define NAME_MODULE_INIT "ModuleInit"
-#define NAME_MODULE_RELEASE "ModuleRelease"
-#define NAME_MODULE_FREE "ModuleFree"
+typedef ptrdiff_t moduleId_t;
 
 #define NAME_GLOBAL_CLASS "Global"
 
@@ -544,32 +541,48 @@ public:
 };
 
 
+
 //////////////////////////////////////////////////////////////////////////////
 // ModuleManager
 
+#define MAX_MODULES 256
+
+
 class DLLAPI ModuleManager {
 
+	struct Module {
+		moduleId_t moduleId; // 0 = free slot
+		JLLibraryHandler moduleHandle; // JLDynamicLibraryNullHandler if uninitialized
+		void *privateData; // user data
+
+		Module() : moduleId(0), moduleHandle(JLDynamicLibraryNullHandler), privateData(NULL) {
+		}
+	};
+
+	friend class Host;
+
 	HostRuntime &_hostRuntime;
+	Module _moduleList[MAX_MODULES];
+	uint16_t _moduleCount;
 
-	struct ModulePrivate {
-		uint32_t moduleId;
-		void *privateData;
-		ModulePrivate() : moduleId(0), privateData(NULL) {}
-	} _modulePrivate[1<<8]; // does not support more than 256 modules.
 
-	jl::Queue _moduleList;
+	ALWAYS_INLINE uint16_t
+	moduleHash( const moduleId_t moduleId ) {
+
+		ASSERT( moduleId != 0 );
+		return moduleId % MAX_MODULES;
+		//	return ((uint8_t*)&moduleId)[0] ^ ((uint8_t*)&moduleId)[1] ^ ((uint8_t*)&moduleId)[2] ^ ((uint8_t*)&moduleId)[3] << 1;
+		// uint32_t a = moduleId ^ (moduleId >> 16);
+		// return (a ^ a >> 8) & 0xFF;
+	}
+
+
 
 public:
 
 	~ModuleManager();
 
 	ModuleManager(HostRuntime &hostRuntime);
-
-	bool
-	hasModule(JLLibraryHandler module);
-
-	bool
-	storeModule(JLLibraryHandler module);
 
 	bool
 	loadModule(const char *libFileName, JS::HandleObject obj, JS::MutableHandleValue rval);
@@ -580,77 +593,48 @@ public:
 	bool
 	freeModules();
 
+/*
+	ALWAYS_INLINE Module &
+	getFreeModuleSlot( const moduleId_t moduleId ) {
 
+		ASSERT( moduleId );
+		uint16_t hashIndex = moduleHash(moduleId);
+		while ( _moduleList[hashIndex].moduleId != 0 ) {
 
-	static ALWAYS_INLINE uint8_t
-	moduleHash( const uint32_t moduleId ) {
-
-		ASSERT( moduleId != 0 );
-		//	return ((uint8_t*)&moduleId)[0] ^ ((uint8_t*)&moduleId)[1] ^ ((uint8_t*)&moduleId)[2] ^ ((uint8_t*)&moduleId)[3] << 1;
-		uint32_t a = moduleId ^ (moduleId >> 16);
-		return (a ^ a >> 8) & 0xFF;
+			if ( ++hashIndex >= MAX_MODULES )
+				hashIndex = 0;
+		}
+		return _moduleList[hashIndex];
 	}
-
+*/
 
 	ALWAYS_INLINE bool
-	initModulePrivate( const uint32_t moduleId, void *modulePrivate ) {
+	isSlotFree( const Module &module ) const {
 
-		ASSERT( moduleId != 0 );
-		ASSERT( modulePrivate );
-
-		uint8_t id = moduleHash(moduleId);
-
-		while ( _modulePrivate[id].moduleId != 0 ) { // assumes that modulePrivate struct is init to 0
-
-			if ( _modulePrivate[id].moduleId == moduleId )
-				return false; // module private already exist or moduleId not unique
-			++id; // uses unsigned char overflow
-		}
-		_modulePrivate[id].moduleId = moduleId;
-		_modulePrivate[id].privateData = modulePrivate;
-		return true;
+		return module.moduleId == 0;
 	}
 
+	ALWAYS_INLINE Module &
+	moduleSlot( const moduleId_t moduleId ) {
 
-	ALWAYS_INLINE void* FASTCALL
-	getModulePrivateOrNULL( uint32_t moduleId ) {
+		ASSERT( moduleId );
+		uint16_t hashIndex = moduleHash(moduleId);
+		
+		while ( !isIn(_moduleList[hashIndex].moduleId, 0, moduleId) ) {
 
-		ASSERT( moduleId != 0 );
-
-		uint8_t id = moduleHash(moduleId);
-		uint8_t id0 = id;
-
-		while ( _modulePrivate[id].moduleId != moduleId ) {
-
-			++id; // uses unsigned char overflow
-			if ( id == id0 )
-				return NULL;
+			if ( ++hashIndex >= MAX_MODULES )
+				hashIndex = 0;
 		}
-		return _modulePrivate[id].privateData;
+		return _moduleList[hashIndex];
 	}
 
+	ALWAYS_INLINE void* & FASTCALL
+	modulePrivate( const moduleId_t moduleId ) {
 
-	ALWAYS_INLINE void* FASTCALL
-	getModulePrivate( uint32_t moduleId ) {
-
-		ASSERT( moduleId != 0 );
-		uint8_t id = moduleHash(moduleId);
-
-	#ifdef DEBUG
-		uint8_t maxid = id;
-	#endif // DEBUG
-
-		while ( _modulePrivate[id].moduleId != moduleId ) {
-
-			++id; // uses unsigned char overflow
-
-	#ifdef DEBUG
-			ASSERT( id != maxid );
-	#endif // DEBUG
-
-		}
-		return _modulePrivate[id].privateData;
+		ASSERT( moduleId );
+		return moduleSlot(moduleId).privateData;
 	}
+
 };
 
 
@@ -1051,18 +1035,15 @@ public: // static
 
 JL_END_NAMESPACE
 
-
-
-
+	
+	
 	
 ///////////////////////////////////////////////////////////////////////////////
 // IDs cache
 
-
 // examples:
 //   JLID(cx, _unserialize) -> jsid
 //   JLID_NAME(cx, _unserialize) -> w_char
-
 
 
 #ifdef DEBUG

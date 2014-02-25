@@ -14,9 +14,9 @@
 
 #include "stdafx.h"
 #include <jlhelper.cpp>
-#include <jslibsModule.cpp>
 #include "jsstd.h"
 
+#include <jslibsModule.h>
 
 DECLARE_STATIC()
 
@@ -30,14 +30,16 @@ $MODULE_FOOTER
 **/
 
 bool
-ModuleInit(JSContext *cx, JS::HandleObject obj, uint32_t id) {
+ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
-	JL_CHK( InitJslibsModule(cx, id)  );
+	JLDisableThreadNotifications();
+
+	JL_ASSERT(jl::Host::getHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 
 	ModulePrivate *mpv;
 	mpv = (ModulePrivate*)jl_malloc(sizeof(ModulePrivate));
 	JL_ASSERT_ALLOC( mpv );
-	JL_CHKM( jl::Host::getHost(cx).moduleManager().initModulePrivate(_moduleId, mpv), E_MODULE, E_INIT ); // "Module id already in use."
+	jl::Host::getHost(cx).moduleManager().modulePrivate(moduleId()) = mpv;
 
 	mpv->objIdList = NULL;
 	mpv->lastObjectId = 0;
@@ -59,7 +61,7 @@ ModuleRelease(JSContext *cx) {
 	if ( host.hostRuntime().canSkipCleanup() ) // do not cleanup in unsafe mode.
 		return true;
 
-	ModulePrivate *mpv = (ModulePrivate*)host.moduleManager().getModulePrivate(_moduleId);
+	ModulePrivate *mpv = (ModulePrivate*)host.moduleManager().modulePrivate(moduleId());
 
 	if ( mpv->objIdList )
 		jl_free(mpv->objIdList);

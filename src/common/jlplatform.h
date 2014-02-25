@@ -258,9 +258,9 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 	// If visibility hidden is not set for _moduleId,
 	// DLLLOCAL uint32_t _moduleId = 0;
 	// nm build/default/src/jsstd/jsstd | grep moduleId
-	//   000168a8 B _moduleId   => uppercase B = global
+	//   000168a8 B _moduleId   => uppercase B = Global "bss" (that is, uninitialized data space) symbol.
 	// and should be:
-	//   000168a8 b _moduleId   => lowercase b = local
+	//   000168a8 b _moduleId   => lowercase b = Local bss symbol.
 	#define DLLIMPORT
 	#define DLLEXPORT __attribute__ ((visibility("default")))
 	#define DLLLOCAL __attribute__ ((visibility("hidden")))
@@ -669,6 +669,29 @@ S_ASSERT( DBL_MANT_DIG < 64 );
 
 
 JL_BEGIN_NAMESPACE
+
+template <typename T, typename T1>
+ALWAYS_INLINE bool
+isIn(T val, T1 v1) {
+	
+	return val == v1;
+}
+
+template <typename T, typename T1, typename T2>
+ALWAYS_INLINE bool
+isIn(T val, T1 v1, T2 v2) {
+	
+	return val == v1 || val == v2;
+}
+
+template <typename T, typename T1, typename T2, typename T3>
+ALWAYS_INLINE bool
+isIn(T val, T1 v1, T2 v2, T2 v3) {
+	
+	return val == v1 || val == v2 || val == v3;
+}
+
+
 
 
 ALWAYS_INLINE NOALIAS int
@@ -1489,6 +1512,12 @@ GetCurrentModule() {
 	//	MEMORY_BASIC_INFORMATION mbi;
 	//	VirtualQuery( &dummy, &mbi, sizeof(mbi) );
 	//	return reinterpret_cast<HMODULE>(mbi.AllocationBase);
+
+}
+
+#elif defined(XP_UNIX)
+	int dladdr(void *addr, Dl_info *info);
+	...
 }
 #endif
 

@@ -99,12 +99,10 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_DEFINE_ARGS;
 
-	if ( !args.isConstructing() ) {
-
-		return JL_GetHostPrivate(cx)->report(cx, false, E_THISOBJ, E_CONSTRUCT);
-	}
-
 	JL_DEFINE_CONSTRUCTOR_OBJ;
+
+	JL_ASSERT_CONSTRUCTING();
+
 	JL_ASSERT_ARGC_RANGE(0,1);
 
 	{

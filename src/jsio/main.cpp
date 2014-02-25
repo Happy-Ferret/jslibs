@@ -14,8 +14,7 @@
 
 #include "stdafx.h"
 #include <jlhelper.cpp>
-#include <jslibsModule.cpp>
-
+#include <jslibsModule.h>
 
 DECLARE_CLASS( IoError )
 DECLARE_CLASS( Descriptor )
@@ -43,9 +42,12 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
-bool ModuleInit(JSContext *cx, JS::HandleObject obj, uint32_t id) {
+bool
+ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
-	JL_CHK( InitJslibsModule(cx, id)  );
+	JLDisableThreadNotifications();
+
+	JL_ASSERT(jl::Host::getHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 
 	if ( instanceCount == 0 && !PR_Initialized() ) {
 
@@ -54,7 +56,10 @@ bool ModuleInit(JSContext *cx, JS::HandleObject obj, uint32_t id) {
 	}
 	PR_AtomicIncrement(&instanceCount);
 
-	JL_CHKM( JL_SetModulePrivate(cx, _moduleId, jl_calloc(sizeof(JsioPrivate), 1)), E_MODULE, E_INIT );
+	JsioPrivate *mpv;
+	mpv = (JsioPrivate*)jl_calloc(sizeof(JsioPrivate), 1);
+	JL_ASSERT_ALLOC( mpv );
+	jl::Host::getHost(cx).moduleManager().modulePrivate(moduleId()) = mpv;
 
 	INIT_CLASS( IoError );
 	INIT_CLASS( Descriptor );
@@ -74,9 +79,10 @@ bool ModuleInit(JSContext *cx, JS::HandleObject obj, uint32_t id) {
 
 bool ModuleRelease(JSContext *cx) {
 
-	JsioPrivate *mpv = (JsioPrivate*)JL_GetModulePrivate(cx, _moduleId);
+	jl::Host &host = jl::Host::getHost(cx);
+	JsioPrivate *mpv = (JsioPrivate*)host.moduleManager().modulePrivate(moduleId());
 
-	if ( JL_GetHostPrivate(cx)->canSkipCleanup ) // do not cleanup in unsafe mode.
+	if ( host.hostRuntime().canSkipCleanup() ) // do not cleanup in unsafe mode.
 		return true;
 
 	if ( mpv->peCancel != NULL )

@@ -15,8 +15,6 @@
 
 #pragma once
 
-static const uint32_t jslangModuleId = jl::CastCStrToUint32("lang");
-
 #define PROCESSEVENT_MAX_ITEM (sizeof(uint32_t) * 8 -1) // see eventsMask. -1 for the sign
 
 struct ProcessEventThreadInfo {
@@ -38,3 +36,9 @@ struct ModulePrivate {
 bool jslangModuleInit(JSContext *cx, JS::HandleObject obj);
 bool jslangModuleRelease(JSContext *cx);
 void jslangModuleFree();
+
+
+//static const uint32_t jslangModuleId = jl::CastCStrToUint32("lang");
+
+#define jslangModuleId (reinterpret_cast<moduleId_t>(jslangModuleInit))
+

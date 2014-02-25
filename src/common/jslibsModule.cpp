@@ -16,12 +16,8 @@
 #include "jlhelper.h" // see InitJslibsModule()
 #include "jlalloc.h"
 
-// (TBD) Should we create a new module for so few symbols ?
 
-// set moduleId as uninitialized.
-uint32_t _moduleId = 0;
-
-
+/*
 static bool FASTCALL
 InitJslibsModule( JSContext *cx, uint32_t id ) {
 
@@ -38,7 +34,7 @@ InitJslibsModule( JSContext *cx, uint32_t id ) {
 
 	ASSERT( _moduleId == 0 || _moduleId == id );
 
-	if ( _moduleId == 0 )
+	if ( _moduleId == 0 ) // id is initialized once, even if the dll is shared multiple times
 		_moduleId = id;
 
 	//host.getAllocators(jl_malloc, jl_calloc, jl_memalign, jl_realloc, jl_msize, jl_free); // useless since host is a dll
@@ -46,7 +42,7 @@ InitJslibsModule( JSContext *cx, uint32_t id ) {
 	return true;
 	JL_BAD;
 }
-
+*/
 
 /* see InitJslibsModule()
 #if defined _WINDLL && !defined JL_NO_DLL_MAIN

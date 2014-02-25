@@ -68,6 +68,7 @@ DEF( INTERFACE,      "interface", JSEXN_NONE )
 DEF( THISOPERATION,  "this operation", JSEXN_NONE )
 DEF( LIB,            "library", JSEXN_NONE )
 DEF( OS,             "operating system", JSEXN_INTERNALERR )
+DEF( COUNT,          "count", JSEXN_RANGEERR )
 
 //
 DEF( RANGE,          "must be between", JSEXN_RANGEERR )

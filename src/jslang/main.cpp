@@ -40,7 +40,9 @@ bool jslangModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	ModulePrivate *mpv = (ModulePrivate*)jl_calloc(sizeof(ModulePrivate), 1);
 
-	JL_CHKM( jl::Host::getHost(cx).moduleManager().initModulePrivate(jslangModuleId, mpv), E_MODULE, E_INIT );
+	jl::Host::getHost(cx).moduleManager().modulePrivate(jslangModuleId) = mpv;
+
+	// JL_CHKM( , E_MODULE, E_INIT );
 	
 	mpv->processEventSignalEventSem = JLSemaphoreCreate(0);
 
@@ -57,7 +59,7 @@ bool jslangModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 bool jslangModuleRelease(JSContext *cx) {
 
-	ModulePrivate *mpv = (ModulePrivate*)jl::Host::getHost(cx).moduleManager().getModulePrivate(jslangModuleId);
+	ModulePrivate *mpv = (ModulePrivate*)jl::Host::getHost(cx).moduleManager().modulePrivate(jslangModuleId);
 	if ( !mpv )
 		return false;
 
@@ -79,12 +81,11 @@ bool jslangModuleRelease(JSContext *cx) {
 	}
 	JLSemaphoreFree(&mpv->processEventSignalEventSem);
 
-	jl_free(mpv);
+	jl_free( mpv );
 
 	return true;
 }
 
 
 void jslangModuleFree() {
-
 }

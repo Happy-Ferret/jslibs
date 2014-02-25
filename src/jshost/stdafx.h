@@ -20,5 +20,4 @@
 #include <time.h>
 #include <signal.h>
 
-#include "../host/host.h"
 #include "../host/host2.h"

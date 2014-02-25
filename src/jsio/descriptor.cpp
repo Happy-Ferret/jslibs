@@ -96,7 +96,8 @@ void FinalizeDescriptor(JSFreeOp *fop, JSObject *obj) {
 		return;
 
 	JS::RootedValue imported(fop->runtime(), JS_GetReservedSlot(obj, SLOT_JSIO_DESCRIPTOR_IMPORTED));
-	if ( imported.toBoolean() ) // Descriptor was inported, then do not close it
+
+	if ( !imported.isUndefined() ) // Descriptor was inported, then do not close it
 		return;
 
 	PRStatus status;
@@ -746,7 +747,7 @@ static bool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JS::HandleO
 
 
 	JsioPrivate *mpv;
-	mpv = (JsioPrivate*)JL_GetModulePrivate(cx, _moduleId);
+	mpv = (JsioPrivate*)jl::Host::getHost(cx).moduleManager().modulePrivate(moduleId());
 	if ( mpv->peCancel == NULL ) {
 
 		mpv->peCancel = PR_NewPollableEvent();
