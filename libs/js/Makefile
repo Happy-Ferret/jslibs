@@ -47,7 +47,7 @@ $(INT_DIR)Makefile: ./src/js/src/configure
 # rm tmp.rej
 
 	mkdir -p $(INT_DIR)
-	cd $(INT_DIR) && CXXFLAGS="$(_CFLAGS)" ../src/js/src/configure $(_CONFIGURE_OPTIONS) --with-windows-version=601 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements --disable-tests --without-intl-api --disable-threadsafe
+	cd $(INT_DIR) && CXXFLAGS="$(_CFLAGS)" ../src/js/src/configure $(_CONFIGURE_OPTIONS) --with-windows-version=601 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements --disable-tests --without-intl-api --disable-threadsafe --enable-exact-rooting
 #	--enable-intl-api (require to remove --disable-intl-api and to add jslibs/libs/js/src/intl directory)
 #	--enable-ctypes (require to be linked with NSPR)
 
