@@ -812,6 +812,13 @@ memcpy(void *dst_, const void *src_, size_t len) {
 	return ::memcpy(dst, src, len);
 }
 
+/*
+ALWAYS_INLINE void *
+memset(void *dst, size_t len, uint8_t val) {
+    
+	return ::memchr(dst, val, len);
+}
+*/
 
 INLINE unsigned long FASTCALL
 IntSqrt(unsigned long x) {

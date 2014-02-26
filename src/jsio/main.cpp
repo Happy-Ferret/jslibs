@@ -82,7 +82,7 @@ bool ModuleRelease(JSContext *cx) {
 	jl::Host &host = jl::Host::getHost(cx);
 	JsioPrivate *mpv = (JsioPrivate*)host.moduleManager().modulePrivate(moduleId());
 
-	if ( host.hostRuntime().canSkipCleanup() ) // do not cleanup in unsafe mode.
+	if ( host.hostRuntime().skipCleanup() ) // do not cleanup in unsafe mode.
 		return true;
 
 	if ( mpv->peCancel != NULL )
@@ -90,14 +90,15 @@ bool ModuleRelease(JSContext *cx) {
 
 	jl_free(mpv);
 
+
 	return true;
 //	JL_BAD;
 }
 
-void ModuleFree() {
+void ModuleFree(bool skipCleanup) {
 
 	PR_AtomicDecrement(&instanceCount);
-	if ( instanceCount == 0 && PR_Initialized() ) {
+	if ( !skipCleanup && instanceCount == 0 && PR_Initialized() ) {
 
 		PR_Cleanup(); // doc. PR_Cleanup must be called by the primordial thread near the end of the main function.
 		// (TBD) manage PR_Cleanup's return value

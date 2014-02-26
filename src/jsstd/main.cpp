@@ -58,7 +58,7 @@ bool
 ModuleRelease(JSContext *cx) {
 
 	jl::Host &host = jl::Host::getHost(cx);
-	if ( host.hostRuntime().canSkipCleanup() ) // do not cleanup in unsafe mode.
+	if ( host.hostRuntime().skipCleanup() ) // do not cleanup in unsafe mode.
 		return true;
 
 	ModulePrivate *mpv = (ModulePrivate*)host.moduleManager().modulePrivate(moduleId());

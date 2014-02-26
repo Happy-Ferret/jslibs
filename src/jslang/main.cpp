@@ -87,5 +87,5 @@ bool jslangModuleRelease(JSContext *cx) {
 }
 
 
-void jslangModuleFree() {
+void jslangModuleFree(bool skipCleanup) {
 }

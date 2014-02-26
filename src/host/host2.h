@@ -212,6 +212,7 @@ public:
 	destruct(size_t item) {
 
 		(&get(item))->T::~T();
+		//memchr(&get(item), 0, sizeof(T));
 	}
 
 	void
@@ -499,13 +500,15 @@ class DLLAPI HostRuntime : public jl::CppAllocators {
 	bool _isEnding;
 	bool _skipCleanup;
 
-public:
+public: // static
 
 	static void
 	setJSEngineAllocators(Allocators allocators);
 
 	static void
 	errorReporterBasic(JSContext *cx, const char *message, JSErrorReport *report);
+
+public:
 
 	HostRuntime(Allocators allocators = StdAllocators(), uint32_t maybeGCInterval = 0);
 
@@ -522,13 +525,13 @@ public:
 	}
 
 	ALWAYS_INLINE const Allocators &
-	allocators() {
+	allocators() const {
 	
 		return _allocators;
 	}
 
 	ALWAYS_INLINE bool
-	canSkipCleanup() const {
+	skipCleanup() const {
 		
 		return _skipCleanup;
 	}
@@ -580,8 +583,6 @@ class DLLAPI ModuleManager {
 
 public:
 
-	~ModuleManager();
-
 	ModuleManager(HostRuntime &hostRuntime);
 
 	bool
@@ -590,8 +591,8 @@ public:
 	bool
 	releaseModules();
 
-	bool
-	freeModules();
+	void
+	freeModules(bool skipCleanup);
 
 /*
 	ALWAYS_INLINE Module &
@@ -669,7 +670,19 @@ public:
 	};
 
 	StaticArray< Item, 1<<JL_MAX_CLASS_PROTO_CACHE_BIT > items;
-	
+
+	void removeAll() {
+
+		for ( int i = 0; i < items.length; ++i ) {
+			
+			if ( items.getConst(i).clasp != NULL && items.getConst(i).clasp != removedSlotClasp() ) {
+
+				items.destruct(i);
+				items.get(i).clasp = NULL;
+			}
+		}
+	}
+
 	~ProtoCache() {
 
 		// destruct only items that has been constructed.
@@ -855,18 +868,19 @@ class DLLAPI Host : public jl::CppAllocators {
 	bool
 	hostStderrWrite(const char *message, size_t length);
 
-
 public:
-	~Host();
-
 	Host( HostRuntime &hr, StdIO &hostStdIO, bool unsafeMode = false );
 
 	// init the host for jslibs usage (modules, errors, ...)
+	
 	bool
 	create();
 
 	bool
-	destroy();
+	destroy(bool skipCleanup = false);
+
+	void
+	free(bool skipCleanup = false);
 
 	ALWAYS_INLINE bool
 	unsafeMode() const {
@@ -879,7 +893,6 @@ public:
 
 		return compatId != 0 && _compatId == compatId;
 	}
-
 
 	ALWAYS_INLINE HostRuntime &
 	hostRuntime() const {

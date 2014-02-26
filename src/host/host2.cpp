@@ -611,9 +611,6 @@ bad:
 //////////////////////////////////////////////////////////////////////////////
 // ModuleManager
 
-ModuleManager::~ModuleManager() {
-}
-
 
 ModuleManager::ModuleManager(HostRuntime &hostRuntime)
 : _hostRuntime(hostRuntime), _moduleCount(0) {
@@ -714,8 +711,8 @@ ModuleManager::releaseModules() {
 	JL_BAD;
 }
 
-bool
-ModuleManager::freeModules() {
+void
+ModuleManager::freeModules(bool skipCleanup) {
 
 	// Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
 
@@ -727,7 +724,7 @@ ModuleManager::freeModules() {
 			ModuleFreeFunction moduleFree = (ModuleFreeFunction)JLDynamicLibrarySymbol(module.moduleHandle, NAME_MODULE_FREE);
 			if ( moduleFree != NULL ) {
 		
-				moduleFree();
+				moduleFree(skipCleanup);
 			}
 
 			//#ifndef DEBUG // else the memory block was allocated in a DLL that was unloaded prior to the _CrtMemDumpAllObjectsSince() call.
@@ -740,8 +737,6 @@ ModuleManager::freeModules() {
 			#endif
 		}
 	}
-
-	return true;
 }
 
 
@@ -952,22 +947,13 @@ Host::Host( HostRuntime &hr, StdIO &hostStdIO, bool unsafeMode )
 	_ids.constructAll(hr.runtime());
 }
 
-Host::~Host() {
-
-	_ids.destructAll();
-	_moduleManager.freeModules();
-
-	jslangModuleFree();
-
-}
-
 // init the host for jslibs usage (modules, errors, ...)
 bool
 Host::create() {
 
-	JSContext *cx = _hostRuntime.context();
+	JL_SetRuntimePrivate(_hostRuntime.runtime(), this);
 
-	JL_SetRuntimePrivate(_hostRuntime.runtime(), static_cast<void*>(this));
+	JSContext *cx = _hostRuntime.context();
 
 	JS::ContextOptionsRef(cx)
 		.setStrictMode(_unsafeMode);
@@ -979,27 +965,20 @@ Host::create() {
 
 	_objectProto.set(JS_GetObjectPrototype(cx, obj));
 	_objectClasp = JL_GetClass(_objectProto);
-
-	//JSObject *newObject = JS_NewObject(cx, NULL, NULL, NULL);
-	//hpv->objectClass = JL_GetClass(newObject);
-	//hpv->objectProto = JL_GetPrototype(cx, newObject);
-	//JL_CHK( JL_GetClassPrototype(cx, JSProto_Object, &hpv->objectProto) ); // JS_GetObjectPrototype
-	//hpv->objectClass = JL_GetClass(hpv->objectProto);
-	//ASSERT( hpv->objectClass );
-	//ASSERT( hpv->objectProto );
 	
 	// global functions & properties
 	JL_CHKM( JS_DefinePropertyById(cx, obj, JLID(cx, global), OBJECT_TO_JSVAL(obj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
 
-	//JL_CHK( jl::InitClass(cx, globalObject, host2::classSpec) ); // 
+	ASSERT(cx && obj);
 	INIT_CLASS( host );
+	ASSERT( _objectProto );
 
-
-	// init static modules
+	// init static modules (jslang)
 	ModuleManager::Module &module = moduleManager().moduleSlot(jslangModuleId);
 	ASSERT( moduleManager().isSlotFree(module) ); // free slot
 	module.moduleHandle = JLDynamicLibraryNullHandler;
 	module.moduleId = jslangModuleId;
+	ASSERT( jslangModuleInit != (ModuleInitFunction)NULL);
 	if ( !jslangModuleInit(cx, obj) )
 		JL_ERR( E_MODULE, E_NAME("jslang"), E_INIT );
 
@@ -1007,21 +986,44 @@ Host::create() {
 	JL_BAD;
 }
 
+
 bool
-Host::destroy() {
+Host::destroy(bool skipCleanup) {
 	
 	JSContext *cx = _hostRuntime.context();
 		
 	JL_CHK( _moduleManager.releaseModules() );
 
+	ASSERT( jslangModuleRelease != (ModuleReleaseFunction)NULL );
 	if ( !jslangModuleRelease(cx) ) {
 		
 		JL_WARN( E_MODULE, E_NAME("jslang"), E_FIN ); // "Fail to release static module jslang."
 	}
 
+	_classProtoCache.removeAll();
+	_hostObject.set(NULL);
+	_objectProto.set(NULL);
+
+	if ( !skipCleanup ) {
+	
+		_ids.destructAll();
+	}
+
 	return true;
 	JL_BAD;
 }
+
+void
+Host::free(bool skipCleanup) {
+
+	if ( !skipCleanup ) {
+
+		_moduleManager.freeModules(skipCleanup);
+		ASSERT( jslangModuleFree != (ModuleFreeFunction)NULL);
+		jslangModuleFree(skipCleanup);
+	}
+}
+
 
 bool
 Host::report( bool isWarning, ... ) const {

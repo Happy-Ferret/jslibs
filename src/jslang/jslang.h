@@ -35,7 +35,7 @@ struct ModulePrivate {
 
 bool jslangModuleInit(JSContext *cx, JS::HandleObject obj);
 bool jslangModuleRelease(JSContext *cx);
-void jslangModuleFree();
+void jslangModuleFree(bool skipCleanup);
 
 
 //static const uint32_t jslangModuleId = jl::CastCStrToUint32("lang");

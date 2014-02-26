@@ -15,6 +15,15 @@ var a = new Socket();
 throw 0;
 */
 
+loadModule('jsio');
+
+[].forEach(function() {})
+
+//var a = new Socket();
+
+throw 0;
+
+
 host.stdout('press ctrl-c');
 
 loadModule('jsstd');

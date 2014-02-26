@@ -10,8 +10,10 @@ loadModule('jsstd');
 loadModule('jsio');
 
 
-var a = new Socket();
+//jsioTest();
 
+	[].forEach(function() {})
+	
 
 
 throw 0;

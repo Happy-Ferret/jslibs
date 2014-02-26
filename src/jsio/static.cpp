@@ -1067,6 +1067,9 @@ DEFINE_FUNCTION( jsioTest ) {
 
 	JL_IGNORE( argc, cx );
 	JL_DEFINE_ARGS;
+
+
+
 /*
 	const char **processArgv;
 
