@@ -14,12 +14,14 @@
 
 #include "stdafx.h"
 
-// set stack to 2MB:
+#define HOST_STACK_SIZE 4194304
+
+// set stack to 4MB:
 #if defined(XP_WIN)
-	#pragma comment (linker, "/STACK:0x400000")
+	#pragma comment (linker, JL_TOSTRING(/STACK:HOST_STACK_SIZE))
 #elif defined(XP_UNIX)
-	#pragma stacksize 4194304
-	//char stack[0x200000] __attribute__ ((section ("STACK"))) = { 0 };
+	#pragma stacksize HOST_STACK_SIZE
+	//char stack[0x400000] __attribute__ ((section ("STACK"))) = { 0 };
 	//init_sp(stack + sizeof (stack));
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
@@ -1043,8 +1045,8 @@ EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS::
 	if ( upe->callbackFunction.get().isUndefined() )
 		return true;
 
-	jsval rval;
-	JL_CHK( JS_CallFunctionValue(cx, upe->callbackFunctionThis, upe->callbackFunction, 0, NULL, &rval) );
+	JS::RootedValue rval(cx);
+	JL_CHK( JS_CallFunctionValue(cx, upe->callbackFunctionThis, upe->callbackFunction, JS::EmptyValueArray, &rval) );
 
 	return true;
 	JL_BAD;
@@ -1183,16 +1185,11 @@ volatile bool NedAllocators::_skipCleanup = false;
 
 
 
-
+/*
 int
 run(jl::HostRuntime &hostRuntime, CmdLineArguments &args, int &exitValue) {
 
 	JSContext *cx = hostRuntime.context();
-/*
-	JS::RootedValue tmpVal(cx);
-	JS::RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
-	JL_CHK( ExecuteScriptText(cx, global, "(function() { for (var i = 0; i < 10000; ++i); })()", false, &tmpVal) );
-*/
 
 	HostStdIO hostIO;
 	jl::Host host(hostRuntime, hostIO);
@@ -1311,6 +1308,8 @@ run(jl::HostRuntime &hostRuntime, CmdLineArguments &args, int &exitValue) {
 	return true;
 	JL_BAD;
 }
+*/
+
 
 //#ifndef JSGC_USE_EXACT_ROOTING
 //	S_ASSERT(false);
@@ -1340,16 +1339,15 @@ int main(int argc, char* argv[]) {
 		#else
 		StdAllocators allocators;
 		#endif // USE_NEDMALLOC
+*/
+		StdAllocators allocators;
+
+
+		//ThreadedAllocator alloc(allocators);
 
 		#ifdef DEBUG
 		CountedAlloc countAlloc(allocators);
 		#endif // DEBUG
-
-		ThreadedAllocator alloc(allocators);
-*/
-
-		StdAllocators allocators;
-		CountedAlloc countAlloc(allocators);
 
 		HostRuntime::setJSEngineAllocators(allocators);
 		Host::setHostAllocators(allocators);
@@ -1362,7 +1360,7 @@ int main(int argc, char* argv[]) {
 
 		HostRuntime hostRuntime(allocators);
 
-		JL_CHK( hostRuntime.create() );
+		JL_CHK( hostRuntime.create(-1, -1, HOST_STACK_SIZE) );
 		
 		//maybe use  --enable-exact-rooting
 //		JL_CHK( run(hostRuntime, args, exitValue) );

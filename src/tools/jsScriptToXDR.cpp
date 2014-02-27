@@ -12,6 +12,8 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
+#include <js/RequiredDefines.h>
+
 #ifdef WIN32
 	#define _CRT_SECURE_NO_WARNINGS
 	#define _CRT_NONSTDC_NO_WARNINGS
@@ -167,7 +169,7 @@ int main(int argc, char* argv[]) {
 //	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
 	
 	JS::DisableIncrementalGC(rt);
-	JS::DisableGenerationalGC(rt);
+//	JS::DisableGenerationalGC(rt);
 
 	//JSC::MacroAssembler::SetSSE3Disabled();
 

@@ -537,7 +537,7 @@ public:
 	}
 
 	bool
-	create(uint32_t maxMem = (uint32_t)-1, uint32_t maxAlloc = (uint32_t)-1, bool lazyStandardClasses = true);
+	create(uint32_t maxMem = (uint32_t)-1, uint32_t maxAlloc = (uint32_t)-1, size_t nativeStackQuota = 0, bool lazyStandardClasses = true);
 
 	bool
 	destroy(bool skipCleanup = false);

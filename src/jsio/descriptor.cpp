@@ -764,7 +764,7 @@ static bool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JS::HandleO
 	// (TBD) find a better solution to root fdArray content
 	// (TBD) use AutoValueVector avr(cx); avr.reserve(16); avr.append(val);
 
-
+	// use HandleValueArray or PersistentHandleValueArray or HeapHandleValueArray ?
 	upe->descArray = new JS::PersistentRootedObject(cx, JS_NewArrayObject(cx, fdCount, NULL));
 	
 

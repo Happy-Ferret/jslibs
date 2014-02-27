@@ -12,8 +12,15 @@ loadModule('jsio');
 
 //jsioTest();
 
-	[].forEach(function() {})
-	
+//	[].forEach(function() {})
+
+	//
+
+	var process = new Process('jshost', ['-u', '-i', 'host.stdout(host.arguments.toString())', '123', '-test']);
+	print(process.stdout)
+
+	//var res = stringify(process.stdout.read());
+
 
 
 throw 0;

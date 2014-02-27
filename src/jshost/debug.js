@@ -3,33 +3,31 @@ var loadModule = host.loadModule;
 
  //RunJsircbot(false); throw 0;
  //loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  halt();
- //loadModule('jsstd'); exec('../common/tools.js');  runLocalQAFile();
+ //loadModule('jsstd'); exec('../common/tools.js');  runLocalQAFile(); throw 0;
  //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
 
 /*
 loadModule('jsstd');
-loadModule('jsio');
+
 var a = new Socket();
 throw 0;
 */
 
 loadModule('jsio');
-
-[].forEach(function() {})
-
-//var a = new Socket();
+host.stdout((new File).name);
 
 throw 0;
 
-
 host.stdout('press ctrl-c');
 
+for (var i = 0; i < 100000; ++i );
+
 loadModule('jsstd');
 loadModule('jsstd');
 
-processEvents(timeoutEvents(1000), host.endSignalEvents());
+processEvents(timeoutEvents(3000), host.endSignalEvents());
 host.stdout('done.');
 
 

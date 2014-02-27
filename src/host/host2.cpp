@@ -485,13 +485,13 @@ HostRuntime::errorReporterBasic(JSContext *cx, const char *message, JSErrorRepor
 }
 
 
-HostRuntime::HostRuntime(Allocators allocators, uint32_t maybeGCInterval)
-: _allocators(allocators), rt(NULL), cx(NULL), _isEnding(false), _skipCleanup(false), _watchDog(*this, maybeGCInterval) {
+HostRuntime::HostRuntime(Allocators allocators, uint32_t maybeGCIntervalMs)
+: _allocators(allocators), rt(NULL), cx(NULL), _isEnding(false), _skipCleanup(false), _watchDog(*this, maybeGCIntervalMs) {
 }
 
 
 bool
-HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, bool lazyStandardClasses ) {
+HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota, bool lazyStandardClasses ) {
 
 	rt = JS_NewRuntime(maxAlloc, JS_NO_HELPER_THREADS); // JSGC_MAX_MALLOC_BYTES
 	JL_CHK( rt );
@@ -502,7 +502,12 @@ HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, bool lazyStandardClasse
 	// doc: maxMem specifies the number of allocated bytes after which garbage collection is run. Maximum nominal heap before last ditch GC.
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem); 
 
+	//JS::DisableGenerationalGC(rt);
+
 	//JS_SetGCParametersBasedOnAvailableMemory
+
+	if ( nativeStackQuota > 0 )
+		JS_SetNativeStackQuota(rt, nativeStackQuota); // see jshost STACK_SIZE macro
 
 	cx = JS_NewContext(rt, 8192); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 	JL_CHK( cx ); //, "unable to create the context." );

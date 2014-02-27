@@ -98,11 +98,8 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_DEFINE_ARGS;
-
 	JL_DEFINE_CONSTRUCTOR_OBJ;
-
 	JL_ASSERT_CONSTRUCTING();
-
 	JL_ASSERT_ARGC_RANGE(0,1);
 
 	{
@@ -821,9 +818,6 @@ DEFINE_PROPERTY( standard ) {
 		if ( fd == NULL )
 			return ThrowIoError(cx);
 		JL_SetPrivate(  obj, fd );
-		
-
-
 		JL_CHK( JL_SetReservedSlot(obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, JL_TRUE()) ); // avoid PR_Close
 	}
 	return true;

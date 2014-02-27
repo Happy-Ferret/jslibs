@@ -318,6 +318,7 @@ DEFINE_PROPERTY_GETTER( stdout ) {
 	JL_ASSERT_THIS_INSTANCE();
 
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_PROCESS_STDOUT, JL_RVAL) );
+
 	return true;
 	JL_BAD;
 }

@@ -1561,7 +1561,30 @@ SessionId() {
 ALWAYS_INLINE size_t
 RemainingStackSize() {
 #if defined(XP_WIN)
+/*
+	#pragma warning(push)
+	#pragma warning(disable : 4312) // warning C4312: 'operation' : conversion from 'type1' to 'type2' of greater size
+	NT_TIB *tib = (NT_TIB*)__readfsdword(0x18); // http://en.wikipedia.org/wiki/Win32_Thread_Information_Block
+	#pragma warning(pop)
+*/
+	NT_TIB *tib = (NT_TIB*)NtCurrentTeb();
+	volatile BYTE *currentSP;
+	__asm mov [currentSP], esp;
+	return currentSP - (BYTE*)tib->StackLimit;
 
+#elif defined(XP_UNIX)
+
+	return (size_t)-1;
+
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
+}
+
+ALWAYS_INLINE size_t
+ThreadStackSize() {
+#if defined(XP_WIN)
+/*
 	#pragma warning(push)
 	#pragma warning(disable : 4312) // warning C4312: 'operation' : conversion from 'type1' to 'type2' of greater size
 	NT_TIB *tib = (NT_TIB*)__readfsdword(0x18); // http://en.wikipedia.org/wiki/Win32_Thread_Information_Block
@@ -1570,10 +1593,18 @@ RemainingStackSize() {
 	volatile BYTE *currentSP;
 	__asm mov [currentSP], esp;
 	return currentSP - (BYTE*)tib->StackLimit;
+*/
+
+	NT_TIB *tib = (NT_TIB*)NtCurrentTeb();
+	DWORD stackBase = (DWORD)tib->StackBase;
+	DWORD stackLimit = (DWORD)tib->StackLimit;
+	return stackLimit - stackBase;
 
 #elif defined(XP_UNIX)
 
-	return (size_t)-1;
+	struct rlimit limit;
+	getrlimit (RLIMIT_STACK, &limit);
+	return (size_t)limit.rlim_cur;
 
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
