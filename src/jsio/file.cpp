@@ -802,7 +802,7 @@ $TOC_MEMBER $INAME
  $TYPE File *stderr* $READONLY
   Is a jsio::File that represents the standard error.
 **/
-DEFINE_PROPERTY( standard ) {
+DEFINE_PROPERTY_GETTER( standard ) {
 
 	JL_IGNORE( obj );
 
@@ -823,6 +823,11 @@ DEFINE_PROPERTY( standard ) {
 	return true;
 	JL_BAD;
 }
+
+
+DEFINE_PROPERTY_GETTER_SWITCH( stdin, standard, PR_StandardInput );
+DEFINE_PROPERTY_GETTER_SWITCH( stdout, standard, PR_StandardOutput );
+DEFINE_PROPERTY_GETTER_SWITCH( stderr, standard, PR_StandardError );
 
 /**doc
 === Constants ===
@@ -902,9 +907,12 @@ CONFIGURE_CLASS
 	END_PROPERTY_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-		PROPERTY_CREATE( stdin  ,PR_StandardInput  ,JSPROP_PERMANENT|JSPROP_READONLY, standard, NULL ) // (TBD) change this
-		PROPERTY_CREATE( stdout ,PR_StandardOutput ,JSPROP_PERMANENT|JSPROP_READONLY, standard, NULL ) // (TBD) change this
-		PROPERTY_CREATE( stderr ,PR_StandardError  ,JSPROP_PERMANENT|JSPROP_READONLY, standard, NULL ) // (TBD) change this
+//		PROPERTY_CREATE( stdin  ,PR_StandardInput  ,JSPROP_PERMANENT|JSPROP_READONLY, standard, NULL ) // (TBD) change this
+//		PROPERTY_CREATE( stdout ,PR_StandardOutput ,JSPROP_PERMANENT|JSPROP_READONLY, standard, NULL ) // (TBD) change this
+//		PROPERTY_CREATE( stderr ,PR_StandardError  ,JSPROP_PERMANENT|JSPROP_READONLY, standard, NULL ) // (TBD) change this
+		PROPERTY_GETTER( stdin )
+		PROPERTY_GETTER( stdout )
+		PROPERTY_GETTER( stderr )
 	END_STATIC_PROPERTY_SPEC
 
 	BEGIN_CONST

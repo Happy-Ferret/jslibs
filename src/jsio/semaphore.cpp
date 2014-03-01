@@ -211,7 +211,7 @@ struct SemProcessEvent {
 
 	PRSem *sem;
 	bool hasEvent;
-	jsval callbackFunction;
+	JS::PersistentRootedValue callbackFunction;
 	JS::PersistentRootedObject callbackFunctionThis;
 };
 
@@ -249,18 +249,23 @@ static bool SemEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx
 	if ( !*hasEvent )
 		return true;
 
-	if ( upe->callbackFunction.isUndefined() )
+	if ( upe->callbackFunction.get().isUndefined() )
 		return true;
 
-	jsval rval;
-	JL_CHK( JS_CallFunctionValue(cx, upe->callbackFunctionThis, upe->callbackFunction, 0, NULL, &rval) );
+	JS::RootedValue rval(cx);
+	JL_CHK( JL_CallFunctionVA(cx, upe->callbackFunctionThis, upe->callbackFunction, &rval) );
 
 
 	return true;
 	JL_BAD;
 }
 
-static void SemWaitFinalize( void* ) {
+static void SemWaitFinalize( void *pe ) {
+
+	SemProcessEvent *upe = (SemProcessEvent*)pe;
+
+	upe->callbackFunction.JS::PersistentRootedValue::~PersistentRootedValue();
+	upe->callbackFunctionThis.JS::PersistentRootedObject::~PersistentRootedObject();
 }
 
 
@@ -277,6 +282,9 @@ DEFINE_FUNCTION( events ) {
 	upe->pe.startWait = SemStartWait;
 	upe->pe.cancelWait = SemCancelWait;
 	upe->pe.endWait = SemEndWait;
+
+	::new(&upe->callbackFunction) JS::PersistentRootedValue(cx);
+	::new(&upe->callbackFunctionThis) JS::PersistentRootedObject(cx);
 
 	ClassPrivate *pv;
 	pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);

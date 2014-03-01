@@ -74,9 +74,9 @@ class SerializerObjectOwnProperties {
 public:
 	SerializerObjectOwnProperties( JSObject *&obj ) : _obj(obj) {}
 
-	operator JSObject*() const {
+	operator JS::HandleObject() const {
 
-		return _obj;
+		return JS::HandleObject::fromMarkedLocation(&_obj);
 	}
 };
 
@@ -90,9 +90,9 @@ class SerializerObjectReservedSlots {
 public:
 	SerializerObjectReservedSlots( JSObject *&obj ) : _obj(obj) {}
 
-	operator JSObject*() const {
+	operator JS::HandleObject() const {
 
-		return _obj;
+		return JS::HandleObject::fromMarkedLocation(&_obj);
 	}
 };
 
@@ -205,21 +205,20 @@ public:
 	bool Write( JSContext *cx, const SerializerObjectOwnProperties &sop ) {
 
 
-		JS::RootedObject obj(cx, sop);
 		JS::RootedValue name(cx);
 		JS::RootedValue value(cx);
 		
-		JSIdArray *idArray = JS_Enumerate(cx, obj); // Get an array of the all *own* enumerable properties of a given object.
+		JSIdArray *idArray = JL_Enumerate(cx, sop); // Get an array of the all *own* enumerable properties of a given object.
 		int len = JS_IdArrayLength(cx, idArray);
 		JL_CHK( idArray );
 		JL_CHK( Write(cx, len) );
 		for ( int i = 0; i < len; ++i ) {
 
-			jsid item = JS_IdArrayGet(cx, idArray, i);
-			JL_CHK( JS_IdToValue(cx, item, name.address()) );
+			JS::RootedId item(cx, JS_IdArrayGet(cx, idArray, i));
+			JL_CHK( JS_IdToValue(cx, item, &name) );
 			JS::RootedString jsstr(cx, name.isString() ? name.toString() : JS::ToString(cx, name));
 			JL_CHK( jsstr );
-			JL_CHK( JS_GetPropertyById(cx, obj, item, &value) );
+			JL_CHK( JS_GetPropertyById(cx, sop, item, &value) );
 			JL_CHK( Write(cx, jsstr) );
 			JL_CHK( Write(cx, value) );
 		}
@@ -255,13 +254,12 @@ public:
 
 	bool Write( JSContext *cx, const SerializerObjectReservedSlots &srs ) {
 
-		JS::RootedObject obj(cx, srs);
 		JS::RootedValue value(cx);
-		uint32_t reservedSlotsCount = JSCLASS_RESERVED_SLOTS(JL_GetClass(obj));
+		uint32_t reservedSlotsCount = JSCLASS_RESERVED_SLOTS(JL_GetClass(srs));
 		JL_CHK( Write(cx, reservedSlotsCount) );
 		for ( uint32_t i = 0; i < reservedSlotsCount; ++i ) {
 
-			JL_CHK( JL_GetReservedSlot( obj, i, &value) );
+			JL_CHK( JL_GetReservedSlot(srs, i, &value) );
 			JL_CHK( Write(cx, value) );
 		}
 		return true;
@@ -422,9 +420,9 @@ public:
 				arg.set(_serializerObj);
 			}
 
-			jsval tmp; // root no need
+			JS::RootedValue tmp(cx); // root no need
 			bool ok;
-			ok = JS_CallFunctionValue(cx, obj, serializeFctVal, 1, arg.address(), &tmp); // rval not used
+			ok = JL_CallFunctionVA(cx, obj, serializeFctVal, &tmp, arg); // rval not used
 			
 			if ( serializerWrapper != NULL ) {
 
@@ -613,14 +611,13 @@ public:
 
 	bool Read( JSContext *cx, SerializerObjectReservedSlots &srs ) {
 
-		JS::RootedObject obj(cx, srs);
 		JS::RootedValue value(cx);
 		uint32_t reservedSlotsCount;
 		JL_CHK( Read(cx, reservedSlotsCount) );
 		for ( uint32_t i = 0; i < reservedSlotsCount; ++i ) {
 
 			JL_CHK( Read(cx, *value.address()) );
-			JL_CHK( JL_SetReservedSlot( obj, i, (JS::HandleValue)&value) );
+			JL_CHK( JL_SetReservedSlot(srs, i, (JS::HandleValue)&value) );
 		}
 		return true;
 		JL_BAD;
@@ -693,7 +690,7 @@ public:
 //				JL_ASSERT_ALLOC( arr );
 //				val = OBJECT_TO_JSVAL(arr);
 
-				JS::RootedObject arr(cx, JS_NewArrayObject(cx, length, NULL));
+				JS::RootedObject arr(cx, JS_NewArrayObject(cx, length));
 				val.setObject(*arr);
 
 				JS::RootedValue tmp(cx);
@@ -842,37 +839,36 @@ public:
 				JL_CHK( Read(cx, data) );
 				JL_CHK( JL_NewBufferCopyN(cx, data.Data(), data.Length(), val) );
 
+				JS::RootedObject arrayBuffer(cx, &val.toObject());
 				JS::RootedObject typedArray(cx);
 				switch ( type ) {
 					case js::ArrayBufferView::TYPE_INT8:
-						typedArray = JS_NewInt8ArrayWithBuffer(cx, &val.toObject(), 0, -1);
+						typedArray = JS_NewInt8ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
 					case js::ArrayBufferView::TYPE_UINT8:
-						typedArray = JS_NewUint8ArrayWithBuffer(cx, &val.toObject(), 0, -1);
+						typedArray = JS_NewUint8ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
 					case js::ArrayBufferView::TYPE_INT16:
-						typedArray = JS_NewInt16ArrayWithBuffer(cx, &val.toObject(), 0, -1);
+						typedArray = JS_NewInt16ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
 					case js::ArrayBufferView::TYPE_UINT16:
-						typedArray = JS_NewUint16ArrayWithBuffer(cx, &val.toObject(), 0, -1);
+						typedArray = JS_NewUint16ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
 					case js::ArrayBufferView::TYPE_INT32:
-						typedArray = JS_NewInt32ArrayWithBuffer(cx, &val.toObject(), 0, -1);
+						typedArray = JS_NewInt32ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
 					case js::ArrayBufferView::TYPE_UINT32:
-						typedArray = JS_NewUint32ArrayWithBuffer(cx, &val.toObject(), 0, -1);
+						typedArray = JS_NewUint32ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
 					case js::ArrayBufferView::TYPE_FLOAT32:
-						typedArray = JS_NewFloat32ArrayWithBuffer(cx, &val.toObject(), 0, -1);
+						typedArray = JS_NewFloat32ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
 					case js::ArrayBufferView::TYPE_FLOAT64:
-						typedArray = JS_NewFloat64ArrayWithBuffer(cx, &val.toObject(), 0, -1);
+						typedArray = JS_NewFloat64ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
 					case js::ArrayBufferView::TYPE_UINT8_CLAMPED:
-						typedArray = JS_NewUint8ClampedArrayWithBuffer(cx, &val.toObject(), 0, -1);
+						typedArray = JS_NewUint8ClampedArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
-					default:
-						typedArray = NULL;
 				}
 
 				JL_CHK( typedArray );
@@ -935,10 +931,9 @@ public:
 				SerializerConstBufferInfo encodedFunction;
 				JL_CHK( Read(cx, encodedFunction) );
 				
-				JS::RootedObject fctObj(cx);
-				fctObj = JS_DecodeInterpretedFunction(cx, encodedFunction.Data(), encodedFunction.Length(), NULL, NULL);
-				
-				fctObj = JS_CloneFunctionObject(cx, fctObj, JS_GetParent(fctObj)); // (TBD) remove this wen bz#741597 wil be fixed.
+				JS::RootedObject fctObj(cx, JS_DecodeInterpretedFunction(cx, encodedFunction.Data(), encodedFunction.Length(), NULL, NULL));
+				JS::RootedObject parentObject(cx, JS_GetParent(fctObj));
+				fctObj = JS_CloneFunctionObject(cx, fctObj, parentObject); // (TBD) remove this wen bz#741597 wil be fixed.
 				
 				val.setObject(*fctObj);
 				break;

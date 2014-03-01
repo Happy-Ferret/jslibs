@@ -2601,7 +2601,7 @@ DEFINE_FUNCTION( forEachPixel ) {
 	jsval level, callArgv[4]; // callArgv[0] is the rval
 
 	JSObject *cArrayObj;
-	cArrayObj = JS_NewArrayObject(cx, channels, NULL);
+	cArrayObj = JS_NewArrayObject(cx, channels);
 	JL_CHK( cArrayObj );
 	callArgv[1] = OBJECT_TO_JSVAL(cArrayObj);
 	{

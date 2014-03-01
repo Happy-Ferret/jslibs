@@ -406,7 +406,7 @@ int do_one( unsigned int namescount, const char * const * names, void* data ) {
 #ifndef JL_NOT_HAS_ICONVLIST
 DEFINE_PROPERTY_GETTER( list ) {
 
-	JS::RootedObject list(cx, JS_NewArrayObject(cx, 0, NULL));
+	JS::RootedObject list(cx, JS_NewArrayObject(cx, 0));
 	JL_CHK( list );
 	vp.setObject(*list);
 	IteratorPrivate ipv;

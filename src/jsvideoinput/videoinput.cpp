@@ -413,7 +413,7 @@ DEFINE_PROPERTY_GETTER( list ) {
 	JL_IGNORE(id, obj);
 
 	int numDevices = videoInput::listDevices(true);
-	JSObject *list = JS_NewArrayObject(cx, numDevices, NULL);
+	JSObject *list = JS_NewArrayObject(cx, numDevices);
 
 	jsval value;
 	int i;

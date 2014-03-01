@@ -218,7 +218,7 @@ DEFINE_FUNCTION( join ) {
 		JS::RootedValue nextFct(cx);
 		JL_CHK( JS_GetPropertyById(cx, argObj, JLID(cx, next), &nextFct) );
 		JL_ASSERT_IS_CALLABLE(nextFct, "iterator");
-		while ( JS_CallFunctionValue(cx, argObj, nextFct, 0, NULL, val.address()) != false ) { // loop until StopIteration or error
+		while ( JS_CallFunctionValue(cx, argObj, nextFct, JS::EmptyValueArray, &val) != false ) { // loop until StopIteration or error
 
 			JL_CHK( JL_JsvalToNative(cx, val, &*++strList) );
 			length += strList->Length();

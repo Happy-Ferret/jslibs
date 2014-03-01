@@ -150,7 +150,8 @@ DEFINE_FUNCTION( expand ) {
 					JL_CHK( JL_CallFunctionVA(cx, JL_OBJ, JL_ARG(2), &value, value) );
 				} else if ( JL_ARG(2).isObject() ) {
 
-					JL_CHK( JS_GetUCProperty(cx, &JL_ARG(2).toObject(), key, keyEnd - key, &value) );
+					JS::RootedObject tmpObj(cx, &JL_ARG(2).toObject());
+					JL_CHK( JS_GetUCProperty(cx, tmpObj, key, keyEnd - key, &value) );
 				} else {
 					
 					continue;
@@ -406,19 +407,28 @@ DEFINE_FUNCTION( clearObject ) {
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
-
-	JSObject *argObj;
-	argObj = &JL_ARG(1).toObject();
+	
+	{
+	
+	JS::RootedObject argObj(cx, &JL_ARG(1).toObject());
+	JS::RootedId id(cx);
 
 	JSIdArray *list;
 	list = JS_Enumerate(cx, argObj); // JS_NewPropertyIterator, JS_NextProperty ?
 	JL_CHK(list);
 
-	for ( int i = 0; i < JS_IdArrayLength(cx, list); ++i )
-		JL_CHK( JS_DeletePropertyById(cx, argObj, JS_IdArrayGet(cx, list, i)) );
+    bool junk;
+	for ( int i = 0; i < JS_IdArrayLength(cx, list); ++i ) {
+
+		id.set(JS_IdArrayGet(cx, list, i));
+		return JS_DeletePropertyById2(cx, argObj, id, &junk);
+	}
 	JS_DestroyIdArray(cx, list);
 
 	JL_RVAL.setUndefined();
+	
+	}
+
 	return true;
 	JL_BAD;
 }
@@ -777,7 +787,8 @@ DEFINE_FUNCTION( print ) {
 	JL_RVAL.setUndefined();
 	if (likely( JL_ValueIsCallable(cx, fval) )) {
 
-		return JS_CallFunctionValue(cx, JL_GetGlobal(cx), fval, JL_ARGC, JS_ARGV(cx,vp), fval.address());
+		//return JS_CallFunctionValue(cx, JL_GetGlobal(cx), fval, JL_ARGC, JS_ARGV(cx,vp), fval.address());
+		return JS_CallFunctionValue(cx, JS::NullPtr(), fval, args.jsargs, &fval);
 	}
 	return true;
 	JL_BAD;
@@ -910,7 +921,6 @@ DEFINE_HAS_INSTANCE() {
 
 CONFIGURE_CLASS
 
-	FROZEN_PROTOTYPE
 	HAS_HAS_INSTANCE
 
 END_CLASS
@@ -956,11 +966,11 @@ static JSClass sandbox_class = {
     JS_PropertyStub,   JS_DeletePropertyStub,
     JS_PropertyStub,   JS_StrictPropertyStub,
     JS_EnumerateStub, (JSResolveOp)sandbox_resolve,
-    JS_ConvertStub,    NULL,
-    JSCLASS_NO_OPTIONAL_MEMBERS
+    JS_ConvertStub,    NULL
 };
 
-struct SandboxContextPrivate {
+class SandboxContextPrivate {
+public:
 
 	SandboxContextPrivate(JSContext *cx) : queryFunctionValue(cx) {
 	}
@@ -1024,9 +1034,7 @@ bool SandboxQueryFunction(JSContext *cx, unsigned argc, jsval *vp) {
 		JL_RVAL.setUndefined();
 	} else {
 
-		JSObject *obj = JS_THIS_OBJECT(cx, vp);
-		JL_CHK( obj );
-		JL_CHK( JS_CallFunctionValue(cx, obj, pv->queryFunctionValue, JL_ARGC, JS_ARGV(cx,vp), JL_RVAL.address()) );
+		JL_CHK( JS_CallFunctionValue(cx, args.thisObj(), pv->queryFunctionValue, args.jsargs, JL_RVAL) );
 		JL_CHKM( JL_RVAL.isPrimitive(), E_RETURNVALUE, E_TYPE, E_TY_PRIMITIVE );
 	}
 	return true;
@@ -1038,7 +1046,6 @@ DEFINE_FUNCTION( sandboxEval ) {
 	JL_DEFINE_ARGS;
 
 	SandboxContextPrivate pv(cx);
-	JS::RootedScript script(cx);
 
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
@@ -1064,10 +1071,14 @@ DEFINE_FUNCTION( sandboxEval ) {
 		pv.maxExecutionTime = 1000; // default value
 
 
-	unsigned lineno;
-	JL_CHK( JS_DescribeScriptedCaller(cx, &script, &lineno) );
 	const char *filename;
-	filename = JS_GetScriptFilename(cx, script);
+	unsigned lineno;
+	
+	{
+	JS::AutoFilename autoFilename;
+	JL_CHK( JS::DescribeScriptedCaller(cx, &autoFilename, &lineno) );
+	filename = autoFilename.get();
+	}
 
 	pv.expired = false;
 	pv.semEnd = JLSemaphoreCreate(0);
@@ -1097,8 +1108,10 @@ DEFINE_FUNCTION( sandboxEval ) {
 
 	JS_FireOnNewGlobalObject(cx, globalObj);
 
+
+
 	bool ok;
-	ok = JS_EvaluateUCScript(cx, globalObj, src, srclen, filename, lineno, vp);
+	ok = JS_EvaluateUCScript(cx, globalObj, src, srclen, filename, lineno, JL_RVAL);
 
 	JSOperationCallback tmp;
 	tmp = JS_SetOperationCallback(JL_GetRuntime(cx), pv.prevOperationCallback);
@@ -1612,10 +1625,8 @@ DEFINE_PROPERTY_GETTER( currentFilename ) {
 	
 	JL_IGNORE(id, obj);
 
-	JS::RootedScript script(cx);
-	JL_CHK( JS_DescribeScriptedCaller(cx, &script, NULL) );
 	const char *filename;
-	filename = JS_GetScriptFilename(cx, script);
+	JL_CHK( JL_GetCurrentLocation(cx, &filename, NULL) );
 	JL_CHK( JL_NativeToJsval(cx, filename, vp) );
 	return true;
 	JL_BAD;
@@ -1636,8 +1647,7 @@ DEFINE_PROPERTY_GETTER( currentLineNumber ) {
 	JL_IGNORE(id, obj);
 
 	unsigned lineno;
-	JS::RootedScript script(cx);
-	JL_CHK( JS_DescribeScriptedCaller(cx, &script, &lineno) );
+	JL_CHK( JL_GetCurrentLocation(cx, NULL, &lineno) );
 	JL_CHK( JL_NativeToJsval(cx, lineno, vp) );
 	return true;
 	JL_BAD;

@@ -158,7 +158,7 @@ struct PropLink {
 					JL_CHK( JS_DefineProperty(cx, obj, nameIt->name, JSVAL_VOID, it->getter, it->setter, attrs) );
 				} else {
 
-					JL_CHK( JS_DefinePropertyWithTinyId(cx, obj, nameIt->name, nameIt->tinyid, JSVAL_VOID, it->getter, it->setter, attrs) );
+					ASSERT(false); //JL_CHK( JS_DefinePropertyWithTinyId(cx, obj, nameIt->name, nameIt->tinyid, JSVAL_VOID, it->getter, it->setter, attrs) );
 				}
 			}
 		}
@@ -321,14 +321,11 @@ struct Class {
 
 			jl::Host &host = jl::Host::getHost(cx);
 
-			JSObject *parentProto;
+			JS::RootedObject parentProto(cx);
 			if ( parentProtoName != NULL ) {
 
 				parentProto = host.getCachedProto(parentProtoName);  //JL_GetCachedProto(hpv, parentProtoName);
 				JL_CHKM( parentProto != NULL, E_STR(parentProtoName), E_STR("prototype"), E_NOTFOUND );
-			} else {
-
-				parentProto = NULL;
 			}
 
 			clasp.flags |= JSCLASS_HAS_RESERVED_SLOTS(reservedSlotCount);

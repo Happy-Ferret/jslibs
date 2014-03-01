@@ -411,7 +411,7 @@ bool VariantToJsval( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rva
 			VARIANT *varray;
 			SafeArrayAccessData(psa, (void**)&varray);
 
-			JSObject *jsArr = JS_NewArrayObject(cx, size, NULL);
+			JSObject *jsArr = JS_NewArrayObject(cx, size);
 			JL_CHK( jsArr );
 			rval.setObject( *jsArr );
 

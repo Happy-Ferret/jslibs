@@ -39,10 +39,10 @@ struct Private {
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
 		return;
 
-	Private *pv = (Private*)JL_GetPrivate(obj);
+	Private *pv = (Private*)js::GetObjectPrivate(obj);
 	if ( pv != NULL ) {
 		
 //		sqlite3_blob_close(pv->pBlob); // closed
@@ -62,25 +62,37 @@ DEFINE_FUNCTION( close ) {
 	JL_ASSERT_ARGC(0);
 
 	Private *pv;
-	pv = (Private*)JL_GetPrivate(obj);
+	pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	jsval v;
-	JL_CHK( JL_GetReservedSlot(obj, SLOT_DATABASE, v) );
-	JL_ASSERT( v.isObject() );
 	DatabasePrivate *dbpv;
-	dbpv = (DatabasePrivate*)JL_GetPrivate(&v.toObject());
-	JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(&v.toObject()) );
+
+	{
+
+	JS::RootedValue v(cx);
+	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_DATABASE, &v) );
+	JL_ASSERT( v.isObject() );
+	
+	{
+	
+	JS::RootedObject tmp(cx, &v.toObject());
+	dbpv = (DatabasePrivate*)JL_GetPrivate(tmp);
+	JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(tmp) );
+
+	}
+
+	}
 
 	if ( sqlite3_blob_close(pv->pBlob) != SQLITE_OK )
 		JL_CHK( SqliteThrowError(cx, dbpv->db) );
 
 	jl::StackRemove(&dbpv->blobList, pv->pBlob);
-	JL_CHK( JL_SetReservedSlot(obj, SLOT_RESULT_DATABASE, JSVAL_VOID) );
+
+	JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_RESULT_DATABASE, JL_UNDEFINED()) );
 
 	jl_free(pv);
 
-	JL_SetPrivate(obj, NULL);
+	JL_SetPrivate(JL_OBJ, NULL);
 	return true;
 	JL_BAD;
 }
@@ -98,7 +110,7 @@ DEFINE_FUNCTION( read ) {
 	JL_ASSERT_ARGC_RANGE(0, 1);
 
 	Private *pv;
-	pv = (Private*)JL_GetPrivate(obj);
+	pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	int blobSize;
@@ -114,11 +126,11 @@ DEFINE_FUNCTION( read ) {
 
 		if ( amount == 0 && available > 0 ) { // not EOF
 
-			JL_CHK( JL_NewEmptyBuffer(cx, *JL_RVAL) );
+			JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
 			return true;
 		}
 
-		amount = js::Min(amount, available);
+		amount = JL_MIN(amount, available);
 	} else {
 
 		amount = available;
@@ -131,7 +143,7 @@ DEFINE_FUNCTION( read ) {
 	}
 
 	uint8_t *buffer;
-	buffer = JL_NewBuffer(cx, amount, *JL_RVAL);
+	buffer = JL_NewBuffer(cx, amount, JL_RVAL);
 	JL_CHK( buffer );
 
 	int st = sqlite3_blob_read(pv->pBlob, buffer, amount, pv->position);
@@ -161,7 +173,7 @@ DEFINE_FUNCTION( write ) {
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &data) );
 
 	Private *pv;
-	pv = (Private*)JL_GetPrivate(obj);
+	pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	// doc: Use the UPDATE SQL command to change the size of a blob.
@@ -340,10 +352,10 @@ bad:
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
 		return;
 
-	DatabasePrivate *pv = (DatabasePrivate*)JL_GetPrivate(obj);
+	DatabasePrivate *pv = (DatabasePrivate*)js::GetObjectPrivate(obj);
 	if ( pv == NULL )
 		return;
 
@@ -415,9 +427,9 @@ DEFINE_FUNCTION( close ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	pv = (DatabasePrivate*)JL_GetPrivate(obj);
+	pv = (DatabasePrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_SetPrivate(obj, NULL);
+	JL_SetPrivate(JL_OBJ, NULL);
 
 	sqlite3_interrupt(pv->db);
 
@@ -471,7 +483,7 @@ DEFINE_FUNCTION( openBlobStream ) {
 	JL_ASSERT_ARGC_RANGE(3, 4);
 
 	DatabasePrivate *pv;
-	pv = (DatabasePrivate*)JL_GetPrivate(obj);
+	pv = (DatabasePrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &tableName) );

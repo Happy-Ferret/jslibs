@@ -19,9 +19,6 @@
 
 JL_BEGIN_NAMESPACE
 
-namespace pv {
-	static const int NOTINYID = -1; // see DefineClassProperties()
-}
 
 typedef int32_t SourceId_t;
 
@@ -83,13 +80,8 @@ StoreProperty( JSContext *cx, JS::HandleObject obj, IN JS::HandleId id, IN JS::H
 ALWAYS_INLINE bool FASTCALL
 DefineClassProperties(JSContext *cx, IN JS::HandleObject obj, IN JSPropertySpec *ps) {
 
-	for ( ; ps->name; ++ps ) {
-
-		if ( ps->tinyid == jl::pv::NOTINYID )
-			JL_CHK( JS_DefineProperty(cx, obj, ps->name, JSVAL_VOID, ps->getter.propertyOp.op, ps->setter.propertyOp.op, ps->flags) );
-		else
-			JL_CHK( JS_DefinePropertyWithTinyId(cx, obj, ps->name, ps->tinyid, JSVAL_VOID, ps->getter.propertyOp.op, ps->setter.propertyOp.op, ps->flags) );
-	}
+	for ( ; ps->name; ++ps )
+		JL_CHK( JS_DefineProperty(cx, obj, ps->name, JSVAL_VOID, ps->getter.propertyOp.op, ps->setter.propertyOp.op, ps->flags) );
 	return true;
 	JL_BAD;
 }
@@ -361,17 +353,15 @@ JL_END_NAMESPACE
 #define FUNCTION_ALIAS(alias, existingName) JS_FN( #alias, _##existingName, 0, FUNCTION_DEFAULT_FLAGS ),
 
 // doc: JSPROP_SHARED - https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
-#define PROPERTY(name) { #name, jl::pv::NOTINYID, JSPROP_PERMANENT|JSPROP_SHARED, JSOP_WRAPPER(_##name##Getter), JSOP_WRAPPER(_##name##Setter) },
-#define PROPERTY_GETTER(name) { #name, jl::pv::NOTINYID, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, JSOP_WRAPPER(_##name##Getter), JSOP_NULLWRAPPER },
-#define PROPERTY_SETTER(name) { #name, jl::pv::NOTINYID, JSPROP_PERMANENT|JSPROP_SHARED, JSOP_NULLWRAPPER, JSOP_WRAPPER(_##name##Setter) },
-#define PROPERTY_SWITCH(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, JSOP_WRAPPER(_##function##Getter), JSOP_WRAPPER(_##function##Setter) }, // Used to define multiple properties with only one pair of getter/setter functions (an enum has to be defiend with less than 256 items !)
-#define PROPERTY_SWITCH_GETTER(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, JSOP_WRAPPER(_##function##Getter), JSOP_NULLWRAPPER },
-#define PROPERTY_CREATE(name,id,flags,getter,setter) { #name, id, flags, JSOP_WRAPPER(_##getter), JSOP_WRAPPER(_##setter) },
-#define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, JSOP_NULLWRAPPER, JSOP_NULLWRAPPER },
+#define PROPERTY(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, JSOP_WRAPPER(_##name##Getter), JSOP_WRAPPER(_##name##Setter) },
+#define PROPERTY_GETTER(name) { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, JSOP_WRAPPER(_##name##Getter), JSOP_NULLWRAPPER },
+#define PROPERTY_SETTER(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, JSOP_NULLWRAPPER, JSOP_WRAPPER(_##name##Setter) },
+//#define PROPERTY_SWITCH(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, JSOP_WRAPPER(_##function##Getter), JSOP_WRAPPER(_##function##Setter) }, // Used to define multiple properties with only one pair of getter/setter functions (an enum has to be defiend with less than 256 items !)
+//#define PROPERTY_SWITCH_GETTER(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, JSOP_WRAPPER(_##function##Getter), JSOP_NULLWRAPPER },
+//#define PROPERTY_CREATE(name,id,flags,getter,setter) { #name, id, flags, JSOP_WRAPPER(_##getter), JSOP_WRAPPER(_##setter) },
+//#define PROPERTY_DEFINE(name) { #name, 0, JSPROP_PERMANENT, JSOP_NULLWRAPPER, JSOP_NULLWRAPPER },
 
 // configuration
-#define FROZEN_PROTOTYPE cs.clasp.flags |= JSCLASS_FREEZE_PROTO;
-#define FROZEN_CONSTRUCTOR cs.clasp.flags |= JSCLASS_FREEZE_CTOR;
 #define HAS_PRIVATE cs.clasp.flags |= JSCLASS_HAS_PRIVATE;
 #define HAS_RESERVED_SLOTS(COUNT) cs.clasp.flags |= JSCLASS_HAS_RESERVED_SLOTS(COUNT);
 #define IS_GLOBAL cs.clasp.flags |= JSCLASS_GLOBAL_FLAGS;
@@ -423,7 +413,7 @@ JL_END_NAMESPACE
 #define DEFINE_NEW_RESOLVE() static bool NewResolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, unsigned flags, JS::MutableHandleObject objp)
 
 #define HAS_ENUMERATE cs.clasp.enumerate = Enumerate;
-#define DEFINE_ENUMERATE() static bool Enumerate(JSContext *cx, JS::HandleObject obj, JSIterateOp enum_op, JS::MutableValue statep, JS::MutableHandleId idp)
+#define DEFINE_ENUMERATE() static bool Enumerate(JSContext *cx, JS::HandleObject obj, JSIterateOp enum_op, JS::MutableHandleValue statep, JS::MutableHandleId idp)
 
 #define HAS_TRACER cs.clasp.trace = Tracer;
 #define DEFINE_TRACER() static void Tracer(JSTracer *trc, JS::HandleObject obj)
@@ -441,24 +431,24 @@ JL_END_NAMESPACE
 #define DEFINE_INIT() static bool Init(JSContext *cx, jl::ClassSpec *cs, JS::HandleObject proto, JS::HandleObject obj)
 
 #define HAS_ADD_PROPERTY cs.clasp.addProperty = AddProperty;
-#define DEFINE_ADD_PROPERTY() static bool AddProperty(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableValue vp)
+#define DEFINE_ADD_PROPERTY() static bool AddProperty(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleValue vp)
 
 #define HAS_DEL_PROPERTY cs.clasp.delProperty = DelProperty;
 #define DEFINE_DEL_PROPERTY() static bool DelProperty(JSContext *cx, JS::HandleObject obj, JS::HandleId id, bool *succeeded)
 
 #define HAS_GET_PROPERTY cs.clasp.getProperty = GetProperty;
-#define DEFINE_GET_PROPERTY() static bool GetProperty(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableValue vp)
+#define DEFINE_GET_PROPERTY() static bool GetProperty(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleValue vp)
 
 #define HAS_SET_PROPERTY cs.clasp.setProperty = SetProperty;
-#define DEFINE_SET_PROPERTY() static bool SetProperty(JSContext *cx, JS::HandleObject obj, JS::HandleId id, bool strict, JS::MutableValue vp)
+#define DEFINE_SET_PROPERTY() static bool SetProperty(JSContext *cx, JS::HandleObject obj, JS::HandleId id, bool strict, JS::MutableHandleValue vp)
 
 #define HAS_GET_OBJECT_OPS cs.clasp.getObjectOps = GetObjectOps;
 #define DEFINE_GET_OBJECT_OPS() static JSObjectOps* GetObjectOps(JSContext *cx, JSClass *clasp)
 
 #define HAS_CHECK_ACCESS cs.clasp.checkAccess = CheckAccess;
-#define DEFINE_CHECK_ACCESS() static bool CheckAccess(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JSAccessMode mode, JS::MutableValue vp)
+#define DEFINE_CHECK_ACCESS() static bool CheckAccess(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JSAccessMode mode, JS::MutableHandleValue vp)
 
-#define HAS_ITERATOR_OBJECT js::Valueify(&cs.clasp)->ext.iteratorObject = IteratorObject;
+#define HAS_ITERATOR_OBJECT const_cast<js::Class*>(js::Valueify(&cs.clasp))->ext.iteratorObject = IteratorObject;
 #define DEFINE_ITERATOR_OBJECT() static JSObject* IteratorObject(JSContext *cx, JS::HandleObject obj, bool keysonly)
 
 
@@ -481,6 +471,19 @@ JL_END_NAMESPACE
 #define DEFINE_PROPERTY_GETTER(name) static bool _##name##Getter(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleValue vp)
 #define DEFINE_PROPERTY_SETTER(name) static bool _##name##Setter(JSContext *cx, JS::HandleObject obj, JS::HandleId id, bool strict, JS::MutableHandleValue vp)
 
+#define DEFINE_PROPERTY_GETTER_SWITCH(NAME, CALL, ARG) \
+	static bool _##NAME##Getter(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleValue vp) { \
+		JS::RootedId tid(cx, INT_TO_JSID(ARG)); \
+		return _##CALL##Getter(cx, obj, tid, vp); \
+	}
+
+#define DEFINE_PROPERTY_SETTER_SWITCH(NAME, CALL, ARG) \
+	static bool _##NAME##Setter(JSContext *cx, JS::HandleObject obj, JS::HandleId id, bool strict, JS::MutableHandleValue vp) { \
+		JS::RootedId tid(cx, INT_TO_JSID(ARG)); \
+		return _##CALL##Setter(cx, obj, tid, strict, vp); \
+	}
+
+#define DEFINE_PROPERTY_SWITCH(NAME, CALL, ARG) DEFINE_PROPERTY_GETTER_SWITCH(NAME, CALL, ARG) DEFINE_PROPERTY_SETTER_SWITCH(NAME, CALL, ARG)
 
 // documentation
 

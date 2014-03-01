@@ -540,7 +540,8 @@ DEFINE_FUNCTION( recvFrom ) {
 	char peerName[47]; // If addr is an IPv4 address, size needs to be at least 16. If addr is an IPv6 address, size needs to be at least 46.
 
 	{
-	JS::RootedObject arrayObject(cx, JS_NewArrayObject(cx, 3, NULL));
+
+	JS::RootedObject arrayObject(cx, JS_NewArrayObject(cx, 3));
 	JL_CHK( arrayObject );
 	JL_RVAL.setObject( *arrayObject );
 
@@ -568,6 +569,7 @@ DEFINE_FUNCTION( recvFrom ) {
 		tmp = JSVAL_VOID;
 		JL_CHK( JL_SetElement(cx, arrayObject, 0, tmp) );
 	}
+
 	}
 
 	return true;
@@ -819,18 +821,6 @@ $TOC_MEMBER multicastLoopback
   IP multicast loopback.
 **/
 
-enum {
-	linger = PR_SockOpt_Linger,
-	noDelay = PR_SockOpt_NoDelay,
-	reuseAddr = PR_SockOpt_Reuseaddr,
-	keepAlive = PR_SockOpt_Keepalive,
-	recvBufferSize = PR_SockOpt_RecvBufferSize,
-	sendBufferSize = PR_SockOpt_SendBufferSize,
-	maxSegment = PR_SockOpt_MaxSegment,
-	nonblocking = PR_SockOpt_Nonblocking,
-	broadcast = PR_SockOpt_Broadcast,
-	multicastLoopback = PR_SockOpt_McastLoopback
-};
 
 DEFINE_PROPERTY_SETTER( Option ) {
 
@@ -957,6 +947,17 @@ DEFINE_PROPERTY_GETTER( Option ) {
 	return true;
 	JL_BAD;
 }
+
+DEFINE_PROPERTY_SWITCH( linger, Option, PR_SockOpt_Linger )
+DEFINE_PROPERTY_SWITCH(	noDelay, Option, PR_SockOpt_NoDelay )
+DEFINE_PROPERTY_SWITCH(	reuseAddr, Option, PR_SockOpt_Reuseaddr )
+DEFINE_PROPERTY_SWITCH(	keepAlive, Option, PR_SockOpt_Keepalive )
+DEFINE_PROPERTY_SWITCH(	recvBufferSize, Option, PR_SockOpt_RecvBufferSize )
+DEFINE_PROPERTY_SWITCH(	sendBufferSize, Option, PR_SockOpt_SendBufferSize )
+DEFINE_PROPERTY_SWITCH(	maxSegment, Option, PR_SockOpt_MaxSegment )
+DEFINE_PROPERTY_SWITCH(	nonblocking, Option, PR_SockOpt_Nonblocking )
+DEFINE_PROPERTY_SWITCH(	broadcast, Option, PR_SockOpt_Broadcast )
+DEFINE_PROPERTY_SWITCH(	multicastLoopback, Option, PR_SockOpt_McastLoopback )
 
 
 /**doc
@@ -1086,7 +1087,7 @@ DEFINE_FUNCTION( getHostsByName ) {
 	{
 	JS::RootedValue tmp(cx);
 	JS::RootedObject addrJsObj(cx);
-	addrJsObj = JS_NewArrayObject(cx, 0, NULL);
+	addrJsObj = JS_NewArrayObject(cx, 0);
 	JL_CHK( addrJsObj );
 	JL_RVAL.setObject(*addrJsObj);
 
@@ -1168,7 +1169,7 @@ DEFINE_FUNCTION( getHostsByAddr ) {
 		return ThrowIoError(cx);
 
 	{
-	JS::RootedObject hostJsObj(cx, JS_NewArrayObject(cx, 0, NULL));
+	JS::RootedObject hostJsObj(cx, JS_NewArrayObject(cx, 0));
 	JL_CHK( hostJsObj );
 	JL_RVAL.setObject(*hostJsObj);
 
@@ -1254,6 +1255,7 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 	BEGIN_PROPERTY_SPEC
+/*
 		PROPERTY_SWITCH( linger, Option )
 		PROPERTY_SWITCH( noDelay, Option )
 		PROPERTY_SWITCH( reuseAddr, Option )
@@ -1264,6 +1266,20 @@ CONFIGURE_CLASS
 		PROPERTY_SWITCH( nonblocking, Option )
 		PROPERTY_SWITCH( broadcast, Option )
 		PROPERTY_SWITCH( multicastLoopback, Option )
+*/
+
+		PROPERTY( linger )
+		PROPERTY( noDelay )
+		PROPERTY( reuseAddr )
+		PROPERTY( keepAlive )
+		PROPERTY( recvBufferSize )
+		PROPERTY( sendBufferSize )
+		PROPERTY( maxSegment )
+		PROPERTY( nonblocking )
+		PROPERTY( broadcast )
+		PROPERTY( multicastLoopback )
+
+
 		PROPERTY_GETTER( peerName )
 		PROPERTY_GETTER( peerPort )
 		PROPERTY_GETTER( sockName )

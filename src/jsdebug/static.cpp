@@ -625,7 +625,7 @@ DEFINE_PROPERTY_GETTER( scriptFilenameList ) {
 
 	JL_IGNORE( id, obj );
 
-	JSObject *arr = JS_NewArrayObject(cx, 0, NULL);
+	JSObject *arr = JS_NewArrayObject(cx, 0);
 	JL_CHK(arr);
 	*vp = OBJECT_TO_JSVAL(arr);
 
@@ -914,7 +914,7 @@ DEFINE_FUNCTION( locate ) {
 	lineno = JS_PCToLineNumber(cx, script, JS_GetFramePC(cx, fp));
 
 	JSObject *arrObj;
-	arrObj = JS_NewArrayObject(cx, 2, NULL);
+	arrObj = JS_NewArrayObject(cx, 2);
 	*JL_RVAL = OBJECT_TO_JSVAL(arrObj);
 
 	if ( script ) {

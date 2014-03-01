@@ -241,14 +241,14 @@ DEFINE_FUNCTION( getVideoModeList ) {
 		return true;
 	}
 
-	JSObject *modesArray = JS_NewArrayObject(cx, 0, NULL);
+	JSObject *modesArray = JS_NewArrayObject(cx, 0);
 	JL_CHK(modesArray);
 	*JL_RVAL = OBJECT_TO_JSVAL( modesArray );
 
 	jsval tmp;
 	for ( int i = 0; modes[i] != NULL; i++ ) {
 
-		JSObject *rectArray = JS_NewArrayObject(cx, 2, NULL);
+		JSObject *rectArray = JS_NewArrayObject(cx, 2);
 		JL_CHK(rectArray);
 
 		tmp = OBJECT_TO_JSVAL(rectArray);

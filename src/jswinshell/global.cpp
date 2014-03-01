@@ -583,7 +583,7 @@ DEFINE_FUNCTION( registryGet ) {
 
 	if ( (argc == 1) || (argc >= 2 && JL_ARG(2).isUndefined()) ) {
 
-		JSObject *arrObj = JS_NewArrayObject(cx, 0, NULL);
+		JSObject *arrObj = JS_NewArrayObject(cx, 0);
 		JL_CHK( arrObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrObj);
 
@@ -787,7 +787,7 @@ DEFINE_FUNCTION( directoryChangesLookup ) {
 
 		if ( res != WAIT_OBJECT_0 ) { // non signaled
 			
-			JSObject *arrObj = JS_NewArrayObject(cx, 0, NULL);
+			JSObject *arrObj = JS_NewArrayObject(cx, 0);
 			JL_CHK( arrObj );
 			*JL_RVAL = OBJECT_TO_JSVAL( arrObj );
 			return true;
@@ -806,7 +806,7 @@ DEFINE_FUNCTION( directoryChangesLookup ) {
 	FILE_NOTIFY_INFORMATION *pFileNotify;
 	pFileNotify = (PFILE_NOTIFY_INFORMATION)&dc->buffer[1-dc->currentBuffer];
 
-	JSObject *arrObj = JS_NewArrayObject(cx, 0, NULL);
+	JSObject *arrObj = JS_NewArrayObject(cx, 0);
 	JL_CHK( arrObj );
 	*JL_RVAL = OBJECT_TO_JSVAL( arrObj );
 

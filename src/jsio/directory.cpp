@@ -373,7 +373,7 @@ DEFINE_FUNCTION( list ) {
 		showDirectoryChar = false;
 
 	{
-	JS::RootedObject addrJsObj(cx, JS_NewArrayObject(cx, 0, NULL));
+	JS::RootedObject addrJsObj(cx, JS_NewArrayObject(cx, 0));
 	JL_CHK( addrJsObj );
 	JL_RVAL.setObject(*addrJsObj);
 

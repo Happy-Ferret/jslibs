@@ -876,7 +876,7 @@ DEFINE_FUNCTION( getInteger ) {
 		if ( JSVAL_IS_INT(JL_ARG(2)) ) {
 
 			count = JL_ARG(2).toInt32();
-			arrayObj = JS_NewArrayObject(cx, count, NULL);
+			arrayObj = JS_NewArrayObject(cx, count);
 			JL_CHK( arrayObj );
 		} else {
 
@@ -951,7 +951,7 @@ DEFINE_FUNCTION( getDouble ) {
 		if ( JSVAL_IS_INT(JL_ARG(2)) ) {
 
 			count = JL_ARG(2).toInt32();
-			arrayObj = JS_NewArrayObject(cx, count, NULL);
+			arrayObj = JS_NewArrayObject(cx, count);
 			JL_CHK( arrayObj );
 		} else {
 
@@ -2055,7 +2055,7 @@ DEFINE_FUNCTION( getLight ) {
 
 	if ( count > 1 ) {
 
-		JS::RootedObject arrayObj(cx, JS_NewArrayObject(cx, count, NULL));
+		JS::RootedObject arrayObj(cx, JS_NewArrayObject(cx, count));
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		JS::RootedValue tmpValue(cx);
@@ -5288,7 +5288,7 @@ DEFINE_FUNCTION( getObjectParameter ) {
 		jsval tmpValue;
 		count = JL_MIN(count, (int)COUNTOF(params));
 
-		JS::RootedObject arrayObj(cx, JS_NewArrayObject(cx, count, NULL));
+		JS::RootedObject arrayObj(cx, JS_NewArrayObject(cx, count));
 		JL_CHK( arrayObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 

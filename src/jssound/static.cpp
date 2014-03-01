@@ -392,7 +392,7 @@ DEFINE_FUNCTION( splitChannels ) {
 	const char *srcBuf;
 	srcBuf = data.GetConstStr();
 
-	JSObject *destArray = JS_NewArrayObject(cx, 0, NULL);
+	JSObject *destArray = JS_NewArrayObject(cx, 0);
 	*JL_RVAL = OBJECT_TO_JSVAL(destArray);
 
 	jsval tmpVal;

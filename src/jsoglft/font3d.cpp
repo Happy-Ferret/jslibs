@@ -242,7 +242,7 @@ DEFINE_FUNCTION( measure ) {
 
 	{
 		OGLFT::BBox bbox = absolute ? pv->face->measure(str) : pv->face->measureRaw(str);
-		JSObject *arrObj = JS_NewArrayObject(cx, 4, NULL);
+		JSObject *arrObj = JS_NewArrayObject(cx, 4);
 		JL_CHK( arrObj );
 		*JL_RVAL = OBJECT_TO_JSVAL(arrObj);
 		jsval tmp;

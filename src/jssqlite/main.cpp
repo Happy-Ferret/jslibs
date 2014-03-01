@@ -54,7 +54,7 @@ $MODULE_FOOTER
 **/
 
 bool
-ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 /* crash case: see http://www.sqlite.org/cvstrac/tktview?tn=3251
 	sqlite3_initialize();
@@ -68,7 +68,9 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 		sqlite3_finalize(pStmt); // pStmt is 0xfeefee at the 2nd loop
 */
  
-	JL_CHK( InitJslibsModule(cx, id) );
+	JLDisableThreadNotifications();
+
+	JL_ASSERT(jl::Host::getHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 
 	//JL_CHKM( sqlite3_config(SQLITE_CONFIG_SINGLETHREAD) == SQLITE_OK, "Unable to set the threading mode to Single-thread." ); // see SQLITE_THREADSAFE=0 define
 	//JL_CHKM( sqlite3_config(SQLITE_CONFIG_SINGLETHREAD) == SQLITE_OK, "Unable to set the threading mode to Single-thread." ); // see SQLITE_THREADSAFE=0 define

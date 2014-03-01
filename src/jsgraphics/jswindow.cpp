@@ -593,7 +593,7 @@ DEFINE_PROPERTY( clientRect ) {
 	JSObject *arrayObj;
 	if ( !JsvalIsArray(cx, *vp) ) {
 
-		arrayObj = JS_NewArrayObject(cx, 4, NULL);
+		arrayObj = JS_NewArrayObject(cx, 4);
 		JL_CHK(arrayObj);
 		*vp = OBJECT_TO_JSVAL(arrayObj);
 	} else { // reusing the stored array is a good idea.

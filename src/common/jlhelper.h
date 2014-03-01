@@ -32,6 +32,7 @@
 #include <jsapi.h>
 #include <jsfriendapi.h>
 #include <js/OldDebugAPI.h> // JS_GetScriptVersion, JS_GetScriptFilename, JS_GetScriptFilename
+#include <js/Id.h>
 
 #ifdef _MSC_VER
 #pragma warning( pop )
@@ -300,6 +301,13 @@ JL_SetElement(JSContext *cx, IN JS::HandleObject obj, unsigned index, IN JS::Han
 	return JS_SetElement(cx, obj, index, value);
 }
 
+ALWAYS_INLINE JSIdArray *
+JL_Enumerate(JSContext *cx, JS::HandleObject obj) {
+
+	JS::RootedObject robj(cx, obj);
+	return JS_Enumerate(cx, robj);
+}
+
 
 ALWAYS_INLINE bool FASTCALL
 JL_GetReservedSlot(IN JS::HandleObject obj, uint32_t slot, OUT JS::MutableHandleValue vp) {
@@ -391,7 +399,19 @@ JL_FALSE() {
 	return JS::HandleValue::fromMarkedLocation(&JS::FalseValue());
 }
 
+ALWAYS_INLINE JS::HandleValue FASTCALL
+JL_UNDEFINED() {
+		
+	return JS::HandleValue::fromMarkedLocation(&JS::UndefinedValue());
+}
+/*
+ALWAYS_INLINE JS::HandleId FASTCALL
+JL_IDEMPTY() {
 
+	const jsid emptyIdValue = JSID_EMPTY;
+	return JS::HandleId::fromMarkedLocation(&emptyIdValue);
+}
+*/
 
 ALWAYS_INLINE JS::HandleId FASTCALL
 JL_JSID_INT32(int32_t i) {
@@ -3039,7 +3059,7 @@ JL_NativeVectorToJsval( JSContext * RESTRICT cx, const T * RESTRICT vector, unsi
 		JL_CHK( JS_SetArrayLength(cx, arrayObj, length) );
 	} else {
 
-		arrayObj = JS_NewArrayObject(cx, length, NULL);
+		arrayObj = JS_NewArrayObject(cx, length);
 		JL_CHK( arrayObj );
 		val.setObject(*arrayObj);
 	}
@@ -3191,7 +3211,7 @@ JL_NativeToProperty( JSContext *cx, IN JS::HandleObject obj, const char *name, c
 
 template <class T>
 ALWAYS_INLINE bool FASTCALL
-JL_NativeToProperty( JSContext *cx, IN JS::HandleObject obj, jsid id, const T &cval ) {
+JL_NativeToProperty( JSContext *cx, IN JS::HandleObject obj, JS::HandleId id, const T &cval ) {
 
 	JS::RootedValue tmp(cx);
 	return JL_NativeToJsval(cx, cval, &tmp) && JS_SetPropertyById(cx, obj, id, tmp);
@@ -4407,6 +4427,19 @@ JL_StackFrameByIndex(JSContext *cx, int frameIndex) {
 	return fp;
 }
 */
+
+INLINE NEVER_INLINE bool FASTCALL
+JL_GetCurrentLocation( JSContext *cx, OUT const char **filename, OUT unsigned *lineno ) {
+
+	JS::AutoFilename autoFilename;
+	if ( JS::DescribeScriptedCaller(cx, filename ? &autoFilename : NULL, lineno ? lineno : NULL) ) {
+	
+		if ( filename )
+			*filename = autoFilename.get();
+		return true;
+	}
+	return false;
+}
 
 
 INLINE NEVER_INLINE bool FASTCALL

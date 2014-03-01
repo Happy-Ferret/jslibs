@@ -16,11 +16,14 @@ loadModule('jsio');
 
 	//
 
-	var process = new Process('jshost', ['-u', '-i', 'host.stdout(host.arguments.toString())', '123', '-test']);
-	print(process.stdout)
+//	var process = new Process('jshost', ['-u', '-i', 'host.stdout(host.arguments.toString())', '123', '-test']);
+//	print(process.stdout)
 
 	//var res = stringify(process.stdout.read());
 
+
+var s = new Socket();
+s.linger = 1;
 
 
 throw 0;

@@ -15,10 +15,9 @@ var a = new Socket();
 throw 0;
 */
 
-loadModule('jsio');
-host.stdout((new File).name);
+//loadModule('jsio');
+//host.stdout((new File).name);
 
-throw 0;
 
 host.stdout('press ctrl-c');
 
