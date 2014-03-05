@@ -153,7 +153,7 @@ JL_updateMallocCounter( JSContext *cx, size_t nbytes ) {
 	JS_updateMallocCounter(cx, nbytes);
 }
 
-ALWAYS_INLINE JSObject * FASTCALL
+ALWAYS_INLINE JSObject* FASTCALL
 JL_GetGlobal( JSContext *cx ) {
 
 	return JS::CurrentGlobalOrNull(cx);
@@ -345,48 +345,6 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 
 
 
-
-
-
-namespace jlpv {
-
-	// useful for structure with jsid initialized to 0, (see HostPrivate ids)
-	ALWAYS_INLINE const jsid
-	NullJsid() {
-
-		jsid tmp;
-		JSID_BITS(tmp) = 0;
-		ASSERT( JSID_IS_ZERO(tmp) );
-		return tmp;
-	}
-}
-
-
-ALWAYS_INLINE jsid FASTCALL
-JL_StringToJsid( JSContext *cx, JS::HandleString jsstr ) {
-
-	ASSERT( jsstr != NULL );
-	JS::RootedString tmp(cx, JS_InternJSString(cx, jsstr)); // if ( !JS_StringHasBeenInterned(cx, jsstr) )
-	if ( !tmp )
-		return jlpv::NullJsid();
-	JS::RootedId id(cx, INTERNED_STRING_TO_JSID(cx, jsstr));
-	return id;
-}
-
-
-ALWAYS_INLINE jsid FASTCALL
-JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
-
-	ASSERT( wstr != NULL );
-	JS::RootedString jsstr(cx, JS_InternUCString(cx, wstr));
-	if ( jsstr == NULL )
-		return jlpv::NullJsid();
-	JS::RootedId id(cx, JL_StringToJsid(cx, jsstr));
-	ASSERT( JSID_IS_STRING(id) );
-	return id;
-}
-
-
 ALWAYS_INLINE JS::HandleValue FASTCALL
 JL_TRUE() {
 		
@@ -404,22 +362,63 @@ JL_UNDEFINED() {
 		
 	return JS::HandleValue::fromMarkedLocation(&JS::UndefinedValue());
 }
-/*
+
+ALWAYS_INLINE JS::HandleObject FASTCALL
+JL_NULL() {
+
+	return JS::HandleObject::fromMarkedLocation(NULL);
+}
+
+
 ALWAYS_INLINE JS::HandleId FASTCALL
 JL_IDEMPTY() {
 
 	const jsid emptyIdValue = JSID_EMPTY;
 	return JS::HandleId::fromMarkedLocation(&emptyIdValue);
 }
-*/
+
+// useful for structure with jsid initialized to 0.
+ALWAYS_INLINE JS::HandleId FASTCALL
+JL_IDZ() {
+
+	jsid tmp;
+	JSID_BITS(tmp) = 0;
+	ASSERT( JSID_IS_ZERO(tmp) );
+	return JS::HandleId::fromMarkedLocation(&tmp);
+}
+
 
 ALWAYS_INLINE JS::HandleId FASTCALL
 JL_JSID_INT32(int32_t i) {
 	
-	jsid idint = INT_TO_JSID(i);
-	return JS::HandleId::fromMarkedLocation(&idint);
+	return JS::HandleId::fromMarkedLocation(&INT_TO_JSID(i));
 }
 
+
+
+ALWAYS_INLINE jsid FASTCALL
+JL_StringToJsid( JSContext *cx, JS::HandleString jsstr ) {
+
+	ASSERT( jsstr != NULL );
+	JS::RootedString tmp(cx, JS_InternJSString(cx, jsstr)); // if ( !JS_StringHasBeenInterned(cx, jsstr) )
+	if ( !tmp )
+		return JL_IDZ();
+	JS::RootedId id(cx, INTERNED_STRING_TO_JSID(cx, jsstr));
+	return id;
+}
+
+
+ALWAYS_INLINE jsid FASTCALL
+JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
+
+	ASSERT( wstr != NULL );
+	JS::RootedString jsstr(cx, JS_InternUCString(cx, wstr));
+	if ( jsstr == NULL )
+		return JL_IDZ();
+	JS::RootedId id(cx, JL_StringToJsid(cx, jsstr));
+	ASSERT( JSID_IS_STRING(id) );
+	return id;
+}
 
 
 /*
@@ -1007,14 +1006,28 @@ JL_NewObjectWithGivenProtoKey( JSContext *cx, JSProtoKey protoKey, JSObject *par
 }
 */
 
-ALWAYS_INLINE JSObject* FASTCALL
-JL_ConstructObject( JSContext *cx, IN JS::HandleObject proto, unsigned argc, JS::Value *argv ) {
+ALWAYS_INLINE
+JSObject* FASTCALL
+JL_ConstructObject( JSContext *cx, IN JS::HandleObject proto ) {
 	
 	JS::RootedObject ctor(cx, JL_GetConstructor(cx, proto));
 	if ( ctor == NULL )
 		return NULL;
-	return JS_New(cx, ctor, argc, argv);
+	return JS_New(cx, ctor, 0, NULL);
 }
+
+ALWAYS_INLINE
+JSObject* FASTCALL
+JL_ConstructObject( JSContext *cx, IN JS::HandleObject proto, JS::HandleValue arg1 ) {
+	
+	jsval argv[] = { arg1 };
+	JS::RootedObject ctor(cx, JL_GetConstructor(cx, proto));
+	if ( ctor == NULL )
+		return NULL;
+	return JS_New(cx, ctor, COUNTOF(argv), argv);
+}
+
+
 
 /*
 #ifndef USE_JSHANDLES
@@ -1384,7 +1397,7 @@ JL_ObjectIsIterable( JSContext * RESTRICT cx, JS::HandleObject obj ) {
 }
 
 ALWAYS_INLINE bool FASTCALL
-JL_ValueIsIterable( JSContext * RESTRICT cx, JS::Value &val ) {
+JL_ValueIsIterable( JSContext * RESTRICT cx, JS::HandleValue val ) {
 
 	JS::RootedObject obj(cx, &val.toObject());
 	return !JSVAL_IS_PRIMITIVE(val) && JL_ObjectIsIterable(cx, obj);
@@ -2354,7 +2367,6 @@ JL_NativeToJsval( JSContext *cx, const uint8_t *cval, size_t length, OUT JS::Mut
 
 // int8
 
-//bool JL_NativeToJsval( JSContext *cx, const int8_t &num, JS::Value &vp );
 bool JL_JsvalToNative( JSContext *cx, IN JS::HandleValue val, int8_t *num );
 
 
@@ -2407,8 +2419,6 @@ JL_JsvalToNative( JSContext *cx, JS::HandleValue val, OUT uint8_t *num ) {
 
 
 // int16
-
-//bool JL_NativeToJsval( JSContext *cx, const int16_t &num, JS::Value &vp );
 
 ALWAYS_INLINE bool FASTCALL
 JL_JsvalToNative( JSContext *cx, IN JS::HandleValue val, int16_t *num ) {
@@ -3617,8 +3627,8 @@ JL_NewImageObject( IN JSContext *cx, IN T width, IN T height, IN U channels, IN 
 
 	ASSERT( width >= 0 && height >= 0 && channels > 0 );
 
-	JS::Value dataVal;
 	uint8_t *data;
+	JS::RootedValue dataVal;
 	JS::RootedObject imageObj(cx, JL_NewObj(cx));
 
 	JL_CHK( imageObj );
@@ -3643,7 +3653,7 @@ JL_NewImageObjectOwner( IN JSContext *cx, IN uint8_t* buffer, IN T width, IN T h
 	ASSERT_IF( buffer != NULL, width > 0 && height > 0 && channels > 0 );
 	ASSERT_IF( buffer != NULL, jl_msize(buffer) >= (size_t)(width * height * channels) );
 
-	JS::Value dataVal;
+	JS::RootedValue dataVal(cx);
 	JS::RootedObject imageObj(cx, JL_NewObj(cx));
 
 	JL_CHK( imageObj );
@@ -3719,7 +3729,7 @@ JL_NewByteAudioObject( JSContext *cx, T bits, U channels, V frames, W rate, OUT 
 	ASSERT( bits > 0 && (bits % 8) == 0 && channels > 0 && frames >= 0 && rate > 0 );
 
 	uint8_t *data;
-	JS::Value dataVal;
+	JS::RootedValue dataVal(cx);
 	JS::RootedObject audioObj(cx, JL_NewObj(cx));
 
 	JL_CHK( audioObj );
@@ -3744,7 +3754,7 @@ JL_NewByteAudioObjectOwner( JSContext *cx, uint8_t* buffer, T bits, U channels, 
 	ASSERT( bits > 0 && (bits % 8) == 0 && channels > 0 && frames >= 0 && rate > 0 );
 	ASSERT_IF( buffer != NULL, jl_msize(buffer) >= (size_t)( (bits/8) * channels * frames ) );
 
-	JS::Value dataVal;
+	JS::RootedValue dataVal(cx);
 	JS::RootedObject audioObj(cx, JL_NewObj(cx));
 	JL_CHK( audioObj );
 	vp.setObject(*audioObj);
@@ -4500,18 +4510,18 @@ JL_ExceptionSetScriptLocation( JSContext * RESTRICT cx, IN OUT JS::MutableHandle
 // NativeInterface API
 
 ALWAYS_INLINE bool
-ReserveNativeInterface( JSContext *cx, JS::HandleObject obj, const jsid &id ) {
+ReserveNativeInterface( JSContext *cx, JS::HandleObject obj, JS::HandleId id ) {
 
-	ASSERT( id != jlpv::NullJsid() );
+	ASSERT( id != JL_IDZ() );
 	return JS_DefinePropertyById(cx, obj, id, JSVAL_VOID, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 }
 
 
 template <class T>
 ALWAYS_INLINE bool
-SetNativeInterface( JSContext *cx, JS::HandleObject obj, const jsid &id, const T nativeFct ) {
+SetNativeInterface( JSContext *cx, JS::HandleObject obj, JS::HandleId id, const T nativeFct ) {
 
-	ASSERT( id != jlpv::NullJsid() );
+	ASSERT( id != JL_IDZ() );
 	if ( nativeFct != NULL ) {
 
 		JL_CHK( JS_DefinePropertyById(cx, obj, id, JSVAL_TRUE, NULL, (JSStrictPropertyOp)nativeFct, JSPROP_READONLY | JSPROP_PERMANENT) ); // hacking the setter of a read-only property seems safe.
@@ -4526,9 +4536,9 @@ SetNativeInterface( JSContext *cx, JS::HandleObject obj, const jsid &id, const T
 
 template <class T>
 ALWAYS_INLINE const T
-GetNativeInterface( JSContext *cx, JS::HandleObject obj, const jsid &id ) {
+GetNativeInterface( JSContext *cx, JS::HandleObject obj, JS::HandleId id ) {
 
-	ASSERT( id != jlpv::NullJsid() );
+	ASSERT( id != JL_IDZ() );
 	JS::Rooted<JSPropertyDescriptor> desc(cx);
 	if ( JS_GetPropertyDescriptorById(cx, obj, id, 0, &desc) ) {
 
@@ -4698,18 +4708,30 @@ Matrix44GetInterface( JSContext *cx, JS::HandleObject obj ) {
 ///////////////////////////////////////////////////////////////////////////////
 // ProcessEvent
 
+#include <../jslang/handlePub.h>
+
+/*
 struct ProcessEvent {
 	bool (*prepareWait)( volatile ProcessEvent *self, JSContext *cx, JS::HandleObject obj ); // called before startWait() to allow one to prepare the blocking step
 	void (*startWait)( volatile ProcessEvent *self ); // starts the blocking thread and call signalEvent() when an event has arrived.
 	bool (*cancelWait)( volatile ProcessEvent *self ); // unlock the blocking thread event if no event has arrived (mean that an event has arrived in another thread).
 	bool (*endWait)( volatile ProcessEvent *self, bool *hasEvent, JSContext *cx, JS::HandleObject obj ); // process the result
 };
+*/
 
-
-class ProcessEvent2 {
+class ProcessEvent2 : public HandlePrivate {
 public:
-	virtual bool prepareWait(JSContext *cx, JS::HandleObject obj) = 0; // called before startWait() to allow one to prepare the blocking step
-	virtual void startWait(JSContext *cx, JS::HandleObject obj) = 0; // starts the blocking thread and call signalEvent() when an event has arrived.
-	virtual bool cancelWait(JSContext *cx, JS::HandleObject obj) = 0; // unlock the blocking thread event if no event has arrived (mean that an event has arrived in another thread).
-	virtual bool endWait(bool *hasEvent, JSContext *cx, JS::HandleObject obj) = 0; // process the result
+	// called before startWait() to allow one to prepare the blocking step
+	virtual bool prepareWait(JSContext *cx, JS::HandleObject obj) = 0;
+	// starts the blocking thread and call signalEvent() when an event has arrived.
+	virtual void startWait() = 0;
+	// unlock the blocking thread event if no event has arrived (mean that an event has arrived in another thread).
+	virtual bool cancelWait() = 0;
+	// process the result
+	virtual bool endWait(bool *hasEvent, JSContext *cx, JS::HandleObject obj) = 0;
+
+	JL_HANDLE_TYPE typeId() const {
+		
+		return JLHID(upe);
+	}
 };

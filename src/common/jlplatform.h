@@ -1548,12 +1548,12 @@ SessionId() {
 	uint32_t r = 0x12345678;
 	r ^= (uint32_t)AccurateTimeCounter();
 	r ^= (uint32_t)ProcessId();
-#if defined(XP_WIN)
-//	r ^= (u_int32_t)GetModuleHandle(NULL);
-	MEMORYSTATUS status;
-	GlobalMemoryStatus( &status );
-	r ^= (uint32_t)status.dwAvailPhys;
-#endif // XP_WIN
+//#if defined(XP_WIN)
+////	r ^= (u_int32_t)GetModuleHandle(NULL);
+//	MEMORYSTATUS status;
+//	GlobalMemoryStatus( &status );
+//	r ^= (uint32_t)status.dwAvailPhys;
+//#endif // XP_WIN
 	return r ? r : 1; // avoid returning 0
 }
 
@@ -1581,19 +1581,19 @@ RemainingStackSize() {
 #endif
 }
 
+/*
 ALWAYS_INLINE size_t
 ThreadStackSize() {
 #if defined(XP_WIN)
-/*
-	#pragma warning(push)
-	#pragma warning(disable : 4312) // warning C4312: 'operation' : conversion from 'type1' to 'type2' of greater size
-	NT_TIB *tib = (NT_TIB*)__readfsdword(0x18); // http://en.wikipedia.org/wiki/Win32_Thread_Information_Block
-	#pragma warning(pop)
 
-	volatile BYTE *currentSP;
-	__asm mov [currentSP], esp;
-	return currentSP - (BYTE*)tib->StackLimit;
-*/
+	//#pragma warning(push)
+	//#pragma warning(disable : 4312) // warning C4312: 'operation' : conversion from 'type1' to 'type2' of greater size
+	//NT_TIB *tib = (NT_TIB*)__readfsdword(0x18); // http://en.wikipedia.org/wiki/Win32_Thread_Information_Block
+	//#pragma warning(pop)
+
+	//volatile BYTE *currentSP;
+	//__asm mov [currentSP], esp;
+	//return currentSP - (BYTE*)tib->StackLimit;
 
 	NT_TIB *tib = (NT_TIB*)NtCurrentTeb();
 	DWORD stackBase = (DWORD)tib->StackBase;
@@ -1610,6 +1610,7 @@ ThreadStackSize() {
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 }
+*/
 
 
 // see http://unicode.org/faq/utf_bom.html#BOM

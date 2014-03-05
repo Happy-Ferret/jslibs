@@ -19,7 +19,7 @@
 
 struct ProcessEventThreadInfo {
 
-	volatile ProcessEvent *peSlot;
+	/*volatile*/ ProcessEvent2 *peSlot;
 	volatile bool isEnd;
 	JLSemaphoreHandler startSem;
 	JLSemaphoreHandler signalEventSem;
@@ -27,7 +27,6 @@ struct ProcessEventThreadInfo {
 };
 
 struct ModulePrivate {
-
 	ProcessEventThreadInfo processEventThreadInfo[PROCESSEVENT_MAX_ITEM];
 	JLSemaphoreHandler processEventSignalEventSem;
 };

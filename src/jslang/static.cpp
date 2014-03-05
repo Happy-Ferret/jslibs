@@ -361,8 +361,8 @@ JLThreadFuncDecl ProcessEventThread( void *data ) {
 			break;
 		ASSERT( ti != NULL );
 		ASSERT( ti->peSlot != NULL );
-		ASSERT( ti->peSlot->startWait != NULL );
-		ti->peSlot->startWait(ti->peSlot);
+//		ASSERT( ti->peSlot->startWait != NULL );
+		ti->peSlot->startWait();
 		ti->peSlot = NULL;
 		JLSemaphoreRelease(ti->signalEventSem);
 	}
@@ -373,9 +373,6 @@ DEFINE_FUNCTION( processEvents ) {
 
 	JL_DEFINE_ARGS;
 	int st;
-	//ModulePrivate *mpv = (ModulePrivate*)JL_GetModulePrivate(cx, jslangModuleId);
-
-	//ModulePrivate *mpv = (ModulePrivate*)jl::Host::getHost(cx).moduleManager().getModulePrivateOrNULL(jslangModuleId);
 
 	ModulePrivate *mpv = (ModulePrivate*)jl::Host::getHost(cx).moduleManager().modulePrivate(jslangModuleId);
 
@@ -385,7 +382,7 @@ DEFINE_FUNCTION( processEvents ) {
 
 	JL_ASSERT_ARGC_MAX( COUNTOF(mpv->processEventThreadInfo) );
 	
-	ProcessEvent *peList[COUNTOF(mpv->processEventThreadInfo)]; // cache to avoid calling GetHandlePrivate() too often.
+	ProcessEvent2 *peList[COUNTOF(mpv->processEventThreadInfo)]; // cache to avoid calling GetHandlePrivate() too often.
 
 	if ( JL_ARGC == 0 ) {
 		
@@ -399,16 +396,13 @@ DEFINE_FUNCTION( processEvents ) {
 
 		handleObj.set(&JL_ARG(i+1).toObject());
 		JL_ASSERT_ARG_TYPE( IsHandle(cx, handleObj), i+1, "(pev) Handle" );
-		JL_ASSERT_ARG_TYPE( IsHandleType(cx, handleObj, jl::CastCStrToUint32("pev")), i+1, "(pev) Handle" );
-		ProcessEvent *pe = (ProcessEvent*)GetHandlePrivate(cx, handleObj);
+		JL_ASSERT_ARG_TYPE( IsHandleType(cx, handleObj, JLHID(pev)), i+1, "(pev) Handle" );
+		
+		ProcessEvent2 *pe;
+		JL_CHK( GetHandlePrivate(cx, handleObj, pe) );
 		JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_STATE ); //JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_ANINVALID, E_NAME("pev Handle") );
 
-		ASSERT( pe->prepareWait );
-		ASSERT( pe->startWait );
-		ASSERT( pe->cancelWait );
-		ASSERT( pe->endWait );
-
-		JL_CHK( pe->prepareWait(pe, cx, handleObj) );
+		JL_CHK( pe->prepareWait(cx, handleObj) );
 
 		peList[i] = pe;
 	}
@@ -451,10 +445,10 @@ DEFINE_FUNCTION( processEvents ) {
 	// cancel other waits
 	for ( i = 0; i < argc; ++i ) {
 
-		volatile ProcessEvent *peSlot = mpv->processEventThreadInfo[i].peSlot; // avoids to mutex ti->peSlot access.
+		/*volatile*/ ProcessEvent2 *peSlot = mpv->processEventThreadInfo[i].peSlot; // avoids to mutex ti->peSlot access.
 		if ( peSlot != NULL ) { // see ProcessEventThread(). if peSlot is null this mean that peSlot->startWait() has returned.
 
-			if ( !peSlot->cancelWait(peSlot) ) { // if the thread cannot be gracefully canceled then kill it. However, keep the signalEventSem semaphore (no JLSemaphoreFree(&ti->startSem)).
+			if ( !peSlot->cancelWait() ) { // if the thread cannot be gracefully canceled then kill it. However, keep the signalEventSem semaphore (no JLSemaphoreFree(&ti->startSem)).
 
 				ProcessEventThreadInfo *ti = &mpv->processEventThreadInfo[i];
 				ti->peSlot = NULL;
@@ -484,7 +478,7 @@ DEFINE_FUNCTION( processEvents ) {
 	// notify waiters
 	for ( i = 0; i < argc; ++i ) {
 
-		ProcessEvent *pe = peList[i];
+		ProcessEvent2 *pe = peList[i];
 
 		JSExceptionState *exState = NULL;
 		if ( JL_IsExceptionPending(cx) ) {
@@ -494,7 +488,7 @@ DEFINE_FUNCTION( processEvents ) {
 		}
 
 		handleObj.set(&JL_ARG(i+1).toObject());
-		if ( pe->endWait(pe, &hasEvent, cx, handleObj) != true )
+		if ( pe->endWait(&hasEvent, cx, handleObj) != true )
 			ok = false; // report errors later
 
 		if ( exState )
@@ -537,77 +531,74 @@ $TOC_MEMBER $INAME
 	QA.ASSERTOP( d, '>=', 123 -5); // error margin
 	QA.ASSERTOP( d, '<=', 123 +10); // error margin
 **/
-struct TimeoutProcessEvent {
-	ProcessEvent pe;
+class TimeoutProcessEvent : public ProcessEvent2 {
+public:
 	unsigned int timeout;
 	JLEventHandler cancel;
 	bool canceled;
-	//jsval callbackFunction;
 	JS::PersistentRootedValue callbackFunction;
-	//JSObject *callbackFunctionThis;
 	JS::PersistentRootedObject callbackFunctionThis;
+
+	TimeoutProcessEvent(JSContext *cx)
+	: callbackFunction(cx), callbackFunctionThis(cx) {
+
+		cancel = JLEventCreate(false);
+		ASSERT( JLEventOk(cancel) );
+	}
+
+	bool prepareWait(JSContext *cx, JS::HandleObject obj) {
+		
+		return true;
+	}
+
+	void startWait() {
+
+		if ( timeout > 0 ) {
+
+			int st = JLEventWait(cancel, timeout);
+			canceled = (st == JLOK);
+		} else {
+
+			canceled = false;
+		}
+	}
+
+	bool cancelWait() {
+
+		JLEventTrigger(cancel);
+		return true;
+	}
+
+	bool endWait(bool *hasEvent, JSContext *cx, JS::HandleObject obj) {
+
+		JL_IGNORE(obj);
+
+		*hasEvent = !canceled;
+
+		// not triggered, then nothing to reset
+		if ( !*hasEvent )
+			return true;
+
+		// reset for further use.
+		JLEventReset(cancel);
+		canceled = false;
+
+		if ( callbackFunction.get().isUndefined() )
+			return true;
+
+		JS::RootedValue rval(cx);
+		JL_CHK( JL_CallFunctionVA(cx, callbackFunctionThis, callbackFunction, &rval) );
+
+		return true;
+		JL_BAD;
+	}
+
+	~TimeoutProcessEvent() {
+
+		JLEventFree(&cancel);
+	}
 };
 
-S_ASSERT( offsetof(TimeoutProcessEvent, pe) == 0 );
-
-static bool TimeoutPrepareWait( volatile ProcessEvent *, JSContext *, JS::HandleObject ) {
-	
-	return true;
-}
-
-static void TimeoutStartWait( volatile ProcessEvent *pe ) {
-
-	TimeoutProcessEvent *upe = (TimeoutProcessEvent*)pe;
-
-	if ( upe->timeout > 0 ) {
-
-		int st = JLEventWait(upe->cancel, upe->timeout);
-		upe->canceled = (st == JLOK);
-	} else {
-
-		upe->canceled = false;
-	}
-}
-
-static bool TimeoutCancelWait( volatile ProcessEvent *pe ) {
-
-	TimeoutProcessEvent *upe = (TimeoutProcessEvent*)pe;
-
-	JLEventTrigger(upe->cancel);
-	return true;
-}
-
-static bool TimeoutEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS::HandleObject obj ) {
-
-	JL_IGNORE(obj);
-
-	TimeoutProcessEvent *upe = (TimeoutProcessEvent*)pe;
-
-	*hasEvent = !upe->canceled;
-
-	// not triggered, then nothing to reset
-	if ( !*hasEvent )
-		return true;
-
-	// reset for further use.
-	JLEventReset(upe->cancel);
-	upe->canceled = false;
-
-	if ( upe->callbackFunction.get().isUndefined() )
-		return true;
-
-	JS::RootedValue rval(cx);
-	JL_CHK( JL_CallFunctionVA(cx, upe->callbackFunctionThis, upe->callbackFunction, &rval) );
-
-	return true;
-	JL_BAD;
-}
-
-static void TimeoutFinalize( void* data ) {
-	
-	TimeoutProcessEvent *upe = (TimeoutProcessEvent*)data;
-	JLEventFree(&upe->cancel);
-}
 
 
 DEFINE_FUNCTION( timeoutEvents ) {
@@ -618,31 +609,16 @@ DEFINE_FUNCTION( timeoutEvents ) {
 	uint32_t timeout;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
 
-	TimeoutProcessEvent *upe;
-
-	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, TimeoutFinalize, JL_RVAL) );
-
-	upe->pe.prepareWait = TimeoutPrepareWait;
-	upe->pe.startWait = TimeoutStartWait;
-	upe->pe.cancelWait = TimeoutCancelWait;
-	upe->pe.endWait = TimeoutEndWait;
+	TimeoutProcessEvent *upe = new TimeoutProcessEvent(cx);
+	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
 
 	upe->timeout = timeout;
-	upe->cancel = JLEventCreate(false);
-	ASSERT( JLEventOk(upe->cancel) );
 
 	if ( JL_ARG_ISDEF(2) ) {
 
 		JL_ASSERT_ARG_IS_CALLABLE(2);
-
-		JL_CHK( SetHandleSlot(cx, JL_RVAL, 0, JL_OBJVAL) ); // GC protection only
-		JL_CHK( SetHandleSlot(cx, JL_RVAL, 1, JL_ARG(2)) ); // GC protection only
-
-		upe->callbackFunctionThis = JL_OBJ; // store "this" object.
-		upe->callbackFunction = JL_ARG(2); // access to ->callbackFunction is faster than Handle slots.
-	} else {
-
-		upe->callbackFunction = JSVAL_VOID;
+		upe->callbackFunction.set(JL_ARG(2)); // access to ->callbackFunction is faster than Handle slots.
+		upe->callbackFunctionThis.set(JL_OBJ); // store "this" object.
 	}
 
 	return true;

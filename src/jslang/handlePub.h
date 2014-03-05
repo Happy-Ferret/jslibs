@@ -22,36 +22,33 @@
 #define JLHID(id) \
 	jl::CastCStrToUint32(#id)
 
-typedef void (*HandleFinalizeCallback_t)(void* data);
-
 #define JL_HANDLE_TYPE uint32_t
 #define JL_HANDLE_INVALID (0)
 
 
-// (TBD) better alignment: __attribute__ ((__vector_size__ (16), __may_alias__)); OR  __declspec(align(64))
-//       note that SSE data must be 128bits alligned !
-
-struct HandlePrivate {
-	JL_HANDLE_TYPE handleType;
-	HandleFinalizeCallback_t finalizeCallback;
+class HandlePrivate : public jl::CppAllocators {
+public:
+	virtual JL_HANDLE_TYPE typeId() const = 0;
+	virtual ~HandlePrivate() {};
 };
 
 
 ALWAYS_INLINE const JSClass*
 JL_HandleJSClass( JSContext *cx ) {
 
-	static const JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
+	// it's safe to use static keyword because JSClass do not depend on the rt or cx.
+	static const JSClass *clasp = NULL;
 	if (unlikely( clasp == NULL ))
-		clasp = jl::Host::getHost(cx).getCachedClasp("Handle");  //clasp = JL_GetCachedClass(JL_GetHostPrivate(cx), "Handle");
+		clasp = jl::Host::getHost(cx).getCachedClasp("Handle");
 	return clasp;
 }
 
 
-template <class Struct>
-INLINE bool FASTCALL
-HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruct, HandleFinalizeCallback_t finalizeCallback, OUT JS::MutableHandleValue handleVal ) {
+template <class T>
+INLINE bool
+HandleCreate( JSContext *cx, T *data, OUT JS::MutableHandleValue handleVal ) {
 
-	ASSERT( handleType != JL_HANDLE_INVALID );
+	HandlePrivate *pv = data;
 
 	const jl::ProtoCache::Item *classProtoCache = jl::Host::getHost(cx).getCachedClassProto("Handle");
 	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME("Handle"), E_NOTFOUND );
@@ -60,17 +57,7 @@ HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruc
 	JS::RootedObject handleObj(cx, JL_NewObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto));
 	JL_CHK( handleObj );
 	handleVal.setObject(*handleObj);
-
-	HandlePrivate *pv;
-	pv = (HandlePrivate*)jl_malloc(sizeof(HandlePrivate) + sizeof(Struct));
-	JL_ASSERT_ALLOC( pv );
-
-	JL_updateMallocCounter(cx, sizeof(HandlePrivate) + sizeof(Struct));
 	JL_SetPrivate(handleObj, pv);
-
-	pv->handleType = handleType;
-	pv->finalizeCallback = finalizeCallback;
-	*userStruct = (Struct*)(pv+1);
 	}
 
 	return true;
@@ -79,31 +66,25 @@ HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruc
 
 
 INLINE bool
-HandleClose( JSContext *cx, JS::HandleValue handleVal ) { // see finalize
+HandleClose( JSContext *cx, IN JS::HandleValue handleVal ) {
 	
 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
 	
 	{
-
 	JS::RootedObject handleObj(cx, &handleVal.toObject());
 	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
 
 	HandlePrivate *pv;
-	pv = (HandlePrivate*)JL_GetPrivate(handleObj);
-	JL_ASSERT_OBJECT_STATE(pv, "Handle");
-
-	if ( pv->finalizeCallback )
-		pv->finalizeCallback(pv+1);
-
-	//pv::~
-	jl_free(pv);
-	JL_SetPrivate( handleObj, NULL);
-
+	pv = reinterpret_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
+	delete pv;
+	JL_SetPrivate(handleObj, NULL);
 	}
 
 	return true;
 	JL_BAD;
 }
+
+
 
 
 INLINE JL_HANDLE_TYPE
@@ -112,15 +93,13 @@ GetHandleType( JSContext *cx, JS::HandleValue handleVal ) {
 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
 
 	{
-
 	JS::RootedObject handleObj(cx, &handleVal.toObject());
 	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
 
 	HandlePrivate *pv;
-	pv = (HandlePrivate*)JL_GetPrivate(handleObj);
+	pv = reinterpret_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
 	JL_CHK( pv );
-	return pv->handleType;
-	
+	return pv->typeId();
 	}
 
 bad:
@@ -137,55 +116,57 @@ IsHandle( JSContext *cx, JS::HandleValue handleVal ) {
 ALWAYS_INLINE bool
 IsHandle( JSContext *cx, JS::HandleObject handleObj ) {
 
-	return JL_GetClass(handleObj) == JL_HandleJSClass(cx);
+	return JL_ObjectIsClass(handleObj, JL_HandleJSClass(cx));
 }
 
 
 ALWAYS_INLINE bool
-IsHandleType( JSContext *, JS::HandleObject handleObj, JL_HANDLE_TYPE handleType ) {
+IsHandleType( JSContext *cx, IN JS::HandleObject handleObj, JL_HANDLE_TYPE handleType ) {
 
-	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(handleObj);
-	return pv != NULL && pv->handleType == handleType;
+	if ( !JL_ObjectIsClass(handleObj, JL_HandleJSClass(cx)) )
+		return false;
+	HandlePrivate *pv;
+	pv = reinterpret_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
+	return pv != NULL && pv->typeId() == handleType;
 }
 
 
 ALWAYS_INLINE bool
-IsHandleType( JSContext *cx, JS::HandleValue handleVal, JL_HANDLE_TYPE handleType ) {
+IsHandleType( JSContext *cx, IN JS::HandleValue handleVal, JL_HANDLE_TYPE handleType ) {
 
 	if ( !JL_ValueIsClass(cx, handleVal, JL_HandleJSClass(cx)) )
 		return false;
 	JS::RootedObject handleObj(cx, &handleVal.toObject());
-	HandlePrivate *pv = (HandlePrivate*)JL_GetPrivate(handleObj);
-	return pv != NULL && pv->handleType == handleType;
+	return IsHandleType(cx, handleObj, handleType);
 }
 
 
-INLINE void*
-GetHandlePrivate( JSContext *cx, IN JS::HandleObject handleObj ) {
+
+template <class T>
+INLINE bool
+GetHandlePrivate( JSContext *cx, IN JS::HandleObject handleObj, T *&data ) {
 
 	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
-
 	HandlePrivate *pv;
-	pv = (HandlePrivate*)JL_GetPrivate(handleObj);
-	JL_CHK( pv );
-	return (char*)pv + sizeof(HandlePrivate); // user data is just behind our private structure.
-
-bad:
-	return NULL;
+	pv = reinterpret_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
+	data = static_cast<T*>(pv);
+	return true;
+	JL_BAD;
 }
 
 
-INLINE void*
-GetHandlePrivate( JSContext *cx, IN JS::HandleValue handleVal ) {
+template <class T>
+INLINE bool
+GetHandlePrivate( JSContext *cx, IN JS::HandleValue handleVal, T *&data ) {
 
-	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
-	{
-	JS::RootedObject handleObj(cx, &handleVal.toObject());
-	return GetHandlePrivate(cx, handleObj);
-	}
-bad:
-	return NULL;
+	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
+	HandlePrivate *pv;
+	pv = reinterpret_cast<HandlePrivate*>(JL_GetPrivate(handleVal));
+	data = static_cast<T*>(pv);
+	return true;
+	JL_BAD;
 }
+
 
 INLINE bool
 SetHandleSlot( JSContext *cx, JS::HandleObject handleObj, uint32_t slotIndex, IN JS::HandleValue val ) {
@@ -233,16 +214,3 @@ GetHandleSlot( JSContext *cx, JS::HandleValue handleVal, uint32_t slotIndex, OUT
 
 	JL_BAD;
 }
-
-
-/* Usage:
-	void FinalizeTrimesh(void *data) {
-	}
-	...
-	void *data;
-	JL_CHK( CreateId(cx, 'TEST', 10, &data, FinalizeTrimesh, JL_RVAL) );
-	bool c = IsIdType(cx, *JL_RVAL, 'TEST');
-	bool d = (data == GetHandlePrivate(cx, *JL_RVAL));
-*/
-
-

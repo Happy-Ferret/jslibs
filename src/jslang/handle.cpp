@@ -22,14 +22,13 @@ BEGIN_CLASS( Handle )
 
 DEFINE_FINALIZE() { // see HandleClose()
 
-	JL_IGNORE( fop );
-
-	HandlePrivate *pv = (HandlePrivate*)js::GetObjectPrivate(obj);
+	HandlePrivate *pv = static_cast<HandlePrivate*>(js::GetObjectPrivate(obj));
 	if ( pv ) {
 
-		if ( pv->finalizeCallback ) // callback function is present
-			pv->finalizeCallback(pv+1);
-		jl_free(pv);
+		if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
+			pv->HandlePrivate::~HandlePrivate();
+		else
+			delete pv;
 	}
 }
 
@@ -41,12 +40,17 @@ DEFINE_FUNCTION( toString ) {
 	JL_DEFINE_FUNCTION_OBJ;
 //	JL_ASSERT_THIS_INSTANCE();
 
-	HandlePrivate *pv = JL_HasPrivate(JL_OBJ) ? (HandlePrivate*)JL_GetPrivate(JL_OBJ) : NULL;
+	HandlePrivate *pv = JL_HasPrivate(JL_OBJ) ? (HandlePrivate*)JL_GetPrivate(JL_OBJ) : NULL; // the prototype has no ptivate slot
+
+	ASSERT( !pv == (JL_OBJ == JL_THIS_CLASS_PROTOTYPE) );
+
+
 	JSString *handleStr;
 	char str[] = "[Handle ????]";
-	if ( pv != NULL ) { // this manage Print(Handle) issue
+	if ( pv != NULL ) { // this handle host.stdout( Handle.prototype ) 
 
-		char *ht = (char*)&pv->handleType;
+		JL_HANDLE_TYPE typeId = pv->typeId();
+		char *ht = (char*)&typeId;
 		if ( JLHostEndian == JLLittleEndian ) {
 
 			str[ 8] = ht[3];
@@ -55,7 +59,7 @@ DEFINE_FUNCTION( toString ) {
 			str[11] = ht[0];
 		} else {
 
-			*((JL_HANDLE_TYPE*)(str + 8)) = pv->handleType;
+			*((JL_HANDLE_TYPE*)(str + 8)) = pv->typeId();
 		}
 
 		if ( str[ 8] == '\0' )  str[ 8] = ' ';
@@ -71,15 +75,6 @@ DEFINE_FUNCTION( toString ) {
 	return true;
 	JL_BAD;
 }
-
-/*
-DEFINE_FUNCTION( valueOf ) {
-
-	*JL_RVAL = INT_TO_JSVAL(213);
-	return true;
-	JL_BAD;
-}
-*/
 
 
 DEFINE_INIT() {
@@ -160,19 +155,33 @@ CONFIGURE_CLASS
 END_CLASS
 
 
+
+
+
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
 /*
+
 #define JL_HANDLE2_PUBLIC_SLOT_COUNT 4
+
+
+class Handle2Private : public jl::CppAllocators {
+public:
+	virtual const char* typeId() const = 0;
+	virtual ~Handle2Private() {};
+};
 
 BEGIN_CLASS( Handle2 )
 
-class HandlePrivate {
-};
-
 
 DEFINE_FINALIZE() {
+
+	Handle2Private *pv = static_cast<Handle2Private*>(js::GetObjectPrivate(obj));
+	if ( pv ) {
+		
+		delete pv;
+	}
 }
 
 CONFIGURE_CLASS
@@ -183,8 +192,53 @@ CONFIGURE_CLASS
 	IS_UNCONSTRUCTIBLE
 END_CLASS
 
-// usage: UserProcessEvent *upe = NewHandle2<UserProcessEvent, "upev">(cx, JL_RVAL);
 
+// HandleCreate( JSContext *cx, const JL_HANDLE_TYPE handleType, Struct **userStruct, HandleFinalizeCallback_t finalizeCallback, OUT JS::MutableHandleValue handleVal ) {
+
+ALWAYS_INLINE const JSClass*
+JL_Handle2JSClass( JSContext *cx ) {
+
+	//static const JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
+	//if (unlikely( clasp == NULL ))
+	//	clasp = jl::Host::getHost(cx).getCachedClasp("Handle");  //clasp = JL_GetCachedClass(JL_GetHostPrivate(cx), "Handle");
+	//return clasp;
+
+	return &Handle2::classSpec->clasp;
+}
+
+
+void handletest(JSContext *cx) {
+
+	class MyHandleData : public Handle2Private {
+	public:
+		const char *typeId(void) const {
+
+			return "abc";
+		}
+
+		~MyHandleData() {
+
+		}
+		int test;
+	};
+
+	JS::RootedValue rval(cx);
+
+	MyHandleData *data = new MyHandleData();
+	data->test = 987;
+
+	Handle2Create(cx, data, &rval);
+
+	JS::RootedObject rvalObj(cx, &rval.toObject());
+
+	MyHandleData *tmp;
+	GetHandle2Private(cx, rvalObj, tmp);
+}
+*/
+
+
+
+/*
 
 template <class UserClass>
 UserClass*
@@ -219,4 +273,10 @@ int test() {
 }
 
 */
+
+
+
+
+
+
 

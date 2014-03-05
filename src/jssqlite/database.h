@@ -28,8 +28,11 @@ struct DatabasePrivate {
 	JSContext *tmpcx;
 };
 
-struct FunctionPrivate {
+class FunctionPrivate {
+public:
+	FunctionPrivate(JSContext *cx) : fval(cx), obj(cx) {}
+
 	DatabasePrivate *dbpv;
-	jsval fval;
-	JSObject *obj;
+	JS::PersistentRootedValue fval;
+	JS::PersistentRootedObject obj;
 };

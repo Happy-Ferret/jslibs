@@ -19,14 +19,31 @@ throw 0;
 //host.stdout((new File).name);
 
 
+//host.stdout( timeoutEvents(1000) );
+
+host.stdout( Handle.prototype );
+
+var ev1 = timeoutEvents(1000, function() { host.stdout('timeout') });
+var ev2 = host.endSignalEvents(function() { host.stdout('end signal') });
+
+processEvents(ev1, ev2);
+processEvents(ev1, ev2);
+
+
+throw 0;
+
+
+
 host.stdout('press ctrl-c');
 
-for (var i = 0; i < 100000; ++i );
+//for (var i = 0; i < 100000; ++i );
+
+[].forEach(function(){});
 
 loadModule('jsstd');
 loadModule('jsstd');
 
-processEvents(timeoutEvents(3000), host.endSignalEvents());
+processEvents(timeoutEvents(1000), host.endSignalEvents());
 host.stdout('done.');
 
 

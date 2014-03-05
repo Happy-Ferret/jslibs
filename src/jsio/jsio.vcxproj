@@ -28,10 +28,12 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\jslibs_OPT.props" />
+    <Import Project="..\host\host.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\jslibs_DBG.props" />
+    <Import Project="..\host\host.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -42,7 +44,7 @@
       <AdditionalIncludeDirectories>../../libs/nspr/$(Platform)_$(Configuration)/dist/include/nspr;../../libs/nspr/$(Platform)_$(Configuration)/dist/include/nspr/private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>../../libs/nspr/$(Platform)_$(Configuration)/dist/lib/nspr4.lib;$(jslibsRootDir)src\host\$(jslibsIntDir)host.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>../../libs/nspr/$(Platform)_$(Configuration)/dist/lib/nspr4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">
@@ -50,7 +52,7 @@
       <AdditionalIncludeDirectories>../../libs/nspr/$(Platform)_$(Configuration)/dist/include/nspr;../../libs/nspr/$(Platform)_$(Configuration)/dist/include/nspr/private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>../../libs/nspr/$(Platform)_$(Configuration)/dist/lib/nspr4.lib;$(jslibsRootDir)src\host\$(jslibsIntDir)host.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>../../libs/nspr/$(Platform)_$(Configuration)/dist/lib/nspr4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

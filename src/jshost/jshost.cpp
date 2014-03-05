@@ -21,7 +21,7 @@
 	#pragma comment (linker, JL_TOSTRING(/STACK:HOST_STACK_SIZE))
 #elif defined(XP_UNIX)
 	#pragma stacksize HOST_STACK_SIZE
-	//char stack[0x400000] __attribute__ ((section ("STACK"))) = { 0 };
+	//char stack[HOST_STACK_SIZE] __attribute__ ((section ("STACK"))) = { 0 };
 	//init_sp(stack + sizeof (stack));
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
@@ -35,10 +35,6 @@
 #include <jslibsModule.cpp>
 
 #include "../jslang/handlePub.h"
-
-
-//static volatile bool disabledFree = false;
-
 
 
 #define HOST_MAIN_ASSERT( CONDITION, ERROR_MESSAGE ) \
@@ -989,76 +985,62 @@ Interrupt( int CtrlType ) {
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 
-struct EndSignalProcessEvent {
+struct EndSignalProcessEvent : public ProcessEvent2 {
 	
-	ProcessEvent pe;
 	bool cancel;
 	JS::PersistentRootedValue callbackFunction;
 	JS::PersistentRootedObject callbackFunctionThis;
+
+	EndSignalProcessEvent(JSContext *cx) : callbackFunction(cx), callbackFunctionThis(cx) {
+	}
+
+	bool
+	prepareWait( JSContext *, JS::HandleObject ) {
+	
+		cancel = false;
+		return true;
+	}
+
+	void
+	startWait() {
+
+		JLMutexAcquire(gEndSignalLock);
+		while ( gEndSignalState == 0 && !cancel )
+			JLCondWait(gEndSignalCond, gEndSignalLock);
+		JLMutexRelease(gEndSignalLock);
+	}
+
+	bool
+	cancelWait() {
+
+		JLMutexAcquire(gEndSignalLock);
+		cancel = true;
+		JLCondBroadcast(gEndSignalCond);
+		JLMutexRelease(gEndSignalLock);
+
+		return true;
+	}
+
+	bool
+	endWait( bool *hasEvent, JSContext *cx, JS::HandleObject ) {
+
+		*hasEvent = (gEndSignalState != 0);
+
+		if ( !*hasEvent )
+			return true;
+
+		if ( callbackFunction.get().isUndefined() )
+			return true;
+
+		JS::RootedValue rval(cx);
+		JL_CHK( JS_CallFunctionValue(cx, callbackFunctionThis, callbackFunction, JS::EmptyValueArray, &rval) );
+
+		return true;
+		JL_BAD;
+	}
+
 };
 
-S_ASSERT( offsetof(EndSignalProcessEvent, pe) == 0 );
-
-static bool
-EndSignalPrepareWait( volatile ProcessEvent *pe, JSContext *, JS::HandleObject ) {
-	
-	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
-
-	upe->cancel = false;
-	return true;
-}
-
-static void
-EndSignalStartWait( volatile ProcessEvent *pe ) {
-
-	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
-
-	JLMutexAcquire(gEndSignalLock);
-	while ( gEndSignalState == 0 && !upe->cancel )
-		JLCondWait(gEndSignalCond, gEndSignalLock);
-	JLMutexRelease(gEndSignalLock);
-}
-
-static bool
-EndSignalCancelWait( volatile ProcessEvent *pe ) {
-
-	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
-
-	JLMutexAcquire(gEndSignalLock);
-	upe->cancel = true;
-	JLCondBroadcast(gEndSignalCond);
-	JLMutexRelease(gEndSignalLock);
-
-	return true;
-}
-
-static bool
-EndSignalEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS::HandleObject ) {
-
-	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
-
-	*hasEvent = (gEndSignalState != 0);
-
-	if ( !*hasEvent )
-		return true;
-
-	if ( upe->callbackFunction.get().isUndefined() )
-		return true;
-
-	JS::RootedValue rval(cx);
-	JL_CHK( JS_CallFunctionValue(cx, upe->callbackFunctionThis, upe->callbackFunction, JS::EmptyValueArray, &rval) );
-
-	return true;
-	JL_BAD;
-}
-
-static void EndSignalFinalize( void *pe ) {
-
-	EndSignalProcessEvent *upe = (EndSignalProcessEvent*)pe;
-
-	upe->callbackFunction.JS::PersistentRootedValue::~PersistentRootedValue();
-	upe->callbackFunctionThis.JS::PersistentRootedObject::~PersistentRootedObject();
-}
 
 bool
 EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
@@ -1067,28 +1049,14 @@ EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
 
 	JL_ASSERT_ARGC_RANGE(0, 1);
 
-	EndSignalProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, EndSignalFinalize, JL_RVAL) );
-	upe->pe.prepareWait = EndSignalPrepareWait;
-	upe->pe.startWait = EndSignalStartWait;
-	upe->pe.cancelWait = EndSignalCancelWait;
-	upe->pe.endWait = EndSignalEndWait;
-
-	::new(&upe->callbackFunction) JS::PersistentRootedValue(cx);
-	::new(&upe->callbackFunctionThis) JS::PersistentRootedObject(cx);
-
+	EndSignalProcessEvent *upe = new EndSignalProcessEvent(cx);
+	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
 
 	if ( JL_ARG_ISDEF(1) ) {
 
 		JL_ASSERT_ARG_IS_CALLABLE(1);
-		JL_CHK( SetHandleSlot(cx, JL_RVAL, 0, JL_OBJVAL) ); // GC protection only
-		JL_CHK( SetHandleSlot(cx, JL_RVAL, 1, JL_ARG(1)) ); // GC protection only
-
-		upe->callbackFunctionThis = JL_OBJ; // store "this" object.
-		upe->callbackFunction = JL_ARG(1);
-	} else {
-	
-		upe->callbackFunction = JSVAL_VOID;
+		upe->callbackFunction.set(JL_ARG(1));
+		upe->callbackFunctionThis.set(JL_OBJ); // store "this" object.
 	}
 
 	return true;
@@ -1135,7 +1103,7 @@ freeInterrupt() {
 	JL_BAD;
 }
 
-
+//////////////////////////////////////////////////////////////////////////////
 
 class AutoJSEngineInit {
 public:
@@ -1194,6 +1162,26 @@ volatile bool NedAllocators::_skipCleanup = false;
 #endif // USE_NEDMALLOC
 
 
+static size_t GetStackUsage()
+{
+    MEMORY_BASIC_INFORMATION mbi;
+    VirtualQuery(&mbi, &mbi, sizeof(mbi));
+    // now mbi.AllocationBase = reserved stack memory base address
+
+    VirtualQuery(mbi.AllocationBase, &mbi, sizeof(mbi));
+    // now (mbi.BaseAddress, mbi.RegionSize) describe reserved (uncommitted) portion of the stack
+    // skip it
+
+    VirtualQuery((char*)mbi.BaseAddress + mbi.RegionSize, &mbi, sizeof(mbi));
+    // now (mbi.BaseAddress, mbi.RegionSize) describe the guard page
+    // skip it
+
+    VirtualQuery((char*)mbi.BaseAddress + mbi.RegionSize, &mbi, sizeof(mbi));
+    // now (mbi.BaseAddress, mbi.RegionSize) describe the committed (i.e. accessed) portion of the stack
+
+    return mbi.RegionSize;
+}
+
 
 // see |int wmain(int argc, wchar_t* argv[])| for wide char
 int main(int argc, char* argv[]) {
@@ -1239,7 +1227,7 @@ int main(int argc, char* argv[]) {
 
 		HostRuntime hostRuntime(allocators, 0);
 
-		JL_CHK( hostRuntime.create(-1, -1, HOST_STACK_SIZE) );
+		JL_CHK( hostRuntime.create() );
 		
 		JSContext *cx = hostRuntime.context();
 

@@ -50,9 +50,10 @@ bool SqliteToJsval( JSContext *cx, sqlite3_value *value, OUT JS::MutableHandleVa
 
 // doc: The sqlite3_bind_*() routines must be called after sqlite3_prepare() or sqlite3_reset() and before sqlite3_step().
 //      Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
-bool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JS::HandleObject argObj, JS::HandleObject curObj ) {
+bool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JS::HandleValue argVal, JS::HandleObject curObj ) {
 
 	JS::RootedValue val(cx);
+	JS::RootedObject argObj(cx, &argVal.toObject());
 	int anonParamIndex = 0;
 	const char *name;
 
@@ -378,7 +379,11 @@ bool DoStep(JSContext *cx, JS::HandleObject obj, JS::MutableHandleValue rval) {
 
 		JS::RootedValue queryArgument(cx);
 		JL_CHK( JL_GetReservedSlot(obj, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, &queryArgument) );
-		JL_CHK( SqliteSetupBindings(cx, pStmt, !queryArgument.isObject() ? NULL : &queryArgument.toObject(), obj) ); // ":" use result object. "@" is the object passed to Query()
+
+		JS::RootedObject queryArgumentObj(cx);
+
+
+		JL_CHK( SqliteSetupBindings(cx, pStmt, queryArgument.isObject() ? queryArgument : JS::NullHandleValue, obj) ); // ":" use result object. "@" is the object passed to Query()
 		JL_CHK( JL_SetReservedSlot(obj, SLOT_RESULT_BINDING_UP_TO_DATE, JL_TRUE()) );
 		// doc: The sqlite3_bind_*() routines must be called AFTER sqlite3_prepare() or sqlite3_reset() and BEFORE sqlite3_step().
 		//      Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
