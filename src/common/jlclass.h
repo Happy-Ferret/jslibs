@@ -415,8 +415,8 @@ JL_END_NAMESPACE
 #define HAS_ENUMERATE cs.clasp.enumerate = Enumerate;
 #define DEFINE_ENUMERATE() static bool Enumerate(JSContext *cx, JS::HandleObject obj, JSIterateOp enum_op, JS::MutableHandleValue statep, JS::MutableHandleId idp)
 
-#define HAS_TRACER cs.clasp.trace = Tracer;
-#define DEFINE_TRACER() static void Tracer(JSTracer *trc, JS::HandleObject obj)
+#define HAS_TRACER cs.clasp.flags |= JSCLASS_IMPLEMENTS_BARRIERS; cs.clasp.trace = Tracer;
+#define DEFINE_TRACER() static void Tracer(JSTracer *trc, JSObject *obj)
 
 #define HAS_HAS_INSTANCE cs.clasp.hasInstance = HasInstance;
 #define DEFINE_HAS_INSTANCE() static bool HasInstance(JSContext *cx, JS::Handle<JSObject*> obj, JS::MutableHandle<JS::Value> vp, bool *bp)

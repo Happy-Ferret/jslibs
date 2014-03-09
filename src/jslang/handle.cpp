@@ -14,6 +14,7 @@
 
 #include "stdafx.h"
 #include "handlePub.h"
+#include <js/Tracer.h>
 
 // the aim of *globalKey* is to ensure that a pointer in the process's virtual memory space can be serialized and unserializes safely.
 static uint32_t globalKey = 0;
@@ -38,34 +39,21 @@ DEFINE_FUNCTION( toString ) {
 	JL_DEFINE_ARGS;
 	JL_IGNORE( argc );
 	JL_DEFINE_FUNCTION_OBJ;
-//	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 
 	HandlePrivate *pv = JL_HasPrivate(JL_OBJ) ? (HandlePrivate*)JL_GetPrivate(JL_OBJ) : NULL; // the prototype has no ptivate slot
 
 	ASSERT( !pv == (JL_OBJ == JL_THIS_CLASS_PROTOTYPE) );
 
-
 	JSString *handleStr;
-	char str[] = "[Handle ????]";
-	if ( pv != NULL ) { // this handle host.stdout( Handle.prototype ) 
+	char str[] = "[Handle \0\0\0\0\0";
+	if ( pv != NULL ) {
 
-		JL_HANDLE_TYPE typeId = pv->typeId();
-		char *ht = (char*)&typeId;
-		if ( JLHostEndian == JLLittleEndian ) {
+		str[8 + jl::CastUint32ToCStr(pv->typeId(), str+8)] = ']';
+	} else {
 
-			str[ 8] = ht[3];
-			str[ 9] = ht[2];
-			str[10] = ht[1];
-			str[11] = ht[0];
-		} else {
-
-			*((JL_HANDLE_TYPE*)(str + 8)) = pv->typeId();
-		}
-
-		if ( str[ 8] == '\0' )  str[ 8] = ' ';
-		if ( str[ 9] == '\0' )  str[ 9] = ' ';
-		if ( str[10] == '\0' )  str[10] = ' ';
-		if ( str[11] == '\0' )  str[11] = ' ';
+		// this handle host.stdout( Handle.prototype ) 
+		str[7] = ']';
 	}
 
 	handleStr = JS_NewStringCopyN(cx, str, sizeof(str)-1);
@@ -74,6 +62,22 @@ DEFINE_FUNCTION( toString ) {
 
 	return true;
 	JL_BAD;
+}
+
+
+DEFINE_TRACER() {
+
+	HandlePrivate *pv = static_cast<HandlePrivate*>(js::GetObjectPrivate(obj));
+	if ( pv ) {
+
+		for ( int i = 0; i < JL_HANDLE_PUBLIC_SLOT_COUNT; ++i ) {
+			
+			if ( pv->slot(i).isMarkable() ) {
+
+				JS_CallValueTracer(trc, &pv->slot(i), "HandlePrivate");
+			}
+		}
+	}
 }
 
 
@@ -140,6 +144,7 @@ CONFIGURE_CLASS
 	HAS_PRIVATE
 	HAS_RESERVED_SLOTS(JL_HANDLE_PUBLIC_SLOT_COUNT)
 	HAS_FINALIZE
+	HAS_TRACER
 	
 	IS_UNCONSTRUCTIBLE
 

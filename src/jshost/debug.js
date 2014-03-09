@@ -8,9 +8,9 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
 
-/*
 loadModule('jsstd');
 
+/*
 var a = new Socket();
 throw 0;
 */
@@ -18,13 +18,14 @@ throw 0;
 //loadModule('jsio');
 //host.stdout((new File).name);
 
-
 //host.stdout( timeoutEvents(1000) );
+//host.stdout( Handle.prototype );
 
-host.stdout( Handle.prototype );
 
 var ev1 = timeoutEvents(1000, function() { host.stdout('timeout') });
 var ev2 = host.endSignalEvents(function() { host.stdout('end signal') });
+
+collectGarbage();
 
 processEvents(ev1, ev2);
 processEvents(ev1, ev2);

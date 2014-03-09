@@ -301,6 +301,7 @@ JL_SetElement(JSContext *cx, IN JS::HandleObject obj, unsigned index, IN JS::Han
 	return JS_SetElement(cx, obj, index, value);
 }
 
+
 ALWAYS_INLINE JSIdArray *
 JL_Enumerate(JSContext *cx, JS::HandleObject obj) {
 
@@ -312,7 +313,6 @@ JL_Enumerate(JSContext *cx, JS::HandleObject obj) {
 ALWAYS_INLINE bool FASTCALL
 JL_GetReservedSlot(IN JS::HandleObject obj, uint32_t slot, OUT JS::MutableHandleValue vp) {
 
-	ASSERT( slot < JSCLASS_RESERVED_SLOTS(JL_GetClass(obj)) );
 	ASSERT( JS_IsNative(obj) );
 	vp.set(js::GetReservedSlot(obj, slot)); // jsfriendapi
 	return true;
@@ -505,79 +505,84 @@ JL_ArrayToAutoArrayRooter(JSContext *cx, JS::HandleObject *arrayObj) {
 
 		struct Args {
 
-			const JS::CallArgs jsargs;
-			JSContext *_cx;
-//			JSObject *_thisObj;
 			JS::PersistentRootedObject _thisObj; // use HandleObject instead ?
+			const JS::CallArgs _jsargs;
+			JSContext *&_cx;
 
-			Args(JSContext *cx, unsigned argc, JS::Value *vp)
-			: _cx(cx), _thisObj(cx), jsargs( JS::CallArgsFromVp(argc, vp) ) {
+			Args(JSContext *&cx, unsigned argc, JS::Value *&vp)
+			: _cx(cx), _thisObj(cx), _jsargs( JS::CallArgsFromVp(argc, vp) ) {
 			}
 
 			unsigned length() const {
 			
-				return jsargs.length();
+				return _jsargs.length();
 			}
 
 			bool hasDefined(unsigned i) const {
 
-				return jsargs.hasDefined(i);
+				return _jsargs.hasDefined(i);
 			}
 
 			JS::MutableHandleValue handleAt(unsigned i) const {
 
-				return jsargs[i];
+				return _jsargs[i];
 			}
 
 			JS::HandleValue handleOrUndefinedAt(unsigned i) const {
 			
-				return jsargs.get(i);
+				return _jsargs.get(i);
 			}
-/*
-			JS::MutableHandleValue operator[](unsigned i) const {
 
-				return jsargs.handleAt(i);
-			}
-*/
 			JS::MutableHandleValue rval() const {
 
-				return jsargs.rval();
+				return _jsargs.rval();
 			}
 
-			bool isConstructing() {
+			bool isConstructing() const {
 
-				return jsargs.isConstructing();
+				return _jsargs.isConstructing();
 			}
 
-			JS::Value computeThis(JSContext *cx) const {
+			void computeThis() {
 
-				return jsargs.computeThis(cx);
+				JS::Value tmp = _jsargs.thisv();
+				if ( tmp.isObject() ) {
+
+					_thisObj.set( &tmp.toObject() );
+				} else 
+				if ( tmp.isNullOrUndefined() ) {
+						
+					_thisObj.set( JL_GetGlobal(_cx) ); //_thisObj.set( JS_GetGlobalForObject(_cx, &_jsargs.callee() ) );
+				} else {
+
+					if ( !JS_ValueToObject(_cx, _jsargs.thisv(), &_thisObj) ) {
+							
+						_thisObj.set(NULL);
+					}
+				}
+				_jsargs.setThis(JS::ObjectValue(*_thisObj));
 			}
 
 			JS::HandleObject thisObj() {
 
-				if ( _thisObj ) {
-
-					return _thisObj;
-				} else {
-				
-					_thisObj.set( &jsargs.computeThis(_cx).toObject() );
-					return _thisObj;
-				}
+				if ( !_thisObj )
+					computeThis();
+				return JS::HandleObject::fromMarkedLocation(_thisObj.address());
 			}
 
 			JS::HandleValue thisObjVal() {
-
-				JS::RootedValue tmp(_cx);
-				tmp.setObject(*thisObj());
-				return tmp;
+				
+				if ( _jsargs.thisv().isObject() )
+					return _jsargs.thisv();
+				computeThis();
+				return _jsargs.thisv();
 			}
-
 
 		private:
 			void operator=( const Args & );
 		};
 	}
+
 
 	#define PROPARGSARGS cx, obj, id, vp
 	namespace jl {
@@ -611,20 +616,11 @@ JL_ArrayToAutoArrayRooter(JSContext *cx, JS::HandleObject *arrayObj) {
 				return _vp;
 			}
 
-//			JS::MutableHandleValue operator[](unsigned i) const {}
-
 			JS::MutableHandleValue &rval() {
 
 				return _vp;
 			}
-/*
-			JS::Value computeThis(JSContext *cx) const {
 
-				JS::RootedValue thisVal(cx);
-				thisVal.setObject(*_thisObj);
-				return thisVal;
-			}
-*/
 			JS::HandleObject thisObj() const {
 
 				return _thisObj;
@@ -2974,7 +2970,7 @@ JL_NativeToJsval( JSContext *cx, void *ptr, OUT JS::MutableHandleValue vp ) {
 
 		if ( PLATFORM_BITS == 32 ) {
 
-			tmp = INT_TO_JSVAL( reinterpret_cast<ptrdiff_t>(ptr) );
+			tmp.setInt32( reinterpret_cast<ptrdiff_t>(ptr) );
 			JL_CHK( JS_SetPropertyById(cx, obj, JL_JSID_INT32(0), tmp) );
 		} else
 		if ( PLATFORM_BITS == 64 ) {
@@ -2984,10 +2980,10 @@ JL_NativeToJsval( JSContext *cx, void *ptr, OUT JS::MutableHandleValue vp ) {
 			#pragma warning(disable:4293) // 'operator' : shift count negative or too big, undefined behavior
 			#endif // XP_WIN
 
-			tmp = INT_TO_JSVAL( reinterpret_cast<ptrdiff_t>(ptr) & UINT32_MAX );
+			tmp.setInt32( reinterpret_cast<ptrdiff_t>(ptr) & UINT32_MAX );
 			JL_CHK( JS_SetPropertyById(cx, obj, JL_JSID_INT32(0), tmp) );
 
-			tmp = INT_TO_JSVAL( reinterpret_cast<ptrdiff_t>(ptr) >> 32 );
+			tmp.setInt32( reinterpret_cast<ptrdiff_t>(ptr) >> 32 );
 			JL_CHK( JS_SetPropertyById(cx, obj, JL_JSID_INT32(1), tmp) );
 
 			#ifdef XP_WIN
@@ -3203,6 +3199,30 @@ JL_ReservedSlotToNative( JSContext * RESTRICT cx, JS::HandleObject obj, unsigned
 	JL_CHK( JL_JsvalToNative(cx, tmp, value) );
 	return true;
 	JL_BAD;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// element conversion helper
+
+// Set
+
+template <class T>
+ALWAYS_INLINE bool FASTCALL
+JL_NativeToElement( JSContext *cx, IN JS::HandleObject obj, uint32_t index, const T &cval ) {
+
+	JS::RootedValue tmp(cx);
+	return JL_NativeToJsval(cx, cval, &tmp) && JL_SetElement(cx, obj, index, tmp);
+}
+
+// Get
+
+template <class T>
+ALWAYS_INLINE bool FASTCALL
+JL_ElementToNative( JSContext *cx, IN JS::HandleObject obj, uint32_t index, T *cval ) {
+
+	JS::RootedValue tmp(cx);
+	return JL_GetElement(cx, obj, index, &tmp) && JL_JsvalToNative(cx, tmp, cval);
 }
 
 
@@ -3957,13 +3977,6 @@ JL_ProtoOfInheritFrom( JSContext *cx, JS::HandleObject obj, const JSClass *clasp
 }
 
 
-ALWAYS_INLINE bool FASTCALL
-JL_CallFunctionId( JSContext *cx, JS::HandleObject obj, JS::HandleId id, IN JS::HandleValueArray argv, OUT JS::MutableHandleValue rval ) {
-
-	JS::RootedValue tmp(cx);
-	return JS_GetPropertyById(cx, obj, id, &tmp) && JS_CallFunctionValue(cx, obj, tmp, argv, rval);
-}
-
 
 ALWAYS_INLINE bool FASTCALL
 JL_CallFunctionVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleValue functionValue, OUT JS::MutableHandleValue rval ) {
@@ -3975,6 +3988,7 @@ JL_CallFunctionVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleValue funct
 ALWAYS_INLINE bool FASTCALL
 JL_CallFunctionVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleValue functionValue, OUT JS::MutableHandleValue rval, IN JS::HandleValue arg1 ) {
 
+	ASSERT( JL_ValueIsCallable(cx, functionValue) );
 	return JS_CallFunctionValue(cx, obj, functionValue, JS::HandleValueArray::fromMarkedLocation(1, arg1.address()), rval);
 }
 
@@ -3982,6 +3996,7 @@ ALWAYS_INLINE bool FASTCALL
 JL_CallFunctionVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleValue functionValue, OUT JS::MutableHandleValue rval, IN JS::HandleValue arg1, IN JS::HandleValue arg2 ) {
 
 	JS::Value args[] = { arg1, arg2 };
+	ASSERT( JL_ValueIsCallable(cx, functionValue) );
 	return JS_CallFunctionValue(cx, obj, functionValue, JS::HandleValueArray::fromMarkedLocation(COUNTOF(args), args), rval);
 }
 
@@ -3989,10 +4004,18 @@ ALWAYS_INLINE bool FASTCALL
 JL_CallFunctionVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleValue functionValue, OUT JS::MutableHandleValue rval, IN JS::HandleValue arg1, IN JS::HandleValue arg2, IN JS::HandleValue arg3 ) {
 
 	JS::Value args[] = { arg1, arg2, arg3 };
+	ASSERT( JL_ValueIsCallable(cx, functionValue) );
 	return JS_CallFunctionValue(cx, obj, functionValue, JS::HandleValueArray::fromMarkedLocation(COUNTOF(args), args), rval);
 }
 
 
+
+ALWAYS_INLINE bool FASTCALL
+JL_CallFunctionId( JSContext *cx, JS::HandleObject obj, JS::HandleId id, IN JS::HandleValueArray argv, OUT JS::MutableHandleValue rval ) {
+
+	JS::RootedValue tmp(cx);
+	return JS_GetPropertyById(cx, obj, id, &tmp) && JS_CallFunctionValue(cx, obj, tmp, argv, rval);
+}
 
 ALWAYS_INLINE bool FASTCALL
 JL_CallFunctionIdVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleId functionId, OUT JS::MutableHandleValue rval ) {
@@ -4732,6 +4755,6 @@ public:
 
 	JL_HANDLE_TYPE typeId() const {
 		
-		return JLHID(upe);
+		return JLHID(pev);
 	}
 };

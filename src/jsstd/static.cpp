@@ -788,7 +788,7 @@ DEFINE_FUNCTION( print ) {
 	if (likely( JL_ValueIsCallable(cx, fval) )) {
 
 		//return JS_CallFunctionValue(cx, JL_GetGlobal(cx), fval, JL_ARGC, JS_ARGV(cx,vp), fval.address());
-		return JS_CallFunctionValue(cx, JS::NullPtr(), fval, args.jsargs, &fval);
+		return JS_CallFunctionValue(cx, JS::NullPtr(), fval, args._jsargs, &fval);
 	}
 	return true;
 	JL_BAD;
@@ -1034,7 +1034,7 @@ bool SandboxQueryFunction(JSContext *cx, unsigned argc, jsval *vp) {
 		JL_RVAL.setUndefined();
 	} else {
 
-		JL_CHK( JS_CallFunctionValue(cx, args.thisObj(), pv->queryFunctionValue, args.jsargs, JL_RVAL) );
+		JL_CHK( JS_CallFunctionValue(cx, args.thisObj(), pv->queryFunctionValue, args._jsargs, JL_RVAL) );
 		JL_CHKM( JL_RVAL.isPrimitive(), E_RETURNVALUE, E_TYPE, E_TY_PRIMITIVE );
 	}
 	return true;

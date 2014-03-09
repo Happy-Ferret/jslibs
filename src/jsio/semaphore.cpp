@@ -205,68 +205,56 @@ DEFINE_FUNCTION( post ) {
 
 
 
-struct SemProcessEvent {
+class SemProcessEvent : public ProcessEvent2 {
 
-	ProcessEvent pe;
+	PRSem *_sem;
+	bool _hasEvent;
 
-	PRSem *sem;
-	bool hasEvent;
-	JS::PersistentRootedValue callbackFunction;
-	JS::PersistentRootedObject callbackFunctionThis;
+	bool prepareWait(JSContext *cx, JS::HandleObject obj) {
+
+		return true;
+	}
+
+	void startWait() {
+
+		_hasEvent = false;
+		PRStatus st = PR_WaitSemaphore(_sem);
+		ASSERT( st == PR_SUCCESS );
+		_hasEvent = true;
+	}
+
+	bool cancelWait() {
+
+		return false;
+	}
+
+	bool endWait(bool *hasEvent, JSContext *cx, JS::HandleObject obj) {
+		
+		*hasEvent = _hasEvent;
+	
+		if ( !*hasEvent )
+			return true;
+
+		if ( !slot(0).isUndefined() ) {
+		
+			JS::RootedObject callThisObj(cx);
+			callThisObj.set(&slot(1).toObject());
+			JS::Value rval; // rval is unused then there is no need to root it
+			JL_CHK( JS_CallFunctionValue(cx, callThisObj, hslot(0), JS::EmptyValueArray, JS::MutableHandleValue::fromMarkedLocation(&rval)) );
+		}
+
+		return true;
+		JL_BAD;
+	}
+public:
+
+	void setSemaphore(PRSem *sem) {
+
+		_sem = sem;
+	}
 };
 
-S_ASSERT( offsetof(SemProcessEvent, pe) == 0 );
 
-static bool SemPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JS::HandleObject obj ) {
-
-	SemProcessEvent *upe = (SemProcessEvent*)pe;
-	return true;
-}
-
-
-static void SemStartWait( volatile ProcessEvent *pe ) {
-
-	SemProcessEvent *upe = (SemProcessEvent*)pe;
-
-	upe->hasEvent = false;
-	PRStatus st = PR_WaitSemaphore(upe->sem);
-	ASSERT( st == PR_SUCCESS );
-	upe->hasEvent = true;
-}
-
-
-static bool SemCancelWait( volatile ProcessEvent *pe ) {
-
-	return false;
-}
-
-
-static bool SemEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS::HandleObject obj ) {
-		
-	SemProcessEvent *upe = (SemProcessEvent*)pe;
-	*hasEvent = upe->hasEvent;
-	
-	if ( !*hasEvent )
-		return true;
-
-	if ( upe->callbackFunction.get().isUndefined() )
-		return true;
-
-	JS::RootedValue rval(cx);
-	JL_CHK( JL_CallFunctionVA(cx, upe->callbackFunctionThis, upe->callbackFunction, &rval) );
-
-
-	return true;
-	JL_BAD;
-}
-
-static void SemWaitFinalize( void *pe ) {
-
-	SemProcessEvent *upe = (SemProcessEvent*)pe;
-
-	upe->callbackFunction.JS::PersistentRootedValue::~PersistentRootedValue();
-	upe->callbackFunctionThis.JS::PersistentRootedObject::~PersistentRootedObject();
-}
 
 
 DEFINE_FUNCTION( events ) {
@@ -276,33 +264,20 @@ DEFINE_FUNCTION( events ) {
 	JL_ASSERT_THIS_INHERITANCE();
 	JL_ASSERT_ARGC_RANGE(0, 1);
 
-	SemProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, SemWaitFinalize, JL_RVAL) );
-	upe->pe.prepareWait = SemPrepareWait;
-	upe->pe.startWait = SemStartWait;
-	upe->pe.cancelWait = SemCancelWait;
-	upe->pe.endWait = SemEndWait;
-
-	::new(&upe->callbackFunction) JS::PersistentRootedValue(cx);
-	::new(&upe->callbackFunctionThis) JS::PersistentRootedObject(cx);
+	SemProcessEvent *upe = new SemProcessEvent();
+	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
 
 	ClassPrivate *pv;
 	pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	upe->sem = pv->semaphore;
+	upe->setSemaphore(pv->semaphore);
 
 	if ( JL_ARG_ISDEF(1) ) {
 
 		JL_ASSERT_ARG_IS_CALLABLE(1);
-		JL_CHK( SetHandleSlot(cx, JL_RVAL, 0, JL_OBJVAL ) ); // GC protection only
-		JL_CHK( SetHandleSlot(cx, JL_RVAL, 1, JL_ARG(1)) ); // GC protection only
-
-		upe->callbackFunctionThis = JL_OBJ; // store "this" object.
-		upe->callbackFunction = JL_ARG(1);
-	} else {
-	
-		upe->callbackFunction = JSVAL_VOID;
+		upe->slot(0) = JL_ARG(1);
+		upe->slot(1) = JL_OBJVAL;
 	}
 
 	return true;

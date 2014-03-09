@@ -14,19 +14,10 @@ loadModule('jsio');
 
 //	[].forEach(function() {})
 
-	//
-
 //	var process = new Process('jshost', ['-u', '-i', 'host.stdout(host.arguments.toString())', '123', '-test']);
 //	print(process.stdout)
 
 	//var res = stringify(process.stdout.read());
-
-
-var s = new Socket();
-s.linger = 1;
-
-
-throw 0;
 
 
 	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
@@ -38,6 +29,14 @@ throw 0;
 
 
 throw 0;
+
+
+var s = new Socket();
+s.linger = 1;
+
+
+throw 0;
+
 
 
 

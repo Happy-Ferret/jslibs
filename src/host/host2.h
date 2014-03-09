@@ -95,14 +95,23 @@ enum {
 
 JL_BEGIN_NAMESPACE
 
-bool enableLowFragmentationHeap();
-
 
 class StdIO {
 public:
-	virtual int	input( char *buffer, size_t bufferLength ) { JL_IGNORE(buffer, bufferLength); return 0; };
-	virtual int	output( const char *buffer, size_t length ) { JL_IGNORE(buffer, length); return 0; };
-	virtual int	error( const char *buffer, size_t length ) { JL_IGNORE(buffer, length); return 0; };
+	virtual int	input( char *buffer, size_t bufferLength ) {
+
+		JL_IGNORE(buffer, bufferLength);
+		return 0;
+	}
+	virtual int	output( const char *buffer, size_t length ) {
+		JL_IGNORE(buffer, length);
+		return 0;
+	}
+	virtual int	error( const char *buffer, size_t length ) {
+		
+		JL_IGNORE(buffer, length);
+		return 0;
+	}
 };
 
 
@@ -709,7 +718,7 @@ public:
 	//   FNV variants (http://isthe.com/chongo/tech/comp/fnv/)
 	//   MurmurHash 1.0 (https://sites.google.com/site/murmurhash/)
 	static ALWAYS_INLINE uint32_t FASTCALL
-	slotHash( const char * const n ) {
+	slotHash( const char *n ) {
 
 		ASSERT( n != NULL );
 		ASSERT( strlen(n) <= 24 );
@@ -745,7 +754,7 @@ public:
 
 
 	bool
-	add( JSRuntime *rt, const char * const className, const JSClass * const clasp, IN JS::HandleObject proto ) {
+	add( JSRuntime *rt, const char *className, const JSClass * const clasp, IN JS::HandleObject proto ) {
 
 		ASSERT( removedSlotClasp() != NULL );
 		ASSERT( className != NULL );
@@ -782,7 +791,7 @@ public:
 
 
 	ALWAYS_INLINE const Item*
-	get( const char * const className ) const {
+	get( const char *className ) const {
 
 		size_t slotIndex = slotHash(className);
 		const size_t first = slotIndex;
@@ -867,6 +876,16 @@ class DLLAPI Host : public jl::CppAllocators {
 
 	bool
 	hostStderrWrite(const char *message, size_t length);
+
+
+	static INLINE NEVER_INLINE void FASTCALL
+	getPrivateJsidSlow( JSContext *cx, JS::PersistentRootedId &id, const jschar *name ) {
+
+		JS::RootedString jsstr(cx, JS_InternUCString(cx, name));
+		ASSERT( jsstr );
+		id.set(JL_StringToJsid(cx, jsstr));
+	}
+
 
 public:
 	Host( HostRuntime &hr, StdIO &hostStdIO, bool unsafeMode = false );
@@ -967,19 +986,19 @@ public:
 	// CachedClassProto
 
 	bool
-	addCachedClassProto( const char * const className, const JSClass * const clasp, IN JS::HandleObject proto ) {
+	addCachedClassProto( const char *className, const JSClass * const clasp, IN JS::HandleObject proto ) {
 
 		return _classProtoCache.add(_hostRuntime.runtime(), className, clasp, proto);
 	}
 
 	ALWAYS_INLINE const ProtoCache::Item*
-	getCachedClassProto( IN const char * const className ) const {
+	getCachedClassProto( IN const char *className ) const {
 
 		return _classProtoCache.get(className);
 	}
 
 	ALWAYS_INLINE const JS::HandleObject
-	getCachedProto( IN const char * const className ) const {
+	getCachedProto( IN const char *className ) const {
 
 		const ProtoCache::Item * cpc = getCachedClassProto(className);
 		if ( cpc )
@@ -989,23 +1008,13 @@ public:
 	}
 	
 	ALWAYS_INLINE const JSClass*
-	getCachedClasp( IN const char * const className ) const {
+	getCachedClasp( IN const char *className ) const {
 
 		return getCachedClassProto(className)->clasp;
 	}
 
 
 	// ids
-
-	static INLINE NEVER_INLINE void FASTCALL
-	getPrivateJsidSlow( JSContext *cx, JS::PersistentRootedId &id, const jschar *name ) {
-
-		JS::RootedString jsstr(cx, JS_InternUCString(cx, name));
-		ASSERT( jsstr );
-		id.set(JL_StringToJsid(cx, jsstr));
-	}
-
-		
 	ALWAYS_INLINE JS::HandleId
 	getId( int index, const jschar *name ) {
 
@@ -1090,7 +1099,7 @@ JL_GetHostPrivate( JSContext *cx ) {
 }
 
 ALWAYS_INLINE const JSClass * FASTCALL
-JL_GetCachedClass( const jl::Host & const hpv, const char * const className ) {
+JL_GetCachedClass( const jl::Host & const hpv, const char *className ) {
 	
 	return hpv.getCachedClasp(className);
 }

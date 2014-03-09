@@ -796,10 +796,21 @@ CastCStrToUint32( const char *cstr ) {
 	return
 		!cstr[0] ? 0 :
 		!cstr[1] ? cstr[0] :
-		!cstr[2] ? (cstr[0] <<  8) | cstr[1] :
-		!cstr[3] ? (cstr[0] << 16) | (cstr[1] <<  8) | cstr[2] :
-		           (cstr[0] << 24) | (cstr[1] << 16) | (cstr[2] <<  8) | cstr[3];
+		!cstr[2] ? (cstr[1] <<  8) | cstr[0] :
+		!cstr[3] ? (cstr[2] << 16) | (cstr[1] <<  8) | cstr[0] :
+		           (cstr[3] << 24) | (cstr[2] << 16) | (cstr[1] <<  8) | cstr[0];
 }
+
+ALWAYS_INLINE NOALIAS int
+CastUint32ToCStr( uint32_t val, char *cstr ) {
+
+	cstr[0] = (val & 0x000000FF) >> 0  & 0xFF;
+	cstr[1] = (val & 0x0000FF00) >> 8  & 0xFF;
+	cstr[2] = (val & 0x00FF0000) >> 16 & 0xFF;
+	cstr[3] = (val & 0xFF000000) >> 24 & 0xFF;
+	return cstr[0] ? cstr[1] ? cstr[2] ? cstr[3] ? 4 : 3 : 2 : 1 : 0;
+}
+
 
 
 ALWAYS_INLINE void *

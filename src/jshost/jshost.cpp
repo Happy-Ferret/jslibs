@@ -988,11 +988,6 @@ Interrupt( int CtrlType ) {
 struct EndSignalProcessEvent : public ProcessEvent2 {
 	
 	bool cancel;
-	JS::PersistentRootedValue callbackFunction;
-	JS::PersistentRootedObject callbackFunctionThis;
-
-	EndSignalProcessEvent(JSContext *cx) : callbackFunction(cx), callbackFunctionThis(cx) {
-	}
 
 	bool
 	prepareWait( JSContext *, JS::HandleObject ) {
@@ -1022,23 +1017,23 @@ struct EndSignalProcessEvent : public ProcessEvent2 {
 	}
 
 	bool
-	endWait( bool *hasEvent, JSContext *cx, JS::HandleObject ) {
+	endWait( bool *hasEvent, JSContext *cx, JS::HandleObject obj ) {
 
 		*hasEvent = (gEndSignalState != 0);
 
 		if ( !*hasEvent )
 			return true;
 
-		if ( callbackFunction.get().isUndefined() )
-			return true;
-
-		JS::RootedValue rval(cx);
-		JL_CHK( JS_CallFunctionValue(cx, callbackFunctionThis, callbackFunction, JS::EmptyValueArray, &rval) );
-
+		if ( !slot(0).isUndefined() ) {
+		
+			JS::RootedObject callThisObj(cx);
+			callThisObj.set(&slot(1).toObject());
+			JS::Value rval; // rval is unused then there is no need to root it
+			JL_CHK( JS_CallFunctionValue(cx, callThisObj, hslot(0), JS::EmptyValueArray, JS::MutableHandleValue::fromMarkedLocation(&rval)) );
+		}
 		return true;
 		JL_BAD;
 	}
-
 };
 
 
@@ -1049,14 +1044,14 @@ EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
 
 	JL_ASSERT_ARGC_RANGE(0, 1);
 
-	EndSignalProcessEvent *upe = new EndSignalProcessEvent(cx);
+	EndSignalProcessEvent *upe = new EndSignalProcessEvent();
 	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
 
 	if ( JL_ARG_ISDEF(1) ) {
 
 		JL_ASSERT_ARG_IS_CALLABLE(1);
-		upe->callbackFunction.set(JL_ARG(1));
-		upe->callbackFunctionThis.set(JL_OBJ); // store "this" object.
+		upe->slot(0) = JL_ARG(1);
+		upe->slot(1) = JL_OBJVAL;
 	}
 
 	return true;
@@ -1071,7 +1066,12 @@ initInterrupt() {
 	gEndSignalCond = JLCondCreate();
 
 #if defined(XP_WIN)
-	JL_CHK( SetProcessShutdownParameters(0x100, SHUTDOWN_NORETRY) );
+	JL_CHK( SetProcessShutdownParameters(0x180, SHUTDOWN_NORETRY) ); // last shutdown range: 100-1FF
+
+//	DWORD shutdownlevel, shutdownflags;
+//	GetProcessShutdownParameters(&shutdownlevel, &shutdownflags);
+//	SetProcessShutdownParameters(shutdownlevel+1, SHUTDOWN_NORETRY);
+
 	JL_CHK( SetConsoleCtrlHandler(Interrupt, TRUE) );
 #elif defined(XP_UNIX)
 	signal(SIGINT, Interrupt);
@@ -1242,7 +1242,8 @@ int main(int argc, char* argv[]) {
 
 		JL_CHKM( initInterrupt(), E_HOST, E_INTERNAL );
 
-		JL_CHK( JS_DefineProperty(cx, host.hostObject(), "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED) ); // https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
+		// https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
+		JL_CHK( JS_DefineProperty(cx, host.hostObject(), "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED) );
 		JL_CHK( JS_DefineFunction(cx, host.hostObject(), "endSignalEvents", EndSignalEvents, 1, 0) );
 
 

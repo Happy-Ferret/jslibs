@@ -19,17 +19,44 @@
 
 #define JL_HANDLE_PUBLIC_SLOT_COUNT 4
 
-#define JLHID(id) \
-	jl::CastCStrToUint32(#id)
-
 #define JL_HANDLE_TYPE uint32_t
 #define JL_HANDLE_INVALID (0)
 
+#define JLHID(id) \
+	jl::CastCStrToUint32(#id)
+
+/*
+ALWAYS_INLINE
+void
+JL_HIDToStr(JL_HANDLE_TYPE hid, char *dst) {
+}
+*/
 
 class HandlePrivate : public jl::CppAllocators {
+	JS::Value _slots[JL_HANDLE_PUBLIC_SLOT_COUNT];
 public:
 	virtual JL_HANDLE_TYPE typeId() const = 0;
 	virtual ~HandlePrivate() {};
+	
+	JS::Value &slot(uint32_t index) {
+
+		ASSERT( index < JL_HANDLE_PUBLIC_SLOT_COUNT );
+		return _slots[index];
+	}
+
+	JS::MutableHandleValue hslot(uint32_t index) {
+
+		return JS::MutableHandleValue::fromMarkedLocation(&slot(index));
+	}
+
+	HandlePrivate() {
+
+		//for ( int i = 0; i < JL_HANDLE_PUBLIC_SLOT_COUNT; ++i )
+		//	slots[i] = JS::Value();
+		memset(_slots, 0, sizeof(_slots));
+		ASSERT(_slots[0] == JS::Value());
+		ASSERT(!_slots[0].isMarkable());
+	}
 };
 
 
@@ -75,7 +102,7 @@ HandleClose( JSContext *cx, IN JS::HandleValue handleVal ) {
 	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
 
 	HandlePrivate *pv;
-	pv = reinterpret_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
+	pv = static_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
 	delete pv;
 	JL_SetPrivate(handleObj, NULL);
 	}
@@ -83,8 +110,6 @@ HandleClose( JSContext *cx, IN JS::HandleValue handleVal ) {
 	return true;
 	JL_BAD;
 }
-
-
 
 
 INLINE JL_HANDLE_TYPE
@@ -97,7 +122,7 @@ GetHandleType( JSContext *cx, JS::HandleValue handleVal ) {
 	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
 
 	HandlePrivate *pv;
-	pv = reinterpret_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
+	pv = static_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
 	JL_CHK( pv );
 	return pv->typeId();
 	}
@@ -106,6 +131,8 @@ bad:
 	return JL_HANDLE_INVALID;
 }
 
+
+// IsHandle
 
 ALWAYS_INLINE bool
 IsHandle( JSContext *cx, JS::HandleValue handleVal ) {
@@ -120,16 +147,17 @@ IsHandle( JSContext *cx, JS::HandleObject handleObj ) {
 }
 
 
+// IsHandleType
+
 ALWAYS_INLINE bool
 IsHandleType( JSContext *cx, IN JS::HandleObject handleObj, JL_HANDLE_TYPE handleType ) {
 
 	if ( !JL_ObjectIsClass(handleObj, JL_HandleJSClass(cx)) )
 		return false;
 	HandlePrivate *pv;
-	pv = reinterpret_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
+	pv = static_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
 	return pv != NULL && pv->typeId() == handleType;
 }
-
 
 ALWAYS_INLINE bool
 IsHandleType( JSContext *cx, IN JS::HandleValue handleVal, JL_HANDLE_TYPE handleType ) {
@@ -141,6 +169,7 @@ IsHandleType( JSContext *cx, IN JS::HandleValue handleVal, JL_HANDLE_TYPE handle
 }
 
 
+// GetHandlePrivate
 
 template <class T>
 INLINE bool
@@ -148,12 +177,11 @@ GetHandlePrivate( JSContext *cx, IN JS::HandleObject handleObj, T *&data ) {
 
 	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
 	HandlePrivate *pv;
-	pv = reinterpret_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
+	pv = static_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
 	data = static_cast<T*>(pv);
 	return true;
 	JL_BAD;
 }
-
 
 template <class T>
 INLINE bool
@@ -161,12 +189,14 @@ GetHandlePrivate( JSContext *cx, IN JS::HandleValue handleVal, T *&data ) {
 
 	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
 	HandlePrivate *pv;
-	pv = reinterpret_cast<HandlePrivate*>(JL_GetPrivate(handleVal));
+	pv = static_cast<HandlePrivate*>(JL_GetPrivate(handleVal));
 	data = static_cast<T*>(pv);
 	return true;
 	JL_BAD;
 }
 
+
+// SetHandleSlot
 
 INLINE bool
 SetHandleSlot( JSContext *cx, JS::HandleObject handleObj, uint32_t slotIndex, IN JS::HandleValue val ) {
@@ -191,6 +221,8 @@ SetHandleSlot( JSContext *cx, JS::HandleValue handleVal, uint32_t slotIndex, IN 
 	JL_BAD;
 }
 
+
+// GetHandleSlot
 
 INLINE bool
 GetHandleSlot( JSContext *cx, JS::HandleObject handleObj, uint32_t slotIndex, OUT JS::MutableHandleValue value ) {

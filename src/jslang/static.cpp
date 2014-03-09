@@ -349,9 +349,10 @@ function mySleep(timeout) {
 }
 }}}
 **/
-JLThreadFuncDecl ProcessEventThread( void *data ) {
+JLThreadFuncDecl
+ProcessEventThread( void *data ) {
 
-	ProcessEventThreadInfo *ti = (ProcessEventThreadInfo*)data;
+	ProcessEventThreadInfo *ti = static_cast<ProcessEventThreadInfo*>(data);
 	int st;
 	for (;;) {
 
@@ -536,11 +537,9 @@ public:
 	unsigned int timeout;
 	JLEventHandler cancel;
 	bool canceled;
-	JS::PersistentRootedValue callbackFunction;
-	JS::PersistentRootedObject callbackFunctionThis;
 
-	TimeoutProcessEvent(JSContext *cx)
-	: callbackFunction(cx), callbackFunctionThis(cx) {
+	TimeoutProcessEvent(unsigned int timeout)
+	: timeout(timeout) {
 
 		cancel = JLEventCreate(false);
 		ASSERT( JLEventOk(cancel) );
@@ -553,7 +552,7 @@ public:
 
 	void startWait() {
 
-		if ( timeout > 0 ) {
+		if ( timeout != 0 ) {
 
 			int st = JLEventWait(cancel, timeout);
 			canceled = (st == JLOK);
@@ -583,11 +582,13 @@ public:
 		JLEventReset(cancel);
 		canceled = false;
 
-		if ( callbackFunction.get().isUndefined() )
-			return true;
-
-		JS::RootedValue rval(cx);
-		JL_CHK( JL_CallFunctionVA(cx, callbackFunctionThis, callbackFunction, &rval) );
+		if ( !slot(0).isUndefined() ) {
+		
+			JS::RootedObject callThisObj(cx);
+			callThisObj.set(&slot(1).toObject());
+			JS::Value rval; // rval is unused then there is no need to root it
+			JL_CHK( JS_CallFunctionValue(cx, callThisObj, hslot(0), JS::EmptyValueArray, JS::MutableHandleValue::fromMarkedLocation(&rval)) );
+		}
 
 		return true;
 		JL_BAD;
@@ -609,16 +610,13 @@ DEFINE_FUNCTION( timeoutEvents ) {
 	uint32_t timeout;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
 
-	TimeoutProcessEvent *upe = new TimeoutProcessEvent(cx);
+	TimeoutProcessEvent *upe = new TimeoutProcessEvent(timeout);
 	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
-
-	upe->timeout = timeout;
-
 	if ( JL_ARG_ISDEF(2) ) {
 
 		JL_ASSERT_ARG_IS_CALLABLE(2);
-		upe->callbackFunction.set(JL_ARG(2)); // access to ->callbackFunction is faster than Handle slots.
-		upe->callbackFunctionThis.set(JL_OBJ); // store "this" object.
+		upe->slot(0) = JL_ARG(2);
+		upe->slot(1) = JL_OBJVAL;
 	}
 
 	return true;

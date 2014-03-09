@@ -700,160 +700,120 @@ $TOC_MEMBER $INAME
 }}}
 **/
 
+struct IOProcessEvent : public ProcessEvent2 {
+
+	int _fdCount;
+	PRPollDesc *_pollDesc;
+	PRInt32 _pollResult;
 
 
-struct IOProcessEvent {
+	bool prepareWait(JSContext *cx, JS::HandleObject obj) {
 
-	ProcessEvent pe;
+		unsigned fdCount;
 
-	int fdCount;
-	PRPollDesc *pollDesc;
-	//jsval *descVal;
+		JS::RootedObject fdArrayObj(cx, &slot(0).toObject());
 
-	JS::PersistentRootedObject *descArray;
-	PRInt32 pollResult;
+		JL_CHK( JS_GetArrayLength(cx, fdArrayObj, &fdCount) );
+
+		_pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * (1 + fdCount)); // pollDesc[0] is the event fd
+		JL_ASSERT_ALLOC( _pollDesc );
+
+		//	_descVal = (jsval*)jl_malloc(sizeof(jsval) * (fdCount));
+		//	JL_ASSERT_ALLOC( _descVal );
+
+		JL_updateMallocCounter(cx, (sizeof(PRPollDesc) /*+ sizeof(jsval)*/) * fdCount); // approximately (pollDesc + descVal)
+
+		JsioPrivate *mpv;
+		mpv = (JsioPrivate*)jl::Host::getHost(cx).moduleManager().modulePrivate(moduleId());
+		if ( mpv->peCancel == NULL ) {
+
+			mpv->peCancel = PR_NewPollableEvent();
+			if ( mpv->peCancel == NULL )
+				return ThrowIoError(cx);
+		}
+
+		_pollDesc[0].fd = mpv->peCancel;
+		_pollDesc[0].in_flags = PR_POLL_READ;
+		_pollDesc[0].out_flags = 0;
+
+		_fdCount = fdCount; // count excluding peCancel
+
+		// (TBD) find a better solution to root fdArray content
+		// (TBD) use AutoValueVector avr(cx); avr.reserve(16); avr.append(val);
+
+		// use HandleValueArray or PersistentHandleValueArray or HeapHandleValueArray ?
+
+
+	//	JS::RootedValue rootedValuesVal(cx);
+	//	rootedValuesVal.setObject(*rootedValues);
+	//	JL_CHK( SetHandleSlot(cx, obj, 1, rootedValuesVal) );
+
+		{
+
+		JS::RootedObject descArrayObj(cx, JS_NewArrayObject(cx, fdCount));
+		hslot(1).setObject(*descArrayObj);
+
+		JS::RootedValue descriptor(cx);
+		for ( unsigned int i = 0; i < fdCount; ++i ) {
+
+			//descriptor = &_descVal[i]; // get the slot addr
+
+
+			JL_CHK( JL_GetElement(cx, fdArrayObj, i, &descriptor) ); // read the item
+			JL_CHK( JL_SetElement(cx, descArrayObj, i, descriptor) ); // root the item
+			JL_CHK( InitPollDesc(cx, descriptor, &_pollDesc[1 + i]) ); // _pollDesc[0] is reserved for mpv->peCancel
+		}
+	
+		}
+
+		return true;
+		JL_BAD;
+	}
+
+	void startWait() {
+
+		_pollResult = PR_Poll(_pollDesc, 1 + _fdCount, PR_INTERVAL_NO_TIMEOUT); // 1 is the PollableEvent
+	}
+
+	bool cancelWait() {
+
+		PRStatus st;
+		st = PR_SetPollableEvent(_pollDesc[0].fd); // cancel the poll
+		ASSERT( st == PR_SUCCESS );
+		st = PR_WaitForPollableEvent(_pollDesc[0].fd); // resets the event. doc. blocks the calling thread until the pollable event is set, and then it atomically unsets the pollable event before it returns.
+		ASSERT( st == PR_SUCCESS );
+
+		return true;
+	}
+
+	bool endWait(bool *hasEvent, JSContext *cx, JS::HandleObject obj) {
+
+		JL_IGNORE(obj);
+
+		if ( _pollResult == -1 )
+			JL_CHK( ThrowIoError(cx) );
+
+		*hasEvent = _pollResult > 0 && !( _pollDesc[0].out_flags & PR_POLL_READ );
+
+		if ( *hasEvent ) { // optimization
+		
+			JS::RootedObject descArrayObj(cx, &slot(1).toObject());
+			JS::RootedValue descriptor(cx);
+			for ( int i = 0; i < _fdCount; ++i ) {
+
+				JL_CHK( JL_GetElement(cx, descArrayObj, i, &descriptor) ); // read the item
+				JL_CHK( PollDescNotify(cx, descriptor, &_pollDesc[1 + i], i) );
+			}
+		}
+
+	end:
+		jl_free(_pollDesc);
+		return true;
+	bad:
+		jl_free(_pollDesc);
+		return false;
+	}
 };
-
-S_ASSERT( offsetof(IOProcessEvent, pe) == 0 );
-
-
-
-
-
-static bool IOPrepareWait( volatile ProcessEvent *pe, JSContext *cx, JS::HandleObject obj ) {
-
-	IOProcessEvent *upe = (IOProcessEvent*)pe;
-
-	unsigned fdCount;
-
-	JS::RootedValue fdArrayVal(cx);
-	JS::RootedObject fdArrayObj(cx);
-
-	JL_CHK( GetHandleSlot(cx, obj, 0, &fdArrayVal) );
-	fdArrayObj.set(&fdArrayVal.toObject());
-
-	JL_CHK( JS_GetArrayLength(cx, fdArrayObj, &fdCount) );
-
-	upe->pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * (1 + fdCount)); // pollDesc[0] is the event fd
-	JL_ASSERT_ALLOC( upe->pollDesc );
-
-
-
-//	upe->descVal = (jsval*)jl_malloc(sizeof(jsval) * (fdCount));
-//	JL_ASSERT_ALLOC( upe->descVal );
-
-
-	JL_updateMallocCounter(cx, (sizeof(PRPollDesc) /*+ sizeof(jsval)*/) * fdCount); // approximately (pollDesc + descVal)
-
-
-	JsioPrivate *mpv;
-	mpv = (JsioPrivate*)jl::Host::getHost(cx).moduleManager().modulePrivate(moduleId());
-	if ( mpv->peCancel == NULL ) {
-
-		mpv->peCancel = PR_NewPollableEvent();
-		if ( mpv->peCancel == NULL )
-			return ThrowIoError(cx);
-	}
-
-	upe->pollDesc[0].fd = mpv->peCancel;
-	upe->pollDesc[0].in_flags = PR_POLL_READ;
-	upe->pollDesc[0].out_flags = 0;
-
-	upe->fdCount = fdCount; // count excluding peCancel
-
-	// (TBD) find a better solution to root fdArray content
-	// (TBD) use AutoValueVector avr(cx); avr.reserve(16); avr.append(val);
-
-	// use HandleValueArray or PersistentHandleValueArray or HeapHandleValueArray ?
-	upe->descArray = new JS::PersistentRootedObject(cx, JS_NewArrayObject(cx, fdCount));
-	
-
-//	JS::RootedValue rootedValuesVal(cx);
-//	rootedValuesVal.setObject(*rootedValues);
-//	JL_CHK( SetHandleSlot(cx, obj, 1, rootedValuesVal) );
-
-	{
-
-	JS::RootedValue descriptor(cx);
-	for ( unsigned int i = 0; i < fdCount; ++i ) {
-
-		//descriptor = &upe->descVal[i]; // get the slot addr
-
-
-		JL_CHK( JL_GetElement(cx, fdArrayObj, i, &descriptor) ); // read the item
-		JL_CHK( JL_SetElement(cx, *(upe->descArray), i, descriptor) ); // root the item
-		JL_CHK( InitPollDesc(cx, descriptor, &upe->pollDesc[1 + i]) ); // upe->pollDesc[0] is reserved for mpv->peCancel
-	}
-	
-	}
-
-	return true;
-	JL_BAD;
-}
-
-static void IOStartWait( volatile ProcessEvent *pe ) {
-
-	IOProcessEvent *upe = (IOProcessEvent*)pe;
-
-	upe->pollResult = PR_Poll(upe->pollDesc, 1 + upe->fdCount, PR_INTERVAL_NO_TIMEOUT); // 1 is the PollableEvent
-}
-
-static bool IOCancelWait( volatile ProcessEvent *pe ) {
-
-	IOProcessEvent *upe = (IOProcessEvent*)pe;
-
-	PRStatus st;
-	st = PR_SetPollableEvent(upe->pollDesc[0].fd); // cancel the poll
-	ASSERT( st == PR_SUCCESS );
-	st = PR_WaitForPollableEvent(upe->pollDesc[0].fd); // resets the event. doc. blocks the calling thread until the pollable event is set, and then it atomically unsets the pollable event before it returns.
-	ASSERT( st == PR_SUCCESS );
-
-	return true;
-}
-
-static bool IOEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JS::HandleObject obj ) {
-
-	JL_IGNORE(obj);
-
-	IOProcessEvent *upe = (IOProcessEvent*)pe;
-
-	if ( upe->pollResult == -1 )
-		JL_CHK( ThrowIoError(cx) );
-
-	*hasEvent = upe->pollResult > 0 && !( upe->pollDesc[0].out_flags & PR_POLL_READ );
-
-	if ( !*hasEvent ) // optimization
-		goto end;
-
-	{
-
-	JS::RootedValue descriptor(cx);
-	for ( int i = 0; i < upe->fdCount; ++i ) {
-
-		JL_CHK( JL_GetElement(cx, *upe->descArray, i, &descriptor) ); // read the item
-		JL_CHK( PollDescNotify(cx, descriptor, &upe->pollDesc[1 + i], i) );
-	}
-
-	}
-
-end:
-	jl_free(upe->pollDesc);
-//	jl_free(upe->descVal);
-	return true;
-
-bad:
-	jl_free(upe->pollDesc);
-//	jl_free(upe->descVal);
-	return false;
-}
-
-
-static void IOWaitFinalize( void* data ) {
-
-	IOProcessEvent *upe = (IOProcessEvent*)data;
-
-	delete upe->descArray;
-}
 
 
 DEFINE_FUNCTION( events ) {
@@ -862,15 +822,10 @@ DEFINE_FUNCTION( events ) {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_ARRAY(1);
 
-	IOProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, IOWaitFinalize, JL_RVAL) );
+	IOProcessEvent *upe = new IOProcessEvent();
+	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
 
-	upe->pe.prepareWait = IOPrepareWait;
-	upe->pe.startWait = IOStartWait;
-	upe->pe.cancelWait = IOCancelWait;
-	upe->pe.endWait = IOEndWait;
-
-	JL_CHK( SetHandleSlot(cx, JL_RVAL, 0, JL_ARG(1)) );
+	upe->slot(0) = JL_ARG(1);
 
 	return true;
 	JL_BAD;
