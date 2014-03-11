@@ -8,7 +8,48 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
 
+
+
+
+	loadModule('jsio');
+
+	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
+	var cl = new Socket(); cl.connect('127.0.0.1', 9999);
+	var io = Descriptor.events([rdv]);
+
+	processEvents( io );
+	processEvents( io );
+
+_jsapiTests();
+throw 0;
+
+
+throw 0;
+
+
+
+host.stdout('press ctrl-c');
+var to = timeoutEvents(500);
+processEvents(to, host.endSignalEvents());
+processEvents(to, host.endSignalEvents());
+host.stdout('done.');
+
+throw 0;
+
+
+
+
+
+
 loadModule('jsstd');
+
+var i = '';
+exec('test.js');
+exec('test.js');
+print(i);
+
+throw 0;
+
 
 /*
 var a = new Socket();

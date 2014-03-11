@@ -1027,18 +1027,22 @@ public:
 	}
 
 
-public: // static
+// static
+
+private:
 
 	static void
 	setHostAllocators(Allocators allocators) {
 
-		jl_malloc = allocators.malloc;
-		jl_calloc = allocators.calloc;
-		jl_memalign = allocators.memalign;
-		jl_realloc = allocators.realloc;
-		jl_msize = allocators.msize;
-		jl_free = allocators.free;
+		::jl_malloc = allocators.malloc;
+		::jl_calloc = allocators.calloc;
+		::jl_memalign = allocators.memalign;
+		::jl_realloc = allocators.realloc;
+		::jl_msize = allocators.msize;
+		::jl_free = allocators.free;
 	}
+
+public:
 
 	static ALWAYS_INLINE Host&
 	getHost( JSRuntime *rt ) {

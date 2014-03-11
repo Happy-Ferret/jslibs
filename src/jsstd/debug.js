@@ -1,10 +1,10 @@
 var loadModule = host.loadModule;
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsstd'); throw 0;
+// loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsstd'); throw 0;
 
 loadModule('jsstd');
+print(12)
 
-
-jsstdTest();
+//jsstdTest();
 
 host.stdout('press ctrl-c');
 processEvents(timeoutEvents(1000), host.endSignalEvents());

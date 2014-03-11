@@ -70,11 +70,21 @@ DEFINE_TRACER() {
 	HandlePrivate *pv = static_cast<HandlePrivate*>(js::GetObjectPrivate(obj));
 	if ( pv ) {
 
-		for ( int i = 0; i < JL_HANDLE_PUBLIC_SLOT_COUNT; ++i ) {
+		uint32_t i;
+
+		for ( i = 0; i < JL_HANDLE_PUBLIC_SLOT_COUNT; ++i ) {
 			
 			if ( pv->slot(i).isMarkable() ) {
 
-				JS_CallValueTracer(trc, &pv->slot(i), "HandlePrivate");
+				JS_CallValueTracer(trc, &pv->slot(i), "HandlePrivate slot");
+			}
+		}
+
+		for ( i = 0; i < pv->dynSlotsCount(); ++i ) {
+
+			if ( pv->dynSlot(i).isMarkable() ) {
+
+				JS_CallValueTracer(trc, &pv->dynSlot(i), "HandlePrivate dynSlot");
 			}
 		}
 	}

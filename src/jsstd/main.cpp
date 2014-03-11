@@ -13,7 +13,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include <jlhelper.cpp>
 #include "jsstd.h"
 
 #include <jslibsModule.h>
@@ -41,12 +40,6 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	JL_ASSERT_ALLOC( mpv );
 	jl::Host::getHost(cx).moduleManager().modulePrivate(moduleId()) = mpv;
 
-	mpv->objIdList = NULL;
-	mpv->lastObjectId = 0;
-	mpv->objectIdAllocated = 0;
-	mpv->prevObjectIdGCCallback = NULL;
-	mpv->prevJSGCCallback = NULL;
-
 	INIT_STATIC();
 
 	return true;
@@ -62,11 +55,6 @@ ModuleRelease(JSContext *cx) {
 		return true;
 
 	ModulePrivate *mpv = (ModulePrivate*)host.moduleManager().modulePrivate(moduleId());
-
-	if ( mpv->objIdList )
-		jl_free(mpv->objIdList);
-
-	// (TBD) need to restore mpv->prevObjectIdGCCallback ?
 
 	jl_free(mpv);
 

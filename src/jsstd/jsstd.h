@@ -15,14 +15,6 @@
 
 #pragma once
 
-struct ObjId;
-
 struct ModulePrivate {
 
-	ObjId *objIdList;
-	unsigned int lastObjectId;
-	unsigned int objectIdAllocated;
-	JSGCCallback prevObjectIdGCCallback;
-
-	JSGCCallback prevJSGCCallback;
 };

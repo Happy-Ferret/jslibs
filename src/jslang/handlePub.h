@@ -34,28 +34,73 @@ JL_HIDToStr(JL_HANDLE_TYPE hid, char *dst) {
 
 class HandlePrivate : public jl::CppAllocators {
 	JS::Value _slots[JL_HANDLE_PUBLIC_SLOT_COUNT];
+	JS::Value *_dynSlots;
+	uint32_t _dynSlotsCount;
 public:
 	virtual JL_HANDLE_TYPE typeId() const = 0;
-	virtual ~HandlePrivate() {};
-	
-	JS::Value &slot(uint32_t index) {
+	virtual ~HandlePrivate() {
 
-		ASSERT( index < JL_HANDLE_PUBLIC_SLOT_COUNT );
-		return _slots[index];
-	}
-
-	JS::MutableHandleValue hslot(uint32_t index) {
-
-		return JS::MutableHandleValue::fromMarkedLocation(&slot(index));
-	}
+		if ( _dynSlots )
+			jl_free(_dynSlots);
+	};
 
 	HandlePrivate() {
 
 		//for ( int i = 0; i < JL_HANDLE_PUBLIC_SLOT_COUNT; ++i )
 		//	slots[i] = JS::Value();
 		memset(_slots, 0, sizeof(_slots));
-		ASSERT(_slots[0] == JS::Value());
+		_dynSlotsCount = 0;
+		_dynSlots = NULL;
+
+		ASSERT(_slots[0] == JL_ZInitValue());
 		ASSERT(!_slots[0].isMarkable());
+	}
+
+	JS::Value &
+	slot(uint32_t index) {
+
+		ASSERT( index < JL_HANDLE_PUBLIC_SLOT_COUNT );
+		return _slots[index];
+	}
+
+	JS::MutableHandleValue
+	hslot(uint32_t index) {
+
+		return JS::MutableHandleValue::fromMarkedLocation(&slot(index));
+	}
+
+
+	bool
+	allocDynSlots(uint32_t count) {
+
+		if ( _dynSlotsCount != count ) {
+			
+			_dynSlots = static_cast<JS::Value*>(jl_realloc(_dynSlots, sizeof(JS::Value) * count));
+		}
+		memset(_dynSlots, 0, sizeof(JS::Value) * count);
+
+		_dynSlotsCount = count;
+		ASSERT_IF(_dynSlotsCount, _dynSlots[0] == JL_ZInitValue());
+		return _dynSlots != 0;
+	}
+
+	uint32_t
+	dynSlotsCount() const {
+		
+		return _dynSlotsCount;
+	}
+
+	JS::Value &
+	dynSlot(uint32_t index) {
+
+		ASSERT( _dynSlots && index < _dynSlotsCount );
+		return _dynSlots[index];
+	}
+
+	JS::MutableHandleValue
+	hDynSlot(uint32_t index) {
+
+		return JS::MutableHandleValue::fromMarkedLocation(&dynSlot(index));
 	}
 };
 

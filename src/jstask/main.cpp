@@ -13,8 +13,6 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-// #include <jlhelper.cpp> // fix mutual access to jl::PreservAllocNone<JLData::Inner> JLData::mem;
-
 #include <jslibsModule.cpp>
 
 

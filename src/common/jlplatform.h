@@ -113,7 +113,7 @@
 
 
 #ifdef DEBUG
-	#define IFDEBUG(expr) expr;
+	#define IFDEBUG(expr) expr
 #else
 	#define IFDEBUG(expr) 0
 #endif // DEBUG
@@ -1092,7 +1092,7 @@ INLINE void GetAbsoluteModulePath( char* moduleFileName, size_t size, char *modu
 
 
 ALWAYS_INLINE bool
-ModuleFileName(char *hostFullPath) {
+GetModuleFileName(char *hostFullPath) {
 #if defined(XP_WIN)
 // get hostpath and hostname
 	return GetModuleFileName((HINSTANCE)GetModuleHandle(NULL), hostFullPath, PATH_MAX) != 0;
@@ -1972,6 +1972,34 @@ JL_enableLowFragmentationHeap() {
 
 	return true; // not implemented
 }
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// cpu
+//
+
+
+ALWAYS_INLINE bool
+JL_setMonoCPU() {
+
+#ifdef XP_WIN
+
+	return SetProcessAffinityMask(GetCurrentProcess(), 1) != FALSE;
+
+#elif XP_UNIX
+
+	cpu_set_t  mask;
+	CPU_ZERO(&mask);
+	CPU_SET(0, &mask);
+	return sched_setaffinity(0, sizeof(mask), &mask) == 0;
+
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
+
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // system interrupt

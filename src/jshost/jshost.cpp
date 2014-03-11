@@ -51,727 +51,6 @@ static const unsigned char embeddedBootstrapScript[] =
 ;
 
 
-/*
-static int stdin_fileno = -1;
-static int stdout_fileno = -1;
-static int stderr_fileno = -1;
-
-int
-HostStdin( void *, char *buffer, size_t bufferLength ) {
-
-	if (unlikely( stdin_fileno == -1 ))
-		stdin_fileno = fileno(stdin);
-	return read(stdin_fileno, (void*)buffer, bufferLength);
-}
-
-int
-HostStdout( void *, const char *buffer, size_t length ) {
-
-	if (unlikely( stdout_fileno == -1 ))
-		stdout_fileno = fileno(stdout);
-	return write(stdout_fileno, buffer, length);
-}
-
-int
-HostStderr( void *, const char *buffer, size_t length ) {
-
-	if (unlikely( stderr_fileno == -1 ))
-		stderr_fileno = fileno(stderr);
-	return write(stderr_fileno, buffer, length);
-}
-*/
-
-//void NewScriptHook(JSContext *cx, const char *filename, unsigned lineno, JSScript *script, JSFunction *fun, void *callerdata) {
-//	printf( "add - %s:%d - %s - %d - %p\n", filename, lineno, fun ? JS_GetFunctionName(fun):"", script->staticDepth, script );
-//}
-//void DestroyScriptHook(JSContext *cx, JSScript *script, void *callerdata) {
-//	printf( "del - %s:%d - ? - %d - %p\n", script->filename, script->lineno, script->staticDepth, script );
-//}
-
-
-// Helps to detect memory leaks (alloc/free balance)
-//#define DBG_ALLOC 1
-
-
-/*
-#ifdef DBG_ALLOC
-
-static volatile int32_t allocCount = 0;
-static volatile int32_t allocAmount = 0;
-static volatile int32_t freeCount = 0;
-static volatile int32_t freeAmount = 0;
-
-EXTERN_C void* jl_malloc_count( size_t size ) {
-	JLAtomicIncrement(&allocCount);
-	void *mem = malloc(size);
-	ASSERT( mem );
-	JLAtomicAdd(&allocAmount, msize(mem));
-	return mem;
-}
-
-EXTERN_C void* jl_calloc_count( size_t num, size_t size ) {
-	JLAtomicIncrement(&allocCount);
-	void *mem = calloc(num, size);
-	ASSERT( mem );
-	JLAtomicAdd(&allocAmount, msize(mem));
-	return mem;
-}
-
-EXTERN_C void* jl_memalign_count( size_t alignment, size_t size ) {
-	JLAtomicIncrement(&allocCount);
-	void *mem = memalign(alignment, size);
-	ASSERT( mem );
-	JLAtomicAdd(&allocAmount, msize(mem));
-	return mem;
-}
-
-EXTERN_C void* jl_realloc_count( void *ptr, size_t size ) {
-
-	size_t prev;
-	if ( ptr == NULL ) {
-		prev = 0;
-		JLAtomicIncrement(&allocCount);
-	} else {
-		prev = msize(ptr);
-	}
-
-	void *mem = realloc(ptr, size);
-	ASSERT( mem );
-
-	if ( mem != ptr ) {
-
-		JLAtomicAdd(&freeAmount, prev);
-		JLAtomicAdd(&allocAmount, msize(mem));
-	} else {
-
-		JLAtomicAdd(&allocAmount, msize(mem) - prev);
-	}
-	return mem;
-}
-
-EXTERN_C size_t jl_msize_count( void *ptr ) {
-	return msize(ptr);
-}
-
-EXTERN_C void jl_free_count( void *ptr ) {
-	if ( ptr ) {
-		JLAtomicIncrement(&freeCount);
-		JLAtomicAdd(&freeAmount, msize(ptr));
-	}
-	free(ptr);
-}
-
-#endif // DBG_ALLOC
-*/
-
-//////////////////////////////////////////////////////////////////////////////////////////////
-
-
-/**qa
-	QA.ASSERTOP(host, 'has', 'path');
-	QA.ASSERTOP(host, 'has', 'name');
-	if ( host.name.indexOf('jshost') == 0 ) {
-
-		QA.ASSERTOP(host, 'has', 'endSignal');
-		QA.ASSERTOP(host, 'has', 'endSignalEvents');
-	}
-**/
-
-/*
-bool EnableLowFragmentationHeap() {
-
-#ifdef XP_WIN
-	// enable low fragmentation heap
-	HANDLE heap = GetProcessHeap();
-	ULONG enable = 2;
-	return HeapSetInformation(heap, HeapCompatibilityInformation, &enable, sizeof(enable)) == TRUE;
-#endif // XP_WIN
-
-	return true; // not implemented
-}
-
-void SetJslibsMemoryAllocators(jl_malloc_t malloc, jl_calloc_t calloc, jl_memalign_t memalign, jl_realloc_t realloc, jl_msize_t msize, jl_free_t free) {
-
-	jl_malloc = malloc;
-	jl_calloc = calloc;
-	jl_memalign = memalign;
-	jl_realloc = realloc;
-	jl_msize = msize;
-	jl_free = free;
-}
-*/
-
-
-/*
-
-int main(int argc, char* argv[]) { // see |int wmain(int argc, wchar_t* argv[])| for wide char
-
-	int test(int argc, char* argv[]);
-	return test(argc, argv);
-
-//	BOOL st = SetProcessAffinityMask(GetCurrentProcess(), 1);
-	
-	EnableLowFragmentationHeap();
-
-	int exitValue;
-
-	uint32_t maxMem = (uint32_t)-1; // by default, there are no limit
-	uint32_t maxAlloc = (uint32_t)-1; // by default, there are no limit
-	bool warningsToErrors = false;
-	bool unsafeMode = false;
-	bool compileOnly = false;
-	float maybeGCInterval = 10; // seconds
-	bool useFileBootstrapScript = false;
-	const char *inlineScript = NULL;
-	const char *scriptName = NULL;
-	#ifdef DEBUG
-	bool debug = false;
-	#endif DEBUG
-
-
-	JSContext *cx = NULL;
-
-	// (TBD) use getopt instead ?
-	char** argumentVector = argv;
-	for ( argumentVector++; argumentVector[0] && argumentVector[0][0] == '-'; argumentVector++ )
-		switch ( argumentVector[0][1] ) {
-			case 'm': // maxbytes (GC)
-				argumentVector++;
-				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
-				maxMem = atol( *argumentVector ) * 1024L * 1024L;
-				break;
-			case 'n': // maxAlloc (GC)
-				argumentVector++;
-				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
-				maxAlloc = atol( *argumentVector ) * 1024L * 1024L;
-				break;
-			case 'u': // avoid any runtime checks
-				unsafeMode = true;
-				break;
-			case 'w': // convert warnings to errors
-				warningsToErrors = true;
-				break;
-			case 'g': // operationLimitGC
-				argumentVector++;
-				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
-				maybeGCInterval = (float)atof(*argumentVector);
-				break;
-			case 'c': // compileOnly
-				compileOnly = true;
-				break;
-			case 'b': // bootstrap
-				useFileBootstrapScript = true;
-				break;
-			case 'i': // inline script
-				argumentVector++; // keep the script as argument[0]
-				HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
-				inlineScript = *(argumentVector);
-				break;
-			case '?': // help
-			case 'h': //
-				fprintf( stderr, "Help: http://code.google.com/p/jslibs/wiki/jshost#Command_line_options\n" );
-				return EXIT_SUCCESS;
-		#ifdef DEBUG
-			case 'd': // debug
-				debug = true;
-		#endif // DEBUG
-	}
-
-
-	static const bool useJslibsMemoryManager =
-#ifdef DBG_ALLOC
-	false
-#else
-	unsafeMode
-#endif // DBG_ALLOC
-;
-
-#if defined(XP_WIN) && defined(DEBUG) && defined(REPORT_MEMORY_LEAKS)
-	if ( debug ) {
-		_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
-		_CrtSetReportMode( _CRT_WARN, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG );
-		_CrtSetReportFile( _CRT_WARN, _CRTDBG_FILE_STDERR );
-	}
-#endif
-
-
-	if ( useJslibsMemoryManager ) {
-
-		#ifdef HAS_JL_ALLOCATORS
-		#ifdef USE_NEDMALLOC
-		SetJslibsMemoryAllocators(nedmalloc, nedcalloc, nedmemalign, nedrealloc, nedblksize_msize, nedfree_handlenull);
-		#endif // USE_NEDMALLOC
-		#endif // HAS_JL_ALLOCATORS
-
-		#ifdef DBG_ALLOC
-		SetJslibsMemoryAllocators(jl_malloc_count, jl_calloc_count, jl_memalign_count, jl_realloc_count, jl_msize_count, jl_free_count);
-		#endif // DBG_ALLOC
-
-		JL_CHK( InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free) );
-		
-
-		// jslibs and spidermonkey allocator should be the same, else JL_NewString() and JL_NewUCString() should be fixed !
-		#ifdef HAS_JL_ALLOCATORS
-
-		js_jl_malloc = jl_malloc;
-		js_jl_calloc = jl_calloc;
-		js_jl_realloc = jl_realloc;
-		js_jl_free = jl_free;
-	
-		#endif // HAS_JL_ALLOCATORS
-
-	} else {
-
-		SetJslibsMemoryAllocators(malloc, calloc, memalign, realloc, msize, free);
-
-		#ifdef DBG_ALLOC
-		SetJslibsMemoryAllocators(jl_malloc_count, jl_calloc_count, jl_memalign_count, jl_realloc_count, jl_msize_count, jl_free_count);
-
-		js_jl_malloc = jl_malloc;
-		js_jl_calloc = jl_calloc;
-		js_jl_realloc = jl_realloc;
-		js_jl_free = jl_free;
-
-		#endif // DBG_ALLOC
-	}
-
-
-//	setvbuf(stderr, pBuffer, mode, buffer_size);
-	
-	JS_Init();
-	
-	cx = CreateHost(maxMem, maxAlloc, (uint32_t)(maybeGCInterval * 1000));
-	HOST_MAIN_ASSERT( cx != NULL, "Unable to initialize the JavaScript engine." );
-
-#ifdef DEBUG	
-	if ( debug ) {
-
-		//JS_SetOptions(cx, JS_GetOptions(cx) & ~(JSOPTION_TYPE_INFERENCE));
-		JS::ContextOptionsRef(cx).setTypeInference(false);
-	}
-#endif // DEBUG	
-
-	HostPrivate *hpv;
-	hpv = JL_GetHostPrivate(cx);
-
-	// custom memory allocators are transfered to modules through the HostPrivate structure:
-	hpv->alloc.malloc = jl_malloc;
-	hpv->alloc.calloc = jl_calloc;
-	hpv->alloc.memalign = jl_memalign;
-	hpv->alloc.realloc = jl_realloc;
-	hpv->alloc.msize = jl_msize;
-	hpv->alloc.free = jl_free;
-
-	//JS_SetOptions(cx, JS_GetOptions(cx) | (warningsToErrors ? JSOPTION_WERROR : 0) ); // default, may be disabled in InitHost()
-	JS::ContextOptionsRef(cx).setWerror(warningsToErrors);
-
-	JL_CHKM( InitHost(cx, unsafeMode, HostStdin, HostStdout, HostStderr, NULL), E_HOST, E_INIT ); // "Unable to initialize the host."
-
-	gEndSignalCond = JLCondCreate();
-	gEndSignalLock = JLMutexCreate();
-
-#if defined(XP_WIN)
-	JL_CHKM( SetProcessShutdownParameters(0x100, SHUTDOWN_NORETRY), E_HOST, E_INTERNAL );
-	JL_CHKM( SetConsoleCtrlHandler(Interrupt, TRUE) != 0, E_HOST, E_INTERNAL );
-#elif defined(XP_UNIX)
-	signal(SIGINT, Interrupt);
-	signal(SIGTERM, Interrupt);
-	signal(SIGKILL, Interrupt);
-#else
-	#error NOT IMPLEMENTED YET	// (TBD)
-#endif
-
-	scriptName = *argumentVector;
-
-	//JL_CHKM( inlineScript != NULL || scriptName != NULL || useFileBootstrapScript || sizeof(embeddedBootstrapScript)-1 > 0, E_SCRIPT, E_NOTFOUND ); // "No script specified."
-
-	if ( !(inlineScript != NULL || scriptName != NULL || useFileBootstrapScript || sizeof(embeddedBootstrapScript)-1 > 0) ) {
-		
-		JL_WARN( E_SCRIPT, E_NOTFOUND );
-	}
-
-	char hostFullPath[PATH_MAX];
-
-#if defined(XP_WIN)
-// get hostpath and hostname
-	HINSTANCE hInstance = (HINSTANCE)GetModuleHandle(NULL);
-	JL_CHKM( GetModuleFileName(hInstance, hostFullPath, sizeof(hostFullPath)) != 0, E_HOST, E_INTERNAL ); // "Unable to GetModuleFileName."
-#elif defined(XP_UNIX)
-	jl::GetAbsoluteModulePath(hostFullPath, sizeof(hostFullPath), argv[0]);
-	JL_CHKM( hostFullPath[0] != '\0', E_HOST, E_INTERNAL ); // "Unable to get module FileName."
-//	int len = readlink("/proc/self/exe", moduleFileName, sizeof(moduleFileName)); // doc: readlink does not append a NUL character to buf.
-//	moduleFileName[len] = '\0';
-//	strcpy(hostFullPath, argv[0]);
-#else
-	#error NOT IMPLEMENTED YET	// (TBD)
-#endif
-
-	char *hostName;
-	hostName = strrchr(hostFullPath, PATH_SEPARATOR);
-	JL_CHK( hostName );
-	hostName += 1;
-	int hostPathLength;
-	hostPathLength = hostName-hostFullPath;
-
-	char hostPath[PATH_MAX];
-	strncpy(hostPath, hostFullPath, hostPathLength);
-	hostPath[hostPathLength] = '\0';
-
-	{
-
-	JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
-	JS::RootedValue rval(cx);
-
-	{
-	JS::RootedObject hostObj(cx, JL_GetHostPrivate(cx)->hostObject);
-	JS::RootedValue arguments(cx);
-
-	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, name), hostName) );
-	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, path), hostPath) );
-
-	JL_CHK( JL_NativeVectorToJsval(cx, argumentVector, argc - (argumentVector-argv), &arguments) );
-	JL_CHK( JS_SetPropertyById(cx, hostObj, JLID(cx, arguments), arguments) );
-
-	JL_CHK( JS_DefineProperty(cx, hostObj, "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED) ); // https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
-	JL_CHK( JS_DefineFunction(cx, hostObj, "endSignalEvents", EndSignalEvents, 1, 0) );
-
-#ifdef DBG_ALLOC
-	struct Tmp {
-		static bool dbgAllocGetter(JSContext *cx, JSObject *, jsid, jsval *vp) {
-
-			return JL_NativeToJsval(cx, (int32_t)allocAmount, vp);
-		}
-	};
-	JL_CHK( JS_DefineProperty(cx, hostObj, "dbgAlloc", JSVAL_VOID, Tmp::dbgAllocGetter, NULL, JSPROP_SHARED) );
-#endif // DBG_ALLOC
-
-	arguments.set(JS::UndefinedHandleValue);
-	hostObj.set(NULL);
-	}
-
-	// embedded bootstrap script
-
-	if ( sizeof(embeddedBootstrapScript)-1 > 0 ) {
-
-		JS::AutoSaveContextOptions asco(cx);
-
-		//uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
-
-		JS::ContextOptionsRef(cx).setDontReportUncaught(false);
-
-		JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL, NULL) ); // -1 because sizeof("") == 1
-		JL_CHK( script );
-		JL_CHK( JS_ExecuteScript(cx, globalObject, script, rval.address()) );
-
-	}
-
-
-	// file bootstrap script
-
-	if ( useFileBootstrapScript ) {
-
-		char bootstrapFilename[PATH_MAX];
-		strcpy(bootstrapFilename, hostFullPath);
-		strcat(bootstrapFilename, ".js");
-		JL_CHK( ExecuteScriptFileName(cx, globalObject, bootstrapFilename, compileOnly, &rval) );
-	}
-
-
-	ASSERT( !JL_IsExceptionPending(cx) );
-
-
-	bool executeStatus;
-	executeStatus = true;
-
-
-	// inline (command-line) script
-
-	if ( inlineScript != NULL ) {
-
-		executeStatus = ExecuteScriptText(cx, globalObject, inlineScript, compileOnly, &rval);
-	}
-
-
-	// file script
-
-	if ( scriptName != NULL && executeStatus == true ) {
-
-		executeStatus = ExecuteScriptFileName(cx, globalObject, scriptName, compileOnly, &rval);
-	}
-
-	globalObject.set(NULL);
-
-
-
-	if ( executeStatus == true ) {
-
-		if ( JSVAL_IS_INT(rval) && rval.toInt32() >= 0 ) // (TBD) enhance this, use JL_JsvalToNative() ?
-			exitValue = rval.toInt32();
-		else
-			exitValue = EXIT_SUCCESS;
-	} else {
-
-		if ( JL_IsExceptionPending(cx) ) { // see JSOPTION_DONT_REPORT_UNCAUGHT option.
-
-			JS::RootedValue ex(cx);
-			JS_GetPendingException(cx, &ex);
-			JL_JsvalToPrimitive(cx, ex, &ex);
-			if ( JSVAL_IS_INT(ex) ) {
-
-				exitValue = ex.toInt32();
-			} else {
-
-				JS_ReportPendingException(cx);
-				exitValue = EXIT_FAILURE;
-			}
-		} else {
-
-			exitValue = EXIT_FAILURE;
-		}
-	}
-
-	}
-
-
-	if ( useJslibsMemoryManager ) {
-	
-		disabledFree = true;
-		FinalizeMemoryManager(!disabledFree, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
-	}
-
-	JS_SetGCCallback(JL_GetRuntime(cx), NULL, NULL);
-	DestroyHost(cx, disabledFree);
-	if ( !disabledFree ) {
-	
-		JS_ShutDown();
-	}
-	cx = NULL;
-
-
-#if defined(XP_WIN)
-	SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, FALSE);
-#elif defined(XP_UNIX)
-	signal(SIGINT, SIG_DFL);
-	signal(SIGTERM, SIG_DFL);
-	signal(SIGKILL, SIG_DFL);
-#else
-	#error NOT IMPLEMENTED YET	// (TBD)
-#endif
-
-
-#if defined(XP_WIN) && defined(DEBUG) && defined(REPORT_MEMORY_LEAKS)
-	if ( debug ) {
-//		_CrtMemDumpAllObjectsSince(NULL);
-	}
-#endif
-//	flush(stdout);
-//	flush(stderr);
-	return exitValue;
-bad:
-
-	if ( cx ) {
-
-		if ( useJslibsMemoryManager )
-			disabledFree = true;
-		JS_SetGCCallback(JL_GetRuntime(cx), NULL, NULL);
-		DestroyHost(cx, true);
-	}
-	JS_ShutDown();
-	return EXIT_FAILURE;
-}
-
-#ifdef DBG_ALLOC
-
-struct DBG_ALLOC_dummyClass {
-	~DBG_ALLOC_dummyClass() { // we must count at exit, see "dynamic atexit destructor"
-
-		fprintf(stderr, "\n{alloc:%d (%dB), leaks:%d (%dB)}\n", allocCount, allocAmount, allocCount - freeCount, allocAmount - freeAmount);
-	}
-} DBG_ALLOC_dummy;
-
-#endif // DBG_ALLOC
-
-
-*/
-
-
-/**doc
-#summary jshost executable
-#labels doc
-
-= jshost executable =
- [http://code.google.com/p/jslibs/ home] *>* [JSLibs] *>* [jshost] - [http://jslibs.googlecode.com/svn/trunk/jshost/jshost.cpp http://jslibs.googlecode.com/svn/wiki/source.png]
-
-=== Description ===
-
-jshost ( javascript host ) is a small executable file that run javascript programs.
-The main features are:
- * Lightweight
-  The binary executable file is less than 60KB
- * Minimalist internal API
-  loadModule is enough, everything else can be added using dynamic loadable modules.
-
-=== Command line options ===
- * `-c <0 or 1>` (default = 0)
-  Compile-only. The script is compiled but not executed. This is useful to detect syntax errors.
- * `-u` (disabled by default)
-  Run in unsafe-mode that is a kind of 'release mode'. In unsafe-mode, any runtime checks is avoid and warnings are not reported. This mode allow a better execution speed.
- * `-w` (disabled by default)
-  Convert warnings to error.
- * `-m <size>` (default: no limit)
-  Specifies the maximum memory usage of the script in megabytes.
- * `-n  <size>` (default: no limit)
-  Specifies the number of allocated megabytes after which garbage collection is run.
- * `-g <time>` (default = 60)
-  This is the frequency (in seconds) at wich the GarbageCollector may be launched (0 for disabled).
- * `-b`
-  Run the bootstrap file (<executable filename>.js, eg. jshost.exe.js on windows and jshost.js on Linux)
- * `-h` `-h`
-  Help.
-
-$H beware
- Options of the host must be *before* the script name.$LF
- Options of the script must be *after* the script name.
-
-=== Exit code ===
- * The exit code of jshost is 1 on error. On success, exit code is the last evaluated expression of the script.
-   If this last expression is a positive integer, its value is returned, in any other case, 0 is returned.
- * If there is a pending uncatched exception and if this exception can be converted into a number (see valueOf()), this numeric value is used as exit code.
- $H example
- {{{
- function exit(code) {
-
-  throw code;
- }
-
- exit(2);
- }}}
-
-=== Global functions ===
- * $THIS *loadModule*( moduleFileName )
-  Loads and initialize the specified module.
-  Do not provide the file extension in _moduleFileName_.
-  $H exemple
-  {{{
-  loadModule('jsstd');
-  print( 'Unsafe mode: ' + host.unsafeMode, '\n' );
-  }}}
-  $H note
-  You can avoid loadModule to use the global object and load the module in your own namespace:
-  $H example 1
-  {{{
-  var std = {};
-  loadModule.call(std, 'jsstd');
-  std.print( std.idOf(1234), '\n' );
-  std.print( std.idOf(1234), '\n' );
-  }}}
-  $H example 2
-  {{{
-  var std = loadModule.call({}, 'jsstd');
-  std.print('hello ');
-  std.print('world');
-  }}}
-  $H example 3
-  {{{
-  var moduleMap = new Map();
-  function myLoadModule(name) {
-    
-    var ns = {};
-    var id = loadModule.call(ns, name);
-    return id ? (moduleMap.set(name, ns), ns) : moduleMap.get(name);
-  }
-
-  // ...
-
-  var s1 = myLoadModule('jsstd');
-  var s2 = myLoadModule('jsstd');
-  var s3 = myLoadModule('jsstd');
-
-  s1.print('hello\n');
-  s2.print('hello\n');
-  s3.print('hello\n');
-
-  throw 0;
-  }}}
-
-=== Global properties ===
-
- * *arguments*
-  The command-line arguments (given after command line options).
-  $H example
-  {{{
-  for ( var i in host.arguments ) {
-
-   print( 'argument['+i+'] = '+host.arguments[i] ,'\n' );
-  }
-  }}}
-  <pre>
-  ...
-  c:\>jshost -g 600 -u foo.js bar
-  argument[0] = foo.js
-  argument[1] = bar
-  </pre>
-
- * *host.endSignal*
-  Is $TRUE if a break signal (ctrl-c, ...) has been sent to jshost. This event can be reset.
-
-=== Host object ===
- jshost create a global `host` object to provide other modules some useful informations like `stdin/stdout/stderr` access and `unsafeMode` flag.
- The `host` also contains the `sourceId`, `buildDate` and `jsVersion` properties.
-
-==== Example ====
- host version information can be obtained using: `jshost -i "host.stdout(_host.build+' r'+_host.sourceId)"`
-
-==== Example ====
-{{{
-var r = host.sourceId + (((2006*12 + 6)*31 + 22)*24 + 0);
-
-var d = 12 * 31 * 24;
-var year = Math.floor(r / d);
-r = r % d;
-
-var d = 31 * 24;
-var month = Math.floor(r / d);
-r = r % d;
-
-var d = 24;
-var day = Math.floor(r / d);
-}}}
-
-== Remarks ==
-
-=== Generated filename extensions are ===
- * ".dll" : for windows
- * ".so" : for linux
-
-=== Modules entry points signature are ===
-|| `"ModuleInit"` || `bool (*ModuleInitFunction)(JSContext *, JSObject *)` || Called when the module is being load ||
-|| `"ModuleRelease"` || `void (*ModuleReleaseFunction)(JSContext *cx)` || Called when the module is not more needed ||
-|| `"ModuleFree"` || `void (*ModuleFreeFunction)(void)` || Called to let the module moke some cleanup tasks ||
-
-
-=== Exemple (win32) ===
-{{{
-extern "C" __declspec(dllexport) bool ModuleInit(JSContext *cx, JSObject *obj) {
-
- InitFileClass(cx, obj);
- InitDirectoryClass(cx, obj);
- InitSocketClass(cx, obj);
- InitErrorClass(cx, obj);
- InitGlobal(cx, obj);
-
- return true;
-}
-
-== Embedding JS scripts in your jshost binary ==
- This can only be done at jshost compilation time.
- # Checkout [http://code.google.com/p/jslibs/source/checkout jslibs sources]
- # Save your embbeded script in the file _jslibs/src/jshost/embeddedBootstrapScript.js_
- # [jslibsBuild Compile jslibs] (or only jshost if jslibs has already been compiled once)
-}}}
-**/
-
-
 
 struct CmdLineArguments {
 
@@ -1024,7 +303,7 @@ struct EndSignalProcessEvent : public ProcessEvent2 {
 		if ( !*hasEvent )
 			return true;
 
-		if ( !slot(0).isUndefined() ) {
+		if ( slot(0) != JL_ZInitValue() ) {
 		
 			JS::RootedObject callThisObj(cx);
 			callThisObj.set(&slot(1).toObject());
@@ -1162,27 +441,6 @@ volatile bool NedAllocators::_skipCleanup = false;
 #endif // USE_NEDMALLOC
 
 
-static size_t GetStackUsage()
-{
-    MEMORY_BASIC_INFORMATION mbi;
-    VirtualQuery(&mbi, &mbi, sizeof(mbi));
-    // now mbi.AllocationBase = reserved stack memory base address
-
-    VirtualQuery(mbi.AllocationBase, &mbi, sizeof(mbi));
-    // now (mbi.BaseAddress, mbi.RegionSize) describe reserved (uncommitted) portion of the stack
-    // skip it
-
-    VirtualQuery((char*)mbi.BaseAddress + mbi.RegionSize, &mbi, sizeof(mbi));
-    // now (mbi.BaseAddress, mbi.RegionSize) describe the guard page
-    // skip it
-
-    VirtualQuery((char*)mbi.BaseAddress + mbi.RegionSize, &mbi, sizeof(mbi));
-    // now (mbi.BaseAddress, mbi.RegionSize) describe the committed (i.e. accessed) portion of the stack
-
-    return mbi.RegionSize;
-}
-
-
 // see |int wmain(int argc, wchar_t* argv[])| for wide char
 int main(int argc, char* argv[]) {
 
@@ -1198,27 +456,23 @@ int main(int argc, char* argv[]) {
 		exitValue = EXIT_SUCCESS;
 	} else {
 
+		//JL_setMonoCPU();
 		JL_enableLowFragmentationHeap();
-/*
+
 		// js engine and jslibs low-level allocators must the same
-		#if defined(USE_NEDMALLOC) && defined(HAS_JL_ALLOCATORS)
-		NedAllocators allocators;
-		#else
+//		#if defined(USE_NEDMALLOC) && defined(HAS_JL_ALLOCATORS)
+//		NedAllocators allocators;
+//		#else
 		StdAllocators allocators;
-		#endif // USE_NEDMALLOC
-*/
-		StdAllocators allocators;
+//		#endif // USE_NEDMALLOC
 
 
 		//ThreadedAllocator alloc(allocators);
+		
+		IFDEBUG( CountedAlloc countAlloc(allocators) );
 
-		#ifdef DEBUG
-		CountedAlloc countAlloc(allocators);
-		#endif // DEBUG
-
-		HostRuntime::setJSEngineAllocators(allocators);
-		Host::setHostAllocators(allocators);
-
+		// js engine and jslibs allocators must the same
+		HostRuntime::setJSEngineAllocators(allocators); // need to be done before AutoJSEngineInit ?
 
 		AutoJSEngineInit ase;
 
@@ -1231,6 +485,8 @@ int main(int argc, char* argv[]) {
 		
 		JSContext *cx = hostRuntime.context();
 
+		JS::ContextOptionsRef(cx).setWerror(args.warningsToErrors);
+
 		//JS::RootedValue tmpVal(cx);
 		//JS::RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
 		//JL_CHK( ExecuteScriptText(cx, global, "(function() { for (var i = 0; i < 10000; ++i); })()", false, &tmpVal) );
@@ -1241,14 +497,13 @@ int main(int argc, char* argv[]) {
 
 
 		JL_CHKM( initInterrupt(), E_HOST, E_INTERNAL );
-
 		// https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
 		JL_CHK( JS_DefineProperty(cx, host.hostObject(), "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED) );
 		JL_CHK( JS_DefineFunction(cx, host.hostObject(), "endSignalEvents", EndSignalEvents, 1, 0) );
 
 
 		char hostFullPath[PATH_MAX];
-		JL_CHK( jl::ModuleFileName(hostFullPath) );
+		JL_CHK( jl::GetModuleFileName(hostFullPath) );
 
 		char *hostName;
 		hostName = strrchr(hostFullPath, PATH_SEPARATOR);
@@ -1263,6 +518,8 @@ int main(int argc, char* argv[]) {
 
 		host.setHostName(hostPath, hostName);
 		host.setHostArguments(args.jsArgv, args.jsArgc);
+
+		JL_ASSERT_WARN( !(!args.inlineScript && args.jsArgc == 0 && !args.useFileBootstrapScript && sizeof(embeddedBootstrapScript)-1 == 0), E_SCRIPT, E_NOTFOUND );
 
 		{
 
@@ -1341,6 +598,8 @@ int main(int argc, char* argv[]) {
 
 		freeInterrupt();
 
+		// JS_SetGCCallback(JL_GetRuntime(cx), NULL, NULL);
+
 		host.destroy();
 		hostRuntime.destroy();
 		host.free(); // must be executed after runtime destroy
@@ -1348,4 +607,225 @@ int main(int argc, char* argv[]) {
 
 	return exitValue;
 	JL_BAD;
+
+/*
+#ifdef DBG_ALLOC
+	struct Tmp {
+		static bool dbgAllocGetter(JSContext *cx, JSObject *, jsid, jsval *vp) {
+
+			return JL_NativeToJsval(cx, (int32_t)allocAmount, vp);
+		}
+	};
+	JL_CHK( JS_DefineProperty(cx, hostObj, "dbgAlloc", JSVAL_VOID, Tmp::dbgAllocGetter, NULL, JSPROP_SHARED) );
+#endif // DBG_ALLOC
+*/
+/*
+#if defined(XP_WIN) && defined(DEBUG) && defined(REPORT_MEMORY_LEAKS)
+	if ( debug ) {
+		_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
+		_CrtSetReportMode( _CRT_WARN, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG );
+		_CrtSetReportFile( _CRT_WARN, _CRTDBG_FILE_STDERR );
+	}
+#endif
+*/
+/*
+#if defined(XP_WIN) && defined(DEBUG) && defined(REPORT_MEMORY_LEAKS)
+	if ( debug ) {
+//		_CrtMemDumpAllObjectsSince(NULL);
+	}
+#endif
+*/
+
 }
+
+/**doc
+#summary jshost executable
+#labels doc
+
+= jshost executable =
+ [http://code.google.com/p/jslibs/ home] *>* [JSLibs] *>* [jshost] - [http://jslibs.googlecode.com/svn/trunk/jshost/jshost.cpp http://jslibs.googlecode.com/svn/wiki/source.png]
+
+=== Description ===
+
+jshost ( javascript host ) is a small executable file that run javascript programs.
+The main features are:
+ * Lightweight
+  The binary executable file is less than 60KB
+ * Minimalist internal API
+  loadModule is enough, everything else can be added using dynamic loadable modules.
+
+=== Command line options ===
+ * `-c <0 or 1>` (default = 0)
+  Compile-only. The script is compiled but not executed. This is useful to detect syntax errors.
+ * `-u` (disabled by default)
+  Run in unsafe-mode that is a kind of 'release mode'. In unsafe-mode, any runtime checks is avoid and warnings are not reported. This mode allow a better execution speed.
+ * `-w` (disabled by default)
+  Convert warnings to error.
+ * `-m <size>` (default: no limit)
+  Specifies the maximum memory usage of the script in megabytes.
+ * `-n  <size>` (default: no limit)
+  Specifies the number of allocated megabytes after which garbage collection is run.
+ * `-g <time>` (default = 60)
+  This is the frequency (in seconds) at wich the GarbageCollector may be launched (0 for disabled).
+ * `-b`
+  Run the bootstrap file (<executable filename>.js, eg. jshost.exe.js on windows and jshost.js on Linux)
+ * `-h` `-h`
+  Help.
+
+$H beware
+ Options of the host must be *before* the script name.$LF
+ Options of the script must be *after* the script name.
+
+=== Exit code ===
+ * The exit code of jshost is 1 on error. On success, exit code is the last evaluated expression of the script.
+   If this last expression is a positive integer, its value is returned, in any other case, 0 is returned.
+ * If there is a pending uncatched exception and if this exception can be converted into a number (see valueOf()), this numeric value is used as exit code.
+ $H example
+ {{{
+ function exit(code) {
+
+  throw code;
+ }
+
+ exit(2);
+ }}}
+
+=== Global functions ===
+ * $THIS *loadModule*( moduleFileName )
+  Loads and initialize the specified module.
+  Do not provide the file extension in _moduleFileName_.
+  $H exemple
+  {{{
+  loadModule('jsstd');
+  print( 'Unsafe mode: ' + host.unsafeMode, '\n' );
+  }}}
+  $H note
+  You can avoid loadModule to use the global object and load the module in your own namespace:
+  $H example 1
+  {{{
+  var std = {};
+  loadModule.call(std, 'jsstd');
+  std.print( std.idOf(1234), '\n' );
+  std.print( std.idOf(1234), '\n' );
+  }}}
+  $H example 2
+  {{{
+  var std = loadModule.call({}, 'jsstd');
+  std.print('hello ');
+  std.print('world');
+  }}}
+  $H example 3
+  {{{
+  var moduleMap = new Map();
+  function myLoadModule(name) {
+    
+    var ns = {};
+    var id = loadModule.call(ns, name);
+    return id ? (moduleMap.set(name, ns), ns) : moduleMap.get(name);
+  }
+
+  // ...
+
+  var s1 = myLoadModule('jsstd');
+  var s2 = myLoadModule('jsstd');
+  var s3 = myLoadModule('jsstd');
+
+  s1.print('hello\n');
+  s2.print('hello\n');
+  s3.print('hello\n');
+
+  throw 0;
+  }}}
+
+=== Global properties ===
+
+ * *arguments*
+  The command-line arguments (given after command line options).
+  $H example
+  {{{
+  for ( var i in host.arguments ) {
+
+   print( 'argument['+i+'] = '+host.arguments[i] ,'\n' );
+  }
+  }}}
+  <pre>
+  ...
+  c:\>jshost -g 600 -u foo.js bar
+  argument[0] = foo.js
+  argument[1] = bar
+  </pre>
+
+ * *host.endSignal*
+  Is $TRUE if a break signal (ctrl-c, ...) has been sent to jshost. This event can be reset.
+
+=== Host object ===
+ jshost create a global `host` object to provide other modules some useful informations like `stdin/stdout/stderr` access and `unsafeMode` flag.
+ The `host` also contains the `sourceId`, `buildDate` and `jsVersion` properties.
+
+==== Example ====
+ host version information can be obtained using: `jshost -i "host.stdout(_host.build+' r'+_host.sourceId)"`
+
+==== Example ====
+{{{
+var r = host.sourceId + (((2006*12 + 6)*31 + 22)*24 + 0);
+
+var d = 12 * 31 * 24;
+var year = Math.floor(r / d);
+r = r % d;
+
+var d = 31 * 24;
+var month = Math.floor(r / d);
+r = r % d;
+
+var d = 24;
+var day = Math.floor(r / d);
+}}}
+
+== Remarks ==
+
+=== Generated filename extensions are ===
+ * ".dll" : for windows
+ * ".so" : for linux
+
+=== Modules entry points signature are ===
+|| `"ModuleInit"` || `bool (*ModuleInitFunction)(JSContext *, JSObject *)` || Called when the module is being load ||
+|| `"ModuleRelease"` || `void (*ModuleReleaseFunction)(JSContext *cx)` || Called when the module is not more needed ||
+|| `"ModuleFree"` || `void (*ModuleFreeFunction)(void)` || Called to let the module moke some cleanup tasks ||
+
+
+=== Exemple (win32) ===
+{{{
+extern "C" __declspec(dllexport) bool ModuleInit(JSContext *cx, JSObject *obj) {
+
+ InitFileClass(cx, obj);
+ InitDirectoryClass(cx, obj);
+ InitSocketClass(cx, obj);
+ InitErrorClass(cx, obj);
+ InitGlobal(cx, obj);
+
+ return true;
+}
+
+== Embedding JS scripts in your jshost binary ==
+ This can only be done at jshost compilation time.
+ # Checkout [http://code.google.com/p/jslibs/source/checkout jslibs sources]
+ # Save your embbeded script in the file _jslibs/src/jshost/embeddedBootstrapScript.js_
+ # [jslibsBuild Compile jslibs] (or only jshost if jslibs has already been compiled once)
+}}}
+**/
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+
+/**qa
+	QA.ASSERTOP(host, 'has', 'path');
+	QA.ASSERTOP(host, 'has', 'name');
+	if ( host.name.indexOf('jshost') == 0 ) {
+
+		QA.ASSERTOP(host, 'has', 'endSignal');
+		QA.ASSERTOP(host, 'has', 'endSignalEvents');
+	}
+**/
+
+

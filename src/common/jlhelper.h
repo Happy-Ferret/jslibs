@@ -179,6 +179,15 @@ JL_NewNumberValue( JSContext *cx, double d, OUT JS::MutableHandleValue rval ) {
 	return true;
 }
 
+
+ALWAYS_INLINE JS::Value FASTCALL
+JL_ZInitValue() {
+
+	ASSERT(JS::Value().asRawBits() == 0);
+	return JS::Value();
+}
+
+
 ALWAYS_INLINE JS::Value FASTCALL
 JL_GetNaNValue( JSContext *cx ) {
 
@@ -4125,6 +4134,8 @@ JL_LoadScript(JSContext * RESTRICT cx, IN JS::HandleObject obj, const char * RES
 	JS::RootedScript script(cx);
 	JS::CompileOptions compileOptions(cx);
 
+	//JS::CompartmentOptionsRef(cx).cloneSingletonsOverride().set(true);
+
 	void *data = NULL;
 
 	char compiledFileName[PATH_MAX];
@@ -4194,10 +4205,9 @@ JL_LoadScript(JSContext * RESTRICT cx, IN JS::HandleObject obj, const char * RES
 	// doc.
 	//   JSOPTION_COMPILE_N_GO: caller of JS_Compile*Script promises to execute compiled script once only; enables compile-time scope chain resolution of consts.
 	// see https://bugzilla.mozilla.org/show_bug.cgi?id=494363
-	if ( saveCompFile ) { // saving the compiled file mean that we cannot promise to execute compiled script once only.
-
-		compileOptions.setCompileAndGo(false);  // JS_SetOptions(cx, prevOpts & ~JSOPTION_COMPILE_N_GO); // previous options a restored below.
-	}
+	// see also bug 920322 : Add support for compileAndGo optimizations to XDRScript
+	//if ( saveCompFile ) // saving the compiled file mean that we cannot promise to execute compiled script once only.
+	//	compileOptions.setCompileAndGo(false);  // JS_SetOptions(cx, prevOpts & ~JSOPTION_COMPILE_N_GO); // previous options a restored below.
 
 #define JL_UC
 #ifndef JL_UC
@@ -4269,6 +4279,8 @@ JL_LoadScript(JSContext * RESTRICT cx, IN JS::HandleObject obj, const char * RES
 				scriptText[1] = '/';
 			}
 			compileOptions.setFileAndLine(fileName, 1);
+			compileOptions.setCompileAndGo(true);
+
 			script = JS_CompileScript(cx, obj, scriptText, scriptTextLength, compileOptions);
 			break;
 		}
@@ -4282,6 +4294,8 @@ JL_LoadScript(JSContext * RESTRICT cx, IN JS::HandleObject obj, const char * RES
 				scriptText[1] = L('/');
 			}
 			compileOptions.setFileAndLine(fileName, 1);
+			compileOptions.setCompileAndGo(true);
+
 			script = JS_CompileUCScript(cx, obj, scriptText, scriptTextLength, compileOptions);
 			break;
 		}
@@ -4297,6 +4311,8 @@ JL_LoadScript(JSContext * RESTRICT cx, IN JS::HandleObject obj, const char * RES
 				scriptText[1] = L('/');
 			}
 			compileOptions.setFileAndLine(fileName, 1);
+			compileOptions.setCompileAndGo(true);
+
 			script = JS_CompileUCScript(cx, obj, scriptText, scriptTextLength, compileOptions);
 			break;
 		}
@@ -4372,6 +4388,7 @@ ExecuteScriptText( JSContext *cx, IN JS::HandleObject obj, const char *scriptTex
 	JS::RootedScript script(cx);
 	JS::CompileOptions compileOptions(cx);
 	compileOptions.setFileAndLine("inline", 1);
+	compileOptions.setCompileAndGo(true);
 
 	script = JS_CompileScript(cx, obj, scriptText, strlen(scriptText), compileOptions);
 	JL_CHK( script );

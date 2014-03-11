@@ -18,7 +18,7 @@
 
 #include <jsvalserializer.h>
 
-#include <../host/host2.h>"
+//#include <../host/host2.h>
 
 #ifdef XP_WIN
 #include <Psapi.h>

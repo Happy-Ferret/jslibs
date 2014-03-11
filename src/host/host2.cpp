@@ -18,13 +18,13 @@
 
 #include <jsprf.h> // JS_smprintf in ErrorReporter
 
-#include "host2.h"
-
 #include <jslibsModule.h>
 
 #include "../jslang/jslang.h"
 
 
+// by default, we run in unsafe mode.
+// mixing safe and unsafe is not allowed.
 DLLAPI int _unsafeMode = true;
 
 DLLAPI jl_malloc_t jl_malloc = NULL;
@@ -37,9 +37,6 @@ DLLAPI jl_free_t jl_free = NULL;
 
 
 JL_BEGIN_NAMESPACE
-
-
-DECLARE_CLASS(host);
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -474,6 +471,7 @@ HostRuntime::setJSEngineAllocators(Allocators allocators) {
 	js_jl_free = allocators.free;
 }
 
+
 void
 HostRuntime::errorReporterBasic(JSContext *cx, const char *message, JSErrorReport *report) {
 
@@ -517,9 +515,13 @@ HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota
 	JS_SetErrorReporter(cx, errorReporterBasic);
 
 	JS::ContextOptionsRef(cx)
+		// doc. VarObjFix is recommended.  Without it, the two scripts "x = 1" and "var x = 1", where no variable x is in scope, do two different things.
+		//      The former creates a property on the global object.  The latter creates a property on obj.  With this flag, both create a global property.
 		.setVarObjFix(true)
 		.setTypeInference(true)
-		.setIon(true);
+		.setIon(true)
+//		.setCloneSingletons(false)
+	;
 
 	//JS_SetNativeStackQuota(cx, DEFAULT_MAX_STACK_SIZE); // see https://developer.mozilla.org/En/SpiderMonkey/JSAPI_User_Guide
 	JS_SetGCParameter(rt, JSGC_MODE, JSGC_MODE_INCREMENTAL); // JSGC_MODE_GLOBAL
@@ -536,7 +538,8 @@ HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota
 	options
 		.setVersion(JSVERSION_LATEST)
 		.setInvisibleToDebugger(false)
-		.setMergeable(false);
+		.setMergeable(false)
+	;
 
 	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, lazyStandardClasses ? &_globalClass_lazy : &_globalClass, NULL, JS::DontFireOnNewGlobalHook, options));
 	JL_CHK( globalObject ); // "unable to create the global object." );
@@ -744,423 +747,6 @@ ModuleManager::freeModules(bool skipCleanup) {
 }
 
 
-//////////////////////////////////////////////////////////////////////////////
-// Host
-
-struct {
-	JSExnType exn;
-	const char *msg;
-} static E_msg[] = {
-		{ JSEXN_NONE, 0 },
-	#define DEF( NAME, TEXT, EXN ) \
-		{ EXN, TEXT },
-	#include "jlerrors.msg"
-	#undef DEF
-};
-
-
-
-const JSErrorFormatString *
-Host::errorCallback(void *userRef, const char *, const unsigned) {
-
-	return (JSErrorFormatString*)userRef;
-}
-
-void
-Host::errorReporterBasic(JSContext *cx, const char *message, JSErrorReport *report) {
-
-	JL_IGNORE( cx );
-	if ( !report )
-		fprintf(stderr, "%s\n", message);
-	else
-		fprintf(stderr, "%s (%s:%d)\n", message, report->filename ? report->filename : "<no filename>", (unsigned int)report->lineno);
-}
-
-
-void
-Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
-
-	// trap JSMSG_OUT_OF_MEMORY error to avoid calling ErrorReporter_stdErrRouter() that may allocate memory that will lead to nested call.
-	if (unlikely( report && report->errorNumber == JSMSG_OUT_OF_MEMORY )) {
-		
-		HostRuntime::errorReporterBasic(cx, message, report);
-		return;
-	}
-
-	bool reportWarnings = JL_IS_SAFE; // no warnings in unsafe mode.
-
-	char buffer[1024];
-	char *buf = buffer;
-
-	#if defined(fprintf) || defined(fputs) || defined(fwrite) || defined(fputc)
-		#error CANNOT DEFINE MACROS fprintf, fputs, fwrite, fputc
-	#endif
-
-	#define fprintf(FILE, FORMAT, ...) \
-	JL_MACRO_BEGIN \
-		size_t remaining = sizeof(buffer)-(buf-buffer); \
-		if ( remaining == 0 ) break; \
-		int count = snprintf(buf, remaining, FORMAT, ##__VA_ARGS__); \
-		buf += count < 0 ? remaining : count; \
-	JL_MACRO_END
-
-	#define fputs(STR, FILE) \
-	JL_MACRO_BEGIN \
-		size_t remaining = sizeof(buffer)-(buf-buffer); \
-		if ( remaining == 0 ) break; \
-		size_t len = JL_MIN(strlen(STR), remaining); \
-		jl::memcpy(buf, STR, len); \
-		buf += len; \
-	JL_MACRO_END
-
-	#define fwrite(STR, SIZE, COUNT, FILE) \
-	JL_MACRO_BEGIN \
-		size_t remaining = sizeof(buffer)-(buf-buffer); \
-		if ( remaining == 0 ) break; \
-		size_t len = JL_MIN(size_t((SIZE)*(COUNT)), remaining); \
-		jl::memcpy(buf, (STR), len); \
-		buf += len; \
-	JL_MACRO_END
-
-	#define fputc(CHR, FILE) \
-	JL_MACRO_BEGIN \
-		size_t remaining = sizeof(buffer)-(buf-buffer); \
-		if ( remaining == 0 ) break; \
-		buf[0] = (CHR); \
-		buf += 1; \
-	JL_MACRO_END
-
-	#define fflush(FILE) \
-	JL_MACRO_BEGIN \
-	JL_MACRO_END
-
-// copy-paste from /js/src/jscntxt.cpp (js::PrintError)
-//	 ---8<---
-
-		if (!report) {
-		fprintf(file, "%s\n", message);
-		fflush(file);
-		return;
-	}
-
-	/* Conditionally ignore reported warnings. */
-	if (JSREPORT_IS_WARNING(report->flags) && !reportWarnings)
-		return;
-
-	char *prefix = nullptr;
-	if (report->filename)
-		prefix = JS_smprintf("%s:", report->filename);
-	if (report->lineno) {
-		char *tmp = prefix;
-		prefix = JS_smprintf("%s%u:%u ", tmp ? tmp : "", report->lineno, report->column);
-		JS_free(cx, tmp);
-	}
-	if (JSREPORT_IS_WARNING(report->flags)) {
-		char *tmp = prefix;
-		prefix = JS_smprintf("%s%swarning: ",
-								tmp ? tmp : "",
-								JSREPORT_IS_STRICT(report->flags) ? "strict " : "");
-		JS_free(cx, tmp);
-	}
-
-	/* embedded newlines -- argh! */
-	const char *ctmp;
-	while ((ctmp = strchr(message, '\n')) != 0) {
-		ctmp++;
-		if (prefix)
-			fputs(prefix, file);
-		fwrite(message, 1, ctmp - message, file);
-		message = ctmp;
-	}
-
-	/* If there were no filename or lineno, the prefix might be empty */
-	if (prefix)
-		fputs(prefix, file);
-	fputs(message, file);
-
-	if (report->linebuf) {
-		/* report->linebuf usually ends with a newline. */
-		int n = strlen(report->linebuf);
-		fprintf(file, ":\n%s%s%s%s",
-				prefix,
-				report->linebuf,
-				(n > 0 && report->linebuf[n-1] == '\n') ? "" : "\n",
-				prefix);
-		n = report->tokenptr - report->linebuf;
-		for (int i = 0, j = 0; i < n; i++) {
-			if (report->linebuf[i] == '\t') {
-				for (int k = (j + 8) & ~7; j < k; j++) {
-					fputc('.', file);
-				}
-				continue;
-			}
-			fputc('.', file);
-			j++;
-		}
-		fputc('^', file);
-	}
-	fputc('\n', file);
-	fflush(file);
-	JS_free(cx, prefix);
-
-//	 ---8<---
-
-	#undef fprintf
-	#undef fputs
-	#undef fwrite
-	#undef fputc
-	#undef fflush
-	
-	Host::getHost(cx).hostStderrWrite(buffer, buf-buffer);
-}
-
-
-bool
-Host::hostStderrWrite(const char *message, size_t length) {
-
-	JSContext *cx = _hostRuntime.context();
-
-	JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
-	ASSERT( globalObject );
-	AutoExceptionState autoEx(cx);
-
-	// avoid reentrancy if stderr function rise an error.
-	AutoErrorReporter autoErrorReporter(cx, JL_IS_SAFE ? errorReporterBasic : NULL);
-		
-	JS::RootedValue fct(cx);
-	JL_CHK( JS_GetPropertyById(cx, _hostObject, JLID(cx, stderr), &fct) );
-	JL_CHK( JL_ValueIsCallable(cx, fct) );
-
-	{
-	JS::RootedValue rval(cx);
-	JS::RootedValue text(cx);
-	JL_CHK( JL_NativeToJsval(cx, message, length, &text) ); // beware out of memory case !
-	JL_CHK( JL_CallFunctionVA(cx, globalObject, fct, &rval, text) );
-	}
-
-	return true;
-bad:
-	autoEx.drop();
-	return false;
-}
-
-
-Host::Host( HostRuntime &hr, StdIO &hostStdIO, bool unsafeMode )
-: _hostRuntime(hr), _moduleManager(hr), _compatId(JL_HOST_VERSIONID), _unsafeMode(unsafeMode), _hostStdIO(hostStdIO), _objectProto(hr.runtime()), _hostObject(hr.runtime()), _ids() {
-
-	_ids.constructAll(hr.runtime());
-}
-
-// init the host for jslibs usage (modules, errors, ...)
-bool
-Host::create() {
-
-	JL_SetRuntimePrivate(_hostRuntime.runtime(), this);
-
-	JSContext *cx = _hostRuntime.context();
-
-	JS::ContextOptionsRef(cx)
-		.setStrictMode(_unsafeMode);
-	
-	JS_SetErrorReporter(cx, errorReporter);
-
-	JS::RootedObject obj(cx, JL_GetGlobal(cx));
-	ASSERT( obj != NULL ); // "Global object not found."
-
-	_objectProto.set(JS_GetObjectPrototype(cx, obj));
-	_objectClasp = JL_GetClass(_objectProto);
-	
-	// global functions & properties
-	JL_CHKM( JS_DefinePropertyById(cx, obj, JLID(cx, global), OBJECT_TO_JSVAL(obj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
-
-	ASSERT(cx && obj);
-	INIT_CLASS( host );
-	ASSERT( _objectProto );
-
-	// init static modules (jslang)
-	ModuleManager::Module &module = moduleManager().moduleSlot(jslangModuleId);
-	ASSERT( moduleManager().isSlotFree(module) ); // free slot
-	module.moduleHandle = JLDynamicLibraryNullHandler;
-	module.moduleId = jslangModuleId;
-	ASSERT( jslangModuleInit != (ModuleInitFunction)NULL);
-	if ( !jslangModuleInit(cx, obj) )
-		JL_ERR( E_MODULE, E_NAME("jslang"), E_INIT );
-
-	return true;
-	JL_BAD;
-}
-
-
-bool
-Host::destroy(bool skipCleanup) {
-	
-	JSContext *cx = _hostRuntime.context();
-		
-	JL_CHK( _moduleManager.releaseModules() );
-
-	ASSERT( jslangModuleRelease != (ModuleReleaseFunction)NULL );
-	if ( !jslangModuleRelease(cx) ) {
-		
-		JL_WARN( E_MODULE, E_NAME("jslang"), E_FIN ); // "Fail to release static module jslang."
-	}
-
-	_classProtoCache.removeAll();
-	_hostObject.set(NULL);
-	_objectProto.set(NULL);
-
-	if ( !skipCleanup ) {
-	
-		_ids.destructAll();
-	}
-
-	return true;
-	JL_BAD;
-}
-
-void
-Host::free(bool skipCleanup) {
-
-	if ( !skipCleanup ) {
-
-		_moduleManager.freeModules(skipCleanup);
-		ASSERT( jslangModuleFree != (ModuleFreeFunction)NULL);
-		jslangModuleFree(skipCleanup);
-	}
-}
-
-
-bool
-Host::report( bool isWarning, ... ) const {
-
-	va_list vl;
-	va_start(vl, isWarning);
-
-	int id;
-	JSExnType exn = JSEXN_NONE;
-
-	char message[1024];
-	char *buf = message;
-	const char *str, *strEnd, *pos;
-
-	while ( (id = va_arg(vl, int)) != E__INVALID ) {
-
-		ASSERT( id > E__INVALID );
-		ASSERT( id < E__LIMIT );
-
-		if ( exn == JSEXN_NONE && E_msg[id].exn != JSEXN_NONE )
-			exn = E_msg[id].exn;
-
-		str = E_msg[id].msg;
-
-		if ( buf != message ) {
-
-			jl::memcpy(buf, " ", 1);
-			buf += 1;
-		}
-
-		strEnd = str + strlen(str);
-		pos = str;
-
-		for (;;) {
-			
-			const char *newPos = strchr(pos, '%');
-			if ( !newPos ) {
-
-				jl::memcpy(buf, pos, strEnd-pos);
-				buf += strEnd-pos;
-				break;
-			} else {
-
-				jl::memcpy(buf, pos, newPos-pos);
-				buf += newPos-pos;
-			}
-			pos = newPos;
-
-			switch ( *++pos ) {
-				case 'd':
-					++pos;
-					jl::itoa(va_arg(vl, long), buf, 10);
-					buf += strlen(buf);
-					break;
-				case 'x':
-					++pos;
-					jl::memcpy(buf, "0x", 2);
-					buf += 2;
-					jl::itoa(va_arg(vl, long), buf, 16);
-					buf += strlen(buf);
-					break;
-				case 's': {
-					++pos;
-					const char * tmp = va_arg(vl, char *);
-					int len = strlen(tmp);
-					if ( len > 128 ) {
-						
-						jl::memcpy(buf, tmp, 128);
-						buf += 128;
-						jl::memcpy(buf, "...", 3);
-						buf += 3;
-					} else {
-
-						jl::memcpy(buf, tmp, len);
-						buf += len;
-					}
-					break;
-				}
-				default:
-					*(buf++) = '%';
-					break;
-			}
-		}
-	}
-	jl::memcpy(buf, ".", 1);
-	buf += 1;
-	*buf = '\0';
-
-	va_end(vl);
-
-	JSErrorFormatString format = { message, 0, (int16_t)exn };
-	return JS_ReportErrorFlagsAndNumber( _hostRuntime.context(), isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, errorCallback, (void*)&format, 0);
-
-//bad:
-//	va_end(vl);
-//	return false;
-}
-
-
-bool
-Host::setHostArguments( char **hostArgv, size_t hostArgc ) {
-
-	JSContext *cx = _hostRuntime.context();
-	JS::RootedValue argumentsVal(_hostRuntime.runtime());
-
-	JL_CHK( JL_NativeVectorToJsval(cx, hostArgv, hostArgc, &argumentsVal) );
-	JL_CHK( JS_SetPropertyById(cx, _hostObject, JLID(cx, arguments), argumentsVal) );
-	return true;
-	JL_BAD;
-}
-
-bool
-Host::setHostName( const char *hostPath, const char *hostName ) {
-
-	JSContext *cx = _hostRuntime.context();
-	JL_CHK( JL_NativeToProperty(cx, _hostObject, JLID(cx, name), hostName) );
-	JL_CHK( JL_NativeToProperty(cx, _hostObject, JLID(cx, path), hostPath) );
-	return true;
-	JL_BAD;
-}
-
-void
-Host::setHostObject( JS::HandleObject hostObj ) {
-	
-	_hostObject.set(hostObj);
-}
-
-
-JS::HandleObject
-Host::hostObject() {
-
-	return JS::HandleObject::fromMarkedLocation(_hostObject.address());
-}
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1441,6 +1027,432 @@ CONFIGURE_CLASS
 	END_STATIC_PROPERTY_SPEC
 
 END_CLASS
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Host
+
+struct {
+	JSExnType exn;
+	const char *msg;
+} static E_msg[] = {
+		{ JSEXN_NONE, 0 },
+	#define DEF( NAME, TEXT, EXN ) \
+		{ EXN, TEXT },
+	#include "jlerrors.msg"
+	#undef DEF
+};
+
+
+
+const JSErrorFormatString *
+Host::errorCallback(void *userRef, const char *, const unsigned) {
+
+	return (JSErrorFormatString*)userRef;
+}
+
+void
+Host::errorReporterBasic(JSContext *cx, const char *message, JSErrorReport *report) {
+
+	JL_IGNORE( cx );
+	if ( !report )
+		fprintf(stderr, "%s\n", message);
+	else
+		fprintf(stderr, "%s (%s:%d)\n", message, report->filename ? report->filename : "<no filename>", (unsigned int)report->lineno);
+}
+
+
+void
+Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
+
+	// trap JSMSG_OUT_OF_MEMORY error to avoid calling ErrorReporter_stdErrRouter() that may allocate memory that will lead to nested call.
+	if (unlikely( report && report->errorNumber == JSMSG_OUT_OF_MEMORY )) {
+		
+		HostRuntime::errorReporterBasic(cx, message, report);
+		return;
+	}
+
+	bool reportWarnings = JL_IS_SAFE; // no warnings in unsafe mode.
+
+	char buffer[1024];
+	char *buf = buffer;
+
+	#if defined(fprintf) || defined(fputs) || defined(fwrite) || defined(fputc)
+		#error CANNOT DEFINE MACROS fprintf, fputs, fwrite, fputc
+	#endif
+
+	#define fprintf(FILE, FORMAT, ...) \
+	JL_MACRO_BEGIN \
+		size_t remaining = sizeof(buffer)-(buf-buffer); \
+		if ( remaining == 0 ) break; \
+		int count = snprintf(buf, remaining, FORMAT, ##__VA_ARGS__); \
+		buf += count < 0 ? remaining : count; \
+	JL_MACRO_END
+
+	#define fputs(STR, FILE) \
+	JL_MACRO_BEGIN \
+		size_t remaining = sizeof(buffer)-(buf-buffer); \
+		if ( remaining == 0 ) break; \
+		size_t len = JL_MIN(strlen(STR), remaining); \
+		jl::memcpy(buf, STR, len); \
+		buf += len; \
+	JL_MACRO_END
+
+	#define fwrite(STR, SIZE, COUNT, FILE) \
+	JL_MACRO_BEGIN \
+		size_t remaining = sizeof(buffer)-(buf-buffer); \
+		if ( remaining == 0 ) break; \
+		size_t len = JL_MIN(size_t((SIZE)*(COUNT)), remaining); \
+		jl::memcpy(buf, (STR), len); \
+		buf += len; \
+	JL_MACRO_END
+
+	#define fputc(CHR, FILE) \
+	JL_MACRO_BEGIN \
+		size_t remaining = sizeof(buffer)-(buf-buffer); \
+		if ( remaining == 0 ) break; \
+		buf[0] = (CHR); \
+		buf += 1; \
+	JL_MACRO_END
+
+	#define fflush(FILE) \
+	JL_MACRO_BEGIN \
+	JL_MACRO_END
+
+// copy-paste from /js/src/jscntxt.cpp (js::PrintError)
+//	 ---8<---
+
+		if (!report) {
+		fprintf(file, "%s\n", message);
+		fflush(file);
+		return;
+	}
+
+	/* Conditionally ignore reported warnings. */
+	if (JSREPORT_IS_WARNING(report->flags) && !reportWarnings)
+		return;
+
+	char *prefix = nullptr;
+	if (report->filename)
+		prefix = JS_smprintf("%s:", report->filename);
+	if (report->lineno) {
+		char *tmp = prefix;
+		prefix = JS_smprintf("%s%u:%u ", tmp ? tmp : "", report->lineno, report->column);
+		JS_free(cx, tmp);
+	}
+	if (JSREPORT_IS_WARNING(report->flags)) {
+		char *tmp = prefix;
+		prefix = JS_smprintf("%s%swarning: ",
+								tmp ? tmp : "",
+								JSREPORT_IS_STRICT(report->flags) ? "strict " : "");
+		JS_free(cx, tmp);
+	}
+
+	/* embedded newlines -- argh! */
+	const char *ctmp;
+	while ((ctmp = strchr(message, '\n')) != 0) {
+		ctmp++;
+		if (prefix)
+			fputs(prefix, file);
+		fwrite(message, 1, ctmp - message, file);
+		message = ctmp;
+	}
+
+	/* If there were no filename or lineno, the prefix might be empty */
+	if (prefix)
+		fputs(prefix, file);
+	fputs(message, file);
+
+	if (report->linebuf) {
+		/* report->linebuf usually ends with a newline. */
+		int n = strlen(report->linebuf);
+		fprintf(file, ":\n%s%s%s%s",
+				prefix,
+				report->linebuf,
+				(n > 0 && report->linebuf[n-1] == '\n') ? "" : "\n",
+				prefix);
+		n = report->tokenptr - report->linebuf;
+		for (int i = 0, j = 0; i < n; i++) {
+			if (report->linebuf[i] == '\t') {
+				for (int k = (j + 8) & ~7; j < k; j++) {
+					fputc('.', file);
+				}
+				continue;
+			}
+			fputc('.', file);
+			j++;
+		}
+		fputc('^', file);
+	}
+	fputc('\n', file);
+	fflush(file);
+	JS_free(cx, prefix);
+
+//	 ---8<---
+
+	#undef fprintf
+	#undef fputs
+	#undef fwrite
+	#undef fputc
+	#undef fflush
+	
+	Host::getHost(cx).hostStderrWrite(buffer, buf-buffer);
+}
+
+
+bool
+Host::hostStderrWrite(const char *message, size_t length) {
+
+	JSContext *cx = _hostRuntime.context();
+
+	JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
+	ASSERT( globalObject );
+	AutoExceptionState autoEx(cx);
+
+	// avoid reentrancy if stderr function rise an error.
+	AutoErrorReporter autoErrorReporter(cx, JL_IS_SAFE ? errorReporterBasic : NULL);
+		
+	JS::RootedValue fct(cx);
+	JL_CHK( JS_GetPropertyById(cx, _hostObject, JLID(cx, stderr), &fct) );
+	JL_CHK( JL_ValueIsCallable(cx, fct) );
+
+	{
+	JS::RootedValue rval(cx);
+	JS::RootedValue text(cx);
+	JL_CHK( JL_NativeToJsval(cx, message, length, &text) ); // beware out of memory case !
+	JL_CHK( JL_CallFunctionVA(cx, globalObject, fct, &rval, text) );
+	}
+
+	return true;
+bad:
+	autoEx.drop();
+	return false;
+}
+
+
+Host::Host( HostRuntime &hr, StdIO &hostStdIO, bool unsafeMode )
+: _hostRuntime(hr), _moduleManager(hr), _compatId(JL_HOST_VERSIONID), _unsafeMode(unsafeMode), _hostStdIO(hostStdIO), _objectProto(hr.runtime()), _hostObject(hr.runtime()), _ids() {
+
+	Host::setHostAllocators(_hostRuntime.allocators());
+	IFDEBUG( jl_free(js_malloc(256)) );
+	IFDEBUG( js_free(jl_malloc(256)) );
+
+	_ids.constructAll(hr.runtime());
+}
+
+// init the host for jslibs usage (modules, errors, ...)
+bool
+Host::create() {
+
+	JL_SetRuntimePrivate(_hostRuntime.runtime(), this);
+
+	JSContext *cx = _hostRuntime.context();
+
+	JS::ContextOptionsRef(cx)
+		.setStrictMode(_unsafeMode)
+		.setExtraWarnings(!_unsafeMode)
+	;
+	
+	JS_SetErrorReporter(cx, errorReporter);
+
+	JS::RootedObject obj(cx, JL_GetGlobal(cx));
+	ASSERT( obj != NULL ); // "Global object not found."
+
+	_objectProto.set(JS_GetObjectPrototype(cx, obj));
+	_objectClasp = JL_GetClass(_objectProto);
+	
+	// global functions & properties
+	JL_CHKM( JS_DefinePropertyById(cx, obj, JLID(cx, global), OBJECT_TO_JSVAL(obj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
+
+	ASSERT(cx && obj);
+	INIT_CLASS( host );
+	ASSERT( _objectProto );
+
+	// init static modules (jslang)
+	ModuleManager::Module &module = moduleManager().moduleSlot(jslangModuleId);
+	ASSERT( moduleManager().isSlotFree(module) ); // free slot
+	module.moduleHandle = JLDynamicLibraryNullHandler;
+	module.moduleId = jslangModuleId;
+	ASSERT( jslangModuleInit != (ModuleInitFunction)NULL);
+	if ( !jslangModuleInit(cx, obj) )
+		JL_ERR( E_MODULE, E_NAME("jslang"), E_INIT );
+
+	return true;
+	JL_BAD;
+}
+
+
+bool
+Host::destroy(bool skipCleanup) {
+	
+	JSContext *cx = _hostRuntime.context();
+		
+	JL_CHK( _moduleManager.releaseModules() );
+
+	ASSERT( jslangModuleRelease != (ModuleReleaseFunction)NULL );
+	if ( !jslangModuleRelease(cx) ) {
+		
+		JL_WARN( E_MODULE, E_NAME("jslang"), E_FIN ); // "Fail to release static module jslang."
+	}
+
+	_classProtoCache.removeAll();
+	_hostObject.set(NULL);
+	_objectProto.set(NULL);
+
+	if ( !skipCleanup ) {
+	
+		_ids.destructAll();
+	}
+
+	return true;
+	JL_BAD;
+}
+
+void
+Host::free(bool skipCleanup) {
+
+	if ( !skipCleanup ) {
+
+		_moduleManager.freeModules(skipCleanup);
+		ASSERT( jslangModuleFree != (ModuleFreeFunction)NULL);
+		jslangModuleFree(skipCleanup);
+	}
+}
+
+
+bool
+Host::report( bool isWarning, ... ) const {
+
+	va_list vl;
+	va_start(vl, isWarning);
+
+	int id;
+	JSExnType exn = JSEXN_NONE;
+
+	char message[1024];
+	char *buf = message;
+	const char *str, *strEnd, *pos;
+
+	while ( (id = va_arg(vl, int)) != E__INVALID ) {
+
+		ASSERT( id > E__INVALID );
+		ASSERT( id < E__LIMIT );
+
+		if ( exn == JSEXN_NONE && E_msg[id].exn != JSEXN_NONE )
+			exn = E_msg[id].exn;
+
+		str = E_msg[id].msg;
+
+		if ( buf != message ) {
+
+			jl::memcpy(buf, " ", 1);
+			buf += 1;
+		}
+
+		strEnd = str + strlen(str);
+		pos = str;
+
+		for (;;) {
+			
+			const char *newPos = strchr(pos, '%');
+			if ( !newPos ) {
+
+				jl::memcpy(buf, pos, strEnd-pos);
+				buf += strEnd-pos;
+				break;
+			} else {
+
+				jl::memcpy(buf, pos, newPos-pos);
+				buf += newPos-pos;
+			}
+			pos = newPos;
+
+			switch ( *++pos ) {
+				case 'd':
+					++pos;
+					jl::itoa(va_arg(vl, long), buf, 10);
+					buf += strlen(buf);
+					break;
+				case 'x':
+					++pos;
+					jl::memcpy(buf, "0x", 2);
+					buf += 2;
+					jl::itoa(va_arg(vl, long), buf, 16);
+					buf += strlen(buf);
+					break;
+				case 's': {
+					++pos;
+					const char * tmp = va_arg(vl, char *);
+					int len = strlen(tmp);
+					if ( len > 128 ) {
+						
+						jl::memcpy(buf, tmp, 128);
+						buf += 128;
+						jl::memcpy(buf, "...", 3);
+						buf += 3;
+					} else {
+
+						jl::memcpy(buf, tmp, len);
+						buf += len;
+					}
+					break;
+				}
+				default:
+					*(buf++) = '%';
+					break;
+			}
+		}
+	}
+	jl::memcpy(buf, ".", 1);
+	buf += 1;
+	*buf = '\0';
+
+	va_end(vl);
+
+	JSErrorFormatString format = { message, 0, (int16_t)exn };
+	return JS_ReportErrorFlagsAndNumber( _hostRuntime.context(), isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, errorCallback, (void*)&format, 0);
+
+//bad:
+//	va_end(vl);
+//	return false;
+}
+
+
+bool
+Host::setHostArguments( char **hostArgv, size_t hostArgc ) {
+
+	JSContext *cx = _hostRuntime.context();
+	JS::RootedValue argumentsVal(_hostRuntime.runtime());
+
+	JL_CHK( JL_NativeVectorToJsval(cx, hostArgv, hostArgc, &argumentsVal) );
+	JL_CHK( JS_SetPropertyById(cx, _hostObject, JLID(cx, arguments), argumentsVal) );
+	return true;
+	JL_BAD;
+}
+
+bool
+Host::setHostName( const char *hostPath, const char *hostName ) {
+
+	JSContext *cx = _hostRuntime.context();
+	JL_CHK( JL_NativeToProperty(cx, _hostObject, JLID(cx, name), hostName) );
+	JL_CHK( JL_NativeToProperty(cx, _hostObject, JLID(cx, path), hostPath) );
+	return true;
+	JL_BAD;
+}
+
+void
+Host::setHostObject( JS::HandleObject hostObj ) {
+	
+	_hostObject.set(hostObj);
+}
+
+
+JS::HandleObject
+Host::hostObject() {
+
+	return JS::HandleObject::fromMarkedLocation(_hostObject.address());
+}
 
 
 JL_END_NAMESPACE

@@ -582,7 +582,7 @@ public:
 		JLEventReset(cancel);
 		canceled = false;
 
-		if ( !slot(0).isUndefined() ) {
+		if ( slot(0) != JL_ZInitValue() ) {
 		
 			JS::RootedObject callThisObj(cx);
 			callThisObj.set(&slot(1).toObject());
@@ -625,7 +625,7 @@ DEFINE_FUNCTION( timeoutEvents ) {
 
 
 #if defined(DEBUG) // || 1
-//#define HAS_JL_API_TESTS
+#define HAS_JL_API_TESTS
 #endif
 
 
@@ -649,6 +649,27 @@ S_ASSERT(sizeof(wchar_t) == sizeof(jschar));
 DEFINE_FUNCTION( _jsapiTests ) {
 
 	JL_IGNORE(cx, argc, vp);
+
+/*
+	JS::Value val = JS::Value();
+
+	ASSERT(val.isDouble());
+	ASSERT(val.asRawBits() == 0);
+	val.setDouble(0);
+	ASSERT(val.asRawBits() == 0);
+*/
+
+	void * ptr = jl_malloc(2);
+	void * ptr2 = jl_realloc(ptr, 4);
+	jl_free(ptr2);
+
+
+	return true;
+	JL_BAD;
+
+
+/*
+
 
 	// allocators ////////////////////////////////////////////////////
 
@@ -700,7 +721,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	TEST( JL_JsidToJsval(cx, id, &r) );
 	TEST( JSVAL_TO_OBJECT(r) == o );
 
-	TEST( JS_ValueToId(cx, OBJECT_TO_JSVAL(o), id.address()) );
+	TEST( JS_ValueToId(cx, OBJECT_TO_JSVAL(o), &id) );
 	TEST( !JSID_IS_OBJECT(id) );
 
 	bool found;
@@ -725,19 +746,19 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	TEST( JL_IsStopIterationExceptionPending(cx) );
 	JS_ClearPendingException(cx);
 
-/*
-	JL_CHK( JS_SetPropertyAttributes(cx, o, "test", 0, &found) );
 
-//	jsval ok;
-//	jsid pid;
-//	pid = JL_StringToJsid(cx, L("test"));
-//	JS_DeletePropertyById2(cx, o, pid, &ok);
+//	JL_CHK( JS_SetPropertyAttributes(cx, o, "test", 0, &found) );
+//
+////	jsval ok;
+////	jsid pid;
+////	pid = JL_StringToJsid(cx, L("test"));
+////	JS_DeletePropertyById2(cx, o, pid, &ok);
+//
+////	JL_RemovePropertyById(cx, o, JL_StringToJsid(cx, L("test")));
+//
+//	JL_CHK( JS_HasProperty(cx, o, "test", &found) );
+//	TEST( !found );
 
-//	JL_RemovePropertyById(cx, o, JL_StringToJsid(cx, L("test")));
-
-	JL_CHK( JS_HasProperty(cx, o, "test", &found) );
-	TEST( !found );
-*/
 
 	// jl::Stack ////////////////////////////////////////////////////
 	{
@@ -915,9 +936,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 
 	/////////////////////////////////////////////////////////////////
-
-	return true;
-	JL_BAD;
+*/
 }
 
 #undef TEST

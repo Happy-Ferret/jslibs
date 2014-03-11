@@ -775,7 +775,7 @@ bad:
 bool
 InitHost( JSContext *cx, bool unsafeMode, HostInput stdIn, HostOutput stdOut, HostOutput stdErr, void* userPrivateData ) { // init the host for jslibs usage (modules, errors, ...)
 
-	_unsafeMode = unsafeMode;
+	::_unsafeMode = unsafeMode;
 	HostPrivate *hpv = JL_GetHostPrivate(cx);
 	if ( hpv == NULL ) { // in the case of CreateHost has not been called (because the caller wants to create and manage its own JS runtime)
 

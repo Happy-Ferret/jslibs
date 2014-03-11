@@ -26,6 +26,7 @@ loadModule('jsio');
 
 	processEvents( io );
 	processEvents( io );
+	processEvents( io );
 
 
 throw 0;

@@ -702,26 +702,30 @@ $TOC_MEMBER $INAME
 
 struct IOProcessEvent : public ProcessEvent2 {
 
-	int _fdCount;
+	uint32_t _fdCount;
 	PRPollDesc *_pollDesc;
 	PRInt32 _pollResult;
 
+	~IOProcessEvent() {
+
+		jl_free(_pollDesc);
+	}
+
+	IOProcessEvent() {
+
+		_pollDesc = NULL;
+	}
 
 	bool prepareWait(JSContext *cx, JS::HandleObject obj) {
 
-		unsigned fdCount;
-
+		JS::RootedValue descriptor(cx);
 		JS::RootedObject fdArrayObj(cx, &slot(0).toObject());
+		JL_CHK( JS_GetArrayLength(cx, fdArrayObj, &_fdCount) );
 
-		JL_CHK( JS_GetArrayLength(cx, fdArrayObj, &fdCount) );
-
-		_pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * (1 + fdCount)); // pollDesc[0] is the event fd
+		_pollDesc = (PRPollDesc*)jl_realloc(_pollDesc, sizeof(PRPollDesc) * (1 + _fdCount)); // pollDesc[0] is the peCancel event fd, _fdCount excludes peCancel descriptior.
 		JL_ASSERT_ALLOC( _pollDesc );
 
-		//	_descVal = (jsval*)jl_malloc(sizeof(jsval) * (fdCount));
-		//	JL_ASSERT_ALLOC( _descVal );
-
-		JL_updateMallocCounter(cx, (sizeof(PRPollDesc) /*+ sizeof(jsval)*/) * fdCount); // approximately (pollDesc + descVal)
+//		JL_updateMallocCounter(cx, (sizeof(PRPollDesc) /*+ sizeof(jsval)*/) * _fdCount); // approximately (pollDesc + descVal)
 
 		JsioPrivate *mpv;
 		mpv = (JsioPrivate*)jl::Host::getHost(cx).moduleManager().modulePrivate(moduleId());
@@ -736,34 +740,13 @@ struct IOProcessEvent : public ProcessEvent2 {
 		_pollDesc[0].in_flags = PR_POLL_READ;
 		_pollDesc[0].out_flags = 0;
 
-		_fdCount = fdCount; // count excluding peCancel
-
-		// (TBD) find a better solution to root fdArray content
-		// (TBD) use AutoValueVector avr(cx); avr.reserve(16); avr.append(val);
-
-		// use HandleValueArray or PersistentHandleValueArray or HeapHandleValueArray ?
-
-
-	//	JS::RootedValue rootedValuesVal(cx);
-	//	rootedValuesVal.setObject(*rootedValues);
-	//	JL_CHK( SetHandleSlot(cx, obj, 1, rootedValuesVal) );
-
-		{
-
-		JS::RootedObject descArrayObj(cx, JS_NewArrayObject(cx, fdCount));
-		hslot(1).setObject(*descArrayObj);
-
-		JS::RootedValue descriptor(cx);
-		for ( unsigned int i = 0; i < fdCount; ++i ) {
-
-			//descriptor = &_descVal[i]; // get the slot addr
-
+		// in order to avoid a Descriptor being GC because it has been removed from the descriptor list (slot(0)), we just duplicate it.
+		allocDynSlots(_fdCount);
+		for ( uint32_t i = 0; i < _fdCount; ++i ) {
 
 			JL_CHK( JL_GetElement(cx, fdArrayObj, i, &descriptor) ); // read the item
-			JL_CHK( JL_SetElement(cx, descArrayObj, i, descriptor) ); // root the item
+			hDynSlot(i).set(descriptor);
 			JL_CHK( InitPollDesc(cx, descriptor, &_pollDesc[1 + i]) ); // _pollDesc[0] is reserved for mpv->peCancel
-		}
-	
 		}
 
 		return true;
@@ -797,21 +780,16 @@ struct IOProcessEvent : public ProcessEvent2 {
 
 		if ( *hasEvent ) { // optimization
 		
-			JS::RootedObject descArrayObj(cx, &slot(1).toObject());
-			JS::RootedValue descriptor(cx);
-			for ( int i = 0; i < _fdCount; ++i ) {
+//			JS::RootedObject descArrayObj(cx, &slot(0).toObject());
+//			JS::RootedValue descriptor(cx);
+			for ( uint32_t i = 0; i < _fdCount; ++i ) {
 
-				JL_CHK( JL_GetElement(cx, descArrayObj, i, &descriptor) ); // read the item
-				JL_CHK( PollDescNotify(cx, descriptor, &_pollDesc[1 + i], i) );
+//				JL_CHK( JL_GetElement(cx, descArrayObj, i, &descriptor) ); // read the item
+				JL_CHK( PollDescNotify(cx, hDynSlot(i), &_pollDesc[1 + i], i) );
 			}
 		}
-
-	end:
-		jl_free(_pollDesc);
 		return true;
-	bad:
-		jl_free(_pollDesc);
-		return false;
+		JL_BAD;
 	}
 };
 
