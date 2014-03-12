@@ -2,7 +2,7 @@ var loadModule = host.loadModule;
 
  //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
  //loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask -rep 1 jsio -stopAfterNIssues 1'); halt();
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio'); throw 0;
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio'); throw 0;
 
 
 //loadModule('jstask');
@@ -20,13 +20,41 @@ loadModule('jsio');
 	//var res = stringify(process.stdout.read());
 
 
-	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
-	var cl = new Socket(); cl.connect('127.0.0.1', 9999);
-	var io = Descriptor.events([rdv]);
+	var descList = []; 
+	var rdv = new Socket();
+	rdv.bind(9999, '127.0.0.1');
+	rdv.listen();
 
-	processEvents( io );
-	processEvents( io );
-	processEvents( io );
+	rdv.readable = function(soc) {
+		
+		print('rdv!\n');
+		var incommingCl = soc.accept();
+		descList.push(incommingCl);
+		incommingCl.readable = function() {
+
+			var data = '>>>'+stringify(incommingClZ);
+				
+			print('can read: ', data);
+		}
+	};
+	descList.push(rdv);
+
+	var cl = new Socket();
+	cl.connect('127.0.0.1', 9999);
+	descList.push(cl);
+
+	cl.writable = function() {
+
+		print('can write\n');
+		cl.write('test');
+		cl.close();
+
+	}
+
+	var io = Descriptor.events(descList);
+
+	processEvents( io, timeoutEvents(100) );
+	processEvents( io, timeoutEvents(100) );
 
 
 throw 0;

@@ -335,7 +335,7 @@ DEFINE_CONSTRUCTOR() {
 	jl::StackInit(&pv->stmtList);
 	jl::StackInit(&pv->blobList);
 
-	JL_SetPrivate(obj, pv);
+	JL_SetPrivate(JL_OBJ, pv);
 	return true;
 	}
 
@@ -707,7 +707,7 @@ DEFINE_FUNCTION( exec ) {
 
 	// (TBD) support multiple statements
 
-	JL_CHK( SqliteSetupBindings(cx, pStmt, (argc >= 2 && JL_ARG(2).isObject()) ? JL_ARG(2) : JS::NullHandleValue, JL_OBJ) ); // "@" : the the argument passed to exec(), ":" nothing
+	JL_CHK( SqliteSetupBindings(cx, pStmt, (JL_ARGC >= 2 && JL_ARG(2).isObject()) ? JL_ARG(2) : JS::NullHandleValue, JL_OBJ) ); // "@" : the the argument passed to exec(), ":" nothing
 
 	pv->tmpcx = cx;
 	int status;
@@ -837,6 +837,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 	//JS::AutoValueArray<1 + MAX_FUNCTION_ARG> argv(cx);
 	JS::RootedValue rval(cx);
 	JS::AutoValueVector argv(cx);
+	argv.resize(sArgc);
 
 	//jsval argv[1 + MAX_FUNCTION_ARG]; // = {0}; // argv[0] is rval
 	//memset(argv, 0, sizeof(argv));

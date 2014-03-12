@@ -97,7 +97,8 @@ DEFINE_FUNCTION( stringify ) {
 		
 		JL_RVAL.set(JL_ARG(1));
 		return true;
-	} else 
+	}
+
 	if ( JL_ARGC == 0 || (JL_ARGC == 1 && JL_ARG(1).isUndefined()) ) { // undefined
 
 		JL_RVAL.setUndefined();
@@ -110,7 +111,7 @@ DEFINE_FUNCTION( stringify ) {
 	else
 		toArrayBuffer = false;
 
-	if ( !JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
+	if ( JL_ARG(1).isObject() ) {
 
 		JS::RootedObject sobj(cx, &JL_ARG(1).toObject() );
 
@@ -650,6 +651,16 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 	JL_IGNORE(cx, argc, vp);
 
+	void *contents;
+	uint8_t *data;
+	JS_AllocateArrayBufferContents(cx, 1000, &contents, &data);
+
+
+
+
+	return true;
+
+
 /*
 	JS::Value val = JS::Value();
 
@@ -659,17 +670,10 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	ASSERT(val.asRawBits() == 0);
 */
 
-	void * ptr = jl_malloc(2);
-	void * ptr2 = jl_realloc(ptr, 4);
-	jl_free(ptr2);
 
-
-	return true;
-	JL_BAD;
 
 
 /*
-
 
 	// allocators ////////////////////////////////////////////////////
 
@@ -678,6 +682,12 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 	void *tmp2 = js_malloc(100000);
 	jl_free(tmp2);
+
+	{
+	void * ptr = jl_malloc(2);
+	void * ptr2 = jl_realloc(ptr, 4);
+	jl_free(ptr2);
+	}
 
 
 	/////////////////////////////////////////////////////////////////
@@ -937,6 +947,9 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 	/////////////////////////////////////////////////////////////////
 */
+
+	return true;
+	JL_BAD;
 }
 
 #undef TEST

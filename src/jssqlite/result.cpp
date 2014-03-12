@@ -53,7 +53,7 @@ bool SqliteToJsval( JSContext *cx, sqlite3_value *value, OUT JS::MutableHandleVa
 bool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JS::HandleValue argVal, JS::HandleObject curObj ) {
 
 	JS::RootedValue val(cx);
-	JS::RootedObject argObj(cx, &argVal.toObject());
+	JS::RootedObject argObj(cx, argVal.toObjectOrNull());
 	int anonParamIndex = 0;
 	const char *name;
 
@@ -766,12 +766,75 @@ DEFINE_EQUALITY_OP() {
 }
 */
 
-DEFINE_ITERATOR_OBJECT() { // HAS_ITERATOR_OBJECT
+
+DEFINE_ITERATOR_OBJECT() {
 
 	JL_CHKM( !keysonly, E_NAME("for...in"), E_NOTSUPPORTED );
 	return obj;
 bad:
 	return NULL;
+}
+
+
+DEFINE_FUNCTION( stdIteratorNext ) {
+
+	JL_DEFINE_ARGS;
+	bool done;
+
+	JS::RootedValue result(cx);
+	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, source), &result) );
+
+	{
+
+	JS::RootedObject item(cx, JL_NewObj(cx));
+	JS::RootedObject resultObj(cx, &result.toObject());
+	JS::RootedValue row(cx);
+	if ( !JL_CallFunctionIdVA(cx, resultObj, JLID(cx, next), &row) ) {
+
+		JS::RootedValue ex(cx);
+		JL_CHK( JS_GetPendingException(cx, &ex) );
+		if ( JS_IsStopIteration(ex) ) { 
+			
+			JS_ClearPendingException(cx);
+			done = true;
+		} else {
+
+			goto bad;
+		}
+	} else {
+		
+		done = false;
+	}
+
+	ASSERT( row.isUndefined() == done );
+
+	JL_CHK( JS_DefinePropertyById(cx, item, JLID(cx, done), JS::BooleanValue(done), NULL, NULL, 0) );
+	JL_CHK( JS_DefinePropertyById(cx, item, JLID(cx, value), row, NULL, NULL, 0) );
+	JL_RVAL.setObject(*item);
+
+	}
+
+	//>>> []["@@iterator"]().next()
+	//Object { done=true, value=undefined}
+	//>>> [1]["@@iterator"]().next()
+	//Object { value=1, done=false}
+
+	return true;
+	JL_BAD;
+}
+
+
+DEFINE_STD_ITERATOR() {
+
+	JL_DEFINE_ARGS;
+
+	JS::RootedObject itObj(cx, JL_NewObj(cx));
+	JL_CHK( JS_DefineFunctionById(cx, itObj, JLID(cx, next), _stdIteratorNext, 0, 0) );
+	JL_CHK( JS_DefinePropertyById(cx, itObj, JLID(cx, source), JL_OBJVAL, NULL, NULL, 0) );
+	JL_RVAL.setObject(*itObj);
+
+	return true;
+	JL_BAD;
 }
 
 
@@ -786,6 +849,7 @@ CONFIGURE_CLASS
 	HAS_SET_PROPERTY
 	HAS_DEL_PROPERTY
 	HAS_ITERATOR_OBJECT
+	HAS_STD_ITERATOR
 	
 	//HAS_EQUALITY_OP  ext.equality hook has gone
 

@@ -73,7 +73,7 @@ DEFINE_CONSTRUCTOR() {
 	{
 	JS::RootedObject fdObj(cx, &JL_ARG(1).toObject());
 	JL_ASSERT_INSTANCE( fdObj, JL_CLASS(File) );
-	JL_CHK( JL_SetReservedSlot( obj, MEMORYMAPPED_SLOT_FILE, JL_ARG(1)) ); // avoid the file to be GCed while being used by MemoryMapped
+	JL_CHK( JL_SetReservedSlot(JL_OBJ, MEMORYMAPPED_SLOT_FILE, JL_ARG(1)) ); // avoid the file to be GCed while being used by MemoryMapped
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc*)JL_GetPrivate(fdObj);

@@ -68,9 +68,9 @@ DEFINE_CONSTRUCTOR() {
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 
-	JL_CHK( ReserveStreamReadInterface(cx, obj) );
+	JL_CHK( ReserveStreamReadInterface(cx, JL_OBJ) );
 
-	JL_SetPrivate(obj, fd);
+	JL_SetPrivate(JL_OBJ, fd);
 
 	}
 

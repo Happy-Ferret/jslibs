@@ -1,9 +1,26 @@
 var loadModule = host.loadModule;
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssqlite');
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssqlite'); throw 0;
+
 
 loadModule('jsstd');
 loadModule('jssqlite');
 
+
+	var e;
+	try {
+		
+		new Database().exec('123');
+		
+	} catch(e) {
+
+		ex = e;
+	}
+
+	var s = new Serializer();
+	var u = new Unserializer( s.write(ex).done() );
+	u.read();
+
+throw 0;
 
 	var db = new Database(); // in-memory database
 	db.exec('create table t1 (value);');
@@ -11,15 +28,21 @@ loadModule('jssqlite');
 	db.exec('insert into t1 (value) values ("green")');
 	db.exec('insert into t1 (value) values ("blue")');
 
+
 	var res = db.query('SELECT * from t1');
 
-	var tmp = ''
-	for ( var i of res )
-		tmp += i.value;
+	var tmp = 'tmp: ';
+
+	for ( var item of res )
+		tmp += item.value;
 
 	print( tmp, '\n');
 
+
+
+
 throw 0;
+
 
 //try {
 

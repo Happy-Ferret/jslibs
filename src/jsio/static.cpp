@@ -80,21 +80,16 @@ bool InitPollDesc( JSContext *cx, JS::HandleValue descVal, PRPollDesc *pollDesc 
 
 bool PollDescNotify( JSContext *cx, JS::HandleValue descVal, PRPollDesc *pollDesc, int index ) {
 
-	if ( JSVAL_IS_PRIMITIVE( descVal ) )
+	if ( !descVal.isObject() )
 		return true;
-
-	JS::RootedValue tmp(cx);
-
-	JS::RootedObject fdObj(cx, &descVal.toObject());
-	JL_ASSERT_INHERITANCE(fdObj, JL_CLASS(Descriptor));
-
-	{
 
 	PRInt16 outFlag = pollDesc->out_flags;
 
-	//JS::RootedValue arg0(cx, descVal);
+	JS::RootedValue tmp(cx);
 	JS::RootedValue arg1(cx, JS::Int32Value(index));
 	JS::RootedValue arg2(cx, JS::BooleanValue(outFlag & PR_POLL_HUP));
+	JS::RootedObject fdObj(cx, &descVal.toObject());
+	JL_ASSERT_INHERITANCE(fdObj, JL_CLASS(Descriptor));
 
 	if ( outFlag & PR_POLL_ERR ) {
 
@@ -106,31 +101,29 @@ bool PollDescNotify( JSContext *cx, JS::HandleValue descVal, PRPollDesc *pollDes
 	if ( outFlag & PR_POLL_EXCEPT ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "exception", &tmp ) );
-		if ( JL_ValueIsCallable(cx, descVal) )
+		if ( JL_ValueIsCallable(cx, tmp) )
 			JL_CHK( JL_CallFunctionVA(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
 	}
 
 	if ( outFlag & PR_POLL_HUP ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &tmp ) );
-		if ( JL_ValueIsCallable(cx, descVal) )
+		if ( JL_ValueIsCallable(cx, tmp) )
 			JL_CHK( JL_CallFunctionVA(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
 	}
 
 	if ( outFlag & PR_POLL_READ ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "readable", &tmp ) );
-		if ( JL_ValueIsCallable(cx, descVal) )
+		if ( JL_ValueIsCallable(cx, tmp) )
 			JL_CHK( JL_CallFunctionVA(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
 	}
 
 	if ( outFlag & PR_POLL_WRITE ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "writable", &tmp ) );
-		if ( JL_ValueIsCallable(cx, descVal) )
+		if ( JL_ValueIsCallable(cx, tmp) )
 			JL_CHK( JL_CallFunctionVA(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
-	}
-	
 	}
 
 	return true;

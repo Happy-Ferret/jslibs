@@ -85,7 +85,10 @@ template<class T>
 class JLAutoPtr {
    T *_ptr;
 public:
-	JLAutoPtr(T *p = NULL) : _ptr(p) {}
+	JLAutoPtr(T *p = NULL)
+	: _ptr(p) {
+	}
+
 	~JLAutoPtr() {
 
 		Free();
@@ -102,20 +105,24 @@ public:
 		
 		return _ptr;
 	}
-	T *&operator->() {
+
+	T *&
+	operator->() {
 
 		return _ptr;
 	}
-	T *&operator=(T *p) {
+
+	T *&
+	operator=(T *p) {
 
 		_ptr = p;
 		return _ptr;
 	}
-	void Free() {
 
-		if ( _ptr )
-			jl_free(_ptr);
-		IFDEBUG( _ptr=0; );
+	void
+	Free() {
+
+		jl_free(_ptr);
 	}
 };
 

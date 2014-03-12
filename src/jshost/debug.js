@@ -10,19 +10,50 @@ var loadModule = host.loadModule;
 
 
 
+loadModule('jsstd');
+loadModule('jssqlite');
 
-	loadModule('jsio');
 
-	var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
-	var cl = new Socket(); cl.connect('127.0.0.1', 9999);
-	var io = Descriptor.events([rdv]);
+	var e;
+	try {
+		
+		new Database().exec('123');
+		
+	} catch(e) {
 
-	processEvents( io );
-	processEvents( io );
+		ex = e;
+	}
 
-_jsapiTests();
+	var s = new Serializer();
+	var u = new Unserializer( s.write(ex).done() );
+	print( u.read() );
+
 throw 0;
 
+
+
+
+loadModule('jsstd');
+print(123)
+
+throw 0;
+
+
+
+_jsapiTests();
+
+throw 0;
+
+
+
+loadModule('jsio');
+
+var rdv = new Socket(); rdv.bind(9999, '127.0.0.1'); rdv.listen(); rdv.readable = true;
+var cl = new Socket(); cl.connect('127.0.0.1', 9999);
+var io = Descriptor.events([rdv]);
+
+processEvents( io );
+processEvents( io );
 
 throw 0;
 
@@ -35,9 +66,6 @@ processEvents(to, host.endSignalEvents());
 host.stdout('done.');
 
 throw 0;
-
-
-
 
 
 

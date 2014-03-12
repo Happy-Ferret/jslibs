@@ -509,7 +509,33 @@ JL_ArrayToAutoArrayRooter(JSContext *cx, JS::HandleObject *arrayObj) {
 #else // USE_JSHANDLES
 */
 
+ALWAYS_INLINE JSObject* FASTCALL
+JL_NewObjectWithGivenProto( JSContext *cx, const JSClass *clasp, IN JS::HandleObject proto, IN JS::HandleObject parent = JS::NullPtr()) {
+
+	ASSERT_IF( proto != NULL, JL_GetParent(cx, proto) != NULL );
+	// Doc. JS_NewObject, JL_NewObjectWithGivenProto behaves exactly the same, except that if proto is NULL, it creates an object with no prototype.
+	JS::RootedObject obj(cx, JS_NewObjectWithGivenProto(cx, clasp, proto, parent));  // (TBD) test if parent is ok (see bug 688510)
+	ASSERT( JL_GetParent(cx, obj) != NULL );
+	return obj;
+}
+
+//#endif // USE_JSHANDLES
+
+ALWAYS_INLINE JSObject* FASTCALL
+JL_NewProtolessObj( JSContext *cx ) {
+
+	JS::RootedObject obj(cx, JL_NewObjectWithGivenProto(cx, NULL, JS::NullPtr())); // JL_GetGlobal(cx) ??
+	ASSERT( JL_GetParent(cx, obj) != NULL );
+	ASSERT( JL_GetPrototype(cx, obj) == NULL );
+	return obj;
+}
+
+
+#include "../host/host2.h"
+
+
 	#define ARGSARGS cx, argc, vp
+
 	namespace jl {
 
 		struct Args {
@@ -550,6 +576,14 @@ JL_ArrayToAutoArrayRooter(JSContext *cx, JS::HandleObject *arrayObj) {
 			bool isConstructing() const {
 
 				return _jsargs.isConstructing();
+			}
+
+			void constructThis(JSClass *clasp) {
+
+				ASSERT( isConstructing() );
+				_thisObj.set( JL_NewObjectWithGivenProto(_cx, clasp, jl::Host::getHost(_cx).getCachedProto(clasp->name)) );
+				_jsargs.setThis(JS::ObjectValue(*_thisObj));
+				rval().setObject(*_thisObj);
 			}
 
 			void computeThis() {
@@ -594,6 +628,7 @@ JL_ArrayToAutoArrayRooter(JSContext *cx, JS::HandleObject *arrayObj) {
 
 
 	#define PROPARGSARGS cx, obj, id, vp
+
 	namespace jl {
 
 		struct PropArgs {
@@ -1049,26 +1084,7 @@ JL_NewObjectWithGivenProto( JSContext *cx, JSClass *clasp, JS::HandleObject prot
 
 #else // USE_JSHANDLES
 */
-ALWAYS_INLINE JSObject* FASTCALL
-JL_NewObjectWithGivenProto( JSContext *cx, const JSClass *clasp, IN JS::HandleObject proto, IN JS::HandleObject parent = JS::NullPtr()) {
 
-	ASSERT_IF( proto != NULL, JL_GetParent(cx, proto) != NULL );
-	// Doc. JS_NewObject, JL_NewObjectWithGivenProto behaves exactly the same, except that if proto is NULL, it creates an object with no prototype.
-	JS::RootedObject obj(cx, JS_NewObjectWithGivenProto(cx, clasp, proto, parent));  // (TBD) test if parent is ok (see bug 688510)
-	ASSERT( JL_GetParent(cx, obj) != NULL );
-	return obj;
-}
-
-//#endif // USE_JSHANDLES
-
-ALWAYS_INLINE JSObject* FASTCALL
-JL_NewProtolessObj( JSContext *cx ) {
-
-	JS::RootedObject obj(cx, JL_NewObjectWithGivenProto(cx, NULL, JS::NullPtr())); // JL_GetGlobal(cx) ??
-	ASSERT( JL_GetParent(cx, obj) != NULL );
-	ASSERT( JL_GetPrototype(cx, obj) == NULL );
-	return obj;
-}
 
 
 
@@ -1101,7 +1117,6 @@ namespace jlpv {
 
 
 
-#include "../host/host2.h"
 
 
 
@@ -1149,8 +1164,13 @@ namespace jlpv {
 //JS::RootedObject obj(cx, jlpv::CreateConstructorObject(cx, JL_THIS_CLASS, JL_THIS_CLASS_PROTOTYPE, args))
 
 #define JL_DEFINE_CONSTRUCTOR_OBJ \
+	JL_MACRO_BEGIN \
+	args.constructThis(JL_THIS_CLASS); \
+	JL_MACRO_END
+/*
 	JS::RootedObject obj(cx, JL_NewObjectWithGivenProto(cx, JL_THIS_CLASS, JL_THIS_CLASS_PROTOTYPE)); \
-	args.rval().setObject(*obj);
+	args.rval().setObject(*obj); \
+*/
 
 // #endif // USE_JSHANDLES
 
@@ -1411,6 +1431,8 @@ JL_ValueIsIterable( JSContext * RESTRICT cx, JS::HandleValue val ) {
 ALWAYS_INLINE bool FASTCALL
 JL_IsStopIteration( JSContext *cx, JS::HandleObject obj ) {
 
+	// JS_IsStopIteration
+
 	JS::RootedObject proto(cx);
 	return JL_GetClassPrototype(cx, JSProto_StopIteration, &proto)
 	    && JL_GetClass(obj) == JL_GetClass(proto);
@@ -1454,7 +1476,7 @@ JL_ObjectIsError( JSContext *cx, JS::HandleObject obj ) {
 ALWAYS_INLINE bool FASTCALL
 JL_ObjectIsCallable( JSContext *cx, JS::HandleObject obj ) {
 
-	return JS_ObjectIsCallable(cx, obj) == true;
+	return JS_ObjectIsCallable(cx, obj);
 }
 
 
@@ -1462,8 +1484,14 @@ JL_ObjectIsCallable( JSContext *cx, JS::HandleObject obj ) {
 ALWAYS_INLINE bool FASTCALL
 JL_ValueIsCallable( JSContext *cx, IN JS::HandleValue value ) {
 
-	JS::RootedObject obj(cx, &value.toObject());
-	return !value.isPrimitive() && JL_ObjectIsCallable(cx, obj);
+	if ( value.isObject() ) {
+	
+		JS::RootedObject obj(cx, &value.toObject());
+		return JL_ObjectIsCallable(cx, obj);
+	} else {
+	
+		return false;
+	}
 }
 
 /*

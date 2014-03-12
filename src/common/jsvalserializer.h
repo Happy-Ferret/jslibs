@@ -181,7 +181,7 @@ public:
 		return Write(cx, (const unsigned char)type);
 	}
 
-	bool Write( JSContext *cx, JS::HandleString jsstr ) {
+	bool Write( JSContext *cx, JSString *jsstr ) {
 
 		size_t length;
 		const jschar *chars;
@@ -563,11 +563,11 @@ public:
 		JL_BAD;
 	}
 
-	bool Read( JSContext *cx, JSString *&jsstr ) {
+	bool Read( JSContext *cx, JS::MutableHandleString jsstr ) {
 
 		SerializerConstBufferInfo buf;
 		JL_CHK( Read(cx, buf) );
-		jsstr = JS_NewUCStringCopyN(cx, (const jschar *)buf.Data(), buf.Length()/2);
+		jsstr.set( JS_NewUCStringCopyN(cx, (const jschar *)buf.Data(), buf.Length()/2) );
 		JL_CHK(jsstr);
 		return true;
 		JL_BAD;
@@ -677,7 +677,7 @@ public:
 			case JLSTString: {
 
 				JS::RootedString jsstr(cx);
-				JL_CHK( Read(cx, jsstr) );
+				JL_CHK( Read(cx, &jsstr) );
 				val.setString(jsstr);
 				break;
 			}

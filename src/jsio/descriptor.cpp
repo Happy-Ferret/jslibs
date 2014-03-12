@@ -374,7 +374,7 @@ DEFINE_FUNCTION( read ) {
 
 		return true;
 	}
-
+	
 	if ( res == 0 ) { // doc: 0 means end of file is reached or the network connection is closed.
 
 		JL_CHK( JL_FreeBuffer(cx, JL_RVAL) );
@@ -706,23 +706,13 @@ struct IOProcessEvent : public ProcessEvent2 {
 	PRPollDesc *_pollDesc;
 	PRInt32 _pollResult;
 
-	~IOProcessEvent() {
-
-		jl_free(_pollDesc);
-	}
-
-	IOProcessEvent() {
-
-		_pollDesc = NULL;
-	}
-
 	bool prepareWait(JSContext *cx, JS::HandleObject obj) {
 
 		JS::RootedValue descriptor(cx);
 		JS::RootedObject fdArrayObj(cx, &slot(0).toObject());
 		JL_CHK( JS_GetArrayLength(cx, fdArrayObj, &_fdCount) );
 
-		_pollDesc = (PRPollDesc*)jl_realloc(_pollDesc, sizeof(PRPollDesc) * (1 + _fdCount)); // pollDesc[0] is the peCancel event fd, _fdCount excludes peCancel descriptior.
+		_pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * (1 + _fdCount)); // pollDesc[0] is the peCancel event fd, _fdCount excludes peCancel descriptior.
 		JL_ASSERT_ALLOC( _pollDesc );
 
 //		JL_updateMallocCounter(cx, (sizeof(PRPollDesc) /*+ sizeof(jsval)*/) * _fdCount); // approximately (pollDesc + descVal)
@@ -765,26 +755,22 @@ struct IOProcessEvent : public ProcessEvent2 {
 		ASSERT( st == PR_SUCCESS );
 		st = PR_WaitForPollableEvent(_pollDesc[0].fd); // resets the event. doc. blocks the calling thread until the pollable event is set, and then it atomically unsets the pollable event before it returns.
 		ASSERT( st == PR_SUCCESS );
-
 		return true;
 	}
 
-	bool endWait(bool *hasEvent, JSContext *cx, JS::HandleObject obj) {
+	bool endWait(bool *hasEvent, JSContext *cx, JS::HandleObject) {
 
-		JL_IGNORE(obj);
+		JLAutoPtr<PRPollDesc> pollDesc(_pollDesc);
 
 		if ( _pollResult == -1 )
 			JL_CHK( ThrowIoError(cx) );
 
-		*hasEvent = _pollResult > 0 && !( _pollDesc[0].out_flags & PR_POLL_READ );
+		*hasEvent = _pollResult > 0 && !( _pollDesc[0].out_flags & PR_POLL_READ ); // has an event but not the cancel event
 
 		if ( *hasEvent ) { // optimization
 		
-//			JS::RootedObject descArrayObj(cx, &slot(0).toObject());
-//			JS::RootedValue descriptor(cx);
 			for ( uint32_t i = 0; i < _fdCount; ++i ) {
 
-//				JL_CHK( JL_GetElement(cx, descArrayObj, i, &descriptor) ); // read the item
 				JL_CHK( PollDescNotify(cx, hDynSlot(i), &_pollDesc[1 + i], i) );
 			}
 		}

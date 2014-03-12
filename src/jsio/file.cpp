@@ -115,11 +115,11 @@ DEFINE_CONSTRUCTOR() {
 		filename.set(JL_ARG(1));
 	}
 
-	JL_CHK( JL_SetReservedSlot( obj, SLOT_JSIO_FILE_NAME, filename) );
+	JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, filename) );
 
-	JL_CHK( ReserveStreamReadInterface(cx, obj) );
+	JL_CHK( ReserveStreamReadInterface(cx, JL_OBJ) );
 
-	ASSERT( JL_GetPrivate(obj) == NULL ); // JL_SetPrivate( obj, NULL); // (TBD) optional ?
+	ASSERT( JL_GetPrivate(JL_OBJ) == NULL ); // JL_SetPrivate( obj, NULL); // (TBD) optional ?
 	}
 
 	return true;

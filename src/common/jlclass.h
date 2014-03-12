@@ -38,6 +38,7 @@ struct ClassSpec {
 	JSFunctionSpec *fs;
 	JSFunctionSpec *static_fs;
 	ConstValueSpec *static_const;
+	JSNative stdIterator;
 	bool (*init)(JSContext *cx, ClassSpec *cs, JS::HandleObject proto, JS::HandleObject obj);
 	SourceId_t sourceId;
 	double buildDate;
@@ -128,6 +129,8 @@ InitStatic( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 		JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _buildDate), DOUBLE_TO_JSVAL(cs->buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
 	}
 
+	ASSERT( !cs->stdIterator ); // not suitable for static classes
+
 	if ( cs->init )
 		JL_CHK( cs->init(cx, cs, JS::NullPtr(), obj) );
 
@@ -187,6 +190,10 @@ InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 	if ( cs->static_const != NULL )
 		JL_CHK( DefineConstValues(cx, ctor, cs->static_const) );
 
+	if ( cs->stdIterator ) {
+
+		JL_CHK( JS_DefineFunction(cx, ctor, "@@iterator", cs->stdIterator, 0, 0) );
+	}
 
 	// info
 	bool isExtensible;
@@ -450,6 +457,9 @@ JL_END_NAMESPACE
 
 #define HAS_ITERATOR_OBJECT const_cast<js::Class*>(js::Valueify(&cs.clasp))->ext.iteratorObject = IteratorObject;
 #define DEFINE_ITERATOR_OBJECT() static JSObject* IteratorObject(JSContext *cx, JS::HandleObject obj, bool keysonly)
+
+#define HAS_STD_ITERATOR cs.stdIterator = StdIterator;
+#define DEFINE_STD_ITERATOR() static bool StdIterator(JSContext *cx, unsigned argc, JS::Value *vp)
 
 
 // ops
