@@ -308,7 +308,7 @@ struct EndSignalProcessEvent : public ProcessEvent2 {
 			JS::RootedObject callThisObj(cx);
 			callThisObj.set(&slot(1).toObject());
 			JS::Value rval; // rval is unused then there is no need to root it
-			JL_CHK( JS_CallFunctionValue(cx, callThisObj, hslot(0), JS::EmptyValueArray, JS::MutableHandleValue::fromMarkedLocation(&rval)) );
+			JL_CHK( JS_CallFunctionValue(cx, callThisObj, hslot(0), JS::HandleValueArray::empty(), JS::MutableHandleValue::fromMarkedLocation(&rval)) );
 		}
 		return true;
 		JL_BAD;
@@ -479,7 +479,7 @@ int main(int argc, char* argv[]) {
 		//alloc.setSkipCleanup(true);
 		//nedAlloc.setSkipCleanup(true);
 
-		HostRuntime hostRuntime(allocators, 0);
+		HostRuntime hostRuntime(allocators, 0); // 0 mean no GC
 
 		JL_CHK( hostRuntime.create() );
 		

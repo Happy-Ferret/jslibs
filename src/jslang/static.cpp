@@ -219,7 +219,7 @@ DEFINE_FUNCTION( join ) {
 		JS::RootedValue nextFct(cx);
 		JL_CHK( JS_GetPropertyById(cx, argObj, JLID(cx, next), &nextFct) );
 		JL_ASSERT_IS_CALLABLE(nextFct, "iterator");
-		while ( JS_CallFunctionValue(cx, argObj, nextFct, JS::EmptyValueArray, &val) != false ) { // loop until StopIteration or error
+		while ( JS_CallFunctionValue(cx, argObj, nextFct, JS::HandleValueArray::empty(), &val) != false ) { // loop until StopIteration or error
 
 			JL_CHK( JL_JsvalToNative(cx, val, &*++strList) );
 			length += strList->Length();
@@ -588,7 +588,7 @@ public:
 			JS::RootedObject callThisObj(cx);
 			callThisObj.set(&slot(1).toObject());
 			JS::Value rval; // rval is unused then there is no need to root it
-			JL_CHK( JS_CallFunctionValue(cx, callThisObj, hslot(0), JS::EmptyValueArray, JS::MutableHandleValue::fromMarkedLocation(&rval)) );
+			JL_CHK( JS_CallFunctionValue(cx, callThisObj, hslot(0), JS::HandleValueArray::empty(), JS::MutableHandleValue::fromMarkedLocation(&rval)) );
 		}
 
 		return true;

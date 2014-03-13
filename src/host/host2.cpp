@@ -334,29 +334,25 @@ CountedAlloc::~CountedAlloc() {
 // WatchDog
 
 bool 
-WatchDog::operationCallback(JSContext *cx) {
+WatchDog::interruptCallback(JSContext *cx) {
 
-//	JSOperationCallback tmp = JS_SetOperationCallback(JL_GetRuntime(cx), NULL);
+	JSRuntime *rt = JL_GetRuntime(cx);
 
-/*
- * For a collection to be carried out incrementally the following conditions
- * must be met:
- *  - the collection must be run by calling js::GCSlice() rather than js::GC()
- *  - the GC mode must have been set to JSGC_MODE_INCREMENTAL with
- *    JS_SetGCParameter()
- *  - no thread may have an AutoKeepAtoms instance on the stack
- *  - all native objects that have their own trace hook must indicate that they
- *    implement read and write barriers with the JSCLASS_IMPLEMENTS_BARRIERS
- *    flag
- */
-//	IncrementalGC(JL_GetRuntime(cx), NO_REASON);
+	JSInterruptCallback tmp = JS_SetInterruptCallback(rt, NULL);
+
+	//For a collection to be carried out incrementally the following conditions must be met:
+	// - The collection must be run by calling JS::IncrementalGC() rather than JS_GC().
+	// - The GC mode must have been set to JSGC_MODE_INCREMENTAL with JS_SetGCParameter().
+	// - All native objects that have their own trace hook must indicate that they implement read and write barriers with the JSCLASS_IMPLEMENTS_BARRIERS flag.
+ 
+	JS::IncrementalGC(rt, JS::gcreason::NO_REASON);
+	bool fin = !JS::IsIncrementalGCInProgress(rt);
 
 	//JS_MaybeGC(cx);
-	//JS_GC(JL_GetRuntime(cx));
+	//JS_GC(rt);
+	//JS::IncrementalGC(rt, JS::gcreason::MAYBEGC);
 
-	//JS::IncrementalGC(JL_GetRuntime(cx), JS::gcreason::MAYBEGC);
-
-//	JS_SetOperationCallback(JL_GetRuntime(cx), tmp);
+	JS_SetInterruptCallback(rt, tmp);
 	return true;
 }
 
@@ -373,8 +369,8 @@ WatchDog::watchDogThreadProc(void *threadArg) {
 			break;
 		JSRuntime *rt = watchDog._hostRuntime.runtime();
 
-		ASSERT( JS_GetOperationCallback(rt) );
-		JS_TriggerOperationCallback(rt);
+//		ASSERT( JS_GetOperationCallback(rt) );
+		JS_RequestInterruptCallback(rt);
 	}
 	JLThreadExit(0);
 	return 0;
@@ -391,7 +387,7 @@ WatchDog::start() {
 	if ( _maybeGCInterval ) {
 
 		JSContext *cx = _hostRuntime.context();
-		JSOperationCallback prevOperationCallback = JS_SetOperationCallback(_hostRuntime.runtime(), operationCallback);
+		JSInterruptCallback prevOperationCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), interruptCallback);
 		ASSERT( prevOperationCallback == NULL );
 		_watchDogSemEnd = JLSemaphoreCreate(0);
 		_watchDogThread = JLThreadStart(watchDogThreadProc, this);
@@ -408,8 +404,8 @@ WatchDog::stop() {
 
 	if ( _maybeGCInterval ) {
 
-		JSOperationCallback prevOperationCallback = JS_SetOperationCallback(_hostRuntime.runtime(), NULL);
-		ASSERT( prevOperationCallback == operationCallback );
+		JSInterruptCallback prev_interruptCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), NULL);
+		ASSERT( prev_interruptCallback == interruptCallback );
 		JLSemaphoreRelease(_watchDogSemEnd);
 		JLThreadWait(_watchDogThread);
 		JLThreadFree(&_watchDogThread);
@@ -514,17 +510,20 @@ HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota
 
 	JS_SetErrorReporter(cx, errorReporterBasic);
 
+	JS::RuntimeOptionsRef(cx)
+		.setTypeInference(true)
+		.setIon(true)
+	;
+
 	JS::ContextOptionsRef(cx)
 		// doc. VarObjFix is recommended.  Without it, the two scripts "x = 1" and "var x = 1", where no variable x is in scope, do two different things.
 		//      The former creates a property on the global object.  The latter creates a property on obj.  With this flag, both create a global property.
 		.setVarObjFix(true)
-		.setTypeInference(true)
-		.setIon(true)
 //		.setCloneSingletons(false)
 	;
 
 	//JS_SetNativeStackQuota(cx, DEFAULT_MAX_STACK_SIZE); // see https://developer.mozilla.org/En/SpiderMonkey/JSAPI_User_Guide
-	JS_SetGCParameter(rt, JSGC_MODE, JSGC_MODE_INCREMENTAL); // JSGC_MODE_GLOBAL
+	JS_SetGCParameter(rt, JSGC_MODE, JSGC_MODE_INCREMENTAL); // != JSGC_MODE_GLOBAL
 
 
 	// JSOPTION_ANONFUNFIX: https://bugzilla.mozilla.org/show_bug.cgi?id=376052 

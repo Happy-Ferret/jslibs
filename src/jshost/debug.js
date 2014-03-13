@@ -9,6 +9,21 @@ var loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
 
 
+//new Array(100000).map(function() { return { a:'sdjhgskdljfghdskljghlsdkjfghldskjfgh' } });
+//[].forEach(function(){});
+
+
+(function() { for (var i = 0; i < 1000000; ++i); })();
+
+
+host.stdout('press ctrl-c');
+var to = timeoutEvents(500);
+processEvents(to, host.endSignalEvents());
+processEvents(to, host.endSignalEvents());
+host.stdout('done.');
+throw 0;
+
+
 
 loadModule('jsstd');
 loadModule('jssqlite');
@@ -58,14 +73,6 @@ processEvents( io );
 throw 0;
 
 
-
-host.stdout('press ctrl-c');
-var to = timeoutEvents(500);
-processEvents(to, host.endSignalEvents());
-processEvents(to, host.endSignalEvents());
-host.stdout('done.');
-
-throw 0;
 
 
 

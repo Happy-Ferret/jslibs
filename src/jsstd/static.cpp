@@ -90,7 +90,7 @@ DEFINE_FUNCTION( expand ) {
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &srcStr) );
 
-	if ( JL_ValueIsCallable(cx, JL_ARG(2)) ) {
+	if ( JL_ARG_ISDEF(2) && JL_ValueIsCallable(cx, JL_ARG(2)) ) {
 			
 		hasMapFct = true;
 	} else {
@@ -148,7 +148,7 @@ DEFINE_FUNCTION( expand ) {
 
 					JL_CHK( JL_NativeToJsval(cx, key, keyEnd - key, &value) );
 					JL_CHK( JL_CallFunctionVA(cx, JL_OBJ, JL_ARG(2), &value, value) );
-				} else if ( JL_ARG(2).isObject() ) {
+				} else if ( JL_SARG(2).isObject() ) {
 
 					JS::RootedObject tmpObj(cx, &JL_ARG(2).toObject());
 					JL_CHK( JS_GetUCProperty(cx, tmpObj, key, keyEnd - key, &value) );
@@ -926,6 +926,7 @@ CONFIGURE_CLASS
 END_CLASS
 
 
+/*
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
 static bool
 sandbox_resolve(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, unsigned flags, JS::MutableHandleObject objp) {
@@ -959,13 +960,37 @@ sandbox_resolve(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, u
 	objp.set(NULL);
 	return true;
 }
+*/
+
+static bool
+sandboxClass_lazy_enumerate(JSContext *cx, JS::HandleObject obj) {
+
+	return JS_EnumerateStandardClasses(cx, obj);
+}
+
+static bool
+sandboxClass_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, unsigned flags, JS::MutableHandleObject objp) {
+
+	bool resolved;
+
+	if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
+		return false;
+
+	if (resolved) {
+
+		objp.set(obj);
+		return true;
+	}
+	return true;
+}
+
 
 static JSClass sandbox_class = {
     "Sandbox",
     JSCLASS_NEW_RESOLVE | JSCLASS_GLOBAL_FLAGS,
     JS_PropertyStub,   JS_DeletePropertyStub,
     JS_PropertyStub,   JS_StrictPropertyStub,
-    JS_EnumerateStub, (JSResolveOp)sandbox_resolve,
+    sandboxClass_lazy_enumerate, (JSResolveOp)sandboxClass_lazy_resolve,
     JS_ConvertStub,    NULL
 };
 
@@ -979,7 +1004,7 @@ public:
 	unsigned int maxExecutionTime;
 	volatile bool expired;
 	JS::PersistentRootedValue queryFunctionValue; //jsval queryFunctionValue;
-	JSOperationCallback prevOperationCallback;
+	JSInterruptCallback prevInterruptCallback;
 };
 
 bool SandboxMaxOperationCallback(JSContext *cx) {
@@ -988,7 +1013,7 @@ bool SandboxMaxOperationCallback(JSContext *cx) {
 	if ( pv->expired && !JL_IsExceptionPending(cx) ) {
 
 		JS::RootedValue branchLimitExceptionVal(cx);
-		JSOperationCallback tmp = JS_SetOperationCallback(JL_GetRuntime(cx), NULL);
+		JSInterruptCallback tmp = JS_SetInterruptCallback(JL_GetRuntime(cx), NULL);
 
 		const jl::ProtoCache::Item* cpc = jl::Host::getHost(cx).getCachedClassProto(JL_CLASS_NAME(OperationLimit));
 		ASSERT( cpc );
@@ -1004,10 +1029,10 @@ bool SandboxMaxOperationCallback(JSContext *cx) {
 		JS_SetPendingException(cx, branchLimitExceptionVal);
 		JS_LeaveCompartment(cx, oldCompartment);
 		JL_CHK( branchLimitExceptionObj );
-		JS_SetOperationCallback(JL_GetRuntime(cx), tmp);
+		JS_SetInterruptCallback(JL_GetRuntime(cx), tmp);
 		JL_BAD;
 	}
-	return pv->prevOperationCallback(cx);
+	return pv->prevInterruptCallback(cx);
 }
 
 JLThreadFuncDecl SandboxWatchDogThreadProc(void *threadArg) {
@@ -1018,7 +1043,7 @@ JLThreadFuncDecl SandboxWatchDogThreadProc(void *threadArg) {
 	if ( st == JLTIMEOUT ) {
 		
 		pv->expired = true;
-		JS_TriggerOperationCallback(JL_GetRuntime(cx));
+		JS_RequestInterruptCallback(JL_GetRuntime(cx));
 	}
 	JLThreadExit(0);
 	return 0;
@@ -1091,10 +1116,24 @@ DEFINE_FUNCTION( sandboxEval ) {
 	prevCxPrivate = JS_GetContextPrivate(cx);
 	JS_SetContextPrivate(cx, &pv);
 
+	bool ok;
+
 	{
 
 	JS::RootedObject globalObj(cx, JS_NewGlobalObject(cx, &sandbox_class, NULL, JS::DontFireOnNewGlobalHook));
+	JL_CHK( globalObj != NULL );
+
+	{
+
 	JSAutoCompartment ac(cx, globalObj);
+
+	//JS_SetNativeStackQuota(JL_GetRuntime(cx), 8192 * sizeof(size_t));
+	
+	//JS_SetNativeStackQuota(JL_GetRuntime(cx), 0);
+
+
+//    if ( !JS_InitStandardClasses(cx, globalObj) )
+//        return nullptr;
 
 	if ( pv.queryFunctionValue != JSVAL_VOID ) {
 
@@ -1102,22 +1141,22 @@ DEFINE_FUNCTION( sandboxEval ) {
 		JL_CHK( JS_DefineFunction(cx, globalObj, "query", SandboxQueryFunction, 1, JSPROP_PERMANENT | JSPROP_READONLY) );
 	}
 
-	JS_SetNativeStackQuota(JL_GetRuntime(cx), 32000);
-
-	pv.prevOperationCallback = JS_SetOperationCallback(JL_GetRuntime(cx), SandboxMaxOperationCallback);
+	
+	pv.prevInterruptCallback = JS_SetInterruptCallback(JL_GetRuntime(cx), SandboxMaxOperationCallback);
+	}
 
 	JS_FireOnNewGlobalObject(cx, globalObj);
 
+	{
+	JSAutoCompartment ac(cx, globalObj);
 
-
-	bool ok;
+	
 	ok = JS_EvaluateUCScript(cx, globalObj, src, srclen, filename, lineno, JL_RVAL);
 
-	JSOperationCallback tmp;
-	tmp = JS_SetOperationCallback(JL_GetRuntime(cx), pv.prevOperationCallback);
+	JSInterruptCallback tmp;
+	tmp = JS_SetInterruptCallback(JL_GetRuntime(cx), pv.prevInterruptCallback);
 	ASSERT( tmp == SandboxMaxOperationCallback );
 
-	JS_SetNativeStackQuota(JL_GetRuntime(cx), 0); // (TBD) any way to restore the previous value ?
 
 	JLSemaphoreRelease(pv.semEnd);
 	JLThreadWait(sandboxWatchDogThread);
@@ -1128,13 +1167,22 @@ DEFINE_FUNCTION( sandboxEval ) {
 
 	// JL_CHK( JS_DeleteProperty(scx, globalObject, "query") ); // (TBD) needed ? also check of the deletion is successful using JS_HasProperty...
 
-	if ( ok )
-		return JS_WrapValue(cx, JL_RVAL);
+	}
 
-	ASSERT( JL_IsExceptionPending(cx) ); // JL_REPORT_ERROR_NUM( JLSMSG_RUNTIME_ERROR, "exception is expected");
+	if ( !ok ) {
+
+		ASSERT( JL_IsExceptionPending(cx) ); // JL_REPORT_ERROR_NUM( JLSMSG_RUNTIME_ERROR, "exception is expected");
+		goto bad;
+	}
+
+	JL_CHK( JS_WrapValue(cx, JL_RVAL) );
+
+//	JS_SetNativeStackQuota(JL_GetRuntime(cx), 0); // (TBD) any way to restore the previous value ?
 
 	}
 
+
+	return true;
 	JL_BAD;
 }
 

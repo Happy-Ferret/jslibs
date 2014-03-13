@@ -472,7 +472,7 @@ class WatchDog {
 	uint32_t _maybeGCInterval;
 
 	static bool 
-	operationCallback(JSContext *cx);
+	interruptCallback(JSContext *cx);
 
 	static JLThreadFuncDecl
 	watchDogThreadProc(void *threadArg);

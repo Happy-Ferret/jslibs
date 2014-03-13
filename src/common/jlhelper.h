@@ -1459,7 +1459,7 @@ JL_ValueIsGenerator( JSContext *cx, JS::HandleValue val ) {
 	return val.isObject()
 		&& JL_GetClassPrototype(cx, JSProto_Function, &proto)
 	    && JS_GetPropertyById(cx, proto, JLID(cx, isGenerator), &fct)
-		&& JS_CallFunctionValue(cx, valueObj, fct, JS::EmptyValueArray, &rval)
+		&& JS_CallFunctionValue(cx, valueObj, fct, JS::HandleValueArray::empty(), &rval)
 		&& rval == JSVAL_TRUE;
 }
 
@@ -4019,7 +4019,7 @@ ALWAYS_INLINE bool FASTCALL
 JL_CallFunctionVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleValue functionValue, OUT JS::MutableHandleValue rval ) {
 
 	ASSERT( JL_ValueIsCallable(cx, functionValue) );
-	return JS_CallFunctionValue(cx, obj, functionValue, JS::EmptyValueArray, rval);
+	return JS_CallFunctionValue(cx, obj, functionValue, JS::HandleValueArray::empty(), rval);
 }
 
 ALWAYS_INLINE bool FASTCALL
@@ -4130,9 +4130,9 @@ JL_JsvalToPrimitive( JSContext * RESTRICT cx, IN JS::HandleValue val, OUT JS::Mu
 	//JSClass *clasp = JL_GetClass(obj);
 	//if ( clasp->convert ) // note that JS_ConvertStub calls js_TryValueOf
 	//	return clasp->convert(cx, obj, JSTYPE_VOID, rval);
-	JL_CHK( JL_CallFunctionId(cx, obj, JLID(cx, valueOf), JS::EmptyValueArray, rval) );
+	JL_CHK( JL_CallFunctionId(cx, obj, JLID(cx, valueOf), JS::HandleValueArray::empty(), rval) );
 	if ( !rval.isPrimitive() )
-		JL_CHK( JL_CallFunctionId(cx, obj, JLID(cx, toString), JS::EmptyValueArray, rval) );
+		JL_CHK( JL_CallFunctionId(cx, obj, JLID(cx, toString), JS::HandleValueArray::empty(), rval) );
 
 	return true;
 	JL_BAD;
@@ -4708,7 +4708,7 @@ INLINE bool
 JSBufferGet( JSContext *cx, JS::HandleObject obj, JLData *str ) {
 
 	JS::RootedValue tmp(cx);
-	return JL_CallFunctionId(cx, obj, JLID(cx, get), JS::EmptyValueArray, &tmp) && JL_JsvalToNative(cx, tmp, str);
+	return JL_CallFunctionId(cx, obj, JLID(cx, get), JS::HandleValueArray::empty(), &tmp) && JL_JsvalToNative(cx, tmp, str);
 }
 
 

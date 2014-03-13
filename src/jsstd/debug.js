@@ -1,8 +1,25 @@
 var loadModule = host.loadModule;
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsstd'); throw 0;
 
-loadModule('jsstd');
-print(12)
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsstd'); throw 0;
+
+loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
+
+
+var res = sandboxEval('Math+" "+Math/*query()*/', function() 123);
+
+//sandboxEval('', function() 123);
+
+//sandboxEval('typeof query');
+//sandboxEval('query()', function() 123);
+
+print(res, '\n');
+
+
+
+
+
+
+throw 0;
 
 //jsstdTest();
 

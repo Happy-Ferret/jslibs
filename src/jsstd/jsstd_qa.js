@@ -308,20 +308,6 @@ loadModule('jsstd');
 		QA.ASSERT( str[9999], 'x', 'last char' );
 
 
-
-/// MultiLineStringUsingE4X [p]
-				
-		var t = <text>
-		this is
-		a multiline
-
-		text
-		</text>
-		
-		QA.ASSERT( typeof t, 'xml', 'text type' );
-		QA.ASSERT_STR( t, "\n\t\tthis is\n\t\ta multiline\n\n\t\ttext\n\t\t", 'text' );
-
-
 /// Sandbox global objects [p]
 	
 		var res = sandboxEval('Math');
