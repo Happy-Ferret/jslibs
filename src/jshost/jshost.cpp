@@ -14,7 +14,9 @@
 
 #include "stdafx.h"
 
-#define HOST_STACK_SIZE 4194304
+
+
+#define HOST_STACK_SIZE 4194304 // = 4 * 1024 * 1024
 
 // set stack to 4MB:
 #if defined(XP_WIN)
@@ -481,7 +483,8 @@ int main(int argc, char* argv[]) {
 
 		HostRuntime hostRuntime(allocators, 0); // 0 mean no GC
 
-		JL_CHK( hostRuntime.create() );
+		// HOST_MAIN_ASSERT
+		JL_CHK( hostRuntime.create((uint32_t)-1, (uint32_t)-1, HOST_STACK_SIZE) );
 		
 		JSContext *cx = hostRuntime.context();
 

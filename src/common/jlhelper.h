@@ -445,6 +445,21 @@ JL_ArrayToAutoArrayRooter(JSContext *cx, JS::HandleObject *arrayObj) {
 */
 
 
+class AutoInterruptCallback {
+	JSRuntime *_rt;
+	JSInterruptCallback _prevCallback;
+	AutoInterruptCallback();
+	AutoInterruptCallback( const AutoInterruptCallback & );
+public:
+	AutoInterruptCallback(JSRuntime *rt, JSInterruptCallback newCallback)
+	: _rt(rt), _prevCallback(JS_SetInterruptCallback(rt, newCallback)) {
+	}
+
+	~AutoInterruptCallback() {
+
+		JS_SetInterruptCallback(_rt, _prevCallback);
+	}
+};
 
 
 

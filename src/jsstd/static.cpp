@@ -1061,6 +1061,7 @@ bool SandboxQueryFunction(JSContext *cx, unsigned argc, jsval *vp) {
 
 		JL_CHK( JS_CallFunctionValue(cx, args.thisObj(), pv->queryFunctionValue, args._jsargs, JL_RVAL) );
 		JL_CHKM( JL_RVAL.isPrimitive(), E_RETURNVALUE, E_TYPE, E_TY_PRIMITIVE );
+
 	}
 	return true;
 	JL_BAD;
@@ -1124,32 +1125,25 @@ DEFINE_FUNCTION( sandboxEval ) {
 	JL_CHK( globalObj != NULL );
 
 	{
-
 	JSAutoCompartment ac(cx, globalObj);
 
-	//JS_SetNativeStackQuota(JL_GetRuntime(cx), 8192 * sizeof(size_t));
-	
-	//JS_SetNativeStackQuota(JL_GetRuntime(cx), 0);
+	//JS_SetNativeStackQuota(JL_GetRuntime(cx), 8192 * sizeof(size_t)); 
 
-
-//    if ( !JS_InitStandardClasses(cx, globalObj) )
-//        return nullptr;
-
-	if ( pv.queryFunctionValue != JSVAL_VOID ) {
+	if ( !pv.queryFunctionValue.get().isUndefined() ) {
 
 		JL_CHK( JS_WrapValue(cx, &pv.queryFunctionValue) );
 		JL_CHK( JS_DefineFunction(cx, globalObj, "query", SandboxQueryFunction, 1, JSPROP_PERMANENT | JSPROP_READONLY) );
 	}
 
+	}
 	
 	pv.prevInterruptCallback = JS_SetInterruptCallback(JL_GetRuntime(cx), SandboxMaxOperationCallback);
-	}
 
 	JS_FireOnNewGlobalObject(cx, globalObj);
 
+
 	{
 	JSAutoCompartment ac(cx, globalObj);
-
 	
 	ok = JS_EvaluateUCScript(cx, globalObj, src, srclen, filename, lineno, JL_RVAL);
 
@@ -1176,15 +1170,16 @@ DEFINE_FUNCTION( sandboxEval ) {
 	}
 
 	JL_CHK( JS_WrapValue(cx, JL_RVAL) );
-
-//	JS_SetNativeStackQuota(JL_GetRuntime(cx), 0); // (TBD) any way to restore the previous value ?
-
 	}
 
 
 	return true;
 	JL_BAD;
 }
+
+
+
+
 
 /*
 

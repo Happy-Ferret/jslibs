@@ -500,7 +500,7 @@ HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota
 
 	//JS_SetGCParametersBasedOnAvailableMemory
 
-	JS_SetNativeStackQuota(rt, nativeStackQuota); // doc: 0:disabled
+	//JS_SetNativeStackQuota(rt, nativeStackQuota); // doc: 0:disabled
 
 	cx = JS_NewContext(rt, 8192); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 	JL_CHK( cx ); //, "unable to create the context." );

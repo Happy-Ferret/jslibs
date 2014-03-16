@@ -1624,6 +1624,7 @@ ThreadStackSize() {
 */
 
 
+
 // see http://unicode.org/faq/utf_bom.html#BOM
 enum EncodingType {
 	ENC_UNKNOWN,
