@@ -121,7 +121,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( phIcon );
 	*phIcon = hIcon;
 
-	JL_SetPrivate(obj, phIcon);
+	JL_SetPrivate(JL_OBJ, phIcon);
 	return true;
 
 bad:

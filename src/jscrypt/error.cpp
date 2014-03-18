@@ -67,7 +67,7 @@ const char *ConstString( int errorCode ) {
 
 DEFINE_PROPERTY_GETTER( const ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_CHK( JL_GetReservedSlot(  obj, 0, vp ) );
 	if ( vp.isUndefined() )
@@ -76,7 +76,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 	errorCode = vp.toInt32();
 	JSString *str;
 	str = JS_NewStringCopyZ( cx, ConstString(errorCode) );
-	*vp = STRING_TO_JSVAL( str );
+	JL_RVAL.setString(str);
 	return true;
 	JL_BAD;
 }
@@ -84,16 +84,16 @@ DEFINE_PROPERTY_GETTER( const ) {
 
 DEFINE_PROPERTY_GETTER( text ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
-	JL_CHK( JL_GetReservedSlot(  obj, 0, vp ) );
-	if ( vp.isUndefined() )
+	JL_CHK( JL_GetReservedSlot(JL_OBJ, 0, JL_RVAL) );
+	if ( JL_RVAL.isUndefined() )
 		return true;
 	int errorCode;
-	errorCode = vp.toInt32();
+	errorCode = JL_RVAL.toInt32();
 	JSString *str;
-	str = JS_NewStringCopyZ( cx, error_to_string(errorCode) );
-	*vp = STRING_TO_JSVAL( str );
+	str = JS_NewStringCopyZ(cx, error_to_string(errorCode));
+	JL_RVAL.setString(str);
 	return true;
 	JL_BAD;
 }
@@ -101,14 +101,24 @@ DEFINE_PROPERTY_GETTER( text ) {
 
 DEFINE_FUNCTION( toString ) {
 
-	JL_IGNORE(argc);
+	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
+	JL_CHK( JL_GetReservedSlot(JL_OBJ, 0, JL_RVAL) );
+	if ( JL_RVAL.isUndefined() )
+		return true;
+	int errorCode;
+	errorCode = JL_RVAL.toInt32();
+	JSString *str;
+	str = JS_NewStringCopyZ(cx, error_to_string(errorCode));
+	JL_RVAL.setString(str);
+	return true;
+	JL_BAD;
 }
 
 
 DEFINE_FUNCTION( _serialize ) {
+
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(1);
@@ -118,11 +128,11 @@ DEFINE_FUNCTION( _serialize ) {
 	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
 
 	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, fileName), JL_RVAL) );
-	JL_CHK( ser->Write(cx, *JL_RVAL) );
+	JL_CHK( ser->Write(cx, JL_RVAL) );
 	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, lineNumber), JL_RVAL) );
-	JL_CHK( ser->Write(cx, *JL_RVAL) );
+	JL_CHK( ser->Write(cx, JL_RVAL) );
 	JL_CHK( JL_GetReservedSlot( JL_OBJ, 0, JL_RVAL) );
-	JL_CHK( ser->Write(cx, *JL_RVAL) );
+	JL_CHK( ser->Write(cx, JL_RVAL) );
 
 	return true;
 	JL_BAD;
@@ -131,6 +141,8 @@ DEFINE_FUNCTION( _serialize ) {
 
 DEFINE_FUNCTION( _unserialize ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_TYPE( jl::JsvalIsUnserializer(cx, JL_ARG(1)), 1, "Unserializer" );
@@ -138,12 +150,12 @@ DEFINE_FUNCTION( _unserialize ) {
 	jl::Unserializer *unser;
 	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));
 
-	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, fileName), JL_RVAL) );
-	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, lineNumber), JL_RVAL) );
-	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JL_SetReservedSlot( JL_OBJ, 0, *JL_RVAL) );
+	JL_CHK( unser->Read(cx, JL_RVAL) );
+	JL_CHK( JS_SetPropertyById(cx, JL_OBJ, JLID(cx, fileName), JL_RVAL) );
+	JL_CHK( unser->Read(cx, JL_RVAL) );
+	JL_CHK( JS_SetPropertyById(cx, JL_OBJ, JLID(cx, lineNumber), JL_RVAL) );
+	JL_CHK( unser->Read(cx, JL_RVAL) );
+	JL_CHK( JL_SetReservedSlot( JL_OBJ, 0, JL_RVAL) );
 
 	return true;
 	JL_BAD;
@@ -178,9 +190,13 @@ ThrowCryptError( JSContext *cx, int errorCode ) {
 
 //	JS_ReportWarning( cx, "CryptError exception" );
 	JS::RootedObject error(cx, JL_NewObjectWithGivenProto( cx, JL_CLASS(CryptError), JL_CLASS_PROTOTYPE(cx, CryptError)));
-	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
-	JL_CHK( JL_SetReservedSlot(  error, 0, INT_TO_JSVAL(errorCode) ) );
-//	JL_SetReservedSlot(  error, 1, errorMessage != NULL ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID );
-	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
+	JS::RootedValue errorVal(cx);
+	errorVal.setObject(*error);
+	JL_CHK( JL_NativeToReservedSlot(cx, error, 0, errorCode) );
+	JL_SAFE( JL_ExceptionSetScriptLocation(cx, &error) );
+
+	JS_SetPendingException(cx, errorVal);
+
+	//	JL_SetReservedSlot(  error, 1, errorMessage != NULL ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID );
 	JL_BAD;
 }

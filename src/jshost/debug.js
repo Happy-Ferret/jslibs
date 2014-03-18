@@ -12,6 +12,16 @@ var loadModule = host.loadModule;
 //new Array(100000).map(function() { return { a:'sdjhgskdljfghdskljghlsdkjfghldskjfgh' } });
 //[].forEach(function(){});
 
+loadModule('jsstd');
+
+print( exec('test.js') );
+
+
+throw 0;
+
+
+
+
 
 (function() { for (var i = 0; i < 1000000; ++i); })();
 

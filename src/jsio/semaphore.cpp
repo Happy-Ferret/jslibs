@@ -170,6 +170,28 @@ DEFINE_FUNCTION( post ) {
 }
 
 
+DEFINE_PROPERTY_GETTER( name ) {
+
+	JL_DEFINE_PROP_ARGS;
+	ClassPrivate *pv;
+	pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_CHK( JL_NativeToJsval(cx, pv->name, JL_RVAL) );
+	return true;
+	JL_BAD;
+}
+
+DEFINE_PROPERTY_GETTER( isOwner ) {
+
+	JL_DEFINE_PROP_ARGS;
+	ClassPrivate *pv;
+	pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
+	JL_RVAL.setBoolean(pv->owner);
+	return true;
+	JL_BAD;
+}
+
 
 /**doc
 === Constants ===
@@ -297,6 +319,11 @@ CONFIGURE_CLASS
 		FUNCTION( post )
 		FUNCTION_ARGC( events, 1 )
 	END_FUNCTION_SPEC
+
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_GETTER( name )
+		PROPERTY_GETTER( isOwner )
+	END_PROPERTY_SPEC
 
 	BEGIN_CONST
 // PR_Open flags

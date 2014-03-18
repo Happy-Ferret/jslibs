@@ -39,10 +39,10 @@ BEGIN_CLASS( Iconv ) // Start the definition of the class. It defines some symbo
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
 		return;
 
-	Private *pv = (Private*)JL_GetPrivate(obj);
+	Private *pv = (Private*)js::GetObjectPrivate(obj);
 	if ( !pv )
 		return;
 	int status = iconv_close(pv->cd); // if ( status == -1 ) error is in errno.
@@ -72,6 +72,8 @@ $TOC_MEMBER $INAME
 
 **/
 DEFINE_CONSTRUCTOR() {
+
+	JL_DEFINE_ARGS;
 
 	Private *pv = NULL;
 	JLData tocode, fromcode;
@@ -111,7 +113,7 @@ DEFINE_CONSTRUCTOR() {
 
 	pv->invalidChar = '?';
 
-	JL_SetPrivate(obj, pv);
+	JL_SetPrivate(JL_OBJ, pv);
 	return true;
 
 bad:
@@ -132,14 +134,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( process ) {
 	
+	JL_DEFINE_ARGS;
+
 	char *outBuf = NULL; // keep on top
 	JLData data;
 	JL_DEFINE_FUNCTION_OBJ;
 
-	JL_ASSERT_INSTANCE(obj, JL_CLASS(Iconv));
+	JL_ASSERT_INSTANCE(JL_OBJ, JL_CLASS(Iconv));
 
 	Private *pv;
-	pv = (Private*)JL_GetPrivate(obj);
+	pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	size_t status;
@@ -292,7 +296,7 @@ DEFINE_FUNCTION( process ) {
 	if ( length == 0 ) {
 		
 		JS_free(cx, outBuf);
-		*JL_RVAL = JL_GetEmptyStringValue(cx);
+		JL_RVAL.set(JL_GetEmptyStringValue(cx));
 		return true;
 	}
 
@@ -314,11 +318,11 @@ DEFINE_FUNCTION( process ) {
 		((jschar*)outBuf)[length / 2] = 0;
 		jsEncStr = JL_NewUCString(cx, (jschar*)outBuf, length / 2);
 		JL_CHK( jsEncStr );
-		*JL_RVAL = STRING_TO_JSVAL(jsEncStr);
+		JL_RVAL.setString(jsEncStr);
 	} else {
 
 		//jsEncStr = JL_NewString(cx, outBuf, length); // loose outBuf ownership	// JL_CHK( StringAndLengthToJsval(cx, JL_RVAL, outBuf, length) );
-		JL_CHK( JLData(outBuf, true, length).GetJSString(cx, *JL_RVAL) );
+		JL_CHK( JLData(outBuf, true, length).GetJSString(cx, JL_RVAL) );
 	}
 
 	return true;
@@ -384,19 +388,23 @@ $TOC_MEMBER $INAME
 **/
 
 struct IteratorPrivate {
+public:
 	JSContext *cx;
-	JS::PersistentObject list;
+	JS::PersistentRootedObject list;
 	int listLen;
+	IteratorPrivate(JSContext *cx)
+	: list(cx) {
+	}
 };
 
 int do_one( unsigned int namescount, const char * const * names, void* data ) {
 
 	IteratorPrivate *ipv = (IteratorPrivate*)data;
-	jsval value;
+	JS::RootedValue value(ipv->cx);
 	while (namescount--) {
 
 		// (TBD) check errors
-		JL_NativeToJsval(ipv->cx, names[namescount], value); // iconv_canonicalize
+		JL_NativeToJsval(ipv->cx, names[namescount], &value); // iconv_canonicalize
 		JL_SetElement(ipv->cx, ipv->list, ipv->listLen, value);
 		ipv->listLen++;
 	}
@@ -409,11 +417,13 @@ DEFINE_PROPERTY_GETTER( list ) {
 	JS::RootedObject list(cx, JS_NewArrayObject(cx, 0));
 	JL_CHK( list );
 	vp.setObject(*list);
-	IteratorPrivate ipv;
+	{
+	IteratorPrivate ipv(cx);
 	ipv.cx = cx;
 	ipv.list = list;
 	ipv.listLen = 0;
 	iconvlist(do_one, &ipv);
+	}
 	return jl::StoreProperty(cx, obj, id, vp, true); // create the list and store it once for all.
 	JL_BAD;
 }

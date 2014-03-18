@@ -11,13 +11,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{09CAD080-B56A-4BC7-AA32-E1A0C6022E6F}</ProjectGuid>
-    <RootNamespace>jsiconv</RootNamespace>
+    <ProjectGuid>{A3794FD9-62E8-4B2C-8C9F-AF1A1DD97CB7}</ProjectGuid>
+    <RootNamespace>jscrypt</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -39,43 +40,39 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\libs\libiconv\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\libs\libtomcrypt\src\src\headers;..\..\libs\libtommath\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;LTC_NO_PROTOTYPES;LTM_DESC;MKAT;LTC_MULTI2;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <Link />
-    <Link>
-      <AdditionalDependencies>$(jslibsRootDir)src\host\$(jslibsIntDir)host.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\libs\libiconv\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\libs\libtomcrypt\src\src\headers;..\..\libs\libtommath\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;LTC_NO_PROTOTYPES;LTM_DESC;MKAT;LTC_MULTI2;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <Link />
-    <Link>
-      <AdditionalDependencies>$(jslibsRootDir)src\host\$(jslibsIntDir)host.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="iconv.cpp" />
+    <ClCompile Include="asymmetricCipher.cpp" />
+    <ClCompile Include="cipher.cpp" />
+    <ClCompile Include="error.cpp" />
+    <ClCompile Include="hash.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="misc.cpp" />
+    <ClCompile Include="prng.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="iconv.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="debug.js" />
-    <None Include="jsiconv_qa.js" />
+    <None Include="jscrypt_qa.js" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\libs\libiconv\libiconv_mak.vcxproj">
-      <Project>{96358e1b-274b-4f4d-bdcf-bd8f652e033e}</Project>
+    <ProjectReference Include="..\..\libs\libtomcrypt\libtomcrypt_msvc.vcxproj">
+      <Project>{04de6dd0-21e3-4117-8b21-1973bd96cbb3}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

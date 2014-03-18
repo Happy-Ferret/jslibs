@@ -1,17 +1,11 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual C++ Express 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jscrypt", "jscrypt.vcproj", "{A3794FD9-62E8-4B2C-8C9F-AF1A1DD97CB7}"
-	ProjectSection(ProjectDependencies) = postProject
-		{04DE6DD0-21E3-4117-8B21-1973BD96CBB3} = {04DE6DD0-21E3-4117-8B21-1973BD96CBB3}
-	EndProjectSection
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jscrypt", "jscrypt.vcxproj", "{A3794FD9-62E8-4B2C-8C9F-AF1A1DD97CB7}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtomcrypt_msvc", "..\..\libs\libtomcrypt\libtomcrypt_msvc.vcproj", "{04DE6DD0-21E3-4117-8B21-1973BD96CBB3}"
-	ProjectSection(ProjectDependencies) = postProject
-		{76C8F2F1-DF8F-476B-BA3C-EF0E16CADFF0} = {76C8F2F1-DF8F-476B-BA3C-EF0E16CADFF0}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtomcrypt_msvc", "..\..\libs\libtomcrypt\libtomcrypt_msvc.vcxproj", "{04DE6DD0-21E3-4117-8B21-1973BD96CBB3}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtommath_msvc", "..\..\libs\libtommath\libtommath_msvc.vcproj", "{76C8F2F1-DF8F-476B-BA3C-EF0E16CADFF0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtommath_msvc", "..\..\libs\libtommath\libtommath_msvc.vcxproj", "{76C8F2F1-DF8F-476B-BA3C-EF0E16CADFF0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -35,6 +35,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( base64Encode ) {
 
+	JL_DEFINE_ARGS;
+
 	JLData in;
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -70,6 +72,8 @@ $TOC_MEMBER $INAME
   Encode the given _string_ using base64 encoding.
 **/
 DEFINE_FUNCTION( base64Decode ) {
+
+	JL_DEFINE_ARGS;
 
 	JLData in;
 
@@ -108,6 +112,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( hexEncode ) {
 
 	static const char hex[] = "0123456789ABCDEF";
+
+	JL_DEFINE_ARGS;
 
 	JLData data;
 
@@ -159,6 +165,8 @@ DEFINE_FUNCTION( hexDecode ) {
 		 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
 		 0, 10, 11, 12, 13, 14, 15,  0,  0,  0,  0,  0,  0,  0,  0,  0
 	};
+
+	JL_DEFINE_ARGS;
 
 	JLData data;
 

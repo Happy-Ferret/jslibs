@@ -1,5 +1,24 @@
 var loadModule = host.loadModule;
 
+//host.stdout('TEST OK\n');
+
+loadModule('jsio');
+var s = new Semaphore(host.name+'qwfgvqwjfgv');
+
+
+throw 0;
+
+
+
+loadModule('jsstd');
+exec('qwer');
+throw 0;
+
+
+
+/*
+
+
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
 loadModule('jswinshell');
@@ -39,3 +58,4 @@ for (;;) {
 
 	processEvents(ev);
 }
+*/

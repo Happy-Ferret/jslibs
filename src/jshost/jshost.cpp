@@ -34,7 +34,7 @@
 #endif
 
 
-#include <jslibsModule.cpp>
+// #include <jslibsModule.cpp>
 
 #include "../jslang/handlePub.h"
 
@@ -386,21 +386,6 @@ freeInterrupt() {
 
 //////////////////////////////////////////////////////////////////////////////
 
-class AutoJSEngineInit {
-public:
-
-	AutoJSEngineInit() {
-
-		bool st = JS_Init();
-		ASSERT(st);
-	}
-
-	~AutoJSEngineInit() {
-
-		JS_ShutDown();
-	}
-};
-
 
 
 #ifdef USE_NEDMALLOC
@@ -481,7 +466,7 @@ int main(int argc, char* argv[]) {
 		//alloc.setSkipCleanup(true);
 		//nedAlloc.setSkipCleanup(true);
 
-		HostRuntime hostRuntime(allocators, 0); // 0 mean no GC
+		HostRuntime hostRuntime(allocators, 0); // 0 mean no periodical GC
 
 		// HOST_MAIN_ASSERT
 		JL_CHK( hostRuntime.create((uint32_t)-1, (uint32_t)-1, HOST_STACK_SIZE) );
@@ -519,7 +504,8 @@ int main(int argc, char* argv[]) {
 		strncpy(hostPath, hostFullPath, hostPathLength);
 		hostPath[hostPathLength] = '\0';
 
-		host.setHostName(hostPath, hostName);
+		host.setHostPath(hostPath);
+		host.setHostName(hostName);
 		host.setHostArguments(args.jsArgv, args.jsArgc);
 
 		JL_ASSERT_WARN( !(!args.inlineScript && args.jsArgc == 0 && !args.useFileBootstrapScript && sizeof(embeddedBootstrapScript)-1 == 0), E_SCRIPT, E_NOTFOUND );

@@ -98,9 +98,11 @@ FinalizeCipher( JS::HandleObject obj, bool wipe ) {
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
 		return;
-	FinalizeCipher(obj, false);
+
+	JS::RootedObject o(fop->runtime(), obj);
+	FinalizeCipher(o, false);
 }
 
 /**doc
@@ -151,6 +153,8 @@ $TOC_MEMBER $INAME
 // mode, cipher, key, IV
 DEFINE_CONSTRUCTOR() {
 	
+	JL_DEFINE_ARGS;
+
 	CipherPrivate *pv = NULL; // see. bad label
 	JLData modeName, cipherName, key, IV, optarg;
 
@@ -283,7 +287,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( err != CRYPT_OK )
 		JL_CHK( ThrowCryptError(cx, err) );
 
-	JL_SetPrivate(obj, pv);
+	JL_SetPrivate(JL_OBJ, pv);
 	return true;
 
 bad:
@@ -309,13 +313,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( wipe ) {
 
-	JL_IGNORE(argc);
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	FinalizeCipher(obj, true);
-	JL_SetPrivate( obj, NULL);
+	FinalizeCipher(JL_OBJ, true);
+	JL_SetPrivate(JL_OBJ, NULL);
 	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
@@ -329,6 +333,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( encrypt ) {
 
+	JL_DEFINE_ARGS;
+
 	JLData pt;
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -336,7 +342,7 @@ DEFINE_FUNCTION( encrypt ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	CipherPrivate *pv;
-	pv = (CipherPrivate *)JL_GetPrivate( obj );
+	pv = (CipherPrivate *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pt) );
@@ -397,6 +403,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( decrypt ) {
 
+	JL_DEFINE_ARGS;
+
 	JLData ct;
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -404,7 +412,7 @@ DEFINE_FUNCTION( decrypt ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	CipherPrivate *pv;
-	pv = (CipherPrivate *)JL_GetPrivate( obj );
+	pv = (CipherPrivate *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 //	const char *ct;
@@ -465,14 +473,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( blockLength ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	*vp = INT_TO_JSVAL( pv->descriptor->block_length );
+	JL_RVAL.setInt32(pv->descriptor->block_length);
 	return true;
 	JL_BAD;
 }
@@ -505,7 +513,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( name ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -515,7 +523,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 	JSString *jsstr;
 	jsstr = JS_NewStringCopyZ(cx, pv->descriptor->name);
 	JL_CHK( jsstr );
-	*vp = STRING_TO_JSVAL( jsstr );
+	JL_RVAL.setString(jsstr);
 	return true;
 	JL_BAD;
 }
@@ -528,7 +536,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( IV ) {
 
-	JL_IGNORE(id, strict);
+	JL_DEFINE_PROP_ARGS;
 
 	JLData IV;
 
@@ -541,7 +549,7 @@ DEFINE_PROPERTY_SETTER( IV ) {
 //	const char *IV;
 //	size_t IVLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &IV, &IVLength) );
-	JL_CHK( JL_JsvalToNative(cx, *vp, &IV) );
+	JL_CHK( JL_JsvalToNative(cx, JL_RVAL, &IV) );
 
 	int err;
 	switch ( pv->mode ) {
@@ -606,7 +614,7 @@ DEFINE_PROPERTY_SETTER( IV ) {
 
 DEFINE_PROPERTY_GETTER( IV ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -623,7 +631,7 @@ DEFINE_PROPERTY_GETTER( IV ) {
 
 		case mode_ecb:
 			JL_WARN( E_STR("IV"), E_NOTSUPPORTED, E_COMMENT("ECB") );
-			*vp = JSVAL_VOID;
+			JL_RVAL.setUndefined();
 			return true;
 		case mode_cfb: {
 			symmetric_CFB *tmp = (symmetric_CFB *)pv->symmetric_XXX;
@@ -701,28 +709,30 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( list ) {
 
+	JL_DEFINE_PROP_ARGS;
+
 	JS::RootedObject list(cx, JL_NewObj(cx));
 	int i;
-	jsval tmp;
+	JS::RootedValue tmp(cx);
 	LTC_MUTEX_LOCK(&ltc_cipher_mutex);
 	for ( i = 0; cipher_is_valid(i) == CRYPT_OK; ++i ) {
 
 		JS::RootedObject desc(cx, JL_NewObj(cx));
-		tmp = OBJECT_TO_JSVAL( desc );
-		JS_SetProperty( cx, list, cipher_descriptor[i].name, &tmp );
+		tmp.setObject(*desc);
+		JS_SetProperty( cx, list, cipher_descriptor[i].name, tmp );
 
 		tmp = INT_TO_JSVAL( cipher_descriptor[i].min_key_length );
-		JS_SetProperty( cx, desc, "minKeyLength", &tmp );
+		JS_SetProperty( cx, desc, "minKeyLength", tmp );
 		tmp = INT_TO_JSVAL( cipher_descriptor[i].max_key_length );
-		JS_SetProperty( cx, desc, "maxKeyLength", &tmp );
+		JS_SetProperty( cx, desc, "maxKeyLength", tmp );
 		tmp = INT_TO_JSVAL( cipher_descriptor[i].block_length );
-		JS_SetProperty( cx, desc, "blockLength", &tmp );
+		JS_SetProperty( cx, desc, "blockLength", tmp );
 		tmp = INT_TO_JSVAL( cipher_descriptor[i].default_rounds );
-		JS_SetProperty( cx, desc, "defaultRounds", &tmp );
+		JS_SetProperty( cx, desc, "defaultRounds", tmp );
 	}
 	LTC_MUTEX_UNLOCK(&ltc_cipher_mutex);
 
-	*vp = OBJECT_TO_JSVAL(list);
+	JL_RVAL.setObject(*list);
 	return jl::StoreProperty(cx, obj, id, vp, true); // create the list and store it once for all.
 }
 

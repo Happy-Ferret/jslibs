@@ -1543,6 +1543,34 @@ JL_ObjectIsInstanceOf( JSContext *, JS::HandleObject obj, JSClass *clasp ) {
 
 
 
+namespace jl {
+
+// value/object types in a jslibs point of view
+
+ALWAYS_INLINE bool FASTCALL
+isString( JSContext *cx, JS::HandleObject obj ) {
+
+	ASSERT( obj );
+	JS::RootedObject proto(cx);
+	return JL_GetClassPrototype(cx, JSProto_String, &proto) && JL_GetClass(obj) == JL_GetClass(proto);
+}
+
+ALWAYS_INLINE bool FASTCALL
+isString( JSContext *cx, JS::HandleValue val ) {
+
+	if ( val.isString() )
+		return true;
+	
+	if ( !val.isObject() )
+		return false;
+
+	JS::RootedObject obj(cx, &val.toObject());
+	return isString(cx, obj);
+}
+
+// ... isData, isArray, isNumber, isBoolean, etc
+
+}
 
 
 

@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include <jslibsModule.cpp>
+#include <jslibsModule.h>
 
 #if defined(_MSC_VER)
 #pragma comment(lib, "advapi32.lib") // rng_get_bytes.obj (function _rng_win32) needs __imp__CryptReleaseContext@8, __imp__CryptGenRandom@12, __imp__CryptAcquireContextA@20
@@ -40,7 +40,7 @@ $MODULE_FOOTER
 **/
 
 bool
-ModuleInit(JSContext *cx, JS::HandleObject obj, uint32_t id) {
+ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	const struct ltc_cipher_descriptor * cipherList[] = {
 		&blowfish_desc,
@@ -90,7 +90,9 @@ ModuleInit(JSContext *cx, JS::HandleObject obj, uint32_t id) {
 		&sober128_desc,
 	};
 
-	JL_CHK( InitJslibsModule(cx, id)  );
+
+	JLDisableThreadNotifications();
+	JL_ASSERT(jl::Host::getHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 
 #ifdef GMP_DESC
 	ltc_mp = gmp_desc; // register math

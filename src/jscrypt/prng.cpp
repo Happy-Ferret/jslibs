@@ -25,10 +25,10 @@ BEGIN_CLASS( Prng )
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
 		return;
 
-	PrngPrivate *pv = (PrngPrivate *)JL_GetPrivate( obj );
+	PrngPrivate *pv = (PrngPrivate *)js::GetObjectPrivate(obj);
 	if ( !pv )
 		return;
 
@@ -49,6 +49,8 @@ $TOC_MEMBER $INAME
     * sober128
 **/
 DEFINE_CONSTRUCTOR() {
+
+	JL_DEFINE_ARGS;
 
 	PrngPrivate *pv = NULL;
 	JLData prngName;
@@ -78,7 +80,7 @@ DEFINE_CONSTRUCTOR() {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx,err);
 
-	JL_SetPrivate(obj, pv);
+	JL_SetPrivate(JL_OBJ, pv);
 	return true;
 bad:
 	jl_free(pv);
@@ -111,12 +113,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(0,1);
 
 	PrngPrivate *pv;
-	pv = (PrngPrivate *)JL_GetPrivate( obj );
+	pv = (PrngPrivate *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	unsigned long readCount, actualRead;
@@ -143,6 +147,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( addEntropy ) {
 
+	JL_DEFINE_ARGS;
+
 	JLData entropy;
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -150,7 +156,7 @@ DEFINE_FUNCTION( addEntropy ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	PrngPrivate *pv;
-	pv = (PrngPrivate *)JL_GetPrivate( obj );
+	pv = (PrngPrivate *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &entropy) );
@@ -175,12 +181,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( autoEntropy ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	PrngPrivate *pv;
-	pv = (PrngPrivate *)JL_GetPrivate( obj );
+	pv = (PrngPrivate *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	unsigned int bits;
@@ -206,6 +214,8 @@ $TOC_MEMBER $INAME
   is the current state of the prng.
 **/
 DEFINE_PROPERTY_GETTER( state ) {
+
+	JL_DEFINE_PROP_ARGS;
 
 	JL_IGNORE(id);
 
@@ -240,7 +250,8 @@ DEFINE_PROPERTY_GETTER( state ) {
 
 DEFINE_PROPERTY_SETTER( state ) {
 
-	JL_IGNORE(id, strict);
+	JL_DEFINE_PROP_ARGS;
+
 	JLData state;
 
 	JL_ASSERT_THIS_INSTANCE();
@@ -248,7 +259,7 @@ DEFINE_PROPERTY_SETTER( state ) {
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_CHK( JL_JsvalToNative(cx, *vp, &state) );
+	JL_CHK( JL_JsvalToNative(cx, JL_RVAL, &state) );
 	JL_CHKM( state.Length() == (size_t)pv->prng.export_size, E_VALUE, E_LENGTH, E_NUM(pv->prng.export_size) );
 
 	int err;
@@ -267,7 +278,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( name ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -275,7 +286,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 	pv = (PrngPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	*vp = STRING_TO_JSVAL( JS_NewStringCopyZ(cx,pv->prng.name) );
+	JL_RVAL.setString(JS_NewStringCopyZ(cx,pv->prng.name));
 	return true;
 	JL_BAD;
 }
@@ -287,6 +298,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( list ) {
 
+	JL_DEFINE_PROP_ARGS;
+
 	JS::RootedObject listObj(cx, JL_NewObj(cx));
 	
 	JS::RootedValue value(cx);
@@ -295,11 +308,11 @@ DEFINE_PROPERTY_GETTER( list ) {
 	for ( i=0; prng_is_valid(i) == CRYPT_OK; i++ ) {
 
 		value = JSVAL_ONE;
-		JS_SetProperty( cx, listObj, prng_descriptor[i].name, &value );
+		JS_SetProperty( cx, listObj, prng_descriptor[i].name, value );
 	}
 	LTC_MUTEX_UNLOCK(&ltc_prng_mutex);
 
-	*vp = OBJECT_TO_JSVAL(listObj);
+	JL_RVAL.setObject(*listObj);
 	return jl::StoreProperty(cx, obj, id, vp, true); // create the list and store it once for all.
 }
 

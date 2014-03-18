@@ -421,6 +421,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JL_DEFINE_ARGS;
+
 	Private *pv = NULL;
 
 	{
@@ -444,7 +446,7 @@ DEFINE_CONSTRUCTOR() {
 	SetThreadPriority(pv->thread, THREAD_PRIORITY_ABOVE_NORMAL);
 	WaitForSingleObject(pv->systrayEvent, INFINITE); // first pulse
 
-	JL_SetPrivate(obj, pv);
+	JL_SetPrivate(JL_OBJ, pv);
 	return true;
 	}
 
@@ -475,7 +477,7 @@ CloseSystray(JSRuntime *rt, Private *pv) {
 	CloseHandle(pv->thread); // doc: The thread object remains in the system until the thread has terminated and all handles to it have been closed through a call to CloseHandle.
 	CloseHandle(pv->systrayEvent);
 	
-	if ( !JL_GetHostPrivate(rt)->canSkipCleanup ) { // do not cleanup in unsafe mode ?
+	if ( jl::Host::getHost(rt).hostRuntime().skipCleanup() ) { // do not cleanup in unsafe mode ?
 
 		while ( !jl::QueueIsEmpty(&pv->msgQueue) )
 			jl_free(jl::QueuePop(&pv->msgQueue));
@@ -490,7 +492,7 @@ CloseSystray(JSRuntime *rt, Private *pv) {
 
 DEFINE_FINALIZE() {
 
-	Private *pv = (Private*)JL_GetPrivate(obj);
+	Private *pv = (Private*)js::GetObjectPrivate(obj);
 	if ( !pv )
 		return;
 	CloseSystray(fop->runtime(), pv);
@@ -514,8 +516,8 @@ DEFINE_FUNCTION( close ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(obj);
-	JL_SetPrivate(obj, NULL);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
+	JL_SetPrivate(JL_OBJ, NULL);
 	CloseSystray(JL_GetRuntime(cx), pv);
 	
 	JL_RVAL.setUndefined();
@@ -524,13 +526,13 @@ DEFINE_FUNCTION( close ) {
 }
 
 
-bool ProcessSystrayMessage( JSContext *cx, JSObject *obj, const MSGInfo *trayMsg, jsval *rval ) {
+bool ProcessSystrayMessage( JSContext *cx, JS::HandleObject obj, const MSGInfo *trayMsg, JS::MutableHandleValue rval ) {
 
 	UINT message = trayMsg->message;
 	LPARAM lParam = trayMsg->lParam;
 	WPARAM wParam = trayMsg->wParam;
 
-	jsval functionVal;
+	JS::RootedValue functionVal(cx);
 
 //	char dbg[65535];  sprintf(dbg, "msg: %x\n", message);  OutputDebugString(dbg);
 
@@ -539,13 +541,13 @@ bool ProcessSystrayMessage( JSContext *cx, JSObject *obj, const MSGInfo *trayMsg
 		case WM_SETFOCUS:
 			JL_CHK( JS_GetProperty(cx, obj, "onfocus", &functionVal) );
 			if ( JL_ValueIsCallable(cx, functionVal) )
-				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, JSVAL_TRUE ) );
+				JL_CHK( JL_CallFunctionVA(cx, obj, functionVal, rval, JL_TRUE()) );
 			break;
 
 		case WM_KILLFOCUS:
 			JL_CHK( JS_GetProperty(cx, obj, "onblur", &functionVal) );
 			if ( JL_ValueIsCallable(cx, functionVal) )
-				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, JSVAL_FALSE ) );
+				JL_CHK( JL_CallFunctionVA(cx, obj, functionVal, rval, JL_FALSE()) );
 			break;
 
 		case WM_CHAR:
@@ -553,7 +555,9 @@ bool ProcessSystrayMessage( JSContext *cx, JSObject *obj, const MSGInfo *trayMsg
 			if ( JL_ValueIsCallable(cx, functionVal) ) {
 
 				char c = jl::SafeCast<char>(wParam);
-				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, STRING_TO_JSVAL( JS_NewStringCopyN(cx, &c, 1) ) ) );
+				JS::RootedValue ch(cx);
+				ch.setString(JS_NewStringCopyN(cx, &c, 1));
+				JL_CHK( JL_CallFunctionVA(cx, obj, functionVal, rval, ch) );
 			}
 			break;
 
@@ -562,8 +566,9 @@ bool ProcessSystrayMessage( JSContext *cx, JSObject *obj, const MSGInfo *trayMsg
 			JL_CHK( JS_GetProperty(cx, obj, "onclose", &functionVal) );
 			if ( JL_ValueIsCallable(cx, functionVal) ) {
 
-				bool endCase = message == WM_ENDSESSION && lParam == 0;
-				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, BOOLEAN_TO_JSVAL(endCase) ) );
+				JS::RootedValue tmp(cx);
+				tmp.setBoolean(message == WM_ENDSESSION && lParam == 0);
+				JL_CHK( JL_CallFunctionVA(cx, obj, functionVal, rval, tmp) );
 			}
 			break;
 
@@ -571,11 +576,14 @@ bool ProcessSystrayMessage( JSContext *cx, JSObject *obj, const MSGInfo *trayMsg
 			JL_CHK( JS_GetProperty(cx, obj, "oncommand", &functionVal) );
 			if ( JL_ValueIsCallable(cx, functionVal) ) {
 
-				jsval key;
 				S_ASSERT( sizeof(jsid) == sizeof(wParam) );
-				JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) );
-				int mButton = trayMsg->lButton ? 1 : trayMsg->rButton ? 2 : 0;
-				JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, key, INT_TO_JSVAL( mButton ) ) );
+				JS::RootedValue key(cx);
+				JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) ); // to change
+
+				JS::RootedValue mButton(cx);
+				mButton.setInt32(trayMsg->lButton ? 1 : trayMsg->rButton ? 2 : 0);
+
+				JL_CHK( JL_CallFunctionVA(cx, obj, functionVal, rval, key, mButton) );
 				Private *pv = (Private*)JL_GetPrivate(obj);
 				if ( pv )
 					FreePopupMenuRoots(pv);
@@ -591,11 +599,17 @@ bool ProcessSystrayMessage( JSContext *cx, JSObject *obj, const MSGInfo *trayMsg
 					JL_CHK( JS_GetProperty(cx, obj, "onidle", &functionVal) );
 					if ( JL_ValueIsCallable(cx, functionVal) ) {
 
-						jsval key;
 						S_ASSERT( sizeof(jsid) == sizeof(wParam) );
-						JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) );
-						int mButton = trayMsg->lButton ? 1 : trayMsg->rButton ? 2 : 0;
-						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, key, INT_TO_JSVAL( mButton ) ) );
+
+						JS::RootedValue key(cx);
+						JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) ); // to change
+
+						JS::RootedValue mButton(cx);
+						mButton.setInt32(trayMsg->lButton ? 1 : trayMsg->rButton ? 2 : 0);
+
+						JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) ); // to change
+
+						JL_CHK( JL_CallFunctionVA(cx, obj, functionVal, rval, key, mButton) );
 					}
 				break;
 			}
@@ -608,43 +622,61 @@ bool ProcessSystrayMessage( JSContext *cx, JSObject *obj, const MSGInfo *trayMsg
 				case WM_MOUSEHOVER:
 					JL_CHK( JS_GetProperty(cx, obj, "onmouseenter", &functionVal) );
 					if ( JL_ValueIsCallable(cx, functionVal) )
-						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, JSVAL_TRUE ) );
+						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, JL_TRUE() ) );
 					break;
 
 				case WM_MOUSELEAVE:
 					JL_CHK( JS_GetProperty(cx, obj, "onmouseleave", &functionVal) );
 					if ( JL_ValueIsCallable(cx, functionVal) )
-						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, JSVAL_FALSE ) );
+						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, JL_FALSE() ) );
 					break;
 
 				case WM_MOUSEMOVE:
 					JL_CHK( JS_GetProperty(cx, obj, "onmousemove", &functionVal) );
-					if ( JL_ValueIsCallable(cx, functionVal) )
-						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, INT_TO_JSVAL( trayMsg->mousePos.x ), INT_TO_JSVAL( trayMsg->mousePos.y ) ) );
+					if ( JL_ValueIsCallable(cx, functionVal) ) {
+
+						JS::RootedValue x(cx);
+						JS::RootedValue y(cx);
+						x.setInt32(trayMsg->mousePos.x);
+						y.setInt32(trayMsg->mousePos.y);
+						JL_CHK( JL_CallFunctionVA(cx, obj, functionVal, rval, x, y) );
+					}
 					break;
 
 				case WM_LBUTTONDOWN:
 				case WM_MBUTTONDOWN:
 				case WM_RBUTTONDOWN:
 					JL_CHK( JS_GetProperty(cx, obj, "onmousedown", &functionVal) );
-					if ( JL_ValueIsCallable(cx, functionVal) )
-						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, INT_TO_JSVAL( lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0 ), JSVAL_TRUE ) );
+					if ( JL_ValueIsCallable(cx, functionVal) ) {
+
+						JS::RootedValue mButton(cx);
+						mButton.setInt32(lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0);
+						JL_CHK( JL_CallFunctionVA(cx, obj, functionVal, rval, mButton, JL_TRUE()) );
+					}
 					break;
 
 				case WM_LBUTTONUP:
 				case WM_MBUTTONUP:
 				case WM_RBUTTONUP:
 					JL_CHK( JS_GetProperty(cx, obj, "onmouseup", &functionVal) );
-					if ( JL_ValueIsCallable(cx, functionVal) )
-						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, INT_TO_JSVAL( lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0 ), JSVAL_FALSE ) );
+					if ( JL_ValueIsCallable(cx, functionVal) ) {
+
+						JS::RootedValue mButton(cx);
+						mButton.setInt32(lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0);
+						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, mButton, JL_FALSE() ) );
+					}
 					break;
 
 				case WM_LBUTTONDBLCLK:
 				case WM_MBUTTONDBLCLK:
 				case WM_RBUTTONDBLCLK:
 					JL_CHK( JS_GetProperty(cx, obj, "onmousedblclick", &functionVal) );
-					if ( JL_ValueIsCallable(cx, functionVal) )
-						JL_CHK( JL_CallFunctionVA( cx, obj, functionVal, rval, INT_TO_JSVAL( lParam==WM_LBUTTONDBLCLK ? 1 : lParam==WM_RBUTTONDBLCLK ? 2 : lParam==WM_MBUTTONDBLCLK ? 3 : 0 ) ) );
+					if ( JL_ValueIsCallable(cx, functionVal) ) {
+
+						JS::RootedValue mButton(cx);
+						mButton.setInt32(lParam==WM_LBUTTONDBLCLK ? 1 : lParam==WM_RBUTTONDBLCLK ? 2 : lParam==WM_MBUTTONDBLCLK ? 3 : 0);
+						JL_CHK( JL_CallFunctionVA(cx, obj, functionVal, rval, mButton) );
+					}
 					break;
 			} // switch lParam
 	} //  switch message
@@ -668,7 +700,7 @@ DEFINE_FUNCTION( processEvents ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	MSGInfo *trayMsg;
@@ -677,7 +709,7 @@ DEFINE_FUNCTION( processEvents ) {
 		EnterCriticalSection(&pv->cs);
 		trayMsg = (MSGInfo*)jl::QueueShift(&pv->msgQueue);
 		LeaveCriticalSection(&pv->cs);
-		JL_CHK( ProcessSystrayMessage(cx, obj, trayMsg, JL_RVAL) );
+		JL_CHK( ProcessSystrayMessage(cx, JL_OBJ, trayMsg, JL_RVAL) );
 		jl_free(trayMsg);
 	}	
 	return true;
@@ -691,74 +723,66 @@ $TOC_MEMBER $INAME
   Passively waits for Systray events through the processEvents function.
 **/
 
-struct SystrayUserProcessEvent {
-	ProcessEvent pe;
+struct SystrayEvent : public ProcessEvent2 {
 	HANDLE cancelEvent;
 	HANDLE systrayEvent;
-	JSObject *systrayObj;
-};
 
-S_ASSERT( offsetof(SystrayUserProcessEvent, pe) == 0 );
+	~SystrayEvent() {
 
-static bool SystrayPrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
+		CloseHandle(cancelEvent);
+		CloseHandle(systrayEvent);
+	}
+
+	bool prepareWait(JSContext *cx, JS::HandleObject obj) {
 	
-	return true;
-}
-
-void SystrayStartWait( volatile ProcessEvent *pe ) {
-
-	SystrayUserProcessEvent *upe = (SystrayUserProcessEvent*)pe;
-	HANDLE events[] = { upe->systrayEvent, upe->cancelEvent };
-	DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
-	ASSERT( status != WAIT_FAILED );
-}
-
-bool SystrayCancelWait( volatile ProcessEvent *pe ) {
-
-	SystrayUserProcessEvent *upe = (SystrayUserProcessEvent*)pe;
-	SetEvent(upe->cancelEvent);
-	return true;
-}
-
-bool SystrayEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject *obj ) {
-
-	JL_IGNORE( obj );
-
-	SystrayUserProcessEvent *upe = (SystrayUserProcessEvent*)pe;
-	Private *pv = (Private*)JL_GetPrivate(upe->systrayObj);
-	
-	if ( pv == NULL ) { // maybe Systray::close() has been called in between
-
 		return true;
 	}
 
-	*hasEvent = !jl::QueueIsEmpty(&pv->msgQueue);
+	void startWait() {
 
-	bool ok;
-	jsval rval;
-	MSGInfo *trayMsg;
-	while ( !jl::QueueIsEmpty(&pv->msgQueue) ) {
+		HANDLE events[] = { systrayEvent, cancelEvent };
+		DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
+		ASSERT( status != WAIT_FAILED );
+	}
 
-		EnterCriticalSection(&pv->cs);
-		trayMsg = (MSGInfo*)jl::QueueShift(&pv->msgQueue);
-		LeaveCriticalSection(&pv->cs);
-		ok = ProcessSystrayMessage(cx, upe->systrayObj, trayMsg, &rval);
-		jl_free(trayMsg);
-		JL_CHK( ok );
+	bool cancelWait() {
 
-		if ( JL_GetPrivate(upe->systrayObj) == NULL ) // maybe Systray::close() has been called in between
-			break;
-	}	
-	return true;
-	JL_BAD;
-}
+		SetEvent(cancelEvent);
+		return true;
+	}
 
-void SystrayWaitFinalize( void* pe ) {
+	bool endWait(bool *hasEvent, JSContext *cx, JS::HandleObject) {
 
-	SystrayUserProcessEvent *upe = (SystrayUserProcessEvent*)pe;
-	CloseHandle(upe->cancelEvent);
-	CloseHandle(upe->systrayEvent);
-}
+		JS::RootedObject systrayObj(cx, &slot(0).toObject());
+
+		Private *pv = (Private*)JL_GetPrivate(systrayObj);
+	
+		if ( pv == NULL ) { // maybe Systray::close() has been called in between
+
+			return true;
+		}
+
+		*hasEvent = !jl::QueueIsEmpty(&pv->msgQueue);
+
+		bool ok;
+		JS::RootedValue rval(cx);
+		MSGInfo *trayMsg;
+		while ( !jl::QueueIsEmpty(&pv->msgQueue) ) {
+
+			EnterCriticalSection(&pv->cs);
+			trayMsg = (MSGInfo*)jl::QueueShift(&pv->msgQueue);
+			LeaveCriticalSection(&pv->cs);
+			ok = ProcessSystrayMessage(cx, systrayObj, trayMsg, &rval);
+			jl_free(trayMsg);
+			JL_CHK( ok );
+
+			if ( JL_GetPrivate(systrayObj) == NULL ) // maybe Systray::close() has been called in between
+				break;
+		}	
+		return true;
+		JL_BAD;
+	}
+};
 
 DEFINE_FUNCTION( events ) {
 	
@@ -767,18 +791,15 @@ DEFINE_FUNCTION( events ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
-	Private *pv = (Private*)JL_GetPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	SystrayUserProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, SystrayWaitFinalize, JL_RVAL) );
-	upe->pe.prepareWait = SystrayPrepareWait;
-	upe->pe.startWait = SystrayStartWait;
-	upe->pe.cancelWait = SystrayCancelWait;
-	upe->pe.endWait = SystrayEndWait;
 
-	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(obj)) ); // GC protection
-	upe->systrayObj = obj;
+	SystrayEvent *upe = new SystrayEvent();
+	JL_CHK( HandleCreate(cx, &upe, JL_RVAL) );
+
+	upe->hslot(0).set(JL_OBJVAL);
+
 
 	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset
 	if ( upe->cancelEvent == NULL )
@@ -802,13 +823,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( focus ) {
 
-	JL_IGNORE( argc );
-
 	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	SetForegroundWindow(pv->nid.hWnd);
 
@@ -817,14 +836,14 @@ DEFINE_FUNCTION( focus ) {
 	JL_BAD;
 }
 
-ALWAYS_INLINE bool NormalizeMenuInfo( JSContext *cx, JSObject *obj, const jsval key, jsval *value ) {
+ALWAYS_INLINE bool NormalizeMenuInfo( JSContext *cx, JS::HandleObject obj, JS::HandleValue key, JS::MutableHandleValue value ) {
 
-	if ( JL_ValueIsCallable(cx, *value) )
-		return JL_CallFunctionVA(cx, obj, *value, value, key);
+	if ( JL_ValueIsCallable(cx, value) )
+		return JL_CallFunctionVA(cx, obj, value, value, key);
 	return true;
 }
 
-bool FillMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *hMenu ) {
+bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menuObj, HMENU *hMenu ) {
 
 //	*hMenu = CreatePopupMenu();
 	ASSERT( *hMenu != NULL );
@@ -842,16 +861,18 @@ bool FillMenu( JSContext *cx, JSObject *systrayObj, JSObject *menuObj, HMENU *hM
 		HMENU popupMenu;
 		IFDEBUG( popupMenu = NULL ); // avoid "potentially uninitialized local variable" warning
 
-		jsval item;
-		JL_CHK( JL_GetElement(cx, menuObj, i, item) );
+		JS::RootedValue item(cx);
+		JL_CHK( JL_GetElement(cx, menuObj, i, &item) );
 
-		JL_CHK( NormalizeMenuInfo(cx, menuObj, INT_TO_JSVAL(i), &item) );
+		JS::RootedValue key(cx);
+		key.setInt32(i);
+		JL_CHK( NormalizeMenuInfo(cx, menuObj, key, &item) );
 
 		if ( item.isNull() || item.isUndefined() ) {
 
 			uFlags |= MF_SEPARATOR;
 		} else 
-			if ( item.isString() || (item.isObject() && JL_ObjectIsString(cx, &item.toObject())) ) {
+		if ( jl::isString(cx, item) ) {
 
 			label = item;
 			cmdid = item;

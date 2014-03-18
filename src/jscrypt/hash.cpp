@@ -32,10 +32,9 @@ BEGIN_CLASS( Hash )
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
 		return;
-
-	HashPrivate *pv = (HashPrivate *)JL_GetPrivate(obj);
+	HashPrivate *pv = (HashPrivate *)js::GetObjectPrivate(obj);
 	jl_free(pv); // NULL is supported but is quite rare.
 }
 
@@ -65,6 +64,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
+	JL_DEFINE_ARGS;
+
 	HashPrivate *pv = NULL;
 	JLData hashName;
 
@@ -92,7 +93,7 @@ DEFINE_CONSTRUCTOR() {
 	pv->inputLength = 0;
 	pv->isValid = true;
 
-	JL_SetPrivate(obj, pv);
+	JL_SetPrivate(JL_OBJ, pv);
 	return true;
 
 bad:
@@ -101,7 +102,7 @@ bad:
 }
 
 
-/**doc
+/* *doc
 $TOC_MEMBER $INAME
  $DATA $INAME( data )
   This is the call operator of the object. It simplifies the usage of hashes and allows a digest calculation in one go.
@@ -116,8 +117,10 @@ $TOC_MEMBER $INAME
   var md5 = new Hash('md5');
   print( hexEncode( md5('foobar') ) ); // prints: 3858F62230AC3C915F300C664312C63F
   }}}
-**/
+** /
 DEFINE_CALL() {
+
+	JL_DEFINE_ARGS;
 
 	JLData in;
 
@@ -153,7 +156,7 @@ DEFINE_CALL() {
 	return true;
 	JL_BAD;
 }
-
+*/
 
 /**doc
 === Methods ===
@@ -166,13 +169,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( write ) {
 
+	JL_DEFINE_ARGS;
+
 	JLData in;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
 	HashPrivate *pv;
-	pv = (HashPrivate *)JL_GetPrivate(obj);
+	pv = (HashPrivate *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv && pv->isValid );
 
 	if ( JL_ARG_ISDEF(1) ) {
@@ -212,14 +217,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( done ) {
 
-	JL_IGNORE(argc);
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
 	HashPrivate *pv;
-	pv = (HashPrivate *)JL_GetPrivate(obj);
+	pv = (HashPrivate *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv && pv->isValid );
 
 	unsigned long outLength;
@@ -247,12 +252,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( reset ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
 	HashPrivate *pv;
-	pv = (HashPrivate *)JL_GetPrivate(obj);
+	pv = (HashPrivate *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	int err;
@@ -279,7 +286,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( name ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 	HashPrivate *pv;
@@ -288,7 +295,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 	JSString *jsstr;
 	jsstr = JS_NewStringCopyZ(cx, pv->descriptor->name );
 	JL_CHK( jsstr );
-	*vp = STRING_TO_JSVAL( jsstr );
+	JL_RVAL.setString(jsstr);
 	return true;
 	JL_BAD;
 }
@@ -300,13 +307,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( blockSize ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	*vp = INT_TO_JSVAL( pv->descriptor->blocksize );
+	JL_RVAL.setInt32(pv->descriptor->blocksize);
 	return true;
 	JL_BAD;
 }	
@@ -318,13 +325,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( length ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	*vp = INT_TO_JSVAL( pv->descriptor->hashsize );
+	JL_RVAL.setInt32(pv->descriptor->hashsize);
 	return true;
 	JL_BAD;
 }	
@@ -336,7 +343,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( inputLength ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 	HashPrivate *pv;
@@ -360,6 +367,8 @@ $TOC_MEMBER $INAME
    In particular this allows a cryptosystem to be designed using very few moving parts.   
 **/
 DEFINE_FUNCTION( cipherHash ) {
+
+	JL_DEFINE_ARGS;
 
 	JLData cipherName;
 
@@ -398,6 +407,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( list ) {
 
+	JL_DEFINE_PROP_ARGS;
+
 	JS::RootedObject list(cx, JL_NewObj(cx));
 	JS::RootedValue value(cx);
 	int i;
@@ -406,16 +417,16 @@ DEFINE_PROPERTY_GETTER( list ) {
 
 		JS::RootedObject desc(cx, JL_NewObj(cx));
 		value = OBJECT_TO_JSVAL(desc);
-		JS_SetProperty( cx, list, hash_descriptor[i].name, &value );
+		JS_SetProperty( cx, list, hash_descriptor[i].name, value );
 
 		value = INT_TO_JSVAL( hash_descriptor[i].hashsize );
-		JS_SetProperty( cx, desc, "hashSize", &value );
+		JS_SetProperty( cx, desc, "hashSize", value );
 		value = INT_TO_JSVAL( hash_descriptor[i].blocksize );
-		JS_SetProperty( cx, desc, "blockSize", &value );
+		JS_SetProperty( cx, desc, "blockSize", value );
 	}
 	LTC_MUTEX_UNLOCK(&ltc_hash_mutex);
 
-	*vp = OBJECT_TO_JSVAL(list);
+	JL_RVAL.setObject(*list);
 	return jl::StoreProperty(cx, obj, id, vp, true); // create the list and store it once for all.
 }
 
@@ -426,7 +437,7 @@ CONFIGURE_CLASS
 	HAS_PRIVATE
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
-	HAS_CALL
+//	HAS_CALL
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION_ARGC( reset, 0 )

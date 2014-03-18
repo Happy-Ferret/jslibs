@@ -936,36 +936,20 @@ JSClass myClass = {
 JS_InitClass(cx, globalObject, NULL, &myClass, Constructor, 0, NULL, NULL, NULL, NULL);
 */
 
-int main_min_run(JSContext *cx, JSClass *globalClasp) {
 
-//	size_t p1 = GetEIP();
-//	size_t p2 = GetEIP() - p1;
-//	printf("%d\n", p2);
+JSClass globalClass = {
+	"global", JSCLASS_GLOBAL_FLAGS,
+	JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub
+};
 
-	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, globalClasp, NULL, JS::FireOnNewGlobalHook) );
 
-/*
-//	AutoVectorRooter
-	JS::AutoArrayRooter rt(cx, 10, JS::NullPtr());
-	JS::RootedValue valTmp(cx);
-	valTmp = rt.handleAt(9);
-	printf("%d\n", valTmp.toInt32());
-*/
-/*
-	JS::RootedValue tmp(cx);
-	mozilla::Vector<JS::PersistentRootedValue,8> descVal;
-	descVal.append(JS::PersistentRootedValue(cx, tmp));
-*/
 
-//	JS::RootedVector<JS::Value> arr;
+int main_run(JSContext *cx) {
+
+	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &globalClass, NULL, JS::FireOnNewGlobalHook) );
+
 	JSAutoCompartment ac(cx, globalObject);
-
-	JS::RootedObject test(cx);
-	JSObject *ptr = test;
-
-	 //JS_InternUCString(cx, (const wchar_t*)L"sdsadfsadf");
-	JS_NewUCStringCopyN(cx, (const wchar_t*)L"sdsadfsadf", 11);
-
 
 	char *scriptText = "(function() { return 123 })";
 	JS::CompileOptions compileOptions(cx);
@@ -980,59 +964,25 @@ int main_min_run(JSContext *cx, JSClass *globalClasp) {
 
 int main_min(int argc, char* argv[]) {
 
-	JSClass globalClass = {
-		"global", JSCLASS_GLOBAL_FLAGS,
-		JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
-		JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub
-	};
-
-
 	JS_Init();
-
     JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
 	JSContext *cx = JS_NewContext(rt, 8192L);
 
-	main_min_run(cx, &globalClass);
-	
+	main_run(cx);
+
 	JS_DestroyContext(cx);
-
-#ifdef DEBUG
-	JS_DumpHeap(rt, fopen("dump.txt", "w"), NULL, JSTRACE_OBJECT, NULL, 1, NULL);
-#endif // DEBUG
-
 	JS_DestroyRuntime(rt);
-
 	JS_ShutDown();
 
 	return EXIT_SUCCESS;
 }
 
 
-
-
-template <class T>
-class Auto {
-
-	T _fct;
-public:
-	Auto(T fct) : _fct(fct) {
-	}
-
-	~Auto() {
-		_fct();
-	}
-};
-
-
-int test() {
-}
-
 int main(int argc, char* argv[]) {
-
-	Auto abc(test);
 
 	//return main_test_class2(argc, argv);
 	//return main_PerfTest(argc, argv);
 	//return main_test_call(argc, argv);
 	return main_min(argc, argv);
+	
 }

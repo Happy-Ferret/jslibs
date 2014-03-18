@@ -1431,11 +1431,19 @@ Host::setHostArguments( char **hostArgv, size_t hostArgc ) {
 }
 
 bool
-Host::setHostName( const char *hostPath, const char *hostName ) {
+Host::setHostPath( const char *hostPath) {
+
+	JSContext *cx = _hostRuntime.context();
+	JL_CHK( JL_NativeToProperty(cx, _hostObject, JLID(cx, path), hostPath) );
+	return true;
+	JL_BAD;
+}
+
+bool
+Host::setHostName( const char *hostName ) {
 
 	JSContext *cx = _hostRuntime.context();
 	JL_CHK( JL_NativeToProperty(cx, _hostObject, JLID(cx, name), hostName) );
-	JL_CHK( JL_NativeToProperty(cx, _hostObject, JLID(cx, path), hostPath) );
 	return true;
 	JL_BAD;
 }

@@ -35,11 +35,17 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <CustomBuildAfterTargets Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">Build</CustomBuildAfterTargets>
+    <CustomBuildAfterTargets Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">Build</CustomBuildAfterTargets>
+    <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">
+    </CustomBuildBeforeTargets>
+    <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">
+    </CustomBuildBeforeTargets>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">
     <CustomBuildStep>
       <Command>copy /Y jswinhost.js "$(TargetDir)"</Command>
-      <Outputs>$(TargetDir)jswinhost.js;%(Outputs)</Outputs>
+      <Outputs>$(TargetDir)jswinhost.js</Outputs>
     </CustomBuildStep>
     <ClCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -52,7 +58,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">
     <CustomBuildStep>
       <Command>copy /Y jswinhost.js "$(TargetDir)"</Command>
-      <Outputs>$(TargetDir)jswinhost.js;%(Outputs)</Outputs>
+      <Outputs>$(TargetDir)jswinhost.js</Outputs>
     </CustomBuildStep>
     <ClCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

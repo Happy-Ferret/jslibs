@@ -1,25 +1,17 @@
 var loadModule = host.loadModule;
+
 loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsiconv'); throw 0; // -inlineOnly
-
-
-
-loadModule('jsstd'); exec('../common/tools.js');
+//loadModule('jsstd'); exec('../common/tools.js');
 //var QA = FakeQAApi;
 //runLocalQAFile();
 //runJsircbot(false); throw 0;
-
-runQATests('-rep 1 -exclude jstask jsiconv'); throw 0;
-
+//runQATests('-rep 1 -exclude jstask jsiconv'); throw 0;
 
 loadModule('jsstd'); 
 loadModule('jsiconv'); 
 
-
-throw 0;
-
-
 	var conv = new Iconv('UTF-8', 'ISO-8859-1', true, false); // source is not wide, dest is wide
-	var res = conv('été');
+	var res = conv.process('été');
 	//QA.ASSERT( res.length, 3, 'UC string length' );
 	print( res.length, '\n' );
 

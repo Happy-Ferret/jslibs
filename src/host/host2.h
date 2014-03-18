@@ -66,7 +66,6 @@ enum {
 	JLID_SPEC( buildDate ),
 	JLID_SPEC( _buildDate ),
 	JLID_SPEC( path ),
-	JLID_SPEC( isFirstInstance ),
 	JLID_SPEC( bootstrapScript ),
 	JLID_SPEC( _serialize ),
 	JLID_SPEC( _unserialize ),
@@ -114,6 +113,22 @@ public:
 		
 		JL_IGNORE(buffer, length);
 		return 0;
+	}
+};
+
+
+class AutoJSEngineInit {
+public:
+
+	AutoJSEngineInit() {
+
+		bool st = JS_Init();
+		ASSERT(st);
+	}
+
+	~AutoJSEngineInit() {
+
+		JS_ShutDown();
 	}
 };
 
@@ -935,7 +950,10 @@ public:
 	setHostArguments( char **hostArgv, size_t hostArgc );
 
 	bool
-	setHostName( const char *hostPath, const char *hostName );
+	setHostPath( const char *hostPath );
+
+	bool
+	setHostName( const char *hostName );
 
 	void
 	setHostObject(JS::HandleObject hostObj);

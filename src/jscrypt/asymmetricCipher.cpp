@@ -46,10 +46,10 @@ struct AsymmetricCipherPrivate {
 
 bool SlotGetPrng(JSContext *cx, JS::HandleObject obj, int *prngIndex, prng_state **prngState) {
 
-	jsval prngVal;
+	JS::RootedValue prngVal(cx);
 	JL_CHK( JL_GetReservedSlot( obj, ASYMMETRIC_CIPHER_PRNG_SLOT, &prngVal) );
-	JL_ASSERT_OBJECT_STATE( JSVAL_IS_OBJECT(prngVal), JL_CLASS_NAME(Prng) );
-	JL_ASSERT_INSTANCE( &prngVal.toObject(), JL_CLASS(Prng) );
+	JL_ASSERT_OBJECT_STATE( prngVal.isObject(), JL_CLASS_NAME(Prng) );
+	JL_ASSERT_INSTANCE( prngVal, JL_CLASS(Prng) );
 	PrngPrivate *prngPrivate;
 	prngPrivate = (PrngPrivate *)JL_GetPrivate(&prngVal.toObject());
 	JL_ASSERT_OBJECT_STATE( prngPrivate, JL_CLASS_NAME(Prng) );

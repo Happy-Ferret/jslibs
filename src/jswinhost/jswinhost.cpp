@@ -14,66 +14,198 @@
 
 #include "stdafx.h"
 
-// set stack to 2MB:
-#pragma comment (linker, "/STACK:0x200000")
+#define HOST_STACK_SIZE 4194304 // = 4 * 1024 * 1024
 
-#include <jslibsModule.cpp>
+// set stack to 4MB:
+#if defined(XP_WIN)
+	#pragma comment (linker, JL_TOSTRING(/STACK:HOST_STACK_SIZE))
+#elif defined(XP_UNIX)
+	#pragma stacksize HOST_STACK_SIZE
+	//char stack[HOST_STACK_SIZE] __attribute__ ((section ("STACK"))) = { 0 };
+	//init_sp(stack + sizeof (stack));
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
 
-#define NO_NED_NAMESPACE
-#define NO_MALLINFO 1
-#include "../../libs/nedmalloc/nedmalloc.h"
 
-static volatile bool disabledFree = false;
-
-void nedfree_handlenull(void *mem) {
-	
-	if ( mem != NULL && !disabledFree )
-		nedfree(mem);
-}
-
-size_t nedblksize_msize(void *mem) {
-
-	return nedblksize(0, mem);
-}
-
+#if defined(XP_WIN)
+#define USE_NEDMALLOC
+#endif
 
 static unsigned char embeddedBootstrapScript[] =
 	#include "embeddedBootstrapScript.js.xdr.cres"
 ;
 
 
-int HostStderr( void *, const char *buffer, size_t length ) {
+#ifdef DEBUG
+	class hostIO : public jl::StdIO {
+public:
+		int
+		output( const char *buffer, size_t length ) {
+			
+			char *tmp = (char*)jl_malloca(length+1);
+			jl::memcpy(tmp, buffer, length);
+			tmp[length] = '\0';
+			OutputDebugString(tmp);
+			jl_freea(tmp);
+			return length;
+		}
 
-	char *tmp = (char*)alloca(length+1);
-	jl::memcpy(tmp, buffer, length);
-	tmp[length] = '\0';
-	::OutputDebugString(tmp);
-	return 1;
-}
+		int
+		error( const char *buffer, size_t length ) {
+		
+			char *tmp = (char*)jl_malloca(8+length+1);
+			strcpy(tmp, "STDERR: ");
+			jl::memcpy(tmp+8, buffer, length);
+			tmp[length+8] = '\0';
+			OutputDebugString(tmp);
+			jl_freea(tmp);
+			return length;
+		}
+	} hostIO;
+#else
+	jl::StdIO hostIO;
+#endif
 
 
 // to be used in the main() function only
 #define HOST_MAIN_ASSERT( condition, errorMessage ) \
 	JL_MACRO_BEGIN \
 		if ( !(condition) ) { \
-			HostStderr(NULL, errorMessage, strlen(errorMessage)); \
+			hostIO.error(errorMessage, strlen(errorMessage)); \
 			goto bad; \
 		} \
 	JL_MACRO_END
 
 
+
+#ifdef USE_NEDMALLOC
+
+#define NO_NED_NAMESPACE
+#define NO_MALLINFO 1
+#include "../../libs/nedmalloc/nedmalloc.h"
+
+
+class NedAllocators : public jl::Allocators {
+	static volatile bool _skipCleanup;
+
+	static NOALIAS void
+	nedfree_handlenull(void *mem) NOTHROW {
+
+		if ( !_skipCleanup && mem != NULL )
+			nedfree(mem);
+	}
+
+	static NOALIAS size_t
+	nedblksize_msize(void *mem) NOTHROW {
+
+		return nedblksize(0, mem);
+	}
+
+public:
+	NedAllocators()
+	: Allocators(nedmalloc, nedcalloc, nedmemalign, nedrealloc, nedblksize_msize, nedfree_handlenull) {
+	}
+
+	void
+	setSkipCleanup(bool skipCleanup) {
+
+		_skipCleanup = skipCleanup;
+	}
+};
+
+volatile bool NedAllocators::_skipCleanup = false;
+
+#endif // USE_NEDMALLOC
+
+
+using namespace jl;
+
 int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int ) {
 
-	HANDLE heap = GetProcessHeap();
-	ULONG enable = 2;
-	HeapSetInformation(heap, HeapCompatibilityInformation, &enable, sizeof(enable));
+	JL_enableLowFragmentationHeap();
 
-	JSContext *cx = NULL;
+//  js engine and jslibs low-level allocators must the same
+//	#if defined(USE_NEDMALLOC) && defined(HAS_JL_ALLOCATORS)
+//	NedAllocators allocators;
+//	#else
+	StdAllocators allocators;
+//	#endif // USE_NEDMALLOC
+
+	HostRuntime::setJSEngineAllocators(allocators); // need to be done before AutoJSEngineInit ?
+	AutoJSEngineInit ase;
+
+	HostRuntime hostRuntime(allocators, 0); // 0 mean no periodical GC
+	JL_CHK( hostRuntime.create((uint32_t)-1, (uint32_t)-1, HOST_STACK_SIZE) );
+	
+	JSContext *cx = hostRuntime.context();
+	//JS::ContextOptionsRef(cx).setWerror(args.warningsToErrors);
+
+	{
+
+	jl::Host host(hostRuntime, hostIO);
+	JL_CHK( host.create() );
 
 	CHAR moduleName[PATH_MAX];
 	CHAR tmp[PATH_MAX];
 	DWORD moduleNameLen = GetModuleFileName(hInstance, moduleName, sizeof(moduleName));
+
 	HOST_MAIN_ASSERT( moduleNameLen > 0 && moduleNameLen < PATH_MAX && moduleName[moduleNameLen] == '\0', "Invalid module filename." );
+
+	// construct host.path and host.name properties
+	jl::memcpy(tmp, moduleName, moduleNameLen+1);
+	char *name = strrchr(tmp, PATH_SEPARATOR);
+	JL_CHK( name );
+	name += 1;
+	JL_CHK( host.setHostName(name) );
+	*name = '\0';
+	JL_CHK( host.setHostPath(tmp) );
+
+	host.setHostArguments(__argv, __argc);
+
+	{
+
+	JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
+	JS::RootedValue rval(cx);
+
+	// embedded bootstrap script
+	if ( sizeof(embeddedBootstrapScript)-1 > 0 ) {
+
+		JS::AutoSaveContextOptions asco(cx);
+		JS::ContextOptionsRef(cx).setDontReportUncaught(false);
+
+		JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL, NULL) ); // -1 because sizeof("") == 1
+		JL_CHK( script );
+		JL_CHK( JS_ExecuteScript(cx, globalObject, script, rval.address()) );
+	}
+
+
+	// construct script name
+	jl::memcpy(tmp, moduleName, moduleNameLen+1);
+	char *dotPos = strrchr(tmp, '.');
+	JL_CHK( dotPos );
+	strcpy(dotPos+1, "js");
+
+	bool executeStatus;
+	executeStatus = ExecuteScriptFileName(cx, globalObject, tmp, false, &rval);
+
+	if ( !executeStatus )
+		if ( JL_IsExceptionPending(cx) )
+			JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
+
+	}
+
+	host.destroy();
+	hostRuntime.destroy();
+	host.free(); // must be executed after runtime destroy
+
+	}
+
+	return 0;
+	bad:
+	return -1;
+}
+
 
 	//doc: If you need to detect whether another instance already exists, create a uniquely named mutex using the CreateMutex function. 
 	//CreateMutex will succeed even if the mutex already exists, but the function will return ERROR_ALREADY_EXISTS. 
@@ -81,126 +213,38 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int ) {
 
 	// (TBD) use file index as mutexName. note: If the file is on an NTFS volume, you can get a unique 64 bit identifier for it with GetFileInformationByHandle.  The 64 bit identifier is the "file index". 
 	
-
-	// handle host.isFirstInstance property
-	bool isFirstInstance;
-	memcpy(tmp, moduleName, moduleNameLen+1);
-	
+	// remoce isFirstInstance, use |new Semaphore('aaa').isOwner| instead !
 	// normalize the mutex name
-	char *pos;
-	while ( (pos = strchr(tmp, PATH_SEPARATOR)) != 0 )
-		*pos = '/';
-	SetLastError(0);
-	HANDLE instanceCheckMutex = ::CreateMutex(NULL, TRUE, tmp); // see Global\\ and Local\\ prefixes for mutex name.
-	switch ( GetLastError() ) {
-		case ERROR_SUCCESS:
-			isFirstInstance = true;
-			break;
-		case ERROR_ALREADY_EXISTS:
-			isFirstInstance = false;
-			break;
-		default: {
-			char message[1024];
-			JLLastSysetmErrorMessage(message, sizeof(message));
-			HOST_MAIN_ASSERT( false,  message );
-		}
-	}
+	// handle host.isFirstInstance property
+	//
+	//HANDLE instanceCheckMutex = NULL;
+	//jl::memcpy(tmp, moduleName, moduleNameLen+1);
+	//bool isFirstInstance;
+	//char *pos;
+	//while ( (pos = strchr(tmp, PATH_SEPARATOR)) != 0 )
+	//	*pos = '/';
+	//SetLastError(0);
+	//instanceCheckMutex = ::CreateMutex(NULL, TRUE, tmp); // see Global\\ and Local\\ prefixes for mutex name.
+	//switch ( GetLastError() ) {
+	//	case ERROR_SUCCESS:
+	//		isFirstInstance = true;
+	//		break;
+	//	case ERROR_ALREADY_EXISTS:
+	//		isFirstInstance = false;
+	//		break;
+	//	default: {
+	//		char message[1024];
+	//		JLLastSysetmErrorMessage(message, sizeof(message));
+	//		HOST_MAIN_ASSERT( false,  message );
+	//	}
+	//}
+	// ...
+	// ...
+	//JL_CHK( JL_NativeToProperty(cx, host.hostObject(), JLID(cx, isFirstInstance), isFirstInstance) );
+	// ...
+	// ...
+	//CloseHandle( instanceCheckMutex ); //ReleaseMutex
 
-	jl_malloc = nedmalloc;
-	jl_calloc = nedcalloc;
-	jl_memalign = nedmemalign;
-	jl_realloc = nedrealloc;
-	jl_msize = nedblksize_msize;
-	jl_free = nedfree_handlenull;
-/*
-	jl_malloc = malloc;
-	jl_calloc = calloc;
-	jl_memalign = memalign;
-	jl_realloc = realloc;
-	jl_msize = msize;
-	jl_free = free;
-*/
-
-	JL_CHK( InitializeMemoryManager(&jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free) );
-
-	cx = CreateHost((uint32_t)-1, (uint32_t)-1, 30000); // 30 seconds
-	JL_CHK( cx );
-
-	HostPrivate *hpv = JL_GetHostPrivate(cx);
-
-	// custom memory allocators are transfered to the modules through the HostPrivate structure:
-	hpv->alloc.malloc = jl_malloc;
-	hpv->alloc.calloc = jl_calloc;
-	hpv->alloc.memalign = jl_memalign;
-	hpv->alloc.realloc = jl_realloc;
-	hpv->alloc.msize = jl_msize;
-	hpv->alloc.free = jl_free;
-
-
-	JL_CHK( InitHost(cx, true, NULL, NULL, HostStderr, NULL) );
-
-	JSObject *hostObj = JL_GetHostPrivate(cx)->hostObject;
-
-
-	// construct host.path and host.name properties
-	memcpy(tmp, moduleName, moduleNameLen+1);
-	char *name = strrchr(tmp, PATH_SEPARATOR);
-	JL_CHK( name );
-	name += 1;
-	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, name), name) );
-	*name = '\0';
-	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, path), tmp) );
-
-	JL_CHK( JL_NativeToProperty(cx, hostObj, JLID(cx, isFirstInstance), isFirstInstance) );
-
-	jsval arguments;
-	JL_CHK( JL_NativeVectorToJsval(cx, __argv, __argc, arguments) );
-	JL_CHK( JS_SetPropertyById(cx, hostObj, JLID(cx, arguments), &arguments) );
-
-	jsval rval;
-
-	if ( sizeof(embeddedBootstrapScript)-1 > 0 ) {
-
-		uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) & ~JSOPTION_DONT_REPORT_UNCAUGHT); // report uncautch exceptions !
-		JSScript *script = JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL, NULL); // -1 because sizeof("") == 1
-		JL_CHK( script );
-		JL_CHK( JS_ExecuteScript(cx, JL_GetGlobal(cx), script, &rval) );
-		JS_SetOptions(cx, prevOpt);
-	}
-
-	// construct script name
-	memcpy(tmp, moduleName, moduleNameLen+1);
-	char *dotPos = strrchr(tmp, '.');
-	JL_CHK( dotPos );
-	strcpy(dotPos+1, "js");
-
-	if ( ExecuteScriptFileName(cx, tmp, false, &rval) != true )
-		if ( JL_IsExceptionPending(cx) )
-			JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
-
-	disabledFree = true;
-	FinalizeMemoryManager(!disabledFree, &jl_malloc, &jl_calloc, &jl_memalign, &jl_realloc, &jl_msize, &jl_free);
-
-	JS_SetGCCallback(JL_GetRuntime(cx), NULL);
-	DestroyHost(cx, disabledFree);
-	cx = NULL;
-	JS_ShutDown();
-
-	CloseHandle( instanceCheckMutex ); //ReleaseMutex
-	return 0;
-
-bad:
-	if ( cx ) {
-
-		disabledFree = true;
-		JS_SetGCCallback(JL_GetRuntime(cx), NULL);
-		DestroyHost(cx, disabledFree);
-	}
-	JS_ShutDown();
-
-	CloseHandle( instanceCheckMutex ); //ReleaseMutex
-	return -1;
-}
 
 /**doc
 #summary jswinhost executable
