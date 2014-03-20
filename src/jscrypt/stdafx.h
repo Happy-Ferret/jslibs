@@ -19,11 +19,6 @@
 #include <jlclass.h>
 //#include <jsvalserializer.h>
 
-#define XMALLOC jl_malloc_fct
-#define XCALLOC jl_calloc_fct
-#define XREALLOC jl_realloc_fct
-#define XFREE jl_free_fct
-
 #include <tomcrypt.h>
 
 
@@ -39,4 +34,3 @@ struct PrngPrivate {
 
 NEVER_INLINE bool FASTCALL
 ThrowCryptError( JSContext *cx, int errorCode );
-

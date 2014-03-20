@@ -203,6 +203,7 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 //#define NOIL(f) f
 #endif
 
+/*
 #ifndef ASSUME
 # if defined _MSC_VER
 #  define ASSUME(expr) (__assume(expr))
@@ -210,6 +211,8 @@ template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
 #  define ASSUME(expr) ((void)0)
 # endif
 #endif
+*/
+#define ASSUME(expr) ((void)0)
 
 
 // restrict says that the pointer is the only thing that accesses the underlying object. 

@@ -25,7 +25,7 @@
 
 // by default, we run in unsafe mode.
 // mixing safe and unsafe is not allowed.
-DLLAPI int _unsafeMode = true;
+DLLAPI bool _unsafeMode = true;
 
 DLLAPI jl_malloc_t jl_malloc = NULL;
 DLLAPI jl_calloc_t jl_calloc = NULL;
@@ -37,7 +37,6 @@ DLLAPI jl_free_t jl_free = NULL;
 
 
 JL_BEGIN_NAMESPACE
-
 
 //////////////////////////////////////////////////////////////////////////////
 // Threaded memory deallocator
@@ -1233,6 +1232,7 @@ bad:
 Host::Host( HostRuntime &hr, StdIO &hostStdIO, bool unsafeMode )
 : _hostRuntime(hr), _moduleManager(hr), _compatId(JL_HOST_VERSIONID), _unsafeMode(unsafeMode), _hostStdIO(hostStdIO), _objectProto(hr.runtime()), _hostObject(hr.runtime()), _ids() {
 
+	::_unsafeMode = unsafeMode;
 	Host::setHostAllocators(_hostRuntime.allocators());
 	IFDEBUG( jl_free(js_malloc(256)) );
 	IFDEBUG( js_free(jl_malloc(256)) );

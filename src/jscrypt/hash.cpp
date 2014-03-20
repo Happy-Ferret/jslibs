@@ -226,7 +226,6 @@ DEFINE_FUNCTION( done ) {
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv && pv->isValid );
-
 	unsigned long outLength;
 	outLength = pv->descriptor->hashsize;
 	uint8_t *out;

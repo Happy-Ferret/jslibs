@@ -40,15 +40,21 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\libs\libtomcrypt\src\src\headers;..\..\libs\libtommath\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;LTC_NO_PROTOTYPES;LTM_DESC;MKAT;LTC_MULTI2;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\libs\libtomcrypt;..\..\libs\libtomcrypt\src\src\headers;..\..\libs\libtommath;..\..\libs\libtommath\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(jslibsRootDir)src\host\$(jslibsIntDir)host.lib;$(jslibsRootDir)libs\js\$(jslibsIntDir)dist\lib\mozjs-30a1.lib;kernel32.lib;$(StopEvaluating)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\libs\libtomcrypt\src\src\headers;..\..\libs\libtommath\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;LTC_NO_PROTOTYPES;LTM_DESC;MKAT;LTC_MULTI2;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\libs\libtomcrypt;..\..\libs\libtomcrypt\src\src\headers;..\..\libs\libtommath;..\..\libs\libtommath\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>$(jslibsRootDir)src\host\$(jslibsIntDir)host.lib;$(jslibsRootDir)libs\js\$(jslibsIntDir)dist\lib\mozjs-30a1.lib;kernel32.lib;$(StopEvaluating)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="asymmetricCipher.cpp" />

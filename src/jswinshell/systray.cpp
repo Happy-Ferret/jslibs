@@ -15,6 +15,8 @@
 #include "stdafx.h"
 #include "error.h"
 
+#include <js/Tracer.h>
+
 
 DECLARE_CLASS( Icon )
 
@@ -856,8 +858,9 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 		UINT uFlags = 0;
 		bool isDefault = false;
 		HBITMAP hBMP = NULL;
-		jsval cmdid = JSVAL_VOID;
-		jsval label = JSVAL_VOID;
+
+		JS::RootedValue cmdid(cx);
+		JS::RootedValue label(cx);
 		HMENU popupMenu;
 		IFDEBUG( popupMenu = NULL ); // avoid "potentially uninitialized local variable" warning
 
@@ -879,8 +882,10 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 		} else
 		if ( item.isObject() ) {
 
-			JSObject *itemObj = &item.toObject();
-			jsval key, value;
+			JS::RootedObject itemObj(cx, &item.toObject());
+			JS::RootedValue key(cx);
+			JS::RootedValue value(cx);
+
 			JSIdArray *list = JS_Enumerate(cx, itemObj);
 			JL_CHK( list );
 			int length = JS_IdArrayLength(cx, list);
@@ -888,7 +893,8 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 
 				JLData keyStr;
 				
-				jsid itemId = JS_IdArrayGet(cx, list, j);
+				JS::RootedId itemId(cx, JS_IdArrayGet(cx, list, j));
+
 				JL_CHK( JS_IdToValue(cx, itemId, &key) );
 				JL_CHK( JS_GetPropertyById(cx, itemObj, itemId, &value) );
 				
@@ -952,7 +958,8 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					JL_ASSERT_IS_OBJECT(value, keyStr);
-					JSObject *iconObj = &value.toObject();
+					
+					JS::RootedObject iconObj(cx, &value.toObject());
 					JL_ASSERT_INSTANCE( iconObj, JL_CLASS(Icon) );
 					HICON *phIcon = (HICON*)JL_GetPrivate(iconObj);
 					JL_ASSERT_OBJECT_STATE(phIcon, JL_CLASS_NAME(Icon));
@@ -966,7 +973,8 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 					JL_ASSERT_IS_OBJECT(value, keyStr);
 					uFlags |= MF_POPUP;
 					popupMenu = CreatePopupMenu();
-					JL_CHK( FillMenu(cx, systrayObj, &value.toObject(), &popupMenu) );
+					JS::RootedObject tmp(cx, &value.toObject());
+					JL_CHK( FillMenu(cx, systrayObj, tmp, &popupMenu) );
 					continue;
 				}
 			}
@@ -984,10 +992,10 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 			
 			lpNewItem = NULL;
 		} else
-		if ( label.isObject() && JL_GetClass(&label.toObject()) == JL_CLASS(Icon) ) {
+		if ( JL_ValueIsClass(cx, label, JL_CLASS(Icon) ) ) {
 
 			uFlags |= MF_BITMAP;
-			HICON *phIcon = (HICON*)JL_GetPrivate(&label.toObject());
+			HICON *phIcon = (HICON*)JL_GetPrivate(label);
 			JL_ASSERT_OBJECT_STATE(phIcon, JL_CLASS_NAME(Icon));
 			hBMP = MenuItemBitmapFromIcon(*phIcon);
 			JL_ASSERT( hBMP != NULL, E_STR("icon"), E_CREATE );
@@ -1020,12 +1028,11 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 
 			AddPopupMenuRoot((Private*)JL_GetPrivate(systrayObj), item);
 
-			jsid id;
+			JS::RootedId id(cx);
 			JL_CHK( JL_JsvalToJsid(cx, item, &id) );
 
-			S_ASSERT( sizeof(id) <= sizeof(UINT_PTR) );
-
-			uIDNewItem = (UINT_PTR)JSID_BITS(id);
+			S_ASSERT( sizeof(jsid) <= sizeof(UINT_PTR) );
+			uIDNewItem = (UINT_PTR)JSID_BITS(id.get());
 		}
 
 		BOOL res = AppendMenu(*hMenu, uFlags, uIDNewItem, lpNewItem);
@@ -1036,7 +1043,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 
 		if ( hBMP != NULL ) {
 
-			res = SetMenuItemBitmaps(*hMenu, i, MF_BYPOSITION, hBMP, hBMP ); // doc: When the menu is destroyed, these bitmaps are not destroyed; it is up to the application to destroy them.
+			res = SetMenuItemBitmaps(*hMenu, i, MF_BYPOSITION, hBMP, hBMP); // doc: When the menu is destroyed, these bitmaps are not destroyed; it is up to the application to destroy them.
 			if ( res == 0 )
 				return JL_ThrowOSError(cx);
 		}
@@ -1097,7 +1104,7 @@ DEFINE_FUNCTION( popupMenu ) {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	Private *pv = (Private*)JL_GetPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	
 	BOOL st;
@@ -1109,11 +1116,13 @@ DEFINE_FUNCTION( popupMenu ) {
 //	ASSERT( st );
 	
 	// there is no way to detect the menu popup has been closed. Here we free previous items.
+	{
 	FreePopupMenuRoots(pv);
-	JL_CHK( FillMenu(cx, obj, &JL_ARG(1).toObject(), &hMenu) );
-
+	JS::RootedObject tmp(cx, &JL_ARG(1).toObject());
+	JL_CHK( FillMenu(cx, JL_OBJ, tmp, &hMenu) );
 	st = PostMessage(pv->nid.hWnd, MSG_POPUP_MENU, 0, 0);
 	ASSERT( st );
+	}
 
 	JL_RVAL.setUndefined();
 	return true;
@@ -1132,14 +1141,14 @@ DEFINE_FUNCTION( popupBalloon ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	BOOL status;
 
 	if ( JL_ARG_ISDEF(1) ) {
 	
 		JL_ASSERT_ARG_IS_OBJECT(1);
-		JSObject *infoObj = &JL_ARG(1).toObject();
+		JS::RootedObject infoObj(cx, &JL_ARG(1).toObject());
 
 		pv->nid.dwInfoFlags = NIIF_NONE;
 
@@ -1147,7 +1156,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 		if ( !JL_RVAL.isUndefined() ) {
 
 			JLData infoTitle;
-			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &infoTitle) );
+			JL_CHK( JL_JsvalToNative(cx, JL_RVAL, &infoTitle) );
 
 			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoTitle.Length());
 			jl::memcpy( pv->nid.szInfoTitle, infoTitle.GetConstStr(), JL_MIN(sizeof(pv->nid.szInfoTitle)-1, infoTitle.Length()) );
@@ -1158,7 +1167,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 		if ( !JL_RVAL.isUndefined() ) {
 
 			JLData infoStr;
-			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &infoStr) );
+			JL_CHK( JL_JsvalToNative(cx, JL_RVAL, &infoStr) );
 			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoStr.Length());
 
 			JL_IGNORE(len);
@@ -1171,7 +1180,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 		if ( !JL_RVAL.isUndefined() ) {
 
 			JLData iconNameStr;
-			JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &iconNameStr) );
+			JL_CHK( JL_JsvalToNative(cx, JL_RVAL, &iconNameStr) );
 			
 			if ( strcmp(iconNameStr, "info") == 0 )
 				pv->nid.dwInfoFlags |= NIIF_INFO;
@@ -1246,7 +1255,7 @@ DEFINE_FUNCTION( position ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	RECT r;
@@ -1254,21 +1263,8 @@ DEFINE_FUNCTION( position ) {
 	if ( res != TRUE )
 		return JL_ThrowOSError(cx);
 
-	jsval v[] = { INT_TO_JSVAL(r.left), INT_TO_JSVAL(r.top) };
-
-	JSObject *point;
-	if ( argc >= 1 && !JL_ARG(1).isPrimitive() ) { // reuse
-
-		point = &JL_ARG(1).toObject(); // (TBD) check this
-
-		JL_CHK( JL_SetElement(cx, point, 0, v[0]) );
-		JL_CHK( JL_SetElement(cx, point, 1, v[1]) );
-	} else {
-
-		point = JS_NewArrayObject(cx, 2, v);
-		JL_CHK( point );
-	}
-	*JL_RVAL = OBJECT_TO_JSVAL(point);
+	LONG v[] = { r.left, r.top };
+	JL_CHK( JL_NativeVectorToJsval(cx, v, COUNTOF(v), JL_RVAL, JL_ARGC >= 1 && JL_ARG(1).isObject()) );
 
 	return true;
 	JL_BAD;
@@ -1292,23 +1288,9 @@ DEFINE_FUNCTION( rect ) {
 	BOOL st = GetWindowRect(hWndTrayWnd, &rect);
 	if ( !st )
 		return JL_ThrowOSError(cx);
-	jsval v[] = { INT_TO_JSVAL(rect.left), INT_TO_JSVAL(rect.top), INT_TO_JSVAL(rect.right-rect.left), INT_TO_JSVAL(rect.bottom-rect.top) };
 
-	JSObject *point;
-	if ( argc >= 1 && !JL_ARG(1).isPrimitive() ) { // reuse
-
-		point = &JL_ARG(1).toObject(); // (TBD) check this
-
-		JL_CHK( JL_SetElement(cx, point, 0, v[0]) );
-		JL_CHK( JL_SetElement(cx, point, 1, v[1]) );
-		JL_CHK( JL_SetElement(cx, point, 2, v[2]) );
-		JL_CHK( JL_SetElement(cx, point, 3, v[3]) );
-	} else {
-
-		point = JS_NewArrayObject(cx, 4, v);
-		JL_CHK( point );
-	}
-	*JL_RVAL = OBJECT_TO_JSVAL(point);
+	LONG v[] = { rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top };
+	JL_CHK( JL_NativeVectorToJsval(cx, v, COUNTOF(v), JL_RVAL, JL_ARGC >= 1 && JL_ARG(1).isObject()) );
 
 	return true;
 	JL_BAD;
@@ -1327,14 +1309,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( icon ) {
 
-	JL_IGNORE( strict );
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 
 	HICON hIcon;
-	if ( !vp.isPrimitive() ) {
+	if ( vp.isObject() ) {
 
-		JSObject *iconObj = vp.toObjectOrNull();
+		JS::RootedObject iconObj(cx, &vp.toObject());
 		JL_ASSERT_INSTANCE( iconObj, JL_CLASS(Icon) );
 		HICON *phIcon = (HICON*)JL_GetPrivate(iconObj);
 		JL_ASSERT_OBJECT_STATE( phIcon, JL_CLASS_NAME(Icon) );
@@ -1369,7 +1351,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( visible ) {
 
-	JL_IGNORE( strict, id );
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -1377,7 +1359,7 @@ DEFINE_PROPERTY_SETTER( visible ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	bool state;
-	JL_CHK( JS::ToBoolean(cx, vp, &state ) );
+	state = JS::ToBoolean(vp);
 	
 	BOOL status = Shell_NotifyIconA_retry( state == true ? NIM_ADD : NIM_DELETE, &pv->nid);
 	JL_ASSERT( status == TRUE, E_THISOBJ, E_INTERNAL );
@@ -1393,7 +1375,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( text ) {
 
-	JL_IGNORE( strict, id );
+	JL_DEFINE_PROP_ARGS;
 
 	JLData tipText;
 
@@ -1417,7 +1399,7 @@ DEFINE_PROPERTY_SETTER( text ) {
 
 DEFINE_PROPERTY_GETTER( text ) {
 
-	JL_IGNORE( id );
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -1432,7 +1414,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 
 DEFINE_TRACER() {
 
-	Private *pv = (Private*)JL_GetPrivate(obj);
+	Private *pv = (Private*)js::GetObjectPrivate(obj);
 	if ( pv ) {
 
 		struct Tmp {

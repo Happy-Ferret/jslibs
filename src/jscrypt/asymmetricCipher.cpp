@@ -49,13 +49,18 @@ bool SlotGetPrng(JSContext *cx, JS::HandleObject obj, int *prngIndex, prng_state
 	JS::RootedValue prngVal(cx);
 	JL_CHK( JL_GetReservedSlot( obj, ASYMMETRIC_CIPHER_PRNG_SLOT, &prngVal) );
 	JL_ASSERT_OBJECT_STATE( prngVal.isObject(), JL_CLASS_NAME(Prng) );
-	JL_ASSERT_INSTANCE( prngVal, JL_CLASS(Prng) );
+	{
+	JS::RootedObject prngObj(cx, &prngVal.toObject());
+	JL_ASSERT_INSTANCE( prngObj, JL_CLASS(Prng) );
 	PrngPrivate *prngPrivate;
-	prngPrivate = (PrngPrivate *)JL_GetPrivate(&prngVal.toObject());
+	prngPrivate = (PrngPrivate *)JL_GetPrivate(prngObj);
 	JL_ASSERT_OBJECT_STATE( prngPrivate, JL_CLASS_NAME(Prng) );
 	*prngState = &prngPrivate->state;
 	*prngIndex = find_prng(prngPrivate->prng.name);
 	JL_ASSERT( *prngIndex != -1, E_STR("PRNG"), E_NAME(prngPrivate->prng.name), E_NOTFOUND );
+	
+	}
+
 	return true;
 	JL_BAD;
 }
@@ -102,9 +107,10 @@ FinalizeAsymmetricCipher( JS::HandleObject obj, bool wipe ) {
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
 		return;
-	FinalizeAsymmetricCipher(obj, false);
+	JS::RootedObject o(fop->runtime(), obj);
+	FinalizeAsymmetricCipher(o, false);
 }
 
 /**doc
@@ -128,6 +134,8 @@ $TOC_MEMBER $INAME
     When performing v1.5 encryption, the hash and lparam parameters are totally ignored.
 **/
 DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersion] )
+
+	JL_DEFINE_ARGS;
 
 	AsymmetricCipherPrivate *pv = NULL;
 	JLData asymmetricCipherName, hashName;
@@ -170,11 +178,12 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 	if ( argc >= 3 ) {
 
 		JL_ASSERT_ARG_IS_OBJECT(3);
-		JL_ASSERT_INSTANCE( &JL_ARG(3).toObject(), JL_CLASS(Prng) );
-		JL_CHK( JL_SetReservedSlot( obj, ASYMMETRIC_CIPHER_PRNG_SLOT, JL_ARG(3)) );
+		JS::RootedObject prngObj(cx, &JL_ARG(3).toObject());
+		JL_ASSERT_INSTANCE( prngObj, JL_CLASS(Prng) );
+		JL_CHK( JL_SetReservedSlot( JL_OBJ, ASYMMETRIC_CIPHER_PRNG_SLOT, JL_ARG(3)) );
 	} else {
 
-		JL_CHK( JL_SetReservedSlot( obj, ASYMMETRIC_CIPHER_PRNG_SLOT, JSVAL_VOID) );
+		JL_CHK( JL_SetReservedSlot(JL_OBJ, ASYMMETRIC_CIPHER_PRNG_SLOT, JL_UNDEFINED()) );
 	}
 
 	if ( asymmetricCipher == rsa ) {
@@ -202,7 +211,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 
 	pv->hasKey = false;
 
-	JL_SetPrivate(obj, pv);
+	JL_SetPrivate(JL_OBJ, pv);
 	return true;
 
 bad:
@@ -224,12 +233,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( wipe ) {
 
-	JL_IGNORE(argc);
+	JL_DEFINE_ARGS;
 
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
-	FinalizeAsymmetricCipher(obj, true);
-	JL_SetPrivate( obj, NULL);
+	FinalizeAsymmetricCipher(JL_OBJ, true);
+	JL_SetPrivate( JL_OBJ, NULL);
 	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
@@ -252,17 +261,19 @@ ac.createKeys( AsymmetricCipher.RSA_MIN_KEYSIZE );
 **/
 DEFINE_FUNCTION( createKeys ) { // ( bitsSize )
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JL_GetPrivate(obj);
+	pv = (AsymmetricCipherPrivate *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	prng_state *prngState;
 	int prngIndex;
-	JL_CHK( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
+	JL_CHK( SlotGetPrng(cx, JL_OBJ, &prngIndex, &prngState) );
 
 	unsigned int keySize;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &keySize) );
@@ -339,6 +350,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 
+	JL_DEFINE_ARGS;
+
 	unsigned long outLength = 4096;
 	uint8_t *out = NULL;
 	JLData in;
@@ -348,13 +361,13 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( obj );
+	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_ASSERT( pv->hasKey, E_NAME("key"), E_DEFINED );
 
 	prng_state *prngState;
 	int prngIndex;
-	JL_CHK( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
+	JL_CHK( SlotGetPrng(cx, JL_OBJ, &prngIndex, &prngState) );
 
 //	const char *in;
 //	size_t inLength;
@@ -433,6 +446,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 
+	JL_DEFINE_ARGS;
+
 	unsigned long outLength = 4096;
 	uint8_t *out = NULL;
 	JLData in;
@@ -442,7 +457,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( obj );
+	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_ASSERT( pv->hasKey, E_NAME("key"), E_DEFINED );
 
@@ -526,6 +541,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( sign ) { // ( data [, saltLength] )
 
+	JL_DEFINE_ARGS;
+
 	unsigned long outLength = 4096;
 	uint8_t *out = NULL;
 	JLData in;
@@ -535,13 +552,13 @@ DEFINE_FUNCTION( sign ) { // ( data [, saltLength] )
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( obj );
+	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_ASSERT( pv->hasKey, E_NAME("key"), E_DEFINED );
 
 	prng_state *prngState;
 	int prngIndex;
-	JL_CHK( SlotGetPrng(cx, obj, &prngIndex, &prngState) );
+	JL_CHK( SlotGetPrng(cx, JL_OBJ, &prngIndex, &prngState) );
 
 //	const char *in;
 //	size_t inLength;
@@ -605,6 +622,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( verifySignature ) { // ( data, signature [, saltLength] )
 
+	JL_DEFINE_ARGS;
+
 	JLData data, sign;
 
 	JL_DEFINE_FUNCTION_OBJ;
@@ -612,7 +631,7 @@ DEFINE_FUNCTION( verifySignature ) { // ( data, signature [, saltLength] )
 	JL_ASSERT_ARGC_MIN( 2 );
 
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( obj );
+	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_ASSERT( pv->hasKey, E_NAME("key"), E_DEFINED );
 
@@ -659,7 +678,7 @@ DEFINE_FUNCTION( verifySignature ) { // ( data, signature [, saltLength] )
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	*JL_RVAL = BOOLEAN_TO_JSVAL( stat == 1 );
+	JL_RVAL.setBoolean( stat == 1 );
 	return true;
 	JL_BAD;
 }
@@ -676,11 +695,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( blockLength ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( obj );
+	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_ASSERT( pv->hasKey, E_NAME("key"), E_DEFINED );
 
@@ -720,7 +739,7 @@ DEFINE_PROPERTY_GETTER( blockLength ) {
 			IFDEBUG( blockLength = 0 );
 			ASSERT(false);
 	}
-	*vp = INT_TO_JSVAL( blockLength );
+	JL_RVAL.setInt32( blockLength );
 	return true;
 	JL_BAD;
 }
@@ -732,11 +751,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( keySize ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( obj );
+	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_ASSERT( pv->hasKey, E_NAME("key"), E_DEFINED );
 
@@ -761,7 +780,7 @@ DEFINE_PROPERTY_GETTER( keySize ) {
 			IFDEBUG( keySize = 0 );
 			ASSERT(false);
 	}
-	*vp = INT_TO_JSVAL( keySize );
+	JL_RVAL.setInt32(keySize);
 	return true;
 	JL_BAD;
 }
@@ -778,13 +797,13 @@ $TOC_MEMBER $INAME
 
 DEFINE_PROPERTY_SETTER( key ) {
 	
-	JL_IGNORE(strict);
+	JL_DEFINE_PROP_ARGS;
 
 	JLData key;
 
 	JL_ASSERT_THIS_INSTANCE();
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( obj );
+	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	int type;
@@ -793,7 +812,7 @@ DEFINE_PROPERTY_SETTER( key ) {
 //	const char *key;
 //	size_t keyLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &key, &keyLength) );
-	JL_CHK( JL_JsvalToNative(cx, *vp, &key) );
+	JL_CHK( JL_JsvalToNative(cx, JL_RVAL, &key) );
 
 	int err;
 	err = -1; // default
@@ -834,12 +853,14 @@ DEFINE_PROPERTY_SETTER( key ) {
 
 DEFINE_PROPERTY_GETTER( key ) {
 
+	JL_DEFINE_PROP_ARGS;
+
 	unsigned long keyLength = 4096;
 	uint8_t *key = NULL;
 
 	JL_ASSERT_THIS_INSTANCE();
 	AsymmetricCipherPrivate *pv;
-	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( obj );
+	pv = (AsymmetricCipherPrivate *)JL_GetPrivate( JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_ASSERT( pv->hasKey, E_NAME("key"), E_DEFINED );
 
@@ -882,11 +903,8 @@ bad:
 }
 
 
-enum {
-	publicKey = PK_PUBLIC,
-	privateKey = PK_PRIVATE,
-};
-
+DEFINE_PROPERTY_SWITCH(	publicKey, key, PK_PUBLIC )
+DEFINE_PROPERTY_SWITCH(	privateKey, key, PK_PRIVATE )
 
 CONFIGURE_CLASS
 
@@ -910,8 +928,9 @@ CONFIGURE_CLASS
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_GETTER( blockLength )
 		PROPERTY_GETTER( keySize )
-		PROPERTY_SWITCH( privateKey, key )
-		PROPERTY_SWITCH( publicKey, key )
+
+		PROPERTY( privateKey )
+		PROPERTY( publicKey )
 	END_PROPERTY_SPEC
 
 	BEGIN_CONST

@@ -2,10 +2,16 @@ var loadModule = host.loadModule;
  //loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 loadModule('jsstd'); exec('../common/tools.js'); runQATests('jscrypt'); throw 0;
 
+
+
 loadModule('jsstd');
 loadModule('jscrypt');
 
-print( CryptError.text, '\n' );
+var md5 = new Hash('md5');
+
+	md5.write('e');
+	print( base64Encode(md5.done()), '\n' );
+	print( base64Encode(md5.done()), '\n' );
 
 throw 0;
 

@@ -3,6 +3,9 @@ var loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 
 
+function a() {}
+function a() {}
+
 
 loadModule('jsstd');
 

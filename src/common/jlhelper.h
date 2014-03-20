@@ -1424,8 +1424,12 @@ JL_ObjectIsData( JSContext * RESTRICT cx, JS::HandleObject obj ) {
 ALWAYS_INLINE bool FASTCALL
 JL_ValueIsData( JSContext *cx, IN JS::HandleValue val ) {
 
+	if ( val.isString() )
+		return true;
+	if ( !val.isObject() )
+		return false;
 	JS::RootedObject obj(cx, &val.toObject());
-	return val.isString() || ( val.isObject() && NOIL(JL_ObjectIsData)(cx, obj) );
+	return NOIL(JL_ObjectIsData)(cx, obj);
 }
 
 

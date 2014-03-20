@@ -12,19 +12,17 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-
 #pragma once
+
 
 #include "jlplatform.h"
 
-
-typedef void* (*jl_malloc_t)( size_t );
-typedef void* (*jl_calloc_t)( size_t, size_t );
-typedef void* (*jl_memalign_t)( size_t, size_t );
-typedef void* (*jl_realloc_t)( void*, size_t );
-typedef size_t (*jl_msize_t)( void* );
-typedef void (*jl_free_t)( void* );
-
+typedef void* (__cdecl *jl_malloc_t)( size_t );
+typedef void* (__cdecl *jl_calloc_t)( size_t, size_t );
+typedef void* (__cdecl *jl_memalign_t)( size_t, size_t );
+typedef void* (__cdecl *jl_realloc_t)( void*, size_t );
+typedef size_t (__cdecl *jl_msize_t)( void* );
+typedef void (__cdecl *jl_free_t)( void* );
 
 extern DLLAPI jl_malloc_t jl_malloc;
 extern DLLAPI jl_calloc_t jl_calloc;
@@ -33,50 +31,14 @@ extern DLLAPI jl_realloc_t jl_realloc;
 extern DLLAPI jl_msize_t jl_msize;
 extern DLLAPI jl_free_t jl_free;
 
+// provide functions to access jl allocators (external libraries are using these symbols).
+EXTERN_C void* jl_malloc_fct( size_t size );
+EXTERN_C void* jl_calloc_fct( size_t num, size_t size );
+EXTERN_C void* jl_memalign_fct( size_t alignment, size_t size );
+EXTERN_C void* jl_realloc_fct( void *ptr, size_t size );
+EXTERN_C size_t jl_msize_fct( void *ptr );
+EXTERN_C void jl_free_fct( void *ptr );
 
-// provide functions to access jl allocators (external libraries are using these symbols)
-EXTERN_C INLINE void* jl_malloc_fct( size_t size ) { return jl_malloc(size); }
-EXTERN_C INLINE void* jl_calloc_fct( size_t num, size_t size ) { return jl_calloc(num, size); }
-EXTERN_C INLINE void* jl_memalign_fct( size_t alignment, size_t size ) { return jl_memalign(alignment, size); }
-EXTERN_C INLINE void* jl_realloc_fct( void *ptr, size_t size ) { return jl_realloc(ptr, size); }
-EXTERN_C INLINE size_t jl_msize_fct( void *ptr ) { return jl_msize(ptr); }
-EXTERN_C INLINE void jl_free_fct( void *ptr ) { jl_free(ptr); }
-
-
-/*
-typedef struct {
-	jl_malloc_t malloc;
-	jl_calloc_t calloc;
-	jl_memalign_t memalign;
-	jl_realloc_t realloc;
-	jl_msize_t msize;
-	jl_free_t free;
-} jl_allocators_t;
-*/
-
-/*
-extern jl_malloc_t jl_malloc;
-extern jl_calloc_t jl_calloc;
-extern jl_memalign_t jl_memalign;
-extern jl_realloc_t jl_realloc;
-extern jl_msize_t jl_msize;
-extern jl_free_t jl_free;
-*/
-
-/*
-ALWAYS_INLINE char *
-JL_strdup(const char * src) {
-
-	size_t size;
-	char *dst;
-	size = strlen(src) + 1;
-	dst = (char*)jl_malloc(size);
-	if ( dst == NULL )
-		return NULL;
-	jl::memcpy(dst, src, size);
-	return dst;
-}
-*/
 
 ///////////////////////////////////////////////////////////////////////////////
 // alloc wrappers
@@ -130,10 +92,8 @@ public:
 ///////////////////////////////////////////////////////////////////////////////
 // Auto buffer
 
-
 template <class T>
 class JLAutoBuffer {
-
 	void *_ptr;
 	JLAutoBuffer(const JLAutoBuffer &);
 	JLAutoBuffer & operator =(const JLAutoBuffer &);
@@ -172,31 +132,7 @@ public:
 			jl_free(_ptr);
 		IFDEBUG( _ptr = NULL );
 	}
-
 };
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-// alloc wrappers
-
-/*
-template <class T>
-ALWAYS_INLINE bool
-JL_Alloc( T*&ptr, size_t count = 1 ) {
-
-	ptr = (T*)jl_malloc(sizeof(T)*count);
-	return ptr != NULL;
-}
-
-template <class T>
-ALWAYS_INLINE bool
-JL_Realloc( T*&ptr, size_t count = 1 ) {
-
-	ptr = (T*)jl_realloc(ptr, sizeof(T)*count);
-	return ptr != NULL;
-}
-*/
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -230,6 +166,7 @@ JL_END_NAMESPACE
 #define jl_malloca(size) \
 	( ( (size)+sizeof(size_t) > JL_MALLOCA_THRESHOLD ) ? jl::pv::MallocaInternal(jl_malloc((size)+sizeof(size_t)), 1) : jl::pv::MallocaInternal(alloca((size)+sizeof(size_t)), 0) )
 
+
 ALWAYS_INLINE void
 jl_freea(void *mem) {
 	
@@ -239,6 +176,22 @@ jl_freea(void *mem) {
 
 
 JL_BEGIN_NAMESPACE
+
+
+ALWAYS_INLINE char *
+strdup(const char * src) {
+
+	size_t size;
+	char *dst;
+	size = strlen(src) + 1;
+	dst = (char*)jl_malloc(size);
+	if ( dst == NULL )
+		return NULL;
+	memcpy(dst, src, size);
+	return dst;
+}
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // memory management

@@ -19,12 +19,20 @@
 #pragma comment(lib, "advapi32.lib") // rng_get_bytes.obj (function _rng_win32) needs __imp__CryptReleaseContext@8, __imp__CryptGenRandom@12, __imp__CryptAcquireContextA@20
 #endif
 
+
 DECLARE_CLASS( CryptError )
 DECLARE_CLASS( Prng )
 DECLARE_CLASS( Hash )
 DECLARE_CLASS( Cipher )
 DECLARE_CLASS( AsymmetricCipher )
 DECLARE_STATIC()
+
+
+// used by libtomcrypt and libtommath
+void* jl_malloc_fct(size_t n) { return jl_malloc(n); }
+void* jl_realloc_fct(void *p, size_t n) { return jl_realloc(p, n); }
+void* jl_calloc_fct(size_t n, size_t s) { return jl_calloc(n, s); }
+void jl_free_fct(void *p) { jl_free(p); }
 
 
 /**doc t:header
@@ -50,7 +58,7 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 		&saferp_desc,
 		&safer_k64_desc, &safer_k128_desc, &safer_sk64_desc, &safer_sk128_desc,
 		&rijndael_desc, &aes_desc,
-		&rijndael_enc_desc, &aes_enc_desc,
+		/* ENCRYPT_ONLY: &rijndael_enc_desc, &aes_enc_desc,*/
 		&xtea_desc,
 		&twofish_desc,
 		&des_desc, &des3_desc,
@@ -90,15 +98,17 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 		&sober128_desc,
 	};
 
-
 	JLDisableThreadNotifications();
 	JL_ASSERT(jl::Host::getHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 
+/*
 #ifdef GMP_DESC
 	ltc_mp = gmp_desc; // register math
 #elif LTM_DESC
 	ltc_mp = ltm_desc; // register math
 #endif
+*/
+	ltc_mp = ltm_desc; // register math
 
 	int regStatus;
 

@@ -26,7 +26,7 @@ typedef ptrdiff_t moduleId_t;
 
 #define JL_MAX_CLASS_PROTO_CACHE_BIT (9)
 
-extern DLLAPI int _unsafeMode;
+extern DLLAPI bool _unsafeMode;
 
 #include <jlalloc.h>
 
