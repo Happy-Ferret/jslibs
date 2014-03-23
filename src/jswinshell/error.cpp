@@ -27,9 +27,10 @@ DEFINE_PROPERTY_GETTER( code ) {
 
 	JL_IGNORE(id);
 
-	jsval hi, lo;
-	JL_GetReservedSlot( obj, SLOT_WIN_ERROR_CODE_HI, hi );
-	JL_GetReservedSlot( obj, SLOT_WIN_ERROR_CODE_LO, lo );
+	JS::RootedValue hi(cx);
+	JS::RootedValue lo(cx);
+	JL_GetReservedSlot( obj, SLOT_WIN_ERROR_CODE_HI, &hi );
+	JL_GetReservedSlot( obj, SLOT_WIN_ERROR_CODE_LO, &lo );
 	JL_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
 	JL_CHK( JL_NewNumberValue(cx, (DWORD)MAKELONG(lo.toInt32(), hi.toInt32()), vp) );
 	return true;
@@ -52,9 +53,10 @@ DEFINE_PROPERTY_GETTER( const ) {
 
 	JL_IGNORE(id);
 
-	jsval hi, lo;
-	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_HI, hi );
-	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_LO, lo );
+	JS::RootedValue hi(cx);
+	JS::RootedValue lo(cx);
+	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_HI, &hi );
+	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_LO, &lo );
 	JL_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
 
 	vp.setString( JS_NewStringCopyZ(cx, ErrorToConstName( (DWORD)MAKELONG(lo.toInt32(), hi.toInt32()) )) );
@@ -67,9 +69,10 @@ DEFINE_PROPERTY_GETTER( text ) {
 
 	JL_IGNORE(id);
 
-	jsval hi, lo;
-	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_HI, hi );
-	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_LO, lo );
+	JS::RootedValue hi(cx);
+	JS::RootedValue lo(cx);
+	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_HI, &hi );
+	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_LO, &lo );
 	JL_ASSERT_THIS_OBJECT_STATE(JSVAL_IS_INT(hi) && JSVAL_IS_INT(lo));
 	DWORD err = (DWORD)MAKELONG(lo.toInt32(), hi.toInt32());
 
@@ -95,16 +98,18 @@ DEFINE_FUNCTION( toString ) {
 
 	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
+
 	{
-	JS::RootedObject rtobj(cx, obj);
+
+	JS::RootedObject rtobj(cx, JL_OBJ);
 	JS::RootedId rtid(cx, JSID_EMPTY);
-	JS::RootedValue hval(cx);
 	
-	if ( !_textGetter(cx, rtobj, rtid, &hval) )
+	if ( !_textGetter(cx, rtobj, rtid, JL_RVAL) )
 		return false;
-	*JL_RVAL = hval;
 	return true;
+	
 	}
+
 	JL_BAD;
 }
 
@@ -120,13 +125,13 @@ DEFINE_FUNCTION( _serialize ) {
 	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
 
 	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, fileName), JL_RVAL) );
-	JL_CHK( ser->Write(cx, *JL_RVAL) );
+	JL_CHK( ser->Write(cx, JL_RVAL) );
 	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, lineNumber), JL_RVAL) );
-	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_HI, *JL_RVAL) );
-	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_LO, *JL_RVAL) );
-	JL_CHK( ser->Write(cx, *JL_RVAL) );
+	JL_CHK( ser->Write(cx, JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_HI, JL_RVAL) );
+	JL_CHK( ser->Write(cx, JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_LO, JL_RVAL) );
+	JL_CHK( ser->Write(cx, JL_RVAL) );
 
 	return true;
 	JL_BAD;
@@ -143,14 +148,14 @@ DEFINE_FUNCTION( _unserialize ) {
 	jl::Unserializer *unser;
 	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));
 
-	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, fileName), JL_RVAL) );
-	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, lineNumber), JL_RVAL) );
-	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JL_SetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_HI, *JL_RVAL) );
-	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JL_SetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_LO, *JL_RVAL) );
+	JL_CHK( unser->Read(cx, JL_RVAL) );
+	JL_CHK( JS_SetPropertyById(cx, JL_OBJ, JLID(cx, fileName), JL_RVAL) );
+	JL_CHK( unser->Read(cx, JL_RVAL) );
+	JL_CHK( JS_SetPropertyById(cx, JL_OBJ, JLID(cx, lineNumber), JL_RVAL) );
+	JL_CHK( unser->Read(cx, JL_RVAL) );
+	JL_CHK( JL_SetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_HI, JL_RVAL) );
+	JL_CHK( unser->Read(cx, JL_RVAL) );
+	JL_CHK( JL_SetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_LO, JL_RVAL) );
 
 	return true;
 	JL_BAD;
@@ -181,14 +186,13 @@ END_CLASS
 
 
 NEVER_INLINE bool FASTCALL
-WinNewError( JSContext *cx, DWORD errorCode, jsval *rval ) {
+WinNewError( JSContext *cx, DWORD errorCode, JS::MutableHandleValue rval ) {
 
-	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(WinError), JL_CLASS_PROTOTYPE(cx, WinError) ); // (TBD) understand why it must have a constructor to be throwed in an exception
-	
-	*rval = OBJECT_TO_JSVAL( error );
-
-	JL_CHK( JL_SetReservedSlot(  error, SLOT_WIN_ERROR_CODE_HI, INT_TO_JSVAL(HIWORD(errorCode)) ) );
-	JL_CHK( JL_SetReservedSlot(  error, SLOT_WIN_ERROR_CODE_LO, INT_TO_JSVAL(LOWORD(errorCode)) ) );
+	// (TBD) understand why it must have a constructor to be throwed in an exception
+	JS::RootedObject error(cx, JL_NewObjectWithGivenProto( cx, JL_CLASS(WinError), JL_CLASS_PROTOTYPE(cx, WinError) ));
+	rval.setObject(*error);
+	JL_CHK( jl::setSlot(cx, error, SLOT_WIN_ERROR_CODE_HI, HIWORD(errorCode)) );
+	JL_CHK( jl::setSlot(cx, error, SLOT_WIN_ERROR_CODE_LO, LOWORD(errorCode)) );
 	return true;
 	JL_BAD;
 }
@@ -197,13 +201,17 @@ NEVER_INLINE bool FASTCALL
 WinThrowError( JSContext *cx, DWORD errorCode ) {
 
 //	JL_SAFE(	JS_ReportWarning( cx, "WinError exception" ) );
-	JSObject *error = JL_NewObjectWithGivenProto( cx, JL_CLASS(WinError), JL_CLASS_PROTOTYPE(cx, WinError) ); // (TBD) understand why it must have a constructor to be throwed in an exception
+	JS::RootedObject error(cx, JL_NewObjectWithGivenProto( cx, JL_CLASS(WinError), JL_CLASS_PROTOTYPE(cx, WinError) )); // (TBD) understand why it must have a constructor to be throwed in an exception
 //	JL_ASSERT( error != NULL, "Unable to create WinError object." );
-	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 
-	JL_CHK( JL_SetReservedSlot(  error, SLOT_WIN_ERROR_CODE_HI, INT_TO_JSVAL(HIWORD(errorCode)) ) );
-	JL_CHK( JL_SetReservedSlot(  error, SLOT_WIN_ERROR_CODE_LO, INT_TO_JSVAL(LOWORD(errorCode)) ) );
-	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
+	JS::RootedValue errorVal(cx);
+	errorVal.setObject(*error);
+
+	JS_SetPendingException(cx, errorVal);
+
+	JL_CHK( jl::setSlot(cx, error, SLOT_WIN_ERROR_CODE_HI, HIWORD(errorCode)) );
+	JL_CHK( jl::setSlot(cx, error, SLOT_WIN_ERROR_CODE_LO, LOWORD(errorCode)) );
+	JL_SAFE( JL_ExceptionSetScriptLocation(cx, &error) );
 	return false;
 	JL_BAD;
 }

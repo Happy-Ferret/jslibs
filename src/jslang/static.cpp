@@ -960,7 +960,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 
 #if defined(DEBUG)  //   || 1
-//#define JSLANG_TEST
+#define JSLANG_TEST
 #endif
 
 #ifdef JSLANG_TEST
@@ -1008,6 +1008,46 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 
+	JS::RootedValue rval(cx);
+
+
+	JS::RootedValue val(cx);
+	JS::RootedObject obj(cx, JL_OBJ);
+	JS::RootedId id(cx);
+	JS::RootedFunction fct(cx);
+	JS::RootedString str(cx, JS_NewStringCopyZ(cx, "test"));
+
+
+	jl::call(cx, obj, val, &rval, 1, obj, id, val, str);
+	jl::call(cx, obj, id, &rval, 1, obj, id, val, str);
+	jl::call(cx, obj, fct, &rval, 1, obj, id, val, str);
+	jl::call(cx, obj, "str", &rval, 1, obj, id, val, str);
+	jl::call(cx, obj, L("wstr"), &rval, 1, obj, id, val, str);
+
+	JS::HandleObject hObj(obj);
+	jl::call(cx, hObj, val, &rval, 1, obj, id, val, str);
+	jl::call(cx, hObj, id, &rval, 1, obj, id, val, str);
+	jl::call(cx, hObj, fct, &rval, 1, obj, id, val, str);
+	jl::call(cx, hObj, "str", &rval, 1, obj, id, val, str);
+	jl::call(cx, hObj, L("wstr"), &rval, 1, obj, id, val, str);
+
+	jl::call(cx, val, val, &rval, 1, obj, id, val, str);
+	jl::call(cx, val, id, &rval, 1, obj, id, val, str);
+	jl::call(cx, val, fct, &rval, 1, obj, id, val, str);
+	jl::call(cx, val, "str", &rval, 1, obj, id, val, str);
+	jl::call(cx, val, L("wstr"), &rval, 1, obj, id, val, str);
+
+	JS::HandleValue hVal(val);
+	jl::call(cx, hVal, val, &rval, 1, obj, id, val, str);
+	jl::call(cx, hVal, id, &rval, 1, obj, id, val, str);
+	jl::call(cx, hVal, fct, &rval, 1, obj, id, val, str);
+	jl::call(cx, hVal, "str", &rval, 1, obj, id, val, str);
+	jl::call(cx, hVal, L("wstr"), &rval, 1, obj, id, val, str);
+
+
+
+/*
+
 	__asm { int 3 }
 
 	JS::RootedValue test1(cx);
@@ -1036,7 +1076,7 @@ DEFINE_FUNCTION( jslangTest ) {
 	cl1(test2);
 
 	args.rval().set(test3);
-
+*/
 
 
 

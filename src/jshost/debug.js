@@ -15,11 +15,7 @@ var loadModule = host.loadModule;
 loadModule('jsstd');
 
 
-function a(){}
-function a(){}
-
-print( host.unsafeMode );
-
+jslangTest();
 
 throw 0;
 

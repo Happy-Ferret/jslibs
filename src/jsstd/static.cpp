@@ -147,7 +147,7 @@ DEFINE_FUNCTION( expand ) {
 				if ( hasMapFct ) {
 
 					JL_CHK( JL_NativeToJsval(cx, key, keyEnd - key, &value) );
-					JL_CHK( JL_CallFunctionVA(cx, JL_OBJ, JL_ARG(2), &value, value) );
+					JL_CHK( jl::call(cx, JL_OBJ, JL_ARG(2), &value, value) );
 				} else if ( JL_SARG(2).isObject() ) {
 
 					JS::RootedObject tmpObj(cx, &JL_ARG(2).toObject());
@@ -1832,6 +1832,8 @@ bool testProp(JSContext *cx, JSObject *obj, jsval id, jsval *vp) {
 DEFINE_FUNCTION( jsstdTest ) {
 
 	JL_IGNORE(vp, argc, cx);
+
+
 
 
 	void *test = &ModuleInit;

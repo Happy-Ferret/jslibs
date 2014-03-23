@@ -2,14 +2,9 @@ var loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsstd'); throw 0;
 //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 
-
-function a() {}
-function a() {}
-
-
 loadModule('jsstd');
 
-exec('qwer');
+jsstdTest();
 
 throw 0;
 

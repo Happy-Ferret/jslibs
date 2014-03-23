@@ -1211,16 +1211,11 @@ Host::hostStderrWrite(const char *message, size_t length) {
 	// avoid reentrancy if stderr function rise an error.
 	AutoErrorReporter autoErrorReporter(cx, JL_IS_SAFE ? errorReporterBasic : NULL);
 		
+	JS::RootedValue rval(cx);
 	JS::RootedValue fct(cx);
 	JL_CHK( JS_GetPropertyById(cx, _hostObject, JLID(cx, stderr), &fct) );
 	JL_CHK( JL_ValueIsCallable(cx, fct) );
-
-	{
-	JS::RootedValue rval(cx);
-	JS::RootedValue text(cx);
-	JL_CHK( JL_NativeToJsval(cx, message, length, &text) ); // beware out of memory case !
-	JL_CHK( JL_CallFunctionVA(cx, globalObject, fct, &rval, text) );
-	}
+	JL_CHK( jl::call(cx, globalObject, fct, &rval, jl::StrSpec(message, length)) ); // beware out of memory case !
 
 	return true;
 bad:

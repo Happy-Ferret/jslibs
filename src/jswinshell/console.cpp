@@ -135,7 +135,7 @@ DEFINE_FUNCTION( read ) {
 	if ( st == 0 )
 		return WinThrowError(cx, GetLastError());
 
-	*JL_RVAL = STRING_TO_JSVAL(JS_NewStringCopyN(cx, buffer, read));
+	JL_RVAL.setString(JS_NewStringCopyN(cx, buffer, read));
 	return true;
 	JL_BAD;
 }
@@ -434,146 +434,149 @@ $TOC_MEMBER $INAME
   Passively waits for a new Console event through the processEvents function.
 **/
 
-struct ConsoleUserProcessEvent {
+struct ConsoleProcessEvent : public ProcessEvent2 {
 	
-	ProcessEvent pe;
 	HANDLE consoleEvent;
 	HANDLE cancelEvent;
-	JSObject *obj;
-};
 
-
-S_ASSERT( offsetof(ConsoleUserProcessEvent, pe) == 0 );
-
-static bool ConsolePrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
+	bool prepareWait(JSContext *cx, JS::HandleObject obj) {
 	
-	return true;
-}
+		return true;
+	}
 
-void ConsoleStartWait( volatile ProcessEvent *pe ) {
+	void startWait() {
 
-	ConsoleUserProcessEvent *upe = (ConsoleUserProcessEvent*)pe;
+		HANDLE events[] = { consoleEvent, cancelEvent };
+		DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
+		ASSERT( status != WAIT_FAILED );
+	}
 
-	HANDLE events[] = { upe->consoleEvent, upe->cancelEvent };
-	DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
-	ASSERT( status != WAIT_FAILED );
-}
+	bool cancelWait() {
 
-bool ConsoleCancelWait( volatile ProcessEvent *pe ) {
+		SetEvent(cancelEvent);
+		return true;
+	}
 
-	ConsoleUserProcessEvent *upe = (ConsoleUserProcessEvent*)pe;
+	bool endWait(bool *hasEvent, JSContext *cx, JS::HandleObject obj) {
 
-	SetEvent(upe->cancelEvent);
-	return true;
-}
+		*hasEvent = WaitForSingleObject(consoleEvent, 0) == WAIT_OBJECT_0;
 
-bool ConsoleEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
+		JS::RootedObject thisObj(cx, &hslot(0).toObject());
+		JS::RootedValue rval(cx);
 
-	ConsoleUserProcessEvent *upe = (ConsoleUserProcessEvent*)pe;
-
-	*hasEvent = WaitForSingleObject(upe->consoleEvent, 0) == WAIT_OBJECT_0;
-
-	if ( *hasEvent ) {
+		if ( *hasEvent ) {
 	
-		HANDLE hStdin = upe->consoleEvent; //GetStdHandle(STD_INPUT_HANDLE);
-		INPUT_RECORD inputRecord;
-		DWORD numberOfEventsRead;
-		BOOL res = ReadConsoleInput(hStdin, &inputRecord, 1, &numberOfEventsRead);
-		if ( res == 0 )
-			return WinThrowError(cx, GetLastError());
+			HANDLE hStdin = consoleEvent; //GetStdHandle(STD_INPUT_HANDLE);
+			INPUT_RECORD inputRecord;
+			DWORD numberOfEventsRead;
+			BOOL res = ReadConsoleInput(hStdin, &inputRecord, 1, &numberOfEventsRead);
+			if ( res == 0 )
+				return WinThrowError(cx, GetLastError());
 
-		if ( numberOfEventsRead > 0 ) {
+			if ( numberOfEventsRead > 0 ) {
 
-			jsval fct, argv[8];
-			switch ( inputRecord.EventType ) {
-				case KEY_EVENT: {
+				JS::RootedValue fct(cx);
 
-					JL_CHK( JS_GetProperty(cx, upe->obj, inputRecord.Event.KeyEvent.bKeyDown ? "onKeyDown" : "onKeyUp", &fct) );
-					if ( JL_ValueIsCallable(cx, fct) ) {
+				switch ( inputRecord.EventType ) {
+					case KEY_EVENT: {
 
-						JSString *str = JS_NewUCStringCopyN(cx, &inputRecord.Event.KeyEvent.uChar.UnicodeChar, 1);
-						argv[1] = STRING_TO_JSVAL(str);
-						argv[2] = INT_TO_JSVAL(inputRecord.Event.KeyEvent.wVirtualKeyCode);
-						argv[3] = BOOLEAN_TO_JSVAL(!!(inputRecord.Event.KeyEvent.dwControlKeyState & (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED)));
-						argv[4] = BOOLEAN_TO_JSVAL(!!(inputRecord.Event.KeyEvent.dwControlKeyState & (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED)));
-						argv[5] = BOOLEAN_TO_JSVAL(!!(inputRecord.Event.KeyEvent.dwControlKeyState & SHIFT_PRESSED));
-						for ( int i = 0; i < inputRecord.Event.KeyEvent.wRepeatCount; ++i ) {
+						JL_CHK( JS_GetProperty(cx, thisObj, inputRecord.Event.KeyEvent.bKeyDown ? "onKeyDown" : "onKeyUp", &fct) );
+						if ( JL_ValueIsCallable(cx, fct) ) {
+
+							for ( int i = 0; i < inputRecord.Event.KeyEvent.wRepeatCount; ++i ) {
 							
-							JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, 5, argv+1, argv) );
+								JL_CHK( jl::call(cx, thisObj, fct, &rval,
+									jl::strSpec(&inputRecord.Event.KeyEvent.uChar.UnicodeChar, 1),
+									inputRecord.Event.KeyEvent.wVirtualKeyCode,
+									!!(inputRecord.Event.KeyEvent.dwControlKeyState & (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED)),
+									!!(inputRecord.Event.KeyEvent.dwControlKeyState & (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED)),
+									!!(inputRecord.Event.KeyEvent.dwControlKeyState & SHIFT_PRESSED)
+								) );
+							}
 						}
+						break;
 					}
-					break;
-				}
 
-				case MOUSE_EVENT: {
+					case MOUSE_EVENT: {
 
-					const char *eventName;
-					if ( inputRecord.Event.MouseEvent.dwEventFlags == 0 ) {
+						const char *eventName;
+						if ( inputRecord.Event.MouseEvent.dwEventFlags == 0 ) {
 	
-						eventName = inputRecord.Event.MouseEvent.dwButtonState == 0 ? "onMouseUp" : "onMouseDown";
-					} else {
-						switch ( inputRecord.Event.MouseEvent.dwEventFlags ) {
-						case MOUSE_MOVED:
-							eventName = "onMouseMove";
-							break;
-						case DOUBLE_CLICK:
-							eventName = "onDblClick";
-							break;
-						case MOUSE_WHEELED:
-							eventName = "onMouseWheel";
-							break;
+							eventName = inputRecord.Event.MouseEvent.dwButtonState == 0 ? "onMouseUp" : "onMouseDown";
+						} else {
+							switch ( inputRecord.Event.MouseEvent.dwEventFlags ) {
+							case MOUSE_MOVED:
+								eventName = "onMouseMove";
+								break;
+							case DOUBLE_CLICK:
+								eventName = "onDblClick";
+								break;
+							case MOUSE_WHEELED:
+								eventName = "onMouseWheel";
+								break;
+							}
 						}
+
+						JL_CHK( JS_GetProperty(cx, thisObj, eventName, &fct) );
+						if ( JL_ValueIsCallable(cx, fct) ) {
+/*
+							argv[1] = INT_TO_JSVAL(inputRecord.Event.MouseEvent.dwMousePosition.X);
+							argv[2] = INT_TO_JSVAL(inputRecord.Event.MouseEvent.dwMousePosition.Y);
+							argv[3] = INT_TO_JSVAL(inputRecord.Event.MouseEvent.dwButtonState & 0x0000FFFF);
+							argv[4] = INT_TO_JSVAL((signed int)inputRecord.Event.MouseEvent.dwButtonState >> 16);
+							argv[5] = BOOLEAN_TO_JSVAL(inputRecord.Event.MouseEvent.dwControlKeyState & (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED));
+							argv[6] = BOOLEAN_TO_JSVAL(inputRecord.Event.MouseEvent.dwControlKeyState & (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED));
+							argv[7] = BOOLEAN_TO_JSVAL(inputRecord.Event.MouseEvent.dwControlKeyState & SHIFT_PRESSED);
+							JL_CHK( JS_CallFunctionValue(cx, thisObj, fct, 7, argv+1, argv) );
+*/
+
+							JL_CHK( jl::call(cx, thisObj, fct, &rval,
+								inputRecord.Event.MouseEvent.dwMousePosition.X,
+								inputRecord.Event.MouseEvent.dwMousePosition.Y,
+								inputRecord.Event.MouseEvent.dwButtonState & 0x0000FFFF,
+								(signed int)inputRecord.Event.MouseEvent.dwButtonState >> 16,
+								inputRecord.Event.MouseEvent.dwControlKeyState & (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED),
+								inputRecord.Event.MouseEvent.dwControlKeyState & (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED),
+								inputRecord.Event.MouseEvent.dwControlKeyState & SHIFT_PRESSED
+							) );
+						}
+						break;
 					}
-					JL_CHK( JS_GetProperty(cx, upe->obj, eventName, &fct) );
-					if ( JL_ValueIsCallable(cx, fct) ) {
 
-						argv[1] = INT_TO_JSVAL(inputRecord.Event.MouseEvent.dwMousePosition.X);
-						argv[2] = INT_TO_JSVAL(inputRecord.Event.MouseEvent.dwMousePosition.Y);
-						argv[3] = INT_TO_JSVAL(inputRecord.Event.MouseEvent.dwButtonState & 0x0000FFFF);
-						argv[4] = INT_TO_JSVAL((signed int)inputRecord.Event.MouseEvent.dwButtonState >> 16);
-						argv[5] = BOOLEAN_TO_JSVAL(inputRecord.Event.MouseEvent.dwControlKeyState & (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED));
-						argv[6] = BOOLEAN_TO_JSVAL(inputRecord.Event.MouseEvent.dwControlKeyState & (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED));
-						argv[7] = BOOLEAN_TO_JSVAL(inputRecord.Event.MouseEvent.dwControlKeyState & SHIFT_PRESSED);
-						JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, 7, argv+1, argv) );
+					case WINDOW_BUFFER_SIZE_EVENT: {
+
+						JL_CHK( JS_GetProperty(cx, thisObj, "onSize", &fct) );
+						if ( JL_ValueIsCallable(cx, fct) ) {
+
+							JL_CHK( jl::call(cx, thisObj, fct, &rval,
+								inputRecord.Event.WindowBufferSizeEvent.dwSize.X,
+								inputRecord.Event.WindowBufferSizeEvent.dwSize.Y
+							) );
+						}
+						break;
 					}
-					break;
-				}
 
-				case WINDOW_BUFFER_SIZE_EVENT: {
+					case FOCUS_EVENT: {
 
-					JL_CHK( JS_GetProperty(cx, upe->obj, "onSize", &fct) );
-					if ( JL_ValueIsCallable(cx, fct) ) {
+						JL_CHK( JS_GetProperty(cx, thisObj, "onFocus", &fct) );
+						if ( JL_ValueIsCallable(cx, fct) ) {
 
-						argv[1] = INT_TO_JSVAL(inputRecord.Event.WindowBufferSizeEvent.dwSize.X);
-						argv[2] = INT_TO_JSVAL(inputRecord.Event.WindowBufferSizeEvent.dwSize.Y);
-						JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, 2, argv+1, argv) );
+							JL_CHK( jl::call(cx, thisObj, fct, &rval, inputRecord.Event.FocusEvent.bSetFocus) );
+						}
+						break;
 					}
-					break;
-				}
-
-				case FOCUS_EVENT: {
-
-					JL_CHK( JS_GetProperty(cx, upe->obj, "onFocus", &fct) );
-					if ( JL_ValueIsCallable(cx, fct) ) {
-
-						argv[1] = BOOLEAN_TO_JSVAL(inputRecord.Event.FocusEvent.bSetFocus);
-						JL_CHK( JS_CallFunctionValue(cx, upe->obj, fct, 1, argv+1, argv) );
-					}
-					break;
 				}
 			}
 		}
+		return true;
+		JL_BAD;
 	}
-	return true;
-	JL_BAD;
-}
 
-void ConsoleWaitFinalize( void *pe ) {
+	~ConsoleProcessEvent() {
 
-	ConsoleUserProcessEvent *upe = (ConsoleUserProcessEvent*)pe;
-
-	CloseHandle(upe->cancelEvent);
-}
+		CloseHandle(cancelEvent);
+	}
+};
 
 
 DEFINE_FUNCTION( events ) {
@@ -582,17 +585,11 @@ DEFINE_FUNCTION( events ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(0);
 
-	ConsoleUserProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, ConsoleWaitFinalize, JL_RVAL) );
-	upe->pe.prepareWait = ConsolePrepareWait;
-	upe->pe.startWait = ConsoleStartWait;
-	upe->pe.cancelWait = ConsoleCancelWait;
-	upe->pe.endWait = ConsoleEndWait;
+	ConsoleProcessEvent *upe = new ConsoleProcessEvent();
+	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
 
 	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset
 	upe->consoleEvent = GetStdHandle(STD_INPUT_HANDLE);
-	upe->obj = JL_OBJ;
-	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(upe->obj)) ); // GC protection
 
 	return true;
 	JL_BAD;

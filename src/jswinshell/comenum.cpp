@@ -24,9 +24,9 @@ BEGIN_CLASS( ComEnum )
 
 DEFINE_FINALIZE() {
 
-	if ( obj == JL_GetCachedProto(JL_GetHostPrivate(fop->runtime()), JL_THIS_CLASS_NAME) )
+	if ( obj == jl::Host::getHost(fop->runtime()).getCachedProto(JL_THIS_CLASS_NAME) )
 		return;
-	IEnumVARIANT *ienumv = (IEnumVARIANT*)JL_GetPrivate(obj);
+	IEnumVARIANT *ienumv = (IEnumVARIANT*)js::GetObjectPrivate(obj);
 	ienumv->Release();
 }
 
@@ -81,10 +81,10 @@ END_CLASS
 
 bool NewComEnum( JSContext *cx, IEnumVARIANT *ienumv, OUT JS::MutableHandleValue rval ) {
 
-	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComEnum), JL_CLASS_PROTOTYPE(cx, ComEnum));
+	JS::RootedObject varObj(cx, JL_NewObjectWithGivenProto(cx, JL_CLASS(ComEnum), JL_CLASS_PROTOTYPE(cx, ComEnum)));
 	JL_CHK( varObj );
-	rval.setObject( *varObj );
-	JL_SetPrivate( varObj, ienumv);
+	rval.setObject(*varObj);
+	JL_SetPrivate(varObj, ienumv);
 	ienumv->AddRef();
 	return true;
 	JL_BAD;

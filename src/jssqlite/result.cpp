@@ -789,7 +789,7 @@ DEFINE_FUNCTION( stdIteratorNext ) {
 	JS::RootedObject item(cx, JL_NewObj(cx));
 	JS::RootedObject resultObj(cx, &result.toObject());
 	JS::RootedValue row(cx);
-	if ( !JL_CallFunctionIdVA(cx, resultObj, JLID(cx, next), &row) ) {
+	if ( !jl::call(cx, resultObj, JLID(cx, next), &row) ) {
 
 		JS::RootedValue ex(cx);
 		JL_CHK( JS_GetPendingException(cx, &ex) );

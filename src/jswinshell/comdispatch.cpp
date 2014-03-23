@@ -20,9 +20,9 @@ BEGIN_CLASS( ComDispatch )
 
 DEFINE_FINALIZE() {
 
-	if ( obj == JL_GetCachedProto(JL_GetHostPrivate(fop->runtime()), JL_THIS_CLASS_NAME) )
+	if ( obj == jl::Host::getHost(fop->runtime()).getCachedProto(JL_THIS_CLASS_NAME) )
 		return;
-	IDispatch *disp = (IDispatch*)JL_GetPrivate(obj);
+	IDispatch *disp = (IDispatch*)js::GetObjectPrivate(obj);
 	disp->Release();
 }
 
@@ -33,18 +33,21 @@ bool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
+/*
 #ifdef DEBUG
 	jsval dbg_funNameVal;
 	JS_GetPropertyById(cx, &JS_CALLEE(cx, vp).toObject(), JLID(cx, name), &dbg_funNameVal);
 	const jschar *dbg_name = JS_GetStringCharsZ(cx, dbg_funNameVal.toString());
 	JL_IGNORE(dbg_name);
 #endif
+*/
 
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( disp );
 
-	JSObject *funObj = &JS_CALLEE(cx, vp).toObject();
-	jsval dispidVal;
+
+	JS::RootedObject funObj(cx, args.callee());
+	JS::RootedValue dispidVal(cx);
 	JL_CHK( JS_GetPropertyById(cx, funObj, JLID(cx, id), &dispidVal) );
 	DISPID dispid = dispidVal.toInt32();
 
@@ -83,12 +86,15 @@ bool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 	if ( hr == DISP_E_MEMBERNOTFOUND ) { // see DEFINE_GET_PROPERTY
 
 		// remove the function because it is not a DISPATCH_METHOD
-		jsval funNameVal;
-		jsid funNameId;
+		JS::RootedValue funNameVal(cx);
+		
+
 		JL_CHK( JS_GetPropertyById(cx, funObj, JLID(cx, name), &funNameVal) );
 		//JL_CHK( JL_JsvalToJsid(cx, &funNameVal, &funNameId) );
 		ASSERT( funNameVal.isString() );
-		funNameId = JL_StringToJsid(cx, funNameVal.toString());
+
+		JS::RootedId funNameId(cx, JL_StringToJsid(cx, funNameVal.toString()));
+
 		ASSERT( JSID_IS_STRING(funNameId) );
 		//JL_CHK( JL_RemovePropertyById(cx, JL_OBJ, funNameId) );
 		JL_CHK( JS_DeletePropertyById(cx, JL_OBJ, funNameId) ); // beware: permanant properties cannot be removed.
@@ -346,7 +352,7 @@ DEFINE_FUNCTION( equals ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(1);
 
-	JL_RVAL->setBoolean(JL_ARG(1).isObject() && &JL_ARG(1).toObject() == obj);
+	JL_RVAL.setBoolean(JL_ARG(1).isObject() && &JL_ARG(1).toObject() == obj);
 	
 	return true;
 	JL_BAD;

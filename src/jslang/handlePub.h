@@ -232,7 +232,7 @@ template <class T>
 INLINE bool
 GetHandlePrivate( JSContext *cx, IN JS::HandleValue handleVal, T *&data ) {
 
-	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
+	JL_ASSERT_INSTANCE( handleVal, JL_HandleJSClass(cx) );
 	HandlePrivate *pv;
 	pv = static_cast<HandlePrivate*>(JL_GetPrivate(handleVal));
 	data = static_cast<T*>(pv);

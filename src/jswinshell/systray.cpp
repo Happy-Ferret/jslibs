@@ -798,7 +798,7 @@ DEFINE_FUNCTION( events ) {
 
 
 	SystrayEvent *upe = new SystrayEvent();
-	JL_CHK( HandleCreate(cx, &upe, JL_RVAL) );
+	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
 
 	upe->hslot(0).set(JL_OBJVAL);
 

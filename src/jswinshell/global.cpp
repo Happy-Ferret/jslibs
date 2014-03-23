@@ -61,12 +61,18 @@ DEFINE_FUNCTION( extractIcon ) {
 		JL_RVAL.setUndefined();
 		return true;
 	}
-	JSObject *icon = JL_NewObjectWithGivenProto(cx, JL_CLASS(Icon), JL_CLASS_PROTOTYPE(cx, Icon));
+
+	{
+
+	JS::RootedObject icon(cx, JL_NewObjectWithGivenProto(cx, JL_CLASS(Icon), JL_CLASS_PROTOTYPE(cx, Icon)));
 	HICON *phIcon = (HICON*)jl_malloc(sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
 	JL_ASSERT_ALLOC( phIcon );
 	*phIcon = hIcon;
-	JL_SetPrivate( icon, phIcon);
-	*JL_RVAL = OBJECT_TO_JSVAL(icon);
+	JL_SetPrivate(icon, phIcon);
+	JL_RVAL.setObject(*icon);
+
+	}
+
 	return true;
 	JL_BAD;
 }
@@ -123,7 +129,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( messageBox ) {
 
 	JLData caption, text;
-	
+
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 
@@ -139,7 +145,7 @@ DEFINE_FUNCTION( messageBox ) {
 	int res = MessageBox(NULL, text.GetConstStrZ(), caption.GetConstStrZOrNULL(), type);
 	if ( res == 0 )
 		return JL_ThrowOSError(cx);
-	*JL_RVAL = INT_TO_JSVAL( res );
+	JL_RVAL.setInt32(res);
 	return true;
 	JL_BAD;
 }
@@ -239,14 +245,14 @@ DEFINE_FUNCTION( fileOpenDialog ) {
 	ofn.nMaxFile = sizeof(fileName);
 	ofn.Flags = OFN_NOCHANGEDIR | OFN_LONGNAMES | OFN_HIDEREADONLY;
 	BOOL res = GetOpenFileName(&ofn); // doc: http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/userinput/commondialogboxlibrary/commondialogboxreference/commondialogboxstructures/openfilename.asp
-	
+
 	if ( res == 0 ) {
-	
+
 		DWORD err = CommDlgExtendedError();
 		JL_ERR( E_OS, E_OPERATION, E_ERRNO(err) );
 	}
 
-	*JL_RVAL = STRING_TO_JSVAL( JS_NewStringCopyZ(cx, fileName) );
+	JL_RVAL.setString( JS_NewStringCopyZ(cx, fileName) );
 	return true;
 	JL_BAD;
 }
@@ -269,7 +275,7 @@ DEFINE_FUNCTION( expandEnvironmentStrings ) {
 	DWORD res = ExpandEnvironmentStrings( src, dst, sizeof(dst) );
 	if ( res == 0 )
 		return JL_ThrowOSError(cx);
-	*JL_RVAL = STRING_TO_JSVAL( JS_NewStringCopyN(cx, dst, res) );
+	JL_RVAL.setString( JS_NewStringCopyN(cx, dst, res) );
 	return true;
 	JL_BAD;
 }
@@ -354,7 +360,7 @@ DEFINE_FUNCTION( createComObject ) {
 
 	hr = GetActiveObject(clsid, NULL, &punk);
 	if ( FAILED(hr) ) {
-		
+
 		hr = CoCreateInstance(clsid, NULL, CLSCTX_SERVER, IID_IUnknown, (void **)&punk); // | CLSCTX_INPROC_HANDLER ???
 		if ( FAILED(hr) )
 			JL_CHK( WinThrowError(cx, hr) );
@@ -439,20 +445,20 @@ ParseRootKey(IN const char *path, OUT size_t *length) {
 		*length = 4;
 		return HKEY_DYN_DATA;
 	} else {
-		
+
 		return NULL;
 	}
 }
 
 DEFINE_FUNCTION( registrySet ) {
 
-	jsval value;
+	JS::RootedValue value(cx);
 	JLData subKeyStr, valueNameStr;
 	const char *subKey;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(3);
-	
+
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &subKeyStr) );
 	subKey = subKeyStr.GetConstStrZ();
 
@@ -485,7 +491,7 @@ DEFINE_FUNCTION( registrySet ) {
 		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &valueNameStr) );
 
 		if ( value.isUndefined() ) {
-			
+
 			st = RegDeleteValue(hKey, valueNameStr);
 		} else
 		if ( value.isNull() ) {
@@ -561,7 +567,7 @@ DEFINE_FUNCTION( registryGet ) {
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(1,2);
-	
+
 	const char *path;
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pathStr) );
 	path = pathStr.GetConstStrZ();
@@ -583,9 +589,9 @@ DEFINE_FUNCTION( registryGet ) {
 
 	if ( (argc == 1) || (argc >= 2 && JL_ARG(2).isUndefined()) ) {
 
-		JSObject *arrObj = JS_NewArrayObject(cx, 0);
+		JS::RootedObject arrObj(cx, JS_NewArrayObject(cx, 0));
 		JL_CHK( arrObj );
-		*JL_RVAL = OBJECT_TO_JSVAL(arrObj);
+		JL_RVAL.setObject(*arrObj);
 
 		char name[16384]; // http://msdn.microsoft.com/en-us/library/ms724872%28VS.85%29.aspx
 		DWORD nameLength, index;
@@ -600,8 +606,8 @@ DEFINE_FUNCTION( registryGet ) {
 
 			if ( st != ERROR_SUCCESS )
 				break;
-			jsval strName;
-			JL_CHK( JL_NativeToJsval(cx, name, nameLength, strName) );
+			JS::RootedValue strName(cx);
+			JL_CHK( JL_NativeToJsval(cx, name, nameLength, &strName) );
 			JL_CHK( JL_SetElement(cx, arrObj, index, strName) );
 			index++;
 		}
@@ -620,7 +626,7 @@ DEFINE_FUNCTION( registryGet ) {
 	st = RegQueryValueEx(hKey, valueName, NULL, &type, NULL, &size);
 
 	if ( st == ERROR_FILE_NOT_FOUND ) {
-		
+
 		JL_RVAL.setUndefined();
 		RegCloseKey(hKey);
 		return true;
@@ -638,30 +644,30 @@ DEFINE_FUNCTION( registryGet ) {
 	// doc. http://msdn.microsoft.com/en-us/library/ms724884(VS.85).aspx
 	switch (type) {
 		case REG_NONE:
-			*JL_RVAL = JSVAL_NULL;
+			JL_RVAL.setNull();
 			JL_DataBufferFree(cx, buffer);
 			break;
 		case REG_BINARY:
-			JL_CHK( JL_NewBufferGetOwnership(cx, buffer, size, *JL_RVAL) );
+			JL_CHK( JL_NewBufferGetOwnership(cx, buffer, size, JL_RVAL) );
 			break;
 		case REG_DWORD:
-			JL_CHK( JL_NativeToJsval(cx, *(DWORD*)buffer, *JL_RVAL) );
+			JL_CHK( JL_NativeToJsval(cx, *(DWORD*)buffer, JL_RVAL) );
 			JL_DataBufferFree(cx, buffer);
 			break;
 		case REG_QWORD:
-			JL_CHK( JL_NativeToJsval(cx, (double)*(DWORD64*)buffer, *JL_RVAL) );
+			JL_CHK( JL_NativeToJsval(cx, (double)*(DWORD64*)buffer, JL_RVAL) );
 			break;
 		case REG_LINK: {
 			JSString *jsstr = JL_NewUCString(cx, (jschar*)buffer, size/2);
 			JL_CHK( jsstr );
-			*JL_RVAL = STRING_TO_JSVAL(jsstr);
+			JL_RVAL.setString(jsstr);
 			break;
 		}
 		case REG_EXPAND_SZ:
 		case REG_MULTI_SZ:
 		case REG_SZ: {
 			//JSString *jsstr = JL_NewString(cx, (char*)buffer, size-1); // note: ((char*)buffer)[size] already == '\0'
-			JL_CHK( JLData((char*)buffer, true, size-1).GetJSString(cx, *JL_RVAL) );
+			JL_CHK( JLData((char*)buffer, true, size-1).GetJSString(cx, JL_RVAL) );
 			break;
 		}
 	}
@@ -699,20 +705,23 @@ $TOC_MEMBER $INAME
   }}}
 **/
 // (TBD) Linux version using inotify: http://en.wikipedia.org/wiki/Inotify / try: man inotify
-struct DirectoryChanges {
+struct DirectoryChanges : public HandlePrivate {
+	JL_HANDLE_TYPE typeId() const {
+
+		return JLHID(dmon);
+	}
 	HANDLE hDirectory;
 	OVERLAPPED overlapped;
 	BYTE buffer[2][2048];
 	int currentBuffer;
 	BOOL watchSubtree;
-	DWORD	notifyFilter;
+	DWORD notifyFilter;
+	~DirectoryChanges() {
+
+		CloseHandle(hDirectory);
+	}
 };
 
-void FinalizeDirectoryHandle(void *data) {
-	
-	DirectoryChanges *dc = (DirectoryChanges*)data;
-	CloseHandle(dc->hDirectory);
-}
 
 DEFINE_FUNCTION( directoryChangesInit ) {
 
@@ -732,8 +741,8 @@ DEFINE_FUNCTION( directoryChangesInit ) {
 	else
 		watchSubtree = false;
 
-	DirectoryChanges *dc;
-	JL_CHK( HandleCreate(cx, JLHID(dmon), &dc, FinalizeDirectoryHandle, JL_RVAL) );
+	DirectoryChanges *dc = new DirectoryChanges();
+	JL_CHK( HandleCreate(cx, dc, JL_RVAL) );
 
 	dc->watchSubtree = watchSubtree;
 	dc->notifyFilter = notifyFilter;
@@ -770,7 +779,8 @@ DEFINE_FUNCTION( directoryChangesLookup ) {
 	JL_ASSERT_ARGC_RANGE(1,2);
 	JL_ASSERT_ARG_TYPE( IsHandleType(cx, JL_ARG(1), JLHID(dmon)), 1, "(dmon) Handle" );
 
-	DirectoryChanges *dc = (DirectoryChanges*)GetHandlePrivate(cx, JL_ARG(1));
+	DirectoryChanges *dc;
+	JL_CHK( GetHandlePrivate(cx, JL_ARG(1), dc) );
 	JL_ASSERT( dc, E_ARG, E_NUM(1), E_STATE );
 
 	bool wait;
@@ -786,10 +796,10 @@ DEFINE_FUNCTION( directoryChangesLookup ) {
 			return WinThrowError(cx,  GetLastError());
 
 		if ( res != WAIT_OBJECT_0 ) { // non signaled
-			
+
 			JSObject *arrObj = JS_NewArrayObject(cx, 0);
 			JL_CHK( arrObj );
-			*JL_RVAL = OBJECT_TO_JSVAL( arrObj );
+			JL_RVAL.setObject(*arrObj);
 			return true;
 		}
 	}
@@ -806,30 +816,30 @@ DEFINE_FUNCTION( directoryChangesLookup ) {
 	FILE_NOTIFY_INFORMATION *pFileNotify;
 	pFileNotify = (PFILE_NOTIFY_INFORMATION)&dc->buffer[1-dc->currentBuffer];
 
-	JSObject *arrObj = JS_NewArrayObject(cx, 0);
-	JL_CHK( arrObj );
-	*JL_RVAL = OBJECT_TO_JSVAL( arrObj );
+	{
 
-	jsval tmp;
-	jsval eltContent[2];
+	JS::RootedObject arrObj(cx, JS_NewArrayObject(cx, 0));
+	JL_CHK( arrObj );
+	JL_RVAL.setObject(*arrObj);
+
 	int index = 0;
 	// see http://www.google.fr/codesearch/p?hl=fr&sa=N&cd=17&ct=rc#8WOCRDPt-u8/trunk/src/FileWatch.cc&q=ReadDirectoryChangesW
 	while ( pFileNotify ) {
 
-		JSString *str = JS_NewUCStringCopyN(cx, (jschar*)pFileNotify->FileName, pFileNotify->FileNameLength / sizeof(WCHAR));
+		JS::RootedValue eltVal(cx);
+		JS::RootedString str(cx, JS_NewUCStringCopyN(cx, (jschar*)pFileNotify->FileName, pFileNotify->FileNameLength / sizeof(WCHAR)));
 		JL_CHK( str );
-		eltContent[0] = STRING_TO_JSVAL( str );
-		eltContent[1] = INT_TO_JSVAL( pFileNotify->Action );
-		JSObject *elt = JS_NewArrayObject(cx, COUNTOF(eltContent), eltContent);
-		JL_CHK( elt );
-		tmp = OBJECT_TO_JSVAL( elt );
-		JL_CHK( JL_SetElement(cx, arrObj, index, tmp) );
+		eltVal.setObject(*jl::newJsArray(cx, (JS::HandleString)str, pFileNotify->Action));
+
+		JL_CHK( JL_SetElement(cx, arrObj, index, eltVal) );
 		index++;
 
 		if ( pFileNotify->NextEntryOffset )
 			pFileNotify = (FILE_NOTIFY_INFORMATION*) ((PBYTE)pFileNotify + pFileNotify->NextEntryOffset) ;
 		else
 			pFileNotify = NULL;
+	}
+
 	}
 
 	return true;
@@ -858,9 +868,7 @@ while ( !host.endSignal )
 }}}
 **/
 
-struct DirectoryUserProcessEvent {
-	
-	ProcessEvent pe;
+struct DirectoryUserProcessEvent : public ProcessEvent2 {
 
 	DirectoryChanges *dc;
 	HANDLE cancelEvent;
@@ -868,92 +876,74 @@ struct DirectoryUserProcessEvent {
 	JSObject *callbackFunctionThis;
 	jsval callbackFunction;
 
-	jsval dcVal;
+
+	bool prepareWait(JSContext *cx, JS::HandleObject obj) {
+
+		return true;
+	}
+
+	void startWait() {
+
+		const HANDLE events[] = { cancelEvent, dc->hDirectory };
+		DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
+		ASSERT( status != WAIT_FAILED );
+	}
+
+	bool cancelWait() {
+
+		BOOL status = SetEvent(cancelEvent);
+		ASSERT( status );
+
+		return true;
+	}
+
+	bool endWait(bool *hasEvent, JSContext *cx, JS::HandleObject obj) {
+
+		DWORD st = WaitForSingleObject(dc->hDirectory, 0);
+		*hasEvent = (st == WAIT_OBJECT_0);
+
+		if ( !*hasEvent )
+			return true;
+
+		if ( slot(0) != JL_ZInitValue() ) {
+
+			JS::RootedValue rval(cx);
+			JS::RootedObject callThisObj(cx);
+			callThisObj.set(&slot(0).toObject());
+			JL_CHK( JL_CallFunctionVA(cx, callThisObj, hslot(0), &rval, hslot(1)) );
+		}
+		return true;
+		JL_BAD;
+	}
+
+	~DirectoryUserProcessEvent() {
+
+		BOOL status = CloseHandle(cancelEvent);
+		ASSERT( status );
+	}
 };
 
-S_ASSERT( offsetof(DirectoryUserProcessEvent, pe) == 0 );
-
-static bool DirectoryChangesPrepareWait( volatile ProcessEvent *, JSContext *, JSObject * ) {
-	
-	return true;
-}
-
-static void DirectoryChangesStartWait( volatile ProcessEvent *pe ) {
-
-	DirectoryUserProcessEvent *upe = (DirectoryUserProcessEvent*)pe;
-	
-	const HANDLE events[] = { upe->cancelEvent, upe->dc->hDirectory };
-	DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
-	ASSERT( status != WAIT_FAILED );
-}
-
-static bool DirectoryChangesCancelWait( volatile ProcessEvent *pe ) {
-
-	DirectoryUserProcessEvent *upe = (DirectoryUserProcessEvent*)pe;
-
-	BOOL status = SetEvent(upe->cancelEvent);
-	ASSERT( status );
-
-	return true;
-}
-
-static bool DirectoryChangesEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
-	
-	DirectoryUserProcessEvent *upe = (DirectoryUserProcessEvent*)pe;
-
-	DWORD st = WaitForSingleObject(upe->dc->hDirectory, 0);
-	*hasEvent = (st == WAIT_OBJECT_0);
-
-	if ( !*hasEvent )
-		return true;
-
-	if ( upe->callbackFunction.isUndefined() )
-		return true;
-
-	jsval rval;
-	JL_CHK( JL_CallFunctionVA(cx, upe->callbackFunctionThis, upe->callbackFunction, &rval, upe->dcVal) );
-	return true;
-	JL_BAD;
-}
-
-static void FinalizeDirectoryChangesEvents( void *data ) {
-	
-	DirectoryUserProcessEvent *upe = (DirectoryUserProcessEvent*)data;
-
-	BOOL status = CloseHandle(upe->cancelEvent);
-	ASSERT( status );
-}
 
 
 DEFINE_FUNCTION( directoryChangesEvents ) {
-	
+
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(1, 2);
 	JL_ASSERT_ARG_TYPE( IsHandleType(cx, JL_ARG(1), JLHID(dmon)), 1, "(dmon) Handle" );
 
-	DirectoryChanges *dc = (DirectoryChanges*)GetHandlePrivate(cx, JL_ARG(1));
+	DirectoryChanges *dc;
+	JL_CHK( GetHandlePrivate(cx, JL_ARG(1), dc) );
 	JL_ASSERT( dc, E_ARG, E_NUM(1), E_STATE );
 
-	DirectoryUserProcessEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, FinalizeDirectoryChangesEvents, JL_RVAL) );
-	upe->pe.prepareWait = DirectoryChangesPrepareWait;
-	upe->pe.startWait = DirectoryChangesStartWait;
-	upe->pe.cancelWait = DirectoryChangesCancelWait;
-	upe->pe.endWait = DirectoryChangesEndWait;
+	DirectoryUserProcessEvent *upe = new DirectoryUserProcessEvent();
+	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
 
 	if ( JL_ARG_ISDEF(2) ) {
 
 		JL_ASSERT_ARG_IS_CALLABLE(2);
-		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, JL_OBJVAL) ); // GC protection only
-		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 1, JL_ARG(1)) ); // GC protection only
-		JL_CHK( SetHandleSlot(cx, *JL_RVAL, 2, JL_ARG(2) ) ); // GC protection only
-
-		upe->callbackFunctionThis = JL_OBJ; // store "this" object.
-		upe->callbackFunction = JL_ARG(2);
-		upe->dcVal = JL_ARG(1); // dmon handle (argument 1 of the callback function)
-	} else {
-	
-		upe->callbackFunction = JSVAL_VOID;
+		upe->hslot(0).set(JL_OBJVAL); // store "this" object.
+		upe->hslot(1).set(JL_ARG(1)); // dmon handle (argument 1 of the callback function)
+		upe->hslot(2).set(JL_ARG(2)); // optional onChange function
 	}
 
 	upe->dc = dc;
@@ -991,11 +981,11 @@ DEFINE_FUNCTION( guidToString ) {
 	GUID guid;
 	CopyMemory(&guid, str.GetConstStr(), sizeof(GUID));
 	WCHAR szGuid[39];
-	int len = StringFromGUID2(guid, szGuid, 39);
-	ASSERT( len == 39 );
-	ASSERT( szGuid[38] == 0 );
+	int len = StringFromGUID2(guid, szGuid, COUNTOF(szGuid));
+	ASSERT( len == COUNTOF(szGuid) );
+	ASSERT( szGuid[COUNTOF(szGuid)-1] == 0 );
 
-	JL_CHK( JL_NativeToJsval(cx, szGuid, 38, *JL_RVAL) );
+	JL_CHK( JL_NativeToJsval(cx, szGuid, COUNTOF(szGuid)-1, JL_RVAL) );
 
 	return true;
 	JL_BAD;
@@ -1209,128 +1199,69 @@ DEFINE_PROPERTY_GETTER( lastInputTime ) {
 /**doc
 $TOC_MEMBER $INAME
  $BOOL $INAME
-  ADMINTOOLS              
-  ALTSTARTUP					
-  APPDATA						
-  BITBUCKET					
-  CDBURN_AREA					
-  COMMON_ADMINTOOLS			
-  COMMON_ALTSTARTUP			
-  COMMON_APPDATA				
-  COMMON_DESKTOPDIRECTORY	
-  COMMON_DOCUMENTS			
-  COMMON_FAVORITES			
-  COMMON_MUSIC				
-  COMMON_OEM_LINKS			
-  COMMON_PICTURES			
-  COMMON_PROGRAMS			
-  COMMON_STARTMENU			
-  COMMON_STARTUP				
-  COMMON_TEMPLATES			
-  COMMON_VIDEO				
-  COMPUTERSNEARME			
-  CONNECTIONS					
-  CONTROLS						
-  COOKIES						
-  DESKTOP						
-  DESKTOPDIRECTORY			
-  DRIVES						
-  FAVORITES					
-  FONTS							
-  HISTORY						
-  INTERNET						
-  INTERNET_CACHE				
-  LOCAL_APPDATA				
-  MYDOCUMENTS					
-  MYMUSIC						
-  MYPICTURES					
-  MYVIDEO						
-  NETHOOD						
-  NETWORK						
-  PERSONAL						
-  PRINTERS						
-  PRINTHOOD					
-  PROFILE						
-  PROGRAM_FILES				
-  PROGRAM_FILESX86			
-  PROGRAM_FILES_COMMON		
-  PROGRAM_FILES_COMMONX86	
-  PROGRAMS						
-  RECENT						
-  RESOURCES					
-  RESOURCES_LOCALIZED		
-  SENDTO						
-  STARTMENU					
-  STARTUP						
-  SYSTEM						
-  SYSTEMX86					
-  TEMPLATES					
-  WINDOWS						
+  ADMINTOOLS
+  ALTSTARTUP
+  APPDATA
+  BITBUCKET
+  CDBURN_AREA
+  COMMON_ADMINTOOLS
+  COMMON_ALTSTARTUP
+  COMMON_APPDATA
+  COMMON_DESKTOPDIRECTORY
+  COMMON_DOCUMENTS
+  COMMON_FAVORITES
+  COMMON_MUSIC
+  COMMON_OEM_LINKS
+  COMMON_PICTURES
+  COMMON_PROGRAMS
+  COMMON_STARTMENU
+  COMMON_STARTUP
+  COMMON_TEMPLATES
+  COMMON_VIDEO
+  COMPUTERSNEARME
+  CONNECTIONS
+  CONTROLS
+  COOKIES
+  DESKTOP
+  DESKTOPDIRECTORY
+  DRIVES
+  FAVORITES
+  FONTS
+  HISTORY
+  INTERNET
+  INTERNET_CACHE
+  LOCAL_APPDATA
+  MYDOCUMENTS
+  MYMUSIC
+  MYPICTURES
+  MYVIDEO
+  NETHOOD
+  NETWORK
+  PERSONAL
+  PRINTERS
+  PRINTHOOD
+  PROFILE
+  PROGRAM_FILES
+  PROGRAM_FILESX86
+  PROGRAM_FILES_COMMON
+  PROGRAM_FILES_COMMONX86
+  PROGRAMS
+  RECENT
+  RESOURCES
+  RESOURCES_LOCALIZED
+  SENDTO
+  STARTMENU
+  STARTUP
+  SYSTEM
+  SYSTEMX86
+  TEMPLATES
+  WINDOWS
  $H example
 {{{
 new File( DESKTOP+'\\test.txt' ).content = '1234';
 }}}
 **/
 
-enum {
-	ADMINTOOLS               = CSIDL_ADMINTOOLS,
-	ALTSTARTUP               = CSIDL_ALTSTARTUP,
-	APPDATA                  = CSIDL_APPDATA,
-	BITBUCKET                = CSIDL_BITBUCKET,
-	CDBURN_AREA              = CSIDL_CDBURN_AREA,
-	COMMON_ADMINTOOLS        = CSIDL_COMMON_ADMINTOOLS,
-	COMMON_ALTSTARTUP        = CSIDL_COMMON_ALTSTARTUP,
-	COMMON_APPDATA           = CSIDL_COMMON_APPDATA,
-	COMMON_DESKTOPDIRECTORY  = CSIDL_COMMON_DESKTOPDIRECTORY,
-	COMMON_DOCUMENTS         = CSIDL_COMMON_DOCUMENTS,
-	COMMON_FAVORITES         = CSIDL_COMMON_FAVORITES,
-	COMMON_MUSIC             = CSIDL_COMMON_MUSIC,
-	COMMON_OEM_LINKS         = CSIDL_COMMON_OEM_LINKS,
-	COMMON_PICTURES          = CSIDL_COMMON_PICTURES,
-	COMMON_PROGRAMS          = CSIDL_COMMON_PROGRAMS,
-	COMMON_STARTMENU         = CSIDL_COMMON_STARTMENU,
-	COMMON_STARTUP           = CSIDL_COMMON_STARTUP,
-	COMMON_TEMPLATES         = CSIDL_COMMON_TEMPLATES,
-	COMMON_VIDEO             = CSIDL_COMMON_VIDEO,
-	COMPUTERSNEARME          = CSIDL_COMPUTERSNEARME,
-	CONNECTIONS              = CSIDL_CONNECTIONS,
-	CONTROLS                 = CSIDL_CONTROLS,
-	COOKIES                  = CSIDL_COOKIES,
-	DESKTOP                  = CSIDL_DESKTOP,
-	DESKTOPDIRECTORY         = CSIDL_DESKTOPDIRECTORY,
-	DRIVES                   = CSIDL_DRIVES,
-	FAVORITES                = CSIDL_FAVORITES,
-	FONTS                    = CSIDL_FONTS,
-	HISTORY                  = CSIDL_HISTORY,
-	INTERNET                 = CSIDL_INTERNET,
-	INTERNET_CACHE           = CSIDL_INTERNET_CACHE,
-	LOCAL_APPDATA            = CSIDL_LOCAL_APPDATA,
-	MYDOCUMENTS              = CSIDL_MYDOCUMENTS,
-	MYMUSIC                  = CSIDL_MYMUSIC,
-	MYPICTURES               = CSIDL_MYPICTURES,
-	MYVIDEO                  = CSIDL_MYVIDEO,
-	NETHOOD                  = CSIDL_NETHOOD,
-	NETWORK                  = CSIDL_NETWORK,
-	PERSONAL                 = CSIDL_PERSONAL,
-	PRINTERS                 = CSIDL_PRINTERS,
-	PRINTHOOD                = CSIDL_PRINTHOOD,
-	PROFILE                  = CSIDL_PROFILE,
-	PROGRAM_FILES            = CSIDL_PROGRAM_FILES,
-	PROGRAM_FILESX86         = CSIDL_PROGRAM_FILESX86,
-	PROGRAM_FILES_COMMON     = CSIDL_PROGRAM_FILES_COMMON,
-	PROGRAM_FILES_COMMONX86  = CSIDL_PROGRAM_FILES_COMMONX86,
-	PROGRAMS                 = CSIDL_PROGRAMS,
-	RECENT                   = CSIDL_RECENT,
-	RESOURCES                = CSIDL_RESOURCES,
-	RESOURCES_LOCALIZED      = CSIDL_RESOURCES_LOCALIZED,
-	SENDTO                   = CSIDL_SENDTO,
-	STARTMENU                = CSIDL_STARTMENU,
-	STARTUP                  = CSIDL_STARTUP,
-	SYSTEM                   = CSIDL_SYSTEM,
-	SYSTEMX86                = CSIDL_SYSTEMX86,
-	TEMPLATES                = CSIDL_TEMPLATES,
-	WINDOWS                  = CSIDL_WINDOWS,
-};
 
 DEFINE_PROPERTY_GETTER( folderPath ) {
 
@@ -1342,6 +1273,67 @@ DEFINE_PROPERTY_GETTER( folderPath ) {
 	vp.setUndefined();
 	return true;
 }
+
+
+DEFINE_PROPERTY_GETTER_SWITCH(ADMINTOOLS               , folderPath, CSIDL_ADMINTOOLS);
+DEFINE_PROPERTY_GETTER_SWITCH(ALTSTARTUP               , folderPath, CSIDL_ALTSTARTUP);
+DEFINE_PROPERTY_GETTER_SWITCH(APPDATA                  , folderPath, CSIDL_APPDATA);
+DEFINE_PROPERTY_GETTER_SWITCH(BITBUCKET                , folderPath, CSIDL_BITBUCKET);
+DEFINE_PROPERTY_GETTER_SWITCH(CDBURN_AREA              , folderPath, CSIDL_CDBURN_AREA);
+DEFINE_PROPERTY_GETTER_SWITCH(COMMON_ADMINTOOLS        , folderPath, CSIDL_COMMON_ADMINTOOLS);
+DEFINE_PROPERTY_GETTER_SWITCH(COMMON_ALTSTARTUP        , folderPath, CSIDL_COMMON_ALTSTARTUP);
+DEFINE_PROPERTY_GETTER_SWITCH(COMMON_APPDATA           , folderPath, CSIDL_COMMON_APPDATA);
+DEFINE_PROPERTY_GETTER_SWITCH(COMMON_DESKTOPDIRECTORY  , folderPath, CSIDL_COMMON_DESKTOPDIRECTORY);
+DEFINE_PROPERTY_GETTER_SWITCH(COMMON_DOCUMENTS         , folderPath, CSIDL_COMMON_DOCUMENTS);
+DEFINE_PROPERTY_GETTER_SWITCH(COMMON_FAVORITES         , folderPath, CSIDL_COMMON_FAVORITES);
+DEFINE_PROPERTY_GETTER_SWITCH(COMMON_MUSIC             , folderPath, CSIDL_COMMON_MUSIC);
+DEFINE_PROPERTY_GETTER_SWITCH(COMMON_OEM_LINKS         , folderPath, CSIDL_COMMON_OEM_LINKS);
+DEFINE_PROPERTY_GETTER_SWITCH(COMMON_PICTURES          , folderPath, CSIDL_COMMON_PICTURES);
+DEFINE_PROPERTY_GETTER_SWITCH(COMMON_PROGRAMS          , folderPath, CSIDL_COMMON_PROGRAMS);
+DEFINE_PROPERTY_GETTER_SWITCH(COMMON_STARTMENU         , folderPath, CSIDL_COMMON_STARTMENU);
+DEFINE_PROPERTY_GETTER_SWITCH(COMMON_STARTUP           , folderPath, CSIDL_COMMON_STARTUP);
+DEFINE_PROPERTY_GETTER_SWITCH(COMMON_TEMPLATES         , folderPath, CSIDL_COMMON_TEMPLATES);
+DEFINE_PROPERTY_GETTER_SWITCH(COMMON_VIDEO             , folderPath, CSIDL_COMMON_VIDEO);
+DEFINE_PROPERTY_GETTER_SWITCH(COMPUTERSNEARME          , folderPath, CSIDL_COMPUTERSNEARME);
+DEFINE_PROPERTY_GETTER_SWITCH(CONNECTIONS              , folderPath, CSIDL_CONNECTIONS);
+DEFINE_PROPERTY_GETTER_SWITCH(CONTROLS                 , folderPath, CSIDL_CONTROLS);
+DEFINE_PROPERTY_GETTER_SWITCH(COOKIES                  , folderPath, CSIDL_COOKIES);
+DEFINE_PROPERTY_GETTER_SWITCH(DESKTOP                  , folderPath, CSIDL_DESKTOP);
+DEFINE_PROPERTY_GETTER_SWITCH(DESKTOPDIRECTORY         , folderPath, CSIDL_DESKTOPDIRECTORY);
+DEFINE_PROPERTY_GETTER_SWITCH(DRIVES                   , folderPath, CSIDL_DRIVES);
+DEFINE_PROPERTY_GETTER_SWITCH(FAVORITES                , folderPath, CSIDL_FAVORITES);
+DEFINE_PROPERTY_GETTER_SWITCH(FONTS                    , folderPath, CSIDL_FONTS);
+DEFINE_PROPERTY_GETTER_SWITCH(HISTORY                  , folderPath, CSIDL_HISTORY);
+DEFINE_PROPERTY_GETTER_SWITCH(INTERNET                 , folderPath, CSIDL_INTERNET);
+DEFINE_PROPERTY_GETTER_SWITCH(INTERNET_CACHE           , folderPath, CSIDL_INTERNET_CACHE);
+DEFINE_PROPERTY_GETTER_SWITCH(LOCAL_APPDATA            , folderPath, CSIDL_LOCAL_APPDATA);
+DEFINE_PROPERTY_GETTER_SWITCH(MYDOCUMENTS              , folderPath, CSIDL_MYDOCUMENTS);
+DEFINE_PROPERTY_GETTER_SWITCH(MYMUSIC                  , folderPath, CSIDL_MYMUSIC);
+DEFINE_PROPERTY_GETTER_SWITCH(MYPICTURES               , folderPath, CSIDL_MYPICTURES);
+DEFINE_PROPERTY_GETTER_SWITCH(MYVIDEO                  , folderPath, CSIDL_MYVIDEO);
+DEFINE_PROPERTY_GETTER_SWITCH(NETHOOD                  , folderPath, CSIDL_NETHOOD);
+DEFINE_PROPERTY_GETTER_SWITCH(NETWORK                  , folderPath, CSIDL_NETWORK);
+DEFINE_PROPERTY_GETTER_SWITCH(PERSONAL                 , folderPath, CSIDL_PERSONAL);
+DEFINE_PROPERTY_GETTER_SWITCH(PRINTERS                 , folderPath, CSIDL_PRINTERS);
+DEFINE_PROPERTY_GETTER_SWITCH(PRINTHOOD                , folderPath, CSIDL_PRINTHOOD);
+DEFINE_PROPERTY_GETTER_SWITCH(PROFILE                  , folderPath, CSIDL_PROFILE);
+DEFINE_PROPERTY_GETTER_SWITCH(PROGRAM_FILES            , folderPath, CSIDL_PROGRAM_FILES);
+DEFINE_PROPERTY_GETTER_SWITCH(PROGRAM_FILESX86         , folderPath, CSIDL_PROGRAM_FILESX86);
+DEFINE_PROPERTY_GETTER_SWITCH(PROGRAM_FILES_COMMON     , folderPath, CSIDL_PROGRAM_FILES_COMMON);
+DEFINE_PROPERTY_GETTER_SWITCH(PROGRAM_FILES_COMMONX86  , folderPath, CSIDL_PROGRAM_FILES_COMMONX86);
+DEFINE_PROPERTY_GETTER_SWITCH(PROGRAMS                 , folderPath, CSIDL_PROGRAMS);
+DEFINE_PROPERTY_GETTER_SWITCH(RECENT                   , folderPath, CSIDL_RECENT);
+DEFINE_PROPERTY_GETTER_SWITCH(RESOURCES                , folderPath, CSIDL_RESOURCES);
+DEFINE_PROPERTY_GETTER_SWITCH(RESOURCES_LOCALIZED      , folderPath, CSIDL_RESOURCES_LOCALIZED);
+DEFINE_PROPERTY_GETTER_SWITCH(SENDTO                   , folderPath, CSIDL_SENDTO);
+DEFINE_PROPERTY_GETTER_SWITCH(STARTMENU                , folderPath, CSIDL_STARTMENU);
+DEFINE_PROPERTY_GETTER_SWITCH(STARTUP                  , folderPath, CSIDL_STARTUP);
+DEFINE_PROPERTY_GETTER_SWITCH(SYSTEM                   , folderPath, CSIDL_SYSTEM);
+DEFINE_PROPERTY_GETTER_SWITCH(SYSTEMX86                , folderPath, CSIDL_SYSTEMX86);
+DEFINE_PROPERTY_GETTER_SWITCH(TEMPLATES                , folderPath, CSIDL_TEMPLATES);
+DEFINE_PROPERTY_GETTER_SWITCH(WINDOWS                  , folderPath, CSIDL_WINDOWS);
+
+
 
 
 #ifdef DEBUG
@@ -1393,64 +1385,64 @@ CONFIGURE_STATIC
 
 		PROPERTY_GETTER( lastInputTime )
 
-		PROPERTY_SWITCH_GETTER( ADMINTOOLS, folderPath )
-		PROPERTY_SWITCH_GETTER( ALTSTARTUP, folderPath )
-		PROPERTY_SWITCH_GETTER( APPDATA, folderPath )
-		PROPERTY_SWITCH_GETTER( BITBUCKET, folderPath )
-		PROPERTY_SWITCH_GETTER( CDBURN_AREA, folderPath )
-		PROPERTY_SWITCH_GETTER( COMMON_ADMINTOOLS, folderPath )
-		PROPERTY_SWITCH_GETTER( COMMON_ALTSTARTUP, folderPath )
-		PROPERTY_SWITCH_GETTER( COMMON_APPDATA, folderPath )
-		PROPERTY_SWITCH_GETTER( COMMON_DESKTOPDIRECTORY, folderPath )
-		PROPERTY_SWITCH_GETTER( COMMON_DOCUMENTS, folderPath )
-		PROPERTY_SWITCH_GETTER( COMMON_FAVORITES, folderPath )
-		PROPERTY_SWITCH_GETTER( COMMON_MUSIC, folderPath )
-		PROPERTY_SWITCH_GETTER( COMMON_OEM_LINKS, folderPath )
-		PROPERTY_SWITCH_GETTER( COMMON_PICTURES, folderPath )
-		PROPERTY_SWITCH_GETTER( COMMON_PROGRAMS, folderPath )
-		PROPERTY_SWITCH_GETTER( COMMON_STARTMENU, folderPath )
-		PROPERTY_SWITCH_GETTER( COMMON_STARTUP, folderPath )
-		PROPERTY_SWITCH_GETTER( COMMON_TEMPLATES, folderPath )
-		PROPERTY_SWITCH_GETTER( COMMON_VIDEO, folderPath )
-		PROPERTY_SWITCH_GETTER( COMPUTERSNEARME, folderPath )
-		PROPERTY_SWITCH_GETTER( CONNECTIONS, folderPath )
-		PROPERTY_SWITCH_GETTER( CONTROLS, folderPath )
-		PROPERTY_SWITCH_GETTER( COOKIES, folderPath )
-		PROPERTY_SWITCH_GETTER( DESKTOP, folderPath )
-		PROPERTY_SWITCH_GETTER( DESKTOPDIRECTORY, folderPath )
-		PROPERTY_SWITCH_GETTER( DRIVES, folderPath )
-		PROPERTY_SWITCH_GETTER( FAVORITES, folderPath )
-		PROPERTY_SWITCH_GETTER( FONTS, folderPath )
-		PROPERTY_SWITCH_GETTER( HISTORY, folderPath )
-		PROPERTY_SWITCH_GETTER( INTERNET, folderPath )
-		PROPERTY_SWITCH_GETTER( INTERNET_CACHE, folderPath )
-		PROPERTY_SWITCH_GETTER( LOCAL_APPDATA, folderPath )
-		PROPERTY_SWITCH_GETTER( MYDOCUMENTS, folderPath )
-		PROPERTY_SWITCH_GETTER( MYMUSIC, folderPath )
-		PROPERTY_SWITCH_GETTER( MYPICTURES, folderPath )
-		PROPERTY_SWITCH_GETTER( MYVIDEO, folderPath )
-		PROPERTY_SWITCH_GETTER( NETHOOD, folderPath )
-		PROPERTY_SWITCH_GETTER( NETWORK, folderPath )
-		PROPERTY_SWITCH_GETTER( PERSONAL, folderPath )
-		PROPERTY_SWITCH_GETTER( PRINTERS, folderPath )
-		PROPERTY_SWITCH_GETTER( PRINTHOOD, folderPath )
-		PROPERTY_SWITCH_GETTER( PROFILE, folderPath )
-		PROPERTY_SWITCH_GETTER( PROGRAM_FILES, folderPath )
-		PROPERTY_SWITCH_GETTER( PROGRAM_FILESX86, folderPath )
-		PROPERTY_SWITCH_GETTER( PROGRAM_FILES_COMMON, folderPath )
-		PROPERTY_SWITCH_GETTER( PROGRAM_FILES_COMMONX86, folderPath )
-		PROPERTY_SWITCH_GETTER( PROGRAMS, folderPath )
-		PROPERTY_SWITCH_GETTER( RECENT, folderPath )
-		PROPERTY_SWITCH_GETTER( RESOURCES, folderPath )
-		PROPERTY_SWITCH_GETTER( RESOURCES_LOCALIZED, folderPath )
-		PROPERTY_SWITCH_GETTER( SENDTO, folderPath )
-		PROPERTY_SWITCH_GETTER( STARTMENU, folderPath )
-		PROPERTY_SWITCH_GETTER( STARTUP, folderPath )
-		PROPERTY_SWITCH_GETTER( SYSTEM, folderPath )
-		PROPERTY_SWITCH_GETTER( SYSTEMX86, folderPath )
-		PROPERTY_SWITCH_GETTER( TEMPLATES, folderPath )
-		PROPERTY_SWITCH_GETTER( WINDOWS, folderPath )
-		
+		PROPERTY_GETTER( ADMINTOOLS )
+		PROPERTY_GETTER( ALTSTARTUP )
+		PROPERTY_GETTER( APPDATA )
+		PROPERTY_GETTER( BITBUCKET )
+		PROPERTY_GETTER( CDBURN_AREA )
+		PROPERTY_GETTER( COMMON_ADMINTOOLS )
+		PROPERTY_GETTER( COMMON_ALTSTARTUP )
+		PROPERTY_GETTER( COMMON_APPDATA )
+		PROPERTY_GETTER( COMMON_DESKTOPDIRECTORY )
+		PROPERTY_GETTER( COMMON_DOCUMENTS )
+		PROPERTY_GETTER( COMMON_FAVORITES )
+		PROPERTY_GETTER( COMMON_MUSIC )
+		PROPERTY_GETTER( COMMON_OEM_LINKS )
+		PROPERTY_GETTER( COMMON_PICTURES )
+		PROPERTY_GETTER( COMMON_PROGRAMS )
+		PROPERTY_GETTER( COMMON_STARTMENU )
+		PROPERTY_GETTER( COMMON_STARTUP )
+		PROPERTY_GETTER( COMMON_TEMPLATES )
+		PROPERTY_GETTER( COMMON_VIDEO )
+		PROPERTY_GETTER( COMPUTERSNEARME )
+		PROPERTY_GETTER( CONNECTIONS )
+		PROPERTY_GETTER( CONTROLS )
+		PROPERTY_GETTER( COOKIES )
+		PROPERTY_GETTER( DESKTOP )
+		PROPERTY_GETTER( DESKTOPDIRECTORY )
+		PROPERTY_GETTER( DRIVES )
+		PROPERTY_GETTER( FAVORITES )
+		PROPERTY_GETTER( FONTS )
+		PROPERTY_GETTER( HISTORY )
+		PROPERTY_GETTER( INTERNET )
+		PROPERTY_GETTER( INTERNET_CACHE )
+		PROPERTY_GETTER( LOCAL_APPDATA )
+		PROPERTY_GETTER( MYDOCUMENTS )
+		PROPERTY_GETTER( MYMUSIC )
+		PROPERTY_GETTER( MYPICTURES )
+		PROPERTY_GETTER( MYVIDEO )
+		PROPERTY_GETTER( NETHOOD )
+		PROPERTY_GETTER( NETWORK )
+		PROPERTY_GETTER( PERSONAL )
+		PROPERTY_GETTER( PRINTERS )
+		PROPERTY_GETTER( PRINTHOOD )
+		PROPERTY_GETTER( PROFILE )
+		PROPERTY_GETTER( PROGRAM_FILES )
+		PROPERTY_GETTER( PROGRAM_FILESX86 )
+		PROPERTY_GETTER( PROGRAM_FILES_COMMON )
+		PROPERTY_GETTER( PROGRAM_FILES_COMMONX86 )
+		PROPERTY_GETTER( PROGRAMS )
+		PROPERTY_GETTER( RECENT )
+		PROPERTY_GETTER( RESOURCES )
+		PROPERTY_GETTER( RESOURCES_LOCALIZED )
+		PROPERTY_GETTER( SENDTO )
+		PROPERTY_GETTER( STARTMENU )
+		PROPERTY_GETTER( STARTUP )
+		PROPERTY_GETTER( SYSTEM )
+		PROPERTY_GETTER( SYSTEMX86 )
+		PROPERTY_GETTER( TEMPLATES )
+		PROPERTY_GETTER( WINDOWS )
+
 	END_STATIC_PROPERTY_SPEC
 
 	BEGIN_CONST
@@ -1484,7 +1476,7 @@ CONFIGURE_STATIC
         CONST_INTEGER(MB_TOPMOST                     ,MB_TOPMOST)
         //CONST_INTEGER(MB_SERVICE_NOTIFICATION        ,MB_SERVICE_NOTIFICATION)
         //CONST_INTEGER(MB_SERVICE_NOTIFICATION_NT3X   ,MB_SERVICE_NOTIFICATION_NT3X)
-		
+
 		CONST_INTEGER(IDABORT     ,IDABORT    )
 		CONST_INTEGER(IDCANCEL	  ,IDCANCEL	  )
 		CONST_INTEGER(IDCONTINUE  ,IDCONTINUE )

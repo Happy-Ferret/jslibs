@@ -2,7 +2,7 @@
 
 #include <wchar.h>
 
-//#define USE_JL
+// #define USE_JL
 
 #ifdef USE_JL
 
@@ -944,6 +944,22 @@ JSClass globalClass = {
 };
 
 
+/*
+template <class T>
+void test(JS::MutableHandle<T> mh) {
+
+	
+}
+
+template <class T>
+void test(JS::Rooted<T> *rth) {
+
+	test(JS::MutableHandle<T>(rth));
+}
+*/
+
+
+
 
 int main_run(JSContext *cx) {
 
@@ -955,8 +971,24 @@ int main_run(JSContext *cx) {
 	JS::CompileOptions compileOptions(cx);
 	JS::RootedScript script(cx, JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), compileOptions));
 
+	//test(&rval);
+
 	JS::RootedValue rval(cx);
+
+	JS::RootedValue fct(cx);
+	JS::RootedId fct1(cx);
+	JS::RootedFunction fct2(cx);
+
+
+	jl::call(NULL, globalObject, fct, &rval, 1);
+
+
+
+// I want to call a template function: template <class T> void test(JS::MutableHandle<T> mutableHandle) like this: JS::RootedValue rval(cx); test(&rval); but the compiler say it cannot deduce 'JS::Handle<T>' from 'JS::RootedValue *'
+
+
 	bool ok = JS_ExecuteScript(cx, globalObject, script, rval.address());
+
 
 	return true;
 }

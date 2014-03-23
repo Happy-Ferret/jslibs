@@ -422,7 +422,7 @@ public:
 
 			JS::RootedValue tmp(cx); // root no need
 			bool ok;
-			ok = JL_CallFunctionVA(cx, obj, serializeFctVal, &tmp, arg); // rval not used
+			ok = jl::call(cx, obj, serializeFctVal, &tmp, arg); // rval not used
 			
 			if ( serializerWrapper != NULL ) {
 
@@ -781,7 +781,7 @@ public:
 				JS::RootedValue rval(cx); // note that no root needed
 
 				//bool ok = JL_CallFunctionId(cx, newObj, JLID(cx, _unserialize), 1, &arg, &rval); // rval not used
-				bool ok = JL_CallFunctionIdVA(cx, newObj, JLID(cx, _unserialize), &rval, arg); // rval not used
+				bool ok = jl::call(cx, newObj, JLID(cx, _unserialize), &rval, arg); // rval not used
 
 				if ( unserializerWrapper != NULL )
 					JL_SetPrivate( unserializerWrapper, NULL);
@@ -813,7 +813,7 @@ public:
 				}
 				
 				JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
-				bool ok = JL_CallFunctionVA(cx, globalObject, funVal, val, arg_1);
+				bool ok = jl::call(cx, globalObject, funVal, val, arg_1);
 
 				if ( unserializerWrapper != NULL )
 					JL_SetPrivate( unserializerWrapper, NULL);

@@ -98,61 +98,55 @@ public:
 			return DISP_E_UNKNOWNINTERFACE;
 		
 		unsigned argc = pDispParams->cArgs;
-		jsval *argv = (jsval*)alloca((argc+1) * sizeof(jsval));
-		memset(argv, 0, (argc+1) * sizeof(jsval));
-		ASSERT( JSVAL_IS_PRIMITIVE(*argv) );
-		
+
 		JSContext *cx = NULL;
 		JS_ContextIterator(_rt, &cx);
 		JS_ASSERT( cx != NULL );
 
-		JS::AutoArrayRooter tvr(cx, argc+1, argv); // see HandleArrayValue 
+		JS::RootedValue rval(_rt);
+		JS::AutoValueVector avv(cx);
+		avv.reserve(argc);
 
-		// try also JS::AutoValueVector argv(cx)
+		ASSERT(false); // TBD
 
-		bool status = JS_CallFunctionValue(cx, JL_GetGlobal(cx), _funcVal, argc, argv+1, argv);
+		JS::RootedObject globalObj(_rt, JL_GetGlobal(cx));
+
+		bool status = jl::call(cx, globalObj, _funcVal, avv, &rval);
 
 		JL_IGNORE(status); // (TBD) error check
+
+		//JL_CHK( JS::Call(cx, JL_GetGlobal(cx), _funcVal, JL_ARG S, &rval) );
+
 
 //		if ( !status )
 		
 		// pVarResult: location where the result is to be stored, or NULL if the caller expects no result.
 		// This argument is ignored if DISPATCH_PROPERTYPUT or DISPATCH_PROPERTYPUTREF is specified.
 		if ( pVarResult != NULL && (wFlags & (DISPATCH_PROPERTYPUT|DISPATCH_PROPERTYPUTREF)) != 0 )
-			JsvalToVariant(cx, tvr.handleAt(0), pVarResult);
+			JsvalToVariant(cx, rval, pVarResult);
 		
 		return NOERROR;
 	}
 
-	JSFunctionDispatch(JSRuntime *rt, jsval funcVal) : _refs(0), _rt(rt), _funcVal(funcVal) {
+	JSFunctionDispatch(JSRuntime *rt, JS::HandleValue funcVal) : _refs(0), _rt(rt), _funcVal(rt, funcVal) {
 
-		JSContext *cx = NULL;
-		JS_ContextIterator(_rt, &cx);
-		JS_ASSERT( cx != NULL );
-		ASSERT( JSVAL_IS_GCTHING(funcVal) );
-//		JS_AddRoot(cx, &_funcVal);
 		AddRef();
 	}
 
 	~JSFunctionDispatch() {
-	
-//		JSContext *cx = NULL;
-//		JS_ContextIterator(_rt, &cx);
-//		JS_ASSERT( cx != NULL );
-//		JS_RemoveRoot(cx, &_funcVal);
 	}
 
 private:
 	JSRuntime *_rt;
-	jsval _funcVal;
+	JS::PersistentRootedValue _funcVal;
 	ULONG _refs;
 };
 
 
-bool BlobToVariant( JSContext *cx, jsval *val, VARIANT *variant ) {
+bool BlobToVariant( JSContext *cx, JS::HandleValue val, VARIANT *variant ) {
 
 	JLData buf;
-	JL_CHK( JL_JsvalToNative(cx, *val, &buf) );
+	JL_CHK( JL_JsvalToNative(cx, val, &buf) );
 	variant->vt = VT_ARRAY | VT_UI1;
 	SAFEARRAYBOUND rgsabound[1];
 	rgsabound[0].cElements = buf.Length();
@@ -193,7 +187,7 @@ bool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *varia
 
 	if ( value.isObject() ) {
 
-		JSObject *obj = &value.toObject();
+		JS::RootedObject obj(cx, &value.toObject());
 
 		//if ( JL_GetClass(obj) == JL_BlobJSClass(cx) ) {
 		if ( JL_ValueIsData(cx, value) ) {
@@ -411,7 +405,7 @@ bool VariantToJsval( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rva
 			VARIANT *varray;
 			SafeArrayAccessData(psa, (void**)&varray);
 
-			JSObject *jsArr = JS_NewArrayObject(cx, size);
+			JS::RootedObject jsArr(cx, JS_NewArrayObject(cx, size));
 			JL_CHK( jsArr );
 			rval.setObject( *jsArr );
 
@@ -424,7 +418,7 @@ bool VariantToJsval( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rva
 
 				JS::RootedValue val(cx);
 				JL_CHK( VariantToJsval(cx, pvar, &val) );
-				JL_CHK( JL_SetElement(cx, jsArr, i - lBound, &val) );
+				JL_CHK( JL_SetElement(cx, jsArr, i - lBound, val) );
 			}
 
 			SafeArrayUnaccessData(psa);
@@ -519,9 +513,9 @@ BEGIN_CLASS( ComVariant )
 
 DEFINE_FINALIZE() {
 
-	if ( obj == JL_GetCachedProto(JL_GetHostPrivate(fop->runtime()), JL_THIS_CLASS_NAME) )
+	if ( obj == jl::Host::getHost(fop->runtime()).getCachedProto(JL_THIS_CLASS_NAME) )
 		return;
-	VARIANT *variant = (VARIANT*)JL_GetPrivate(obj);
+	VARIANT *variant = (VARIANT*)js::GetObjectPrivate(obj);
 	HRESULT hr = VariantClear(variant);
 
 	JL_IGNORE(hr); // (TBD) error check
@@ -544,7 +538,7 @@ DEFINE_FUNCTION( toDispatch ) {
 
 	if ( V_VT(variant) != VT_DISPATCH ) {
 
-		*JL_RVAL = OBJECT_TO_JSVAL(JL_OBJ);
+		JL_RVAL.set(JL_OBJVAL);
 		return true;
 	}
 
@@ -588,7 +582,7 @@ DEFINE_FUNCTION( toString ) {
 	BSTR bstr = V_ISBYREF(&tmpVariant) ? *V_BSTRREF(&tmpVariant) : V_BSTR(&tmpVariant);
 	JSString *str = JS_NewUCStringCopyN(cx, (const jschar*)bstr, SysStringLen(bstr));
 	JL_CHK(str);
-	*JL_RVAL = STRING_TO_JSVAL(str);
+	JL_RVAL.setString(str);
 
 	hr = VariantClear(&tmpVariant);
 	if ( FAILED(hr) )
@@ -665,7 +659,7 @@ DEFINE_FUNCTION( toTypeName ) {
 	}
 	strcat(str, "]");
 
-	return JL_NativeToJsval(cx, str, *JL_RVAL);
+	return JL_NativeToJsval(cx, str, JL_RVAL);
 	JL_BAD;
 }
 
@@ -698,10 +692,10 @@ END_CLASS
 // acquire the ownership of the variant
 bool NewComVariant( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rval ) {
 
-	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComVariant), JL_CLASS_PROTOTYPE(cx, ComVariant));
+	JS::RootedObject varObj(cx, JL_NewObjectWithGivenProto(cx, JL_CLASS(ComVariant), JL_CLASS_PROTOTYPE(cx, ComVariant)));
 	JL_CHK( varObj );
-	rval.setObject( *varObj );
-	JL_SetPrivate( varObj, variant);
+	rval.setObject(*varObj);
+	JL_SetPrivate(varObj, variant);
 	return true;
 	JL_BAD;
 }

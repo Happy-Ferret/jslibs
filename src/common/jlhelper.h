@@ -244,7 +244,7 @@ JL_GetPrivate( IN JS::HandleValue val ) {
 	ASSERT( val.isObject() );
 	ASSERT( JS_IsNative(&val.toObject()) );
 //	ASSERT( JL_HasPrivate(JS::HandleObject::fromMarkedLocation(val.toObjectOrNull())) );
-	return js::GetObjectPrivate(&val.toObject()); // jsfriendapi
+	return js::GetObjectPrivate(&val.toObject()); // jsfriendapi // rooting issue?
 }
 
 ALWAYS_INLINE void FASTCALL
@@ -266,6 +266,14 @@ JL_GetPrototype(JSContext *cx, IN JS::HandleObject obj) {
 ALWAYS_INLINE const JSClass* FASTCALL
 JL_GetClassOfPrototype(JSContext *cx, IN JS::HandleObject proto) {
 
+	JS::RootedObject obj(cx, JL_GetPrototype(cx, proto));
+	return JL_GetClass(obj);
+}
+
+ALWAYS_INLINE const JSClass* FASTCALL
+JL_GetClassOfPrototype(JSContext *cx, IN JS::HandleValue protoVal) {
+
+	JS::RootedObject proto(cx, &protoVal.toObject());
 	JS::RootedObject obj(cx, JL_GetPrototype(cx, proto));
 	return JL_GetClass(obj);
 }
@@ -494,6 +502,238 @@ public:
 
 #define JL_BAD bad:return(false)
 
+
+///////////////////////////////////////////////////////////////////////////////
+// Error management
+
+enum E_TXTID {
+
+		E__INVALID,
+	#define JL_NEW_ERR
+	#define DEF( NAME, TEXT, EXN ) \
+		E_##NAME,
+	#include "jlerrors.msg"
+	#undef DEF
+	#undef JL_NEW_ERR
+		E__LIMIT,
+};
+
+// simple helpers
+#define E_ERRNO( num )                E_ERRNO_1, num
+#define E_STR( str )                  E_STR_1, (const char *)str
+#define E_NAME( str )                 E_NAME_1, (const char *)str
+#define E_NUM( num )                  E_NUM_1, num
+#define E_COMMENT( str )              E_COMMENT_1, str
+#define E_COMMENT2( str1, str2 )      E_COMMENT_2, str1, str2
+#define E_INTERVAL_NUM( vMin, vMax )  E_INTERVAL_NUM_2, vMin, vMax
+#define E_INTERVAL_STR( sMin, sMax )  E_INTERVAL_STR_2, sMin, sMax
+#define E_TY_NARRAY( num )            E_TY_NARRAY_1, num
+#define E_TY_NVECTOR( num )           E_TY_NVECTOR_1, num
+
+
+#ifdef DEBUG
+#define JL__REPORT_END_ARG E_COMMENT(JL_CODE_LOCATION), E__INVALID
+#else
+#define JL__REPORT_END_ARG E__INVALID
+#endif
+
+
+// note: Support for variadic macros was introduced in Visual C++ 2005
+#define JL_ERR( ... ) \
+	JL_MACRO_BEGIN \
+		jl::Host::getHost(cx).report(false, ##__VA_ARGS__, JL__REPORT_END_ARG); \
+		goto bad; \
+	JL_MACRO_END
+
+
+#define JL_WARN( ... ) \
+	JL_MACRO_BEGIN \
+		if ( JL_IS_SAFE && !jl::Host::getHost(cx).report(true, ##__VA_ARGS__, JL__REPORT_END_ARG) ) \
+			goto bad; \
+	JL_MACRO_END
+
+
+#define JL_CHK( CONDITION ) \
+	JL_MACRO_BEGIN \
+		if (unlikely( !(CONDITION) )) { \
+			goto bad; \
+		} \
+		ASSUME(!!(CONDITION)); \
+	JL_MACRO_END
+
+
+#define JL_CHKB( CONDITION, LABEL ) \
+	JL_MACRO_BEGIN \
+		if (unlikely( !(CONDITION) )) { \
+			goto LABEL; \
+		} \
+	JL_MACRO_END
+
+
+#define JL_CHKM( CONDITION, ... ) \
+	JL_MACRO_BEGIN \
+		if (unlikely( !(CONDITION) )) { \
+			JL_ERR( __VA_ARGS__ ); \
+		} \
+		ASSUME(!!(CONDITION)); \
+	JL_MACRO_END
+
+
+#define JL_ASSERT( CONDITION, ... ) \
+	JL_MACRO_BEGIN \
+		if ( JL_IS_SAFE ) { \
+			if (unlikely( !(CONDITION) )) { \
+				JL_ERR( __VA_ARGS__ ); \
+			} \
+		} /* else if ( IS_DEBUG ) { ASSERT( (CONDITION) ); } */ \
+		ASSUME(!!(CONDITION)); \
+	JL_MACRO_END
+
+
+#define JL_ASSERT_WARN( CONDITION, ... ) \
+	JL_MACRO_BEGIN \
+		if ( JL_IS_SAFE ) { \
+			if (unlikely( !(CONDITION) )) { \
+				JL_WARN( __VA_ARGS__ ); \
+			} \
+		} \
+	JL_MACRO_END
+
+
+// misc
+
+#define JL_ASSERT_ALLOC( PTR ) \
+	JL_MACRO_BEGIN \
+		if ( JL_IS_SAFE ) { \
+			if (unlikely( (PTR) == NULL )) { \
+				ASSERT( !JL_IsExceptionPending(cx) ); \
+				JS_ReportOutOfMemory(cx); \
+				goto bad; \
+			} \
+		} \
+		else if ( IS_DEBUG ) { \
+			ASSERT( (PTR) ); \
+		} \
+		ASSUME(PTR); \
+	JL_MACRO_END
+
+
+// val
+
+#define JL_ASSERT_IS_BOOLEAN(val, context) \
+	JL_ASSERT( NOIL(JL_ValueIsBoolean)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_BOOLEAN )
+
+#define JL_ASSERT_IS_INTEGER(val, context) \
+	JL_ASSERT( NOIL(JL_ValueIsInteger)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_INTEGER )
+
+#define JL_ASSERT_IS_INTEGER_NUMBER(val, context) \
+	JL_ASSERT( NOIL(JL_ValueIsInteger)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_INTEGERDOUBLE )
+
+#define JL_ASSERT_IS_NUMBER(val, context) \
+	JL_ASSERT( NOIL(JL_ValueIsNumber)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_NUMBER )
+
+#define JL_ASSERT_IS_CALLABLE(val, context) \
+	JL_ASSERT( NOIL(JL_ValueIsCallable)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_FUNC )
+
+#define JL_ASSERT_IS_ARRAY(val, context) \
+	JL_ASSERT( NOIL(JL_ValueIsArray)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_ARRAY )
+
+#define JL_ASSERT_IS_OBJECT(val, context) \
+	JL_ASSERT( !JSVAL_IS_PRIMITIVE(val), E_VALUE, E_STR(context), E_TYPE, E_TY_OBJECT )
+
+#define JL_ASSERT_IS_STRING(val, context) \
+	JL_ASSERT( NOIL(JL_ValueIsData)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_STRINGDATA )
+
+//
+
+#define JL_ASSERT_RANGE(val, valMin, valMax, context) \
+	JL_ASSERT( jl::IsInRange((int)val, (int)valMin, (int)valMax), E_VALUE, E_STR(context), E_RANGE, E_INTERVAL_NUM(valMin, valMax) )
+
+
+// arg
+
+#define JL_ASSERT_ARGC_MIN(minCount) \
+	JL_ASSERT( JL_ARGC >= (minCount), E_ARGC, E_MIN, E_NUM(minCount) )
+
+#define JL_ASSERT_ARGC_MAX(maxCount) \
+	JL_ASSERT( JL_ARGC <= (maxCount), E_ARGC, E_MAX, E_NUM(maxCount) )
+
+#define JL_ASSERT_ARGC_RANGE(minCount, maxCount) \
+	JL_ASSERT( jl::IsInRange((int)JL_ARGC, (int)minCount, (int)maxCount), E_ARGC, E_RANGE, E_INTERVAL_NUM(unsigned(minCount), unsigned(maxCount)) )
+
+#define JL_ASSERT_ARGC(count) \
+	JL_ASSERT( JL_ARGC == (count), E_ARGC, E_EQUALS, E_NUM(count) )
+
+#define JL_ASSERT_ARG_IS_BOOLEAN(argNum) \
+	JL_ASSERT( NOIL(JL_ValueIsBoolean)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("boolean") )
+
+#define JL_ASSERT_ARG_IS_INTEGER(argNum) \
+	JL_ASSERT( NOIL(JL_ValueIsInteger)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("integer") )
+
+#define JL_ASSERT_ARG_IS_INTEGER_NUMBER(argNum) \
+	JL_ASSERT( NOIL(JL_ValueIsInteger)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("integer < 2^53") )
+
+#define JL_ASSERT_ARG_IS_NUMBER(argNum) \
+	JL_ASSERT( NOIL(JL_ValueIsNumber)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("number") )
+
+#define JL_ASSERT_ARG_IS_OBJECT(argNum) \
+	JL_ASSERT( !JSVAL_IS_PRIMITIVE(JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("object") )
+
+#define JL_ASSERT_ARG_IS_OBJECT_OR_NULL(argNum) \
+	JL_ASSERT( JSVAL_IS_OBJECT(JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("object"), E_OR, E_NAME("null") )
+
+#define JL_ASSERT_ARG_IS_STRING(argNum) \
+	JL_ASSERT( NOIL(JL_ValueIsData)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("string || data") )
+
+#define JL_ASSERT_ARG_IS_ARRAY(argNum) \
+	JL_ASSERT( NOIL(JL_ValueIsArray)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("array") )
+
+#define JL_ASSERT_ARG_IS_ARRAYLIKE(argNum) \
+	JL_ASSERT( NOIL(JL_ValueIsArrayLike)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("array") )
+
+#define JL_ASSERT_ARG_IS_CALLABLE(argNum) \
+	JL_ASSERT( NOIL(JL_ValueIsCallable)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("function") )
+
+// fallback
+#define JL_ASSERT_ARG_TYPE(condition, argNum, typeStr) \
+	JL_ASSERT( condition, E_ARG, E_NUM(argNum), E_TYPE, E_NAME(typeStr) )
+
+#define JL_ASSERT_ARG_VAL_RANGE(val, valMin, valMax, argNum) \
+	JL_ASSERT( jl::IsInRange((int)val, (int)valMin, (int)valMax), E_ARG, E_NUM(argNum), E_RANGE, E_INTERVAL_NUM(valMin, valMax) )
+
+
+
+// obj
+
+// note:
+//   If JS_IsConstructing is true, JS_THIS must not be used, the constructor should construct and return a new object.
+//   JS_IsConstructing must be called from within a native given the native's original cx and vp arguments !
+#define JL_ASSERT_CONSTRUCTING() \
+	JL_ASSERT( args.isConstructing() /*(JL_ARGC, JS_IsConstructing(cx, vp))*/, E_THISOBJ, E_CONSTRUCT )
+
+// note: JL_GetClass(JL_GetPrototype(... because |JL_ASSERT_THIS_INSTANCE( new Stream() )| must pass whereas |JL_ASSERT_THIS_INSTANCE( Stream.prototype )| must fail.
+#define JL_ASSERT_INSTANCE( jsObject, jsClass ) \
+	JL_ASSERT( JL_GetClassOfPrototype(cx, jsObject) == jsClass, E_OBJ, E_INSTANCE, E_NAME((jsClass)->name) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
+
+#define JL_ASSERT_THIS_INSTANCE() \
+	JL_ASSERT( JL_GetClassOfPrototype(cx, JL_OBJ) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
+
+#define JL_ASSERT_INHERITANCE( jsObject, jsClass ) \
+	JL_ASSERT( NOIL(JL_ProtoOfInheritFrom)(cx, jsObject, (jsClass)), E_OBJ, E_INHERIT, E_NAME((jsClass)->name) )
+
+#define JL_ASSERT_THIS_INHERITANCE() \
+	JL_ASSERT( NOIL(JL_ProtoOfInheritFrom)(cx, JL_OBJ, JL_THIS_CLASS), E_THISOBJ, E_INHERIT, E_NAME(JL_THIS_CLASS_NAME) )
+
+
+#define JL_ASSERT_OBJECT_STATE( condition, name ) \
+	JL_ASSERT( condition, E_OBJ, E_NAME(name), E_STATE )
+
+#define JL_ASSERT_THIS_OBJECT_STATE( condition ) \
+	JL_ASSERT( condition, E_THISOBJ, E_NAME(JL_THIS_CLASS_NAME), E_STATE )
+
+
+
+
 /*
 #ifndef USE_JSHANDLES // NOT using handles
 
@@ -561,6 +801,11 @@ JL_NewProtolessObj( JSContext *cx ) {
 
 			Args(JSContext *&cx, unsigned argc, JS::Value *&vp)
 			: _cx(cx), _thisObj(cx), _jsargs( JS::CallArgsFromVp(argc, vp) ) {
+			}
+
+			JSObject *callee() {
+
+				return &_jsargs.callee();
 			}
 
 			unsigned length() const {
@@ -1547,7 +1792,11 @@ JL_ObjectIsInstanceOf( JSContext *, JS::HandleObject obj, JSClass *clasp ) {
 
 
 
-namespace jl {
+
+
+
+
+JL_BEGIN_NAMESPACE
 
 // value/object types in a jslibs point of view
 
@@ -1574,238 +1823,480 @@ isString( JSContext *cx, JS::HandleValue val ) {
 
 // ... isData, isArray, isNumber, isBoolean, etc
 
+////
+
+class StrSpec {
+	const char *_str;
+	size_t _len;
+public:
+	StrSpec(const char *str, size_t len)
+	: _str(str), _len(len) {
+	}
+	
+	const char *str() const {
+	
+		return _str;
+	}
+
+	size_t len() const {
+	
+		return _len;
+	}
+};
+
+class WStrSpec {
+	const jschar *_wstr;
+	size_t _len;
+public:
+	WStrSpec(const jschar *wstr, size_t len)
+	: _wstr(wstr), _len(len) {
+	}
+
+	const jschar *wstr() const {
+		
+		return _wstr;
+	}
+
+	size_t len() const {
+	
+		return _len;
+	}
+};
+
+ALWAYS_INLINE StrSpec FASTCALL
+strSpec(const char *str, size_t len) {
+	
+	return StrSpec(str, len);
+}
+
+ALWAYS_INLINE StrSpec FASTCALL
+strSpec(const char *str) {
+	
+	return StrSpec(str, strlen(str));
+}
+
+ALWAYS_INLINE WStrSpec FASTCALL
+strSpec(const jschar *str, size_t len) {
+	
+	return WStrSpec(str, len);
+}
+
+ALWAYS_INLINE WStrSpec FASTCALL
+strSpec(const jschar *str) {
+	
+	return WStrSpec(str, wcslen(str));
+}
+
+////
+
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const JS::HandleValue v) {
+
+	val.set(v);
+	return true;
+}
+
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const JS::HandleObject obj) {
+	
+	val.setObject(*obj);
+	return true;
+}
+
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const JS::HandleId id) {
+
+	return JS_IdToValue(cx, id, val);
+}
+
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const JS::HandleString str) {
+	
+	val.setString(str);
+	return true;
+}
+
+
+/*
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, void *ptr) {
+
+	if ( ptr == nullptr )
+		val.setNull();
+	else
+		val.address()->setPrivate(ptr);
+	return true;
+}
+*/
+
+
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const bool b) {
+
+	val.setBoolean(b);
+	return true;
+}
+
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const char *s) {
+
+	JS::RootedString str(cx, JS_NewStringCopyZ(cx, s));
+	val.setString(str);
+	return true;
+}
+
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const StrSpec s) {
+
+	JS::RootedString str(cx, JS_NewStringCopyN(cx, s.str(), s.len()));
+	val.setString(str);
+	return true;
+}
+
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const WStrSpec s) {
+
+	JS::RootedString str(cx, JS_NewUCStringCopyN(cx, s.wstr(), s.len()));
+	val.setString(str);
+	return true;
+}
+
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const jschar *ws) {
+
+	JS::RootedString str(cx, JS_NewUCStringCopyZ(cx, ws));
+	val.setString(str);
+	return true;
 }
 
 
 
+/*
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const int8_t num) {
 
-///////////////////////////////////////////////////////////////////////////////
-// Error management
-
-enum E_TXTID {
-
-		E__INVALID,
-	#define JL_NEW_ERR
-	#define DEF( NAME, TEXT, EXN ) \
-		E_##NAME,
-	#include "jlerrors.msg"
-	#undef DEF
-	#undef JL_NEW_ERR
-		E__LIMIT,
-};
-
-// simple helpers
-#define E_ERRNO( num )                E_ERRNO_1, num
-#define E_STR( str )                  E_STR_1, (const char *)str
-#define E_NAME( str )                 E_NAME_1, (const char *)str
-#define E_NUM( num )                  E_NUM_1, num
-#define E_COMMENT( str )              E_COMMENT_1, str
-#define E_COMMENT2( str1, str2 )      E_COMMENT_2, str1, str2
-#define E_INTERVAL_NUM( vMin, vMax )  E_INTERVAL_NUM_2, vMin, vMax
-#define E_INTERVAL_STR( sMin, sMax )  E_INTERVAL_STR_2, sMin, sMax
-#define E_TY_NARRAY( num )            E_TY_NARRAY_1, num
-#define E_TY_NVECTOR( num )           E_TY_NVECTOR_1, num
-
-
-#ifdef DEBUG
-#define JL__REPORT_END_ARG E_COMMENT(JL_CODE_LOCATION), E__INVALID
-#else
-#define JL__REPORT_END_ARG E__INVALID
-#endif
-
-
-// note: Support for variadic macros was introduced in Visual C++ 2005
-#define JL_ERR( ... ) \
-	JL_MACRO_BEGIN \
-		jl::Host::getHost(cx).report(false, ##__VA_ARGS__, JL__REPORT_END_ARG); \
-		goto bad; \
-	JL_MACRO_END
-
-
-#define JL_WARN( ... ) \
-	JL_MACRO_BEGIN \
-		if ( JL_IS_SAFE && !jl::Host::getHost(cx).report(true, ##__VA_ARGS__, JL__REPORT_END_ARG) ) \
-			goto bad; \
-	JL_MACRO_END
-
+	val.set(JS::NumberValue(num));
+	return true;
+}
 
-#define JL_CHK( CONDITION ) \
-	JL_MACRO_BEGIN \
-		if (unlikely( !(CONDITION) )) { \
-			goto bad; \
-		} \
-		ASSUME(!!(CONDITION)); \
-	JL_MACRO_END
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const uint8_t num) {
 
+	val.set(JS::NumberValue(num));
+	return true;
+}
 
-#define JL_CHKB( CONDITION, LABEL ) \
-	JL_MACRO_BEGIN \
-		if (unlikely( !(CONDITION) )) { \
-			goto LABEL; \
-		} \
-	JL_MACRO_END
 
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const int16_t num) {
 
-#define JL_CHKM( CONDITION, ... ) \
-	JL_MACRO_BEGIN \
-		if (unlikely( !(CONDITION) )) { \
-			JL_ERR( __VA_ARGS__ ); \
-		} \
-		ASSUME(!!(CONDITION)); \
-	JL_MACRO_END
+	val.set(JS::NumberValue(num));
+	return true;
+}
 
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const uint16_t num) {
+
+	val.set(JS::NumberValue(num));
+	return true;
+}
+
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const int32_t num) {
 
-#define JL_ASSERT( CONDITION, ... ) \
-	JL_MACRO_BEGIN \
-		if ( JL_IS_SAFE ) { \
-			if (unlikely( !(CONDITION) )) { \
-				JL_ERR( __VA_ARGS__ ); \
-			} \
-		} /* else if ( IS_DEBUG ) { ASSERT( (CONDITION) ); } */ \
-		ASSUME(!!(CONDITION)); \
-	JL_MACRO_END
+	val.set(JS::NumberValue(num));
+	return true;
+}
+
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const uint32_t num) {
+
+	val.set(JS::NumberValue(num));
+	return true;
+}
+
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const float num) {
 
+	val.set(JS::NumberValue(num));
+	return true;
+}
+
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const double num) {
+
+	val.set(JS::NumberValue(num));
+	return true;
+}
+*/
+
+template <typename T>
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const T num) {
+
+	val.set(JS::NumberValue(num));
+	return true;
+}
+
+
+// since neither implicit constructors nor conversion operators are applied during template deduction, we have to force the JS::Rooted to JS::Handle conversion here
+template <typename T>
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const JS::Rooted<T> &rv) {
+
+	JS::Handle<T> h(rv);
+	return setMutableHandleValue(cx, val, h);
+}
+
+
+////
+
+template <typename T1>
+ALWAYS_INLINE JSObject* FASTCALL
+newJsArray( JSContext *cx, const T1 v1 ) {
 
-#define JL_ASSERT_WARN( CONDITION, ... ) \
-	JL_MACRO_BEGIN \
-		if ( JL_IS_SAFE ) { \
-			if (unlikely( !(CONDITION) )) { \
-				JL_WARN( __VA_ARGS__ ); \
-			} \
-		} \
-	JL_MACRO_END
+	JS::AutoValueArray<1> ava(cx);
+	return
+		setMutableHandleValue(cx, ava[0], v1) &&
+		true ? JS_NewArrayObject(cx, ava) : nullptr;
+}
+
+template <typename T1, typename T2>
+ALWAYS_INLINE JSObject* FASTCALL
+newJsArray( JSContext *cx, const T1 v1, const T2 v2 ) {
+
+	JS::AutoValueArray<2> ava(cx);
+	return
+		setMutableHandleValue(cx, ava[0], v1) &&
+		setMutableHandleValue(cx, ava[1], v2) &&
+		true ? JS_NewArrayObject(cx, ava) : nullptr;
+}
 
-
-// misc
-
-#define JL_ASSERT_ALLOC( PTR ) \
-	JL_MACRO_BEGIN \
-		if ( JL_IS_SAFE ) { \
-			if (unlikely( (PTR) == NULL )) { \
-				ASSERT( !JL_IsExceptionPending(cx) ); \
-				JS_ReportOutOfMemory(cx); \
-				goto bad; \
-			} \
-		} \
-		else if ( IS_DEBUG ) { \
-			ASSERT( (PTR) ); \
-		} \
-		ASSUME(PTR); \
-	JL_MACRO_END
-
-
-// val
-
-#define JL_ASSERT_IS_BOOLEAN(val, context) \
-	JL_ASSERT( NOIL(JL_ValueIsBoolean)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_BOOLEAN )
-
-#define JL_ASSERT_IS_INTEGER(val, context) \
-	JL_ASSERT( NOIL(JL_ValueIsInteger)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_INTEGER )
-
-#define JL_ASSERT_IS_INTEGER_NUMBER(val, context) \
-	JL_ASSERT( NOIL(JL_ValueIsInteger)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_INTEGERDOUBLE )
-
-#define JL_ASSERT_IS_NUMBER(val, context) \
-	JL_ASSERT( NOIL(JL_ValueIsNumber)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_NUMBER )
-
-#define JL_ASSERT_IS_CALLABLE(val, context) \
-	JL_ASSERT( NOIL(JL_ValueIsCallable)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_FUNC )
-
-#define JL_ASSERT_IS_ARRAY(val, context) \
-	JL_ASSERT( NOIL(JL_ValueIsArray)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_ARRAY )
-
-#define JL_ASSERT_IS_OBJECT(val, context) \
-	JL_ASSERT( !JSVAL_IS_PRIMITIVE(val), E_VALUE, E_STR(context), E_TYPE, E_TY_OBJECT )
-
-#define JL_ASSERT_IS_STRING(val, context) \
-	JL_ASSERT( NOIL(JL_ValueIsData)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_STRINGDATA )
-
-//
-
-#define JL_ASSERT_RANGE(val, valMin, valMax, context) \
-	JL_ASSERT( jl::IsInRange((int)val, (int)valMin, (int)valMax), E_VALUE, E_STR(context), E_RANGE, E_INTERVAL_NUM(valMin, valMax) )
-
-
-// arg
-
-#define JL_ASSERT_ARGC_MIN(minCount) \
-	JL_ASSERT( JL_ARGC >= (minCount), E_ARGC, E_MIN, E_NUM(minCount) )
-
-#define JL_ASSERT_ARGC_MAX(maxCount) \
-	JL_ASSERT( JL_ARGC <= (maxCount), E_ARGC, E_MAX, E_NUM(maxCount) )
-
-#define JL_ASSERT_ARGC_RANGE(minCount, maxCount) \
-	JL_ASSERT( jl::IsInRange((int)JL_ARGC, (int)minCount, (int)maxCount), E_ARGC, E_RANGE, E_INTERVAL_NUM(unsigned(minCount), unsigned(maxCount)) )
-
-#define JL_ASSERT_ARGC(count) \
-	JL_ASSERT( JL_ARGC == (count), E_ARGC, E_EQUALS, E_NUM(count) )
-
-#define JL_ASSERT_ARG_IS_BOOLEAN(argNum) \
-	JL_ASSERT( NOIL(JL_ValueIsBoolean)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("boolean") )
-
-#define JL_ASSERT_ARG_IS_INTEGER(argNum) \
-	JL_ASSERT( NOIL(JL_ValueIsInteger)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("integer") )
-
-#define JL_ASSERT_ARG_IS_INTEGER_NUMBER(argNum) \
-	JL_ASSERT( NOIL(JL_ValueIsInteger)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("integer < 2^53") )
-
-#define JL_ASSERT_ARG_IS_NUMBER(argNum) \
-	JL_ASSERT( NOIL(JL_ValueIsNumber)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("number") )
-
-#define JL_ASSERT_ARG_IS_OBJECT(argNum) \
-	JL_ASSERT( !JSVAL_IS_PRIMITIVE(JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("object") )
-
-#define JL_ASSERT_ARG_IS_OBJECT_OR_NULL(argNum) \
-	JL_ASSERT( JSVAL_IS_OBJECT(JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("object"), E_OR, E_NAME("null") )
-
-#define JL_ASSERT_ARG_IS_STRING(argNum) \
-	JL_ASSERT( NOIL(JL_ValueIsData)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("string || data") )
-
-#define JL_ASSERT_ARG_IS_ARRAY(argNum) \
-	JL_ASSERT( NOIL(JL_ValueIsArray)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("array") )
-
-#define JL_ASSERT_ARG_IS_ARRAYLIKE(argNum) \
-	JL_ASSERT( NOIL(JL_ValueIsArrayLike)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("array") )
-
-#define JL_ASSERT_ARG_IS_CALLABLE(argNum) \
-	JL_ASSERT( NOIL(JL_ValueIsCallable)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("function") )
-
-// fallback
-#define JL_ASSERT_ARG_TYPE(condition, argNum, typeStr) \
-	JL_ASSERT( condition, E_ARG, E_NUM(argNum), E_TYPE, E_NAME(typeStr) )
-
-#define JL_ASSERT_ARG_VAL_RANGE(val, valMin, valMax, argNum) \
-	JL_ASSERT( jl::IsInRange((int)val, (int)valMin, (int)valMax), E_ARG, E_NUM(argNum), E_RANGE, E_INTERVAL_NUM(valMin, valMax) )
-
-
-
-// obj
-
-// note:
-//   If JS_IsConstructing is true, JS_THIS must not be used, the constructor should construct and return a new object.
-//   JS_IsConstructing must be called from within a native given the native's original cx and vp arguments !
-#define JL_ASSERT_CONSTRUCTING() \
-	JL_ASSERT( args.isConstructing() /*(JL_ARGC, JS_IsConstructing(cx, vp))*/, E_THISOBJ, E_CONSTRUCT )
-
-// note: JL_GetClass(JL_GetPrototype(... because |JL_ASSERT_THIS_INSTANCE( new Stream() )| must pass whereas |JL_ASSERT_THIS_INSTANCE( Stream.prototype )| must fail.
-#define JL_ASSERT_INSTANCE( jsObject, jsClass ) \
-	JL_ASSERT( JL_GetClassOfPrototype(cx, jsObject) == jsClass, E_OBJ, E_INSTANCE, E_NAME((jsClass)->name) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
-
-#define JL_ASSERT_THIS_INSTANCE() \
-	JL_ASSERT( JL_GetClassOfPrototype(cx, JL_OBJ) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
-
-#define JL_ASSERT_INHERITANCE( jsObject, jsClass ) \
-	JL_ASSERT( NOIL(JL_ProtoOfInheritFrom)(cx, jsObject, (jsClass)), E_OBJ, E_INHERIT, E_NAME((jsClass)->name) )
-
-#define JL_ASSERT_THIS_INHERITANCE() \
-	JL_ASSERT( NOIL(JL_ProtoOfInheritFrom)(cx, JL_OBJ, JL_THIS_CLASS), E_THISOBJ, E_INHERIT, E_NAME(JL_THIS_CLASS_NAME) )
-
-
-#define JL_ASSERT_OBJECT_STATE( condition, name ) \
-	JL_ASSERT( condition, E_OBJ, E_NAME(name), E_STATE )
-
-#define JL_ASSERT_THIS_OBJECT_STATE( condition ) \
-	JL_ASSERT( condition, E_THISOBJ, E_NAME(JL_THIS_CLASS_NAME), E_STATE )
+template <typename T1, typename T2, typename T3>
+ALWAYS_INLINE JSObject* FASTCALL
+newJsArray( JSContext *cx, const T1 v1, const T2 v2, const T3 v3 ) {
+
+	JS::AutoValueArray<3> ava(cx);
+	return
+		setMutableHandleValue(cx, ava[0], v1) &&
+		setMutableHandleValue(cx, ava[1], v2) &&
+		setMutableHandleValue(cx, ava[2], v3) &&
+		true ? JS_NewArrayObject(cx, ava) : nullptr;
+}
+
+template <typename T1, typename T2, typename T3, typename T4>
+ALWAYS_INLINE JSObject* FASTCALL
+newJsArray( JSContext *cx, const T1 v1, const T2 v2, const T3 v3, const T4 v4 ) {
+
+	JS::AutoValueArray<4> ava(cx);
+	return
+		setMutableHandleValue(cx, ava[0], v1) &&
+		setMutableHandleValue(cx, ava[1], v2) &&
+		setMutableHandleValue(cx, ava[2], v3) &&
+		setMutableHandleValue(cx, ava[3], v4) &&
+		true ? JS_NewArrayObject(cx, ava) : nullptr;
+}
+
+template <typename T1, typename T2, typename T3, typename T4, typename T5>
+ALWAYS_INLINE JSObject* FASTCALL
+newJsArray( JSContext *cx, const T1 v1, const T2 v2, const T3 v3, const T4 v4, const T5 v5 ) {
+
+	JS::AutoValueArray<4> ava(cx);
+	return
+		setMutableHandleValue(cx, ava[0], v1) &&
+		setMutableHandleValue(cx, ava[1], v2) &&
+		setMutableHandleValue(cx, ava[2], v3) &&
+		setMutableHandleValue(cx, ava[3], v4) &&
+		setMutableHandleValue(cx, ava[4], v5) &&
+		true ? JS_NewArrayObject(cx, ava) : nullptr;
+}
+
+//...
+
+////
+
+
+/*
+ALWAYS_INLINE bool FASTCALL
+call(JSContext *cx, JS::HandleValue thisv, JS::HandleValue fval, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
+	
+	return JS::Call(cx, thisv, fval, args, rval);
+}
+*/
+
+ALWAYS_INLINE bool FASTCALL
+call(JSContext *cx, JS::HandleObject thisObj, JS::HandleValue fval, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
+	
+	return JS_CallFunctionValue(cx, thisObj, fval, args, rval);
+}
+
+ALWAYS_INLINE bool FASTCALL
+call(JSContext *cx, JS::HandleObject thisObj, JS::HandleFunction fun, const JS::HandleValueArray &args, JS::MutableHandleValue rval) {
+
+    return JS_CallFunction(cx, thisObj, fun, args, rval);
+}
+
+ALWAYS_INLINE bool FASTCALL
+call(JSContext *cx, JS::HandleObject thisObj, JS::HandleId funId, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
+
+    JS::RootedValue funVal(cx);
+	return
+		JS_GetPropertyById(cx, thisObj, funId, &funVal) &&
+		call(cx, thisObj, funVal, args, rval);
+}
+
+ALWAYS_INLINE bool FASTCALL
+call(JSContext *cx, JS::HandleObject thisObj, const char *name, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
+
+    return JS_CallFunctionName(cx, thisObj, name, args, rval);
+}
+
+ALWAYS_INLINE bool FASTCALL
+call(JSContext *cx, JS::HandleObject thisObj, const jschar *name, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
+
+	JS::RootedValue fval(cx);
+    return 
+		JS_GetUCProperty(cx, thisObj, name, wcslen(name), &fval) &&
+		JS_CallFunctionValue(cx, thisObj, fval, args, rval);
+}
+
+ALWAYS_INLINE bool FASTCALL
+call(JSContext *cx, JS::HandleObject thisObj, const WStrSpec name, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
+
+	JS::RootedValue fval(cx);
+	JS_GetUCProperty(cx, thisObj, name.wstr(), name.len(), &fval);
+    return call(cx, thisObj, fval, args, rval);
+}
+
+
+// since neither implicit constructors nor conversion operators are applied during template deduction, we have to force the JS::Rooted to JS::Handle conversion here
+template <class FCT>
+ALWAYS_INLINE bool FASTCALL
+call(JSContext *cx, JS::HandleValue thisArg, const FCT &fct, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
+
+	JS::RootedObject thisObj(cx, &thisArg.toObject());
+	return call(cx, thisObj, fct, args, rval);
+}
+
+
+////
+
+template <class THIS, class FCT>
+ALWAYS_INLINE bool FASTCALL
+call( JSContext *cx, const THIS &thisArg, const FCT &fct, JS::MutableHandleValue rval ) {
+
+	return call(cx, thisArg, fct, JS::HandleValueArray::empty(), rval);
+}
+
+template <class THIS, class FCT, class T1>
+ALWAYS_INLINE bool FASTCALL
+call( JSContext *cx, const THIS &thisArg, const FCT &fct, JS::MutableHandleValue rval, const T1 &v1 ) {
+
+	JS::AutoValueArray<1> ava(cx);
+	return
+		setMutableHandleValue(cx, ava[0], v1) &&
+		call(cx, thisArg, fct, ava, rval);
+}
+
+template <class THIS, class FCT, class T1, class T2>
+ALWAYS_INLINE bool FASTCALL
+call( JSContext *cx, const THIS &thisArg, const FCT &fct, JS::MutableHandleValue rval, const T1 &v1, const T2 &v2 ) {
+
+	JS::AutoValueArray<2> ava(cx);
+	return
+		setMutableHandleValue(cx, ava[0], v1) &&
+		setMutableHandleValue(cx, ava[1], v2) &&
+		call(cx, thisArg, fct, ava, rval);
+}
+
+template <class THIS, class FCT, class T1, class T2, class T3>
+ALWAYS_INLINE bool FASTCALL
+call( JSContext *cx, const THIS &thisArg, const FCT &fct, JS::MutableHandleValue rval, const T1 &v1, const T2 &v2, const T3 &v3 ) {
+
+	JS::AutoValueArray<3> ava(cx);
+	return
+		setMutableHandleValue(cx, ava[0], v1) &&
+		setMutableHandleValue(cx, ava[1], v2) &&
+		setMutableHandleValue(cx, ava[2], v3) &&
+		call(cx, thisArg, fct, ava, rval);
+}
+
+template <class THIS, class FCT, class T1, class T2, class T3, class T4>
+ALWAYS_INLINE bool FASTCALL
+call( JSContext *cx, const THIS &thisArg, const FCT &fct, JS::MutableHandleValue rval, const T1 &v1, const T2 &v2, const T3 &v3, const T4 &v4 ) {
+
+	JS::AutoValueArray<4> ava(cx);
+	return
+		setMutableHandleValue(cx, ava[0], v1) &&
+		setMutableHandleValue(cx, ava[1], v2) &&
+		setMutableHandleValue(cx, ava[2], v3) &&
+		setMutableHandleValue(cx, ava[3], v4) &&
+		call(cx, thisArg, fct, ava, rval);
+}
+
+template <class THIS, class FCT, class T1, class T2, class T3, class T4, class T5>
+ALWAYS_INLINE bool FASTCALL
+call( JSContext *cx, const THIS &thisArg, const FCT &fct, JS::MutableHandleValue rval, const T1 &v1, const T2 &v2, const T3 &v3, const T4 &v4, const T5 &v5 ) {
+
+	JS::AutoValueArray<5> ava(cx);
+	return
+		setMutableHandleValue(cx, ava[0], v1) &&
+		setMutableHandleValue(cx, ava[1], v2) &&
+		setMutableHandleValue(cx, ava[2], v3) &&
+		setMutableHandleValue(cx, ava[3], v4) &&
+		setMutableHandleValue(cx, ava[4], v5) &&
+		call(cx, thisArg, fct, ava, rval);
+}
+
+template <class THIS, class FCT, class T1, class T2, class T3, class T4, class T5, class T6>
+ALWAYS_INLINE bool FASTCALL
+call( JSContext *cx, const THIS &thisArg, const FCT &fct, JS::MutableHandleValue rval, const T1 &v1, const T2 &v2, const T3 &v3, const T4 &v4, const T5 &v5, const T6 &v6 ) {
+
+	JS::AutoValueArray<6> ava(cx);
+	return
+		setMutableHandleValue(cx, ava[0], v1) &&
+		setMutableHandleValue(cx, ava[1], v2) &&
+		setMutableHandleValue(cx, ava[2], v3) &&
+		setMutableHandleValue(cx, ava[3], v4) &&
+		setMutableHandleValue(cx, ava[4], v5) &&
+		setMutableHandleValue(cx, ava[5], v6) &&
+		call(cx, thisArg, fct, ava, rval);
+}
+
+template <class THIS, class FCT, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
+ALWAYS_INLINE bool FASTCALL
+call( JSContext *cx, const THIS &thisArg, const FCT &fct, JS::MutableHandleValue rval, const T1 &v1, const T2 &v2, const T3 &v3, const T4 &v4, const T5 &v5, const T6 &v6, const T7 &v7 ) {
+
+	JS::AutoValueArray<7> ava(cx);
+	return	
+		setMutableHandleValue(cx, ava[0], v1) &&
+		setMutableHandleValue(cx, ava[1], v2) &&
+		setMutableHandleValue(cx, ava[2], v3) &&
+		setMutableHandleValue(cx, ava[3], v4) &&
+		setMutableHandleValue(cx, ava[4], v5) &&
+		setMutableHandleValue(cx, ava[5], v6) &&
+		setMutableHandleValue(cx, ava[6], v7) &&
+		call(cx, thisArg, fct, ava, rval);
+}
+
+
+//...
+
+template <class T1>
+ALWAYS_INLINE bool FASTCALL
+setSlot( JSContext *cx, JS::HandleObject obj, size_t slotIndex, const T1 v1 ) {
+
+	JS::RootedValue v(cx);
+	return
+		setMutableHandleValue(cx, &v, v1) &&
+		JL_SetReservedSlot(obj, slotIndex, v);
+}
+
+////////
+
+
+
+JL_END_NAMESPACE
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3376,7 +3867,7 @@ JL_PropertyToNative( JSContext *cx, IN JS::HandleObject obj, const char *propert
 
 template <class T>
 ALWAYS_INLINE bool FASTCALL
-JL_PropertyToNative( JSContext *cx, IN JS::HandleObject obj, jsid id, T *cval ) {
+JL_PropertyToNative( JSContext *cx, IN JS::HandleObject obj, JS::HandleId id, T *cval ) {
 
 	JS::RootedValue tmp(cx);
 	return JS_GetPropertyById(cx, obj, id, &tmp) && JL_JsvalToNative(cx, tmp, cval);
@@ -3778,8 +4269,9 @@ ALWAYS_INLINE JLData FASTCALL
 JL_GetImageObject( IN JSContext *cx, IN JS::HandleValue val, OUT T *width, OUT T *height, OUT U *channels, OUT ImageDataType *dataType ) {
 
 	JLData data;
-	//JL_ASSERT_IS_OBJECT(val, "image");
 	JL_CHK( val.isObject() );
+
+	{
 
 	JS::RootedObject imageObj(cx, &val.toObject());
 	JL_CHK( JL_PropertyToNative(cx, imageObj, JLID(cx, data), &data) );
@@ -3817,6 +4309,9 @@ JL_GetImageObject( IN JSContext *cx, IN JS::HandleValue val, OUT T *width, OUT T
 	JL_CHK( data.IsSet() && jl::SafeCast<int>(data.Length()) == (int)(*width * *height * *channels * dataTypeSize) );
 //	JL_ASSERT( width >= 0 && height >= 0 && channels > 0, E_STR("image"), E_FORMAT );
 //	JL_ASSERT( data.IsSet() && jl::SafeCast<int>(data.Length()) == (int)(*width * *height * *channels * 1), E_DATASIZE, E_INVALID );
+
+	}
+
 	return data;
 bad:
 	return JLData();
@@ -4061,6 +4556,7 @@ JL_ProtoOfInheritFrom( JSContext *cx, JS::HandleObject obj, const JSClass *clasp
 }
 
 
+/* see jl::call()
 
 ALWAYS_INLINE bool FASTCALL
 JL_CallFunctionVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleValue functionValue, OUT JS::MutableHandleValue rval ) {
@@ -4130,6 +4626,9 @@ JL_CallFunctionIdVA( JSContext *cx, JS::HandleObject obj, IN JS::HandleId functi
 }
 
 
+*/
+
+
 
 
 /* no more used ?
@@ -4177,9 +4676,9 @@ JL_JsvalToPrimitive( JSContext * RESTRICT cx, IN JS::HandleValue val, OUT JS::Mu
 	//JSClass *clasp = JL_GetClass(obj);
 	//if ( clasp->convert ) // note that JS_ConvertStub calls js_TryValueOf
 	//	return clasp->convert(cx, obj, JSTYPE_VOID, rval);
-	JL_CHK( JL_CallFunctionId(cx, obj, JLID(cx, valueOf), JS::HandleValueArray::empty(), rval) );
+	JL_CHK( jl::call(cx, obj, JLID(cx, valueOf), rval) );
 	if ( !rval.isPrimitive() )
-		JL_CHK( JL_CallFunctionId(cx, obj, JLID(cx, toString), JS::HandleValueArray::empty(), rval) );
+		JL_CHK( jl::call(cx, obj, JLID(cx, toString), rval) );
 
 	return true;
 	JL_BAD;
@@ -4693,16 +5192,15 @@ StreamReadNativeInterface( JSContext *cx, JS::HandleObject obj ) {
 INLINE bool
 JSStreamRead( JSContext * RESTRICT cx, JS::HandleObject obj, char * RESTRICT buffer, size_t * RESTRICT amount ) {
 
-	JS::RootedValue tmp(cx);
-	JL_CHK( JL_NativeToJsval(cx, *amount, &tmp) );
-	JL_CHK( JL_CallFunctionId(cx, obj, JLID(cx, read), tmp, &tmp) );
-	if ( tmp.isUndefined() ) { // (TBD) with sockets, undefined mean 'closed', that is not supported by NIStreamRead.
+	JS::RootedValue rval(cx);
+	JL_CHK( jl::call(cx, obj, JLID(cx, read), &rval, *amount) );
+	if ( rval.isUndefined() ) { // (TBD) with sockets, undefined mean 'closed', that is not supported by NIStreamRead.
 
 		*amount = 0;
 	} else {
 
 		JLData str;
-		JL_CHK( JL_JsvalToNative(cx, tmp, &str) );
+		JL_CHK( JL_JsvalToNative(cx, rval, &str) );
 		JL_ASSERT( str.Length() <= *amount, E_DATASIZE, E_MAX, E_NUM(*amount) );
 		ASSERT( str.Length() <= *amount );
 		*amount = str.Length();
@@ -4755,7 +5253,7 @@ INLINE bool
 JSBufferGet( JSContext *cx, JS::HandleObject obj, JLData *str ) {
 
 	JS::RootedValue tmp(cx);
-	return JL_CallFunctionId(cx, obj, JLID(cx, get), JS::HandleValueArray::empty(), &tmp) && JL_JsvalToNative(cx, tmp, str);
+	return jl::call(cx, obj, JLID(cx, get), &tmp) && JL_JsvalToNative(cx, tmp, str);
 }
 
 

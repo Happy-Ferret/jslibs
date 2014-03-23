@@ -95,35 +95,35 @@ bool PollDescNotify( JSContext *cx, JS::HandleValue descVal, PRPollDesc *pollDes
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "error", &tmp ) ); // (TBD) use JS_HasPropertyById
 		if ( JL_ValueIsCallable(cx, tmp) )
-			JL_CHK( JL_CallFunctionVA(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
+			JL_CHK( jl::call(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
 	}
 
 	if ( outFlag & PR_POLL_EXCEPT ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "exception", &tmp ) );
 		if ( JL_ValueIsCallable(cx, tmp) )
-			JL_CHK( JL_CallFunctionVA(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
+			JL_CHK( jl::call(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
 	}
 
 	if ( outFlag & PR_POLL_HUP ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "hangup", &tmp ) );
 		if ( JL_ValueIsCallable(cx, tmp) )
-			JL_CHK( JL_CallFunctionVA(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
+			JL_CHK( jl::call(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
 	}
 
 	if ( outFlag & PR_POLL_READ ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "readable", &tmp ) );
 		if ( JL_ValueIsCallable(cx, tmp) )
-			JL_CHK( JL_CallFunctionVA(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
+			JL_CHK( jl::call(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
 	}
 
 	if ( outFlag & PR_POLL_WRITE ) {
 
 		JL_CHK( JS_GetProperty( cx, fdObj, "writable", &tmp ) );
 		if ( JL_ValueIsCallable(cx, tmp) )
-			JL_CHK( JL_CallFunctionVA(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
+			JL_CHK( jl::call(cx, fdObj, tmp, &tmp, descVal, arg1, arg2) );
 	}
 
 	return true;

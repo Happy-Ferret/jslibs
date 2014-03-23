@@ -42,9 +42,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_CONSTRUCTING();
 
-	jsval iconVal;
-
-	iconVal = JL_ARG(1);
+	{
+	JS::RootedValue iconVal(cx, JL_ARG(1));
 
 	HICON hIcon = NULL;
 
@@ -122,6 +121,9 @@ DEFINE_CONSTRUCTOR() {
 	*phIcon = hIcon;
 
 	JL_SetPrivate(JL_OBJ, phIcon);
+
+	}
+
 	return true;
 
 bad:
@@ -137,7 +139,7 @@ bad:
 
 DEFINE_FINALIZE() {
 
-	HICON *phIcon = (HICON*)JL_GetPrivate(obj);
+	HICON *phIcon = (HICON*)js::GetObjectPrivate(obj);
 	if ( !phIcon )
 		return;
 
