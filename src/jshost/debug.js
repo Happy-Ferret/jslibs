@@ -283,7 +283,7 @@ try {
 		} catch(ex){}
 	}
 	
-	function fct(obj, left) {
+	var fct = function(obj, left) {
 
 		if ( host.endSignal )
 			halt();

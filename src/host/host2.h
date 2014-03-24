@@ -117,67 +117,6 @@ public:
 };
 
 
-class AutoJSEngineInit {
-public:
-
-	AutoJSEngineInit() {
-
-		bool st = JS_Init();
-		ASSERT(st);
-	}
-
-	~AutoJSEngineInit() {
-
-		JS_ShutDown();
-	}
-};
-
-
-class AutoExceptionState {
-	
-	JSContext *_cx;
-	JSExceptionState *_exState;
-
-public:
-	~AutoExceptionState() {
-
-		if ( _exState )
-			JS_RestoreExceptionState(_cx, _exState);
-	}
-
-	AutoExceptionState(JSContext *cx) : _cx(cx) {
-			
-		_exState = JS_SaveExceptionState(_cx);
-		JS_ClearPendingException(_cx);
-	}
-
-	void drop() {
-			
-		ASSERT( _exState != NULL );
-		JS_DropExceptionState(_cx, _exState);
-		_exState = NULL;
-	}
-};
-
-
-
-class AutoErrorReporter {
-	
-	JSContext *_cx;
-	JSErrorReporter _errReporter;
-
-public:
-	~AutoErrorReporter() {
-
-		JS_SetErrorReporter(_cx, _errReporter);
-	}
-
-	AutoErrorReporter(JSContext *cx, JSErrorReporter errorReporter) : _cx(cx) {
-			
-		_errReporter = JS_SetErrorReporter(_cx, errorReporter);
-	}
-};
-
 
 template <class T, const size_t ITEM_COUNT>
 class StaticArray {

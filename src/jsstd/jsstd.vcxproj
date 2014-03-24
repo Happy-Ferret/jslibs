@@ -41,15 +41,11 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">
     <Link />
-    <Link>
-      <AdditionalDependencies>$(jslibsRootDir)src\host\$(jslibsIntDir)host.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
+    <Link />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">
     <Link />
-    <Link>
-      <AdditionalDependencies>$(jslibsRootDir)src\host\$(jslibsIntDir)host.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
+    <Link />
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

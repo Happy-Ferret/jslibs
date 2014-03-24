@@ -1010,41 +1010,59 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	JS::RootedValue rval(cx);
 
+	class X {
+	public:
+		static bool fct(JSContext *cx, unsigned argc, JS::Value *vp) {
 
+			printf("C ");
+			return true;
+		}
+	};
+
+
+	JS::RootedFunction fct(cx, JS_NewFunction(cx, X::fct, 1, 0, JS::NullPtr(), "fct"));
+	JS::RootedObject obj(cx, JS_GetFunctionObject(fct));
 	JS::RootedValue val(cx);
-	JS::RootedObject obj(cx, JL_OBJ);
-	JS::RootedId id(cx);
-	JS::RootedFunction fct(cx);
+	val.setObject(*obj);
 	JS::RootedString str(cx, JS_NewStringCopyZ(cx, "test"));
+	JS::RootedValue tmp(cx);
+	tmp.setString(str);
+	jl::setProperty(cx, obj, "test", val);
+	JS::RootedId id(cx);
+	JL_CHK( JS_ValueToId(cx, tmp, &id) );
 
-
-	jl::call(cx, obj, val, &rval, 1, obj, id, val, str);
-	jl::call(cx, obj, id, &rval, 1, obj, id, val, str);
-	jl::call(cx, obj, fct, &rval, 1, obj, id, val, str);
-	jl::call(cx, obj, "str", &rval, 1, obj, id, val, str);
-	jl::call(cx, obj, L("wstr"), &rval, 1, obj, id, val, str);
+	{
 
 	JS::HandleObject hObj(obj);
-	jl::call(cx, hObj, val, &rval, 1, obj, id, val, str);
-	jl::call(cx, hObj, id, &rval, 1, obj, id, val, str);
-	jl::call(cx, hObj, fct, &rval, 1, obj, id, val, str);
-	jl::call(cx, hObj, "str", &rval, 1, obj, id, val, str);
-	jl::call(cx, hObj, L("wstr"), &rval, 1, obj, id, val, str);
-
-	jl::call(cx, val, val, &rval, 1, obj, id, val, str);
-	jl::call(cx, val, id, &rval, 1, obj, id, val, str);
-	jl::call(cx, val, fct, &rval, 1, obj, id, val, str);
-	jl::call(cx, val, "str", &rval, 1, obj, id, val, str);
-	jl::call(cx, val, L("wstr"), &rval, 1, obj, id, val, str);
-
 	JS::HandleValue hVal(val);
-	jl::call(cx, hVal, val, &rval, 1, obj, id, val, str);
-	jl::call(cx, hVal, id, &rval, 1, obj, id, val, str);
-	jl::call(cx, hVal, fct, &rval, 1, obj, id, val, str);
-	jl::call(cx, hVal, "str", &rval, 1, obj, id, val, str);
-	jl::call(cx, hVal, L("wstr"), &rval, 1, obj, id, val, str);
 
+	JL_CHK( jl::call(cx, obj, val, &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, obj, id, &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, obj, fct, &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, obj, "test", &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, obj, L("test"), &rval, 1, obj, id, val, str) );
+	
+	JL_CHK( jl::call(cx, hObj, val, &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, hObj, id, &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, hObj, fct, &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, hObj, "test", &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, hObj, L("test"), &rval, 1, obj, id, val, str) );
+	
+	JL_CHK( jl::call(cx, val, val, &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, val, id, &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, val, fct, &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, val, "test", &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, val, L("test"), &rval, 1, obj, id, val, str) );
+	
+	JL_CHK( jl::call(cx, hVal, val, &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, hVal, id, &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, hVal, fct, &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, hVal, "test", &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, hVal, L("test"), &rval, 1, obj, id, val, str) );
 
+	JL_CHK( jl::setElement(cx, hVal, 0, jl::strSpec("test")) );
+
+	}
 
 /*
 
@@ -1194,6 +1212,7 @@ DEFINE_FUNCTION( jslangTest ) {
 	//JSObject *errorObj = JS_NewObjectForConstructor(cx, &constructor);
 */
 
+	return true;
 	JL_BAD;
 }
 

@@ -344,7 +344,7 @@ bool VariantToJsval( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rva
 
 		case VT_HRESULT: {
 			HRESULT errorCode = isRef ? *V_I4REF(variant) : V_I4(variant); // check ->scode and ResultFromScode
-			JL_CHK( WinNewError(cx, errorCode, rval.address()) );
+			JL_CHK( WinNewError(cx, errorCode, rval) );
 			}
 			break;
 		case VT_ERROR: {
@@ -353,7 +353,7 @@ bool VariantToJsval( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rva
 				scode = isRef ? *V_ERRORREF(variant) : V_ERROR(variant);
 			else
 				scode = variant->scode;
-			JL_CHK( WinNewError(cx, scode, rval.address()) );
+			JL_CHK( WinNewError(cx, scode, rval) );
 			}
 			break;
 		case VT_NULL:

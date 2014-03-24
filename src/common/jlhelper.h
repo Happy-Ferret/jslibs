@@ -184,6 +184,7 @@ ALWAYS_INLINE JS::Value FASTCALL
 JL_ZInitValue() {
 
 	ASSERT(JS::Value().asRawBits() == 0);
+	ASSERT(!JS::Value().isMarkable());
 	return JS::Value();
 }
 
@@ -466,6 +467,67 @@ public:
 	~AutoInterruptCallback() {
 
 		JS_SetInterruptCallback(_rt, _prevCallback);
+	}
+};
+
+
+class AutoJSEngineInit {
+public:
+
+	AutoJSEngineInit() {
+
+		bool st = JS_Init();
+		ASSERT(st);
+	}
+
+	~AutoJSEngineInit() {
+
+		JS_ShutDown();
+	}
+};
+
+
+class AutoExceptionState {
+	
+	JSContext *_cx;
+	JSExceptionState *_exState;
+
+public:
+	~AutoExceptionState() {
+
+		if ( _exState )
+			JS_RestoreExceptionState(_cx, _exState);
+	}
+
+	AutoExceptionState(JSContext *cx) : _cx(cx) {
+			
+		_exState = JS_SaveExceptionState(_cx);
+		JS_ClearPendingException(_cx);
+	}
+
+	void drop() {
+			
+		ASSERT( _exState != NULL );
+		JS_DropExceptionState(_cx, _exState);
+		_exState = NULL;
+	}
+};
+
+
+class AutoErrorReporter {
+	
+	JSContext *_cx;
+	JSErrorReporter _errReporter;
+
+public:
+	~AutoErrorReporter() {
+
+		JS_SetErrorReporter(_cx, _errReporter);
+	}
+
+	AutoErrorReporter(JSContext *cx, JSErrorReporter errorReporter) : _cx(cx) {
+			
+		_errReporter = JS_SetErrorReporter(_cx, errorReporter);
 	}
 };
 
@@ -1917,17 +1979,17 @@ setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const JS::Handl
 }
 
 
-/*
+
 ALWAYS_INLINE bool FASTCALL
-setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, void *ptr) {
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const void *ptr) {
 
 	if ( ptr == nullptr )
 		val.setNull();
 	else
-		val.address()->setPrivate(ptr);
+		val.address()->setPrivate(const_cast<void*>(ptr));
 	return true;
 }
-*/
+
 
 
 ALWAYS_INLINE bool FASTCALL
@@ -2048,6 +2110,14 @@ setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const JS::Roote
 	return setMutableHandleValue(cx, val, h);
 }
 
+template <typename T>
+ALWAYS_INLINE bool FASTCALL
+setMutableHandleValue(JSContext *cx, JS::MutableHandleValue val, const JS::MutableHandle<T> &rv) {
+
+	JS::Handle<T> h(rv);
+	return setMutableHandleValue(cx, val, h);
+}
+
 
 ////
 
@@ -2115,19 +2185,85 @@ newJsArray( JSContext *cx, const T1 v1, const T2 v2, const T3 v3, const T4 v4, c
 
 ////
 
-
-/*
+template <class T>
 ALWAYS_INLINE bool FASTCALL
-call(JSContext *cx, JS::HandleValue thisv, JS::HandleValue fval, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
-	
-	return JS::Call(cx, thisv, fval, args, rval);
+setElement( JSContext *cx, JS::HandleObject objArg, uint32_t index, const T &v ) {
+
+	JS::RootedValue value(cx);
+	return
+		setMutableHandleValue(cx, &value, v) &&
+		JS_SetElement(cx, objArg, index, value);
 }
-*/
+
+template <class T>
+ALWAYS_INLINE bool FASTCALL
+setElement( JSContext *cx, JS::HandleValue objArg, uint32_t index, const T &v ) {
+
+	ASSERT( objArg.isObject() );
+	JS::RootedObject obj(cx, &objArg.toObject());
+	return setElement(cx, obj, index, v);
+}
+
+////
+
+template <typename T>
+ALWAYS_INLINE bool FASTCALL
+setProperty( JSContext *cx, JS::HandleObject objArg, const char *name, const T &v ) {
+
+	JS::RootedValue value(cx);
+	return setMutableHandleValue(cx, &value, v) && JS_SetProperty(cx, objArg, name, value);
+}
+
+template <typename T>
+ALWAYS_INLINE bool FASTCALL
+setProperty( JSContext *cx, JS::HandleObject objArg, JS::HandleId nameId, const T &v ) {
+
+	JS::RootedValue value(cx);
+	return setMutableHandleValue(cx, &value, v) && JS_SetPropertyById(cx, objArg, nameId, value);
+}
 
 ALWAYS_INLINE bool FASTCALL
-call(JSContext *cx, JS::HandleObject thisObj, JS::HandleValue fval, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
+setProperty( JSContext *cx, JS::HandleObject objArg, const char *name, JS::HandleValue value ) {
+
+	return JS_SetProperty(cx, objArg, name, value);
+}
+
+
+
+template <typename T>
+ALWAYS_INLINE bool FASTCALL
+setProperty( JSContext *cx, JS::HandleValue objArg, const char *name, const T &v ) {
+
+	ASSERT( objArg.isObject() );
+	JS::RootedObject obj(cx, &objArg.toObject());
+	return setProperty(cx, obj, name, v);
+}
+
+template <typename T>
+ALWAYS_INLINE bool FASTCALL
+setProperty( JSContext *cx, JS::HandleValue objArg, JS::HandleId nameId, const T &v ) {
+
+	ASSERT( objArg.isObject() );
+	JS::RootedObject obj(cx, &objArg.toObject());
+	return setProperty(cx, obj, nameId, v);
+}
+
+ALWAYS_INLINE bool FASTCALL
+setProperty( JSContext *cx, JS::HandleValue objArg, const char *name, JS::HandleValue value ) {
+
+	ASSERT( objArg.isObject() );
+	JS::RootedObject obj(cx, &objArg.toObject());
+	return setProperty(cx, obj, name, value);
+}
+
+
+////
+
+// fun as function 
+ALWAYS_INLINE bool FASTCALL
+call(JSContext *cx, JS::HandleObject thisObj, JS::HandleValue fun, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
 	
-	return JS_CallFunctionValue(cx, thisObj, fval, args, rval);
+	return JS_CallFunctionValue(cx, thisObj, fun, args, rval);
 }
 
 ALWAYS_INLINE bool FASTCALL
@@ -2136,6 +2272,7 @@ call(JSContext *cx, JS::HandleObject thisObj, JS::HandleFunction fun, const JS::
     return JS_CallFunction(cx, thisObj, fun, args, rval);
 }
 
+// fun as name (obj.fun)
 ALWAYS_INLINE bool FASTCALL
 call(JSContext *cx, JS::HandleObject thisObj, JS::HandleId funId, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
 
@@ -2169,7 +2306,7 @@ call(JSContext *cx, JS::HandleObject thisObj, const WStrSpec name, const JS::Han
 }
 
 
-// since neither implicit constructors nor conversion operators are applied during template deduction, we have to force the JS::Rooted to JS::Handle conversion here
+// handle case when thisArg is a value and not an object
 template <class FCT>
 ALWAYS_INLINE bool FASTCALL
 call(JSContext *cx, JS::HandleValue thisArg, const FCT &fct, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
@@ -2178,6 +2315,11 @@ call(JSContext *cx, JS::HandleValue thisArg, const FCT &fct, const JS::HandleVal
 	return call(cx, thisObj, fct, args, rval);
 }
 
+ALWAYS_INLINE bool FASTCALL
+call(JSContext *cx, JS::HandleValue thisArg, const JS::RootedValue &fval, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
+	
+	return JS::Call(cx, thisArg, fval, args, rval);
+}
 
 ////
 
@@ -3541,12 +3683,10 @@ JL_NativeToJsval( JSContext *cx, void *ptr, OUT JS::MutableHandleValue vp ) {
 		JS::RootedObject obj(cx, JL_NewProtolessObj(cx));
 		JL_CHK( obj );
 		vp.setObject(*obj);
-		JS::RootedValue tmp(cx);
 
 		if ( PLATFORM_BITS == 32 ) {
 
-			tmp.setInt32( reinterpret_cast<ptrdiff_t>(ptr) );
-			JL_CHK( JS_SetPropertyById(cx, obj, JL_JSID_INT32(0), tmp) );
+			JL_CHK( jl::setProperty(cx, obj, JL_JSID_INT32(0), reinterpret_cast<ptrdiff_t>(ptr)) );
 		} else
 		if ( PLATFORM_BITS == 64 ) {
 
@@ -3555,11 +3695,8 @@ JL_NativeToJsval( JSContext *cx, void *ptr, OUT JS::MutableHandleValue vp ) {
 			#pragma warning(disable:4293) // 'operator' : shift count negative or too big, undefined behavior
 			#endif // XP_WIN
 
-			tmp.setInt32( reinterpret_cast<ptrdiff_t>(ptr) & UINT32_MAX );
-			JL_CHK( JS_SetPropertyById(cx, obj, JL_JSID_INT32(0), tmp) );
-
-			tmp.setInt32( reinterpret_cast<ptrdiff_t>(ptr) >> 32 );
-			JL_CHK( JS_SetPropertyById(cx, obj, JL_JSID_INT32(1), tmp) );
+			JL_CHK( jl::setProperty(cx, obj, JL_JSID_INT32(0), reinterpret_cast<ptrdiff_t>(ptr) & UINT32_MAX) );
+			JL_CHK( jl::setProperty(cx, obj, JL_JSID_INT32(1), reinterpret_cast<ptrdiff_t>(ptr) >> 32) );
 
 			#ifdef XP_WIN
 			#pragma warning(pop)
@@ -4223,7 +4360,7 @@ JL_NewImageObject( IN JSContext *cx, IN T width, IN T height, IN U channels, IN 
 	ASSERT( width >= 0 && height >= 0 && channels > 0 );
 
 	uint8_t *data;
-	JS::RootedValue dataVal;
+	JS::RootedValue dataVal(cx);
 	JS::RootedObject imageObj(cx, JL_NewObj(cx));
 
 	JL_CHK( imageObj );
@@ -4639,6 +4776,7 @@ JL_Eval( JSContext *cx, JSString *source, JS::Value *rval ) { // used in JS::Val
 	return JL_CallFunctionId(cx, JL_GetGlobal(cx), JLID(cx, eval), 1, &argv, rval); // see JS_EvaluateUCScript
 }
 */
+
 
 
 ALWAYS_INLINE bool FASTCALL
@@ -5348,3 +5486,4 @@ public:
 		return JLHID(pev);
 	}
 };
+

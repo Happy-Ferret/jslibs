@@ -910,7 +910,7 @@ struct DirectoryUserProcessEvent : public ProcessEvent2 {
 			JS::RootedValue rval(cx);
 			JS::RootedObject callThisObj(cx);
 			callThisObj.set(&slot(0).toObject());
-			JL_CHK( JL_CallFunctionVA(cx, callThisObj, hslot(0), &rval, hslot(1)) );
+			JL_CHK( jl::call(cx, callThisObj, hslot(0), &rval, hslot(1)) );
 		}
 		return true;
 		JL_BAD;

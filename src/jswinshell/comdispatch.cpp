@@ -45,6 +45,7 @@ bool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( disp );
 
+	{
 
 	JS::RootedObject funObj(cx, args.callee());
 	JS::RootedValue dispidVal(cx);
@@ -87,21 +88,17 @@ bool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 
 		// remove the function because it is not a DISPATCH_METHOD
 		JS::RootedValue funNameVal(cx);
-		
-
 		JL_CHK( JS_GetPropertyById(cx, funObj, JLID(cx, name), &funNameVal) );
-		//JL_CHK( JL_JsvalToJsid(cx, &funNameVal, &funNameId) );
 		ASSERT( funNameVal.isString() );
-
-		JS::RootedId funNameId(cx, JL_StringToJsid(cx, funNameVal.toString()));
-
+		JS::RootedString funNameStr(cx, funNameVal.toString());
+		JS::RootedId funNameId(cx, JL_StringToJsid(cx, funNameStr));
 		ASSERT( JSID_IS_STRING(funNameId) );
-		//JL_CHK( JL_RemovePropertyById(cx, JL_OBJ, funNameId) );
-		JL_CHK( JS_DeletePropertyById(cx, JL_OBJ, funNameId) ); // beware: permanant properties cannot be removed.
+		bool succeeded;
+		JL_CHK( JS_DeletePropertyById2(cx, JL_OBJ, funNameId, &succeeded) ); // beware: permanant properties cannot be removed.
 
 	#ifdef DEBUG
 		bool found;
-		ASSERT( JS_HasPropertyById(cx, obj, funNameId, &found) && !found );
+		ASSERT( JS_HasPropertyById(cx, JL_OBJ, funNameId, &found) && !found );
 	#endif
 	} // ...
 
@@ -109,12 +106,17 @@ bool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 		JL_CHK( WinThrowError(cx, hr) );
 
 	JL_CHK( VariantToJsval(cx, result, args.rval()) ); // loose variant ownership
+
+	}
+
 	return true;
 	JL_BAD;
 }
 
 
 DEFINE_GET_PROPERTY() {
+
+	JL_DEFINE_PROP_ARGS;
 
 	VARIANT *result = NULL; // bad:
 	
@@ -170,12 +172,12 @@ DEFINE_GET_PROPERTY() {
 			JL_CHK( WinThrowError(cx, hr) );
 		JS_free(cx, result);
 
-		JSFunction *fun = JS_NewFunction(cx, FunctionInvoke, 8, 0, NULL, NULL);
+		JSFunction *fun = JS_NewFunction(cx, FunctionInvoke, 8, 0, JS::NullPtr(), NULL);
 		JSObject *funObj = JS_GetFunctionObject(fun);
 		JL_CHK( funObj );
 		vp.setObject(*funObj);
 		JL_CHK( JS_DefinePropertyById(cx, funObj, JLID(cx, id), INT_TO_JSVAL(dispid), NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY) ); // (TBD) use JS_SetProperty instead ?
-		jsval tmp;
+		JS::RootedValue tmp(cx);
 		JL_CHK( JS_IdToValue(cx, id, &tmp) );
 		JL_CHK( JS_DefinePropertyById(cx, funObj, JLID(cx, name), tmp, NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY) ); // (TBD) use JS_SetProperty instead ?
 		JL_CHK( JS_DefinePropertyById(cx, obj, id, vp, NULL, NULL, /*JSPROP_PERMANENT|*/JSPROP_READONLY) ); // not JSPROP_PERMANENT else prop is undeletable, see DISP_E_MEMBERNOTFOUND case in FunctionInvoke()  // (TBD) use JS_SetProperty instead ?
@@ -210,7 +212,7 @@ bad:
 
 DEFINE_SET_PROPERTY() {
 	
-	JL_IGNORE(strict, cx);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -294,13 +296,11 @@ DEFINE_FUNCTION( functionList ) {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	IDispatch *disp = (IDispatch*)JL_GetPrivate(&JL_ARG(1).toObject());
+	IDispatch *disp = (IDispatch*)JL_GetPrivate(JL_ARG(1));
 	JL_ASSERT_OBJECT_STATE( disp, JL_THIS_CLASS_NAME );
 
-//	JSObject *memberList = JL_NewProtolessObj(cx);
-	JSObject *memberList = JL_NewObj(cx);
-	JL_CHK( memberList );
-	*JL_RVAL = OBJECT_TO_JSVAL(memberList);
+	JL_RVAL.setObject(*JL_NewObj(cx));
+	JL_CHK( !JL_RVAL.isNull() );
 
 	HRESULT hr;
 
@@ -326,10 +326,7 @@ DEFINE_FUNCTION( functionList ) {
 		if ( FAILED(hr) )
 			JL_CHK( WinThrowError(cx, hr) );
 
-		JSString *jsstr = JS_NewUCStringCopyZ(cx, (const jschar*)bstrName);
-
-		jsval tmp = STRING_TO_JSVAL(jsstr);
-		JL_CHK( JL_SetElement(cx, memberList, i, tmp) );
+		JL_CHK( jl::setElement(cx, JL_RVAL, i, jl::strSpec((const jschar*)bstrName)) );
 //		JL_CHK( JS_DefineUCProperty(cx, memberList, (const jschar*)bstrName, SysStringLen(bstrName), INT_TO_JSVAL(pFuncDesc->invkind), NULL, NULL, JSPROP_ENUMERATE | JSPD_PERMANENT | JSPROP_READONLY) );
 
 		SysFreeString(bstrName);
@@ -352,7 +349,7 @@ DEFINE_FUNCTION( equals ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(1);
 
-	JL_RVAL.setBoolean(JL_ARG(1).isObject() && &JL_ARG(1).toObject() == obj);
+	JL_RVAL.setBoolean(JL_ARG(1).isObject() && &JL_ARG(1).toObject() == JL_OBJ);
 	
 	return true;
 	JL_BAD;
@@ -368,7 +365,7 @@ DEFINE_ITERATOR_OBJECT() {
 	UINT argErr = 0;
 	VARIANT result;
 
-	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT( JL_GetClassOfPrototype(cx, obj) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) );
 
 	JL_CHKM( !keysonly, E_NAME("for...in"), E_NOTSUPPORTED ); // JL_ASSERT( !keysonly, "Only for each..in loop is supported." );
 
@@ -456,7 +453,7 @@ END_CLASS
 
 bool NewComDispatch( JSContext *cx, IDispatch *pdisp, OUT JS::MutableHandleValue rval ) {
 
-	JSObject *varObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(ComDispatch), JL_CLASS_PROTOTYPE(cx, ComDispatch));
+	JS::RootedObject varObj(cx, JL_NewObjectWithGivenProto(cx, JL_CLASS(ComDispatch), JL_CLASS_PROTOTYPE(cx, ComDispatch)));
 	JL_CHK(varObj);
 	rval.setObject( *varObj );
 	JL_SetPrivate( varObj, pdisp);

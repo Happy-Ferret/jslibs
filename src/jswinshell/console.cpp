@@ -514,6 +514,13 @@ struct ConsoleProcessEvent : public ProcessEvent2 {
 							case MOUSE_WHEELED:
 								eventName = "onMouseWheel";
 								break;
+						#if(_WIN32_WINNT >= 0x0600)
+							case MOUSE_HWHEELED:
+								eventName = "onMouseHorizontalWheel";
+								break;
+						#endif /* _WIN32_WINNT >= 0x0600 */
+							default:
+								eventName = NULL;
 							}
 						}
 
