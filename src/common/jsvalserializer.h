@@ -340,7 +340,7 @@ public:
 			return true;
 		}
 
-		if ( JL_ObjectIsArray(cx, obj) ) { // real array object, not array-like !!
+		if ( jl::isArray(cx, obj) ) { // real array object, not array-like !!
 
 			unsigned length;
 			JL_CHK( JS_GetArrayLength(cx, obj, &length) );
@@ -386,7 +386,7 @@ public:
 
 			JS::RootedValue arg(cx);
 
-			JL_ASSERT( JL_ValueIsCallable(cx, serializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_serialize"), E_DEFINED );
+			JL_ASSERT( jl::isCallable(cx, serializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_serialize"), E_DEFINED );
 
 			if ( !JL_ObjectIsObject(cx, obj ) ) {
 
@@ -397,7 +397,7 @@ public:
 				JL_CHK( Write(cx, JLSTSerializableScriptObject) );
 				JS::RootedValue unserializeFctVal(cx);
 				JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, _unserialize), &unserializeFctVal) );
-				JL_ASSERT( JL_ValueIsCallable(cx, unserializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_unserialize"), E_DEFINED );
+				JL_ASSERT( jl::isCallable(cx, unserializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_unserialize"), E_DEFINED );
 				JL_CHK( Write(cx, unserializeFctVal) );
 			}
 
@@ -794,7 +794,7 @@ public:
 
 				JS::RootedValue funVal(cx);
 				JL_CHK( Read(cx, funVal) );
-				JL_ASSERT( JL_ValueIsCallable(cx, funVal), E_STR("unserializer"), E_STATE ); // JLSMSG_INVALID_OBJECT_STATE, "Unserializer"
+				JL_ASSERT( jl::isCallable(cx, funVal), E_STR("unserializer"), E_STATE ); // JLSMSG_INVALID_OBJECT_STATE, "Unserializer"
 
 				JS::RootedValue arg_1(cx);
 				JS::RootedObject unserializerWrapper(cx);
@@ -963,7 +963,7 @@ public:
 ALWAYS_INLINE bool
 JsvalIsSerializer( JSContext *cx, JS::HandleValue val ) {
 
-	return JL_ValueIsClass(cx, val, JL_GetCachedClass(JL_GetHostPrivate(cx), "Serializer"));
+	return jl::isClass(cx, val, JL_GetCachedClass(JL_GetHostPrivate(cx), "Serializer"));
 }
 
 ALWAYS_INLINE Serializer*
@@ -976,7 +976,7 @@ JsvalToSerializer( JSContext *cx, JS::MutableHandleValue val ) {
 ALWAYS_INLINE bool
 JsvalIsUnserializer( JSContext *cx, JS::HandleValue val ) {
 
-	return JL_ValueIsClass(cx, val, JL_GetCachedClass(JL_GetHostPrivate(cx), "Unserializer"));
+	return jl::isClass(cx, val, JL_GetCachedClass(JL_GetHostPrivate(cx), "Unserializer"));
 }
 
 ALWAYS_INLINE Unserializer*

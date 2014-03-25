@@ -63,7 +63,7 @@ DEFINE_FUNCTION( isCallable ) {
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
 
-	JL_RVAL.setBoolean( JL_ValueIsCallable(cx, JL_ARG(1)) );
+	JL_RVAL.setBoolean( jl::isCallable(cx, JL_ARG(1)) );
 	return true;
 	JL_BAD;
 }
@@ -203,7 +203,7 @@ DEFINE_FUNCTION( join ) {
 
 	JS::RootedObject argObj(cx, &JL_ARG(1).toObject());
 
-	if ( JL_ObjectIsArrayLike(cx, argObj) ) {
+	if ( jl::isArrayLike(cx, argObj) ) {
 
 		uint32_t arrayLen;
 		JL_CHK( JS_GetArrayLength(cx, argObj, &arrayLen) );
@@ -1010,6 +1010,14 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	JS::RootedValue rval(cx);
 
+/*
+	double d = -0;
+	double e = 0;
+	double f = d/e;
+
+	ASSERT( jl::DoubleIsNeg(f) );
+*/
+
 	class X {
 	public:
 		static bool fct(JSContext *cx, unsigned argc, JS::Value *vp) {
@@ -1036,31 +1044,63 @@ DEFINE_FUNCTION( jslangTest ) {
 	JS::HandleObject hObj(obj);
 	JS::HandleValue hVal(val);
 
-	JL_CHK( jl::call(cx, obj, val, &rval, 1, obj, id, val, str) );
-	JL_CHK( jl::call(cx, obj, id, &rval, 1, obj, id, val, str) );
-	JL_CHK( jl::call(cx, obj, fct, &rval, 1, obj, id, val, str) );
-	JL_CHK( jl::call(cx, obj, "test", &rval, 1, obj, id, val, str) );
-	JL_CHK( jl::call(cx, obj, L("test"), &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, obj, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_CHK( jl::call(cx, obj, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_CHK( jl::call(cx, obj, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_CHK( jl::call(cx, obj, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_CHK( jl::call(cx, obj, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
 	
-	JL_CHK( jl::call(cx, hObj, val, &rval, 1, obj, id, val, str) );
-	JL_CHK( jl::call(cx, hObj, id, &rval, 1, obj, id, val, str) );
-	JL_CHK( jl::call(cx, hObj, fct, &rval, 1, obj, id, val, str) );
-	JL_CHK( jl::call(cx, hObj, "test", &rval, 1, obj, id, val, str) );
-	JL_CHK( jl::call(cx, hObj, L("test"), &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, hObj, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_CHK( jl::call(cx, hObj, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_CHK( jl::call(cx, hObj, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_CHK( jl::call(cx, hObj, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_CHK( jl::call(cx, hObj, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
 	
-	JL_CHK( jl::call(cx, val, val, &rval, 1, obj, id, val, str) );
-	JL_CHK( jl::call(cx, val, id, &rval, 1, obj, id, val, str) );
-	JL_CHK( jl::call(cx, val, fct, &rval, 1, obj, id, val, str) );
-	JL_CHK( jl::call(cx, val, "test", &rval, 1, obj, id, val, str) );
-	JL_CHK( jl::call(cx, val, L("test"), &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, val, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_CHK( jl::call(cx, val, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_CHK( jl::call(cx, val, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_CHK( jl::call(cx, val, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_CHK( jl::call(cx, val, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
 	
-	JL_CHK( jl::call(cx, hVal, val, &rval, 1, obj, id, val, str) );
-	JL_CHK( jl::call(cx, hVal, id, &rval, 1, obj, id, val, str) );
-	JL_CHK( jl::call(cx, hVal, fct, &rval, 1, obj, id, val, str) );
-	JL_CHK( jl::call(cx, hVal, "test", &rval, 1, obj, id, val, str) );
-	JL_CHK( jl::call(cx, hVal, L("test"), &rval, 1, obj, id, val, str) );
+	JL_CHK( jl::call(cx, hVal, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_CHK( jl::call(cx, hVal, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_CHK( jl::call(cx, hVal, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_CHK( jl::call(cx, hVal, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_CHK( jl::call(cx, hVal, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
 
-	JL_CHK( jl::setElement(cx, hVal, 0, jl::strSpec("test")) );
+	JL_CHK( jl::setElement(cx, hVal, 0, "test") );
+
+	JL_CHK( jl::setProperty(cx, obj, "TEST", 1) );
+	JL_CHK( jl::setProperty(cx, obj, L("TEST"), 1) );
+	JL_CHK( jl::setProperty(cx, obj, jl::strSpec("TEST", 4), 1) );
+	JL_CHK( jl::setProperty(cx, obj, jl::strSpec(L("TEST"), 4), 1) );
+
+	JL_CHK( jl::setProperty(cx, obj, "TEST", val) );
+	JL_CHK( jl::setProperty(cx, obj, L("TEST"), val) );
+	JL_CHK( jl::setProperty(cx, obj, jl::strSpec("TEST", 4), val) );
+	JL_CHK( jl::setProperty(cx, obj, jl::strSpec(L("TEST"), 4), val) );
+
+	JL_CHK( jl::setProperty(cx, val, "TEST", 1) );
+	JL_CHK( jl::setProperty(cx, val, L("TEST"), 1) );
+	JL_CHK( jl::setProperty(cx, val, jl::strSpec("TEST", 4), 1) );
+	JL_CHK( jl::setProperty(cx, val, jl::strSpec(L("TEST"), 4), 1) );
+
+	JL_CHK( jl::setProperty(cx, val, "TEST", val) );
+	JL_CHK( jl::setProperty(cx, val, L("TEST"), val) );
+	JL_CHK( jl::setProperty(cx, val, jl::strSpec("TEST", 4), val) );
+	JL_CHK( jl::setProperty(cx, val, jl::strSpec(L("TEST"), 4), val) );
+
+
+
+	JL_CHK( jl::hasProperty(cx, obj, "TEST") );
+	JL_CHK( jl::hasProperty(cx, obj, L("TEST")) );
+	JL_CHK( jl::hasProperty(cx, obj, jl::strSpec("TEST", 4)) );
+	JL_CHK( jl::hasProperty(cx, obj, jl::strSpec(L("TEST"), 4)) );
+
+	JL_CHK( jl::hasProperty(cx, val, "TEST") );
+	JL_CHK( jl::hasProperty(cx, val, L("TEST")) );
+	JL_CHK( jl::hasProperty(cx, val, jl::strSpec("TEST", 4)) );
+	JL_CHK( jl::hasProperty(cx, val, jl::strSpec(L("TEST"), 4)) );
 
 	}
 

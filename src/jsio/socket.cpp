@@ -483,7 +483,7 @@ DEFINE_FUNCTION( sendTo ) {
 	}
 
 
-	if ( !JL_ObjectIsClass(JL_OBJ, JL_THIS_CLASS) )
+	if ( !jl::isClass(cx, JL_OBJ, JL_THIS_CLASS) )
 		PR_Close(fd);
 
 	return true;
@@ -513,7 +513,7 @@ DEFINE_FUNCTION( recvFrom ) {
 //	JL_ASSERT_INSTANCE( obj, _class );
 
 	PRFileDesc *fd;
-	if ( JL_ObjectIsClass(JL_OBJ, JL_THIS_CLASS) ) {
+	if ( jl::isClass(cx, JL_OBJ, JL_THIS_CLASS) ) {
 
 		fd = (PRFileDesc*)JL_GetPrivate(JL_OBJ);
 		JL_ASSERT_THIS_OBJECT_STATE( fd );

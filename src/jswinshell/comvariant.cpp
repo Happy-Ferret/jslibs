@@ -190,7 +190,7 @@ bool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *varia
 		JS::RootedObject obj(cx, &value.toObject());
 
 		//if ( JL_GetClass(obj) == JL_BlobJSClass(cx) ) {
-		if ( JL_ValueIsData(cx, value) ) {
+		if ( jl::isData(cx, value) ) {
 
 			// see also: Write and read binary data in VARIANT - http://www.ucosoft.com/write-and-read-binary-data-in-variant.html
 			

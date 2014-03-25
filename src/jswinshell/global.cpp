@@ -517,7 +517,7 @@ DEFINE_FUNCTION( registrySet ) {
 			// doc: When writing a string to the registry, you must specify the length of the string, including the terminating null character (\0).
 			st = RegSetValueEx(hKey, valueNameStr, 0, REG_SZ, (LPBYTE)tmp.GetConstStrZ(), tmp.Length() + 1);
 		} else
-		if ( JL_ValueIsData(cx, value) ) {
+		if ( jl::isData(cx, value) ) {
 
 			JLData tmp;
 			JL_CHK( JL_JsvalToNative(cx, value, &tmp) );

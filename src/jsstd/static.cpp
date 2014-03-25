@@ -90,7 +90,7 @@ DEFINE_FUNCTION( expand ) {
 
 	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &srcStr) );
 
-	if ( JL_ARG_ISDEF(2) && JL_ValueIsCallable(cx, JL_ARG(2)) ) {
+	if ( JL_ARG_ISDEF(2) && jl::isCallable(cx, JL_ARG(2)) ) {
 			
 		hasMapFct = true;
 	} else {
@@ -785,7 +785,7 @@ DEFINE_FUNCTION( print ) {
 	JS::RootedValue fval(cx);
 	JL_CHK( JS_GetPropertyById(cx, jl::Host::getHost(cx).hostObject(), JLID(cx, stdout), &fval) );
 	JL_RVAL.setUndefined();
-	if (likely( JL_ValueIsCallable(cx, fval) )) {
+	if (likely( jl::isCallable(cx, fval) )) {
 
 		//return JS_CallFunctionValue(cx, JL_GetGlobal(cx), fval, JL_ARGC, JS_ARGV(cx,vp), fval.address());
 		return JS_CallFunctionValue(cx, JS::NullPtr(), fval, args._jsargs, &fval);
@@ -915,7 +915,7 @@ DEFINE_HAS_INSTANCE() {
 
 	JL_IGNORE(obj, cx);
 //	*bp = !JSVAL_IS_PRIMITIVE(vp) && JL_GetClass(JSVAL_TO_OBJECT(vp)) == JL_THIS_CLASS;
-	*bp = JL_ValueIsClass(cx, vp, JL_THIS_CLASS);
+	*bp = jl::isClass(cx, vp, JL_THIS_CLASS);
 	return true;
 }
 
@@ -1510,7 +1510,7 @@ DEFINE_PROPERTY_GETTER( peakMemoryUsage ) {
 	if ( !status )
 		return JL_ThrowOSError(cx);
 
-	JL_CHK( JL_NewNumberValue(cx, pmc.PeakWorkingSetSize, vp) ); // same value as "windows task manager" "peak mem usage"
+	JL_CHK( jl::setValue(cx, vp, pmc.PeakWorkingSetSize) ); // same value as "windows task manager" "peak mem usage"
 	return true;
 #else
 
@@ -1624,7 +1624,7 @@ DEFINE_PROPERTY_GETTER( privateMemoryUsage ) {
 				dPageTablePages += dCurrentPageStatus; // page table region
 			}
 		} 
-		return JL_NewNumberValue(cx, (dPages - dSharedPages) * dPageSize, vp);
+		JL_CHK( jl::setValue(cx, vp, (dPages - dSharedPages) * dPageSize) );
 	} __finally {
 
 		CloseHandle( hProcess );

@@ -1214,8 +1214,8 @@ Host::hostStderrWrite(const char *message, size_t length) {
 	JS::RootedValue rval(cx);
 	JS::RootedValue fct(cx);
 	JL_CHK( JS_GetPropertyById(cx, _hostObject, JLID(cx, stderr), &fct) );
-	JL_CHK( JL_ValueIsCallable(cx, fct) );
-	JL_CHK( jl::call(cx, globalObject, fct, &rval, jl::StrSpec(message, length)) ); // beware out of memory case !
+	JL_CHK( jl::isCallable(cx, fct) );
+	JL_CHK( jl::call(cx, globalObject, fct, &rval, jl::strSpec(message, length)) ); // beware out of memory case !
 
 	return true;
 bad:

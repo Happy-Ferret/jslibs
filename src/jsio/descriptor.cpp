@@ -911,7 +911,7 @@ DEFINE_PROPERTY_SETTER( timeout ) {
 
 			timeout = PR_INTERVAL_NO_WAIT;
 		} else
-		if ( JL_ValueIsPInfinity(cx, JL_RVAL) ) {
+		if ( jl::isPInfinity(cx, JL_RVAL) ) {
 
 			timeout = PR_INTERVAL_NO_TIMEOUT;
 		} else {

@@ -154,7 +154,7 @@ bool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JS::HandleValue ar
 						return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 					break;
 				}
-				if ( JL_ValueIsData(cx, val) ) {
+				if ( jl::isData(cx, val) ) {
 
 					JLData data;
 					JL_CHK( JL_JsvalToNative(cx, val, &data) );

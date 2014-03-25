@@ -182,13 +182,13 @@ bad:
 ALWAYS_INLINE bool
 IsHandle( JSContext *cx, JS::HandleValue handleVal ) {
 
-	return JL_ValueIsClass(cx, handleVal, JL_HandleJSClass(cx));
+	return jl::isClass(cx, handleVal, JL_HandleJSClass(cx));
 }
 
 ALWAYS_INLINE bool
 IsHandle( JSContext *cx, JS::HandleObject handleObj ) {
 
-	return JL_ObjectIsClass(handleObj, JL_HandleJSClass(cx));
+	return jl::isClass(cx, handleObj, JL_HandleJSClass(cx));
 }
 
 
@@ -197,7 +197,7 @@ IsHandle( JSContext *cx, JS::HandleObject handleObj ) {
 ALWAYS_INLINE bool
 IsHandleType( JSContext *cx, IN JS::HandleObject handleObj, JL_HANDLE_TYPE handleType ) {
 
-	if ( !JL_ObjectIsClass(handleObj, JL_HandleJSClass(cx)) )
+	if ( !jl::isClass(cx, handleObj, JL_HandleJSClass(cx)) )
 		return false;
 	HandlePrivate *pv;
 	pv = static_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
@@ -207,7 +207,7 @@ IsHandleType( JSContext *cx, IN JS::HandleObject handleObj, JL_HANDLE_TYPE handl
 ALWAYS_INLINE bool
 IsHandleType( JSContext *cx, IN JS::HandleValue handleVal, JL_HANDLE_TYPE handleType ) {
 
-	if ( !JL_ValueIsClass(cx, handleVal, JL_HandleJSClass(cx)) )
+	if ( !jl::isClass(cx, handleVal, JL_HandleJSClass(cx)) )
 		return false;
 	JS::RootedObject handleObj(cx, &handleVal.toObject());
 	return IsHandleType(cx, handleObj, handleType);

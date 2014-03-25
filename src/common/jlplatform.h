@@ -199,8 +199,8 @@
 #if defined DEBUG
 #define NOIL(f) f
 #else
-template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
-//#define NOIL(f) f
+//template <class F> NEVER_INLINE F NOIL( F f ) { return f; }
+#define NOIL(f) f
 #endif
 
 /*
@@ -712,7 +712,7 @@ DoubleIsNegZero(const double &d) {
 ALWAYS_INLINE NOALIAS bool
 DoubleIsNeg(const double &d) {
 #ifdef WIN32
-	return DoubleIsNegZero(d) || d < 0;
+	return d < 0 || DoubleIsNegZero(d);
 #elif defined(SOLARIS)
 	return copysign(1, d) < 0;
 #else
