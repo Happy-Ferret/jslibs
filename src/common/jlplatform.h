@@ -722,7 +722,7 @@ DoubleIsNeg(const double &d) {
 
 
 ALWAYS_INLINE bool
-IsInteger(double d) {
+IsIntegerValue(double d) {
 
 	return d == floor(d);
 }

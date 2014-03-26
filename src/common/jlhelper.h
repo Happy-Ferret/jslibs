@@ -822,7 +822,7 @@ enum E_TXTID {
 */
 
 ALWAYS_INLINE JSObject* FASTCALL
-JL_NewObjectWithGivenProto( JSContext *cx, const JSClass *clasp, IN JS::HandleObject proto, IN JS::HandleObject parent = JS::NullPtr()) {
+JL_NewObjectWithGivenProto( JSContext *cx, const JSClass *clasp, IN JS::HandleObject proto, IN JS::HandleObject parent = JS::NullPtr() ) {
 
 	ASSERT_IF( proto != NULL, JL_GetParent(cx, proto) != NULL );
 	// Doc. JS_NewObject, JL_NewObjectWithGivenProto behaves exactly the same, except that if proto is NULL, it creates an object with no prototype.
@@ -1363,6 +1363,7 @@ JL_NewObjectWithGivenProtoKey( JSContext *cx, JSProtoKey protoKey, JSObject *par
 }
 */
 
+/*
 ALWAYS_INLINE
 JSObject* FASTCALL
 JL_ConstructObject( JSContext *cx, IN JS::HandleObject proto ) {
@@ -1383,7 +1384,7 @@ JL_ConstructObject( JSContext *cx, IN JS::HandleObject proto, JS::HandleValue ar
 		return NULL;
 	return JS_New(cx, ctor, COUNTOF(argv), argv);
 }
-
+*/
 
 
 /*
@@ -1576,7 +1577,7 @@ JL_ValueIsBoolean( IN JSContext *cx, IN JS::HandleValue value ) {
 ALWAYS_INLINE bool FASTCALL
 JL_ValueIsInteger( JSContext *, IN JS::HandleValue value ) {
 
-	return value.isInt32() || value.isDouble() && jl::IsInteger(value.toDouble());
+	return value.isInt32() || value.isDouble() && jl::IsIntegerValue(value.toDouble());
 }
 
 /*
@@ -1867,6 +1868,176 @@ JL_BEGIN_NAMESPACE
 
 ////
 
+
+template <class T> ALWAYS_INLINE bool isTypeDouble(T) { return false; }
+ALWAYS_INLINE bool isTypeDouble(double) { return true; }
+
+template <class T> ALWAYS_INLINE bool isTypeFloat(T) { return false; }
+ALWAYS_INLINE bool isTypeFloat(float) { return true; }
+
+/*
+template <class T>
+ALWAYS_INLINE bool isTypeIntegral(T v) { return !isTypeFloat(v) && !isTypeDouble(v); }
+*/
+
+
+
+ALWAYS_INLINE uint8_t getTypeMin(uint8_t) { return 0; }
+ALWAYS_INLINE uint8_t getTypeMax(uint8_t) { return UINT8_MAX; }
+ALWAYS_INLINE int8_t getTypeMin(int8_t) { return INT8_MIN; }
+ALWAYS_INLINE int8_t getTypeMax(int8_t) { return INT8_MAX; }
+ALWAYS_INLINE uint16_t getTypeMin(uint16_t) { return 0; }
+ALWAYS_INLINE uint16_t getTypeMax(uint16_t) { return UINT16_MAX; }
+ALWAYS_INLINE int16_t getTypeMin(int16_t) { return INT16_MIN; }
+ALWAYS_INLINE int16_t getTypeMax(int16_t) { return INT16_MAX; }
+ALWAYS_INLINE uint32_t getTypeMin(uint32_t) { return 0; }
+ALWAYS_INLINE uint32_t getTypeMax(uint32_t) { return UINT32_MAX; }
+ALWAYS_INLINE int32_t getTypeMin(int32_t) { return INT32_MIN; }
+ALWAYS_INLINE int32_t getTypeMax(int32_t) { return INT32_MAX; }
+ALWAYS_INLINE uint64_t getTypeMin(uint64_t) { return 0; }
+ALWAYS_INLINE uint64_t getTypeMax(uint64_t) { return UINT64_MAX; }
+ALWAYS_INLINE int64_t getTypeMin(int64_t) { return INT64_MIN; }
+ALWAYS_INLINE int64_t getTypeMax(int64_t) { return INT64_MAX; }
+ALWAYS_INLINE unsigned long getTypeMin(unsigned long) { return 0; }
+ALWAYS_INLINE unsigned long getTypeMax(unsigned long) { return ULONG_MAX; }
+ALWAYS_INLINE long getTypeMin(long) { return LONG_MIN; }
+ALWAYS_INLINE long getTypeMax(long) { return LONG_MAX; }
+//ALWAYS_INLINE unsigned long long getTypeMin(unsigned long long) { return 0; }
+//ALWAYS_INLINE unsigned long long getTypeMax(unsigned long long) { return ULLONG_MAX; }
+//ALWAYS_INLINE long long getTypeMin(long long) { return LLONG_MIN; }
+//ALWAYS_INLINE long long getTypeMax(long long) { return LLONG_MAX; }
+ALWAYS_INLINE float getTypeMin(float) { return -FLT_MAX; }
+ALWAYS_INLINE float getTypeMax(float) { return FLT_MAX; }
+ALWAYS_INLINE double getTypeMin(double) { return -DBL_MAX; }
+ALWAYS_INLINE double getTypeMax(double) { return DBL_MAX; }
+
+/*
+ALWAYS_INLINE uint8_t getTypeSignificantBits(uint8_t) { return 8; }
+ALWAYS_INLINE uint8_t getTypeSignificantBits(int8_t) { return 7; }
+ALWAYS_INLINE uint8_t getTypeSignificantBits(uint16_t) { return 16; }
+ALWAYS_INLINE uint8_t getTypeSignificantBits(int16_t) { return 15; }
+ALWAYS_INLINE uint8_t getTypeSignificantBits(uint32_t) { return 32; }
+ALWAYS_INLINE uint8_t getTypeSignificantBits(int32_t) { return 31; }
+ALWAYS_INLINE uint8_t getTypeSignificantBits(uint64_t) { return 64; }
+ALWAYS_INLINE uint8_t getTypeSignificantBits(int64_t) { return 63; }
+ALWAYS_INLINE uint8_t getTypeSignificantBits(float) { return FLT_MANT_DIG; }
+ALWAYS_INLINE uint8_t getTypeSignificantBits(double) { return DBL_MANT_DIG; }
+
+ALWAYS_INLINE bool getTypeIsSigned(uint8_t) { return false; }
+ALWAYS_INLINE bool getTypeIsSigned(int8_t) { return true; }
+ALWAYS_INLINE bool getTypeIsSigned(uint16_t) { return false; }
+ALWAYS_INLINE bool getTypeIsSigned(int16_t) { return true; }
+ALWAYS_INLINE bool getTypeIsSigned(uint32_t) { return false; }
+ALWAYS_INLINE bool getTypeIsSigned(int32_t) { return true; }
+ALWAYS_INLINE bool getTypeIsSigned(uint64_t) { return false; }
+ALWAYS_INLINE bool getTypeIsSigned(int64_t) { return true; }
+ALWAYS_INLINE bool getTypeIsSigned(unsigned long) { return false; }
+ALWAYS_INLINE bool getTypeIsSigned(long) { return true; }
+ALWAYS_INLINE bool getTypeIsSigned(float) { return true; }
+ALWAYS_INLINE bool getTypeIsSigned(double) { return true; }
+
+// MIN_INT_TO_DOUBLE and MAX_INT_TO_DOUBLE are replaced by jl::IsInteger()
+
+
+
+template <class T, class U>
+ALWAYS_INLINE bool FASTCALL
+fitsIn(T src, U dst) { // eg. dst = src
+
+	if ( src < T(0) && getTypeMin(dst) == 0 )
+		return false;
+
+	return ( src - getTypeMin(dst) >= 0 && getTypeMax(dst) - src >= 0 );
+
+	//std::is_integral<T>::value;
+	//mozilla::detail::IsInBounds<T,U>(src);
+	//return isGE(src, getTypeMin(dst)) && isLE(src, getTypeMax(dst));
+}
+
+
+ALWAYS_INLINE bool fitsIn(uint8_t, uint8_t) { return true; }
+ALWAYS_INLINE bool fitsIn(uint8_t, int16_t) { return true; }
+ALWAYS_INLINE bool fitsIn(uint8_t, uint16_t) { return true; }
+ALWAYS_INLINE bool fitsIn(uint8_t, int32_t) { return true; }
+ALWAYS_INLINE bool fitsIn(uint8_t, uint32_t) { return true; }
+ALWAYS_INLINE bool fitsIn(uint8_t, int64_t) { return true; }
+ALWAYS_INLINE bool fitsIn(uint8_t, uint64_t) { return true; }
+ALWAYS_INLINE bool fitsIn(uint8_t, float) { return true; }
+ALWAYS_INLINE bool fitsIn(uint8_t, double) { return true; }
+
+ALWAYS_INLINE bool fitsIn(int8_t, int8_t) { return true; }
+ALWAYS_INLINE bool fitsIn(int8_t, int16_t) { return true; }
+ALWAYS_INLINE bool fitsIn(int8_t, int32_t) { return true; }
+ALWAYS_INLINE bool fitsIn(int8_t, int64_t) { return true; }
+ALWAYS_INLINE bool fitsIn(int8_t, float) { return true; }
+ALWAYS_INLINE bool fitsIn(int8_t, double) { return true; }
+
+ALWAYS_INLINE bool fitsIn(uint16_t, uint16_t) { return true; }
+ALWAYS_INLINE bool fitsIn(uint16_t, int32_t) { return true; }
+ALWAYS_INLINE bool fitsIn(uint16_t, uint32_t) { return true; }
+ALWAYS_INLINE bool fitsIn(uint16_t, int64_t) { return true; }
+ALWAYS_INLINE bool fitsIn(uint16_t, uint64_t) { return true; }
+ALWAYS_INLINE bool fitsIn(uint16_t, float) { return true; }
+ALWAYS_INLINE bool fitsIn(uint16_t, double) { return true; }
+
+ALWAYS_INLINE bool fitsIn(int16_t, int16_t) { return true; }
+ALWAYS_INLINE bool fitsIn(int16_t, int32_t) { return true; }
+ALWAYS_INLINE bool fitsIn(int16_t, uint32_t) { return true; }
+ALWAYS_INLINE bool fitsIn(int16_t, int64_t) { return true; }
+ALWAYS_INLINE bool fitsIn(int16_t, uint64_t) { return true; }
+ALWAYS_INLINE bool fitsIn(int16_t, float) { return true; }
+ALWAYS_INLINE bool fitsIn(int16_t, double) { return true; }
+
+ALWAYS_INLINE bool fitsIn(uint32_t, uint32_t) { return true; }
+ALWAYS_INLINE bool fitsIn(uint32_t, int64_t) { return true; }
+ALWAYS_INLINE bool fitsIn(uint32_t, uint64_t) { return true; }
+ALWAYS_INLINE bool fitsIn(uint32_t, float) { return true; }
+ALWAYS_INLINE bool fitsIn(uint32_t, double) { return true; }
+
+ALWAYS_INLINE bool fitsIn(int32_t, int32_t) { return true; }
+ALWAYS_INLINE bool fitsIn(int32_t, int64_t) { return true; }
+ALWAYS_INLINE bool fitsIn(int32_t, uint64_t) { return true; }
+ALWAYS_INLINE bool fitsIn(int32_t, float) { return true; }
+ALWAYS_INLINE bool fitsIn(int32_t, double) { return true; }
+
+ALWAYS_INLINE bool fitsIn(uint64_t, uint64_t) { return true; }
+ALWAYS_INLINE bool fitsIn(uint64_t, float) { return true; }
+ALWAYS_INLINE bool fitsIn(uint64_t, double) { return true; }
+
+ALWAYS_INLINE bool fitsIn(int64_t, int64_t) { return true; }
+ALWAYS_INLINE bool fitsIn(int64_t, float) { return true; }
+ALWAYS_INLINE bool fitsIn(int64_t, double) { return true; }
+
+ALWAYS_INLINE bool fitsIn(float, float) { return true; }
+ALWAYS_INLINE bool fitsIn(float, double) { return true; }
+
+ALWAYS_INLINE bool fitsIn(double, double) { return true; }
+
+template<typename From, typename To>
+inline bool
+JLIsInBounds(const From from) {
+
+	To to = 0;
+	return fitsIn<From, To>(from, to);
+}
+*/
+
+template<typename T>
+ALWAYS_INLINE bool isSigned(T) { return T(-1) < T(0); }
+
+template<typename T>
+ALWAYS_INLINE bool isIntegral(T) { return T(1) / T(2) == T(0); }
+
+
+
+template<typename FROM, typename TO>
+ALWAYS_INLINE bool fitsIn(FROM from, TO to) {
+	ASSERT(false);
+	return false;
+}
+
+
+
 ALWAYS_INLINE size_t FASTCALL
 getStringLength(const char *str) {
 	
@@ -1878,6 +2049,7 @@ getStringLength(const jschar *str) {
 
 	return wcslen(str);
 }
+
 
 namespace pv {
 
@@ -1920,11 +2092,165 @@ strSpec(const jschar *str, size_t len) {
 }
 
 
+////
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, bool &b ) {
+
+	b = val.toBoolean();
+	return true;
+}
+
+
+namespace pv {
+
+template <class T>
+ALWAYS_INLINE bool FASTCALL
+getNumberValue_slow( JSContext *cx, const JS::HandleValue &val, bool valIsDouble, T &num ) {
+
+	double d;
+	if (likely( valIsDouble )) {
+
+		d = val.toDouble();
+	} else {
+
+		JL_CHK( JS::ToNumber(cx, val, &d) );
+		ASSERT( mozilla::IsNaN(JL_GetNaNValue(cx).toDouble()) );
+		JL_CHKM( !mozilla::IsNaN(d), E_VALUE, E_TYPE, E_TY_NUMBER );
+	}
+
+	if (likely( fitsIn(d, num) )) { // -or- use !jl::DoubleIsNeg() ?
+
+		// only warn for precision lost when num is integral
+		JL_ASSERT_WARN( !jl::isIntegral(num) || jl::IsIntegerValue(d), E_VALUE, E_PRECISION );
+		num = T(d);
+		return true;
+	}
+
+	JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(getTypeMin(num), getTypeMax(num)) );
+	JL_BAD;
+}
+
+
+template <class T>
+ALWAYS_INLINE bool FASTCALL
+getNumberValue( JSContext *cx, const JS::HandleValue &val, T &num ) {
+
+	if (likely( val.isInt32() )) {
+
+		int32_t tmp = val.toInt32();
+		if (likely( fitsIn(tmp, num) )) {
+
+			num = T(tmp);
+			return true;
+		}
+
+		JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_NUM(getTypeMin(num), getTypeMax(num)) );
+	}
+
+	bool valIsDouble = val.isDouble();
+
+	// optimization when T == double
+	if (likely( jl::isTypeDouble(num) && valIsDouble )) {
+
+		num = val.toDouble();
+		return true;
+	}
+
+	// optimization when T == float
+	if (likely( isTypeFloat(num) && valIsDouble )) {
+
+		double d = val.toDouble();
+		if (likely( fitsIn(d, num) )) {
+			
+			num = float(d);
+			return true;
+		}
+	}
+
+	return getNumberValue_slow(cx, val, valIsDouble, num);
+	JL_BAD;
+}
+
+} // namespace pv
+
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, int8_t &num ); // why not defined ???
+
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, uint8_t &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, int16_t &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, uint16_t &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, int32_t &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, uint32_t &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, int64_t &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, uint64_t &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, long &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, unsigned long &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, float &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, double &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
 
 ////
 
 ALWAYS_INLINE bool FASTCALL
-setValue(JSContext *cx, JS::MutableHandleValue rval, const bool b) {
+setValue( JSContext *cx, JS::MutableHandleValue rval, const bool b ) {
 
 	rval.setBoolean(b);
 	return true;
@@ -2000,12 +2326,11 @@ setValue(JSContext *cx, JS::MutableHandleValue rval, const double num) {
 	return true;
 }
 
-
-
+/* unfortunately calling setValue("foo") use this instead of setValue(pv::StrSpec) */
 ALWAYS_INLINE bool FASTCALL
 setValue(JSContext *cx, JS::MutableHandleValue rval, const void *ptr) {
 
-	if ( ptr == nullptr )
+	if ( ptr == NULL )
 		rval.setNull();
 	else
 		rval.address()->setPrivate(const_cast<void*>(ptr));
@@ -2016,7 +2341,7 @@ setValue(JSContext *cx, JS::MutableHandleValue rval, const void *ptr) {
 ALWAYS_INLINE bool FASTCALL
 setValue(JSContext *cx, JS::MutableHandleValue rval, const pv::StrSpec<char> s) {
 	
-	if ( s.str() != nullptr ) {
+	if ( s.str() != NULL ) {
 
 		JS::RootedString str(cx, JS_NewStringCopyN(cx, s.str(), s.len()));
 		rval.setString(str);
@@ -2030,7 +2355,7 @@ setValue(JSContext *cx, JS::MutableHandleValue rval, const pv::StrSpec<char> s) 
 ALWAYS_INLINE bool FASTCALL
 setValue(JSContext *cx, JS::MutableHandleValue rval, const pv::StrSpec<jschar> s) {
 
-	if ( s.str() != nullptr ) {
+	if ( s.str() != NULL ) {
 		
 		JS::RootedString str(cx, JS_NewUCStringCopyN(cx, s.str(), s.len()));
 		rval.setString(str);
@@ -2040,6 +2365,21 @@ setValue(JSContext *cx, JS::MutableHandleValue rval, const pv::StrSpec<jschar> s
 	}
 	return true;
 }
+
+// since implicit constructors are not applied during template deduction, we have to force the char* to pv::StrSpec conversion here.
+ALWAYS_INLINE bool FASTCALL
+setValue(JSContext *cx, JS::MutableHandleValue rval, const char* s) {
+
+	return setValue(cx, rval, pv::StrSpec<char>(s));
+}
+
+// since implicit constructors are not applied during template deduction, we have to force the jschar* to pv::StrSpec conversion here.
+ALWAYS_INLINE bool FASTCALL
+setValue(JSContext *cx, JS::MutableHandleValue rval, const jschar* s) {
+
+	return setValue(cx, rval, pv::StrSpec<jschar>(s));
+}
+
 
 ALWAYS_INLINE bool FASTCALL
 setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::HandleValue val) {
@@ -2058,8 +2398,7 @@ setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::HandleObject obj)
 ALWAYS_INLINE bool FASTCALL
 setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::HandleId id) {
 
-	//return JS_IdToValue(cx, id, val);
-	rval.set(js::IdToValue(id));
+	rval.set(js::IdToValue(id)); // -or- return JS_IdToValue(cx, id, val);
 	return true;
 }
 
@@ -2070,7 +2409,7 @@ setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::HandleString str)
 	return true;
 }
 
-// since neither implicit constructors nor conversion operators are applied during template deduction, we have to force the JS::Rooted & MutableHandle to JS::Handle conversion here.
+// since neither implicit constructors nor conversion operators are applied during template deduction, we have to force the JS::Rooted to JS::Handle conversion here.
 template <typename T>
 ALWAYS_INLINE bool FASTCALL
 setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::Rooted<T> &rv) {
@@ -2078,6 +2417,7 @@ setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::Rooted<T> &rv) {
 	return setValue(cx, rval, JS::Handle<T>(rv));
 }
 
+// since neither implicit constructors nor conversion operators are applied during template deduction, we have to force the MutableHandle to JS::Handle conversion here.
 template <typename T>
 ALWAYS_INLINE bool FASTCALL
 setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::MutableHandle<T> &rv) {
@@ -2432,8 +2772,32 @@ call( JSContext *cx, const THIS &thisArg, const FCT &fct, JS::MutableHandleValue
 		call(cx, thisArg, fct, ava, rval);
 }
 
+//...
+
+////
+
+ALWAYS_INLINE JSObject* FASTCALL
+construct( JSContext *cx, JS::HandleObject proto ) {
+	
+	JS::RootedObject ctor(cx, JL_GetConstructor(cx, proto));
+	return ctor &&
+		true ? JS_New(cx, ctor, 0, NULL) : NULL;
+}
+
+template <class T1>
+ALWAYS_INLINE JSObject* FASTCALL
+construct( JSContext *cx, JS::HandleObject proto, const T1 &v1 ) {
+
+	JS::AutoValueArray<1> ava(cx);
+	JS::RootedObject ctor(cx, JL_GetConstructor(cx, proto));
+	return ctor &&
+		setValue(cx, ava[0], v1) &&
+		true ? JS_New(cx, ctor, ava.length(), ava.begin()) : NULL;
+}
 
 //...
+
+////
 
 template <class T1>
 ALWAYS_INLINE bool FASTCALL
@@ -3351,7 +3715,7 @@ JL_JsvalToNative( JSContext *cx, JS::HandleValue val, OUT uint8_t *num ) {
 
 	if (likely( d >= double(0) && d <= double(UINT8_MAX) )) {
 
-		JL_ASSERT_WARN( jl::IsInteger(d), E_VALUE, E_PRECISION );
+		JL_ASSERT_WARN( jl::IsIntegerValue(d), E_VALUE, E_PRECISION );
 		*num = uint8_t(d);
 		return true;
 	}
@@ -3390,7 +3754,7 @@ JL_JsvalToNative( JSContext *cx, IN JS::HandleValue val, int16_t *num ) {
 
 	if (likely( d >= double(INT16_MIN) && d <= double(INT16_MAX) )) {
 
-		JL_ASSERT_WARN( jl::IsInteger(d), E_VALUE, E_PRECISION );
+		JL_ASSERT_WARN( jl::IsIntegerValue(d), E_VALUE, E_PRECISION );
 		*num = int16_t(d);
 		return true;
 	}
@@ -3437,7 +3801,7 @@ JL_JsvalToNative( JSContext *cx, IN JS::HandleValue val, OUT uint16_t *num ) {
 
 	if (likely( d >= double(0) && d <= double(UINT16_MAX) )) {
 
-		JL_ASSERT_WARN( jl::IsInteger(d), E_VALUE, E_PRECISION );
+		JL_ASSERT_WARN( jl::IsIntegerValue(d), E_VALUE, E_PRECISION );
 		*num = uint16_t(d);
 		return true;
 	}
@@ -3481,7 +3845,7 @@ JL_JsvalToNative( JSContext *cx, IN JS::HandleValue val, int32_t *num ) {
 
 	if (likely( d >= double(INT32_MIN) && d <= double(INT32_MAX) )) {
 
-		JL_ASSERT_WARN( jl::IsInteger(d), E_VALUE, E_PRECISION );
+		JL_ASSERT_WARN( jl::IsIntegerValue(d), E_VALUE, E_PRECISION );
 		*num = int32_t(d);
 		return true;
 	}
@@ -3555,7 +3919,7 @@ JL_JsvalToNative( JSContext *cx, IN JS::HandleValue val, uint32_t *num ) {
 
 	if (likely( d >= double(0) && d <= double(UINT32_MAX) )) {
 
-		JL_ASSERT_WARN( jl::IsInteger(d), E_VALUE, E_PRECISION );
+		JL_ASSERT_WARN( jl::IsIntegerValue(d), E_VALUE, E_PRECISION );
 		*num = uint32_t(d);
 		return true;
 	}
@@ -3604,7 +3968,7 @@ JL_JsvalToNative( JSContext *cx, IN JS::HandleValue val, int64_t *num ) {
 
 	if (likely( d >= double(MIN_INT_TO_DOUBLE) && d <= double(MAX_INT_TO_DOUBLE) )) {
 
-		JL_ASSERT_WARN( jl::IsInteger(d), E_VALUE, E_PRECISION );
+		JL_ASSERT_WARN( jl::IsIntegerValue(d), E_VALUE, E_PRECISION );
 		*num = int64_t(d);
 		return true;
 	}
@@ -3672,7 +4036,7 @@ JL_JsvalToNative( JSContext *cx, IN JS::HandleValue val, uint64_t *num ) {
 
 	if (likely( d >= double(0) && d <= double(MAX_INT_TO_DOUBLE) )) { // or d <= double(UINT64_MAX)
 
-		JL_ASSERT_WARN( jl::IsInteger(d), E_VALUE, E_PRECISION );
+		JL_ASSERT_WARN( jl::IsIntegerValue(d), E_VALUE, E_PRECISION );
 		*num = uint64_t(d);
 		return true;
 	}

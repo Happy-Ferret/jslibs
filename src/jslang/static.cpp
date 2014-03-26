@@ -1041,6 +1041,133 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	{
 
+	JS::RootedValue numval(cx);
+	uint8_t uint8 = 0;
+	int8_t int8 = 0;
+	uint16_t uint16 = 0;
+	int16_t int16 = 0;
+	uint32_t uint32 = 0;
+	int32_t int32 = 0;
+	uint64_t uint64 = 0;
+	int64_t int64 = 0;
+	double dbl = 0;
+	float flt = 0;
+
+	ASSERT( !jl::isIntegral(dbl) );
+	ASSERT( jl::isIntegral(int8) );
+
+
+	//ASSERT( int32 >= uint32 );
+/*
+	ASSERT((jl::JLIsInBounds<int16_t, int16_t>(int16_t(0))));
+	ASSERT((jl::JLIsInBounds<int16_t, int16_t>(int16_t(INT16_MIN))));
+	ASSERT((jl::JLIsInBounds<int16_t, int16_t>(int16_t(INT16_MAX))));
+	ASSERT((jl::JLIsInBounds<uint16_t, uint16_t>(uint16_t(UINT16_MAX))));
+	ASSERT((jl::JLIsInBounds<uint16_t, int16_t>(uint16_t(0))));
+	ASSERT((!jl::JLIsInBounds<uint16_t, int16_t>(uint16_t(-1))));
+	ASSERT((!jl::JLIsInBounds<int16_t, uint16_t>(int16_t(-1))));
+	ASSERT((jl::JLIsInBounds<int16_t, uint16_t>(int16_t(INT16_MAX))));
+	ASSERT((!jl::JLIsInBounds<int16_t, uint16_t>(int16_t(INT16_MIN))));
+	ASSERT((jl::JLIsInBounds<int32_t, uint32_t>(int32_t(INT32_MAX))));
+	ASSERT((!jl::JLIsInBounds<int32_t, uint32_t>(int32_t(INT32_MIN))));
+ 
+	ASSERT((jl::JLIsInBounds<int16_t, int32_t>(int16_t(0))));
+	ASSERT((jl::JLIsInBounds<int16_t, int32_t>(int16_t(INT16_MIN))));
+	ASSERT((jl::JLIsInBounds<int16_t, int32_t>(int16_t(INT16_MAX))));
+	ASSERT((jl::JLIsInBounds<uint16_t, uint32_t>(uint16_t(UINT16_MAX))));
+	ASSERT((jl::JLIsInBounds<uint16_t, int32_t>(uint16_t(0))));
+	ASSERT((jl::JLIsInBounds<uint16_t, int32_t>(uint16_t(-1))));
+	ASSERT((!jl::JLIsInBounds<int16_t, uint32_t>(int16_t(-1))));
+	ASSERT((jl::JLIsInBounds<int16_t, uint32_t>(int16_t(INT16_MAX))));
+	ASSERT((!jl::JLIsInBounds<int16_t, uint32_t>(int16_t(INT16_MIN))));
+	ASSERT((jl::JLIsInBounds<int32_t, uint64_t>(int32_t(INT32_MAX))));
+	ASSERT((!jl::JLIsInBounds<int32_t, uint64_t>(int32_t(INT32_MIN))));
+
+	ASSERT((jl::JLIsInBounds<int16_t, int8_t>(int16_t(0))));
+	ASSERT((!jl::JLIsInBounds<int16_t, int8_t>(int16_t(INT16_MIN))));
+	ASSERT((!jl::JLIsInBounds<int16_t, int8_t>(int16_t(INT16_MAX))));
+	ASSERT((!jl::JLIsInBounds<uint16_t, uint8_t>(uint16_t(UINT16_MAX))));
+	ASSERT((jl::JLIsInBounds<uint16_t, int8_t>(uint16_t(0))));
+	ASSERT((!jl::JLIsInBounds<uint16_t, int8_t>(uint16_t(-1))));
+	ASSERT((!jl::JLIsInBounds<int16_t, uint8_t>(int16_t(-1))));
+	ASSERT((!jl::JLIsInBounds<int16_t, uint8_t>(int16_t(INT16_MAX))));
+	ASSERT((!jl::JLIsInBounds<int16_t, uint8_t>(int16_t(INT16_MIN))));
+	ASSERT((!jl::JLIsInBounds<int32_t, uint16_t>(int32_t(INT32_MAX))));
+	ASSERT((!jl::JLIsInBounds<int32_t, uint16_t>(int32_t(INT32_MIN))));
+
+	ASSERT((!jl::JLIsInBounds<int64_t, int32_t>(int64_t(INT32_MIN) - 1)));
+	ASSERT((jl::JLIsInBounds<int64_t, int32_t>(int64_t(INT32_MIN))));
+	ASSERT((jl::JLIsInBounds<int64_t, int32_t>(int64_t(INT32_MIN) + 1)));
+	ASSERT((jl::JLIsInBounds<int64_t, int32_t>(int64_t(INT32_MAX) - 1)));
+	ASSERT((jl::JLIsInBounds<int64_t, int32_t>(int64_t(INT32_MAX))));
+	ASSERT((!jl::JLIsInBounds<int64_t, int32_t>(int64_t(INT32_MAX) + 1)));
+
+	ASSERT((!jl::JLIsInBounds<int64_t, uint32_t>(int64_t(-1))));
+	ASSERT((jl::JLIsInBounds<int64_t, uint32_t>(int64_t(0))));
+	ASSERT((jl::JLIsInBounds<int64_t, uint32_t>(int64_t(1))));
+	ASSERT((jl::JLIsInBounds<int64_t, uint32_t>(int64_t(UINT32_MAX) - 1)));
+	ASSERT((jl::JLIsInBounds<int64_t, uint32_t>(int64_t(UINT32_MAX))));
+	ASSERT((!jl::JLIsInBounds<int64_t, uint32_t>(int64_t(UINT32_MAX) + 1)));
+*/
+
+
+	ASSERT( jl::fitsIn(double(255), uint8) );
+	ASSERT( !jl::fitsIn(double(255), int8) );
+	ASSERT( jl::fitsIn(double(255), uint16) );
+
+	ASSERT( !jl::fitsIn(float(FLT_MAX), int64) );
+	ASSERT( !jl::fitsIn(double(DBL_MAX), int64) );
+
+	ASSERT( jl::fitsIn(double(255), uint8) );
+	ASSERT( !jl::fitsIn(double(256), uint8) );
+	ASSERT( jl::fitsIn(double(1), flt) );
+
+	ASSERT( jl::fitsIn(double(FLT_MAX), flt) );
+	ASSERT( !jl::fitsIn(double(DBL_MAX), flt) );
+
+	ASSERT( jl::fitsIn(int64_t(INT64_MAX), flt) );
+	ASSERT( jl::fitsIn(int64_t(INT64_MAX), flt) );
+
+	ASSERT( jl::fitsIn(int64_t(INT32_MAX), int32) );
+	ASSERT( jl::fitsIn(int64_t(UINT32_MAX), uint32) );
+
+	ASSERT( jl::fitsIn(double(INT32_MIN), int32) );
+	ASSERT( jl::fitsIn(float(INT32_MIN), int32) );
+	ASSERT( jl::fitsIn(int64_t(INT32_MIN), int32) );
+	ASSERT( jl::fitsIn(int8_t(INT8_MIN), dbl) );
+	ASSERT( jl::fitsIn(int32_t(INT32_MIN), int32) );
+
+
+	ASSERT( jl::fitsIn(int32, uint32) );
+	ASSERT( jl::fitsIn(int32, dbl) );
+	ASSERT( jl::isTypeDouble(dbl) );
+	ASSERT( !jl::isTypeDouble(flt) );
+	ASSERT( jl::isTypeFloat(flt) );
+	ASSERT( !jl::isTypeFloat(dbl) );
+
+	jl::setValue(cx, &numval, "123");
+	ASSERT( numval.isString() );
+	JL_CHK( jl::getValue(cx, numval, uint8) );
+	JL_CHK( jl::getValue(cx, numval, int16) );
+	JL_CHK( jl::getValue(cx, numval, dbl) );
+
+	numval.setDouble(1.5);
+	JL_CHK( jl::getValue(cx, numval, uint8) );
+	JL_CHK( jl::getValue(cx, numval, int16) );
+	JL_CHK( jl::getValue(cx, numval, dbl) );
+	
+	numval.setInt32(256);
+	JL_CHK( jl::getValue(cx, numval, dbl) );
+	JL_CHK( jl::getValue(cx, numval, int16) );
+	JL_CHK( !jl::getValue(cx, numval, uint8) );
+	JS_ClearPendingException(cx);
+
+	}
+
+
+
+	{
+
 	JS::HandleObject hObj(obj);
 	JS::HandleValue hVal(val);
 
@@ -1101,6 +1228,10 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_CHK( jl::hasProperty(cx, val, L("TEST")) );
 	JL_CHK( jl::hasProperty(cx, val, jl::strSpec("TEST", 4)) );
 	JL_CHK( jl::hasProperty(cx, val, jl::strSpec(L("TEST"), 4)) );
+
+
+	JL_CHK( jl::construct(cx, hObj) );
+	JL_CHK( jl::construct(cx, hObj, 1) );
 
 	}
 
