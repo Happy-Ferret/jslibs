@@ -1053,12 +1053,43 @@ DEFINE_FUNCTION( jslangTest ) {
 	double dbl = 0;
 	float flt = 0;
 
+/*
+	ASSERT( jl::fitDoubleTo(double(127), int8) );
+	ASSERT( !jl::fitDoubleTo(double(128), int8) );
+	ASSERT( jl::fitDoubleTo(double(0), int8) );
+	ASSERT( jl::fitDoubleTo(double(-1), int8) );
+	ASSERT( jl::fitDoubleTo(double(255), uint8) );
+	ASSERT( !jl::fitDoubleTo(double(-1), uint8) );
+	ASSERT( jl::fitDoubleTo(int32_t(-1), int32) );
+	ASSERT( !jl::fitDoubleTo(int32_t(-1), uint32) );
+	ASSERT( jl::fitDoubleTo(int32_t(0), int32) );
+	ASSERT( jl::fitDoubleTo(int32_t(0), uint32) );
+	ASSERT( jl::fitDoubleTo(int32_t(127), int8) );
+	ASSERT( !jl::fitDoubleTo(int32_t(128), int8) );
+	ASSERT( jl::fitDoubleTo(int32_t(127), int64) );
+	ASSERT( jl::fitDoubleTo(int32_t(128), int64) );
+	ASSERT( jl::fitDoubleTo(int32_t(128), uint64) );
+	ASSERT( !jl::fitDoubleTo(int32_t(-128), uint64) );
+
+	ASSERT( jl::fitInt32To(int32_t(0), flt) );
+	ASSERT( jl::fitInt32To(int32_t(INT32_MAX), flt) );
+	ASSERT( jl::fitInt32To(int32_t(INT32_MIN), flt) );
+
+
+	ASSERT( !jl::fitInt32To(int32_t(-1), uint32) );
+	ASSERT( jl::fitInt32To(int32_t(0), uint32) );
+	ASSERT( jl::fitInt32To(int32_t(1), uint32) );
+	ASSERT( jl::fitInt32To(int32_t(INT32_MAX), uint32) );
+
+	ASSERT( jl::fitInt32To(int32_t(0), uint64) );
+	ASSERT( jl::fitInt32To(int32_t(INT32_MAX), uint64) );
+	ASSERT( !jl::fitInt32To(int32_t(INT32_MIN), uint64) );
+	
 	ASSERT( !jl::isIntegral(dbl) );
 	ASSERT( jl::isIntegral(int8) );
-
-
-	//ASSERT( int32 >= uint32 );
+*/
 /*
+
 	ASSERT((jl::JLIsInBounds<int16_t, int16_t>(int16_t(0))));
 	ASSERT((jl::JLIsInBounds<int16_t, int16_t>(int16_t(INT16_MIN))));
 	ASSERT((jl::JLIsInBounds<int16_t, int16_t>(int16_t(INT16_MAX))));
@@ -1108,7 +1139,9 @@ DEFINE_FUNCTION( jslangTest ) {
 	ASSERT((jl::JLIsInBounds<int64_t, uint32_t>(int64_t(UINT32_MAX) - 1)));
 	ASSERT((jl::JLIsInBounds<int64_t, uint32_t>(int64_t(UINT32_MAX))));
 	ASSERT((!jl::JLIsInBounds<int64_t, uint32_t>(int64_t(UINT32_MAX) + 1)));
-*/
+
+
+
 
 
 	ASSERT( jl::fitsIn(double(255), uint8) );
@@ -1140,6 +1173,9 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	ASSERT( jl::fitsIn(int32, uint32) );
 	ASSERT( jl::fitsIn(int32, dbl) );
+*/
+
+
 	ASSERT( jl::isTypeDouble(dbl) );
 	ASSERT( !jl::isTypeDouble(flt) );
 	ASSERT( jl::isTypeFloat(flt) );

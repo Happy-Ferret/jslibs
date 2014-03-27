@@ -298,7 +298,8 @@
 #include <sys/types.h>
 #include <float.h>
 #include <wchar.h>
-#include <limits.h>
+//#include <limits.h>
+#include <limits>
 #include <cstddef>
 #include <stdarg.h>
 #include <errno.h>
@@ -646,23 +647,6 @@ static const union {
 	(JLHostEndianType.value)
 
 
-// 2^53 = 9007199254740992
-// since double(9007199254740992) == double(9007199254740993), and double(-9007199254740992) == double(-9007199254740993)  we must subtract 1.
-// see also std::numeric_limits<double>::digits
-S_ASSERT( DBL_MANT_DIG < 64 );
-
-#define MAX_INT_TO_DOUBLE \
-	((double)((((uint64_t)1)<<DBL_MANT_DIG)-1))
-
-#define MIN_INT_TO_DOUBLE \
-	(-MAX_INT_TO_DOUBLE)
-
-// failed on linux because + Standard 2003, 5.19 "Constant expressions", paragraph 1.
-// ... Floating literals (2.13.3) can appear only if they are cast to integral or enumeration types.
-//S_ASSERT( MAX_INT_TO_DOUBLE != MAX_INT_TO_DOUBLE+(double)1 );
-//S_ASSERT( MAX_INT_TO_DOUBLE+(double)1 == MAX_INT_TO_DOUBLE+(double)2 );
-
-
 
 #define JL_MIN(a,b) ((a) < (b) ? (a) : (b))
 
@@ -672,6 +656,124 @@ S_ASSERT( DBL_MANT_DIG < 64 );
 
 
 JL_BEGIN_NAMESPACE
+
+template <class T> ALWAYS_INLINE bool isTypeDouble(T) { return false; }
+ALWAYS_INLINE bool isTypeDouble(double) { return true; }
+
+template <class T> ALWAYS_INLINE bool isTypeFloat(T) { return false; }
+ALWAYS_INLINE bool isTypeFloat(float) { return true; }
+
+
+// 2^53 = 9007199254740992. since double(9007199254740992) == double(9007199254740993), and double(-9007199254740992) == double(-9007199254740993)  we must subtract 1.
+// see also std::numeric_limits<double>::digits
+//
+// failed on linux because + Standard 2003, 5.19 "Constant expressions", paragraph 1.
+// ... Floating literals (2.13.3) can appear only if they are cast to integral or enumeration types.
+//S_ASSERT( MAX_INT_TO_DOUBLE != MAX_INT_TO_DOUBLE+(double)1 );
+//S_ASSERT( MAX_INT_TO_DOUBLE+(double)1 == MAX_INT_TO_DOUBLE+(double)2 );
+
+
+template<typename T>
+int significandSizeOf() {
+
+	return ::std::numeric_limits<T>::digits;
+}
+
+template<typename Source> struct SignificandValue {
+	static Source max() { return ::std::numeric_limits<Source>::max(); }
+	static Source min() { return ::std::numeric_limits<Source>::min(); }
+};
+
+S_ASSERT( ::std::numeric_limits<float>::digits < 32 );
+template<> struct SignificandValue<float> {
+	static float max() { return (uint32_t(1)<<::std::numeric_limits<float>::digits)-1; }
+	static float min() { return -max(); }
+};
+
+S_ASSERT( ::std::numeric_limits<double>::digits < 64 );
+template<> struct SignificandValue<double> {
+	static double max() { return (uint64_t(1)<<::std::numeric_limits<double>::digits)-1; }
+	static double min() { return -max(); }
+};
+
+
+// Helper class used as a base for various type traits, exposed publicly because <type_traits> exposes it as well.
+template<typename T, T Value>
+struct IntegralConstant {
+    static const T value = Value;
+    typedef T ValueType;
+    typedef IntegralConstant<T, Value> Type;
+};
+
+// Convenient aliases.
+typedef IntegralConstant<bool, true> TrueType;
+typedef IntegralConstant<bool, false> FalseType;
+
+template<typename T, typename U>
+struct IsSame;
+
+template<typename T, typename U>
+struct IsSame : FalseType {};
+
+template<typename T>
+struct IsSame<T, T> : TrueType {};
+
+
+template <typename Target, typename Source, bool targetSigned = ::std::numeric_limits<Target>::is_signed, bool sourceSigned = ::std::numeric_limits<Source>::is_signed> struct BoundsChecker;
+template <typename Target, typename Source> struct BoundsChecker<Target, Source, false, false> {
+    static bool inBounds(Source value) {
+        // Same signedness so implicit type conversion will always increase precision to widest type
+        return value <= SignificandValue<Target>::max();
+    }
+};
+
+template <typename Target, typename Source> struct BoundsChecker<Target, Source, true, true> {
+    static bool inBounds(Source value) {
+        // Same signedness so implicit type conversion will always increase precision to widest type
+        return SignificandValue<Target>::min() <= value && value <= SignificandValue<Target>::max();
+    }
+};
+
+template <typename Target, typename Source> struct BoundsChecker<Target, Source, false, true> {
+    static bool inBounds(Source value) {
+        // Target is unsigned so any value less than zero is clearly unsafe
+        if (value < 0)
+            return false;
+        // If our (unsigned) Target is the same or greater width we can convert value to type Target without losing precision
+        if (significandSizeOf<Target>() >= significandSizeOf<Source>())
+            return static_cast<Target>(value) <= SignificandValue<Target>::max();
+        // The signed Source type has greater precision than the target so max(Target) -> Source will widen.
+        return value <= static_cast<Source>(SignificandValue<Target>::max());
+    }
+};
+
+template <typename Target, typename Source> struct BoundsChecker<Target, Source, true, false> {
+    static bool inBounds(Source value) {
+        // Signed target with an unsigned source
+        if (significandSizeOf<Target>() <= significandSizeOf<Source>())
+            return value <= static_cast<Source>(SignificandValue<Target>::max());
+        // Target is Wider than Source so we're guaranteed to fit any value in unsigned Source
+        return true;
+    }
+};
+
+template <typename Target, typename Source, bool SameType = IsSame<Target, Source>::value> struct BoundsCheckElider;
+template <typename Target, typename Source> struct BoundsCheckElider<Target, Source, true> {
+    static bool inBounds(Source) {
+		return true;
+	}
+};
+
+template <typename Target, typename Source> struct BoundsCheckElider<Target, Source, false> : public BoundsChecker<Target, Source> {
+};
+
+template <typename Target, typename Source> static inline bool isInBounds(Source value) {
+    return BoundsCheckElider<Target, Source>::inBounds(value);
+}
+
+
+
+
 
 template <typename T, typename T1>
 ALWAYS_INLINE bool
@@ -721,10 +823,12 @@ DoubleIsNeg(const double &d) {
 }
 
 
+template <typename T>
 ALWAYS_INLINE bool
-IsIntegerValue(double d) {
+IsIntegerValue(T num) {
 
-	return d == floor(d);
+	//return ::std::modf(num, 0) == 0.0;
+	return num == floor(num);
 }
 
 

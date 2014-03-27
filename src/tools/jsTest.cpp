@@ -4,6 +4,7 @@
 
 // #define USE_JL
 
+
 #ifdef USE_JL
 
 #include <../common/jlplatform.h>
@@ -980,8 +981,6 @@ int main_run(JSContext *cx) {
 	JS::RootedFunction fct2(cx);
 
 
-	jl::call(NULL, globalObject, fct, &rval, 1);
-
 
 
 // I want to call a template function: template <class T> void test(JS::MutableHandle<T> mutableHandle) like this: JS::RootedValue rval(cx); test(&rval); but the compiler say it cannot deduce 'JS::Handle<T>' from 'JS::RootedValue *'
@@ -1010,11 +1009,92 @@ int main_min(int argc, char* argv[]) {
 }
 
 
+
+
+
+
+
+template <typename Target, typename Source, bool targetSigned = ::std::numeric_limits<Target>::is_signed, bool sourceSigned = ::std::numeric_limits<Source>::is_signed> struct BoundsChecker;
+template <typename Target, typename Source> struct BoundsChecker<Target, Source, false, false> {
+    static bool inBounds(Source value)
+    {
+        // Same signedness so implicit type conversion will always increase precision
+        // to widest type
+        return value <= ::std::numeric_limits<Target>::max();
+    }
+};
+
+template <typename Target, typename Source> struct BoundsChecker<Target, Source, true, true> {
+    static bool inBounds(Source value)
+    {
+        // Same signedness so implicit type conversion will always increase precision
+        // to widest type
+        return ::std::numeric_limits<Target>::min() <= value && value <= ::std::numeric_limits<Target>::max();
+    }
+};
+
+template <typename Target, typename Source> struct BoundsChecker<Target, Source, false, true> {
+    static bool inBounds(Source value)
+    {
+        // Target is unsigned so any value less than zero is clearly unsafe
+        if (value < 0)
+            return false;
+        // If our (unsigned) Target is the same or greater width we can
+        // convert value to type Target without losing precision
+        if (sizeof(Target) >= sizeof(Source)) 
+            return static_cast<Target>(value) <= ::std::numeric_limits<Target>::max();
+        // The signed Source type has greater precision than the target so
+        // max(Target) -> Source will widen.
+        return value <= static_cast<Source>(::std::numeric_limits<Target>::max());
+    }
+};
+
+template <typename Target, typename Source> struct BoundsChecker<Target, Source, true, false> {
+    static bool inBounds(Source value)
+    {
+        // Signed target with an unsigned source
+        if (sizeof(Target) <= sizeof(Source)) 
+            return value <= static_cast<Source>(::std::numeric_limits<Target>::max());
+        // Target is Wider than Source so we're guaranteed to fit any value in
+        // unsigned Source
+        return true;
+    }
+};
+
+template <typename Target, typename Source, bool SameType = mozilla::IsSame<Target, Source>::value> struct BoundsCheckElider;
+template <typename Target, typename Source> struct BoundsCheckElider<Target, Source, true> {
+    static bool inBounds(Source) { return true; }
+};
+template <typename Target, typename Source> struct BoundsCheckElider<Target, Source, false> : public BoundsChecker<Target, Source> {
+};
+
+template <typename Target, typename Source> static inline bool isInBounds(Source value)
+{
+    return BoundsCheckElider<Target, Source>::inBounds(value);
+}
+
+
+#include <../common/jlplatform.h>
+
+
+int main_bound(int argc, char* argv[]) {
+
+	int32_t a = -1;
+	uint32_t b = 1;
+
+	ASSERT( isInBounds<uint32_t>(-1) );
+
+
+	return EXIT_SUCCESS;
+}
+
+
 int main(int argc, char* argv[]) {
 
 	//return main_test_class2(argc, argv);
 	//return main_PerfTest(argc, argv);
 	//return main_test_call(argc, argv);
-	return main_min(argc, argv);
+	//return main_min(argc, argv);
+	return main_bound(argc, argv);
 	
 }
