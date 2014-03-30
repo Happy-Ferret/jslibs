@@ -610,9 +610,15 @@ int jldatad;
 
 template <class T>
 struct Wrap {
+	typedef T Type;
 	T _item;
-	ALWAYS_INLINE explicit Wrap( T item ) : _item(item) {}
-	ALWAYS_INLINE operator T() { return _item; }
+	ALWAYS_INLINE explicit Wrap( T& item )
+	: _item(item) {
+	}
+	ALWAYS_INLINE operator T() {
+
+		return _item;
+	}
 };
 
 
@@ -831,14 +837,14 @@ IsIntegerValue(T num) {
 	return num == floor(num);
 }
 
-
+/*
 template<class T>
 ALWAYS_INLINE T
 IsSigned(T a) {
 
 	return a > (T)-1;
 }
-
+*/
 
 template<class T, class U>
 ALWAYS_INLINE bool
@@ -1082,7 +1088,6 @@ SvnRevToInt(const char *r) { // supports 9 digits revision number, NULL and empt
 }
 
 
-
 /*
 int posix_memalign(void **memptr, size_t alignment, size_t size) {
 
@@ -1312,6 +1317,20 @@ Network64ToHost64( void *pval ) {
 }
 
 
+
+ALWAYS_INLINE size_t FASTCALL
+getStringLength(const char *str) {
+
+	return strlen(str);
+}
+
+ALWAYS_INLINE size_t FASTCALL
+getStringLength(const wchar_t *str) {
+
+	return wcslen(str);
+}
+
+
 INLINE NEVER_INLINE long FASTCALL
 atoi(const char *buf, int base) {
 
@@ -1319,18 +1338,19 @@ atoi(const char *buf, int base) {
 }
 
 
+template <typename T>
 INLINE NEVER_INLINE char* FASTCALL
-itoa(long val, char *buf, int base) {
+itoa(T val, char *buf, char base) {
 
 	char *p = buf;
-	long prev;
+	T prev;
 	do {
 
 		prev = val;
 		val /= base;
 		*p++ = ("zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz"+35)[prev - val * base];
 	} while ( val );
-	if ( prev < 0 )
+	if ( ::std::numeric_limits<T>::is_signed && prev < 0 )
 		*p++ = '-';
 	*p-- = '\0';
 	char *p1 = buf;
@@ -1345,28 +1365,14 @@ itoa(long val, char *buf, int base) {
 }
 
 
-#define JL_ITOA10_MAX_DIGITS (12) // 12 = sign + base-10 max int32_t + '\0'
-
+template <typename T>
 INLINE NEVER_INLINE char* FASTCALL
-itoa10(uint32_t val, char *buf) {
+itoa10(T val, char *buf) {
 
-	char *tmp = buf + JL_ITOA10_MAX_DIGITS;
+	char *tmp = buf + (::std::numeric_limits<T>::is_signed ? 1 : 0) + 1 + ::std::numeric_limits<T>::digits10 + 1;
 	*--tmp = '\0';
-	do {
-		*--tmp = '0' + val % 10;
-		val /= 10;
-	} while ( val );
-	return tmp;
-}
+	if ( ::std::numeric_limits<T>::is_signed && val < 0 ) {
 
-
-INLINE NEVER_INLINE char* FASTCALL
-itoa10(int32_t val, char *buf) {
-
-	char *tmp = buf + JL_ITOA10_MAX_DIGITS;
-	*--tmp = '\0';
-	if ( val >= 0 ) {
-		
 		do {
 			*--tmp = '0' + val % 10;
 			val /= 10;

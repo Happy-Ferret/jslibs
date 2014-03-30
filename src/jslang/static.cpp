@@ -1001,8 +1001,9 @@ struct Test1 : public TestIf {
 
 
 
+
 DEFINE_FUNCTION( jslangTest ) {
-	
+
 	JL_IGNORE(cx, argc, vp);
 
 	JL_DEFINE_ARGS;
@@ -1052,6 +1053,12 @@ DEFINE_FUNCTION( jslangTest ) {
 	int64_t int64 = 0;
 	double dbl = 0;
 	float flt = 0;
+
+
+	jl::setVector(cx, &val, &uint8, 1);
+	uint32_t act;
+	jl::getVector(cx, val, &uint8, 1, act);
+
 
 /*
 	ASSERT( jl::fitDoubleTo(double(127), int8) );
@@ -1185,22 +1192,32 @@ DEFINE_FUNCTION( jslangTest ) {
 	ASSERT( numval.isString() );
 	JL_CHK( jl::getValue(cx, numval, uint8) );
 	JL_CHK( jl::getValue(cx, numval, int16) );
+	JL_CHK( jl::getValue(cx, numval, flt) );
 	JL_CHK( jl::getValue(cx, numval, dbl) );
+
+	jl::setValue(cx, &numval, "255.1");
+	JL_CHK( !jl::getValue(cx, numval, uint8) );
+
+	jl::setValue(cx, &numval, ::std::numeric_limits<double>::max());
+	JL_CHK( !jl::getValue(cx, numval, flt) );
 
 	numval.setDouble(1.5);
 	JL_CHK( jl::getValue(cx, numval, uint8) );
 	JL_CHK( jl::getValue(cx, numval, int16) );
+	JL_CHK( jl::getValue(cx, numval, flt) );
 	JL_CHK( jl::getValue(cx, numval, dbl) );
 	
 	numval.setInt32(256);
+	JL_CHK( jl::getValue(cx, numval, flt) );
 	JL_CHK( jl::getValue(cx, numval, dbl) );
 	JL_CHK( jl::getValue(cx, numval, int16) );
 	JL_CHK( !jl::getValue(cx, numval, uint8) );
 	JS_ClearPendingException(cx);
 
+	unsigned long num = 123;
+	JL_CHK( jl::setValue(cx, &val, num) );
+
 	}
-
-
 
 	{
 
