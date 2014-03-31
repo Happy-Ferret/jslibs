@@ -999,7 +999,34 @@ struct Test1 : public TestIf {
 	}
 };
 
+volatile bool test0() {
+	
+	return true;
+}
 
+
+bool test1() {
+
+	volatile bool a = true;
+	volatile bool b = true;
+	volatile bool c = true;
+
+	return a && b && c && test0();
+}
+
+
+bool test2() {
+
+	volatile bool a = true;
+	volatile bool b = true;
+	volatile bool c = true;
+
+	JL_CHK( a );
+	JL_CHK( b );
+	JL_CHK( c );
+	return test0();
+	JL_BAD;
+}
 
 
 DEFINE_FUNCTION( jslangTest ) {
@@ -1010,6 +1037,7 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	JS::RootedValue rval(cx);
+
 
 /*
 	double d = -0;
@@ -1040,7 +1068,11 @@ DEFINE_FUNCTION( jslangTest ) {
 	JS::RootedId id(cx);
 	JL_CHK( JS_ValueToId(cx, tmp, &id) );
 
+
 	{
+
+	JS::HandleObject hObj(obj);
+	JS::HandleValue hVal(val);
 
 	JS::RootedValue numval(cx);
 	uint8_t uint8 = 0;
@@ -1053,11 +1085,6 @@ DEFINE_FUNCTION( jslangTest ) {
 	int64_t int64 = 0;
 	double dbl = 0;
 	float flt = 0;
-
-
-	jl::setVector(cx, &val, &uint8, 1);
-	uint32_t act;
-	jl::getVector(cx, val, &uint8, 1, act);
 
 
 /*
@@ -1148,9 +1175,6 @@ DEFINE_FUNCTION( jslangTest ) {
 	ASSERT((!jl::JLIsInBounds<int64_t, uint32_t>(int64_t(UINT32_MAX) + 1)));
 
 
-
-
-
 	ASSERT( jl::fitsIn(double(255), uint8) );
 	ASSERT( !jl::fitsIn(double(255), int8) );
 	ASSERT( jl::fitsIn(double(255), uint16) );
@@ -1177,7 +1201,6 @@ DEFINE_FUNCTION( jslangTest ) {
 	ASSERT( jl::fitsIn(int8_t(INT8_MIN), dbl) );
 	ASSERT( jl::fitsIn(int32_t(INT32_MIN), int32) );
 
-
 	ASSERT( jl::fitsIn(int32, uint32) );
 	ASSERT( jl::fitsIn(int32, dbl) );
 */
@@ -1188,41 +1211,6 @@ DEFINE_FUNCTION( jslangTest ) {
 	ASSERT( jl::isTypeFloat(flt) );
 	ASSERT( !jl::isTypeFloat(dbl) );
 
-	jl::setValue(cx, &numval, "123");
-	ASSERT( numval.isString() );
-	JL_CHK( jl::getValue(cx, numval, uint8) );
-	JL_CHK( jl::getValue(cx, numval, int16) );
-	JL_CHK( jl::getValue(cx, numval, flt) );
-	JL_CHK( jl::getValue(cx, numval, dbl) );
-
-	jl::setValue(cx, &numval, "255.1");
-	JL_CHK( !jl::getValue(cx, numval, uint8) );
-
-	jl::setValue(cx, &numval, ::std::numeric_limits<double>::max());
-	JL_CHK( !jl::getValue(cx, numval, flt) );
-
-	numval.setDouble(1.5);
-	JL_CHK( jl::getValue(cx, numval, uint8) );
-	JL_CHK( jl::getValue(cx, numval, int16) );
-	JL_CHK( jl::getValue(cx, numval, flt) );
-	JL_CHK( jl::getValue(cx, numval, dbl) );
-	
-	numval.setInt32(256);
-	JL_CHK( jl::getValue(cx, numval, flt) );
-	JL_CHK( jl::getValue(cx, numval, dbl) );
-	JL_CHK( jl::getValue(cx, numval, int16) );
-	JL_CHK( !jl::getValue(cx, numval, uint8) );
-	JS_ClearPendingException(cx);
-
-	unsigned long num = 123;
-	JL_CHK( jl::setValue(cx, &val, num) );
-
-	}
-
-	{
-
-	JS::HandleObject hObj(obj);
-	JS::HandleValue hVal(val);
 
 	JL_CHK( jl::call(cx, obj, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
 	JL_CHK( jl::call(cx, obj, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
@@ -1286,7 +1274,51 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_CHK( jl::construct(cx, hObj) );
 	JL_CHK( jl::construct(cx, hObj, 1) );
 
+
+	jl::setVector(cx, &val, &uint8, 1);
+	uint32_t act;
+	jl::getVector(cx, val, &uint8, 1, act);
+
+
+	jl::setValue(cx, &numval, "123");
+	ASSERT( numval.isString() );
+	JL_CHK( jl::getValue(cx, numval, uint8) );
+	JL_CHK( jl::getValue(cx, numval, int16) );
+	JL_CHK( jl::getValue(cx, numval, flt) );
+	JL_CHK( jl::getValue(cx, numval, dbl) );
+
+	jl::setValue(cx, &numval, "255.1");
+	JL_CHK( !jl::getValue(cx, numval, uint8) );
+
+	jl::setValue(cx, &numval, ::std::numeric_limits<double>::max());
+	JL_CHK( !jl::getValue(cx, numval, flt) );
+
+	numval.setDouble(1.5);
+	JL_CHK( jl::getValue(cx, numval, uint8) );
+	JL_CHK( jl::getValue(cx, numval, int16) );
+	JL_CHK( jl::getValue(cx, numval, flt) );
+	JL_CHK( jl::getValue(cx, numval, dbl) );
+	
+	numval.setInt32(256);
+	JL_CHK( jl::getValue(cx, numval, flt) );
+	JL_CHK( jl::getValue(cx, numval, dbl) );
+	JL_CHK( jl::getValue(cx, numval, int16) );
+	JL_CHK( !jl::getValue(cx, numval, uint8) );
+	JS_ClearPendingException(cx);
+
+	unsigned long num = 123;
+	JL_CHK( jl::setValue(cx, &val, num) );
+
 	}
+
+
+	{
+
+	JL_CHK( test1() );
+	JL_CHK( test2() );
+
+	}
+
 
 /*
 

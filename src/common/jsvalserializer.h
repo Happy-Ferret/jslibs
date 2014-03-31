@@ -890,7 +890,7 @@ public:
 				JL_CHK( JS_GetUCProperty(cx, globalObject, (const jschar *)constructorName.Data(), constructorName.Length() / 2, &constructor) );
 				JL_ASSERT( constructor.isObject(), E_TY_ERROR, E_NOTCONSTRUCT );
 
-				//JSClass *cl = JL_GetErrorJSClassJSClassByProtoKey(cx, JSProto_Error, JL_GetGlobal(cx));
+				//JSClass *cl = JL_GetErrorClaspByProtoKey(cx, JSProto_Error, JL_GetGlobal(cx));
 				//JSObject *errorObj = JS_NewObjectForConstructor(cx, &constructor);
 
 				JL_CHK( Read(cx, constructorArgs[0]) ); // message

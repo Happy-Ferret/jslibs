@@ -240,6 +240,8 @@ JL_GetPrivate( IN JS::HandleValue val ) {
 	ASSERT( val.isObject() );
 	ASSERT( JS_IsNative(&val.toObject()) );
 //	ASSERT( JL_HasPrivate(JS::HandleObject::fromMarkedLocation(val.toObjectOrNull())) );
+	// JS::RootedObject obj(cx, &val.toObject());
+	// return JL_GetPrivate(obj);
 	return js::GetObjectPrivate(&val.toObject()); // jsfriendapi // rooting issue?
 }
 
@@ -254,9 +256,9 @@ JL_SetPrivate( IN JS::HandleObject obj, void *data ) {
 ALWAYS_INLINE JSObject* FASTCALL
 JL_GetPrototype(JSContext *cx, IN JS::HandleObject obj) {
 
-    JS::RootedObject robj(cx, obj), rproto(cx);
-    bool rv = js::GetObjectProto(cx, robj, &rproto);
-    return rv ? rproto.get() : NULL;
+    JS::RootedObject robj(cx, obj);
+	JS::RootedObject rproto(cx);
+    return js::GetObjectProto(cx, robj, &rproto) ? rproto.get() : NULL;
 }
 
 ALWAYS_INLINE const JSClass* FASTCALL
@@ -294,7 +296,7 @@ JL_GetClassPrototype(JSContext *cx, JSProtoKey protoKey, OUT JS::MutableHandleOb
 }
 
 ALWAYS_INLINE const JSClass* FASTCALL
-JL_GetErrorJSClassJSClassByProtoKey( JSContext *cx, JSProtoKey protoKey ) {
+JL_GetErrorClaspByProtoKey( JSContext *cx, JSProtoKey protoKey ) {
 
 	JS::RootedObject proto(cx);
 	if ( !JL_GetClassPrototype(cx, protoKey, &proto) )
@@ -559,6 +561,7 @@ public:
 
 #define JL_BAD bad:return(false)
 
+#define JL_BADVAL(RETURN_VALUE) bad:return(RETURN_VALUE)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Error management
@@ -1860,6 +1863,126 @@ JL_ObjectIsInstanceOf( JSContext *, JS::HandleObject obj, JSClass *clasp ) {
 
 
 
+///////////////////////////////////////////////////////////////////////////////
+// Buffer
+
+ALWAYS_INLINE uint8_t* FASTCALL
+JL_DataBufferAlloc( JSContext *, size_t nbytes ) {
+
+	return (uint8_t*)jl_malloc(nbytes);
+}
+
+ALWAYS_INLINE uint8_t* FASTCALL
+JL_DataBufferRealloc( JSContext *, uint8_t *data, size_t nbytes ) {
+
+	return (uint8_t*)jl_realloc(data, nbytes);
+}
+
+ALWAYS_INLINE void FASTCALL
+JL_DataBufferFree( JSContext *, uint8_t *data ) {
+
+	return jl_free(data);
+}
+
+//
+
+ALWAYS_INLINE uint8_t* FASTCALL
+JL_NewBuffer( JSContext *cx, size_t nbytes, OUT JS::MutableHandleValue vp ) {
+
+	JS::RootedObject bufferObj(cx, JS_NewArrayBuffer(cx, nbytes));
+	if ( bufferObj ) {
+
+		vp.setObject(*bufferObj);
+		return JS_GetArrayBufferData(bufferObj);
+	} else {
+
+		return NULL;
+	}
+}
+
+ALWAYS_INLINE bool FASTCALL
+JL_NewBufferCopyN( JSContext *cx, IN const void *src, IN size_t nbytes, OUT JS::MutableHandleValue vp ) {
+
+	JS::RootedObject bufferObj(cx, JS_NewArrayBuffer(cx, nbytes));
+	if ( !bufferObj )
+		return false;
+	void *data = JS_GetArrayBufferData(bufferObj);
+	if ( !data )
+		return false;
+	jl::memcpy(data, src, nbytes);
+	vp.setObject(*bufferObj);
+	return true;
+}
+
+ALWAYS_INLINE bool FASTCALL
+JL_NewBufferGetOwnership( JSContext *cx, IN void *src, IN size_t nbytes, OUT JS::MutableHandleValue rval ) {
+
+	// (TBD) need to handle ownership properly
+	bool ok = JL_NewBufferCopyN(cx, src, nbytes, rval);
+	jl_free(src);
+	return ok;
+}
+
+ALWAYS_INLINE bool FASTCALL
+JL_NewEmptyBuffer( JSContext *cx, OUT JS::MutableHandleValue vp ) {
+
+	JS::RootedObject obj(cx, JS_NewArrayBuffer(cx, 0));
+	if ( obj ) {
+
+		vp.setObject(*obj);
+		return true;
+	}
+	return false;
+}
+
+template <class T>
+ALWAYS_INLINE bool FASTCALL
+JL_FreeBuffer( JSContext *, T ) {
+
+	// do nothing at the moment. The CG will free the buffer.
+	return true;
+}
+
+
+ALWAYS_INLINE uint8_t* FASTCALL
+JL_ChangeBufferLength( JSContext *cx, IN OUT JS::MutableHandleValue vp, size_t nbytes ) {
+
+	// need to create a new buffer because ArrayBuffer does not support realloc nor length changing, then we copy it in a new one.
+	// see JS_ReallocateArrayBufferContents
+
+	ASSERT( vp.isObject() );
+	JS::RootedObject arrayBufferObj(cx, &vp.toObject());
+	ASSERT( JS_IsArrayBufferObject(arrayBufferObj) );
+	uint32_t bufferLen = JS_GetArrayBufferByteLength(arrayBufferObj);
+	void *bufferData = JS_GetArrayBufferData(arrayBufferObj);
+
+	if ( nbytes == bufferLen )
+		return (uint8_t*)bufferData;
+
+	JS::RootedObject newBufferObj(cx);
+	void *newBufferData;
+	if ( nbytes < bufferLen ) {
+
+		newBufferObj = JS_NewArrayBuffer(cx, nbytes);
+		void *data = JS_GetArrayBufferData(newBufferObj);
+		jl::memcpy(data, bufferData, nbytes);
+
+		if ( !newBufferObj )
+			return false;
+		newBufferData = JS_GetArrayBufferData(arrayBufferObj);
+	} else {
+
+		newBufferObj = JS_NewArrayBuffer(cx, nbytes);
+		if ( !newBufferObj )
+			return false;
+		newBufferData = JS_GetArrayBufferData(arrayBufferObj);
+		jl::memcpy(newBufferData, bufferData, bufferLen);
+	}
+	vp.setObject(*newBufferObj);
+	return (uint8_t*)newBufferData;
+}
+
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2316,7 +2439,9 @@ JL_BEGIN_NAMESPACE
 
 namespace pv {
 
-template<typename Source> struct SignificandStringValue {
+
+template<typename Source>
+struct SignificandStringValue {
 	
 	static const char * min() {
 	
@@ -2333,32 +2458,38 @@ template<typename Source> struct SignificandStringValue {
 	}
 };
 
-template<> struct SignificandStringValue<int32_t> {
+template<>
+struct SignificandStringValue<int32_t> {
 	static const char * min() { return "-2^31"; }
 	static const char * max() { return "2^31-1"; }
 };
 
-template<> struct SignificandStringValue<uint32_t> {
+template<>
+struct SignificandStringValue<uint32_t> {
 	static const char * min() { return "0"; }
 	static const char * max() { return "2^32"; }
 };
 
-template<> struct SignificandStringValue<int64_t> {
+template<>
+struct SignificandStringValue<int64_t> {
 	static const char * min() { return "2^63"; }
 	static const char * max() { return "2^63-1"; }
 };
 
-template<> struct SignificandStringValue<uint64_t> {
+template<>
+struct SignificandStringValue<uint64_t> {
 	static const char * min() { return "0"; }
 	static const char * max() { return "2^64"; }
 };
 
-template<> struct SignificandStringValue<float> {
+template<>
+struct SignificandStringValue<float> {
 	static const char * min() { return "-2^24"; }
 	static const char * max() { return "2^24"; }
 };
 
-template<> struct SignificandStringValue<double> {
+template<>
+struct SignificandStringValue<double> {
 	static const char * min() { return "-2^53"; }
 	static const char * max() { return "2^53"; }
 };
@@ -2497,15 +2628,18 @@ getValue_slow( JSContext *cx, JS::HandleValue val, JLData &data ) {
 
 template <class T>
 class StrSpec {
+	static const size_t undefined = size_t(-1);
 	T _str;
-	const size_t _len;
+	mutable size_t _len;
 public:
 	StrSpec(T str)
-	: _str(str), _len(str ? getStringLength(str) : 0) {
+	: _str(str), _len(StrSpec::undefined) {
 	}
 
 	StrSpec(T str, size_t len)
 	: _str(str), _len(len) {
+
+		ASSERT( len != StrSpec::undefined );
 	}
 
 	const T	str() const {
@@ -2520,6 +2654,12 @@ public:
 
 	size_t len() const {
 
+		ASSERT( _str );
+		if (unlikely( _len == StrSpec::undefined )) {
+
+			_len = getStringLength(_str);
+			ASSERT( _len != StrSpec::undefined );
+		}
 		return _len;
 	}
 };
@@ -2535,110 +2675,19 @@ typedef pv::StrSpec<jschar *> OwnerlessWCStrSpec;
 
 
 ALWAYS_INLINE CStrSpec FASTCALL
-strSpec(const char *str, size_t len) {
+strSpec( const char *str, size_t len ) {
 
 	return CStrSpec(str, len);
 }
 
 ALWAYS_INLINE WCStrSpec FASTCALL
-strSpec(const jschar *str, size_t len) {
+strSpec( const jschar *str, size_t len ) {
 
 	return WCStrSpec(str, len);
 }
 
 
-ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT JLData &data ) {
-
-	if ( val.isString() ) { // for string literals
-
-		JS::RootedString tmp(cx, val.toString());
-		data = JLData(cx, tmp);
-		return true;
-	}
-	return pv::getValue_slow(cx, val, data);
-}
-
-
-ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT bool &b ) {
-
-	b = val.toBoolean();
-	return true;
-}
-
-ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT int8_t &num ); // why not defined ???
-
-ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT uint8_t &num ) {
-
-	return pv::getNumberValue(cx, val, num);
-}
-
-ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT int16_t &num ) {
-
-	return pv::getNumberValue(cx, val, num);
-}
-
-ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT uint16_t &num ) {
-
-	return pv::getNumberValue(cx, val, num);
-}
-
-ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT int32_t &num ) {
-
-	return pv::getNumberValue(cx, val, num);
-}
-
-ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT uint32_t &num ) {
-
-	return pv::getNumberValue(cx, val, num);
-}
-
-ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT int64_t &num ) {
-
-	return pv::getNumberValue(cx, val, num);
-}
-
-ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT uint64_t &num ) {
-
-	return pv::getNumberValue(cx, val, num);
-}
-
-ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT long &num ) {
-
-	return pv::getNumberValue(cx, val, num);
-}
-
-ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT unsigned long &num ) {
-
-	return pv::getNumberValue(cx, val, num);
-}
-
-ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT float &num ) {
-
-	return pv::getNumberValue(cx, val, num);
-}
-
-ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT double &num ) {
-
-	return pv::getNumberValue(cx, val, num);
-}
-
-
-////
-
+////////
 
 
 ALWAYS_INLINE bool FASTCALL
@@ -2881,16 +2930,128 @@ setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::MutableHandle<T> 
 }
 
 
-////
+////////
+
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, OUT JLData &data ) {
+
+	if ( val.isString() ) { // for string literals
+
+		JS::RootedString tmp(cx, val.toString());
+		data = JLData(cx, tmp);
+		return true;
+	}
+	return pv::getValue_slow(cx, val, data);
+}
+
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, OUT bool &b ) {
+
+	b = val.toBoolean();
+	return true;
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, OUT int8_t &num ); // why not defined ???
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, OUT uint8_t &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, OUT int16_t &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, OUT uint16_t &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, OUT int32_t &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, OUT uint32_t &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, OUT int64_t &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, OUT uint64_t &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, OUT long &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, OUT unsigned long &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, OUT float &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue( JSContext *cx, JS::HandleValue val, OUT double &num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue(JSContext *cx, JS::HandleValue val, JS::MutableHandleValue v) {
+
+	v.set(val);
+	return true;
+}
+
+ALWAYS_INLINE bool FASTCALL
+getValue(JSContext *cx, JS::HandleValue val, JS::MutableHandleObject obj) {
+
+	JL_ASSERT( val.isObject(), E_VALUE, E_TYPE, E_TY_OBJECT );
+	obj.set(&val.toObject());
+	return true;
+	JL_BAD;
+}
+
+
+
+////////
+
+
 
 template <class T>
 ALWAYS_INLINE bool FASTCALL
 setElement( JSContext *cx, JS::HandleObject objArg, uint32_t index, const T &v ) {
 
 	JS::RootedValue value(cx);
-	return
-		setValue(cx, &value, v) &&
-		JS_SetElement(cx, objArg, index, value);
+	JL_CHK( setValue(cx, &value, v) );
+	return JS_SetElement(cx, objArg, index, value);
+	JL_BAD;
 }
 
 template <class T>
@@ -2908,10 +3069,9 @@ ALWAYS_INLINE bool FASTCALL
 getElement( JSContext *cx, JS::HandleObject objArg, uint32_t index, T &v ) {
 
 	JS::RootedValue value(cx);
-	return
-		JS_GetElement(cx, objArg, index, &value) &&
-		getValue(cx, value, v);
-
+	JL_CHK( JS_ForwardGetElementTo(cx, objArg, index, objArg, &value) ); //JL_CHK( JS_GetElement(cx, objArg, index, &value) );
+	return getValue(cx, value, v);
+	JL_BAD;
 }
 
 template <class T>
@@ -2930,21 +3090,25 @@ getElement( JSContext *cx, JS::HandleValue objArg, uint32_t index, T &v ) {
 template <class T1>
 ALWAYS_INLINE bool FASTCALL
 setSlot( JSContext *cx, JS::HandleObject obj, size_t slotIndex, const T1 &v1 ) {
-
+	
+	ASSERT( JS_IsNative(obj) );
 	JS::RootedValue v(cx);
-	return
-		setValue(cx, &v, v1) &&
-		JL_SetReservedSlot(obj, slotIndex, v);
+	JL_CHK( setValue(cx, &v, v1) );
+	//return JL_SetReservedSlot(obj, slotIndex, v);
+	js::SetReservedSlot(obj, slotIndex, v); // jsfriendapi
+	JL_BAD;
 }
 
 template <class T1>
 ALWAYS_INLINE bool FASTCALL
 getSlot( JSContext *cx, JS::HandleObject obj, size_t slotIndex, T1 &v1 ) {
 
-	JS::RootedValue v(cx);
-	return
-		JL_GetReservedSlot(obj, slotIndex, v) &&
-		setValue(cx, &v, v1);
+	ASSERT( JS_IsNative(obj) );
+	//JS::RootedValue v(cx);
+	//JL_CHK( JL_GetReservedSlot(obj, slotIndex, v) );
+	JS::RootedValue v(cx, js::GetReservedSlot(obj, slotIndex)); // jsfriendapi
+	return setValue(cx, &v, v1);
+	JL_BAD;
 }
 
 
@@ -2957,7 +3121,9 @@ hasProperty( JSContext *cx, JS::HandleObject obj, JS::HandleId nameId ) {
 
 	ASSERT( obj );
 	bool found;
-	return JS_HasPropertyById(cx, obj, nameId, &found) && found;
+	JL_CHK( JS_HasPropertyById(cx, obj, nameId, &found) );
+	return found;
+	JL_BAD;
 }
 
 ALWAYS_INLINE bool FASTCALL
@@ -2965,7 +3131,9 @@ hasProperty( JSContext *cx, JS::HandleObject obj, const CStrSpec name ) {
 
 	ASSERT( obj );
 	bool found;
-	return JS_HasProperty(cx, obj, name.str(), &found) && found;
+	JL_CHK( JS_HasProperty(cx, obj, name.str(), &found) );
+	return found;
+	JL_BAD;
 }
 
 ALWAYS_INLINE bool FASTCALL
@@ -2973,7 +3141,9 @@ hasProperty( JSContext *cx, JS::HandleObject obj, const WCStrSpec name ) {
 
 	ASSERT( obj );
 	bool found;
-	return JS_HasUCProperty(cx, obj, name.str(), name.len(), &found) && found;
+	JL_CHK( JS_HasUCProperty(cx, obj, name.str(), name.len(), &found) );
+	return found;
+	JL_BAD;
 }
 
 
@@ -2994,7 +3164,9 @@ ALWAYS_INLINE bool FASTCALL
 setProperty( JSContext *cx, JS::HandleObject objArg, JS::HandleId nameId, const T &v ) {
 
 	JS::RootedValue value(cx);
-	return setValue(cx, &value, v) && JS_SetPropertyById(cx, objArg, nameId, value);
+	JL_CHK( setValue(cx, &value, v) ); 
+	return JS_SetPropertyById(cx, objArg, nameId, value);
+	JL_BAD;
 }
 
 template <typename T>
@@ -3002,7 +3174,9 @@ ALWAYS_INLINE bool FASTCALL
 setProperty( JSContext *cx, JS::HandleObject objArg, const CStrSpec name, const T &v ) {
 
 	JS::RootedValue value(cx);
-	return setValue(cx, &value, v) && JS_SetProperty(cx, objArg, name.str(), value);
+	JL_CHK( setValue(cx, &value, v) );
+	return JS_SetProperty(cx, objArg, name.str(), value);
+	JL_BAD;
 }
 
 template <typename T>
@@ -3010,7 +3184,9 @@ ALWAYS_INLINE bool FASTCALL
 setProperty( JSContext *cx, JS::HandleObject objArg, const WCStrSpec name, const T &v ) {
 
 	JS::RootedValue value(cx);
-	return setValue(cx, &value, v) && JS_SetUCProperty(cx, objArg, name.str(), name.len(), value);
+	JL_CHK( setValue(cx, &value, v) );
+	return JS_SetUCProperty(cx, objArg, name.str(), name.len(), value);
+	JL_BAD;
 }
 
 
@@ -3187,32 +3363,26 @@ ALWAYS_INLINE bool FASTCALL
 call(JSContext *cx, JS::HandleObject thisObj, JS::HandleId funId, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
 
     JS::RootedValue funVal(cx);
-	return
-		JS_GetPropertyById(cx, thisObj, funId, &funVal) &&
-		call(cx, thisObj, funVal, args, rval);
+	JL_CHK( JS_GetPropertyById(cx, thisObj, funId, &funVal) );
+	return call(cx, thisObj, funVal, args, rval);
+	JL_BAD;
 }
+
 
 ALWAYS_INLINE bool FASTCALL
-call(JSContext *cx, JS::HandleObject thisObj, const char *name, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
+call(JSContext *cx, JS::HandleObject thisObj, const CStrSpec name, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
 
-    return JS_CallFunctionName(cx, thisObj, name, args, rval);
+    return JS_CallFunctionName(cx, thisObj, name.str(), args, rval);
 }
 
-ALWAYS_INLINE bool FASTCALL
-call(JSContext *cx, JS::HandleObject thisObj, const jschar *name, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
-
-	JS::RootedValue fval(cx);
-    return
-		JS_GetUCProperty(cx, thisObj, name, wcslen(name), &fval) &&
-		JS_CallFunctionValue(cx, thisObj, fval, args, rval);
-}
 
 ALWAYS_INLINE bool FASTCALL
 call(JSContext *cx, JS::HandleObject thisObj, const WCStrSpec name, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
 
 	JS::RootedValue fval(cx);
-	JS_GetUCProperty(cx, thisObj, name.str(), name.len(), &fval);
-    return call(cx, thisObj, fval, args, rval);
+	JL_CHK( JS_GetUCProperty(cx, thisObj, name.str(), name.len(), &fval) );
+	return call(cx, thisObj, fval, args, rval);
+	JL_BAD;
 }
 
 
@@ -3245,9 +3415,9 @@ ALWAYS_INLINE bool FASTCALL
 call( JSContext *cx, const THIS &thisArg, const FCT &fct, JS::MutableHandleValue rval, const T1 &v1 ) {
 
 	JS::AutoValueArray<1> ava(cx);
-	return
-		setValue(cx, ava[0], v1) &&
-		call(cx, thisArg, fct, ava, rval);
+	JL_CHK( setValue(cx, ava[0], v1) );
+	return call(cx, thisArg, fct, ava, rval);
+	JL_BAD;
 }
 
 template <class THIS, class FCT, class T1, class T2>
@@ -3255,10 +3425,10 @@ ALWAYS_INLINE bool FASTCALL
 call( JSContext *cx, const THIS &thisArg, const FCT &fct, JS::MutableHandleValue rval, const T1 &v1, const T2 &v2 ) {
 
 	JS::AutoValueArray<2> ava(cx);
-	return
-		setValue(cx, ava[0], v1) &&
-		setValue(cx, ava[1], v2) &&
-		call(cx, thisArg, fct, ava, rval);
+	JL_CHK( setValue(cx, ava[0], v1) );
+	JL_CHK( setValue(cx, ava[1], v2) );
+	return call(cx, thisArg, fct, ava, rval);
+	JL_BAD;
 }
 
 template <class THIS, class FCT, class T1, class T2, class T3>
@@ -3266,11 +3436,11 @@ ALWAYS_INLINE bool FASTCALL
 call( JSContext *cx, const THIS &thisArg, const FCT &fct, JS::MutableHandleValue rval, const T1 &v1, const T2 &v2, const T3 &v3 ) {
 
 	JS::AutoValueArray<3> ava(cx);
-	return
-		setValue(cx, ava[0], v1) &&
-		setValue(cx, ava[1], v2) &&
-		setValue(cx, ava[2], v3) &&
-		call(cx, thisArg, fct, ava, rval);
+	JL_CHK( setValue(cx, ava[0], v1) );
+	JL_CHK( setValue(cx, ava[1], v2) );
+	JL_CHK( setValue(cx, ava[2], v3) );
+	return call(cx, thisArg, fct, ava, rval);
+	JL_BAD;
 }
 
 template <class THIS, class FCT, class T1, class T2, class T3, class T4>
@@ -3278,12 +3448,12 @@ ALWAYS_INLINE bool FASTCALL
 call( JSContext *cx, const THIS &thisArg, const FCT &fct, JS::MutableHandleValue rval, const T1 &v1, const T2 &v2, const T3 &v3, const T4 &v4 ) {
 
 	JS::AutoValueArray<4> ava(cx);
-	return
-		setValue(cx, ava[0], v1) &&
-		setValue(cx, ava[1], v2) &&
-		setValue(cx, ava[2], v3) &&
-		setValue(cx, ava[3], v4) &&
-		call(cx, thisArg, fct, ava, rval);
+	JL_CHK( setValue(cx, ava[0], v1) );
+	JL_CHK( setValue(cx, ava[1], v2) );
+	JL_CHK( setValue(cx, ava[2], v3) );
+	JL_CHK( setValue(cx, ava[3], v4) );
+	return call(cx, thisArg, fct, ava, rval);
+	JL_BAD;
 }
 
 template <class THIS, class FCT, class T1, class T2, class T3, class T4, class T5>
@@ -3291,13 +3461,13 @@ ALWAYS_INLINE bool FASTCALL
 call( JSContext *cx, const THIS &thisArg, const FCT &fct, JS::MutableHandleValue rval, const T1 &v1, const T2 &v2, const T3 &v3, const T4 &v4, const T5 &v5 ) {
 
 	JS::AutoValueArray<5> ava(cx);
-	return
-		setValue(cx, ava[0], v1) &&
-		setValue(cx, ava[1], v2) &&
-		setValue(cx, ava[2], v3) &&
-		setValue(cx, ava[3], v4) &&
-		setValue(cx, ava[4], v5) &&
-		call(cx, thisArg, fct, ava, rval);
+	JL_CHK( setValue(cx, ava[0], v1) );
+	JL_CHK( setValue(cx, ava[1], v2) );
+	JL_CHK( setValue(cx, ava[2], v3) );
+	JL_CHK( setValue(cx, ava[3], v4) );
+	JL_CHK( setValue(cx, ava[4], v5) );
+	return call(cx, thisArg, fct, ava, rval);
+	JL_BAD;
 }
 
 template <class THIS, class FCT, class T1, class T2, class T3, class T4, class T5, class T6>
@@ -3305,14 +3475,14 @@ ALWAYS_INLINE bool FASTCALL
 call( JSContext *cx, const THIS &thisArg, const FCT &fct, JS::MutableHandleValue rval, const T1 &v1, const T2 &v2, const T3 &v3, const T4 &v4, const T5 &v5, const T6 &v6 ) {
 
 	JS::AutoValueArray<6> ava(cx);
-	return
-		setValue(cx, ava[0], v1) &&
-		setValue(cx, ava[1], v2) &&
-		setValue(cx, ava[2], v3) &&
-		setValue(cx, ava[3], v4) &&
-		setValue(cx, ava[4], v5) &&
-		setValue(cx, ava[5], v6) &&
-		call(cx, thisArg, fct, ava, rval);
+	JL_CHK( setValue(cx, ava[0], v1) );
+	JL_CHK( setValue(cx, ava[1], v2) );
+	JL_CHK( setValue(cx, ava[2], v3) );
+	JL_CHK( setValue(cx, ava[3], v4) );
+	JL_CHK( setValue(cx, ava[4], v5) );
+	JL_CHK( setValue(cx, ava[5], v6) );
+	return call(cx, thisArg, fct, ava, rval);
+	JL_BAD;
 }
 
 template <class THIS, class FCT, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
@@ -3320,15 +3490,15 @@ ALWAYS_INLINE bool FASTCALL
 call( JSContext *cx, const THIS &thisArg, const FCT &fct, JS::MutableHandleValue rval, const T1 &v1, const T2 &v2, const T3 &v3, const T4 &v4, const T5 &v5, const T6 &v6, const T7 &v7 ) {
 
 	JS::AutoValueArray<7> ava(cx);
-	return
-		setValue(cx, ava[0], v1) &&
-		setValue(cx, ava[1], v2) &&
-		setValue(cx, ava[2], v3) &&
-		setValue(cx, ava[3], v4) &&
-		setValue(cx, ava[4], v5) &&
-		setValue(cx, ava[5], v6) &&
-		setValue(cx, ava[6], v7) &&
-		call(cx, thisArg, fct, ava, rval);
+	JL_CHK( setValue(cx, ava[0], v1) );
+	JL_CHK( setValue(cx, ava[1], v2) );
+	JL_CHK( setValue(cx, ava[2], v3) );
+	JL_CHK( setValue(cx, ava[3], v4) );
+	JL_CHK( setValue(cx, ava[4], v5) );
+	JL_CHK( setValue(cx, ava[5], v6) );
+	JL_CHK( setValue(cx, ava[6], v7) );
+	return call(cx, thisArg, fct, ava, rval);
+	JL_BAD;
 }
 
 //...
@@ -3339,8 +3509,9 @@ ALWAYS_INLINE JSObject* FASTCALL
 construct( JSContext *cx, JS::HandleObject proto ) {
 
 	JS::RootedObject ctor(cx, JL_GetConstructor(cx, proto));
-	return ctor &&
-		true ? JS_New(cx, ctor, 0, NULL) : NULL;
+	JL_CHK( ctor );
+	return JS_New(cx, ctor, 0, NULL);
+	JL_BADVAL(nullptr);
 }
 
 template <class T1>
@@ -3349,9 +3520,23 @@ construct( JSContext *cx, JS::HandleObject proto, const T1 &v1 ) {
 
 	JS::AutoValueArray<1> ava(cx);
 	JS::RootedObject ctor(cx, JL_GetConstructor(cx, proto));
-	return ctor &&
-		setValue(cx, ava[0], v1) &&
-		true ? JS_New(cx, ctor, ava.length(), ava.begin()) : NULL;
+	JL_CHK( ctor );
+	JL_CHK( setValue(cx, ava[0], v1) );
+	return JS_New(cx, ctor, ava.length(), ava.begin());
+	JL_BADVAL(nullptr);
+}
+
+template <class T1, class T2>
+ALWAYS_INLINE JSObject* FASTCALL
+construct( JSContext *cx, JS::HandleObject proto, const T1 &v1, const T2 &v2 ) {
+
+	JS::AutoValueArray<1> ava(cx);
+	JS::RootedObject ctor(cx, JL_GetConstructor(cx, proto));
+	JL_CHK( ctor );
+	JL_CHK( setValue(cx, ava[0], v1) );
+	JL_CHK( setValue(cx, ava[1], v2) );
+	return JS_New(cx, ctor, ava.length(), ava.begin());
+	JL_BADVAL(nullptr);
 }
 
 //...
@@ -3361,62 +3546,69 @@ construct( JSContext *cx, JS::HandleObject proto, const T1 &v1 ) {
 
 template <typename T1>
 ALWAYS_INLINE JSObject* FASTCALL
-newJsArray( JSContext *cx, const T1 v1 ) {
+newArray( JSContext *cx ) {
+
+	return JS_NewArrayObject(cx, 0);
+}
+
+template <typename T1>
+ALWAYS_INLINE JSObject* FASTCALL
+newArray( JSContext *cx, const T1 v1 ) {
 
 	JS::AutoValueArray<1> ava(cx);
-	return
-		setValue(cx, ava[0], v1) &&
-		true ? JS_NewArrayObject(cx, ava) : nullptr;
+	JL_CHK( setValue(cx, ava[0], v1) );
+	return JS_NewArrayObject(cx, ava);
+	JL_BADVAL(nullptr);
 }
 
 template <typename T1, typename T2>
 ALWAYS_INLINE JSObject* FASTCALL
-newJsArray( JSContext *cx, const T1 v1, const T2 v2 ) {
+newArray( JSContext *cx, const T1 v1, const T2 v2 ) {
 
 	JS::AutoValueArray<2> ava(cx);
-	return
-		setValue(cx, ava[0], v1) &&
-		setValue(cx, ava[1], v2) &&
-		true ? JS_NewArrayObject(cx, ava) : nullptr;
+	JL_CHK( setValue(cx, ava[0], v1) );
+	JL_CHK( setValue(cx, ava[1], v2) );
+	return JS_NewArrayObject(cx, ava);
+	JL_BADVAL(nullptr);
 }
 
 template <typename T1, typename T2, typename T3>
 ALWAYS_INLINE JSObject* FASTCALL
-newJsArray( JSContext *cx, const T1 v1, const T2 v2, const T3 v3 ) {
+newArray( JSContext *cx, const T1 v1, const T2 v2, const T3 v3 ) {
 
 	JS::AutoValueArray<3> ava(cx);
-	return
-		setValue(cx, ava[0], v1) &&
-		setValue(cx, ava[1], v2) &&
-		setValue(cx, ava[2], v3) &&
-		true ? JS_NewArrayObject(cx, ava) : nullptr;
+	JL_CHK( setValue(cx, ava[0], v1) );
+	JL_CHK( setValue(cx, ava[1], v2) );
+	JL_CHK( setValue(cx, ava[2], v3) );
+	return JS_NewArrayObject(cx, ava);
+	JL_BADVAL(nullptr);
 }
 
 template <typename T1, typename T2, typename T3, typename T4>
 ALWAYS_INLINE JSObject* FASTCALL
-newJsArray( JSContext *cx, const T1 v1, const T2 v2, const T3 v3, const T4 v4 ) {
+newArray( JSContext *cx, const T1 v1, const T2 v2, const T3 v3, const T4 v4 ) {
 
 	JS::AutoValueArray<4> ava(cx);
-	return
-		setValue(cx, ava[0], v1) &&
-		setValue(cx, ava[1], v2) &&
-		setValue(cx, ava[2], v3) &&
-		setValue(cx, ava[3], v4) &&
-		true ? JS_NewArrayObject(cx, ava) : nullptr;
+	JL_CHK( setValue(cx, ava[0], v1) );
+	JL_CHK( setValue(cx, ava[1], v2) );
+	JL_CHK( setValue(cx, ava[2], v3) );
+	JL_CHK( setValue(cx, ava[3], v4) );
+	return JS_NewArrayObject(cx, ava);
+	JL_BADVAL(nullptr);
 }
 
 template <typename T1, typename T2, typename T3, typename T4, typename T5>
 ALWAYS_INLINE JSObject* FASTCALL
-newJsArray( JSContext *cx, const T1 v1, const T2 v2, const T3 v3, const T4 v4, const T5 v5 ) {
+newArray( JSContext *cx, const T1 v1, const T2 v2, const T3 v3, const T4 v4, const T5 v5 ) {
 
 	JS::AutoValueArray<4> ava(cx);
-	return
-		setValue(cx, ava[0], v1) &&
-		setValue(cx, ava[1], v2) &&
-		setValue(cx, ava[2], v3) &&
-		setValue(cx, ava[3], v4) &&
-		setValue(cx, ava[4], v5) &&
-		true ? JS_NewArrayObject(cx, ava) : nullptr;
+	JL_CHK( setValue(cx, ava[0], v1) );
+	JL_CHK( setValue(cx, ava[1], v2) );
+	JL_CHK( setValue(cx, ava[2], v3) );
+	JL_CHK( setValue(cx, ava[3], v4) );
+	JL_CHK( setValue(cx, ava[4], v5) );
+	return JS_NewArrayObject(cx, ava);
+	JL_BADVAL(nullptr);
 }
 
 
@@ -3600,11 +3792,9 @@ isArray( JSContext *cx, IN JS::HandleValue val ) {
 ALWAYS_INLINE bool FASTCALL
 isArrayLike( JSContext *cx, JS::HandleObject obj ) {
 
-	return JS_IsArrayObject(cx, obj)
-		|| (
-			hasProperty(cx, obj, JLID(cx, length))
-			&& !JS_ObjectIsFunction(cx, obj) // exclude (function(){}).length
-		);
+	if ( JS_IsArrayObject(cx, obj) )
+		return true;
+	return hasProperty(cx, obj, JLID(cx, length)) && !JS_ObjectIsFunction(cx, obj); // exclude (function(){}).length
 }
 
 ALWAYS_INLINE bool FASTCALL
@@ -3652,7 +3842,6 @@ JL_END_NAMESPACE
 ///////////////////////////////////////////////////////////////////////////////
 // convertion functions
 
-// JLData
 
 /*
 template<class T>
@@ -4982,126 +5171,8 @@ JL_JsvalToMatrix44( JSContext * RESTRICT cx, IN JS::HandleValue val, OUT float *
 
 
 
-///////////////////////////////////////////////////////////////////////////////
-// Buffer
-
-ALWAYS_INLINE uint8_t* FASTCALL
-JL_DataBufferAlloc( JSContext *, size_t nbytes ) {
-
-	return (uint8_t*)jl_malloc(nbytes);
-}
-
-ALWAYS_INLINE uint8_t* FASTCALL
-JL_DataBufferRealloc( JSContext *, uint8_t *data, size_t nbytes ) {
-
-	return (uint8_t*)jl_realloc(data, nbytes);
-}
-
-ALWAYS_INLINE void FASTCALL
-JL_DataBufferFree( JSContext *, uint8_t *data ) {
-
-	return jl_free(data);
-}
-
-//
-
-ALWAYS_INLINE uint8_t* FASTCALL
-JL_NewBuffer( JSContext *cx, size_t nbytes, OUT JS::MutableHandleValue vp ) {
-
-	JS::RootedObject bufferObj(cx, JS_NewArrayBuffer(cx, nbytes));
-	if ( bufferObj ) {
-
-		vp.setObject(*bufferObj);
-		return JS_GetArrayBufferData(bufferObj);
-	} else {
-
-		return NULL;
-	}
-}
-
-ALWAYS_INLINE bool FASTCALL
-JL_NewBufferCopyN( JSContext *cx, IN const void *src, IN size_t nbytes, OUT JS::MutableHandleValue vp ) {
-
-	JS::RootedObject bufferObj(cx, JS_NewArrayBuffer(cx, nbytes));
-	if ( !bufferObj )
-		return false;
-	void *data = JS_GetArrayBufferData(bufferObj);
-	if ( !data )
-		return false;
-	jl::memcpy(data, src, nbytes);
-	vp.setObject(*bufferObj);
-	return true;
-}
-
-ALWAYS_INLINE bool FASTCALL
-JL_NewBufferGetOwnership( JSContext *cx, IN void *src, IN size_t nbytes, OUT JS::MutableHandleValue rval ) {
-
-	// (TBD) need to handle ownership properly
-	bool ok = JL_NewBufferCopyN(cx, src, nbytes, rval);
-	jl_free(src);
-	return ok;
-}
-
-ALWAYS_INLINE bool FASTCALL
-JL_NewEmptyBuffer( JSContext *cx, OUT JS::MutableHandleValue vp ) {
-
-	JS::RootedObject obj(cx, JS_NewArrayBuffer(cx, 0));
-	if ( obj ) {
-
-		vp.setObject(*obj);
-		return true;
-	} else {
-
-		return false;
-	}
-}
-
-template <class T>
-ALWAYS_INLINE bool FASTCALL
-JL_FreeBuffer( JSContext *, T ) {
-
-	// do nothing at the moment. The CG will free the buffer.
-	return true;
-}
 
 
-ALWAYS_INLINE uint8_t* FASTCALL
-JL_ChangeBufferLength( JSContext *cx, IN OUT JS::MutableHandleValue vp, size_t nbytes ) {
-
-	// need to create a new buffer because ArrayBuffer does not support realloc nor length changing, then we copy it in a new one.
-	// see JS_ReallocateArrayBufferContents
-
-	ASSERT( vp.isObject() );
-	JS::RootedObject arrayBufferObj(cx, &vp.toObject());
-	ASSERT( JS_IsArrayBufferObject(arrayBufferObj) );
-	uint32_t bufferLen = JS_GetArrayBufferByteLength(arrayBufferObj);
-	void *bufferData = JS_GetArrayBufferData(arrayBufferObj);
-
-	if ( nbytes == bufferLen )
-		return (uint8_t*)bufferData;
-
-	JS::RootedObject newBufferObj(cx);
-	void *newBufferData;
-	if ( nbytes < bufferLen ) {
-
-		newBufferObj = JS_NewArrayBuffer(cx, nbytes);
-		void *data = JS_GetArrayBufferData(newBufferObj);
-		jl::memcpy(data, bufferData, nbytes);
-
-		if ( !newBufferObj )
-			return false;
-		newBufferData = JS_GetArrayBufferData(arrayBufferObj);
-	} else {
-
-		newBufferObj = JS_NewArrayBuffer(cx, nbytes);
-		if ( !newBufferObj )
-			return false;
-		newBufferData = JS_GetArrayBufferData(arrayBufferObj);
-		jl::memcpy(newBufferData, bufferData, bufferLen);
-	}
-	vp.setObject(*newBufferObj);
-	return (uint8_t*)newBufferData;
-}
 
 
 
@@ -5544,7 +5615,7 @@ JL_Eval( JSContext *cx, JSString *source, JS::Value *rval ) { // used in JS::Val
 */
 
 
-
+/*
 ALWAYS_INLINE bool FASTCALL
 JL_ArrayPush( JSContext * RESTRICT cx, IN JS::HandleObject arr, IN JS::HandleValue value ) {
 
@@ -5565,6 +5636,8 @@ JL_ArrayReset( JSContext * RESTRICT cx, IN JS::HandleObject arr ) {
 
 	return JS_SetArrayLength(cx, arr, 0);
 }
+*/
+
 
 
 INLINE bool FASTCALL
@@ -5575,11 +5648,7 @@ JL_JsvalToPrimitive( JSContext * RESTRICT cx, IN JS::HandleValue val, OUT JS::Mu
 		rval.set(val);
 		return true;
 	}
-
 	JS::RootedObject obj(cx, &val.toObject());
-	//JSClass *clasp = JL_GetClass(obj);
-	//if ( clasp->convert ) // note that JS_ConvertStub calls js_TryValueOf
-	//	return clasp->convert(cx, obj, JSTYPE_VOID, rval);
 	JL_CHK( jl::call(cx, obj, JLID(cx, valueOf), rval) );
 	if ( !rval.isPrimitive() )
 		JL_CHK( jl::call(cx, obj, JLID(cx, toString), rval) );

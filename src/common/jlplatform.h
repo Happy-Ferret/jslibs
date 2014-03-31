@@ -1338,6 +1338,10 @@ atoi(const char *buf, int base) {
 }
 
 
+// \0 not included !
+#define IToA10MaxDigits(TYPE) (  (::std::numeric_limits<TYPE>::is_signed ? 1 : 0) + ::std::numeric_limits<TYPE>::digits10 + 1  )
+
+
 template <typename T>
 INLINE NEVER_INLINE char* FASTCALL
 itoa(T val, char *buf, char base) {

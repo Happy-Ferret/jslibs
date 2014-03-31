@@ -49,7 +49,7 @@ struct Private : public jl::CppAllocators {
 	HANDLE systrayEvent;
 	jl::Queue msgQueue;
 	CRITICAL_SECTION cs; // protects msgQueue
-	jl::Stack<jsval> popupMenuRoots;
+	jl::Stack<JS::Value> popupMenuRoots;
 	POINT lastMousePos;
 	bool mouseIn;
 };
@@ -577,7 +577,7 @@ bool ProcessSystrayMessage( JSContext *cx, JS::HandleObject obj, const MSGInfo *
 				S_ASSERT( sizeof(jsid) == sizeof(wParam) );
 				
 				JS::RootedValue key(cx);
-				JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) ); // to change
+TBD				JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) ); // to change
 
 				JL_CHK( jl::call(cx, obj, functionVal, rval, key, trayMsg->lButton ? 1 : trayMsg->rButton ? 2 : 0) );
 				Private *pv = (Private*)JL_GetPrivate(obj);
@@ -598,7 +598,7 @@ bool ProcessSystrayMessage( JSContext *cx, JS::HandleObject obj, const MSGInfo *
 						S_ASSERT( sizeof(jsid) == sizeof(wParam) );
 
 						JS::RootedValue key(cx);
-						JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) ); // to change
+TBD						JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) ); // to change
 						JL_CHK( jl::call(cx, obj, functionVal, rval, key, trayMsg->lButton ? 1 : trayMsg->rButton ? 2 : 0) );
 					}
 				break;
@@ -828,16 +828,15 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 		UINT uFlags = 0;
 		bool isDefault = false;
 		HBITMAP hBMP = NULL;
-
-		JS::RootedValue cmdid(cx);
-		JS::RootedValue label(cx);
 		HMENU popupMenu;
 		IFDEBUG( popupMenu = NULL ); // avoid "potentially uninitialized local variable" warning
 
+		JS::RootedValue cmdid(cx);
+		JS::RootedValue label(cx);
 		JS::RootedValue item(cx);
-		JL_CHK( JL_GetElement(cx, menuObj, i, &item) );
-
 		JS::RootedValue key(cx);
+
+		JL_CHK( JL_GetElement(cx, menuObj, i, &item) );
 		key.setInt32(i);
 		JL_CHK( NormalizeMenuInfo(cx, menuObj, key, &item) );
 
@@ -1002,7 +1001,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 			JL_CHK( JL_JsvalToJsid(cx, item, &id) );
 
 			S_ASSERT( sizeof(jsid) <= sizeof(UINT_PTR) );
-			uIDNewItem = (UINT_PTR)JSID_BITS(id.get());
+TBD			uIDNewItem = (UINT_PTR)JSID_BITS(id.get());
 		}
 
 		BOOL res = AppendMenu(*hMenu, uFlags, uIDNewItem, lpNewItem);

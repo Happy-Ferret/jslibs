@@ -326,7 +326,7 @@ DEFINE_FUNCTION( functionList ) {
 		if ( FAILED(hr) )
 			JL_CHK( WinThrowError(cx, hr) );
 
-		JL_CHK( jl::setElement(cx, JL_RVAL, i, jl::strSpec((const jschar*)bstrName)) );
+		JL_CHK( jl::setElement(cx, JL_RVAL, i, static_cast<const jschar*>(bstrName)) );
 //		JL_CHK( JS_DefineUCProperty(cx, memberList, (const jschar*)bstrName, SysStringLen(bstrName), INT_TO_JSVAL(pFuncDesc->invkind), NULL, NULL, JSPROP_ENUMERATE | JSPD_PERMANENT | JSPROP_READONLY) );
 
 		SysFreeString(bstrName);

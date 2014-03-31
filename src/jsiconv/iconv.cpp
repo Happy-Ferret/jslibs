@@ -432,13 +432,14 @@ DEFINE_PROPERTY_GETTER( list ) {
 
 DEFINE_PROPERTY_GETTER( version ) {
 
-	char versionStr[16], tmp[JL_ITOA10_MAX_DIGITS];
 #ifdef _LIBICONV_VERSION
-
+	char versionStr[16];
+	char tmp[IToA10MaxDigits(uint8_t) + 1];
 	strcpy( versionStr, jl::itoa10(_LIBICONV_VERSION >> 8, tmp) );
 	strcat( versionStr, ".");
 	strcat( versionStr, jl::itoa10(_LIBICONV_VERSION & 0xFF, tmp) );
 #else
+	char versionStr[7];
 	strcpy( versionStr, "system");
 #endif
 	return JL_NativeToJsval(cx, versionStr, vp);

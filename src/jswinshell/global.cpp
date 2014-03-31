@@ -829,7 +829,7 @@ DEFINE_FUNCTION( directoryChangesLookup ) {
 		JS::RootedValue eltVal(cx);
 		JS::RootedString str(cx, JS_NewUCStringCopyN(cx, (jschar*)pFileNotify->FileName, pFileNotify->FileNameLength / sizeof(WCHAR)));
 		JL_CHK( str );
-		eltVal.setObject(*jl::newJsArray(cx, (JS::HandleString)str, pFileNotify->Action));
+		eltVal.setObject(*jl::newArray(cx, (JS::HandleString)str, pFileNotify->Action));
 
 		JL_CHK( JL_SetElement(cx, arrObj, index, eltVal) );
 		index++;
