@@ -13,7 +13,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-//#include <jslibsModule.cpp>
+#include <jslibsModule.h>
 
 #include "com.h"
 
@@ -25,7 +25,6 @@ DECLARE_CLASS( Systray )
 DECLARE_CLASS( Console )
 
 
-
 /**doc t:header
 $MODULE_HEADER
 $FILE_TOC
@@ -35,9 +34,7 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-bool
-ModuleInit(JSContext *cx, JS::HandleObject obj) {
-
+bool ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	//JLDisableThreadNotifications();
 	JL_ASSERT(jl::Host::getHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 

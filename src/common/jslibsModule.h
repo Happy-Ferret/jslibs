@@ -33,6 +33,9 @@ EXTERN_C DLLEXPORT bool ModuleInit(JSContext *cx, JS::HandleObject obj); // JSCo
 EXTERN_C DLLEXPORT bool ModuleRelease(JSContext *cx);
 EXTERN_C DLLEXPORT void ModuleFree(bool skipCleanup);
 
+bool ModuleInit(JSContext *cx, JS::HandleObject obj);
+bool ModuleRelease(JSContext *cx);
+void ModuleFree(bool skipCleanup);
 
 typedef ptrdiff_t moduleId_t;
 

@@ -1545,7 +1545,7 @@ int Compare( const void * Val1, const void * Val2 )
 
 DEFINE_PROPERTY_GETTER( privateMemoryUsage ) {
 
-	JL_IGNORE( id, obj );
+	JL_DEFINE_PROP_ARGS;
 
 #if defined(XP_WIN)
 
@@ -1624,12 +1624,12 @@ DEFINE_PROPERTY_GETTER( privateMemoryUsage ) {
 				dPageTablePages += dCurrentPageStatus; // page table region
 			}
 		} 
-		JL_CHK( jl::setValue(cx, vp, (dPages - dSharedPages) * dPageSize) );
+		JL_CHK( jl::setValue(cx, JL_RVAL, (dPages - dSharedPages) * dPageSize) );
 	} __finally {
 
 		CloseHandle( hProcess );
 	}
-
+	return true;
 #else
 
 
@@ -1641,6 +1641,7 @@ DEFINE_PROPERTY_GETTER( privateMemoryUsage ) {
 	return true;
 
 #endif
+
 	JL_BAD;
 }
 

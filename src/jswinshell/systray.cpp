@@ -43,6 +43,9 @@ Shell_NotifyIconA_retry(DWORD dwMessage, PNOTIFYICONDATAA lpData) {
 	return status;
 }
 
+S_ASSERT( sizeof(WPARAM) >= sizeof(JS::Value*) );
+S_ASSERT( sizeof(UINT_PTR) >= sizeof(JS::Value*) );
+
 struct Private : public jl::CppAllocators {
 	NOTIFYICONDATA nid;
 	HANDLE thread;
@@ -65,9 +68,10 @@ struct MSGInfo {
 };
 
 
-void AddPopupMenuRoot(Private *pv, jsval value) {
+JS::Value* AddPopupMenuRoot(Private *pv, JS::HandleValue value) {
 
 	*++(pv->popupMenuRoots) = value;
+	return &pv->popupMenuRoots;
 }
 
 void FreePopupMenuRoots(Private *pv) {
@@ -574,11 +578,7 @@ bool ProcessSystrayMessage( JSContext *cx, JS::HandleObject obj, const MSGInfo *
 			JL_CHK( JS_GetProperty(cx, obj, "oncommand", &functionVal) );
 			if ( jl::isCallable(cx, functionVal) ) {
 
-				S_ASSERT( sizeof(jsid) == sizeof(wParam) );
-				
-				JS::RootedValue key(cx);
-TBD				JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) ); // to change
-
+				JS::RootedValue key(cx, *(JS::Value*)wParam);
 				JL_CHK( jl::call(cx, obj, functionVal, rval, key, trayMsg->lButton ? 1 : trayMsg->rButton ? 2 : 0) );
 				Private *pv = (Private*)JL_GetPrivate(obj);
 				if ( pv )
@@ -595,10 +595,7 @@ TBD				JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) ); // to change
 					JL_CHK( JS_GetProperty(cx, obj, "onidle", &functionVal) );
 					if ( jl::isCallable(cx, functionVal) ) {
 
-						S_ASSERT( sizeof(jsid) == sizeof(wParam) );
-
-						JS::RootedValue key(cx);
-TBD						JL_CHK( JS_IdToValue(cx, *(jsid*)&wParam, &key) ); // to change
+						JS::RootedValue key(cx, *(JS::Value*)wParam);
 						JL_CHK( jl::call(cx, obj, functionVal, rval, key, trayMsg->lButton ? 1 : trayMsg->rButton ? 2 : 0) );
 					}
 				break;
@@ -756,6 +753,7 @@ struct SystrayEvent : public ProcessEvent2 {
 	}
 };
 
+
 DEFINE_FUNCTION( events ) {
 	
 	JL_DEFINE_ARGS;
@@ -766,12 +764,10 @@ DEFINE_FUNCTION( events ) {
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-
 	SystrayEvent *upe = new SystrayEvent();
 	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
 
 	upe->hslot(0).set(JL_OBJVAL);
-
 
 	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset
 	if ( upe->cancelEvent == NULL )
@@ -815,6 +811,7 @@ ALWAYS_INLINE bool NormalizeMenuInfo( JSContext *cx, JS::HandleObject obj, JS::H
 	return true;
 }
 
+
 bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menuObj, HMENU *hMenu ) {
 
 //	*hMenu = CreatePopupMenu();
@@ -833,10 +830,10 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 
 		JS::RootedValue cmdid(cx);
 		JS::RootedValue label(cx);
+		JS::RootedValue key(cx); // JS::NumberValue(i);
 		JS::RootedValue item(cx);
-		JS::RootedValue key(cx);
 
-		JL_CHK( JL_GetElement(cx, menuObj, i, &item) );
+		JL_CHK( jl::getElement(cx, menuObj, i, &item) );
 		key.setInt32(i);
 		JL_CHK( NormalizeMenuInfo(cx, menuObj, key, &item) );
 
@@ -852,21 +849,20 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 		if ( item.isObject() ) {
 
 			JS::RootedObject itemObj(cx, &item.toObject());
-			JS::RootedValue key(cx);
 			JS::RootedValue value(cx);
 
-			JSIdArray *list = JS_Enumerate(cx, itemObj);
-			JL_CHK( list );
-			int length = JS_IdArrayLength(cx, list);
-			for ( int j = 0; j < length; ++j ) {
+			JS::AutoIdArray ida(cx, JS_Enumerate(cx, itemObj));
+			JL_CHK( ida );
+
+			size_t length = ida.length();
+			for ( size_t j = 0; j < length; ++j ) {
 
 				JLData keyStr;
-				
-				JS::RootedId itemId(cx, JS_IdArrayGet(cx, list, j));
+				JS::RootedId itemId(cx, ida[j]);
 
 				JL_CHK( JS_IdToValue(cx, itemId, &key) );
-				JL_CHK( JS_GetPropertyById(cx, itemObj, itemId, &value) );
-				
+				JL_CHK( jl::getProperty(cx, itemObj, itemId, &value) );
+		
 				JL_CHK( JL_JsvalToNative(cx, key, &keyStr) );
 
 				if ( strcmp(keyStr, "id") == 0 ) {
@@ -947,11 +943,11 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 					continue;
 				}
 			}
-			JS_DestroyIdArray(cx, list);
 		} else {
 
 			JL_ERR( E_STR("menu item"), E_INVALID );
 		}
+
 
 		JLData newItemStr;
 		LPCTSTR lpNewItem;
@@ -983,6 +979,8 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 			}
 		}
 
+
+
 		if ( uFlags & MF_SEPARATOR ) {
 			
 			uIDNewItem = 0;
@@ -994,14 +992,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 
 			if ( cmdid == JSVAL_VOID )
 				cmdid = label;
-
-			AddPopupMenuRoot((Private*)JL_GetPrivate(systrayObj), item);
-
-			JS::RootedId id(cx);
-			JL_CHK( JL_JsvalToJsid(cx, item, &id) );
-
-			S_ASSERT( sizeof(jsid) <= sizeof(UINT_PTR) );
-TBD			uIDNewItem = (UINT_PTR)JSID_BITS(id.get());
+			uIDNewItem = (UINT_PTR)AddPopupMenuRoot((Private*)JL_GetPrivate(systrayObj), item);
 		}
 
 		BOOL res = AppendMenu(*hMenu, uFlags, uIDNewItem, lpNewItem);
@@ -1121,7 +1112,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 
 		pv->nid.dwInfoFlags = NIIF_NONE;
 
-		JL_CHK( JS_GetProperty(cx, infoObj, "infoTitle", JL_RVAL) );
+		JL_CHK( jl::getProperty(cx, infoObj, "infoTitle", JL_RVAL) );
 		if ( !JL_RVAL.isUndefined() ) {
 
 			JLData infoTitle;

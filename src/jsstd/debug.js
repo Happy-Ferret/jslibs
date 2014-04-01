@@ -4,8 +4,15 @@ var loadModule = host.loadModule;
 
 loadModule('jsstd');
 
-jsstdTest();
+print( 'peakMemoryUsage: '+(peakMemoryUsage/(1024*1024)).toFixed(0) + 'MB\n' );
+print( 'privateMemoryUsage: '+(privateMemoryUsage/(1024*1024)).toFixed(0) + 'MB\n' );
+print( 'processTime: '+processTime.toFixed(0) + 'ms\n' );
 
+throw 0;
+
+
+loadModule('jsstd');
+//jsstdTest();
 throw 0;
 
 

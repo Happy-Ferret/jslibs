@@ -4,18 +4,10 @@ var loadModule = host.loadModule;
 loadModule('jsio');
 loadModule('jsstd');
 loadModule('jswinshell');
-loadModule('jssvg');
-
-
-
-var loadModule = host.loadModule;
-
-// loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
-
-loadModule('jswinshell');
-
-loadModule('jsstd');
 //loadModule('jssvg');
+
+
+
 
 const RUN_KEY = 'HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run';
 
@@ -59,6 +51,8 @@ for (;;) {
 
 
 throw 0;
+
+
 
 //registrySet('HKEY_CURRENT_USER\\Software\\7-Zip\\xxx', '',  123);
 //print( uneval(registryGet('HKEY_CURRENT_USER\\Software\\7-Zip\\xxx', '')), '\n' );
@@ -269,11 +263,11 @@ halt();
 
 
 var iconRed = new SVG();
-iconRed.write(<svg><circle cx="8" cy="8" r="5" fill="orange"/></svg>);
+// no more E4X: iconRed.write(<svg><circle cx="8" cy="8" r="5" fill="orange"/></svg>);
 iconRed = new Icon( iconRed.renderImage(16,16,3) );
 
 var iconGreen = new SVG();
-iconGreen.write(<svg><circle cx="8" cy="8" r="5" fill="lightgreen"/></svg>);
+// no more E4X: iconGreen.write(<svg><circle cx="8" cy="8" r="5" fill="lightgreen"/></svg>);
 iconGreen = new Icon( iconGreen.renderImage(16,16,3) );
 
 const SECOND = 1000;

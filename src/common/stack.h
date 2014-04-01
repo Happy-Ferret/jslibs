@@ -223,6 +223,12 @@ public:
 		return &_top->data;
 	}
 
+	ALWAYS_INLINE T* operator&() const {
+
+		ASSERT( _top != NULL );
+		return &_top->data;
+	}
+
 	ALWAYS_INLINE T& operator*() const {
 
 		ASSERT( _top != NULL );

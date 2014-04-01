@@ -27,6 +27,8 @@ DEFINE_FINALIZE() {
 	if ( obj == jl::Host::getHost(fop->runtime()).getCachedProto(JL_THIS_CLASS_NAME) )
 		return;
 	IEnumVARIANT *ienumv = (IEnumVARIANT*)js::GetObjectPrivate(obj);
+	if ( !ienumv )
+		return;
 	ienumv->Release();
 }
 

@@ -516,6 +516,9 @@ DEFINE_FINALIZE() {
 	if ( obj == jl::Host::getHost(fop->runtime()).getCachedProto(JL_THIS_CLASS_NAME) )
 		return;
 	VARIANT *variant = (VARIANT*)js::GetObjectPrivate(obj);
+	if ( !variant )
+		return;
+
 	HRESULT hr = VariantClear(variant);
 
 	JL_IGNORE(hr); // (TBD) error check

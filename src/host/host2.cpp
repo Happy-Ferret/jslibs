@@ -648,6 +648,18 @@ ModuleManager::loadModule(const char *libFileName, JS::HandleObject obj, JS::Mut
 	moduleInit = (ModuleInitFunction)JLDynamicLibrarySymbol(moduleHandle, NAME_MODULE_INIT);
 	JL_ASSERT( moduleInit, E_MODULE, E_NAME(libFileName), E_INIT ); // "Invalid module."
 
+	//if ( !moduleInit ) {
+	//	JL_SAFE_BEGIN
+	//	char errorBuffer[256];
+	//	JLDynamicLibraryLastErrorMessage( errorBuffer, sizeof(errorBuffer) );
+	//	JL_WARN( E_OS, E_OPERATION, E_DETAILS, E_STR(errorBuffer), E_COMMENT(libFileName) );
+	//	JL_SAFE_END
+	//	rval.setBoolean(false);
+	//	return true;
+	//}
+
+
+
 	moduleId_t moduleId;
 	moduleId = reinterpret_cast<moduleId_t>(moduleInit); // JLDynamicLibraryId(module); // module unique ID
 
