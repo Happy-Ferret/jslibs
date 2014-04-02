@@ -2497,17 +2497,17 @@ struct SignificandStringValue<double> {
 
 template <class T>
 INLINE NEVER_INLINE bool FASTCALL
-getNumberValue_slow( JSContext *cx, const JS::HandleValue &val, bool valIsDouble, T &num ) {
+getNumberValue_slow( JSContext *cx, const JS::HandleValue &val, bool valIsDouble, T *num ) {
 
 	double d;
 
 	// optimization when T is float
-	if ( jl::isTypeFloat(num) && valIsDouble ) {
+	if ( jl::isTypeFloat(*num) && valIsDouble ) {
 
 		d = val.toDouble();
 		if ( abs(d) < ::std::numeric_limits<T>::max() ) { //if ( isInBounds<T>(d) ) {
 
-			num = static_cast<T>(d);
+			*num = static_cast<T>(d);
 			return true;
 		}
 		goto bad_range;
@@ -2524,15 +2524,15 @@ getNumberValue_slow( JSContext *cx, const JS::HandleValue &val, bool valIsDouble
 	}
 
 	// optimization when T is double
-	if ( jl::isTypeDouble(num) ) {
+	if ( jl::isTypeDouble(*num) ) {
 
-		num = d;
+		*num = d;
 		return true;
 	}
 
 	if ( isInBounds<T>(d) ) {
 
-		num = static_cast<T>(d);
+		*num = static_cast<T>(d);
 		// only warn for precision lost if num is integral
 		JL_ASSERT_WARN( !::std::numeric_limits<T>::is_exact || jl::IsIntegerValue(d), E_VALUE, E_PRECISION );
 		return true;
@@ -2547,14 +2547,14 @@ bad_range:
 // error if out of range, warning if loss of precision
 template <class T>
 ALWAYS_INLINE bool FASTCALL
-getNumberValue( JSContext *cx, const JS::HandleValue &val, T &num ) {
+getNumberValue( JSContext *cx, const JS::HandleValue &val, T *num ) {
 
 	if ( val.isInt32() ) {
 
 		int32_t intVal = val.toInt32();
 		if ( jl::isInBounds<T>(intVal) ) {
 
-			num = static_cast<T>(intVal);
+			*num = static_cast<T>(intVal);
 			return true;
 		}
 		goto bad_range;
@@ -2563,9 +2563,9 @@ getNumberValue( JSContext *cx, const JS::HandleValue &val, T &num ) {
 	bool valIsDouble = val.isDouble();
 
 	// optimization when T and val are double
-	if ( jl::isTypeDouble(num) && valIsDouble ) {
+	if ( jl::isTypeDouble(*num) && valIsDouble ) {
 
-		num = val.toDouble();
+		*num = val.toDouble();
 		return true;
 	}
 
@@ -2581,22 +2581,22 @@ bad_range:
 namespace pv {
 
 INLINE NEVER_INLINE bool FASTCALL
-getValue_slow( JSContext *cx, JS::HandleValue val, JLData &data ) {
+getValue_slow( JSContext *cx, JS::HandleValue val, JLData* data ) {
 
 	if ( val.isObject() ) {
 
 		JS::RootedObject obj(cx, &val.toObject());
 		NIBufferGet fct = BufferGetInterface(cx, obj); // BufferGetNativeInterface
 		if ( fct )
-			return fct(cx, obj, &data);
+			return fct(cx, obj, data);
 
 		if ( JS_IsArrayBufferObject(obj) ) {
 
 			uint32_t length = JS_GetArrayBufferByteLength(obj);
 			if ( length )
-				data = JLData((const char*)JS_GetArrayBufferData(obj), false, length);
+				*data = JLData((const char*)JS_GetArrayBufferData(obj), false, length);
 			else
-				data = JLData::Empty();
+				*data = JLData::Empty();
 			return true;
 		}
 
@@ -2606,12 +2606,12 @@ getValue_slow( JSContext *cx, JS::HandleValue val, JLData &data ) {
 			if ( length ) {
 
 				if ( JS_GetArrayBufferViewType(obj) == js::ArrayBufferView::TYPE_UINT16 )
-					data = JLData((const jschar*)JS_GetUint16ArrayData(obj), false, length);
+					*data = JLData((const jschar*)JS_GetUint16ArrayData(obj), false, length);
 				else
-					data = JLData((const char*)JS_GetInt8ArrayData(obj), false, length);
+					*data = JLData((const char*)JS_GetInt8ArrayData(obj), false, length);
 			} else {
 
-				data = JLData::Empty();
+				*data = JLData::Empty();
 			}
 			return true;
 		}
@@ -2620,7 +2620,7 @@ getValue_slow( JSContext *cx, JS::HandleValue val, JLData &data ) {
 	// fallback
 	JS::RootedString jsstr(cx, JS::ToString(cx, val));
 	JL_CHKM( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
-	data = JLData(cx, jsstr);
+	*data = JLData(cx, jsstr);
 	return true;
 	JL_BAD;
 }
@@ -2870,6 +2870,7 @@ setValue(JSContext *cx, JS::MutableHandleValue rval, const WCStrSpec s) {
 	return true;
 }
 
+
 // since implicit constructors are not applied during template deduction, we have to force the char* to pv::StrSpec conversion here.
 ALWAYS_INLINE bool FASTCALL
 setValue(JSContext *cx, JS::MutableHandleValue rval, const char* s) {
@@ -2913,10 +2914,13 @@ setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::HandleString str)
 	return true;
 }
 
+// rooted IN : JS::Rooted& / JS::Rooted* / JS::MutableHandle / JS::Handle
+
+
 // since neither implicit constructors nor conversion operators are applied during template deduction, we have to force the JS::Rooted to JS::Handle conversion here.
 template <typename T>
 ALWAYS_INLINE bool FASTCALL
-setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::Rooted<T> &rv) {
+setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::Rooted<T>& rv) {
 
 	return setValue(cx, rval, JS::Handle<T>(rv));
 }
@@ -2924,22 +2928,24 @@ setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::Rooted<T> &rv) {
 // since neither implicit constructors nor conversion operators are applied during template deduction, we have to force the MutableHandle to JS::Handle conversion here.
 template <typename T>
 ALWAYS_INLINE bool FASTCALL
-setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::MutableHandle<T> &rv) {
+setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::MutableHandle<T> rv) {
 
 	return setValue(cx, rval, JS::Handle<T>(rv));
 }
 
 
+
 ////////
 
 
+
 ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT JLData &data ) {
+getValue( JSContext *cx, JS::HandleValue val, OUT JLData* data ) {
 
 	if ( val.isString() ) { // for string literals
 
 		JS::RootedString tmp(cx, val.toString());
-		data = JLData(cx, tmp);
+		*data = JLData(cx, tmp);
 		return true;
 	}
 	return pv::getValue_slow(cx, val, data);
@@ -2947,119 +2953,134 @@ getValue( JSContext *cx, JS::HandleValue val, OUT JLData &data ) {
 
 
 ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT bool &b ) {
+getValue( JSContext *cx, JS::HandleValue val, OUT bool *b ) {
 
-	b = val.toBoolean();
+	*b = val.toBoolean();
 	return true;
 }
 
 ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT int8_t &num ); // why not defined ???
+getValue( JSContext *cx, JS::HandleValue val, OUT int8_t *num ) {
+
+	return pv::getNumberValue(cx, val, num);
+}
+
 
 ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT uint8_t &num ) {
+getValue( JSContext *cx, JS::HandleValue val, OUT uint8_t *num ) {
 
 	return pv::getNumberValue(cx, val, num);
 }
 
 ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT int16_t &num ) {
+getValue( JSContext *cx, JS::HandleValue val, OUT int16_t *num ) {
 
 	return pv::getNumberValue(cx, val, num);
 }
 
 ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT uint16_t &num ) {
+getValue( JSContext *cx, JS::HandleValue val, OUT uint16_t *num ) {
 
 	return pv::getNumberValue(cx, val, num);
 }
 
 ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT int32_t &num ) {
+getValue( JSContext *cx, JS::HandleValue val, OUT int32_t *num ) {
 
 	return pv::getNumberValue(cx, val, num);
 }
 
 ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT uint32_t &num ) {
+getValue( JSContext *cx, JS::HandleValue val, OUT uint32_t *num ) {
 
 	return pv::getNumberValue(cx, val, num);
 }
 
 ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT int64_t &num ) {
+getValue( JSContext *cx, JS::HandleValue val, OUT int64_t *num ) {
 
 	return pv::getNumberValue(cx, val, num);
 }
 
 ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT uint64_t &num ) {
+getValue( JSContext *cx, JS::HandleValue val, OUT uint64_t *num ) {
 
 	return pv::getNumberValue(cx, val, num);
 }
 
 ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT long &num ) {
+getValue( JSContext *cx, JS::HandleValue val, OUT long *num ) {
 
 	return pv::getNumberValue(cx, val, num);
 }
 
 ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT unsigned long &num ) {
+getValue( JSContext *cx, JS::HandleValue val, OUT unsigned long *num ) {
 
 	return pv::getNumberValue(cx, val, num);
 }
 
 ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT float &num ) {
+getValue( JSContext *cx, JS::HandleValue val, OUT float *num ) {
 
 	return pv::getNumberValue(cx, val, num);
 }
 
 ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT double &num ) {
+getValue( JSContext *cx, JS::HandleValue val, OUT double *num ) {
 
 	return pv::getNumberValue(cx, val, num);
 }
 
 ALWAYS_INLINE bool FASTCALL
-getValue(JSContext *cx, JS::HandleValue val, OUT JS::MutableHandleValue rval) {
+getValue(JSContext *cx, JS::HandleValue val, OUT JS::RootedValue* rval) {
 
-	rval.set(val);
+	(*rval).set(val);
 	return true;
 }
 
+
 ALWAYS_INLINE bool FASTCALL
-getValue(JSContext *cx, JS::HandleValue val, OUT JS::MutableHandleObject obj) {
+getValue(JSContext *cx, JS::HandleValue val, OUT JS::MutableHandleValue* rval) {
+
+	(*rval).set(val);
+	return true;
+}
+
+
+ALWAYS_INLINE bool FASTCALL
+getValue(JSContext *cx, JS::HandleValue val, OUT JS::MutableHandleObject* obj) {
 
 	JL_ASSERT( val.isObject(), E_VALUE, E_TYPE, E_TY_OBJECT );
-	obj.set(&val.toObject());
+	(*obj).set(&val.toObject());
 	return true;
 	JL_BAD;
 }
 
 
+// rooted OUT: JS::Rooted& / JS::Rooted* / JS::MutableHandle
 
-// since neither implicit constructors nor conversion operators are applied during template deduction, we have to force the JS::Rooted to JS::Handle conversion here.
+
+// since neither implicit constructors nor conversion operators are applied during template deduction, we have to force the JS::Rooted* to JS::MutableHandle conversion here.
 template <typename T>
 ALWAYS_INLINE bool FASTCALL
-getValue(JSContext *cx, JS::HandleValue val, OUT JS::Rooted<T> *rv) {
+getValue(JSContext *cx, JS::HandleValue val, OUT JS::Rooted<T>* rval) {
 
-	return getValue(cx, val, JS::MutableHandle<T>(rv));
+	JS::MutableHandle<T> tmp(rval);
+	return getValue(cx, val, &tmp);
 }
 
-// since neither implicit constructors nor conversion operators are applied during template deduction, we have to force the MutableHandle to JS::Handle conversion here.
+// since neither implicit constructors nor conversion operators are applied during template deduction, we have to force the MutableHandle& to JS::MutableHandle conversion here.
 template <typename T>
 ALWAYS_INLINE bool FASTCALL
-getValue(JSContext *cx, JS::HandleValue val, OUT JS::MutableHandle<T> &rv) {
+getValue(JSContext *cx, JS::HandleValue val, OUT JS::MutableHandle<T> rval) {
 
-	return getValue(cx, val, JS::MutableHandle<T>(&rv));
+	return getValue(cx, val, rval);
 }
 
 
 
 ////////
-
 
 
 template <class T>
@@ -3087,7 +3108,7 @@ setElement( JSContext *cx, JS::HandleValue objArg, uint32_t index, const T &v ) 
 
 template <class T>
 ALWAYS_INLINE bool FASTCALL
-getElement( JSContext *cx, const JS::HandleObject &objArg, uint32_t index, T &v ) {
+getElement( JSContext *cx, const JS::HandleObject &objArg, uint32_t index, T* v ) {
 
 	JS::RootedValue value(cx);
 	JL_CHK( JS_ForwardGetElementTo(cx, objArg, index, objArg, &value) ); //JL_CHK( JS_GetElement(cx, objArg, index, &value) );
@@ -3097,26 +3118,17 @@ getElement( JSContext *cx, const JS::HandleObject &objArg, uint32_t index, T &v 
 
 template <class T>
 ALWAYS_INLINE bool FASTCALL
-getElement( JSContext *cx, const JS::HandleObject &objArg, uint32_t index, JS::Rooted<T> *v ) {
+getElement( JSContext *cx, const JS::HandleObject &objArg, uint32_t index, JS::MutableHandle<T> v ) {
 
-	JS::MutableHandle<T> mutableHandle(v);
-	return getElement(cx, objArg, index, mutableHandle);
+	return getElement(cx, objArg, index, &v);
 }
+
 
 //
 
 template <class T>
 ALWAYS_INLINE bool FASTCALL
-getElement( JSContext *cx, const JS::HandleValue &objArg, uint32_t index, T &v ) {
-
-	ASSERT( objArg.isObject() );
-	JS::RootedObject obj(cx, &objArg.toObject());
-	return getElement(cx, obj, index, v);
-}
-
-template <class T>
-ALWAYS_INLINE bool FASTCALL
-getElement( JSContext *cx, const JS::HandleValue &objArg, uint32_t index, JS::Rooted<T> *v ) {
+getElement( JSContext *cx, const JS::HandleValue &objArg, uint32_t index, T v ) {
 
 	ASSERT( objArg.isObject() );
 	JS::RootedObject obj(cx, &objArg.toObject());
@@ -3127,28 +3139,35 @@ getElement( JSContext *cx, const JS::HandleValue &objArg, uint32_t index, JS::Ro
 
 ////
 
-template <class T1>
+
+template <class T>
 ALWAYS_INLINE bool FASTCALL
-setSlot( JSContext *cx, JS::HandleObject obj, size_t slotIndex, const T1 &v1 ) {
+setSlot( JSContext *cx, JS::HandleObject obj, size_t slotIndex, const T &val ) {
 	
 	ASSERT( JS_IsNative(obj) );
-	JS::RootedValue v(cx);
-	JL_CHK( setValue(cx, &v, v1) );
+	JS::RootedValue tmp(cx);
+	JL_CHK( setValue(cx, &tmp, val) );
 	//return JL_SetReservedSlot(obj, slotIndex, v);
-	js::SetReservedSlot(obj, slotIndex, v); // jsfriendapi
+	js::SetReservedSlot(obj, slotIndex, tmp); // jsfriendapi
 	JL_BAD;
 }
 
-template <class T1>
+template <class T>
 ALWAYS_INLINE bool FASTCALL
-getSlot( JSContext *cx, JS::HandleObject obj, size_t slotIndex, T1 &v1 ) {
+getSlot( JSContext *cx, JS::HandleObject obj, size_t slotIndex, T* rval ) {
 
 	ASSERT( JS_IsNative(obj) );
 	//JS::RootedValue v(cx);
 	//JL_CHK( JL_GetReservedSlot(obj, slotIndex, v) );
-	JS::RootedValue v(cx, js::GetReservedSlot(obj, slotIndex)); // jsfriendapi
-	return setValue(cx, &v, v1);
+	JS::RootedValue tmp(cx, js::GetReservedSlot(obj, slotIndex)); // jsfriendapi
+	return getValue(cx, tmp, rval);
 	JL_BAD;
+}
+
+ALWAYS_INLINE bool FASTCALL
+getSlot( JSContext *cx, JS::HandleObject obj, size_t slotIndex, JS::MutableHandleValue v ) {
+
+	return getSlot(cx, obj, slotIndex, &v);
 }
 
 
@@ -3251,10 +3270,11 @@ setProperty( JSContext *cx, JS::HandleObject objArg, WCStrSpec name, JS::HandleV
 }
 
 
+
 // setProperty(cx, jsval, *, *)
 template <typename N, typename T>
 ALWAYS_INLINE bool FASTCALL
-setProperty( JSContext *cx, JS::HandleValue objArg, N name, const T &v ) {
+setProperty( JSContext *cx, JS::HandleValue objArg, N name, const T& v ) {
 
 	ASSERT( objArg.isObject() );
 	JS::RootedObject obj(cx, &objArg.toObject());
@@ -3267,7 +3287,7 @@ setProperty( JSContext *cx, JS::HandleValue objArg, N name, const T &v ) {
 
 template <typename T>
 ALWAYS_INLINE bool FASTCALL
-getProperty( JSContext *cx, JS::HandleObject objArg, CStrSpec name, T &v ) {
+getProperty( JSContext *cx, JS::HandleObject objArg, CStrSpec name, T* v ) {
 
 	JS::RootedValue value(cx);
 	JL_CHK( JS_GetProperty(cx, objArg, name.str(), &value) );
@@ -3278,7 +3298,7 @@ getProperty( JSContext *cx, JS::HandleObject objArg, CStrSpec name, T &v ) {
 
 template <typename T>
 ALWAYS_INLINE bool FASTCALL
-getProperty( JSContext *cx, JS::HandleObject objArg, WCStrSpec name, T &v ) {
+getProperty( JSContext *cx, JS::HandleObject objArg, WCStrSpec name, T* v ) {
 
 	JS::RootedValue value(cx);
 	JL_CHK( JS_GetUCProperty(cx, objArg, name.str(), name.len(), &value) );
@@ -3289,7 +3309,7 @@ getProperty( JSContext *cx, JS::HandleObject objArg, WCStrSpec name, T &v ) {
 
 template <typename T>
 ALWAYS_INLINE bool FASTCALL
-getProperty( JSContext *cx, JS::HandleObject objArg, JS::RootedId &nameId, T &v ) {
+getProperty( JSContext *cx, JS::HandleObject objArg, JS::HandleId nameId, T* v ) {
 
 	JS::RootedValue value(cx);
 	JL_CHK( JS_GetPropertyById(cx, objArg, nameId, &value) );
@@ -3298,34 +3318,21 @@ getProperty( JSContext *cx, JS::HandleObject objArg, JS::RootedId &nameId, T &v 
 	JL_BAD;
 }
 
-
+template <typename T>
 ALWAYS_INLINE bool FASTCALL
-getProperty( JSContext *cx, JS::HandleObject objArg, CStrSpec name, JS::MutableHandleValue rval ) {
+getProperty( JSContext *cx, JS::HandleObject objArg, JS::RootedId &nameId, T* v ) {
 
-	return JS_GetProperty(cx, objArg, name.str(), rval);
+	JS::HandleId name(nameId);
+	return getProperty(cx, objArg, name, v);
 }
 
-ALWAYS_INLINE bool FASTCALL
-getProperty( JSContext *cx, JS::HandleObject objArg, WCStrSpec name, JS::MutableHandleValue rval ) {
-
-	return JS_GetUCProperty(cx, objArg, name.str(), name.len(), rval);
-}
-
-ALWAYS_INLINE bool FASTCALL
-getProperty( JSContext *cx, JS::HandleObject objArg, JS::RootedId &nameId, JS::MutableHandleValue rval ) {
-
-	return JS_GetPropertyById(cx, objArg, nameId, rval);
-}
-
-
-// neither implicit constructors nor conversion operators are applied during template deduction.
 template <typename N, typename T>
 ALWAYS_INLINE bool FASTCALL
-getProperty( JSContext *cx, JS::HandleObject objArg, N &name, JS::Rooted<T> *v ) {
+getProperty( JSContext *cx, JS::HandleObject objArg, const N &name, JS::MutableHandle<T> v ) {
 
-	JS::MutableHandle<T> mutableHandle(v);
-	return getProperty(cx, objArg, name, mutableHandle);
+	return getProperty(cx, objArg, name, &v);
 }
+
 
 
 //
@@ -3334,7 +3341,7 @@ getProperty( JSContext *cx, JS::HandleObject objArg, N &name, JS::Rooted<T> *v )
 // setProperty(cx, jsval, *, *)
 template <typename NAME, typename T>
 ALWAYS_INLINE bool FASTCALL
-getProperty( JSContext *cx, JS::HandleValue objArg, NAME name, T &v ) {
+getProperty( JSContext *cx, JS::HandleValue objArg, NAME name, T v ) {
 
 	ASSERT( objArg.isObject() );
 	JS::RootedObject obj(cx, &objArg.toObject());
@@ -3451,8 +3458,10 @@ getVector( JSContext *cx, IN JS::HandleValue val, OUT T * vector, IN uint32_t ma
 
 	JL_CHK( JS_GetArrayLength(cx, arrayObj, &actualLength) );
 	maxLength = JL_MIN( actualLength, maxLength );
-	for ( unsigned i = 0; i < maxLength; ++i ) // while ( maxLength-- ) { // avoid reverse walk (L1 cache issue)
-		JL_CHK( getElement(cx, arrayObj, i, vector[i]) );
+	for ( unsigned i = 0; i < maxLength; ++i ) { // while ( maxLength-- ) { // avoid reverse walk (L1 cache issue)
+		
+		JL_CHK( getElement(cx, arrayObj, i, &vector[i]) );
+	}
 
 	}
 
@@ -3979,6 +3988,23 @@ JL_NativeToJsval( JSContext *cx, T nVal, JS::MutableHandleValue val ) {
 */
 
 
+template<class T>
+ALWAYS_INLINE bool FASTCALL
+JL_JsvalToNative( JSContext *cx, JS::HandleValue val, T* nativeValue ) {
+
+	return jl::getValue(cx, val, nativeValue);
+}
+
+template<class T>
+ALWAYS_INLINE bool FASTCALL
+JL_NativeToJsval( JSContext *cx, T nativeValue, JS::HandleValue val ) {
+
+	return jl::setValue(cx, val, nativeValue);
+}
+
+
+/*
+
 ALWAYS_INLINE bool FASTCALL
 JL_JsvalToNative( JSContext *cx, JS::HandleValue val, JLData *str ) {
 
@@ -4331,17 +4357,17 @@ JL_JsvalToNative( JSContext *cx, IN JS::HandleValue val, int32_t *num ) {
 
 S_ASSERT( UINT32_MAX >= JSVAL_INT_MAX );
 
-/*
-namespace jlpv {
-	INLINE NEVER_INLINE bool
-	NativeToJsval_slow( const uint32_t &num, JS::Value &vp ) {
 
-		ASSERT( double(num) <= MAX_INT_TO_DOUBLE );
-		vp = DOUBLE_TO_JSVAL(double(num));
-		return true;
-	}
-}
-*/
+//namespace jlpv {
+//	INLINE NEVER_INLINE bool
+//	NativeToJsval_slow( const uint32_t &num, JS::Value &vp ) {
+//
+//		ASSERT( double(num) <= MAX_INT_TO_DOUBLE );
+//		vp = DOUBLE_TO_JSVAL(double(num));
+//		return true;
+//	}
+//}
+
 
 
 ALWAYS_INLINE bool FASTCALL
@@ -4470,19 +4496,16 @@ JL_NativeToJsval( JSContext *cx, const uint64_t &num, OUT JS::MutableHandleValue
 	JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_STR("0", "2^53") );
 	JL_BAD;
 
-/*
-	UNLIKELY_SPLIT_BEGIN( JSContext *cx, const uint64_t &num, JS::Value &vp )
 
-	JL_SAFE_BEGIN
-	if (unlikely( num > MAX_INT_TO_DOUBLE ))
-		JL_REPORT_WARNING_NUM( JLSMSG_LOSS_OF_PRECISION);
-	JL_SAFE_END
-	vp = DOUBLE_TO_JSVAL(double(num));
-	return true;
-	JL_BAD;
-
-	UNLIKELY_SPLIT_END(cx, num, vp);
-*/
+	//UNLIKELY_SPLIT_BEGIN( JSContext *cx, const uint64_t &num, JS::Value &vp )
+	//JL_SAFE_BEGIN
+	//if (unlikely( num > MAX_INT_TO_DOUBLE ))
+	//	JL_REPORT_WARNING_NUM( JLSMSG_LOSS_OF_PRECISION);
+	//JL_SAFE_END
+	//vp = DOUBLE_TO_JSVAL(double(num));
+	//return true;
+	//JL_BAD;
+	//UNLIKELY_SPLIT_END(cx, num, vp);
 }
 
 
@@ -4556,91 +4579,91 @@ JL_JsvalToNative( JSContext *cx, IN JS::HandleValue val, unsigned long *num ) {
 }
 
 
-/*
-// size_t
 
-ALWAYS_INLINE bool JL_NativeToJsval( JSContext *, const size_t &num, JS::Value &vp ) {
+//// size_t
+//
+//ALWAYS_INLINE bool JL_NativeToJsval( JSContext *, const size_t &num, JS::Value &vp ) {
+//
+//	if (likely( num <= JSVAL_INT_MAX ))
+//		vp = INT_TO_JSVAL(int(num));
+//	else
+//		vp = DOUBLE_TO_JSVAL(double(num));
+//	return true;
+//}
+//
+//ALWAYS_INLINE bool JL_JsvalToNative( JSContext *cx, const JS::Value &val, size_t *num ) {
+//
+//	if (likely( JSVAL_IS_INT(val) )) {
+//
+//		int tmp = val.toInt32();
+//		if (unlikely( tmp < 0 ))
+//			JL_REPORT_ERROR_NUM( JLSMSG_VALUE_OUTOFRANGE, ...);
+//		*num = size_t(uint32_t(tmp));
+//		return true;
+//	}
+//
+//	double d;
+//	if (likely( JSVAL_IS_DOUBLE(val) ))
+//		d = JSVAL_TO_DOUBLE(val);
+//	else
+//		JL_CHK( JS::ToNumber(cx, val, &d) );
+//
+//	if (likely( d >= double(0) && d <= double(SIZE_T_MAX) )) { // cannot use jl::IsSafeCast(d, *i) because if d is not integer, the test fails.
+//
+//		JL_SAFE_BEGIN
+//		if ( !jl::IsSafeCast(d, *num) )
+//			JL_REPORT_WARNING_NUM( JLSMSG_LOSS_OF_PRECISION);
+//		JL_SAFE_END
+//
+//		*num = size_t(d);
+//		return true;
+//	}
+//
+//	JL_REPORT_ERROR_NUM( JLSMSG_VALUE_OUTOFRANGE, ...);
+//	JL_BAD;
+//}
+//
+//
+//// ptrdiff_t
+//
+//ALWAYS_INLINE bool JL_NativeToJsval( JSContext *, const ptrdiff_t &num, JS::Value &vp ) {
+//
+//	if (likely( num >= JSVAL_INT_MIN && size <= JSVAL_INT_MAX ))
+//		vp = INT_TO_JSVAL(int(num));
+//	else
+//		vp = DOUBLE_TO_JSVAL(double(num));
+//	return true;
+//}
+//
+//ALWAYS_INLINE bool JL_JsvalToNative( JSContext *cx, const JS::Value &val, ptrdiff_t *num ) {
+//
+//	if (likely( JSVAL_IS_INT(val) )) {
+//
+//		*num = ptrdiff_t(val.toInt32());
+//		return true;
+//	}
+//
+//	double d;
+//	if (likely( JSVAL_IS_DOUBLE(val) ))
+//		d = JSVAL_TO_DOUBLE(val);
+//	else
+//		JL_CHK( JS::ToNumber(cx, val, &d) );
+//
+//	if (likely( d >= double(PTRDIFF_MIN) && d <= double(PTRDIFF_MAX) )) {
+//
+//		JL_SAFE_BEGIN
+//		if ( !jl::IsSafeCast(d, *i) )
+//			JL_REPORT_WARNING_NUM( JLSMSG_LOSS_OF_PRECISION);
+//		JL_SAFE_END
+//
+//		*num = (ptrdiff_t)d;
+//		return true;
+//	}
+//
+//	JL_REPORT_ERROR_NUM( JLSMSG_VALUE_OUTOFRANGE, ...);
+//	JL_BAD;
+//}
 
-	if (likely( num <= JSVAL_INT_MAX ))
-		vp = INT_TO_JSVAL(int(num));
-	else
-		vp = DOUBLE_TO_JSVAL(double(num));
-	return true;
-}
-
-ALWAYS_INLINE bool JL_JsvalToNative( JSContext *cx, const JS::Value &val, size_t *num ) {
-
-	if (likely( JSVAL_IS_INT(val) )) {
-
-		int tmp = val.toInt32();
-		if (unlikely( tmp < 0 ))
-			JL_REPORT_ERROR_NUM( JLSMSG_VALUE_OUTOFRANGE, ...);
-		*num = size_t(uint32_t(tmp));
-		return true;
-	}
-
-	double d;
-	if (likely( JSVAL_IS_DOUBLE(val) ))
-		d = JSVAL_TO_DOUBLE(val);
-	else
-		JL_CHK( JS::ToNumber(cx, val, &d) );
-
-	if (likely( d >= double(0) && d <= double(SIZE_T_MAX) )) { // cannot use jl::IsSafeCast(d, *i) because if d is not integer, the test fails.
-
-		JL_SAFE_BEGIN
-		if ( !jl::IsSafeCast(d, *num) )
-			JL_REPORT_WARNING_NUM( JLSMSG_LOSS_OF_PRECISION);
-		JL_SAFE_END
-
-		*num = size_t(d);
-		return true;
-	}
-
-	JL_REPORT_ERROR_NUM( JLSMSG_VALUE_OUTOFRANGE, ...);
-	JL_BAD;
-}
-
-
-// ptrdiff_t
-
-ALWAYS_INLINE bool JL_NativeToJsval( JSContext *, const ptrdiff_t &num, JS::Value &vp ) {
-
-	if (likely( num >= JSVAL_INT_MIN && size <= JSVAL_INT_MAX ))
-		vp = INT_TO_JSVAL(int(num));
-	else
-		vp = DOUBLE_TO_JSVAL(double(num));
-	return true;
-}
-
-ALWAYS_INLINE bool JL_JsvalToNative( JSContext *cx, const JS::Value &val, ptrdiff_t *num ) {
-
-	if (likely( JSVAL_IS_INT(val) )) {
-
-		*num = ptrdiff_t(val.toInt32());
-		return true;
-	}
-
-	double d;
-	if (likely( JSVAL_IS_DOUBLE(val) ))
-		d = JSVAL_TO_DOUBLE(val);
-	else
-		JL_CHK( JS::ToNumber(cx, val, &d) );
-
-	if (likely( d >= double(PTRDIFF_MIN) && d <= double(PTRDIFF_MAX) )) {
-
-		JL_SAFE_BEGIN
-		if ( !jl::IsSafeCast(d, *i) )
-			JL_REPORT_WARNING_NUM( JLSMSG_LOSS_OF_PRECISION);
-		JL_SAFE_END
-
-		*num = (ptrdiff_t)d;
-		return true;
-	}
-
-	JL_REPORT_ERROR_NUM( JLSMSG_VALUE_OUTOFRANGE, ...);
-	JL_BAD;
-}
-*/
 
 
 
@@ -4822,7 +4845,7 @@ JL_JsvalToNative( JSContext *cx, IN JS::HandleValue val, void **ptr ) {
 	JL_BAD;
 }
 
-
+*/
 
 
 

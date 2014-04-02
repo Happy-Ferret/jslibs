@@ -98,8 +98,8 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_ASSERT_CONSTRUCTING();
+	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_ASSERT_ARGC_RANGE(0,1);
 
 	{
@@ -109,7 +109,7 @@ DEFINE_CONSTRUCTOR() {
 		char tempFileName[PATH_MAX];
 		bool st = JLTemporaryFilename(tempFileName);
 		JL_ASSERT( st, E_OS, E_INTERNAL );
-		JL_CHK( JL_NativeToJsval(cx, (const char *)tempFileName, &filename) );
+		JL_CHK( jl::setValue(cx, &filename, tempFileName) );
 	} else {
 		
 		filename.set(JL_ARG(1));
@@ -158,11 +158,11 @@ DEFINE_FUNCTION( open ) {
 
 		if ( JL_ARG(1).isNumber() ) {
 
-			JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &flags) );
+			JL_CHK( jl::getValue(cx, JL_ARG(1), &flags) );
 		} else {
 
 			JLData strFlags;
-			JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &strFlags) );
+			JL_CHK( jl::getValue(cx, JL_ARG(1), &strFlags) );
 			flags = FileOpenFlagsFromString(strFlags);
 		}
 	} else { // default
@@ -175,11 +175,11 @@ DEFINE_FUNCTION( open ) {
 
 		if ( JL_ARG(2).isNumber() ) {
 
-			JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &mode) );
+			JL_CHK( jl::getValue(cx, JL_ARG(2), &mode) );
 		} else {
 
 			JLData strMode;
-			JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &strMode) );
+			JL_CHK( jl::getValue(cx, JL_ARG(2), &strMode) );
 			mode = FileOpenModeFromString(strMode);
 		}
 	}
@@ -191,8 +191,8 @@ DEFINE_FUNCTION( open ) {
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
 //	const char *fileName;
-//	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) );
-	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &str) );
+//	JL_CHK( jl::getValue(cx, jsvalFileName, &fileName) );
+	JL_CHK( jl::getValue(cx, jsvalFileName, &str) );
 
 	PRFileDesc *fd;
 	fd = PR_OpenFile(str.GetConstStrZ(), flags, mode); // PR_OpenFile has the same prototype as PR_Open but implements the specified file mode where possible.
@@ -234,7 +234,7 @@ DEFINE_FUNCTION( seek ) {
 
 		JL_ASSERT_ARG_IS_INTEGER_NUMBER(1);
 		double doubleOffset;
-		JL_CHK( JL_JsvalToNative( cx, JL_ARG(1), &doubleOffset ) );
+		JL_CHK( jl::getValue( cx, JL_ARG(1), &doubleOffset ) );
 		offset = (PRInt64)doubleOffset;
 	} else
 		offset = 0; // default is arg is missing
@@ -282,7 +282,7 @@ DEFINE_FUNCTION( delete ) {
 
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
-	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &str) );
+	JL_CHK( jl::getValue(cx, jsvalFileName, &str) );
 	if ( PR_Delete(str.GetConstStrZ()) != PR_SUCCESS )
 		return ThrowIoError(cx);
 
@@ -309,7 +309,7 @@ DEFINE_FUNCTION( lock ) {
 	fd = (PRFileDesc *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	bool doLock;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &doLock) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &doLock) );
 	PRStatus st;
 	st = doLock ? PR_LockFile(fd) : PR_UnlockFile(fd);
 	if ( st != PR_SUCCESS )
@@ -341,12 +341,12 @@ DEFINE_FUNCTION( move ) {
 
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
-	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) ); // warning: GC on the returned buffer !
+	JL_CHK( jl::getValue(cx, jsvalFileName, &fileName) ); // warning: GC on the returned buffer !
 
 //	const char *destDirName;
 //	size_t destDirNameLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &destDirName, &destDirNameLength) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &destDirName) ); // warning: GC on the returned buffer !
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &destDirName) ); // warning: GC on the returned buffer !
 
 	const char *fileNameOnly;
 	fileNameOnly = strrchr(fileName, '/');
@@ -399,7 +399,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 	JL_ASSERT_IS_INTEGER_NUMBER(vp, "");
 	PRInt64 offset;
 	double doubleOffset;
-	JL_CHK( JL_JsvalToNative( cx, vp, &doubleOffset ) );
+	JL_CHK( jl::getValue( cx, vp, &doubleOffset ) );
 	offset = (PRInt64)doubleOffset;
 	PRInt64 ret;
 	ret = PR_Seek64( fd, offset, PR_SEEK_SET );
@@ -411,7 +411,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 
 DEFINE_PROPERTY_GETTER( position ) {
 
-	JL_IGNORE( id );
+	JL_DEFINE_PROP_ARGS;
 
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT( fd, E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_CLOSED );
@@ -422,7 +422,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 		return ThrowIoError(cx);
 //	JL_CHK( JL_NewNumberValue(cx, (double)ret, vp) );
 //	return true;
-	return JL_NativeToJsval(cx, ret, vp);
+	return jl::setValue(cx, JL_RVAL, ret);
 	JL_BAD;
 }
 
@@ -444,7 +444,7 @@ DEFINE_PROPERTY_GETTER( content ) {
 	JL_ASSERT( !JL_GetPrivate(JL_OBJ), E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) ); // (TBD) add somthing like J_SCHK instead
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
-	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) );
+	JL_CHK( jl::getValue(cx, jsvalFileName, &fileName) );
 
 /*
 	PRStatus status;
@@ -533,7 +533,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 	JL_CHK( JL_GetReservedSlot( obj, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 	JL_ASSERT( !JL_GetPrivate(obj), E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
-	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) );
+	JL_CHK( jl::getValue(cx, jsvalFileName, &fileName) );
 
 	if ( vp.isUndefined() ) {
 
@@ -554,7 +554,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 
-	JL_CHK( JL_JsvalToNative(cx, vp, &buf) );
+	JL_CHK( jl::getValue(cx, vp, &buf) );
 	PRInt32 bytesSent;
 
 	ASSERT( buf.Length() <= PR_INT32_MAX );
@@ -606,8 +606,8 @@ DEFINE_PROPERTY_SETTER( name ) {
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
 
-	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fromFileName) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, vp, &toFileName) ); // warning: GC on the returned buffer !
+	JL_CHK( jl::getValue(cx, jsvalFileName, &fromFileName) ); // warning: GC on the returned buffer !
+	JL_CHK( jl::getValue(cx, vp, &toFileName) ); // warning: GC on the returned buffer !
 	if ( PR_Rename(fromFileName, toFileName) != PR_SUCCESS ) // if status == PR_FILE_EXISTS_ERROR ...
 		return ThrowIoError(cx);
 	JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, vp) );
@@ -629,8 +629,8 @@ DEFINE_PROPERTY_GETTER( exist ) {
 	JS::RootedValue jsvalFileName(cx);
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
-	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) );
-	return JL_NativeToJsval(cx, PR_Access( fileName, PR_ACCESS_EXISTS ) == PR_SUCCESS, vp);
+	JL_CHK( jl::getValue(cx, jsvalFileName, &fileName) );
+	return jl::setValue(cx, JL_RVAL, PR_Access( fileName, PR_ACCESS_EXISTS ) == PR_SUCCESS);
 	JL_BAD;
 }
 
@@ -648,8 +648,8 @@ DEFINE_PROPERTY_GETTER( hasWriteAccess ) {
 	JS::RootedValue jsvalFileName(cx);
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
-	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) );
-	return JL_NativeToJsval(cx, PR_Access( fileName, PR_ACCESS_WRITE_OK ) == PR_SUCCESS, vp);
+	JL_CHK( jl::getValue(cx, jsvalFileName, &fileName) );
+	return jl::setValue(cx, JL_RVAL, PR_Access( fileName, PR_ACCESS_WRITE_OK ) == PR_SUCCESS);
 	JL_BAD;
 }
 
@@ -667,8 +667,8 @@ DEFINE_PROPERTY_GETTER( hasReadAccess ) {
 	JS::RootedValue jsvalFileName(cx);
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
-	JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) );
-	return JL_NativeToJsval(cx, PR_Access( fileName, PR_ACCESS_READ_OK ) == PR_SUCCESS, vp);
+	JL_CHK( jl::getValue(cx, jsvalFileName, &fileName) );
+	return jl::setValue(cx, JL_RVAL, PR_Access( fileName, PR_ACCESS_READ_OK ) == PR_SUCCESS);
 	JL_BAD;
 }
 
@@ -709,7 +709,7 @@ DEFINE_PROPERTY_GETTER( info ) {
 		JS::RootedValue jsvalFileName(cx);
 		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 		JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
-		JL_CHK( JL_JsvalToNative(cx, jsvalFileName, &fileName) );
+		JL_CHK( jl::getValue(cx, jsvalFileName, &fileName) );
 		status = PR_GetFileInfo( fileName, &fileInfo );
 	} else {
 
@@ -750,7 +750,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( id ) {
 
-	JL_IGNORE( id );
+	JL_DEFINE_PROP_ARGS;
 
 	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
@@ -763,7 +763,7 @@ DEFINE_PROPERTY_GETTER( id ) {
 	DWORD cbOut;
 	if ( !DeviceIoControl(fileHandle, FSCTL_CREATE_OR_GET_OBJECT_ID, NULL, 0, &buf, sizeof(buf), &cbOut, NULL) ) // WinBase.h
 		return JL_ThrowOSError(cx);
-	return JL_NativeToJsval(cx, (const char *)&buf.ObjectId, sizeof(buf.ObjectId), vp);
+	return jl::setValue(cx, JL_RVAL, jl::strSpec((const char *)&buf.ObjectId, sizeof(buf.ObjectId)));
 
 #elif defined XP_UNIX
 
@@ -775,7 +775,7 @@ DEFINE_PROPERTY_GETTER( id ) {
 	if ( fstat(fileHandle, &fileStat) == -1 )
 		return JL_ThrowOSError(cx);
 
-	return JL_NativeToJsval(cx, (const char *)&fileStat.st_ino, sizeof(fileStat.st_ino), vp);
+	return jl::setValue(cx, JL_RVAL, jl::strSpec( (const char *)&fileStat.st_ino, sizeof(fileStat.st_ino) ));
 
 #else
 

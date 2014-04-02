@@ -174,7 +174,7 @@ DEFINE_FUNCTION( poll ) {
 	if ( JL_ARG_ISDEF(2) && !JL_ValueIsPInfinity(cx, JL_ARG(2)) ) {
 
 		PRUint32 tmpint;
-		JL_CHKB( JL_JsvalToNative(cx, JL_ARG(2), &tmpint), bad1 );
+		JL_CHKB( jl::getValue(cx, JL_ARG(2), &tmpint), bad1 );
 		pr_timeout = PR_MillisecondsToInterval(tmpint);
 	} else {
 
@@ -242,7 +242,7 @@ DEFINE_FUNCTION( intervalNow ) {
 	JL_ASSERT_ARGC(0);
 
 	// (TBD) Check if it may wrap around in about 12 hours. Is it related to the data type ???
-	JL_CHK( JL_NativeToJsval(cx, PR_IntervalToMilliseconds( PR_IntervalNow() ), JL_RVAL) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, PR_IntervalToMilliseconds(PR_IntervalNow())) );
 	return true;
 	JL_BAD;
 }
@@ -258,7 +258,7 @@ DEFINE_FUNCTION( sleep ) {
 	PRUint32 timeout;
 	JL_DEFINE_ARGS;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &timeout) );
 	else
 		timeout = 0;
 	PR_Sleep( PR_MillisecondsToInterval(timeout) );
@@ -281,7 +281,7 @@ DEFINE_FUNCTION( getEnv ) {
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &name) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
 	char* value;
 	value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
 
@@ -290,7 +290,7 @@ DEFINE_FUNCTION( getEnv ) {
 		JL_RVAL.setUndefined();
 	} else {
 
-		JL_CHK( JL_NativeToJsval(cx, value, JL_RVAL) );
+		JL_CHK( jl::setValue(cx, JL_RVAL, value) );
 	}
 	return true;
 	JL_BAD;
@@ -313,8 +313,8 @@ doc:
 	JL_ASSERT_ARGC_MIN(1);
 
 	const char *name, *value;
-	JL_CHK( JL_JsvalToNative(cx, &JL_ARG(1), &name) );
-	JL_CHK( JL_JsvalToNative(cx, &JL_ARG(2), &value) );
+	JL_CHK( jl::getValue(cx, &JL_ARG(1), &name) );
+	JL_CHK( jl::getValue(cx, &JL_ARG(2), &value) );
 
 	PRStatus status = PR_SetEnv...
 
@@ -403,12 +403,12 @@ DEFINE_FUNCTION( waitSemaphore ) {
 	PRUintn mode;
 	mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &mode) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &mode) );
 
 //	const char *name;
 //	size_t nameLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &name, &nameLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &name) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
 
 	bool isCreation;
 	isCreation = true;
@@ -460,7 +460,7 @@ DEFINE_FUNCTION( postSemaphore ) {
 //	const char *name;
 //	size_t nameLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &name, &nameLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &name) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
 
 	PRSem *semaphore;
 	semaphore = PR_OpenSemaphore(name, 0, 0, 0);
@@ -523,7 +523,7 @@ DEFINE_FUNCTION( createProcess ) {
 			JL_CHK( JL_GetElement(cx, JSVAL_TO_OBJECT(JL_ARG(2)), propVal.toInt32(), &propVal )); // (TBD) optimize
 
 			const char *tmp;
-			JL_CHK( JL_JsvalToNative(cx, &propVal, &tmp) ); // warning: GC on the returned buffer !
+			JL_CHK( jl::getValue(cx, &propVal, &tmp) ); // warning: GC on the returned buffer !
 			processArgv[i+1] = tmp;
 		}
 		JS_DestroyIdArray( cx, idArray );
@@ -534,7 +534,7 @@ DEFINE_FUNCTION( createProcess ) {
 	}
 
 	const char *path;
-	JL_CHK( JL_JsvalToNative(cx, &JL_ARG(1), &path) );
+	JL_CHK( jl::getValue(cx, &JL_ARG(1), &path) );
 
 	processArgv[0] = path;
 	processArgv[processArgc] = NULL;
@@ -542,7 +542,7 @@ DEFINE_FUNCTION( createProcess ) {
 	bool waitEnd;
 	waitEnd = false;
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &waitEnd) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &waitEnd) );
 
 	PRFileDesc *stdout_child, *stdout_parent, *stdin_child, *stdin_parent;
 	JL_CHKB( PR_CreatePipe(&stdout_parent, &stdout_child) == PR_SUCCESS, bad_throw );
@@ -620,7 +620,7 @@ DEFINE_FUNCTION( availableSpace ) {
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
 	
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &path) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &path) );
 
 	double available;
 
@@ -712,25 +712,25 @@ DEFINE_FUNCTION( configureSerialPort ) {
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &baudRate) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &baudRate) );
 		dcb.BaudRate = baudRate;
 	}
 
 	if ( JL_ARG_ISDEF(3) ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &byteSize) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &byteSize) );
 		dcb.ByteSize = byteSize;
 	}
 
 	if ( JL_ARG_ISDEF(4) ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &parity) );
+		JL_CHK( jl::getValue(cx, JL_ARG(4), &parity) );
 		dcb.Parity = parity;
 	}
 
 	if ( JL_ARG_ISDEF(5) ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &stopBits) );
+		JL_CHK( jl::getValue(cx, JL_ARG(5), &stopBits) );
 		dcb.StopBits = stopBits;
 	}
 
@@ -779,7 +779,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( hostName ) {
 
-	JL_IGNORE( id, obj );
+	JL_DEFINE_PROP_ARGS;
 
 	char tmp[SYS_INFO_BUFFER_LENGTH];
 	// doc:
@@ -789,7 +789,7 @@ DEFINE_PROPERTY_GETTER( hostName ) {
 	PRStatus status = PR_GetSystemInfo( PR_SI_HOSTNAME_UNTRUNCATED, tmp, sizeof(tmp) );
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
-	JL_CHK( JL_NativeToJsval(cx, tmp, vp) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, tmp) );
 	return true;
 	JL_BAD;
 }
@@ -802,11 +802,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( architecture ) {
 
-	JL_IGNORE( id, obj );
+	JL_DEFINE_PROP_ARGS;
+
 	char tmp[SYS_INFO_BUFFER_LENGTH];
 	if ( PR_GetSystemInfo( PR_SI_ARCHITECTURE, tmp, sizeof(tmp) ) != PR_SUCCESS )
 		return ThrowIoError(cx);
-	JL_CHK( JL_NativeToJsval(cx, tmp, vp) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, tmp) );
 	return true;
 	JL_BAD;
 }
@@ -818,11 +819,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( systemName ) {
 
-	JL_IGNORE( id, obj );
+	JL_DEFINE_PROP_ARGS;
+
 	char tmp[SYS_INFO_BUFFER_LENGTH];
 	if ( PR_GetSystemInfo( PR_SI_SYSNAME, tmp, sizeof(tmp) ) != PR_SUCCESS )
 		return ThrowIoError(cx);
-	JL_CHK( JL_NativeToJsval(cx, tmp, vp) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, tmp) );
 	return true;
 	JL_BAD;
 }
@@ -834,11 +836,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( systemRelease ) {
 
-	JL_IGNORE( id, obj );
+	JL_DEFINE_PROP_ARGS;
+
 	char tmp[SYS_INFO_BUFFER_LENGTH];
 	if ( PR_GetSystemInfo( PR_SI_RELEASE, tmp, sizeof(tmp) ) != PR_SUCCESS )
 		return ThrowIoError(cx);
-	JL_CHK( JL_NativeToJsval(cx, tmp, vp) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, tmp) );
 	return true;
 	JL_BAD;
 }
@@ -851,14 +854,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( numberOfProcessors ) {
 
-	JL_IGNORE( id, obj );
+	JL_DEFINE_PROP_ARGS;
+
 	PRInt32 count = PR_GetNumberOfProcessors();
 	if ( count < 0 ) {
 
 		JL_WARN( E_FUNC, E_NOTIMPLEMENTED );
 		count = 1;
 	}
-	JL_CHK( JL_NativeToJsval(cx, count, vp) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, count) );
 	//	JL_CHK( jl::StoreProperty(cx, obj, id, vp, true) ); // may change ??
 	return true;
 	JL_BAD;
@@ -872,8 +876,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( physicalMemorySize ) {
 
-	JL_IGNORE( id, obj );
-	JL_CHK( JL_NativeToJsval(cx, (double)PR_GetPhysicalMemorySize(), vp) );
+	JL_DEFINE_PROP_ARGS;
+
+	JL_CHK( jl::setValue(cx, JL_RVAL, PR_GetPhysicalMemorySize()) );
 	return true;
 	JL_BAD;
 }
@@ -892,7 +897,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( processPriority ) {
 
-	JL_IGNORE( id, obj, cx );
+	JL_DEFINE_PROP_ARGS;
 
 	PRThreadPriority priority = PR_GetThreadPriority(PR_GetCurrentThread());
 	int priorityValue;
@@ -920,10 +925,10 @@ DEFINE_PROPERTY_GETTER( processPriority ) {
 
 DEFINE_PROPERTY_SETTER( processPriority ) {
 
-	JL_IGNORE( strict, id, obj );
+	JL_DEFINE_PROP_ARGS;
 
 	int priorityValue;
-	JL_CHK( JL_JsvalToNative(cx, vp, &priorityValue) );
+	JL_CHK( jl::getValue(cx, vp, &priorityValue) );
 	PRThreadPriority priority;
 	switch ( priorityValue ) {
 		case -1:
@@ -961,7 +966,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( currentDirectory ) {
 
-	JL_IGNORE( id, obj );
+	JL_DEFINE_PROP_ARGS;
 
 	char buf[PATH_MAX];
 #ifdef XP_WIN
@@ -979,10 +984,10 @@ DEFINE_PROPERTY_GETTER( currentDirectory ) {
 
 DEFINE_PROPERTY_SETTER( currentDirectory ) {
 
-	JL_IGNORE( id, obj, strict );
+	JL_DEFINE_PROP_ARGS;
 
 	JLData dir;
-	JL_CHK( JL_JsvalToNative(cx, vp, &dir ) );
+	JL_CHK( jl::getValue(cx, vp, &dir ) );
 #ifdef XP_WIN
 //	_chdir(dir);
 	::SetCurrentDirectory(dir);
@@ -1005,8 +1010,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( directorySeparator ) {
 
+	JL_DEFINE_PROP_ARGS;
+
 	char tmp = PR_GetDirectorySeparator();
-	JL_CHK( JL_NativeToJsval(cx, &tmp, 1, vp) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, jl::strSpec(&tmp, 1)) );
 	JL_CHK( jl::StoreProperty(cx, obj, id, vp, true) );
 	return true;
 	JL_BAD;
@@ -1023,8 +1030,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( pathSeparator ) {
 
-	char tmp = PR_GetPathSeparator();
-	JL_CHK( JL_NativeToJsval(cx, &tmp, 1, vp) );
+	JL_DEFINE_PROP_ARGS;
+
+	const char tmp = PR_GetPathSeparator();
+	JL_CHK( jl::setValue(cx, JL_RVAL, jl::strSpec(&tmp, 1)) );
 	JL_CHK( jl::StoreProperty(cx, obj, id, vp, true) );
 	return true;
 	JL_BAD;
@@ -1037,7 +1046,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( version ) {
 
-	JL_CHK( JL_NativeToJsval(cx, PR_VERSION, vp) );
+	JL_DEFINE_PROP_ARGS;
+
+	JL_CHK( jl::setValue(cx, JL_RVAL, PR_VERSION) );
 	JL_CHK( jl::StoreProperty(cx, obj, id, vp, true) );
 	return true;
 	JL_BAD;

@@ -95,7 +95,7 @@ DEFINE_CONSTRUCTOR() {
 	// Doc. The offset must be aligned to whole pages. !!!
 	PROffset64 offset;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &offset) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &offset) );
 	else
 		offset = 0;
 
@@ -165,18 +165,18 @@ DEFINE_PROPERTY_SETTER( offset ) {
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_CHK( JL_JsvalToNative(cx, vp, &pv->offset) );
+	JL_CHK( jl::getValue(cx, vp, &pv->offset) );
 	return true;
 	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( offset ) {
 
-	JL_IGNORE( id );
+	JL_DEFINE_PROP_ARGS;
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_CHK( JL_NativeToJsval(cx, pv->offset, vp) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, pv->offset) );
 	return true;
 	JL_BAD;
 }

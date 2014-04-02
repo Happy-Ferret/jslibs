@@ -54,7 +54,7 @@ DEFINE_CONSTRUCTOR() {
 
 	int descType;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &descType) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &descType) );
 	else
 		descType = PR_DESC_SOCKET_TCP; // default
 
@@ -168,7 +168,7 @@ DEFINE_FUNCTION( bind ) {
 	PRUint16 port;
 	if ( JL_ARG_ISDEF(1) ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &port) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &port) );
 	} else {
 
 		port = 0; // doc. If you do not care about the TCP/UDP port assigned to the socket, set the inet.port field of PRNetAddr to 0.
@@ -177,7 +177,7 @@ DEFINE_FUNCTION( bind ) {
 	if ( JL_ARG_ISDEF(2) ) { // if we have a second argument and this argument is not undefined
 
 		JLData host;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &host) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &host) );
 
 		if ( PR_StringToNetAddr(host, &addr) != PR_SUCCESS )
 			return ThrowIoError(cx);
@@ -235,7 +235,7 @@ DEFINE_FUNCTION( listen ) {
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	PRIntn backlog;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &backlog) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &backlog) );
 	else
 		backlog = 8; // too low ??
 
@@ -271,7 +271,7 @@ DEFINE_FUNCTION( accept ) {
 	if ( JL_ARG_ISDEF(1) ) {
 
 		PRUint32 timeoutInMilliseconds;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeoutInMilliseconds) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &timeoutInMilliseconds) );
 		timeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else {
 
@@ -339,10 +339,10 @@ DEFINE_FUNCTION( connect ) {
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
 	PRUint16 port;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &port) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &port) );
 
 //	const char *host;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &host) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &host) );
 
 	PRNetAddr addr;
 
@@ -419,10 +419,10 @@ DEFINE_FUNCTION( sendTo ) {
 	}
 
 	PRUint16 port;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &port) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &port) );
 
 //	const char *host;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &host) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &host) );
 
 	PRNetAddr addr;
 
@@ -448,7 +448,7 @@ DEFINE_FUNCTION( sendTo ) {
 //	const char *str;
 //	size_t len;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(3), &str, &len) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &str) );
+	JL_CHK( jl::getValue(cx, JL_ARG(3), &str) );
 	ASSERT( str.Length() <= PR_INT32_MAX );
 
 	PRInt32 res;
@@ -547,13 +547,13 @@ DEFINE_FUNCTION( recvFrom ) {
 
 	JL_CHKB( PR_NetAddrToString(&addr, peerName, sizeof(peerName)) == PR_SUCCESS, bad_ex ); // Converts a character string to a network address.
 
-	JL_CHK( JL_NativeToJsval(cx, peerName, &tmp) );
+	JL_CHK( jl::setValue(cx, &tmp, peerName) );
 	JL_CHK( JL_SetElement(cx, arrayObject, 1, tmp) );
 
 	PRUint16 port;
 	port = PR_NetAddrInetPort(&addr);
 
-	JL_CHK( JL_NativeToJsval(cx, port, &tmp) );
+	JL_CHK( jl::setValue(cx, &tmp, port) );
 	JL_CHK( JL_SetElement(cx, arrayObject, 2, tmp) );
 
 	if (likely( res > 0 )) {
@@ -626,7 +626,7 @@ DEFINE_FUNCTION( transmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	if ( JL_ARG_ISDEF(2) ) {
 
 		bool closeAfterTransmit;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &closeAfterTransmit) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &closeAfterTransmit) );
 		if ( closeAfterTransmit )
 			flag = PR_TRANSMITFILE_CLOSE_SOCKET;
 	}
@@ -637,7 +637,7 @@ DEFINE_FUNCTION( transmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	if ( JL_ARG_ISDEF(4) ) {
 
 		PRUint32 timeoutInMilliseconds;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &timeoutInMilliseconds) );
+		JL_CHK( jl::getValue(cx, JL_ARG(4), &timeoutInMilliseconds) );
 		connectTimeout = PR_MillisecondsToInterval(timeoutInMilliseconds);
 	} else
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
@@ -649,7 +649,7 @@ DEFINE_FUNCTION( transmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 	if ( JL_ARG_ISDEF(3) ) {
 
 //		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(3), &headers, &headerLength) );
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &headers) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &headers) );
 		ASSERT( headers.Length() <= PR_INT32_MAX );
 	}
 
@@ -662,7 +662,7 @@ DEFINE_FUNCTION( transmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 		return ThrowIoError(cx);
 
 	//JL_CHK( JL_NewNumberValue(cx, bytes, JL_RVAL) );
-	JL_CHK( JL_NativeToJsval(cx, bytes, JL_RVAL) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, bytes) );
 
 	return true;
 	JL_BAD;
@@ -835,7 +835,7 @@ DEFINE_PROPERTY_SETTER( Option ) {
 	switch ( sod.option ) {
 		case PR_SockOpt_Linger: { // http://developer.mozilla.org/en/docs/PRLinger
 				PRUint32 timeout;
-				JL_CHK( JL_JsvalToNative(cx, vp, &timeout) );
+				JL_CHK( jl::getValue(cx, vp, &timeout) );
 				if ( timeout > 0 ) {
 
 					sod.value.linger.polarity = PR_TRUE;
@@ -901,6 +901,8 @@ DEFINE_PROPERTY_SETTER( Option ) {
 
 DEFINE_PROPERTY_GETTER( Option ) {
 
+	JL_DEFINE_PROP_ARGS;
+
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
@@ -911,7 +913,7 @@ DEFINE_PROPERTY_GETTER( Option ) {
 	switch ( sod.option ) {
 		case PR_SockOpt_Linger:
 			if ( sod.value.linger.polarity == PR_TRUE )
-				JL_CHK( JL_NativeToJsval( cx, PR_IntervalToMilliseconds(sod.value.linger.linger), vp ) );
+				JL_CHK( jl::setValue(cx, JL_RVAL, PR_IntervalToMilliseconds(sod.value.linger.linger)) );
 			else
 				vp.setInt32(0);
 			break;
@@ -925,13 +927,13 @@ DEFINE_PROPERTY_GETTER( Option ) {
 			vp.setBoolean( sod.value.keep_alive == PR_TRUE );
 			break;
 		case PR_SockOpt_RecvBufferSize:
-			JL_CHK( JL_NativeToJsval(cx, sod.value.recv_buffer_size, vp) );
+			JL_CHK( jl::setValue(cx, JL_RVAL, sod.value.recv_buffer_size) );
 			break;
 		case PR_SockOpt_SendBufferSize:
-			JL_CHK( JL_NativeToJsval(cx, sod.value.send_buffer_size, vp) );
+			JL_CHK( jl::setValue(cx, JL_RVAL, sod.value.send_buffer_size) );
 			break;
 		case PR_SockOpt_MaxSegment:
-			JL_CHK( JL_NativeToJsval(cx, sod.value.max_segment, vp) );
+			JL_CHK( jl::setValue(cx, JL_RVAL, sod.value.max_segment) );
 			break;
 		case PR_SockOpt_Nonblocking:
 			vp.setBoolean( sod.value.non_blocking == PR_TRUE );
@@ -1091,7 +1093,7 @@ DEFINE_FUNCTION( getHostsByName ) {
 	JL_CHK( addrJsObj );
 	JL_RVAL.setObject(*addrJsObj);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &host) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &host) );
 
 	if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS ) {
 
@@ -1114,10 +1116,11 @@ DEFINE_FUNCTION( getHostsByName ) {
 		JL_CHKB( hostIndex != -1, bad_throw );
 		JL_CHKB( PR_NetAddrToString(&addr, addrStr, sizeof(addrStr)) == PR_SUCCESS, bad_throw ); // memory leak
 
-		JL_CHK( JL_NativeToJsval(cx, addrStr, &tmp) );
+		JL_CHK( jl::setValue(cx, &tmp, addrStr) );
 		//JL_CHK( JS_DefineElement(cx, addrJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
 		JL_CHK( JL_SetElement(cx, addrJsObj, index++, tmp) );
 	}
+
 	}
 	return true;
 
@@ -1156,7 +1159,7 @@ DEFINE_FUNCTION( getHostsByAddr ) {
 	JL_ASSERT_ARGC( 1 );
 
 	//const char *addr; // MAX_IP_STRING_LENGTH
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &addr) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &addr) );
 
 	PRNetAddr netaddr;
 	if ( PR_StringToNetAddr(addr, &netaddr) != PR_SUCCESS )
@@ -1176,7 +1179,7 @@ DEFINE_FUNCTION( getHostsByAddr ) {
 	int index;
 	index = 0;
 
-	JL_CHK( JL_NativeToJsval(cx, hostent.h_name, &tmp) );
+	JL_CHK( jl::setValue(cx, &tmp, hostent.h_name) );
 	//JL_CHK( JS_DefineElement(cx, hostJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
 	JL_CHK( JL_SetElement(cx, hostJsObj, index++, tmp) );
 	
@@ -1185,7 +1188,7 @@ DEFINE_FUNCTION( getHostsByAddr ) {
 
 	for ( int i = 0; hostent.h_aliases[i]; ++i ) {
 
-		JL_CHK( JL_NativeToJsval(cx, hostent.h_aliases[i], &tmp) );
+		JL_CHK( jl::setValue(cx, &tmp, hostent.h_aliases[i]) );
 		//JL_CHK( JS_DefineElement(cx, hostJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
 		JL_CHK( JL_SetElement(cx, hostJsObj, index++, tmp) );
 	}

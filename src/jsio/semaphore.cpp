@@ -62,23 +62,23 @@ DEFINE_CONSTRUCTOR() {
 	JLData name;
 
 	JL_DEFINE_ARGS;
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_ASSERT_ARGC_MIN( 1 );
-	JL_ASSERT_CONSTRUCTING();
 
 	PRUintn count;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &count) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &count) );
 	else
 		count = 0;
 
 	PRUintn mode;
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &mode) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &mode) );
 	else
 		mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &name) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
 	JL_ASSERT( name.Length() < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
 
 	pv = (ClassPrivate*)JS_malloc(cx, sizeof(ClassPrivate));
@@ -176,7 +176,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 	ClassPrivate *pv;
 	pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_CHK( JL_NativeToJsval(cx, pv->name, JL_RVAL) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, pv->name) );
 	return true;
 	JL_BAD;
 }

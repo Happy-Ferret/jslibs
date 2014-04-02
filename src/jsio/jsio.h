@@ -50,7 +50,7 @@ GetTimeoutInterval(JSContext *cx, JS::HandleObject obj, PRIntervalTime *timeout,
 		*timeout = defaultTimeout;
 	} else {
 	
-		JL_CHK( JL_JsvalToNative(cx, timeoutValue, timeout) );
+		JL_CHK( jl::getValue(cx, timeoutValue, timeout) );
 	}
 	return true;
 	JL_BAD;

@@ -191,7 +191,7 @@ EndSignalGetter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, J
 
 	JL_IGNORE(id, obj);
 
-	JL_CHK( JL_NativeToJsval(cx, (int32_t)gEndSignalState, vp) );
+	JL_CHK( jl::setValue(cx, vp, gEndSignalState) );
 	return true;
 	JL_BAD;
 }
@@ -202,7 +202,7 @@ EndSignalSetter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, b
 	JL_IGNORE(strict, id, obj);
 
 	int tmp;
-	JL_CHK( JL_JsvalToNative(cx, vp, &tmp) );
+	JL_CHK( jl::getValue(cx, vp, &tmp) );
 
 	JLMutexAcquire(gEndSignalLock);
 	gEndSignalState = tmp;
@@ -558,7 +558,7 @@ int main(int argc, char* argv[]) {
 
 		if ( executeStatus == true ) {
 
-			if ( JSVAL_IS_INT(rval) && rval.toInt32() >= 0 ) // (TBD) enhance this, use JL_JsvalToNative() ?
+			if ( rval.isInt32() && rval.toInt32() >= 0 ) // (TBD) enhance this, use jl::getValue() ?
 				exitValue = rval.toInt32();
 			else
 				exitValue = EXIT_SUCCESS;
@@ -602,7 +602,7 @@ int main(int argc, char* argv[]) {
 	struct Tmp {
 		static bool dbgAllocGetter(JSContext *cx, JSObject *, jsid, jsval *vp) {
 
-			return JL_NativeToJsval(cx, (int32_t)allocAmount, vp);
+			return jl::setValue(cx, vp, allocAmount);
 		}
 	};
 	JL_CHK( JS_DefineProperty(cx, hostObj, "dbgAlloc", JSVAL_VOID, Tmp::dbgAllocGetter, NULL, JSPROP_SHARED) );

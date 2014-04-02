@@ -415,18 +415,15 @@ DEFINE_PROPERTY_GETTER( list ) {
 	for ( i=0; hash_is_valid(i) == CRYPT_OK; i++ ) {
 
 		JS::RootedObject desc(cx, JL_NewObj(cx));
-		value = OBJECT_TO_JSVAL(desc);
-		JS_SetProperty( cx, list, hash_descriptor[i].name, value );
-
-		value = INT_TO_JSVAL( hash_descriptor[i].hashsize );
-		JS_SetProperty( cx, desc, "hashSize", value );
-		value = INT_TO_JSVAL( hash_descriptor[i].blocksize );
-		JS_SetProperty( cx, desc, "blockSize", value );
+		JL_CHK( jl::setProperty(cx, list, hash_descriptor[i].name, desc) );
+		JL_CHK( jl::setProperty(cx, desc, "hashSize", hash_descriptor[i].hashsize) );
+		JL_CHK( jl::setProperty(cx, desc, "blockSize", hash_descriptor[i].blocksize) );
 	}
 	LTC_MUTEX_UNLOCK(&ltc_hash_mutex);
 
 	JL_RVAL.setObject(*list);
 	return jl::StoreProperty(cx, obj, id, vp, true); // create the list and store it once for all.
+	JL_BAD;
 }
 
 

@@ -773,7 +773,7 @@ DEFINE_PROPERTY_GETTER( unsafeMode ) {
 
 	JL_IGNORE( id, obj );
 
-	JL_CHK( JL_NativeToJsval(cx, Host::getHost(cx).unsafeMode(), vp) );
+	JL_CHK( jl::setValue(cx, vp, Host::getHost(cx).unsafeMode()) );
 	return true;
 	JL_BAD;
 }
@@ -786,7 +786,7 @@ DEFINE_PROPERTY_GETTER( jsVersion ) {
 
 	JL_IGNORE( id, obj );
 
-	JL_CHK( JL_NativeToJsval(cx, JS_GetVersion(cx), vp) ); // btw, see JS_GetImplementationVersion()
+	JL_CHK( jl::setValue(cx, vp, JS_GetVersion(cx)) ); // btw, see JS_GetImplementationVersion()
 	return true;
 	JL_BAD;
 }
@@ -801,7 +801,7 @@ DEFINE_PROPERTY_GETTER( incrementalGarbageCollector ) {
 	JL_IGNORE( id, obj );
 
 	uint32_t gcMode = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_MODE);
-	JL_CHK( JL_NativeToJsval(cx, gcMode == JSGC_MODE_INCREMENTAL, vp) ); // JSGC_MODE_GLOBAL
+	JL_CHK( jl::setValue(cx, vp, gcMode == JSGC_MODE_INCREMENTAL) ); // JSGC_MODE_GLOBAL
 	return true;
 	JL_BAD;
 }
@@ -811,7 +811,7 @@ DEFINE_PROPERTY_SETTER( incrementalGarbageCollector ) {
 	JL_IGNORE( strict, id, obj );
 
 	bool incGc;
-	JL_CHK( JL_JsvalToNative(cx, vp, &incGc) );
+	JL_CHK( jl::getValue(cx, vp, &incGc) );
 	JS_SetGCParameter(JL_GetRuntime(cx), JSGC_MODE, incGc ? JSGC_MODE_INCREMENTAL : JSGC_MODE_GLOBAL);
 	return true;
 	JL_BAD;
@@ -830,7 +830,7 @@ DEFINE_FUNCTION( stdout ) {
 	Host &host(Host::getHost(cx));
 	for ( unsigned i = 0; i < argc; ++i ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(i+1), &str) );
+		JL_CHK( jl::getValue(cx, JL_ARG(i+1), &str) );
 		int status = host.stdIO().output(str.GetConstStr(), str.Length());
 		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdout"), E_WRITE );
 	}
@@ -851,7 +851,7 @@ DEFINE_FUNCTION( stderr ) {
 	Host &host(Host::getHost(cx));
 	for ( unsigned i = 0; i < argc; ++i ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(i+1), &str) );
+		JL_CHK( jl::getValue(cx, JL_ARG(i+1), &str) );
 		int status = host.stdIO().error(str.GetConstStr(), str.Length());
 		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stderr"), E_WRITE );
 	}
@@ -899,7 +899,7 @@ DEFINE_FUNCTION( loadModule ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(1);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 
 	char libFileName[PATH_MAX];
 	strncpy( libFileName, str.GetConstStr(), str.Length() );
@@ -916,7 +916,7 @@ DEFINE_FUNCTION( loadModule ) {
 				obj = JSVAL_TO_OBJECT(JL_ARG(2));
 			} else {
 				const char *ns;
-				JL_CHK( JL_JsvalToNative(cx, &JL_ARG(2), &ns) );
+				JL_CHK( jl::getValue(cx, &JL_ARG(2), &ns) );
 
 				jsval existingNsVal;
 				JL_CHK( JS_GetProperty(cx, obj, ns, &existingNsVal) );

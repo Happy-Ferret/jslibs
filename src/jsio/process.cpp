@@ -69,7 +69,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT( !JL_ARG_ISDEF(2) || jl::isArrayLike(cx, JL_ARG(2)), E_ARG, E_NUM(2), E_TYPE, E_TY_ARRAY );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &path) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &path) );
 
 	uint32_t processArgc;
 	const char **processArgv;
@@ -86,7 +86,7 @@ DEFINE_CONSTRUCTOR() {
 
 			JLData tmp;
 			JL_CHK( JL_GetElement(cx, argObj, i -1, &propVal) ); // -1 because 0 is reserved to argv[0]
-			JL_CHK( JL_JsvalToNative(cx, propVal, &tmp) ); // warning: GC on the returned buffer !
+			JL_CHK( jl::getValue(cx, propVal, &tmp) ); // warning: GC on the returned buffer !
 			processArgv[i] = tmp.GetStrZOwnership();
 		}
 	} else {
@@ -100,11 +100,11 @@ DEFINE_CONSTRUCTOR() {
 	processArgv[processArgc] = NULL;
 
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &currentDir) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &currentDir) );
 
 	bool stdioRedirect;
 	if ( JL_ARG_ISDEF(4) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &stdioRedirect) );
+		JL_CHK( jl::getValue(cx, JL_ARG(4), &stdioRedirect) );
 	else
 		stdioRedirect = true;
 
@@ -221,8 +221,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( wait ) {
 
-	JL_IGNORE( argc );
-
 	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
@@ -233,7 +231,7 @@ DEFINE_FUNCTION( wait ) {
 	PRInt32 exitValue;
 	JL_CHK( PR_WaitProcess(process, &exitValue) == PR_SUCCESS );
 	JL_SetPrivate(JL_OBJ, NULL);
-	JL_CHK( JL_NativeToJsval(cx, exitValue, JL_RVAL) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, exitValue) );
 	return true;
 	JL_BAD;
 }

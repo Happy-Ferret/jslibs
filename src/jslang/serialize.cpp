@@ -149,7 +149,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_STRING(1);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 	unser = new jl::Unserializer(cx, str.GetStrZOwnership(), str.Length(), OBJECT_TO_JSVAL(JL_OBJ));
 	JL_ASSERT_ALLOC(unser);
 	jl::SourceId_t srcId;

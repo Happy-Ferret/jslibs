@@ -124,13 +124,13 @@ DEFINE_FUNCTION( _serialize ) {
 	jl::Serializer *ser;
 	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
 
-	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, fileName), JL_RVAL) );
+	JL_CHK( jl::getProperty(cx, JL_OBJ, JLID(cx, fileName), JL_RVAL) );
 	JL_CHK( ser->Write(cx, JL_RVAL) );
-	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, lineNumber), JL_RVAL) );
+	JL_CHK( jl::getProperty(cx, JL_OBJ, JLID(cx, lineNumber), JL_RVAL) );
 	JL_CHK( ser->Write(cx, JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_HI, JL_RVAL) );
+	JL_CHK( jl::getSlot( cx, JL_OBJ, SLOT_WIN_ERROR_CODE_HI, JL_RVAL) );
 	JL_CHK( ser->Write(cx, JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_WIN_ERROR_CODE_LO, JL_RVAL) );
+	JL_CHK( jl::getSlot( cx, JL_OBJ, SLOT_WIN_ERROR_CODE_LO, JL_RVAL) );
 	JL_CHK( ser->Write(cx, JL_RVAL) );
 
 	return true;

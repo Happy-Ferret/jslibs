@@ -307,13 +307,13 @@ DEFINE_PROPERTY_GETTER( list ) {
 	LTC_MUTEX_LOCK(&ltc_prng_mutex);
 	for ( i=0; prng_is_valid(i) == CRYPT_OK; i++ ) {
 
-		value = JSVAL_ONE;
-		JS_SetProperty( cx, listObj, prng_descriptor[i].name, value );
+		JL_CHK( jl::setProperty(cx, listObj, prng_descriptor[i].name, 1) );
 	}
 	LTC_MUTEX_UNLOCK(&ltc_prng_mutex);
 
 	JL_RVAL.setObject(*listObj);
 	return jl::StoreProperty(cx, obj, id, vp, true); // create the list and store it once for all.
+	JL_BAD;
 }
 
 

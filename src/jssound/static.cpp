@@ -203,8 +203,7 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 		case SEEK_SET:
 			if ( offset < 0 )
 				return -1;
-			JL_NativeToJsval(pv->cx, offset, tmpVal); // (TBD) manage error
-			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
+			JL_CHK( jl::setProperty(pv->cx, pv->obj, "position", offset) ); // (TBD) manage error
 			return 0;
 
 		case SEEK_CUR:
@@ -214,8 +213,7 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 			JL_JsvalToNative(pv->cx, tmpVal, &position); // (TBD) manage error
 
 			position += size_t(offset);
-			JL_NativeToJsval(pv->cx, position, tmpVal); // (TBD) manage error
-			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
+			JL_CHK( jl::setProperty(pv->cx, pv->obj, "position", position) ); // (TBD) manage error
 			return 0;
 
 		case SEEK_END:
@@ -232,11 +230,11 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 			if ( offset > 0 || -offset > position + available )
 				return -1;
 			JL_JsvalToNative(pv->cx, tmpVal, &position);
-			JL_NativeToJsval(pv->cx, position + available + offset, tmpVal); // the pointer is set to the size of the file plus offset.
-			JS_SetProperty(pv->cx, pv->obj, "position", &tmpVal);
+			JL_CHK( jl::setProperty(pv->cx, pv->obj, "position", position + available + offset) ); // the pointer is set to the size of the file plus offset.
 			return 0;
 
 	}
+	bad:
 	return -1;
 }
 

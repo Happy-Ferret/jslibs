@@ -545,19 +545,19 @@ bool ProcessSystrayMessage( JSContext *cx, JS::HandleObject obj, const MSGInfo *
 	switch ( message ) {
 
 		case WM_SETFOCUS:
-			JL_CHK( JS_GetProperty(cx, obj, "onfocus", &functionVal) );
+			JL_CHK( jl::getProperty(cx, obj, "onfocus", &functionVal) );
 			if ( jl::isCallable(cx, functionVal) )
 				JL_CHK( jl::call(cx, obj, functionVal, rval, true) );
 			break;
 
 		case WM_KILLFOCUS:
-			JL_CHK( JS_GetProperty(cx, obj, "onblur", &functionVal) );
+			JL_CHK( jl::getProperty(cx, obj, "onblur", &functionVal) );
 			if ( jl::isCallable(cx, functionVal) )
 				JL_CHK( jl::call(cx, obj, functionVal, rval, false) );
 			break;
 
 		case WM_CHAR:
-			JL_CHK( JS_GetProperty(cx, obj, "onchar", &functionVal) );
+			JL_CHK( jl::getProperty(cx, obj, "onchar", &functionVal) );
 			if ( jl::isCallable(cx, functionVal) ) {
 
 				char c = jl::SafeCast<char>(wParam);
@@ -567,7 +567,7 @@ bool ProcessSystrayMessage( JSContext *cx, JS::HandleObject obj, const MSGInfo *
 
 		case WM_ENDSESSION: // case WM_QUERYENDSESSION:
 		case WM_CLOSE:
-			JL_CHK( JS_GetProperty(cx, obj, "onclose", &functionVal) );
+			JL_CHK( jl::getProperty(cx, obj, "onclose", &functionVal) );
 			if ( jl::isCallable(cx, functionVal) ) {
 
 				JL_CHK( jl::call(cx, obj, functionVal, rval, message == WM_ENDSESSION && lParam == 0) );
@@ -575,7 +575,7 @@ bool ProcessSystrayMessage( JSContext *cx, JS::HandleObject obj, const MSGInfo *
 			break;
 
 		case WM_COMMAND:
-			JL_CHK( JS_GetProperty(cx, obj, "oncommand", &functionVal) );
+			JL_CHK( jl::getProperty(cx, obj, "oncommand", &functionVal) );
 			if ( jl::isCallable(cx, functionVal) ) {
 
 				JS::RootedValue key(cx, *(JS::Value*)wParam);
@@ -592,7 +592,7 @@ bool ProcessSystrayMessage( JSContext *cx, JS::HandleObject obj, const MSGInfo *
 				
 				case SC_SCREENSAVE:
 				case SC_MONITORPOWER:
-					JL_CHK( JS_GetProperty(cx, obj, "onidle", &functionVal) );
+					JL_CHK( jl::getProperty(cx, obj, "onidle", &functionVal) );
 					if ( jl::isCallable(cx, functionVal) ) {
 
 						JS::RootedValue key(cx, *(JS::Value*)wParam);
@@ -607,19 +607,19 @@ bool ProcessSystrayMessage( JSContext *cx, JS::HandleObject obj, const MSGInfo *
 			switch ( lParam ) {
 
 				case WM_MOUSEHOVER:
-					JL_CHK( JS_GetProperty(cx, obj, "onmouseenter", &functionVal) );
+					JL_CHK( jl::getProperty(cx, obj, "onmouseenter", &functionVal) );
 					if ( jl::isCallable(cx, functionVal) )
 						JL_CHK( jl::call(cx, obj, functionVal, rval, true) );
 					break;
 
 				case WM_MOUSELEAVE:
-					JL_CHK( JS_GetProperty(cx, obj, "onmouseleave", &functionVal) );
+					JL_CHK( jl::getProperty(cx, obj, "onmouseleave", &functionVal) );
 					if ( jl::isCallable(cx, functionVal) )
 						JL_CHK( jl::call(cx, obj, functionVal, rval, false) );
 					break;
 
 				case WM_MOUSEMOVE:
-					JL_CHK( JS_GetProperty(cx, obj, "onmousemove", &functionVal) );
+					JL_CHK( jl::getProperty(cx, obj, "onmousemove", &functionVal) );
 					if ( jl::isCallable(cx, functionVal) )
 						JL_CHK( jl::call(cx, obj, functionVal, rval, trayMsg->mousePos.x, trayMsg->mousePos.y) );
 					break;
@@ -627,7 +627,7 @@ bool ProcessSystrayMessage( JSContext *cx, JS::HandleObject obj, const MSGInfo *
 				case WM_LBUTTONDOWN:
 				case WM_MBUTTONDOWN:
 				case WM_RBUTTONDOWN:
-					JL_CHK( JS_GetProperty(cx, obj, "onmousedown", &functionVal) );
+					JL_CHK( jl::getProperty(cx, obj, "onmousedown", &functionVal) );
 					if ( jl::isCallable(cx, functionVal) )
 						JL_CHK( jl::call(cx, obj, functionVal, rval, lParam==WM_LBUTTONDOWN ? 1 : lParam==WM_RBUTTONDOWN ? 2 : lParam==WM_MBUTTONDOWN ? 3 : 0, true) );
 					break;
@@ -635,7 +635,7 @@ bool ProcessSystrayMessage( JSContext *cx, JS::HandleObject obj, const MSGInfo *
 				case WM_LBUTTONUP:
 				case WM_MBUTTONUP:
 				case WM_RBUTTONUP:
-					JL_CHK( JS_GetProperty(cx, obj, "onmouseup", &functionVal) );
+					JL_CHK( jl::getProperty(cx, obj, "onmouseup", &functionVal) );
 					if ( jl::isCallable(cx, functionVal) )
 						JL_CHK( jl::call(cx, obj, functionVal, rval, lParam==WM_LBUTTONUP ? 1 : lParam==WM_RBUTTONUP ? 2 : lParam==WM_MBUTTONUP ? 3 : 0, false) );
 					break;
@@ -643,7 +643,7 @@ bool ProcessSystrayMessage( JSContext *cx, JS::HandleObject obj, const MSGInfo *
 				case WM_LBUTTONDBLCLK:
 				case WM_MBUTTONDBLCLK:
 				case WM_RBUTTONDBLCLK:
-					JL_CHK( JS_GetProperty(cx, obj, "onmousedblclick", &functionVal) );
+					JL_CHK( jl::getProperty(cx, obj, "onmousedblclick", &functionVal) );
 					if ( jl::isCallable(cx, functionVal) )
 						JL_CHK( jl::call(cx, obj, functionVal, rval, lParam==WM_LBUTTONDBLCLK ? 1 : lParam==WM_RBUTTONDBLCLK ? 2 : lParam==WM_MBUTTONDBLCLK ? 3 : 0) );
 					break;
@@ -1123,7 +1123,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 			pv->nid.szInfoTitle[len] = '\0';
 		}
 
-		JL_CHK( JS_GetProperty(cx, infoObj, "info", JL_RVAL) );
+		JL_CHK( jl::getProperty(cx, infoObj, "info", JL_RVAL) );
 		if ( !JL_RVAL.isUndefined() ) {
 
 			JLData infoStr;
@@ -1136,7 +1136,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 			pv->nid.szInfo[infoStr.Length()] = '\0';
 		}
 
-		JL_CHK( JS_GetProperty(cx, infoObj, "icon", JL_RVAL) );
+		JL_CHK( jl::getProperty(cx, infoObj, "icon", JL_RVAL) );
 		if ( !JL_RVAL.isUndefined() ) {
 
 			JLData iconNameStr;
@@ -1182,7 +1182,7 @@ DEFINE_FUNCTION( callDefault ) {
 	DWORD err = GetLastError();
 
 	jsval functionVal;
-	JS_GetProperty(cx, obj, "oncommand", &functionVal);
+	jl::getProperty(cx, obj, "oncommand", &functionVal);
 	if ( !JSVAL_IS_VOID( functionVal ) ) {
 
 		jsval key;

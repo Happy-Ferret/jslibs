@@ -713,27 +713,21 @@ DEFINE_PROPERTY_GETTER( list ) {
 
 	JS::RootedObject list(cx, JL_NewObj(cx));
 	int i;
-	JS::RootedValue tmp(cx);
 	LTC_MUTEX_LOCK(&ltc_cipher_mutex);
 	for ( i = 0; cipher_is_valid(i) == CRYPT_OK; ++i ) {
 
 		JS::RootedObject desc(cx, JL_NewObj(cx));
-		tmp.setObject(*desc);
-		JS_SetProperty( cx, list, cipher_descriptor[i].name, tmp );
-
-		tmp = INT_TO_JSVAL( cipher_descriptor[i].min_key_length );
-		JS_SetProperty( cx, desc, "minKeyLength", tmp );
-		tmp = INT_TO_JSVAL( cipher_descriptor[i].max_key_length );
-		JS_SetProperty( cx, desc, "maxKeyLength", tmp );
-		tmp = INT_TO_JSVAL( cipher_descriptor[i].block_length );
-		JS_SetProperty( cx, desc, "blockLength", tmp );
-		tmp = INT_TO_JSVAL( cipher_descriptor[i].default_rounds );
-		JS_SetProperty( cx, desc, "defaultRounds", tmp );
+		JL_CHK( jl::setProperty(cx, list, cipher_descriptor[i].name, desc) );
+		JL_CHK( jl::setProperty(cx, desc, "minKeyLength", cipher_descriptor[i].min_key_length) );
+		JL_CHK( jl::setProperty(cx, desc, "maxKeyLength", cipher_descriptor[i].max_key_length) );
+		JL_CHK( jl::setProperty(cx, desc, "blockLength", cipher_descriptor[i].block_length) );
+		JL_CHK( jl::setProperty(cx, desc, "defaultRounds", cipher_descriptor[i].default_rounds) );
 	}
 	LTC_MUTEX_UNLOCK(&ltc_cipher_mutex);
 
 	JL_RVAL.setObject(*list);
 	return jl::StoreProperty(cx, obj, id, vp, true); // create the list and store it once for all.
+	JL_BAD;
 }
 
 

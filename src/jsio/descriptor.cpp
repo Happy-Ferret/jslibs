@@ -288,7 +288,7 @@ DEFINE_FUNCTION( read ) {
 
 	if ( JL_ARG_ISDEF(1) ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &amount) );
 	} else {
 
 		// doc:
@@ -414,7 +414,7 @@ DEFINE_FUNCTION( write ) {
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	size_t sentAmount;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 
 	ASSERT( str.Length() <= PR_INT32_MAX );
 
@@ -549,7 +549,7 @@ DEFINE_PROPERTY_GETTER( available ) {
 		return ThrowIoError(cx);
 	}
 
-	return JL_NativeToJsval(cx, available, JL_RVAL);
+	return jl::setValue(cx, JL_RVAL, available);
 	JL_BAD;
 }
 
@@ -620,10 +620,10 @@ DEFINE_FUNCTION( import ) {
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(2);
 	//int stdfd;
-	//JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &stdfd) );
+	//JL_CHK( jl::getValue(cx, JL_ARG(1), &stdfd) );
 
 	PRInt32 osfd;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &osfd) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &osfd) );
 
 	//switch (stdfd) {
 	//	case 0:
@@ -641,7 +641,7 @@ DEFINE_FUNCTION( import ) {
 	//}
 
 	int descType;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &descType) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &descType) );
 	PRDescType type;
 	type = (PRDescType)descType;
 
@@ -819,7 +819,7 @@ DEFINE_FUNCTION( isReadable ) {
 	if ( JL_ARG_ISDEF(1) ) {
 
 		PRUint32 timeout;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &timeout) );
 		prTimeout = PR_MillisecondsToInterval(timeout);
 	} else {
 
@@ -867,7 +867,7 @@ DEFINE_FUNCTION( isWritable ) {
 	if ( JL_ARG_ISDEF(1) ) {
 
 		PRUint32 timeout;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &timeout) );
 		prTimeout = PR_MillisecondsToInterval(timeout);
 	} else {
 
@@ -917,10 +917,10 @@ DEFINE_PROPERTY_SETTER( timeout ) {
 		} else {
 
 			PRUint32 milli;
-			JL_CHK( JL_JsvalToNative(cx, JL_RVAL, &milli) );
+			JL_CHK( jl::getValue(cx, JL_RVAL, &milli) );
 			timeout = PR_MillisecondsToInterval(milli);
 		}
-		JL_CHK( JL_NativeToJsval(cx, timeout, JL_RVAL) );
+		JL_CHK( jl::setValue(cx, JL_RVAL, timeout) );
 	}
 
 	JL_CHK( JL_SetReservedSlot( obj, SLOT_JSIO_DESCRIPTOR_TIMEOUT, JL_RVAL) );

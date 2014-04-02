@@ -141,15 +141,15 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARGC_RANGE(2, 3);
 
 	size_t size;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &size) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &size) );
 
 	unsigned int mode;
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &mode) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &mode) );
 	else
 		mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &name) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
 
 	char semName[PATH_MAX];
 	strcpy(semName, name);
@@ -241,12 +241,12 @@ DEFINE_FUNCTION( write ) {
 	size_t offset;
 	offset = 0;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &offset) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &offset) );
 
 //	const char *data;
 //	size_t dataLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &data, &dataLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &data) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
 
 	JL_ASSERT( sizeof(MemHeader) + offset + data.Length() <= pv->size, E_DATASIZE, E_MAX, E_NUM(pv->size - sizeof(MemHeader) - offset) ); // JL_ASSERT( sizeof(MemHeader) + offset + data.Length() <= pv->size, "SharedMemory too small to hold the given data." );
 
@@ -284,7 +284,7 @@ DEFINE_FUNCTION( read ) {
 	size_t offset;
 	offset = 0;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &offset) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &offset) );
 
 	JL_CHK( Lock(cx, pv) );
 	MemHeader *mh;
@@ -292,7 +292,7 @@ DEFINE_FUNCTION( read ) {
 
 	size_t dataLength;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &dataLength) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &dataLength) );
 	else
 		dataLength = mh->currentDataLength;
 
@@ -396,7 +396,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 //		const char *data;
 //		size_t dataLength;
 //		JL_CHK( JL_JsvalToStringAndLength(cx, vp, &data, &dataLength) );
-		JL_CHK( JL_JsvalToNative(cx, vp, &data) );
+		JL_CHK( jl::getValue(cx, vp, &data) );
 
 		JL_ASSERT( sizeof(MemHeader) + data.Length() <= pv->size, E_DATASIZE, E_MAX, E_NUM(pv->size - sizeof(MemHeader)) ); //JL_ASSERT( sizeof(MemHeader) + data.Length() <= pv->size, "SharedMemory too small to hold the given data." );
 

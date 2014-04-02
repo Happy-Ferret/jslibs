@@ -14,7 +14,6 @@ var loadModule = host.loadModule;
 
 loadModule('jsstd');
 
-
 jslangTest();
 
 throw 0;

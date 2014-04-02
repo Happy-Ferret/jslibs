@@ -38,7 +38,7 @@ bool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 /*
 #ifdef DEBUG
 	jsval dbg_funNameVal;
-	JS_GetPropertyById(cx, &JS_CALLEE(cx, vp).toObject(), JLID(cx, name), &dbg_funNameVal);
+	jl::getProperty(cx, &JS_CALLEE(cx, vp).toObject(), JLID(cx, name), &dbg_funNameVal);
 	const jschar *dbg_name = JS_GetStringCharsZ(cx, dbg_funNameVal.toString());
 	JL_IGNORE(dbg_name);
 #endif
@@ -51,7 +51,7 @@ bool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 
 	JS::RootedObject funObj(cx, args.callee());
 	JS::RootedValue dispidVal(cx);
-	JL_CHK( JS_GetPropertyById(cx, funObj, JLID(cx, id), &dispidVal) );
+	JL_CHK( jl::getProperty(cx, funObj, JLID(cx, id), &dispidVal) );
 	DISPID dispid = dispidVal.toInt32();
 
 	HRESULT hr;
@@ -90,7 +90,7 @@ bool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 
 		// remove the function because it is not a DISPATCH_METHOD
 		JS::RootedValue funNameVal(cx);
-		JL_CHK( JS_GetPropertyById(cx, funObj, JLID(cx, name), &funNameVal) );
+		JL_CHK( jl::getProperty(cx, funObj, JLID(cx, name), &funNameVal) );
 		ASSERT( funNameVal.isString() );
 		JS::RootedString funNameStr(cx, funNameVal.toString());
 		JS::RootedId funNameId(cx, JL_StringToJsid(cx, funNameStr));

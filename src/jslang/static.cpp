@@ -107,7 +107,7 @@ DEFINE_FUNCTION( stringify ) {
 
 	bool toArrayBuffer;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &toArrayBuffer) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &toArrayBuffer) );
 	else
 		toArrayBuffer = false;
 
@@ -145,7 +145,7 @@ DEFINE_FUNCTION( stringify ) {
 	}
 
 	// fallback:
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 	JL_CHK( toArrayBuffer ? str.GetArrayBuffer(cx, JL_RVAL) : str.GetJSString(cx, JL_RVAL) );
 
 	return true;
@@ -210,7 +210,7 @@ DEFINE_FUNCTION( join ) {
 		for ( unsigned i = 0; i < arrayLen; ++i ) {
 
 			JL_CHK( JL_GetElement(cx, argObj, i, &val) );
-			JL_CHK( JL_JsvalToNative(cx, val, &*++strList) );
+			JL_CHK( jl::getValue(cx, val, &*++strList) );
 			length += strList->Length();
 			avr.append(val);
 		}
@@ -221,7 +221,7 @@ DEFINE_FUNCTION( join ) {
 		JL_ASSERT_IS_CALLABLE(nextFct, "iterator");
 		while ( JS_CallFunctionValue(cx, argObj, nextFct, JS::HandleValueArray::empty(), &val) != false ) { // loop until StopIteration or error
 
-			JL_CHK( JL_JsvalToNative(cx, val, &*++strList) );
+			JL_CHK( jl::getValue(cx, val, &*++strList) );
 			length += strList->Length();
 			avr.append(val);
 		}
@@ -231,7 +231,7 @@ DEFINE_FUNCTION( join ) {
 
 	bool toArrayBuffer;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &toArrayBuffer) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &toArrayBuffer) );
 	else
 		toArrayBuffer = false;
 
@@ -287,12 +287,12 @@ DEFINE_FUNCTION( indexOf ) {
 	
 	JL_ASSERT_ARGC_MIN(2);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &srcStr) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &patStr) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &srcStr) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &patStr) );
 
 	if ( JL_ARG_ISDEF(3) ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &start) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &start) );
 		if ( start > srcStr.Length() - patStr.Length() ) {
 			
 			JL_RVAL.setInt32(-1);
@@ -609,7 +609,7 @@ DEFINE_FUNCTION( timeoutEvents ) {
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	uint32_t timeout;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &timeout) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &timeout) );
 
 	TimeoutProcessEvent *upe = new TimeoutProcessEvent(timeout);
 	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
@@ -707,7 +707,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	{
 	JLData path;
 	JS::RootedValue tmp(cx, JSVAL_ONE);
-	JL_CHK( JL_JsvalToNative(cx, tmp, &path) );
+	JL_CHK( jl::getValue(cx, tmp, &path) );
 	const char *d1 = path.GetConstStrZ();
 	const char *d2 = path.GetConstStrZ();
 	TEST( d1 == d2 );
@@ -886,7 +886,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	JS::RootedValue v;
 	void *tmp = ptr;
 	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
-	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
+	JL_CHK( jl::getValue(cx, v, &tmp) );
 	TEST( tmp == ptr );
 	}
 
@@ -896,7 +896,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	JS::RootedValue v;
 	void *tmp = ptr;
 	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
-	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
+	JL_CHK( jl::getValue(cx, v, &tmp) );
 	TEST( tmp == ptr );
 	}
 
@@ -906,7 +906,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	JS::RootedValue v;
 	void *tmp = ptr;
 	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
-	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
+	JL_CHK( jl::getValue(cx, v, &tmp) );
 	TEST( tmp == ptr );
 	}
 
@@ -916,7 +916,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	JS::RootedValue v;
 	void *tmp = ptr;
 	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
-	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
+	JL_CHK( jl::getValue(cx, v, &tmp) );
 	TEST( tmp == ptr );
 	}
 
@@ -926,7 +926,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	JS::RootedValue v;
 	void *tmp = ptr;
 	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
-	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
+	JL_CHK( jl::getValue(cx, v, &tmp) );
 	TEST( tmp == ptr );
 	}
 
@@ -936,7 +936,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	JS::RootedValue v;
 	void *tmp = ptr;
 	JL_CHK( JL_NativeToJsval(cx, tmp, v) );
-	JL_CHK( JL_JsvalToNative(cx, v, &tmp) );
+	JL_CHK( jl::getValue(cx, v, &tmp) );
 	TEST( tmp == ptr );
 	}
 
@@ -1073,8 +1073,13 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	JS::HandleObject hObj(obj);
 	JS::HandleValue hVal(val);
+	JS::HandleId hId(id);
 
+	JS::MutableHandleValue mhVal(&val);
+	JS::MutableHandleId mhId(&id);
+	
 	JS::RootedValue numval(cx);
+
 	uint8_t uint8 = 0;
 	int8_t int8 = 0;
 	uint16_t uint16 = 0;
@@ -1213,66 +1218,97 @@ DEFINE_FUNCTION( jslangTest ) {
 
 
 	JL_CHK( jl::call(cx, obj, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_CHK( jl::call(cx, obj, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_CHK( jl::call(cx, obj, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_CHK( jl::call(cx, obj, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_CHK( jl::call(cx, obj, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, obj, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, obj, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, obj, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, obj, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
 	
-	JL_CHK( jl::call(cx, hObj, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_CHK( jl::call(cx, hObj, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_CHK( jl::call(cx, hObj, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_CHK( jl::call(cx, hObj, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_CHK( jl::call(cx, hObj, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, hObj, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, hObj, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, hObj, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, hObj, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, hObj, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
 	
-	JL_CHK( jl::call(cx, val, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_CHK( jl::call(cx, val, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_CHK( jl::call(cx, val, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_CHK( jl::call(cx, val, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_CHK( jl::call(cx, val, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, val, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, val, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, val, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, val, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, val, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
 	
-	JL_CHK( jl::call(cx, hVal, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_CHK( jl::call(cx, hVal, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_CHK( jl::call(cx, hVal, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_CHK( jl::call(cx, hVal, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_CHK( jl::call(cx, hVal, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, hVal, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, hVal, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, hVal, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, hVal, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	JL_ASSERT( jl::call(cx, hVal, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
 
-	JL_CHK( jl::setElement(cx, hVal, 0, "test") );
+	JL_ASSERT( jl::setElement(cx, hVal, 0, "test") );
 
-	JL_CHK( jl::setProperty(cx, obj, "TEST", 1) );
-	JL_CHK( jl::setProperty(cx, obj, L("TEST"), 1) );
-	JL_CHK( jl::setProperty(cx, obj, jl::strSpec("TEST", 4), 1) );
-	JL_CHK( jl::setProperty(cx, obj, jl::strSpec(L("TEST"), 4), 1) );
+	JL_ASSERT( jl::setProperty(cx, obj, "TEST", 1) );
+	JL_ASSERT( jl::setProperty(cx, obj, L("TEST"), 1) );
+	JL_ASSERT( jl::setProperty(cx, obj, jl::strSpec("TEST", 4), 1) );
+	JL_ASSERT( jl::setProperty(cx, obj, jl::strSpec(L("TEST"), 4), 1) );
 
-	JL_CHK( jl::setProperty(cx, obj, "TEST", val) );
-	JL_CHK( jl::setProperty(cx, obj, L("TEST"), val) );
-	JL_CHK( jl::setProperty(cx, obj, jl::strSpec("TEST", 4), val) );
-	JL_CHK( jl::setProperty(cx, obj, jl::strSpec(L("TEST"), 4), val) );
+	JL_ASSERT( jl::setProperty(cx, obj, "TEST", val) );
+	JL_ASSERT( jl::setProperty(cx, obj, L("TEST"), val) );
+	JL_ASSERT( jl::setProperty(cx, obj, jl::strSpec("TEST", 4), val) );
+	JL_ASSERT( jl::setProperty(cx, obj, jl::strSpec(L("TEST"), 4), val) );
 
-	JL_CHK( jl::setProperty(cx, val, "TEST", 1) );
-	JL_CHK( jl::setProperty(cx, val, L("TEST"), 1) );
-	JL_CHK( jl::setProperty(cx, val, jl::strSpec("TEST", 4), 1) );
-	JL_CHK( jl::setProperty(cx, val, jl::strSpec(L("TEST"), 4), 1) );
+	JL_ASSERT( jl::setProperty(cx, val, "TEST", val) );
+	JL_ASSERT( jl::setProperty(cx, val, L("TEST"), val) );
+	JL_ASSERT( jl::setProperty(cx, val, jl::strSpec("TEST", 4), val) );
+	JL_ASSERT( jl::setProperty(cx, val, jl::strSpec(L("TEST"), 4), val) );
 
-	JL_CHK( jl::setProperty(cx, val, "TEST", val) );
-	JL_CHK( jl::setProperty(cx, val, L("TEST"), val) );
-	JL_CHK( jl::setProperty(cx, val, jl::strSpec("TEST", 4), val) );
-	JL_CHK( jl::setProperty(cx, val, jl::strSpec(L("TEST"), 4), val) );
+	JL_ASSERT( jl::setProperty(cx, val, "TEST", 1) );
+	JL_ASSERT( jl::setProperty(cx, val, L("TEST"), 1) );
+	JL_ASSERT( jl::setProperty(cx, val, jl::strSpec("TEST", 4), 1) );
+	JL_ASSERT( jl::setProperty(cx, val, jl::strSpec(L("TEST"), 4), 1) );
+
+	{
+
+	JL_ASSERT( jl::getProperty(cx, obj, "TEST", &int32) );
+
+	JL_ASSERT( jl::getProperty(cx, obj, "TEST", &val) );
+	JL_ASSERT( jl::getProperty(cx, obj, L("TEST"), &val) );
+	JL_ASSERT( jl::getProperty(cx, obj, jl::strSpec("TEST", 4), &val) );
+	JL_ASSERT( jl::getProperty(cx, obj, jl::strSpec(L("TEST"), 4), &val) );
+	JL_ASSERT( jl::getProperty(cx, obj, id, &val) );
+	JL_ASSERT( jl::getProperty(cx, obj, hId, &val) );
+
+	JL_ASSERT( jl::getProperty(cx, obj, "TEST", mhVal) );
+	JL_ASSERT( jl::getProperty(cx, obj, L("TEST"), mhVal) );
+	JL_ASSERT( jl::getProperty(cx, obj, jl::strSpec("TEST", 4), mhVal) );
+	JL_ASSERT( jl::getProperty(cx, obj, jl::strSpec(L("TEST"), 4), mhVal) );
+	JL_ASSERT( jl::getProperty(cx, obj, id, mhVal) );
+	JL_ASSERT( jl::getProperty(cx, obj, hId, mhVal) );
 
 
 
-	JL_CHK( jl::hasProperty(cx, obj, "TEST") );
-	JL_CHK( jl::hasProperty(cx, obj, L("TEST")) );
-	JL_CHK( jl::hasProperty(cx, obj, jl::strSpec("TEST", 4)) );
-	JL_CHK( jl::hasProperty(cx, obj, jl::strSpec(L("TEST"), 4)) );
-
-	JL_CHK( jl::hasProperty(cx, val, "TEST") );
-	JL_CHK( jl::hasProperty(cx, val, L("TEST")) );
-	JL_CHK( jl::hasProperty(cx, val, jl::strSpec("TEST", 4)) );
-	JL_CHK( jl::hasProperty(cx, val, jl::strSpec(L("TEST"), 4)) );
+	JL_ASSERT( jl::setElement(cx, obj, 0, val) );
+	JL_ASSERT( jl::setElement(cx, obj, 0, hVal) );
+	JL_ASSERT( jl::setElement(cx, obj, 0, mhVal) );
 
 
-	JL_CHK( jl::construct(cx, hObj) );
-	JL_CHK( jl::construct(cx, hObj, 1) );
+	JL_ASSERT( jl::getElement(cx, obj, 0, &val) );
+	JL_ASSERT( jl::getElement(cx, obj, 0, mhVal) );
+	JL_ASSERT( jl::getElement(cx, obj, 0, &int32) );
+
+
+	}
+	
+
+	JL_ASSERT( jl::hasProperty(cx, obj, "TEST") );
+	JL_ASSERT( jl::hasProperty(cx, obj, L("TEST")) );
+	JL_ASSERT( jl::hasProperty(cx, obj, jl::strSpec("TEST", 4)) );
+	JL_ASSERT( jl::hasProperty(cx, obj, jl::strSpec(L("TEST"), 4)) );
+
+	JL_ASSERT( jl::hasProperty(cx, val, "TEST") );
+	JL_ASSERT( jl::hasProperty(cx, val, L("TEST")) );
+	JL_ASSERT( jl::hasProperty(cx, val, jl::strSpec("TEST", 4)) );
+	JL_ASSERT( jl::hasProperty(cx, val, jl::strSpec(L("TEST"), 4)) );
+
+
+	JL_ASSERT( jl::construct(cx, hObj) );
+	JL_ASSERT( jl::construct(cx, hObj, 1) );
 
 
 	jl::setVector(cx, &val, &uint8, 1);
@@ -1282,40 +1318,40 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	jl::setValue(cx, &numval, "123");
 	ASSERT( numval.isString() );
-	JL_CHK( jl::getValue(cx, numval, uint8) );
-	JL_CHK( jl::getValue(cx, numval, int16) );
-	JL_CHK( jl::getValue(cx, numval, flt) );
-	JL_CHK( jl::getValue(cx, numval, dbl) );
+	JL_ASSERT( jl::getValue(cx, numval, &uint8) );
+	JL_ASSERT( jl::getValue(cx, numval, &int16) );
+	JL_ASSERT( jl::getValue(cx, numval, &flt) );
+	JL_ASSERT( jl::getValue(cx, numval, &dbl) );
 
 	jl::setValue(cx, &numval, "255.1");
-	JL_CHK( !jl::getValue(cx, numval, uint8) );
+	JL_ASSERT( !jl::getValue(cx, numval, &uint8) );
 
 	jl::setValue(cx, &numval, ::std::numeric_limits<double>::max());
-	JL_CHK( !jl::getValue(cx, numval, flt) );
+	JL_ASSERT( !jl::getValue(cx, numval, &flt) );
 
 	numval.setDouble(1.5);
-	JL_CHK( jl::getValue(cx, numval, uint8) );
-	JL_CHK( jl::getValue(cx, numval, int16) );
-	JL_CHK( jl::getValue(cx, numval, flt) );
-	JL_CHK( jl::getValue(cx, numval, dbl) );
+	JL_ASSERT( jl::getValue(cx, numval, &uint8) );
+	JL_ASSERT( jl::getValue(cx, numval, &int16) );
+	JL_ASSERT( jl::getValue(cx, numval, &flt) );
+	JL_ASSERT( jl::getValue(cx, numval, &dbl) );
 	
 	numval.setInt32(256);
-	JL_CHK( jl::getValue(cx, numval, flt) );
-	JL_CHK( jl::getValue(cx, numval, dbl) );
-	JL_CHK( jl::getValue(cx, numval, int16) );
-	JL_CHK( !jl::getValue(cx, numval, uint8) );
+	JL_ASSERT( jl::getValue(cx, numval, &flt) );
+	JL_ASSERT( jl::getValue(cx, numval, &dbl) );
+	JL_ASSERT( jl::getValue(cx, numval, &int16) );
+	JL_ASSERT( !jl::getValue(cx, numval, &uint8) );
 	JS_ClearPendingException(cx);
 
 	unsigned long num = 123;
-	JL_CHK( jl::setValue(cx, &val, num) );
+	JL_ASSERT( jl::setValue(cx, &val, &num) );
 
 	}
 
 
 	{
 
-	JL_CHK( test1() );
-	JL_CHK( test2() );
+	JL_ASSERT( test1() );
+	JL_ASSERT( test2() );
 
 	}
 

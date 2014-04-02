@@ -517,11 +517,11 @@ DEFINE_FUNCTION( row ) {
 
 		if ( namedRows ) {
 
-			JL_CHK( JS_SetProperty(cx, row, sqlite3_column_name(pStmt, col), colJsValue) );
+			JL_CHK( jl::setProperty(cx, row, sqlite3_column_name(pStmt, col), colJsValue) );
 		} else {
 
 			//JL_CHK( JS_DefineElement(cx, row, col, colJsValue, NULL, NULL, JSPROP_ENUMERATE) );
-			JL_CHK( JL_SetElement(cx, row, col, colJsValue) );
+			JL_CHK( jl::setElement(cx, row, col, colJsValue) );
 		}
 	}
 

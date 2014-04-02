@@ -480,7 +480,7 @@ struct ConsoleProcessEvent : public ProcessEvent2 {
 				switch ( inputRecord.EventType ) {
 					case KEY_EVENT: {
 
-						JL_CHK( JS_GetProperty(cx, thisObj, inputRecord.Event.KeyEvent.bKeyDown ? "onKeyDown" : "onKeyUp", &fct) );
+						JL_CHK( jl::getProperty(cx, thisObj, inputRecord.Event.KeyEvent.bKeyDown ? "onKeyDown" : "onKeyUp", &fct) );
 						if ( jl::isCallable(cx, fct) ) {
 
 							for ( int i = 0; i < inputRecord.Event.KeyEvent.wRepeatCount; ++i ) {
@@ -524,7 +524,7 @@ struct ConsoleProcessEvent : public ProcessEvent2 {
 							}
 						}
 
-						JL_CHK( JS_GetProperty(cx, thisObj, eventName, &fct) );
+						JL_CHK( jl::getProperty(cx, thisObj, eventName, &fct) );
 						if ( jl::isCallable(cx, fct) ) {
 /*
 							argv[1] = INT_TO_JSVAL(inputRecord.Event.MouseEvent.dwMousePosition.X);
@@ -552,7 +552,7 @@ struct ConsoleProcessEvent : public ProcessEvent2 {
 
 					case WINDOW_BUFFER_SIZE_EVENT: {
 
-						JL_CHK( JS_GetProperty(cx, thisObj, "onSize", &fct) );
+						JL_CHK( jl::getProperty(cx, thisObj, "onSize", &fct) );
 						if ( jl::isCallable(cx, fct) ) {
 
 							JL_CHK( jl::call(cx, thisObj, fct, &rval,
@@ -565,7 +565,7 @@ struct ConsoleProcessEvent : public ProcessEvent2 {
 
 					case FOCUS_EVENT: {
 
-						JL_CHK( JS_GetProperty(cx, thisObj, "onFocus", &fct) );
+						JL_CHK( jl::getProperty(cx, thisObj, "onFocus", &fct) );
 						if ( jl::isCallable(cx, fct) ) {
 
 							JL_CHK( jl::call(cx, thisObj, fct, &rval, inputRecord.Event.FocusEvent.bSetFocus) );

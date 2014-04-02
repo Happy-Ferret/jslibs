@@ -16,6 +16,8 @@ var b = new Semaphore('aaa');
 
 print( s.name, b.isOwner, '\n' );
 
+print( new File().name );
+
 
 throw 0;
 
