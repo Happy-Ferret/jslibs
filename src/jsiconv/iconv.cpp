@@ -82,8 +82,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &tocode) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &fromcode) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &tocode) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &fromcode) );
 
 	pv = (Private*)JS_malloc(cx, sizeof(Private));
 	JL_CHK(pv);
@@ -93,12 +93,12 @@ DEFINE_CONSTRUCTOR() {
 	pv->cd = iconv_open(tocode, fromcode);
 
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &pv->wTo) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &pv->wTo) );
 	else
 		pv->wTo = false;
 
 	if ( JL_ARG_ISDEF(4) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &pv->wFrom) );
+		JL_CHK( jl::getValue(cx, JL_ARG(4), &pv->wFrom) );
 	else
 		pv->wFrom = false;
 
@@ -169,7 +169,7 @@ DEFINE_FUNCTION( process ) {
 	//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), (const char**)&inBuf, &inLen) );
 	//}
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &data) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
 
 	if ( pv->wFrom ) {
 
@@ -349,7 +349,7 @@ DEFINE_PROPERTY_SETTER( invalidChar ) {
 //	const char *chr;
 //	size_t length;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &chr, &length) );
-	JL_CHK( JL_JsvalToNative(cx, vp, &chr) );
+	JL_CHK( jl::getValue(cx, vp, &chr) );
 	JL_ASSERT_WARN( chr.Length() == 1, E_VALUE, E_LENGTH, E_NUM(1) );
 	pv->invalidChar = chr.GetConstStr()[0];
 	return true;
@@ -364,7 +364,7 @@ DEFINE_PROPERTY_GETTER( invalidChar ) {
 	pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );	
 //	JL_CHK( JL_StringAndLengthToJsval(cx, vp, &pv->invalidChar, 1) );
-	JL_CHK( JL_NativeToJsval(cx, &pv->invalidChar, 1, vp) );
+	JL_CHK( jl::setValue(cx, vp, jl::strSpec(&pv->invalidChar, 1)) );
 	return true;
 	JL_BAD;
 }
@@ -376,7 +376,7 @@ DEFINE_PROPERTY_GETTER( hasIncompleteSequence ) {
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );	
-	JL_CHK( JL_NativeToJsval(cx, pv->remainderLen != 0, vp) );
+	JL_CHK( jl::setValue(cx, vp, pv->remainderLen != 0) );
 	return true;
 	JL_BAD;
 }
@@ -404,7 +404,7 @@ int do_one( unsigned int namescount, const char * const * names, void* data ) {
 	while (namescount--) {
 
 		// (TBD) check errors
-		JL_NativeToJsval(ipv->cx, names[namescount], &value); // iconv_canonicalize
+		jl::setValue(ipv->cx, &value, names[namescount]); // iconv_canonicalize
 		JL_SetElement(ipv->cx, ipv->list, ipv->listLen, value);
 		ipv->listLen++;
 	}
@@ -442,7 +442,7 @@ DEFINE_PROPERTY_GETTER( version ) {
 	char versionStr[7];
 	strcpy( versionStr, "system");
 #endif
-	return JL_NativeToJsval(cx, versionStr, vp);
+	return jl::setValue(cx, vp, versionStr);
 	return jl::StoreProperty(cx, obj, id, vp, true);  // create and store store the value once for all.
 }
 
@@ -451,10 +451,10 @@ DEFINE_PROPERTY_GETTER( jsUC ) {
 
 	switch ( JLHostEndian ) {
 		case JLBigEndian:
-			JL_CHK( JL_NativeToJsval(cx, "UCS-2be", vp) );
+			JL_CHK( jl::setValue(cx, vp, "UCS-2be") );
 			break;
 		case JLLittleEndian:
-			JL_CHK( JL_NativeToJsval(cx, "UCS-2le", vp) );
+			JL_CHK( jl::setValue(cx, vp, "UCS-2le") );
 			break;
 		default:
 			vp.setUndefined();

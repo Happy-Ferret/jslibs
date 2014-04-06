@@ -60,11 +60,11 @@ sf_count_t SfGetFilelen(void *user_data) {
 	JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) );
 	if ( tmpVal.isUndefined() )
 		return -1;
-	JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
+	JL_CHK( jl::getValue(pv->cx, tmpVal, &position) );
 	JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, available), &tmpVal) );
 	if ( tmpVal.isUndefined() )
 		return -1;
-	JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &available) );
+	JL_CHK( jl::getValue(pv->cx, tmpVal, &available) );
 	return position + available;
 bad:
 	return -1;
@@ -83,7 +83,7 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 		case SEEK_SET:
 			if ( offset < 0 )
 				return -1;
-			JL_CHK( JL_NativeToJsval(pv->cx, offset, tmpVal) );
+			JL_CHK( jl::setValue(pv->cx, tmpVal, offset) );
 			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
 			return 0;
 
@@ -91,10 +91,10 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
 			if ( tmpVal.isUndefined() )
 				return -1;
-			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
+			JL_CHK( jl::getValue(pv->cx, tmpVal, &position) );
 
 			position += int(offset);
-			JL_CHK( JL_NativeToJsval(pv->cx, position, tmpVal) );
+			JL_CHK( jl::setValue(pv->cx, tmpVal, position) );
 			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
 			return 0;
 
@@ -102,17 +102,17 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, available), tmpVal.address()) );
 			if ( tmpVal.isUndefined() )
 				return -1;
-			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &available) );
+			JL_CHK( jl::getValue(pv->cx, tmpVal, &available) );
 
 			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
 			if ( tmpVal.isUndefined() )
 				return -1;
-			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
+			JL_CHK( jl::getValue(pv->cx, tmpVal, &position) );
 
 			if ( offset > 0 || -offset > position + available )
 				return -1;
-			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
-			JL_CHK( JL_NativeToJsval(pv->cx, position + available + offset, tmpVal) ); // the pointer is set to the size of the file plus offset.
+			JL_CHK( jl::getValue(pv->cx, tmpVal, &position) );
+			JL_CHK( jl::setValue(pv->cx, tmpVal, position + available + offset) ); // the pointer is set to the size of the file plus offset.
 			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
 			return 0;
 	}
@@ -131,7 +131,7 @@ sf_count_t SfTell(void *user_data) {
 	JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) );
 	if ( tmpVal.isUndefined() )
 		return -1;
-	JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
+	JL_CHK( jl::getValue(pv->cx, tmpVal, &position) );
 	return position;
 bad:
 	return -1;
@@ -157,7 +157,7 @@ static SF_VIRTUAL_IO sfCallbacks = { SfGetFilelen, SfSeek, SfRead, 0, SfTell };
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime())->canSkipCleanup )
 		return;
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
@@ -302,7 +302,7 @@ DEFINE_FUNCTION( read ) {
 	int32_t frames;
 	if ( JL_ARG_ISDEF(1) ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &frames) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &frames) );
 		if ( frames <= 0 ) {
 
 			// like Descriptor::read, returns an empty audio object even if EOF

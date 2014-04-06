@@ -410,10 +410,10 @@ DEFINE_FUNCTION( toggleBreakpoint ) {
 	JL_ASSERT_ARGC_MIN( 3 );
 
 	bool polarity;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &polarity) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &polarity) );
 
 	unsigned lineno;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &lineno) );
+	JL_CHK( jl::getValue(cx, JL_ARG(3), &lineno) );
 
 	JS::RootedScript script;
 	jsbytecode *pc;
@@ -453,7 +453,7 @@ DEFINE_FUNCTION( hasBreakpoint ) {
 	JL_ASSERT_ARGC_MIN( 2 );
 
 	unsigned lineno;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lineno) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &lineno) );
 
 	JS::RootedScript script;
 	jsbytecode *pc;
@@ -518,7 +518,7 @@ DEFINE_PROPERTY_SETTER( interruptCounterLimit ) {
 	} else {
 
 		JL_ASSERT_IS_INTEGER(*vp, "");
-		JL_CHK( JL_JsvalToNative(cx, *vp, &pv->interruptCounterLimit) );
+		JL_CHK( jl::getValue(cx, *vp, &pv->interruptCounterLimit) );
 	}
 
 	JSRuntime *rt;
@@ -551,7 +551,7 @@ DEFINE_PROPERTY_SETTER( breakOnError ) {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
+	JL_CHK( jl::getValue(cx, *vp, &b) );
 
 	if ( pv->debugHooks ) { // defered hook assignment
 
@@ -576,7 +576,7 @@ DEFINE_PROPERTY_SETTER( breakOnException ) {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
+	JL_CHK( jl::getValue(cx, *vp, &b) );
 
 	if ( pv->debugHooks ) { // defered hook assignment
 
@@ -601,7 +601,7 @@ DEFINE_PROPERTY_SETTER( breakOnDebuggerKeyword ) {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
+	JL_CHK( jl::getValue(cx, *vp, &b) );
 
 	if ( pv->debugHooks ) { // defered hook assignment
 
@@ -626,7 +626,7 @@ DEFINE_PROPERTY_SETTER( breakOnExecute ) {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
+	JL_CHK( jl::getValue(cx, *vp, &b) );
 
 	if ( pv->debugHooks ) { // defered hook assignment
 
@@ -651,7 +651,7 @@ DEFINE_PROPERTY_SETTER( breakOnFirstExecute ) {
 	DebuggerPrivate *pv = (DebuggerPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	bool b;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &b) );
+	JL_CHK( jl::getValue(cx, *vp, &b) );
 
 	if ( pv->debugHooks ) { // defered hook assignment
 
@@ -692,7 +692,7 @@ DEFINE_PROPERTY_SETTER( excludedFileList ) {
 
 		JLData fileName;
 		JL_CHK( JL_GetElement(cx, arrayObject, i, &tmp ) );
-		JL_CHK( JL_JsvalToNative(cx, tmp, &fileName) );
+		JL_CHK( jl::getValue(cx, tmp, &fileName) );
 		AddExcludedFile(&pv->excludedFiles, fileName.GetStrZOwnership());
 	}
 

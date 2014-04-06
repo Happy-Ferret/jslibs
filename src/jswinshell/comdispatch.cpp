@@ -367,7 +367,7 @@ DEFINE_ITERATOR_OBJECT() {
 	UINT argErr = 0;
 	VARIANT result;
 
-	JL_ASSERT( JL_GetClassOfPrototype(cx, obj) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) );
+	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
 
 	JL_CHKM( !keysonly, E_NAME("for...in"), E_NOTSUPPORTED ); // JL_ASSERT( !keysonly, "Only for each..in loop is supported." );
 
@@ -455,7 +455,7 @@ END_CLASS
 
 bool NewComDispatch( JSContext *cx, IDispatch *pdisp, OUT JS::MutableHandleValue rval ) {
 
-	JS::RootedObject varObj(cx, JL_NewObjectWithGivenProto(cx, JL_CLASS(ComDispatch), JL_CLASS_PROTOTYPE(cx, ComDispatch)));
+	JS::RootedObject varObj(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(ComDispatch), JL_CLASS_PROTOTYPE(cx, ComDispatch)));
 	JL_CHK(varObj);
 	rval.setObject( *varObj );
 	JL_SetPrivate( varObj, pdisp);

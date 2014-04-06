@@ -156,13 +156,13 @@ DEFINE_FUNCTION( setAxis ) {
 	JL_RVAL.setUndefined();
 
 	int anum, rel;
-	JL_JsvalToNative(cx, JL_ARG(1), &anum);
+	jl::getValue(cx, JL_ARG(1), &anum);
 	if ( !JL_ARG_ISDEF(3) ) {
 		
 		ode::dJointSetAMotorNumAxes(jointId, anum+1);
 		return true;
 	}
-	JL_JsvalToNative(cx, JL_ARG(2), &rel);
+	jl::getValue(cx, JL_ARG(2), &rel);
 	ode::dVector3 vector;
 	uint32_t length;
 	JL_CHK( JsvalToODERealVector(cx, JL_ARG(3), vector, 3, &length) );
@@ -192,7 +192,7 @@ DEFINE_FUNCTION( setAngle ) {
 	
 	int anum;
 	ode::dReal angle;
-	JL_JsvalToNative(cx, JL_ARG(1), &anum);
+	jl::getValue(cx, JL_ARG(1), &anum);
 	JL_CHK( JsvalToODEReal(cx, JL_ARG(2), &angle) );
 
 	if ( anum+1 > ode::dJointGetAMotorNumAxes(jointId) )
@@ -220,7 +220,7 @@ DEFINE_PROPERTY_SETTER( eulerMode ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
 	bool eulerMode;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &eulerMode) );
+	JL_CHK( jl::getValue(cx, *vp, &eulerMode) );
 	ode::dJointSetAMotorMode(jointId, eulerMode ?  ode::dAMotorEuler :  ode::dAMotorUser);
 	return true;
 	JL_BAD;

@@ -122,7 +122,7 @@ DEFINE_FUNCTION( read ) {
 	int amount;
 	if ( JL_ARG_ISDEF(1) ) {
 		
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &amount) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &amount) );
 
 		if ( amount == 0 && available > 0 ) { // not EOF
 
@@ -130,7 +130,7 @@ DEFINE_FUNCTION( read ) {
 			return true;
 		}
 
-		amount = JL_MIN(amount, available);
+		amount = jl::min(amount, available);
 	} else {
 
 		amount = available;
@@ -170,7 +170,7 @@ DEFINE_FUNCTION( write ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &data) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(JL_OBJ);
@@ -198,7 +198,7 @@ DEFINE_PROPERTY_GETTER( available ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	int available = sqlite3_blob_bytes(pv->pBlob) - pv->position;
-	JL_CHK( JL_NativeToJsval(cx, available, vp) );
+	JL_CHK( jl::setValue(cx, vp, available) );
 
 	return true;
 	JL_BAD;
@@ -212,7 +212,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 	pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JL_CHK( JL_NativeToJsval(cx, pv->position, vp) );
+	JL_CHK( jl::setValue(cx, vp, pv->position) );
 
 	return true;
 	JL_BAD;
@@ -226,9 +226,9 @@ DEFINE_PROPERTY_SETTER( position ) {
 	pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JL_CHK( JL_JsvalToNative(cx, vp, &pv->position) );
+	JL_CHK( jl::getValue(cx, vp, &pv->position) );
 
-	pv->position = JL_MINMAX(pv->position, 0, sqlite3_blob_bytes(pv->pBlob));
+	pv->position = jl::minmax(pv->position, 0, sqlite3_blob_bytes(pv->pBlob));
 
 	return true;
 	JL_BAD;
@@ -317,7 +317,7 @@ DEFINE_CONSTRUCTOR() {
 //	flags |= SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_SHAREDCACHE;
 
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &fileName) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &fileName) );
 	else
 		fileName = JLData(":memory:", true);
 
@@ -494,13 +494,13 @@ DEFINE_FUNCTION( openBlobStream ) {
 	pv = (DatabasePrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &tableName) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &columnName) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &rowid) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &tableName) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &columnName) );
+	JL_CHK( jl::getValue(cx, JL_ARG(3), &rowid) );
 
 	// doc: If the flags parameter is non-zero, then the BLOB is opened for read and write access. If it is zero, the BLOB is opened for read access. 
 	if ( JL_ARG_ISDEF(4) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &flags) );
+		JL_CHK( jl::getValue(cx, JL_ARG(4), &flags) );
 	else
 		flags = 1;
 
@@ -519,7 +519,7 @@ DEFINE_FUNCTION( openBlobStream ) {
 
 	{
 
-	JS::RootedObject blobStreamObj(cx, JL_NewObjectWithGivenProto(cx, JL_CLASS(BlobStream), JL_CLASS_PROTOTYPE(cx, BlobStream)));
+	JS::RootedObject blobStreamObj(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(BlobStream), JL_CLASS_PROTOTYPE(cx, BlobStream)));
 	JL_CHK( blobStreamObj );
 
 	JL_SetPrivate(blobStreamObj, blobStreamPv);
@@ -602,7 +602,7 @@ DEFINE_FUNCTION( query ) {
 	pv = (DatabasePrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sql) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &sql) );
 
 	const char *szTail;
 	sqlite3_stmt *pStmt;
@@ -627,7 +627,7 @@ DEFINE_FUNCTION( query ) {
 	{
 
 	// create the Result (statement) object
-	JS::RootedObject dbStatement(cx, JL_NewObjectWithGivenProto(cx, JL_CLASS(Result), JL_CLASS_PROTOTYPE(cx, Result)));
+	JS::RootedObject dbStatement(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(Result), JL_CLASS_PROTOTYPE(cx, Result)));
 	JL_CHK( dbStatement );
 	JL_SetPrivate(dbStatement, pStmt);
 	JL_CHK( JL_SetReservedSlot( dbStatement, SLOT_RESULT_DATABASE, JL_OBJVAL) ); // link to avoid GC
@@ -687,7 +687,7 @@ DEFINE_FUNCTION( exec ) {
 //	J_JSVAL_TO_STRING( argv[0], sqlQuery );
 //	size_t sqlQueryLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sqlQuery, &sqlQueryLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sql) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &sql) );
 
 	const char *szTail;
 	// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
@@ -765,7 +765,7 @@ DEFINE_PROPERTY_GETTER( lastInsertRowid ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	sqlite3_int64 lastId;
 	lastId = sqlite3_last_insert_rowid(pv->db);
-	return JL_NativeToJsval(cx, lastId, vp);
+	return jl::setValue(cx, vp, lastId);
 	JL_BAD;
 }
 
@@ -822,7 +822,7 @@ DEFINE_PROPERTY_GETTER( memoryUsed ) {
 	//	int val, tmp;
 //	sqlite3_status(SQLITE_STATUS_MEMORY_USED, &val, &tmp, false);
 //	if ( val ) {
-	return JL_NativeToJsval(cx, (size_t)sqlite3_memory_used(), vp);
+	return jl::setValue(cx, vp, (size_t)sqlite3_memory_used());
 }
 
 void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArgv ) {
@@ -879,7 +879,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 			} else {
 
 				double jd;
-				JL_CHK( JL_JsvalToNative(cx, rval, &jd) );
+				JL_CHK( jl::getValue(cx, rval, &jd) );
 				if ( jd >= INT_MIN && jd <= INT_MAX && jd == (int)jd )
 					sqlite3_result_int(sCx, (int)jd);
 				else
@@ -901,7 +901,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 				//size_t length;
 				//JL_CHKB( JL_JsvalToStringAndLength(cx, &rval, &data, &length), bad_unroot );
 				JLData data;
-				JL_CHK( JL_JsvalToNative(cx, rval, &data) );
+				JL_CHK( jl::getValue(cx, rval, &data) );
 				sqlite3_result_blob(sCx, data.GetConstStr(), data.Length(), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 				break;
 			}
@@ -914,7 +914,7 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 //			JL_CHKB( JL_JsvalToStringAndLength(cx, &rval, &str, &len), bad_unroot );
 
 			JLData str;
-			JL_CHK( JL_JsvalToNative(cx, rval, &str) );
+			JL_CHK( jl::getValue(cx, rval, &str) );
 			sqlite3_result_text(sCx, str.GetConstStr(), str.Length(), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
 			break;
 		}

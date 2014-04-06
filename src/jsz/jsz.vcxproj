@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{58F49E9E-B111-4E37-BD76-0F5BED79F121}</ProjectGuid>
-    <RootNamespace>jstemplate</RootNamespace>
+    <ProjectGuid>{F00B77DF-185B-4F30-B71C-5D9786D76D94}</ProjectGuid>
+    <RootNamespace>jsz</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -38,53 +38,48 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\libs\zlib\src;..\..\libs\unzip\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <Link>
-      <AdditionalDependencies>user32.lib;gdi32.lib;Winmm.lib;shell32.lib;Comdlg32.lib;Advapi32.lib;Ole32.lib;oleaut32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\libs\zlib\src;..\..\libs\unzip\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
-    <Link>
-      <AdditionalDependencies>user32.lib;gdi32.lib;shell32.lib;Comdlg32.lib;Advapi32.lib;Ole32.lib;oleaut32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="audio.cpp" />
-    <ClCompile Include="comdispatch.cpp" />
-    <ClCompile Include="comenum.cpp" />
-    <ClCompile Include="comvariant.cpp" />
-    <ClCompile Include="console.cpp" />
-    <ClCompile Include="error.cpp" />
-    <ClCompile Include="global.cpp" />
-    <ClCompile Include="icon.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="systray.cpp" />
+    <ClCompile Include="z.cpp" />
+    <ClCompile Include="zError.cpp" />
+    <ClCompile Include="zipfile.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="com.h" />
-    <ClInclude Include="console.h" />
-    <ClInclude Include="error.h" />
-    <ClInclude Include="errorNamesCase.h" />
-    <ClInclude Include="icon.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="systray.h" />
+    <ClInclude Include="z.h" />
+    <ClInclude Include="zError.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="debug.js" />
+    <None Include="jsz_qa.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\libs\unzip\unzip.vcxproj">
+      <Project>{66c5b9c7-74b1-4bf8-89cf-db2bc6d5e60e}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\zlib\zlib.vcxproj">
+      <Project>{b9898a5a-a1d6-4dbb-87f6-609f97bd7848}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

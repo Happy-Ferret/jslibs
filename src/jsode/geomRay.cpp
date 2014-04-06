@@ -79,7 +79,7 @@ DEFINE_PROPERTY_SETTER( length ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	double radius;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &radius) );
+	JL_CHK( jl::getValue(cx, *vp, &radius) );
 	ode::dGeomRaySetLength(geom, (ode::dReal)radius);
 	return true;
 	JL_BAD;
@@ -170,7 +170,7 @@ DEFINE_PROPERTY_SETTER( firstContact ) {
 	JL_ASSERT_IS_INTEGER(*vp, "");
 	int firstContact, backfaceCull;
 	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
-	JL_CHK( JL_JsvalToNative(cx, *vp, &firstContact) );
+	JL_CHK( jl::getValue(cx, *vp, &firstContact) );
 	ode::dGeomRaySetParams(geom, firstContact, backfaceCull);
 	return true;
 	JL_BAD;
@@ -198,7 +198,7 @@ DEFINE_PROPERTY_SETTER( backfaceCull ) {
 	JL_ASSERT_IS_INTEGER(*vp, "");
 	int firstContact, backfaceCull;
 	ode::dGeomRayGetParams(geom, &firstContact, &backfaceCull);
-	JL_CHK( JL_JsvalToNative(cx, *vp, &backfaceCull) );
+	JL_CHK( jl::getValue(cx, *vp, &backfaceCull) );
 	ode::dGeomRaySetParams(geom, firstContact, backfaceCull);
 	return true;
 	JL_BAD;
@@ -226,7 +226,7 @@ DEFINE_PROPERTY_SETTER( closestHit ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( geom );
 	int closestHit;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &closestHit) );
+	JL_CHK( jl::getValue(cx, *vp, &closestHit) );
 	ode::dGeomRaySetClosestHit(geom, closestHit);
 	return true;
 	JL_BAD;

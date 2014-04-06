@@ -483,7 +483,7 @@ DEFINE_FUNCTION( getList ) {
 
 	JSObject *iterator = JL_NewObj(cx);
 	JS_DefineFunctionById(cx, iterator, JLID(cx, next), getListNext, 0, 0); // JSPROP_PERMANENT | JSPROP_READONLY
-	JL_NativeToProperty(cx, iterator, 
+	jl::setProperty(cx, iterator, 
 
 	return true;
 	JL_BAD;

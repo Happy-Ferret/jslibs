@@ -329,7 +329,8 @@ DEFINE_PROPERTY_GETTER( gcNumber ) {
 
 	JL_IGNORE( id, obj );
 
-	return JL_NewNumberValue(cx, JS_GetGCParameter(JL_GetRuntime(cx), JSGC_NUMBER), vp);
+	vp.setNumber(JS_GetGCParameter(JL_GetRuntime(cx), JSGC_NUMBER));
+	return true;
 }
 
 
@@ -383,7 +384,7 @@ DEFINE_PROPERTY_SETTER( gcZeal ) {
 #ifdef JS_GC_ZEAL
 
 	uint8_t zeal;
-	JL_CHKM( JL_JsvalToNative(cx, *vp, &zeal), E_VALUE, E_INVALID );
+	JL_CHKM( jl::getValue(cx, *vp, &zeal), E_VALUE, E_INVALID );
 	JS_SetGCZeal(cx, zeal, 1); // JS_DEFAULT_ZEAL_FREQ
 	return jl::StoreProperty(cx, obj, id, vp, false); // make the value available for default getter
 
@@ -671,7 +672,7 @@ DEFINE_FUNCTION( getActualLineno ) {
 	JL_ASSERT_ARGC_MIN( 2 );
 
 	unsigned lineno;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lineno) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &lineno) );
 
 	JS::RootedScript script;
 	jsbytecode *pc;
@@ -726,7 +727,7 @@ DEFINE_FUNCTION( stackFrameInfo ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	unsigned int frameIndex;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &frameIndex) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &frameIndex) );
 
 	JSStackFrame *fp;
 	fp = JL_StackFrameByIndex(cx, frameIndex);
@@ -828,7 +829,7 @@ DEFINE_FUNCTION( evalInStackFrame ) {
 	JL_ASSERT_ARG_IS_STRING(1);
 
 	unsigned int frameIndex;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &frameIndex) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &frameIndex) );
 
 	JSStackFrame *fp;
 	fp = JL_StackFrameByIndex(cx, frameIndex);
@@ -895,7 +896,7 @@ DEFINE_FUNCTION( locate ) {
 	if ( JL_ARG_ISDEF(1) ) {
 
 		int frame;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &frame) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &frame) );
 		fp = JL_StackFrameByIndex(cx, frame);
 	} else {
 
@@ -1036,8 +1037,8 @@ DEFINE_FUNCTION( scriptByLocation ) {
 	const char *filename;
 	unsigned int lineno;
 
-	JL_CHK( JL_JsvalToNative(cx, &JL_ARG(1), &filename) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lineno) );
+	JL_CHK( jl::getValue(cx, &JL_ARG(1), &filename) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &lineno) );
 	JSScript *script = ScriptByLocation(cx, scriptFileList, filename, lineno);
 	JL_CHK( script );
 	JSObject *scrobj = JS_GetScriptObject(script);
@@ -1076,8 +1077,8 @@ DEFINE_FUNCTION( disassembleScript ) {
 
 	JL_ASSERT_ARGC(2);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &filename) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lineno) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &filename) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &lineno) );
 
 	scriptFileList = &((ModulePrivate*)JL_GetModulePrivate(cx, _moduleId))->scriptFileList;
 
@@ -1155,7 +1156,7 @@ DEFINE_FUNCTION( debugOutput ) {
 #if defined(_MSC_VER) && defined(DEBUG)
 	{
 	JLData str;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 	OutputDebugString(str); // (TBD) not thread-safe, use a critical section
 	}
 	*JL_RVAL = JSVAL_TRUE;

@@ -838,7 +838,7 @@ class DLLAPI Host : public jl::CppAllocators {
 	static INLINE NEVER_INLINE void FASTCALL
 	getPrivateJsidSlow( JSContext *cx, JS::PersistentRootedId &id, const jschar *name ) {
 
-		JS::RootedString jsstr(cx, JS_InternUCString(cx, name));
+		JS::RootedString jsstr(cx, JS_InternUCStringN(cx, name, jl::strlen(name)));
 		ASSERT( jsstr );
 		id.set(JL_StringToJsid(cx, jsstr));
 	}
@@ -904,7 +904,7 @@ public:
 	ALWAYS_INLINE JSObject *
 	newObject() {
 
-		return JL_NewObjectWithGivenProto(_hostRuntime.context(), _objectClasp, _objectProto); // JL_GetGlobal(cx)
+		return jl::newObjectWithGivenProto(_hostRuntime.context(), _objectClasp, _objectProto); // JL_GetGlobal(cx)
 	}
 
 
@@ -913,7 +913,7 @@ public:
 
 		const ProtoCache::Item *cpc = _classProtoCache.get(className);
 		if ( cpc != NULL )
-			return JL_NewObjectWithGivenProto(_hostRuntime.context(), cpc->clasp, cpc->proto);
+			return jl::newObjectWithGivenProto(_hostRuntime.context(), cpc->clasp, cpc->proto);
 		else
 			return NULL;
 	}
@@ -1039,35 +1039,14 @@ JL_END_NAMESPACE
 #endif // DEBUG
 
 //#define JLID(cx, name) JL_GetPrivateJsid(cx, JLID_##name, (jschar*)L(#name))
-#define JLID(cx, name) jl::Host::getHost(cx).getId(JLID_##name, (jschar*)L(#name))
+#define JLID(cx, name) jl::Host::getHost(cx).getId(JLID_##name, L(#name))
 
-// eg: jsid cfg = JLID(cx, fileName); const char *name = JLID_NAME(fileName);
-
-
+// eg:
+//   jsid cfg = JLID(cx, fileName); const char *name = JLID_NAME(fileName);
 
 
 //////////////////////////////////////////////////////////////////////////////
 // the following helper functions depends on the host object
-
-
-ALWAYS_INLINE jl::Host&
-JL_GetHostPrivate( JSRuntime *rt ) {
-
-	return jl::Host::getHost(rt);
-}
-
-ALWAYS_INLINE jl::Host&
-JL_GetHostPrivate( JSContext *cx ) {
-
-	return jl::Host::getHost(cx);
-}
-
-ALWAYS_INLINE const JSClass * FASTCALL
-JL_GetCachedClass( const jl::Host & const hpv, const char *className ) {
-	
-	return hpv.getCachedClasp(className);
-}
-
 
 
 ALWAYS_INLINE JSObject* FASTCALL

@@ -57,7 +57,7 @@ DEFINE_FUNCTION( randSeed ) {
 	JL_ASSERT_ARGC_MIN(1);
 
 	unsigned int seed;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &seed) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &seed) );
 	init_genrand(seed);
 
 	JL_RVAL.setUndefined();
@@ -102,19 +102,19 @@ DEFINE_FUNCTION( perlinNoise ) {
 
 	int n;
 	float a, b, x, y, z;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &a) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &b) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &n) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &a) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &b) );
+	JL_CHK( jl::getValue(cx, JL_ARG(3), &n) );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &x) );
+	JL_CHK( jl::getValue(cx, JL_ARG(4), &x) );
 	if ( argc == 4 )
 		return JL_NativeToJsval(cx, Noise1DPerlin(x, a, b, n), *JL_RVAL);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &y) );
+	JL_CHK( jl::getValue(cx, JL_ARG(5), &y) );
 	if ( argc == 5 )
 		return JL_NativeToJsval(cx, Noise2DPerlin(x, y, a, b, n), *JL_RVAL);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &z) );
+	JL_CHK( jl::getValue(cx, JL_ARG(6), &z) );
 	if ( argc == 6 )
 		return JL_NativeToJsval(cx, Noise3DPerlin(x, y, z, a, b, n), *JL_RVAL);
 
@@ -151,9 +151,9 @@ DEFINE_FUNCTION( perlinNoise2 ) {
 	JL_ASSERT_ARGC(3);
 
 	double x, y, z;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &y) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &z) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &x) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &y) );
+	JL_CHK( jl::getValue(cx, JL_ARG(3), &z) );
 	return JL_NativeToJsval(cx, PerlinNoise2(x,y,z), *JL_RVAL);
 	JL_BAD;
 }

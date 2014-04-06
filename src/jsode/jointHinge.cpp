@@ -87,7 +87,7 @@ DEFINE_FUNCTION( addTorque ) {
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	double torque;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &torque) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &torque) );
 	ode::dJointAddHingeTorque(jointId, (ode::dReal)torque);
 
 	JL_RVAL.setUndefined();

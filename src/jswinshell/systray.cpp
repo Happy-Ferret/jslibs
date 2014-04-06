@@ -560,7 +560,7 @@ bool ProcessSystrayMessage( JSContext *cx, JS::HandleObject obj, const MSGInfo *
 			JL_CHK( jl::getProperty(cx, obj, "onchar", &functionVal) );
 			if ( jl::isCallable(cx, functionVal) ) {
 
-				char c = jl::SafeCast<char>(wParam);
+				char c = jl::isInBounds<char>(wParam);
 				JL_CHK( jl::call(cx, obj, functionVal, rval, jl::strSpec(&c,1)) );
 			}
 			break;
@@ -863,7 +863,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 				JL_CHK( JS_IdToValue(cx, itemId, &key) );
 				JL_CHK( jl::getProperty(cx, itemObj, itemId, &value) );
 		
-				JL_CHK( JL_JsvalToNative(cx, key, &keyStr) );
+				JL_CHK( jl::getValue(cx, key, &keyStr) );
 
 				if ( strcmp(keyStr, "id") == 0 ) {
 
@@ -881,7 +881,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					bool b;
-					JL_CHK( JL_JsvalToNative(cx, value, &b) );
+					JL_CHK( jl::getValue(cx, value, &b) );
 					if ( b )
 						uFlags |= MF_MENUBARBREAK;
 					continue;
@@ -890,7 +890,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					bool b;
-					JL_CHK( JL_JsvalToNative(cx, value, &b) );
+					JL_CHK( jl::getValue(cx, value, &b) );
 					if ( b )
 						uFlags |= MF_CHECKED;
 					continue;
@@ -899,7 +899,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					bool b;
-					JL_CHK( JL_JsvalToNative(cx, value, &b) );
+					JL_CHK( jl::getValue(cx, value, &b) );
 					if ( b )
 						uFlags |= MF_GRAYED;
 					continue;
@@ -908,7 +908,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					bool b;
-					JL_CHK( JL_JsvalToNative(cx, value, &b) );
+					JL_CHK( jl::getValue(cx, value, &b) );
 					if ( b )
 						uFlags |= MF_DISABLED;
 					continue;
@@ -916,7 +916,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 				if ( strcmp(keyStr, "default") == 0 ) {
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
-					JL_CHK( JL_JsvalToNative(cx, value, &isDefault) );
+					JL_CHK( jl::getValue(cx, value, &isDefault) );
 					continue;
 				}
 				if ( strcmp(keyStr, "icon") == 0 ) {
@@ -969,7 +969,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 
 			if ( label != JSVAL_VOID ) {
 
-				JL_CHK( JL_JsvalToNative(cx, label, &newItemStr) );
+				JL_CHK( jl::getValue(cx, label, &newItemStr) );
 				
 				lpNewItem = newItemStr.GetConstStrZ();
 				uFlags |= MF_STRING;
@@ -1116,10 +1116,10 @@ DEFINE_FUNCTION( popupBalloon ) {
 		if ( !JL_RVAL.isUndefined() ) {
 
 			JLData infoTitle;
-			JL_CHK( JL_JsvalToNative(cx, JL_RVAL, &infoTitle) );
+			JL_CHK( jl::getValue(cx, JL_RVAL, &infoTitle) );
 
-			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoTitle.Length());
-			jl::memcpy( pv->nid.szInfoTitle, infoTitle.GetConstStr(), JL_MIN(sizeof(pv->nid.szInfoTitle)-1, infoTitle.Length()) );
+			size_t len = jl::min(sizeof(pv->nid.szInfo)-1, infoTitle.Length());
+			jl::memcpy( pv->nid.szInfoTitle, infoTitle.GetConstStr(), jl::min(sizeof(pv->nid.szInfoTitle)-1, infoTitle.Length()) );
 			pv->nid.szInfoTitle[len] = '\0';
 		}
 
@@ -1127,8 +1127,8 @@ DEFINE_FUNCTION( popupBalloon ) {
 		if ( !JL_RVAL.isUndefined() ) {
 
 			JLData infoStr;
-			JL_CHK( JL_JsvalToNative(cx, JL_RVAL, &infoStr) );
-			size_t len = JL_MIN(sizeof(pv->nid.szInfo)-1, infoStr.Length());
+			JL_CHK( jl::getValue(cx, JL_RVAL, &infoStr) );
+			size_t len = jl::min(sizeof(pv->nid.szInfo)-1, infoStr.Length());
 
 			JL_IGNORE(len);
 
@@ -1140,7 +1140,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 		if ( !JL_RVAL.isUndefined() ) {
 
 			JLData iconNameStr;
-			JL_CHK( JL_JsvalToNative(cx, JL_RVAL, &iconNameStr) );
+			JL_CHK( jl::getValue(cx, JL_RVAL, &iconNameStr) );
 			
 			if ( strcmp(iconNameStr, "info") == 0 )
 				pv->nid.dwInfoFlags |= NIIF_INFO;
@@ -1224,7 +1224,7 @@ DEFINE_FUNCTION( position ) {
 		return JL_ThrowOSError(cx);
 
 	LONG v[] = { r.left, r.top };
-	JL_CHK( JL_NativeVectorToJsval(cx, v, COUNTOF(v), JL_RVAL, JL_ARGC >= 1 && JL_ARG(1).isObject()) );
+	JL_CHK( jl::setVector(cx, JL_RVAL, v, COUNTOF(v), JL_ARGC >= 1 && JL_ARG(1).isObject()) );
 
 	return true;
 	JL_BAD;
@@ -1250,7 +1250,7 @@ DEFINE_FUNCTION( rect ) {
 		return JL_ThrowOSError(cx);
 
 	LONG v[] = { rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top };
-	JL_CHK( JL_NativeVectorToJsval(cx, v, COUNTOF(v), JL_RVAL, JL_ARGC >= 1 && JL_ARG(1).isObject()) );
+	JL_CHK( jl::setVector(cx, JL_RVAL, v, COUNTOF(v), JL_ARGC >= 1 && JL_ARG(1).isObject()) );
 
 	return true;
 	JL_BAD;
@@ -1343,8 +1343,8 @@ DEFINE_PROPERTY_SETTER( text ) {
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_CHK( JL_JsvalToNative(cx, vp, &tipText) );
-	size_t len = JL_MIN(sizeof(pv->nid.szTip)-1, tipText.Length());
+	JL_CHK( jl::getValue(cx, vp, &tipText) );
+	size_t len = jl::min(sizeof(pv->nid.szTip)-1, tipText.Length());
 	jl::memcpy(pv->nid.szTip, tipText.GetConstStr(), tipText.Length());
 	pv->nid.szTip[len] = '\0';
 

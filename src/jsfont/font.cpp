@@ -43,7 +43,7 @@ BEGIN_CLASS( Font ) // Start the definition of the class. It defines some symbol
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime())->canSkipCleanup )
 		return;
 
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(obj);
@@ -75,11 +75,11 @@ DEFINE_CONSTRUCTOR() {
 
 	int faceIndex;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &faceIndex) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &faceIndex) );
 	else
 		faceIndex = 0;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &filePathName) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &filePathName) );
 
 	JsfontModulePrivate *mpv;
 	mpv = (JsfontModulePrivate*)ModulePrivateGet();
@@ -123,8 +123,8 @@ DEFINE_FUNCTION( setSize ) {
 
 	FT_UInt width, height;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &width) ); // a value of 0 for one of the dimensions means same as the other.
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &height) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &width) ); // a value of 0 for one of the dimensions means same as the other.
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &height) );
 
 	FT_Error status;
 	status = FT_Set_Pixel_Sizes(face, width, height);
@@ -287,12 +287,12 @@ DEFINE_FUNCTION( drawString ) {
 	bool keepTrailingSpace;
 	keepTrailingSpace = false;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &keepTrailingSpace) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &keepTrailingSpace) );
 
 	bool getWidthOnly;
 	getWidthOnly = false;
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &getWidthOnly) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &getWidthOnly) );
 
 
 	jsval tmp;
@@ -301,37 +301,37 @@ DEFINE_FUNCTION( drawString ) {
 	letterSpacing = 0;
 	JL_CHK( JL_GetReservedSlot( obj, FONT_SLOT_LETTERSPACING, &tmp) );
 	if ( !tmp.isUndefined() )
-		JL_CHK( JL_JsvalToNative(cx, tmp, &letterSpacing) );
+		JL_CHK( jl::getValue(cx, tmp, &letterSpacing) );
 
 	int horizontalPadding;
 	horizontalPadding = 0;
 	JL_CHK( JL_GetReservedSlot( obj, FONT_SLOT_HORIZONTALPADDING, &tmp) );
 	if ( !tmp.isUndefined() )
-		JL_CHK( JL_JsvalToNative(cx, tmp, &horizontalPadding) );
+		JL_CHK( jl::getValue(cx, tmp, &horizontalPadding) );
 
 	int verticalPadding;
 	verticalPadding = 0;
 	JL_CHK( JL_GetReservedSlot( obj, FONT_SLOT_VERTICALPADDING, &tmp) );
 	if ( !tmp.isUndefined() )
-		JL_CHK( JL_JsvalToNative(cx, tmp, &verticalPadding) );
+		JL_CHK( jl::getValue(cx, tmp, &verticalPadding) );
 
 	bool useKerning;
 	useKerning = true;
 	JL_CHK( JL_GetReservedSlot( obj, FONT_SLOT_USEKERNING, &tmp) );
 	if ( !tmp.isUndefined() )
-		JL_CHK( JL_JsvalToNative(cx, tmp, &useKerning) );
+		JL_CHK( jl::getValue(cx, tmp, &useKerning) );
 
 	bool isItalic;
 	isItalic = false;
 	JL_CHK( JL_GetReservedSlot( obj, FONT_SLOT_ITALIC, &tmp) );
 	if ( !tmp.isUndefined() )
-		JL_CHK( JL_JsvalToNative(cx, tmp, &isItalic) );
+		JL_CHK( jl::getValue(cx, tmp, &isItalic) );
 
 	bool isBold;
 	isBold = false;
 	JL_CHK( JL_GetReservedSlot( obj, FONT_SLOT_BOLD, &tmp) );
 	if ( !tmp.isUndefined() )
-		JL_CHK( JL_JsvalToNative(cx, tmp, &isBold) );
+		JL_CHK( jl::getValue(cx, tmp, &isBold) );
 
 
 	typedef struct {
@@ -519,7 +519,7 @@ DEFINE_PROPERTY_SETTER( size ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	FT_UInt size;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &size) );
+	JL_CHK( jl::getValue(cx, *vp, &size) );
 
 	if ( size != 0 ) {
 		
@@ -553,7 +553,7 @@ DEFINE_PROPERTY_SETTER( encoding ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	unsigned int encoding;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &encoding) );
+	JL_CHK( jl::getValue(cx, *vp, &encoding) );
 	FTCHK( FT_Select_Charmap(pv->face, (FT_Encoding)encoding) );
 	return jl::StoreProperty(cx, obj, id, vp, false); // storing the value allow one to use the default getter of the property.
 	JL_BAD;
@@ -570,7 +570,7 @@ DEFINE_PROPERTY_GETTER( poscriptName ) {
 	JsfontPrivate *pv = (JsfontPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	JL_CHK( JL_NativeToJsval(cx, FT_Get_Postscript_Name(pv->face), vp) );
+	JL_CHK( jl::setValue(cx, vp, FT_Get_Postscript_Name(pv->face)) );
 	return true;
 	JL_BAD;
 }

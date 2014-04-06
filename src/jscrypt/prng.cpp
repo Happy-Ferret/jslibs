@@ -59,7 +59,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &prngName) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &prngName) );
 
 	int prngIndex;
 	prngIndex = find_prng(prngName);
@@ -126,7 +126,7 @@ DEFINE_FUNCTION( read ) {
 	unsigned long readCount, actualRead;
 
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &readCount) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &readCount) );
 	else
 		readCount = 1024;
 
@@ -159,7 +159,7 @@ DEFINE_FUNCTION( addEntropy ) {
 	pv = (PrngPrivate *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &entropy) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &entropy) );
 
 	int err;
 	err = pv->prng.add_entropy( (const unsigned char *)entropy.GetConstStr(), (unsigned long)entropy.Length(), &pv->state );
@@ -192,7 +192,7 @@ DEFINE_FUNCTION( autoEntropy ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	unsigned int bits;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &bits) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &bits) );
 	int err;
 	err = rng_make_prng( bits, find_prng(pv->prng.name), &pv->state, NULL );
 	if ( err != CRYPT_OK )
@@ -259,7 +259,7 @@ DEFINE_PROPERTY_SETTER( state ) {
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_CHK( JL_JsvalToNative(cx, JL_RVAL, &state) );
+	JL_CHK( jl::getValue(cx, JL_RVAL, &state) );
 	JL_CHKM( state.Length() == (size_t)pv->prng.export_size, E_VALUE, E_LENGTH, E_NUM(pv->prng.export_size) );
 
 	int err;

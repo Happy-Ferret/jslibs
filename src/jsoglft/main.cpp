@@ -42,7 +42,7 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	JL_CHK( InitJslibsModule(cx, id) );
 
 	JsfontModulePrivate *jsfontMpv;
-	JL_CHKM( JL_PropertyToNative(cx, JL_GetHostPrivate(cx)->hostObject, "_jsfontModulePrivate", (void**)&jsfontMpv) && jsfontMpv != NULL, E_MODULE, E_NAME("jsfont"), E_REQUIRED );
+	JL_CHKM( jl::getProperty(cx, jl::Host::getHost(cx)->hostObject, "_jsfontModulePrivate", (void**)&jsfontMpv) && jsfontMpv != NULL, E_MODULE, E_NAME("jsfont"), E_REQUIRED );
 
 	jsfontMpv->GetFTSymbols(&_ftSymbols);
 	mpv->ftLibrary = jsfontMpv->ftLibrary;

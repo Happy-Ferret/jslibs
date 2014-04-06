@@ -111,7 +111,7 @@ DEFINE_FUNCTION( valueOf ) {
 
 	ALuint bid = (ALuint) JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( bid );
-	JL_CHK( JL_NativeToJsval(cx, bid, *JL_RVAL) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, bid) );
 	return true;
 	JL_BAD;
 }
@@ -139,7 +139,7 @@ DEFINE_PROPERTY_GETTER( frequency ) {
 	alGetBufferi(bid, AL_FREQUENCY, &frequency);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_NativeToJsval(cx, frequency, vp) );
+	JL_CHK( jl::setValue(cx, vp, frequency) );
 	return true;
 	JL_BAD;
 }
@@ -162,7 +162,7 @@ DEFINE_PROPERTY_GETTER( size ) {
 	alGetBufferi(bid, AL_SIZE, &size);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_NativeToJsval(cx, size, vp) );
+	JL_CHK( jl::setValue(cx, vp, size) );
 	return true;
 	JL_BAD;
 }
@@ -186,7 +186,7 @@ DEFINE_PROPERTY_GETTER( bits ) {
 	alGetBufferi(bid, AL_BITS, &bits);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_NativeToJsval(cx, bits, vp) );
+	JL_CHK( jl::setValue(cx, vp, bits) );
 	return true;
 	JL_BAD;
 }
@@ -209,7 +209,7 @@ DEFINE_PROPERTY_GETTER( channels ) {
 	alGetBufferi(bid, AL_CHANNELS, &channels);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_NativeToJsval(cx, channels, vp) );
+	JL_CHK( jl::setValue(cx, vp, channels) );
 	return true;
 	JL_BAD;
 }

@@ -446,7 +446,7 @@ DEFINE_FUNCTION( step ) {
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ode::dReal stepSize;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &stepSize) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &stepSize) );
 	if ( ode::dWorldGetQuickStepNumIterations(pv->worldId) == 0 )
 		ode::dWorldStep(pv->worldId, stepSize / 1000.f);
 	else
@@ -480,7 +480,7 @@ DEFINE_FUNCTION( scaleImpulse ) {
 	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 
 	float stepSize;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &stepSize) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &stepSize) );
 	ode::dWorldImpulseToForce(pv->worldId, stepSize / 1000, force[0], force[1], force[2], force);
 	
 	JSObject *objArr = &JL_ARG(1).toObject();
@@ -615,7 +615,7 @@ DEFINE_PROPERTY_SETTER( real ) {
 	WorldPrivate *pv = (WorldPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float value;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &value) );
+	JL_CHK( jl::getValue(cx, *vp, &value) );
 	switch ( JSID_TO_INT(id) ) {
 		case ERP:
 			ode::dWorldSetERP(pv->worldId, value);
@@ -732,7 +732,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_GETTER( env ) {
 
 	JL_ASSERT_THIS_INSTANCE();
-	JSObject *staticBody = JL_NewObjectWithGivenProto(cx, JL_CLASS(Body), JL_CLASS_PROTOTYPE(cx, Body));
+	JSObject *staticBody = jl::newObjectWithGivenProto(cx, JL_CLASS(Body), JL_CLASS_PROTOTYPE(cx, Body));
 	JL_CHK(staticBody);
 	JL_SetPrivate( staticBody, (ode::dBodyID)0);
 	*vp = OBJECT_TO_JSVAL(staticBody);

@@ -73,7 +73,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &hashName) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &hashName) );
 
 	int hashIndex;
 	hashIndex = find_hash(hashName);
@@ -139,7 +139,7 @@ DEFINE_CALL() {
 	out = JL_NewBuffer(cx, pv->descriptor->hashsize, JL_RVAL);
 	JL_CHK( out );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &in) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
 
 	err = pv->descriptor->init(&pv->state);
 	if (err != CRYPT_OK)
@@ -183,7 +183,7 @@ DEFINE_FUNCTION( write ) {
 	if ( JL_ARG_ISDEF(1) ) {
 		
 		JL_ASSERT_ARG_IS_STRING(1);
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &in) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
 
 		unsigned long length = in.Length();
 
@@ -348,7 +348,7 @@ DEFINE_PROPERTY_GETTER( inputLength ) {
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	return JL_NativeToJsval(cx, pv->inputLength, vp);
+	return jl::setValue(cx, vp, pv->inputLength);
 	JL_BAD;
 }	
 
@@ -375,7 +375,7 @@ DEFINE_FUNCTION( cipherHash ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &cipherName) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &cipherName) );
 	int cipherIndex;
 	cipherIndex = find_cipher(cipherName);
 	JL_ASSERT( cipherIndex >= 0, E_STR("cipher"), E_NAME(cipherName), E_NOTFOUND );

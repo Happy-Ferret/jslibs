@@ -517,7 +517,7 @@ int main_NewObjectWithGivenProto_NewObject(int argc, char* argv[]) {
 // -> GetGlobalForScopeChain
 
 //	JSObject *o2 = JS_GetParent(JS_NewObject(cx, NULL, NULL, NULL));
-//	JSObject *o1 = JS_GetParent(JL_NewObjectWithGivenProto(cx, NULL, NULL, NULL));
+//	JSObject *o1 = JS_GetParent(jl::newObjectWithGivenProto(cx, NULL, NULL, NULL));
 
 	//JSObject *o1 = JS_GetGlobalForScopeChain(cx);
 //	JSObject *o2 = JS_GetGlobalObject(cx);

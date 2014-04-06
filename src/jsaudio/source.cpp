@@ -126,7 +126,7 @@ DEFINE_FINALIZE() {
 		alDeleteSources(1, &pv->sid);
 	}
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime())->canSkipCleanup )
 		return;
 
 	while ( !QueueIsEmpty(pv->queue) ) {
@@ -193,7 +193,7 @@ DEFINE_FUNCTION( queueBuffers ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
 	ALuint bid;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &bid) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &bid) );
 	JL_ASSERT( alIsBuffer(bid), E_ARG, E_NUM(1), E_INVALID );
 
 	alSourceQueueBuffers(pv->sid, 1, &bid);
@@ -235,7 +235,7 @@ DEFINE_FUNCTION( unqueueBuffers ) {
 	JL_SAFE(
 		// ensure the oal buffer matchs the js buffer stored in the pv->queue
 		ALuint tmp;
-		JL_CHK( JL_JsvalToNative(cx, *JL_RVAL, &tmp) );
+		JL_CHK( jl::getValue(cx, *JL_RVAL, &tmp) );
 		JL_ASSERT( bid == tmp, E_LIB, E_INTERNAL, E_COMMENT("wrong buffer") ); // JL_ASSERT( bid == tmp, "Internal error in UnqueueBuffers()." );
 	);
 	pv->totalTime -= BufferSecTime(bid);
@@ -331,14 +331,14 @@ DEFINE_FUNCTION( effect ) {
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALuint send;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &send) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &send) );
 
 	ALuint effectSlot = AL_EFFECTSLOT_NULL;
 	ALuint filter = AL_FILTER_NULL;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &effectSlot) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &effectSlot) );
 //	if ( JL_ARG_ISDEF(3) )
-//		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &filter) );
+//		JL_CHK( jl::getValue(cx, JL_ARG(3), &filter) );
 
 //	ALCdevice *device = alcGetContextsDevice(alcGetCurrentContext());
 //	ALCint numSends;
@@ -363,7 +363,7 @@ DEFINE_FUNCTION( valueOf ) {
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_CHK( JL_NativeToJsval(cx, pv->sid, *JL_RVAL) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, pv->sid) );
 	return true;
 	JL_BAD;
 }
@@ -384,7 +384,7 @@ DEFINE_PROPERTY_SETTER( effectSlot ) {
 
 	ALuint effectSlot;
 	if ( !vp.isUndefined() )
-		JL_CHK( JL_JsvalToNative(cx, vp, &effectSlot) );
+		JL_CHK( jl::getValue(cx, vp, &effectSlot) );
 	else
 		effectSlot = AL_EFFECTSLOT_NULL;
 
@@ -407,7 +407,7 @@ DEFINE_PROPERTY_SETTER( directFilter ) {
 
 	ALuint filter;
 	if ( !vp.isUndefined() )
-		JL_CHK( JL_JsvalToNative(cx, vp, &filter) );
+		JL_CHK( jl::getValue(cx, vp, &filter) );
 	else
 		filter = AL_FILTER_NULL;
 
@@ -431,7 +431,7 @@ DEFINE_PROPERTY_SETTER( buffer ) {
 	if ( vp.isUndefined() || vp.get() == JSVAL_ZERO )
 		bid = AL_NONE;
 	else
-		JL_CHK( JL_JsvalToNative(cx, vp, &bid) ); // calls OalBuffer valueOf function
+		JL_CHK( jl::getValue(cx, vp, &bid) ); // calls OalBuffer valueOf function
 
 	JL_ASSERT( alIsBuffer(bid), E_VALUE, E_INVALID ); // JL_ASSERT( alIsBuffer(bid), E_VALUE, E_ANINVALID, E_STR("buffer") );
 
@@ -459,7 +459,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 	if ( !vp.isUndefined() ) {
 
 		ALint tmp;
-		JL_CHK( JL_JsvalToNative(cx, vp, &tmp) ); // calls OalBuffer valueOf function
+		JL_CHK( jl::getValue(cx, vp, &tmp) ); // calls OalBuffer valueOf function
 
 		JL_ASSERT( alIsBuffer(bid), E_VALUE, E_INVALID ); // JL_ASSERT( alIsBuffer(bid), E_VALUE, E_ANINVALID, E_STR("buffer") ); // JLSMSG_LOGIC_ERROR, "invalid buffer"
 
@@ -472,7 +472,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 
 		jsval *val = (jsval*)QueueGetData(it);
 		ALint tmp;
-		JL_CHK( JL_JsvalToNative(cx, *val, &tmp) ); // calls OalBuffer valueOf function
+		JL_CHK( jl::getValue(cx, *val, &tmp) ); // calls OalBuffer valueOf function
 		JL_ASSERT( alIsBuffer(tmp), E_VALUE, E_INVALID ); // JLSMSG_LOGIC_ERROR, "invalid buffer"
 		if ( tmp == bid ) {
 
@@ -482,7 +482,7 @@ DEFINE_PROPERTY_GETTER( buffer ) {
 	}
 
 	JL_ASSERT( alIsBuffer(bid), E_VALUE, E_INVALID ); // JLSMSG_LOGIC_ERROR, "invalid buffer"
-	JL_CHK( JL_NativeToJsval(cx, bid, vp) );
+	JL_CHK( jl::setValue(cx, vp, bid) );
 
 out:
 	return jl::StoreProperty(cx, obj, id, vp, false);
@@ -498,7 +498,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float pos[3];
 	size_t len;
-	JL_CHK( JL_JsvalToNativeVector(cx, *vp, pos, 3, &len) );
+	JL_CHK( jl::getVector(cx, *vp, pos, 3, &len) );
 	alSource3f(pv->sid, AL_POSITION, pos[0], pos[1], pos[2]);
 	return true;
 	JL_BAD;
@@ -516,9 +516,9 @@ DEFINE_FUNCTION( position ) {
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float pos[3];
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pos[0]) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &pos[1]) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &pos[2]) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &pos[0]) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &pos[1]) );
+	JL_CHK( jl::getValue(cx, JL_ARG(3), &pos[2]) );
 
 	alSource3f(pv->sid, AL_POSITION, pos[0], pos[1], pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -542,7 +542,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 	alGetSource3f(pv->sid, AL_POSITION, &pos[0], &pos[1], &pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_NativeVectorToJsval(cx, pos, 3, vp) );
+	JL_CHK( jl::setVector(cx, vp, pos, 3) );
 	return true;
 	JL_BAD;
 }
@@ -555,7 +555,7 @@ DEFINE_PROPERTY_SETTER( velocity ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float pos[3];
 	size_t len;
-	JL_CHK( JL_JsvalToNativeVector(cx, *vp, pos, 3, &len) );
+	JL_CHK( jl::getVector(cx, *vp, pos, 3, &len) );
 	alSource3f(pv->sid, AL_VELOCITY, pos[0], pos[1], pos[2]);
 	return true;
 	JL_BAD;
@@ -571,9 +571,9 @@ DEFINE_FUNCTION( velocity ) {
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float pos[3];
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pos[0]) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &pos[1]) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &pos[2]) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &pos[0]) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &pos[1]) );
+	JL_CHK( jl::getValue(cx, JL_ARG(3), &pos[2]) );
 
 	alSource3f(pv->sid, AL_VELOCITY, pos[0], pos[1], pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -596,7 +596,7 @@ DEFINE_PROPERTY_GETTER( velocity ) {
 	alGetSource3f(pv->sid, AL_VELOCITY, &pos[0], &pos[1], &pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_NativeVectorToJsval(cx, pos, 3, vp) );
+	JL_CHK( jl::setVector(cx, vp, pos, 3) );
 	return true;
 	JL_BAD;
 }
@@ -631,7 +631,7 @@ DEFINE_PROPERTY_GETTER( remainingTime ) {
 
 	ALfloat secOffset;
 	alGetSourcef(pv->sid, AL_SEC_OFFSET, &secOffset);
-	JL_CHK(JL_NativeToJsval(cx, pv->totalTime - secOffset, vp) );
+	JL_CHK(jl::setValue(cx, vp, pv->totalTime - secOffset) );
 	return true;
 	JL_BAD;
 }
@@ -692,7 +692,7 @@ DEFINE_PROPERTY_SETTER( sourceFloatInd ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = enumToConst[JSID_TO_INT(id)];
 	float f;
-	JL_CHK( JL_JsvalToNative(cx, vp, &f) );
+	JL_CHK( jl::getValue(cx, vp, &f) );
 	alSourcef(pv->sid, param, f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return true;
@@ -709,7 +709,7 @@ DEFINE_PROPERTY_GETTER( sourceFloatInd ) {
 	float f;
 	alGetSourcef(pv->sid, param, &f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK(JL_NativeToJsval(cx, f, vp) );
+	JL_CHK(jl::setValue(cx, vp, f) );
 	return true;
 	JL_BAD;
 }
@@ -725,7 +725,7 @@ DEFINE_PROPERTY_SETTER( sourceIntInd ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	int i;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &i) );
+	JL_CHK( jl::getValue(cx, *vp, &i) );
 	alSourcei(pv->sid, param, i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return true;
@@ -743,7 +743,7 @@ DEFINE_PROPERTY_GETTER( sourceIntInd ) {
 	int i;
 	alGetSourcei(pv->sid, param, &i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK( JL_NativeToJsval(cx, i, vp) );
+	JL_CHK( jl::setValue(cx, vp, i) );
 	return true;
 	JL_BAD;
 }
@@ -758,7 +758,7 @@ DEFINE_PROPERTY_SETTER( sourceBoolInd ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = enumToConst[JSID_TO_INT(id)]; // see sourceFloatInd comment.
 	bool b;
-	JL_CHK( JL_JsvalToNative(cx, vp, &b) );
+	JL_CHK( jl::getValue(cx, vp, &b) );
 	alSourcei(pv->sid, param, b ? AL_TRUE : AL_FALSE);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return true;

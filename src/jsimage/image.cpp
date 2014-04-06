@@ -20,7 +20,7 @@ BEGIN_CLASS( Image )
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime())->canSkipCleanup )
 		return;
 
 	void *data = JL_GetPrivate(obj);
@@ -92,7 +92,7 @@ DEFINE_FUNCTION( trim ) {
 	int vect[4];
 	//IntArrayToVector(cx, 4, &argv[0], vect);
 	uint32_t length;
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), vect, 4, &length) );
+	JL_CHK( jl::getVector(cx, JL_ARG(1), vect, 4, &length) );
 	JL_ASSERT( length == 4, E_ARG, E_NUM(1), E_TYPE, E_TY_NARRAY(4) );
 
 	int x, y;
@@ -103,9 +103,9 @@ DEFINE_FUNCTION( trim ) {
 	y1 = vect[3];
 
 	int width, height, channels;
-	JL_CHK( JL_PropertyToNative(cx, obj, JLID(cx, width), &width) );
-	JL_CHK( JL_PropertyToNative(cx, obj, JLID(cx, height), &height) );
-	JL_CHK( JL_PropertyToNative(cx, obj, JLID(cx, channels), &channels) );
+	JL_CHK( jl::getProperty(cx, obj, JLID(cx, width), &width) );
+	JL_CHK( jl::getProperty(cx, obj, JLID(cx, height), &height) );
+	JL_CHK( jl::getProperty(cx, obj, JLID(cx, channels), &channels) );
 
 // assume that we have 1 Byte/channel !
 
@@ -148,8 +148,8 @@ DEFINE_FUNCTION( trim ) {
 	//JS_DefineProperty(cx, obj, "width", INT_TO_JSVAL(newWidth), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 	//JS_DefineProperty(cx, obj, "height", INT_TO_JSVAL(newHeight), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT );
 
-	JL_CHK( JL_NativeToProperty(cx, obj, JLID(cx, width), newWidth) );
-	JL_CHK( JL_NativeToProperty(cx, obj, JLID(cx, height), newHeight) );
+	JL_CHK( jl::setProperty(cx, obj, JLID(cx, width), newWidth) );
+	JL_CHK( jl::setProperty(cx, obj, JLID(cx, height), newHeight) );
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj); // allows to write: var texture = new Jpeg(f).Load().Trim(...)
 

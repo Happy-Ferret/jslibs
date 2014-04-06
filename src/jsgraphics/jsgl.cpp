@@ -83,7 +83,7 @@ bool GetArgInt( JSContext *cx, unsigned *argc, jsval **argv, unsigned count, int
 		JL_ASSERT( *argc >= count, "Not enough arguments." );
 		for ( i = 0; i < count; ++i ) {
 
-			JL_CHK( JL_JsvalToNative(cx, **argv, rval) );
+			JL_CHK( jl::getValue(cx, **argv, rval) );
 			++rval;
 			++*argv;
 		}
@@ -91,7 +91,7 @@ bool GetArgInt( JSContext *cx, unsigned *argc, jsval **argv, unsigned count, int
 		return true;
 	}
 	unsigned len;
-	JL_CHK( JL_JsvalToNativeVector(cx, **argv, rval, count, &len) );
+	JL_CHK( jl::getVector(cx, **argv, rval, count, &len) );
 	JL_ASSERT( len == count, "Not enough elements." );
 	++*argv;
 	--*argc;
@@ -107,7 +107,7 @@ bool GetArgDouble( JSContext *cx, unsigned *argc, jsval **argv, unsigned count, 
 		JL_ASSERT( *argc >= count, "Not enough arguments." );
 		for ( i = 0; i < count; ++i ) {
 
-			JL_CHK( JL_JsvalToNative(cx, **argv, rval) );
+			JL_CHK( jl::getValue(cx, **argv, rval) );
 			++rval;
 			++*argv;
 		}
@@ -115,7 +115,7 @@ bool GetArgDouble( JSContext *cx, unsigned *argc, jsval **argv, unsigned count, 
 		return true;
 	}
 	unsigned len;
-	JL_CHK( JL_JsvalToNativeVector(cx, **argv, rval, count, &len) );
+	JL_CHK( jl::getVector(cx, **argv, rval, count, &len) );
 	JL_ASSERT( len == count, "Not enough elements." );
 	++*argv;
 	--*argc;
@@ -750,7 +750,7 @@ DEFINE_FUNCTION( get ) {
 		{
 			GLdouble params[2];
 			glGetDoublev(pname, params);  OGL_ERR_CHK;
-			return JL_NativeVectorToJsval(cx, params, COUNTOF(params), *JL_RVAL);
+			return jl::setVector(cx, JL_RVAL, params, COUNTOF(params));
 		}
 
 		case GL_CURRENT_NORMAL:
@@ -758,7 +758,7 @@ DEFINE_FUNCTION( get ) {
 		{
 			GLdouble params[3];
 			glGetDoublev(pname, params);  OGL_ERR_CHK;
-			return JL_NativeVectorToJsval(cx, params, COUNTOF(params), *JL_RVAL);
+			return jl::setVector(cx, JL_RVAL, params, COUNTOF(params));
 		}
 
 		case GL_ACCUM_CLEAR_VALUE:
@@ -777,7 +777,7 @@ DEFINE_FUNCTION( get ) {
 		{
 			GLdouble params[4];
 			glGetDoublev(pname, params);  OGL_ERR_CHK;
-			return JL_NativeVectorToJsval(cx, params, COUNTOF(params), *JL_RVAL);
+			return jl::setVector(cx, JL_RVAL, params, COUNTOF(params));
 		}
 
 		case GL_COLOR_MATRIX:
@@ -791,7 +791,7 @@ DEFINE_FUNCTION( get ) {
 		{
 			GLdouble params[16];
 			glGetDoublev(pname, params);  OGL_ERR_CHK;
-			return JL_NativeVectorToJsval(cx, params, COUNTOF(params), *JL_RVAL);
+			return jl::setVector(cx, JL_RVAL, params, COUNTOF(params));
 		}
 
 		case GL_COMPRESSED_TEXTURE_FORMATS: // enum
@@ -800,7 +800,7 @@ DEFINE_FUNCTION( get ) {
 			glGetIntegerv(GL_NUM_COMPRESSED_TEXTURE_FORMATS, &count);
 			GLint *params = (GLint*)alloca(count * sizeof(GLenum));
 			glGetIntegerv(pname, params);
-			return JL_NativeVectorToJsval(cx, params, count, *JL_RVAL);
+			return jl::setVector(cx, JL_RVAL, params, count);
 		}
 	}
 
@@ -895,7 +895,7 @@ DEFINE_FUNCTION( getInteger ) {
 
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
-		count = JL_MIN(count, COUNTOF(params));
+		count = jl::min(count, COUNTOF(params));
 		while (count--) {
 
 			tmpValue = INT_TO_JSVAL( params[count] );
@@ -970,7 +970,7 @@ DEFINE_FUNCTION( getDouble ) {
 
 		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
 		jsval tmpValue;
-		count = JL_MIN(count, COUNTOF(params));
+		count = jl::min(count, COUNTOF(params));
 		while (count--) {
 
 			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
@@ -1076,7 +1076,7 @@ DEFINE_FUNCTION( accum ) {
 	JL_ASSERT_ARG_IS_NUMBER(2);
 
 	float value;
-	JL_JsvalToNative(cx, JL_ARG(2), &value);
+	jl::getValue(cx, JL_ARG(2), &value);
 
 	glAccum(JL_ARG(1).toInt32(), value);  OGL_ERR_CHK;
 
@@ -1113,7 +1113,7 @@ DEFINE_FUNCTION( stencilFunc ) {
 	if ( INT_TO_JSVAL(-1) == JL_ARG(3) )
 		mask = 0xffffffff;
 	else
-		JL_JsvalToNative(cx, JL_ARG(3), &mask);
+		jl::getValue(cx, JL_ARG(3), &mask);
 
 	glStencilFunc(JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), mask);  OGL_ERR_CHK;
 
@@ -1175,7 +1175,7 @@ DEFINE_FUNCTION( stencilMask ) {
 	if ( INT_TO_JSVAL(-1) == JL_ARG(1) )
 		mask = 0xffffffff;
 	else
-		JL_JsvalToNative(cx, JL_ARG(1), &mask);
+		jl::getValue(cx, JL_ARG(1), &mask);
 
 	glStencilMask( mask );  OGL_ERR_CHK;
 
@@ -1205,7 +1205,7 @@ DEFINE_FUNCTION( alphaFunc ) {
 	JL_ASSERT_ARG_IS_NUMBER(2);
 
 	float ref;
-	JL_JsvalToNative(cx, JL_ARG(2), &ref);
+	jl::getValue(cx, JL_ARG(2), &ref);
 
 	glAlphaFunc( JL_ARG(1).toInt32(), ref );  OGL_ERR_CHK;
 
@@ -1287,7 +1287,7 @@ DEFINE_FUNCTION( fog ) {
 	if ( JL_ARG(2).isDouble() ) {
 
 		float param;
-		JL_JsvalToNative(cx, JL_ARG(2), &param);
+		jl::getValue(cx, JL_ARG(2), &param);
 
 		glFogf( JL_ARG(1).toInt32(), param );  OGL_ERR_CHK;
 
@@ -1297,7 +1297,7 @@ DEFINE_FUNCTION( fog ) {
 
 		GLfloat params[MAX_PARAMS];
 		uint32_t length;
-		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, COUNTOF(params), &length ) );
+		JL_CHK( jl::getVector(cx, JL_ARG(2), params, COUNTOF(params), &length ) );
 
 		glFogfv( JL_ARG(1).toInt32(), params );  OGL_ERR_CHK;
 
@@ -1361,14 +1361,14 @@ DEFINE_FUNCTION( vertex ) {
 		JL_ASSERT_ARGC_RANGE(2,4);
 
 		double x, y, z, w;
-		JL_JsvalToNative(cx, JL_ARG(1), &x);
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &y) );
+		jl::getValue(cx, JL_ARG(1), &x);
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &y) );
 		if ( JL_ARGC >= 3 ) {
 
-			JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &z) );
+			JL_CHK( jl::getValue(cx, JL_ARG(3), &z) );
 			if ( JL_ARGC >= 4 ) {
 
-				JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &w) );
+				JL_CHK( jl::getValue(cx, JL_ARG(4), &w) );
 				glVertex4d(x, y, z, w);  OGL_ERR_CHK;
 				return true;
 			}
@@ -1383,7 +1383,7 @@ DEFINE_FUNCTION( vertex ) {
 
 	GLdouble pos[4];
 	uint32_t len;
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), pos, COUNTOF(pos), &len) );
+	JL_CHK( jl::getVector(cx, JL_ARG(1), pos, COUNTOF(pos), &len) );
 	if ( len == 2 ) {
 		glVertex2dv(pos);  OGL_ERR_CHK;
 	} else if ( len == 3 ) {
@@ -1416,7 +1416,7 @@ DEFINE_FUNCTION( edgeFlag ) {
 	JL_ASSERT_ARGC(1);
 
 	bool flag;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &flag) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &flag) );
 
 	glEdgeFlag(flag);
 
@@ -1453,22 +1453,22 @@ DEFINE_FUNCTION( color ) {
 		JL_ASSERT_ARGC_MAX(4);
 
 		double r, g, b, a;
-		JL_JsvalToNative(cx, JL_ARG(1), &r);
+		jl::getValue(cx, JL_ARG(1), &r);
 		if ( argc == 1 ) {
 
 			glColor3d(r, r, r);  OGL_ERR_CHK;
 			;
 			return true;
 		}
-		JL_JsvalToNative(cx, JL_ARG(2), &g);
-		JL_JsvalToNative(cx, JL_ARG(3), &b);
+		jl::getValue(cx, JL_ARG(2), &g);
+		jl::getValue(cx, JL_ARG(3), &b);
 		if ( argc == 3 ) {
 
 			glColor3d(r, g, b);  OGL_ERR_CHK;
 			;
 			return true;
 		}
-		JL_JsvalToNative(cx, JL_ARG(4), &a);
+		jl::getValue(cx, JL_ARG(4), &a);
 		glColor4d(r, g, b, a);  OGL_ERR_CHK;
 		;
 	} else {
@@ -1477,7 +1477,7 @@ DEFINE_FUNCTION( color ) {
 
 		GLdouble color[4];
 		uint32_t len;
-		JL_JsvalToNativeVector(cx, JL_ARG(1), color, 4, &len);
+		jl::getVector(cx, JL_ARG(1), color, 4, &len);
 		if ( len == 3 ) {
 			glColor3dv(color);  OGL_ERR_CHK;
 		} else if ( len == 4 ) {
@@ -1513,9 +1513,9 @@ DEFINE_FUNCTION( normal ) {
 	JL_ASSERT_ARG_IS_NUMBER(3);
 
 	double nx, ny, nz;
-	JL_JsvalToNative(cx, JL_ARG(1), &nx);
-	JL_JsvalToNative(cx, JL_ARG(2), &ny);
-	JL_JsvalToNative(cx, JL_ARG(3), &nz);
+	jl::getValue(cx, JL_ARG(1), &nx);
+	jl::getValue(cx, JL_ARG(2), &ny);
+	jl::getValue(cx, JL_ARG(3), &nz);
 
 	glNormal3d(nx, ny, nz);  OGL_ERR_CHK;
 
@@ -1546,7 +1546,7 @@ DEFINE_FUNCTION( texCoord ) {
 
 	JL_RVAL.setUndefined();
 	double s;
-	JL_JsvalToNative(cx, JL_ARG(1), &s);
+	jl::getValue(cx, JL_ARG(1), &s);
 	if ( JL_ARGC == 1 ) {
 
 		glTexCoord1d(s);  OGL_ERR_CHK;
@@ -1555,7 +1555,7 @@ DEFINE_FUNCTION( texCoord ) {
 		return true;
 	}
 	double t;
-	JL_JsvalToNative(cx, JL_ARG(2), &t);
+	jl::getValue(cx, JL_ARG(2), &t);
 	if ( JL_ARGC == 2 ) {
 
 		glTexCoord2d(s, t);  OGL_ERR_CHK;
@@ -1564,7 +1564,7 @@ DEFINE_FUNCTION( texCoord ) {
 		return true;
 	}
 	double r;
-	JL_JsvalToNative(cx, JL_ARG(3), &r);
+	jl::getValue(cx, JL_ARG(3), &r);
 
 	glTexCoord3d(s, t, r);  OGL_ERR_CHK;
 
@@ -1605,7 +1605,7 @@ DEFINE_FUNCTION( texParameter ) {
 	if ( JL_ARG(3).isDouble() ) {
 
 		float param;
-		JL_JsvalToNative(cx, JL_ARG(3), &param);
+		jl::getValue(cx, JL_ARG(3), &param);
 
 		glTexParameterf( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), param );  OGL_ERR_CHK;
 
@@ -1615,7 +1615,7 @@ DEFINE_FUNCTION( texParameter ) {
 
 		GLfloat params[MAX_PARAMS];
 		uint32_t length;
-		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
+		JL_CHK( jl::getVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
 
 		glTexParameterfv( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), params );  OGL_ERR_CHK;
 
@@ -1659,7 +1659,7 @@ DEFINE_FUNCTION( texEnv ) {
 	if ( argc == 3 && JL_ARG(3).isDouble() ) {
 
 		float param;
-		JL_JsvalToNative(cx, JL_ARG(3), &param);
+		jl::getValue(cx, JL_ARG(3), &param);
 
 		glTexEnvf( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), param );  OGL_ERR_CHK;
 
@@ -1670,7 +1670,7 @@ DEFINE_FUNCTION( texEnv ) {
 	if ( argc == 3 && JL_ValueIsArrayLike(cx, JL_ARG(3)) ) {
 
 		uint32_t length;
-		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
+		JL_CHK( jl::getVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
 
 		glTexEnvfv( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), params );  OGL_ERR_CHK;
 
@@ -1682,7 +1682,7 @@ DEFINE_FUNCTION( texEnv ) {
 	JL_ASSERT_ARGC_MIN( 3 ); // at least
 	ASSERT( argc-2 < COUNTOF(params) );
 	for ( unsigned int i = 2; i < argc; ++i )
-		JL_JsvalToNative(cx, JL_ARG(i+1), &params[i-2]);
+		jl::getValue(cx, JL_ARG(i+1), &params[i-2]);
 
 	glTexEnvfv( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), params );  OGL_ERR_CHK;
 
@@ -1721,7 +1721,7 @@ DEFINE_FUNCTION( texGen ) {
 	if ( argc == 3 && JL_ARG(3).isDouble() ) {
 
 		double param;
-		JL_JsvalToNative(cx, JL_ARG(3), &param);
+		jl::getValue(cx, JL_ARG(3), &param);
 
 		glTexGend( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), param );  OGL_ERR_CHK;
 
@@ -1732,7 +1732,7 @@ DEFINE_FUNCTION( texGen ) {
 	if ( argc == 3 && JL_ValueIsArrayLike(cx, JL_ARG(3)) ) {
 
 		uint32_t length;
-		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
+		JL_CHK( jl::getVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
 
 		glTexGendv( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), params );  OGL_ERR_CHK;
 
@@ -1742,7 +1742,7 @@ DEFINE_FUNCTION( texGen ) {
 	JL_ASSERT_ARGC_MIN( 3 ); // at least
 	ASSERT( argc-2 < COUNTOF(params) );
 	for ( unsigned int i = 2; i < argc; ++i )
-		JL_JsvalToNative(cx, JL_ARG(i+1), &params[i-2]);
+		jl::getValue(cx, JL_ARG(i+1), &params[i-2]);
 
 	glTexGendv( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), params );  OGL_ERR_CHK;
 
@@ -1788,7 +1788,7 @@ DEFINE_FUNCTION( texImage2D ) {
 	JL_ASSERT_ARG_IS_INTEGER(8);
 
 	if ( JL_ARG_ISDEF(9) && !JL_ARG(9).isNull() ) // same as !JSVAL_IS_PRIMITIVE
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(9), &data) );
+		JL_CHK( jl::getValue(cx, JL_ARG(9), &data) );
 
 	glTexImage2D( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), JL_ARG(3).toInt32(), JL_ARG(4).toInt32(), JL_ARG(5).toInt32(), JL_ARG(6).toInt32(), JL_ARG(7).toInt32(), JL_ARG(8).toInt32(), (GLvoid*)data.GetConstStr() );  OGL_ERR_CHK;
 
@@ -1881,7 +1881,7 @@ DEFINE_FUNCTION( texSubImage2D ) {
 		pixels = (GLvoid*)arg.toInt32();
 	} else {
 
-		JL_CHK( JL_JsvalToNative(cx, arg, &data) );
+		JL_CHK( jl::getValue(cx, arg, &data) );
 		pixels = (GLvoid*)data.GetConstStr();
 	}
 
@@ -1921,7 +1921,7 @@ DEFINE_FUNCTION( lightModel ) {
 	if ( JL_ARG(2).isDouble() ) {
 
 		float param;
-		JL_JsvalToNative(cx, JL_ARG(2), &param);
+		jl::getValue(cx, JL_ARG(2), &param);
 		glLightModelf( JL_ARG(1).toInt32(), param );  OGL_ERR_CHK;
 		return true;
 	}
@@ -1930,7 +1930,7 @@ DEFINE_FUNCTION( lightModel ) {
 
 		GLfloat params[MAX_PARAMS];
 		uint32_t length;
-		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, COUNTOF(params), &length ) );
+		JL_CHK( jl::getVector(cx, JL_ARG(2), params, COUNTOF(params), &length ) );
 		glLightModelfv( JL_ARG(1).toInt32(), params );  OGL_ERR_CHK;
 		return true;
 	}
@@ -1971,7 +1971,7 @@ DEFINE_FUNCTION( light ) {
 	if ( argc == 3 && JL_ARG(3).isDouble() ) {
 
 		float param;
-		JL_JsvalToNative(cx, JL_ARG(3), &param);
+		jl::getValue(cx, JL_ARG(3), &param);
 		glLightf( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), param );  OGL_ERR_CHK;
 		return true;
 	}
@@ -1980,7 +1980,7 @@ DEFINE_FUNCTION( light ) {
 	if ( argc == 3 && JL_ValueIsArrayLike(cx, JL_ARG(3)) ) {
 
 		uint32_t length;
-		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
+		JL_CHK( jl::getVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
 		glLightfv( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), params );  OGL_ERR_CHK;
 		return true;
 	}
@@ -1988,7 +1988,7 @@ DEFINE_FUNCTION( light ) {
 	JL_ASSERT_ARGC_MIN( 3 ); // at least
 	ASSERT( argc-2 < COUNTOF(params) );
 	for ( unsigned int i = 2; i < argc; ++i )
-		JL_JsvalToNative(cx, JL_ARG(i+1), &params[i-2]);
+		jl::getValue(cx, JL_ARG(i+1), &params[i-2]);
 	glLightfv( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), params );  OGL_ERR_CHK;
 	return true;
 	JL_BAD;
@@ -2028,7 +2028,7 @@ DEFINE_FUNCTION( getLight ) {
 	if ( JL_ARG_ISDEF(3) ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(3);
-		count = JL_MIN(JL_ARG(3).toInt32(), (int)COUNTOF(params));
+		count = jl::min(JL_ARG(3).toInt32(), (int)COUNTOF(params));
 	} else {
 
 		switch ( pname ) {
@@ -2139,7 +2139,7 @@ DEFINE_FUNCTION( material ) {
 	if ( argc == 3 && JL_ARG(3).isDouble() ) {
 
 		float param;
-		JL_JsvalToNative(cx, JL_ARG(3), &param);
+		jl::getValue(cx, JL_ARG(3), &param);
 		glMaterialf( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), param );  OGL_ERR_CHK;
 		;
 		return true;
@@ -2149,7 +2149,7 @@ DEFINE_FUNCTION( material ) {
 	if ( argc == 3 && JL_ValueIsArrayLike(cx, JL_ARG(3)) ) {
 
 		uint32_t length;
-		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
+		JL_CHK( jl::getVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
 		glMaterialfv( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), params );  OGL_ERR_CHK;
 		;
 		return true;
@@ -2158,7 +2158,7 @@ DEFINE_FUNCTION( material ) {
 	JL_ASSERT_ARGC_MIN( 3 ); // at least
 	ASSERT( argc-2 < COUNTOF(params) );
 	for ( unsigned int i = 2; i < argc; ++i )
-		JL_JsvalToNative(cx, JL_ARG(i+1), &params[i-2]);
+		jl::getValue(cx, JL_ARG(i+1), &params[i-2]);
 	glMaterialfv( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), params );  OGL_ERR_CHK;
 	;
 	return true;
@@ -2237,7 +2237,7 @@ DEFINE_FUNCTION( pointSize ) {
 	JL_ASSERT_ARGC(1);
 
 	float size;
-	JL_JsvalToNative(cx, JL_ARG(1), &size);
+	jl::getValue(cx, JL_ARG(1), &size);
 
 	glPointSize(size);  OGL_ERR_CHK;
 
@@ -2264,7 +2264,7 @@ DEFINE_FUNCTION( lineWidth ) {
 	JL_ASSERT_ARGC(1);
 
 	float width;
-	JL_JsvalToNative(cx, JL_ARG(1), &width);
+	jl::getValue(cx, JL_ARG(1), &width);
 
 	glLineWidth(width);  OGL_ERR_CHK;
 
@@ -2397,8 +2397,8 @@ DEFINE_FUNCTION( depthRange ) {
 	JL_ASSERT_ARG_IS_NUMBER(2);
 
 	double zNear, zFar;
-	JL_JsvalToNative(cx, JL_ARG(1), &zNear);
-	JL_JsvalToNative(cx, JL_ARG(2), &zFar);
+	jl::getValue(cx, JL_ARG(1), &zNear);
+	jl::getValue(cx, JL_ARG(2), &zFar);
 
 	glDepthRange(zNear, zFar);  OGL_ERR_CHK;
 
@@ -2431,8 +2431,8 @@ DEFINE_FUNCTION( polygonOffset ) {
 
 	GLfloat factor, units;
 
-	JL_JsvalToNative(cx, JL_ARG(1), &factor);
-	JL_JsvalToNative(cx, JL_ARG(2), &units);
+	jl::getValue(cx, JL_ARG(1), &factor);
+	jl::getValue(cx, JL_ARG(2), &units);
 
 	glPolygonOffset(factor, units);  OGL_ERR_CHK;
 
@@ -2515,7 +2515,7 @@ DEFINE_FUNCTION( clearStencil ) {
 	if ( INT_TO_JSVAL(-1) == JL_ARG(1) )
 		s = 0xffffffff;
 	else
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &s) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &s) );
 
 	glClearStencil(s);  OGL_ERR_CHK;
 
@@ -2543,7 +2543,7 @@ DEFINE_FUNCTION( clearDepth ) {
 	JL_ASSERT_ARG_IS_NUMBER(1);
 
 	double depth;
-	JL_JsvalToNative(cx, JL_ARG(1), &depth);
+	jl::getValue(cx, JL_ARG(1), &depth);
 
 	glClearDepth(depth);  OGL_ERR_CHK;
 
@@ -2577,10 +2577,10 @@ DEFINE_FUNCTION( clearColor ) {
 	JL_ASSERT_ARG_IS_NUMBER(4);
 
 	float r, g, b, a;
-	JL_JsvalToNative(cx, JL_ARG(1), &r);
-	JL_JsvalToNative(cx, JL_ARG(2), &g);
-	JL_JsvalToNative(cx, JL_ARG(3), &b);
-	JL_JsvalToNative(cx, JL_ARG(4), &a);
+	jl::getValue(cx, JL_ARG(1), &r);
+	jl::getValue(cx, JL_ARG(2), &g);
+	jl::getValue(cx, JL_ARG(3), &b);
+	jl::getValue(cx, JL_ARG(4), &a);
 
 	glClearColor(r, g, b, a);  OGL_ERR_CHK;
 
@@ -2614,10 +2614,10 @@ DEFINE_FUNCTION( clearAccum ) {
 	JL_ASSERT_ARG_IS_NUMBER(4);
 
 	float r, g, b, a;
-	JL_JsvalToNative(cx, JL_ARG(1), &r);
-	JL_JsvalToNative(cx, JL_ARG(2), &g);
-	JL_JsvalToNative(cx, JL_ARG(3), &b);
-	JL_JsvalToNative(cx, JL_ARG(4), &a);
+	jl::getValue(cx, JL_ARG(1), &r);
+	jl::getValue(cx, JL_ARG(2), &g);
+	jl::getValue(cx, JL_ARG(3), &b);
+	jl::getValue(cx, JL_ARG(4), &a);
 
 	glClearAccum(r, g, b, a);  OGL_ERR_CHK;
 
@@ -2720,7 +2720,7 @@ DEFINE_FUNCTION( clipPlane ) {
 
 	GLdouble equation[4];
 	uint32_t len;
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), equation, COUNTOF(equation), &len ) );
+	JL_CHK( jl::getVector(cx, JL_ARG(2), equation, COUNTOF(equation), &len ) );
 	JL_CHKM( len == 4, E_ARG, E_NUM(2), E_LENGTH, E_NUM(4) );
 	glClipPlane(JL_ARG(1).toInt32(), equation);  OGL_ERR_CHK;
 	JL_RVAL.setUndefined();
@@ -2788,12 +2788,12 @@ DEFINE_FUNCTION( frustum ) {
 	JL_ASSERT_ARG_IS_NUMBER(6);
 
 	double left, right, bottom, top, zNear, zFar;
-	JL_JsvalToNative(cx, JL_ARG(1), &left);
-	JL_JsvalToNative(cx, JL_ARG(2), &right);
-	JL_JsvalToNative(cx, JL_ARG(3), &bottom);
-	JL_JsvalToNative(cx, JL_ARG(4), &top);
-	JL_JsvalToNative(cx, JL_ARG(5), &zNear);
-	JL_JsvalToNative(cx, JL_ARG(6), &zFar);
+	jl::getValue(cx, JL_ARG(1), &left);
+	jl::getValue(cx, JL_ARG(2), &right);
+	jl::getValue(cx, JL_ARG(3), &bottom);
+	jl::getValue(cx, JL_ARG(4), &top);
+	jl::getValue(cx, JL_ARG(5), &zNear);
+	jl::getValue(cx, JL_ARG(6), &zFar);
 
 	glFrustum(left, right, bottom, top, zNear, zFar);  OGL_ERR_CHK;
 
@@ -2831,12 +2831,12 @@ DEFINE_FUNCTION( ortho ) {
 	JL_ASSERT_ARG_IS_NUMBER(6);
 
 	double left, right, bottom, top, zNear, zFar;
-	JL_JsvalToNative(cx, JL_ARG(1), &left);
-	JL_JsvalToNative(cx, JL_ARG(2), &right);
-	JL_JsvalToNative(cx, JL_ARG(3), &bottom);
-	JL_JsvalToNative(cx, JL_ARG(4), &top);
-	JL_JsvalToNative(cx, JL_ARG(5), &zNear);
-	JL_JsvalToNative(cx, JL_ARG(6), &zFar);
+	jl::getValue(cx, JL_ARG(1), &left);
+	jl::getValue(cx, JL_ARG(2), &right);
+	jl::getValue(cx, JL_ARG(3), &bottom);
+	jl::getValue(cx, JL_ARG(4), &top);
+	jl::getValue(cx, JL_ARG(5), &zNear);
+	jl::getValue(cx, JL_ARG(6), &zFar);
 
 	glOrtho(left, right, bottom, top, zNear, zFar);  OGL_ERR_CHK;
 
@@ -2874,17 +2874,17 @@ DEFINE_FUNCTION( perspective ) {
 
 
 	double fovy, zNear, zFar, aspect;
-	JL_JsvalToNative(cx, JL_ARG(1), &fovy);
-	//	JL_JsvalToNative(cx, JL_ARG(2), &aspect)
-	JL_JsvalToNative(cx, JL_ARG(3), &zNear);
-	JL_JsvalToNative(cx, JL_ARG(4), &zFar);
+	jl::getValue(cx, JL_ARG(1), &fovy);
+	//	jl::getValue(cx, JL_ARG(2), &aspect)
+	jl::getValue(cx, JL_ARG(3), &zNear);
+	jl::getValue(cx, JL_ARG(4), &zFar);
 
 //	GLint prevMatrixMode;
 //	glGetIntegerv(GL_MATRIX_MODE, &prevMatrixMode);  OGL_ERR_CHK; // GL_MODELVIEW
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_JsvalToNative(cx, JL_ARG(2), &aspect);
+		jl::getValue(cx, JL_ARG(2), &aspect);
 	} else {
 
 		GLint viewport[4];
@@ -3032,7 +3032,7 @@ DEFINE_FUNCTION( loadMatrix ) {
 
 	float tmp[16], *m = tmp;
 
-	JL_CHK( JL_JsvalToMatrix44(cx, JL_ARG(1), &m) );
+	JL_CHK( jl::getMatrix44(cx, JL_ARG(1), &m) );
 	glLoadMatrixf(m);  OGL_ERR_CHK;
 
 	JL_RVAL.setUndefined();
@@ -3059,7 +3059,7 @@ DEFINE_FUNCTION( multMatrix ) {
 
 	float tmp[16], *m = tmp;
 
-	JL_CHK( JL_JsvalToMatrix44(cx, JL_ARG(1), &m) );
+	JL_CHK( jl::getMatrix44(cx, JL_ARG(1), &m) );
 
 	glMultMatrixf(m);  OGL_ERR_CHK;
 
@@ -3089,10 +3089,10 @@ DEFINE_FUNCTION( rotate ) {
 	JL_ASSERT_ARGC(4);
 
 	double angle, x, y, z;
-	JL_JsvalToNative(cx, JL_ARG(1), &angle);
-	JL_JsvalToNative(cx, JL_ARG(2), &x);
-	JL_JsvalToNative(cx, JL_ARG(3), &y);
-	JL_JsvalToNative(cx, JL_ARG(4), &z);
+	jl::getValue(cx, JL_ARG(1), &angle);
+	jl::getValue(cx, JL_ARG(2), &x);
+	jl::getValue(cx, JL_ARG(3), &y);
+	jl::getValue(cx, JL_ARG(4), &z);
 
 	glRotated(angle, x, y, z);  OGL_ERR_CHK;
 
@@ -3123,10 +3123,10 @@ DEFINE_FUNCTION( translate ) {
 	JL_ASSERT_ARG_IS_NUMBER(2);
 
 	double x, y, z;
-	JL_JsvalToNative(cx, JL_ARG(1), &x);
-	JL_JsvalToNative(cx, JL_ARG(2), &y);
+	jl::getValue(cx, JL_ARG(1), &x);
+	jl::getValue(cx, JL_ARG(2), &y);
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &z) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &z) );
 	else
 		z = 0;
 
@@ -3159,7 +3159,7 @@ DEFINE_FUNCTION( scale ) {
 
 	JL_RVAL.setUndefined();
 	double x, y, z;
-	JL_JsvalToNative(cx, JL_ARG(1), &x);
+	jl::getValue(cx, JL_ARG(1), &x);
 
 	if ( argc == 1 ) {
 
@@ -3167,11 +3167,11 @@ DEFINE_FUNCTION( scale ) {
 		;
 		return true;
 	}
-	JL_JsvalToNative(cx, JL_ARG(2), &y);
+	jl::getValue(cx, JL_ARG(2), &y);
 
 	if ( argc >= 3 ) {
 
-		JL_JsvalToNative(cx, JL_ARG(3), &z);
+		jl::getValue(cx, JL_ARG(3), &z);
 		glScaled(x, y, z);  OGL_ERR_CHK;
 		;
 		return true;
@@ -3201,7 +3201,7 @@ DEFINE_FUNCTION( newList ) {
 
 	bool compileOnly;
 	if ( JL_ARG_ISDEF(1) )
-		JL_JsvalToNative(cx, JL_ARG(1), &compileOnly);
+		jl::getValue(cx, JL_ARG(1), &compileOnly);
 	else
 		compileOnly = false;
 
@@ -3415,7 +3415,7 @@ DEFINE_FUNCTION( pushAttrib ) {
 //	JL_ARG_GEN(1, GLbitfield);
 	
 	GLbitfield mask;
-	JL_JsvalToNative(cx, JL_ARG(1), &mask);
+	jl::getValue(cx, JL_ARG(1), &mask);
 
 	glPushAttrib(mask);  OGL_ERR_CHK;
 
@@ -3491,7 +3491,7 @@ DEFINE_FUNCTION( bindTexture ) {
 //	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	int texture;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &texture) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &texture) );
 
 	glBindTexture( JL_ARG(1).toInt32(), texture );  OGL_ERR_CHK;
 
@@ -3604,7 +3604,7 @@ DEFINE_FUNCTION( pixelTransfer ) {
 
 		JL_ASSERT_ARG_IS_NUMBER(2);
 		float param;
-		JL_JsvalToNative(cx, JL_ARG(2), &param);
+		jl::getValue(cx, JL_ARG(2), &param);
 		glPixelTransferf(pname, param);  OGL_ERR_CHK;
 	}
 
@@ -3637,7 +3637,7 @@ DEFINE_FUNCTION( pixelStore ) {
 
 		JL_ASSERT_ARG_IS_NUMBER(2);
 		float param;
-		JL_JsvalToNative(cx, JL_ARG(2), &param);
+		jl::getValue(cx, JL_ARG(2), &param);
 		glPixelStoref(pname, param);  OGL_ERR_CHK;
 	}
 
@@ -3667,14 +3667,14 @@ DEFINE_FUNCTION( rasterPos ) {
 
 	JL_RVAL.setUndefined();
 
-	JL_JsvalToNative(cx, JL_ARG(1), &x);
-	JL_JsvalToNative(cx, JL_ARG(2), &y);
+	jl::getValue(cx, JL_ARG(1), &x);
+	jl::getValue(cx, JL_ARG(2), &y);
 	if ( argc >= 3 ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &z) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &z) );
 		if ( argc >= 4 ) {
 
-			JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &w) );
+			JL_CHK( jl::getValue(cx, JL_ARG(4), &w) );
 			glRasterPos4d(x, y, z, w);  OGL_ERR_CHK;
 			;
 			return true;
@@ -3708,8 +3708,8 @@ DEFINE_FUNCTION( pixelZoom ) {
 
 	float x, y;
 
-	JL_JsvalToNative(cx, JL_ARG(1), &x);
-	JL_JsvalToNative(cx, JL_ARG(2), &y);
+	jl::getValue(cx, JL_ARG(1), &x);
+	jl::getValue(cx, JL_ARG(2), &y);
 	glPixelZoom(x, y);  OGL_ERR_CHK;
 
 	JL_RVAL.setUndefined();
@@ -3736,7 +3736,7 @@ DEFINE_FUNCTION( pixelMap ) {
 	unsigned mapsize;
 	JL_CHK( JS_GetArrayLength(cx, &JL_ARG(2).toObject(), &mapsize) );
 	GLfloat *values = (GLfloat*)alloca(mapsize * sizeof(*values));
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), values, mapsize, &mapsize ) );
+	JL_CHK( jl::getVector(cx, JL_ARG(2), values, mapsize, &mapsize ) );
 	glPixelMapfv(JL_ARG(1).toInt32(), mapsize, values);  OGL_ERR_CHK;
 
 	JL_RVAL.setUndefined();
@@ -3770,7 +3770,7 @@ DEFINE_FUNCTION( hasExtensionProc ) {
 	void *procAddr;
 	for ( unsigned i = 0; i < JL_ARGC; ++i ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(i+1), &procName) );
+		JL_CHK( jl::getValue(cx, JL_ARG(i+1), &procName) );
 		procAddr = glGetProcAddress(procName);
 		if ( procAddr == NULL ) {
 
@@ -3810,7 +3810,7 @@ DEFINE_FUNCTION( hasExtensionName ) {
 //		const char *name;
 //		unsigned int nameLength;
 //		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARGV[i], &name, &nameLength) );
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(i+1), &name) );
+		JL_CHK( jl::getValue(cx, JL_ARG(i+1), &name) );
 
 		const char *pos = strstr(extensions, name);
 		if ( pos == NULL || ( pos[name.Length()] != ' ' && pos[name.Length()] != '\0' ) ) {
@@ -3884,7 +3884,7 @@ DEFINE_FUNCTION( stencilFuncSeparate ) {
 	if ( INT_TO_JSVAL(-1) == JL_ARG(4) )
 		mask = 0xffffffff;
 	else
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &mask) );
+		JL_CHK( jl::getValue(cx, JL_ARG(4), &mask) );
 
 	glStencilFuncSeparate(JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), JL_ARG(3).toInt32(), mask);  OGL_ERR_CHK;
 
@@ -4098,8 +4098,8 @@ DEFINE_FUNCTION( getRenderbufferParameter ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(3);
 		int count;
-		count = JL_MIN(JL_ARG(3).toInt32()), (int)COUNTOF(params));
-		JL_CHK( JL_NativeVectorToJsval(cx, params, count, *JL_RVAL, false) );
+		count = jl::min(JL_ARG(3).toInt32()), (int)COUNTOF(params));
+		JL_CHK( jl::setVector(cx, JL_RVAL, params, count) );
 	} else {
 
 		*JL_RVAL = INT_TO_JSVAL( params[0] );
@@ -4391,8 +4391,8 @@ DEFINE_FUNCTION( getFramebufferAttachmentParameter ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(4);
 		int count;
-		count = JL_MIN(JL_ARG(4).toInt32(), (int)COUNTOF(params));
-		JL_CHK( JL_NativeVectorToJsval(cx, params, count, *JL_RVAL, false) );
+		count = jl::min(JL_ARG(4).toInt32(), (int)COUNTOF(params));
+		JL_CHK( jl::setVector(cx, JL_RVAL, params, count) );
 	} else {
 
 		*JL_RVAL = INT_TO_JSVAL( params[0] );
@@ -4530,7 +4530,7 @@ DEFINE_FUNCTION( shaderSource ) {
 
 	GLhandleARB shaderHandle;
 	shaderHandle = JL_ARG(1).toInt32();
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &source) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &source) );
 
 	const GLcharARB *buffer;
 	GLint length;
@@ -4589,7 +4589,7 @@ DEFINE_FUNCTION( attachObject ) {
 //	JL_ASSERT_ARG_IS_INTEGER(1);
 	GLhandleARB programHandle;
 //	programHandle = JL_ARG(1).toInt32();
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &programHandle) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &programHandle) );
 
 	GLhandleARB shaderHandle;
 	shaderHandle = JL_ARG(2).toInt32();
@@ -4623,7 +4623,7 @@ DEFINE_FUNCTION( linkProgram ) {
 
 	GLhandleARB programHandle;
 //	programHandle = JL_ARG(1).toInt32();
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &programHandle) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &programHandle) );
 
 	glLinkProgramARB(programHandle);  OGL_ERR_CHK;
 
@@ -4652,7 +4652,7 @@ DEFINE_FUNCTION( useProgramObject ) {
 
 	GLhandleARB programHandle;
 //	programHandle = JL_ARG(1).toInt32();
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &programHandle) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &programHandle) );
 
 	glUseProgramObjectARB(programHandle);  OGL_ERR_CHK;
 
@@ -4683,7 +4683,7 @@ DEFINE_FUNCTION( getUniformInfo ) {
 
 	GLhandleARB program;
 	GLint activeUniform;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &program) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &program) );
 	glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &activeUniform);  OGL_ERR_CHK;
 
 	JS::RootedObject info(cx, JL_NewObj(cx));
@@ -4756,9 +4756,9 @@ DEFINE_FUNCTION( getUniformLocation ) {
 
 	GLhandleARB programHandle;
 	//programHandle = JL_ARG(1).toInt32();
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &programHandle) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &programHandle) );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &name) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &name) );
 	GLint uniformLocation;
 
 	uniformLocation = glGetUniformLocationARB(programHandle, name);  OGL_ERR_CHK;
@@ -4900,16 +4900,16 @@ DEFINE_FUNCTION( uniform ) {
 	if ( aargs[0].isDouble() ) {
 
 		float v1, v2, v3, v4;
-		JL_CHK( JL_JsvalToNative(cx, aargs[0], &v1) );
+		JL_CHK( jl::getValue(cx, aargs[0], &v1) );
 		if ( count > 1 ) {
 
-			JL_CHK( JL_JsvalToNative(cx, aargs[1], &v2) );
+			JL_CHK( jl::getValue(cx, aargs[1], &v2) );
 			if ( count > 2 ) {
 
-				JL_CHK( JL_JsvalToNative(cx, aargs[2], &v3) );
+				JL_CHK( jl::getValue(cx, aargs[2], &v3) );
 				if ( count > 3 ) {
 
-					JL_CHK( JL_JsvalToNative(cx, aargs[3], &v4) );
+					JL_CHK( jl::getValue(cx, aargs[3], &v4) );
 					glUniform4fARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
 					return true;
 				}
@@ -4924,16 +4924,16 @@ DEFINE_FUNCTION( uniform ) {
 	} else {
 
 		int v1, v2, v3, v4;
-		JL_CHK( JL_JsvalToNative(cx, aargs[0], &v1) );
+		JL_CHK( jl::getValue(cx, aargs[0], &v1) );
 		if ( count > 1 ) {
 
-			JL_CHK( JL_JsvalToNative(cx, aargs[1], &v2) );
+			JL_CHK( jl::getValue(cx, aargs[1], &v2) );
 			if ( count > 2 ) {
 
-				JL_CHK( JL_JsvalToNative(cx, aargs[2], &v3) );
+				JL_CHK( jl::getValue(cx, aargs[2], &v3) );
 				if ( count > 3 ) {
 
-					JL_CHK( JL_JsvalToNative(cx, aargs[3], &v4) );
+					JL_CHK( jl::getValue(cx, aargs[3], &v4) );
 					glUniform4iARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
 					if ( glGetError() == GL_INVALID_OPERATION )
 						glUniform4fARB(uniformLocation, (float)v1, (float)v2, (float)v3, (float)v4);  OGL_ERR_CHK;
@@ -4978,16 +4978,16 @@ DEFINE_FUNCTION( uniform ) {
 
 	if ( JSVAL_IS_NUMBER(arg2) ) {
 
-		JL_CHK( JL_JsvalToNative(cx, arg2, &v1) );
+		JL_CHK( jl::getValue(cx, arg2, &v1) );
 		if ( JL_ARGC >= 3 ) {
 
-			JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v2) );
+			JL_CHK( jl::getValue(cx, JL_ARG(3), &v2) );
 			if ( JL_ARGC >= 4 ) {
 
-				JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &v3) );
+				JL_CHK( jl::getValue(cx, JL_ARG(4), &v3) );
 				if ( JL_ARGC >= 5 ) {
 
-					JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &v4) );
+					JL_CHK( jl::getValue(cx, JL_ARG(5), &v4) );
 					glUniform4fARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
 					return true;
 				}
@@ -5044,7 +5044,7 @@ DEFINE_FUNCTION( uniformMatrix ) {
 	JL_RVAL.setUndefined();
 
 	float tmp[16], *m = tmp;
-	JL_CHK( JL_JsvalToMatrix44(cx, JL_ARG(2), &m) );
+	JL_CHK( jl::getMatrix44(cx, JL_ARG(2), &m) );
 	glUniformMatrix4fvARB(uniformLocation, 1, false, m);  OGL_ERR_CHK;
 
 	return true;
@@ -5091,7 +5091,7 @@ DEFINE_FUNCTION( uniformFloatVector ) {
 		JL_ASSERT_ARG_IS_ARRAY(2);
 		GLfloat val[4]; // max for *4fv
 //		JS::RootedObject arr = JSVAL_TO_OBJECT(JL_ARG(2));
-		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), val, COUNTOF(val), &len) );
+		JL_CHK( jl::getVector(cx, JL_ARG(2), val, COUNTOF(val), &len) );
 		JL_ASSERT_RANGE(len, (unsigned)0, (unsigned)4, "vec.length" );
 
 		ASSERT( len >= 0 && len <= 4 );
@@ -5114,7 +5114,7 @@ DEFINE_FUNCTION( uniformFloatVector ) {
 
 	for ( int i = 0; i < count; --i ) {
 
-		JL_CHK( JL_JsvalToNativeVector(cx, *tmpVal, tmpVec, 4, &len) );
+		JL_CHK( jl::getVector(cx, *tmpVal, tmpVec, 4, &len) );
 		if ( firstLen == 0 )
 			firstLen = len;
 		ASSERT( len >= 0 && len <= 4 );
@@ -5169,16 +5169,16 @@ DEFINE_FUNCTION( uniformFloat ) {
 	float v1, v2, v3, v4;
 	if ( arg2.isNumber() ) {
 
-		JL_CHK( JL_JsvalToNative(cx, arg2, &v1) );
+		JL_CHK( jl::getValue(cx, arg2, &v1) );
 		if ( JL_ARGC >= 3 ) {
 
-			JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v2) );
+			JL_CHK( jl::getValue(cx, JL_ARG(3), &v2) );
 			if ( JL_ARGC >= 4 ) {
 
-				JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &v3) );
+				JL_CHK( jl::getValue(cx, JL_ARG(4), &v3) );
 				if ( JL_ARGC >= 5 ) {
 
-					JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &v4) );
+					JL_CHK( jl::getValue(cx, JL_ARG(5), &v4) );
 					glUniform4fARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
 					return true;
 				}
@@ -5228,16 +5228,16 @@ DEFINE_FUNCTION( uniformInteger ) {
 
 	if ( arg2.isNumber() ) {
 
-		JL_CHK( JL_JsvalToNative(cx, arg2, &v1) );
+		JL_CHK( jl::getValue(cx, arg2, &v1) );
 		if ( JL_ARGC >= 3 ) {
 
-			JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v2) );
+			JL_CHK( jl::getValue(cx, JL_ARG(3), &v2) );
 			if ( JL_ARGC >= 4 ) {
 
-				JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &v3) );
+				JL_CHK( jl::getValue(cx, JL_ARG(4), &v3) );
 				if ( JL_ARGC >= 5 ) {
 
-					JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &v4) );
+					JL_CHK( jl::getValue(cx, JL_ARG(5), &v4) );
 					glUniform4iARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
 					return true;
 				}
@@ -5286,7 +5286,7 @@ DEFINE_FUNCTION( getObjectParameter ) {
 		JL_ASSERT_ARG_IS_INTEGER(3);
 		int count = JL_ARG(3).toInt32();
 		jsval tmpValue;
-		count = JL_MIN(count, (int)COUNTOF(params));
+		count = jl::min(count, (int)COUNTOF(params));
 
 		JS::RootedObject arrayObj(cx, JS_NewArrayObject(cx, count));
 		JL_CHK( arrayObj );
@@ -5326,7 +5326,7 @@ DEFINE_FUNCTION( bindAttribLocation ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 	JL_ASSERT_ARG_IS_INTEGER(2);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &name) );
+	JL_CHK( jl::getValue(cx, JL_ARG(3), &name) );
 	glBindAttribLocationARB(JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), name);  OGL_ERR_CHK;
 
 	JL_RVAL.setUndefined();
@@ -5353,7 +5353,7 @@ DEFINE_FUNCTION( getAttribLocation ) {
 	JL_ASSERT_ARGC(2);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &name) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &name) );
 	int location;
 	location = glGetAttribLocationARB(JL_ARG(1).toInt32(), name);  OGL_ERR_CHK;
 	*JL_RVAL = INT_TO_JSVAL(location);
@@ -5405,16 +5405,16 @@ DEFINE_FUNCTION( vertexAttrib ) {
 
 	if ( arg2.isNumber() ) {
 
-		JL_CHK( JL_JsvalToNative(cx, arg2, &v1) );
+		JL_CHK( jl::getValue(cx, arg2, &v1) );
 		if ( JL_ARGC >= 3 ) {
 
-			JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v2) );
+			JL_CHK( jl::getValue(cx, JL_ARG(3), &v2) );
 			if ( JL_ARGC >= 4 ) {
 
-				JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &v3) );
+				JL_CHK( jl::getValue(cx, JL_ARG(4), &v3) );
 				if ( JL_ARGC >= 5 ) {
 
-					JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &v4) );
+					JL_CHK( jl::getValue(cx, JL_ARG(5), &v4) );
 					glVertexAttrib4dARB(index, v1, v2, v3, v4);  OGL_ERR_CHK;
 					return true;
 				}
@@ -5557,7 +5557,7 @@ DEFINE_FUNCTION( pointParameter ) {
 	if ( JL_ARG(2).isDouble() ) {
 
 		float param;
-		JL_JsvalToNative(cx, JL_ARG(2), &param);
+		jl::getValue(cx, JL_ARG(2), &param);
 
 		glPointParameterf( JL_ARG(1).toInt32(), param );  OGL_ERR_CHK;
 
@@ -5568,7 +5568,7 @@ DEFINE_FUNCTION( pointParameter ) {
 
 		GLfloat params[MAX_PARAMS];
 		uint32_t length;
-		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, COUNTOF(params), &length ) );
+		JL_CHK( jl::getVector(cx, JL_ARG(2), params, COUNTOF(params), &length ) );
 		glPointParameterfv( JL_ARG(1).toInt32(), params );  OGL_ERR_CHK;
 		;
 		return true;
@@ -5663,7 +5663,7 @@ DEFINE_FUNCTION( multiTexCoord ) {
 	GLenum target = JL_ARG(1).toInt32();
 
 	double s;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &s) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &s) );
 	if ( JL_ARGC == 2 ) {
 
 		glMultiTexCoord1d(target, s);  OGL_ERR_CHK;
@@ -5671,7 +5671,7 @@ DEFINE_FUNCTION( multiTexCoord ) {
 		return true;
 	}
 	double t;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &t) );
+	JL_CHK( jl::getValue(cx, JL_ARG(3), &t) );
 	if ( JL_ARGC == 3 ) {
 
 		glMultiTexCoord2d(target, s, t);  OGL_ERR_CHK;
@@ -5679,7 +5679,7 @@ DEFINE_FUNCTION( multiTexCoord ) {
 		return true;
 	}
 	double r;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &r) );
+	JL_CHK( jl::getValue(cx, JL_ARG(4), &r) );
 	if ( JL_ARGC == 4 ) {
 
 		glMultiTexCoord3d(target, s, t, r);  OGL_ERR_CHK;
@@ -5948,7 +5948,7 @@ DEFINE_FUNCTION( unProject ) {
 
 	gluUnProject((GLdouble) x, (GLdouble) realy, 0.0, mvmatrix, projmatrix, viewport, w+0, w+1, w+2);
 
-	JL_CHK( JL_NativeVectorToJsval(cx, w, 3, JL_RVAL, false) );
+	JL_CHK( jl::setVector(cx, JL_RVAL, w, 3) );
 
 	return true;
 	JL_BAD;
@@ -6087,7 +6087,7 @@ DEFINE_FUNCTION( readImage ) {
 
 	bool flipY;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &flipY) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &flipY) );
 	else
 		flipY = false;
 
@@ -6550,9 +6550,9 @@ DEFINE_FUNCTION( defineTextureImage ) {
 				JL_ERR( E_ARG, E_NUM(3), E_NOTSUPPORTED, E_COMMENT("ArrayBufferView.type") );
 		}
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &width) );
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &height) );
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &channels) );
+		JL_CHK( jl::getValue(cx, JL_ARG(4), &width) );
+		JL_CHK( jl::getValue(cx, JL_ARG(5), &height) );
+		JL_CHK( jl::getValue(cx, JL_ARG(6), &channels) );
 
 		JL_ASSERT( width * height * channels == (int)JS_GetTypedArrayByteLength(tObj, cx), E_DATASIZE, E_INVALID );
 	} else {
@@ -6671,7 +6671,7 @@ DEFINE_FUNCTION( drawPoint ) {
 	JL_ASSERT_ARGC(1);
 
 	float size;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &size) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &size) );
 	glPointSize(size);  OGL_ERR_CHK; // get max with GL_POINT_SIZE_RANGE
 	glBegin(GL_POINTS);
 	glVertex2i(0,0);
@@ -6697,9 +6697,9 @@ DEFINE_FUNCTION( drawDisk ) {
 	int vertexCount;
 	JL_ASSERT_ARGC_RANGE(1,2);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &radius) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &radius) );
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &vertexCount) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &vertexCount) );
 	else
 		vertexCount = 12;
 	angle = 2*M_PI / vertexCount;
@@ -6733,10 +6733,10 @@ DEFINE_FUNCTION( drawSphere ) {
 	double radius;
 	int slices, stacks;
 	bool smooth;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &radius) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &slices) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &stacks) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &smooth) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &radius) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &slices) );
+	JL_CHK( jl::getValue(cx, JL_ARG(3), &stacks) );
+	JL_CHK( jl::getValue(cx, JL_ARG(4), &smooth) );
 
 	GLUquadric *q = gluNewQuadric();
 	gluQuadricTexture(q, GL_FALSE);
@@ -6764,9 +6764,9 @@ DEFINE_FUNCTION( drawDisk ) {
 	double radius;
 	int slices, loops;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &radius) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &slices) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &loops) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &radius) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &slices) );
+	JL_CHK( jl::getValue(cx, JL_ARG(3), &loops) );
 
 	GLUquadric *q = gluNewQuadric();
 	gluQuadricTexture(q, GL_FALSE);
@@ -6794,12 +6794,12 @@ DEFINE_FUNCTION( drawCylinder ) {
 	double baseRadius, topRadius, height;
 	int slices, stacks;
 	bool smooth;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &baseRadius) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &topRadius) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &height) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &slices) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &stacks) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &smooth) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &baseRadius) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &topRadius) );
+	JL_CHK( jl::getValue(cx, JL_ARG(3), &height) );
+	JL_CHK( jl::getValue(cx, JL_ARG(4), &slices) );
+	JL_CHK( jl::getValue(cx, JL_ARG(5), &stacks) );
+	JL_CHK( jl::getValue(cx, JL_ARG(6), &smooth) );
 
 	GLUquadric *q = gluNewQuadric();
 	gluQuadricTexture(q, GL_FALSE); // GL_TRUE
@@ -6828,9 +6828,9 @@ DEFINE_FUNCTION( drawBox ) {
 	JL_ASSERT_ARGC(3);
 
 	float lengthX, lengthY, lengthZ;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &lengthX) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &lengthY) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &lengthZ) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &lengthX) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &lengthY) );
+	JL_CHK( jl::getValue(cx, JL_ARG(3), &lengthZ) );
 
 	lengthX /= 2.f;
 	lengthY /= 2.f;
@@ -7040,17 +7040,17 @@ DEFINE_FUNCTION( lookAt ) {
 	JL_ASSERT_ARG_IS_NUMBER(9);
 
 	double eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz;
-	JL_JsvalToNative(cx, JL_ARG(1), &eyex);
-	JL_JsvalToNative(cx, JL_ARG(2), &eyey);
-	JL_JsvalToNative(cx, JL_ARG(3), &eyez);
+	jl::getValue(cx, JL_ARG(1), &eyex);
+	jl::getValue(cx, JL_ARG(2), &eyey);
+	jl::getValue(cx, JL_ARG(3), &eyez);
 
-	JL_JsvalToNative(cx, JL_ARG(4), &centerx);
-	JL_JsvalToNative(cx, JL_ARG(5), &centery);
-	JL_JsvalToNative(cx, JL_ARG(6), &centerz);
+	jl::getValue(cx, JL_ARG(4), &centerx);
+	jl::getValue(cx, JL_ARG(5), &centery);
+	jl::getValue(cx, JL_ARG(6), &centerz);
 
-	JL_JsvalToNative(cx, JL_ARG(7), &upx);
-	JL_JsvalToNative(cx, JL_ARG(8), &upy);
-	JL_JsvalToNative(cx, JL_ARG(9), &upz);
+	jl::getValue(cx, JL_ARG(7), &upx);
+	jl::getValue(cx, JL_ARG(8), &upy);
+	jl::getValue(cx, JL_ARG(9), &upz);
 
 	gluLookAt(eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz);  OGL_ERR_CHK;
 
@@ -7075,9 +7075,9 @@ DEFINE_FUNCTION( aimAt ) {
 	JL_ASSERT_ARG_IS_NUMBER(3);
 
 	float px, py, pz, ux, uy, uz;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &px) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &py) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &pz) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &px) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &py) );
+	JL_CHK( jl::getValue(cx, JL_ARG(3), &pz) );
 
 	if ( JL_ARGC == 6 ) {
 
@@ -7085,9 +7085,9 @@ DEFINE_FUNCTION( aimAt ) {
 		JL_ASSERT_ARG_IS_NUMBER(5);
 		JL_ASSERT_ARG_IS_NUMBER(6);
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &ux) );
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &uy) );
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &uz) );
+		JL_CHK( jl::getValue(cx, JL_ARG(4), &ux) );
+		JL_CHK( jl::getValue(cx, JL_ARG(5), &uy) );
+		JL_CHK( jl::getValue(cx, JL_ARG(6), &uz) );
 	} else {
 
 		ux = 0.00001f;
@@ -7243,7 +7243,7 @@ DEFINE_INIT() {
 	glGetProcAddress = windowsGLGetProcAddress;
 #else
 	//	JL_CHK( GetPrivateNativeFunction(cx, JL_GetGlobal(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
-	JL_CHK( JL_PropertyToNative(cx, GetHostObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
+	JL_CHK( jl::getProperty(cx, GetHostObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
 #endif
 
 	ASSERT( glGetProcAddress != NULL );

@@ -265,7 +265,7 @@ NewHandle2(JSContext *cx, jsval *rval) {
 	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME("Handle2"), E_NOTFOUND );
 
 	JSObject *handleObj;
-	handleObj = JL_NewObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto, NULL);
+	handleObj = jl::newObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto, NULL);
 	JL_CHK( handleObj );
 	*rval = OBJECT_TO_JSVAL(handleObj);
 

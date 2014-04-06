@@ -304,7 +304,7 @@ DEFINE_FUNCTION( encodeJpegImage ) {
 	int quality;
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &quality) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &quality) );
 		JL_ASSERT_ARG_VAL_RANGE(quality, 0, 100, 2);
 	} else {
 	
@@ -606,7 +606,7 @@ DEFINE_FUNCTION( encodePngImage ) {
 	int compressionLevel;
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &compressionLevel) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &compressionLevel) );
 		JL_ASSERT_ARG_VAL_RANGE( compressionLevel, 0, 9, 2 );
 	} else {
 

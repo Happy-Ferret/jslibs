@@ -23,6 +23,7 @@ DECLARE_STATIC()
 DECLARE_CLASS( Icon )
 DECLARE_CLASS( Systray )
 DECLARE_CLASS( Console )
+DECLARE_CLASS( Audio )
 
 
 /**doc t:header
@@ -43,6 +44,7 @@ bool ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	INIT_CLASS( Icon );
 	INIT_CLASS( Systray );
 	INIT_CLASS( Console );
+	INIT_CLASS( Audio );
 
 	HRESULT hr;
 	hr = CoInitialize(NULL);

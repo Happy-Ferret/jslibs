@@ -77,7 +77,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(3) ) {
 		
 		bool b;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &b) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &b) );
 		if ( b )
 			ode::dGeomTriMeshDataPreprocess(triMeshDataID);
 	}

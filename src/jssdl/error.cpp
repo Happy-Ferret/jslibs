@@ -111,13 +111,13 @@ END_CLASS
 NEVER_INLINE bool FASTCALL
 ThrowSdlError( JSContext *cx ) {
 
-	JSObject *errorObj = JL_NewObjectWithGivenProto(cx, JL_CLASS(SdlError), JL_CLASS_PROTOTYPE(cx, SdlError));
+	JSObject *errorObj = jl::newObjectWithGivenProto(cx, JL_CLASS(SdlError), JL_CLASS_PROTOTYPE(cx, SdlError));
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( errorObj ) );
 	const char *errorMessage = SDL_GetError();
 	SDL_ClearError();
 //	if ( errorMessage == NULL || *errorMessage == '\0' )
 //		errorMessage = "Undefined error";
 	JL_CHK( JL_SetReservedSlot(  errorObj, 0, errorMessage != NULL && *errorMessage != '\0' ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID ) );
-	JL_SAFE( JL_ExceptionSetScriptLocation(cx, errorObj) );
+	JL_SAFE( jl::setScriptLocation(cx, errorObj) );
 	JL_BAD;
 }

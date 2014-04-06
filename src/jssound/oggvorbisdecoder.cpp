@@ -73,7 +73,7 @@ int seek_func(void *datasource, ogg_int64_t offset, int whence) {
 		case SEEK_SET:
 			if ( offset < 0 )
 				return -1;
-			JL_CHK( JL_NativeToProperty(pv->cx, pv->streamObject, JLID(pv->cx, position), offset) );
+			JL_CHK( jl::setProperty(pv->cx, pv->streamObject, JLID(pv->cx, position), offset) );
 
 //			JL_CHK( JL_NativeToJsval(pv->cx, offset, &tmpVal) ); // (TBD) manage error
 //			JL_CHK( JS_SetProperty(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) ); // (TBD) manage error
@@ -85,9 +85,9 @@ int seek_func(void *datasource, ogg_int64_t offset, int whence) {
 				return -1;
 			if ( offset == 0 ) // no move, just tested, but let -1 to be return if no position property available.
 				return 0;
-			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) ); // (TBD) manage error
+			JL_CHK( jl::getValue(pv->cx, tmpVal, &position) ); // (TBD) manage error
 			position += offset;
-			JL_CHK( JL_NativeToJsval(pv->cx, position, tmpVal) ); // (TBD) manage error
+			JL_CHK( jl::setValue(pv->cx, tmpVal, position) ); // (TBD) manage error
 			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) ); // (TBD) manage error
 			return 0;
 
@@ -95,17 +95,17 @@ int seek_func(void *datasource, ogg_int64_t offset, int whence) {
 			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, available), tmpVal.address()) );
 			if ( tmpVal.isUndefined() )
 				return -1;
-			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &available) );
+			JL_CHK( jl::getValue(pv->cx, tmpVal, &available) );
 
 			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
 			if ( tmpVal.isUndefined() )
 				return -1;
-			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
+			JL_CHK( jl::getValue(pv->cx, tmpVal, &position) );
 
 			if ( offset > 0 || -offset > position + available )
 				return -1;
-			JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
-			JL_CHK( JL_NativeToJsval(pv->cx, position + available + offset, tmpVal) ); // the pointer is set to the size of the file plus offset.
+			JL_CHK( jl::getValue(pv->cx, tmpVal, &position) );
+			JL_CHK( jl::setValue(pv->cx, tmpVal, position + available + offset) ); // the pointer is set to the size of the file plus offset.
 			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
 			return 0;
 	}
@@ -124,7 +124,7 @@ long tell_func(void *datasource) {
 	JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) );
 	if ( tmpVal.isUndefined() )
 		return -1;
-	JL_CHK( JL_JsvalToNative(pv->cx, tmpVal, &position) );
+	JL_CHK( jl::getValue(pv->cx, tmpVal, &position) );
 	return position;
 bad:
 	return -1;
@@ -152,7 +152,7 @@ static const ov_callbacks ovCallbacks = { read_func, seek_func, 0, tell_func };
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime())->canSkipCleanup )
 		return;
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
@@ -288,7 +288,7 @@ DEFINE_FUNCTION( read ) {
 	int32_t frames;
 	if ( JL_ARG_ISDEF(1) ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &frames) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &frames) );
 		if ( frames <= 0 ) {
 
 			// like Descriptor::read, returns an empty audio object even if EOF
@@ -487,7 +487,7 @@ DEFINE_PROPERTY_GETTER( frames ) {
 		return true;
 	}
 //	size_t frames = pcmTotal / pv->ofInfo->channels; // (TBD) ???
-	return JL_NativeToJsval(cx, pcmTotal, vp); // *vp = INT_TO_JSVAL( pcmTotal );
+	return jl::setValue(cx, vp, pcmTotal); // *vp = INT_TO_JSVAL( pcmTotal );
 	JL_BAD;
 }
 

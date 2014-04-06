@@ -40,10 +40,10 @@ struct Private {
 
 DEFINE_FINALIZE() {
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
 		return;
 
-	Private *pv = (Private*)JL_GetPrivate(obj);
+	Private *pv = (Private*)js::GetObjectPrivate(obj);
 	if ( !pv )
 		return;
 
@@ -97,6 +97,8 @@ DEFINE_CONSTRUCTOR() {
 
 	Private *pv = NULL;
 
+	JL_DEFINE_ARGS;
+
 	JL_ASSERT_ARGC_RANGE(1,2);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
@@ -108,12 +110,12 @@ DEFINE_CONSTRUCTOR() {
 	pv->stream.zalloc = jsz_alloc;
 	pv->stream.zfree = jsz_free;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pv->method) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &pv->method) );
 	JL_ASSERT_ARG_VAL_RANGE(pv->method, INFLATE, DEFLATE, 1);
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pv->level) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &pv->level) );
 		JL_ASSERT_ARG_VAL_RANGE( pv->level, Z_NO_COMPRESSION, Z_BEST_COMPRESSION, 1 );
 		JL_ASSERT_WARN( pv->method == DEFLATE, E_ARG, E_NUM(2), E_IGNORED ); // "The second argument is overmuch for this method."
 	} else {
@@ -121,7 +123,7 @@ DEFINE_CONSTRUCTOR() {
 		pv->level = Z_DEFAULT_COMPRESSION; // default value
 	}
 
-	JL_SetPrivate(obj, pv);
+	JL_SetPrivate(JL_OBJ, pv);
 	return true;
 
 bad:
@@ -170,22 +172,23 @@ DEFINE_FUNCTION( process ) {
 	JLData inputData;
 	int flushType;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
+	JL_DEFINE_ARGS;
+
+	JL_ASSERT_INSTANCE(JL_OBJ, JL_THIS_CLASS);
 
 	Private *pv;
-	pv = (Private*)JL_GetPrivate(obj);
+	pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	// force finish
 	bool forceFinish;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &forceFinish) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &forceFinish) );
 	else
 		forceFinish = false;
 
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &inputData) ); // warning: GC on the returned buffer !
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &inputData) ); // warning: GC on the returned buffer !
 	else
 		forceFinish = true;
 
@@ -216,7 +219,7 @@ DEFINE_FUNCTION( process ) {
 	int xflateStatus;
 	for (;;) {
 
-//		length = JL_MAX( length, BufferGetOptimalLength(&resultBuffer) );
+//		length = jl::max( length, BufferGetOptimalLength(&resultBuffer) );
 
 		ASSERT( length <= (uInt)-1 );
 		pv->stream.avail_out = (uInt)length;
@@ -268,11 +271,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( idle ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_CHK( JL_NativeToJsval(cx, pv->stream.state == Z_NULL, vp) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, pv->stream.state == Z_NULL) );
 	return true;
 	JL_BAD;
 }
@@ -286,11 +289,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( adler32 ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_CHK( JL_NativeToJsval(cx, pv->stream.adler, vp) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, pv->stream.adler) );
 	return true;
 	JL_BAD;
 }
@@ -303,11 +306,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( lengthIn ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_CHK( JL_NativeToJsval(cx, pv->stream.total_in, vp) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, pv->stream.total_in) );
 	return true;
 	JL_BAD;
 }
@@ -320,11 +323,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( lengthOut ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_CHK( JL_NativeToJsval(cx, pv->stream.total_out, vp) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, pv->stream.total_out) );
 	return true;
 	JL_BAD;
 }

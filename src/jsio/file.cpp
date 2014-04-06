@@ -732,10 +732,10 @@ DEFINE_PROPERTY_GETTER( info ) {
 		vp.setObject( *fileInfoObj );
 	}
 
-	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "type", (int)fileInfo.type) );
-	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "size", fileInfo.size) );
-	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "creationTime", fileInfo.creationTime / (double)1000) );
-	JL_CHK( JL_NativeToProperty(cx, fileInfoObj, "modifyTime", fileInfo.modifyTime / (double)1000) );
+	JL_CHK( jl::setProperty(cx, fileInfoObj, "type", (int)fileInfo.type) );
+	JL_CHK( jl::setProperty(cx, fileInfoObj, "size", fileInfo.size) );
+	JL_CHK( jl::setProperty(cx, fileInfoObj, "creationTime", fileInfo.creationTime / (double)1000) );
+	JL_CHK( jl::setProperty(cx, fileInfoObj, "modifyTime", fileInfo.modifyTime / (double)1000) );
 	}
 	
 //	return jl::StoreProperty(cx, obj, id, vp, false); // file info may change between dwo calls
@@ -811,7 +811,7 @@ DEFINE_PROPERTY_GETTER( standard ) {
 		int i;
 		//JS::ToInt32( cx, id, &i );
 		i = JSID_TO_INT(id);
-		JS::RootedObject obj(cx, JL_NewObjectWithGivenProto(cx, JL_CLASS(File), JL_CLASS_PROTOTYPE(cx, File))); // no need to use classDescriptor as proto.
+		JS::RootedObject obj(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(File), JL_CLASS_PROTOTYPE(cx, File))); // no need to use classDescriptor as proto.
 		vp.setObject( *obj );
 
 		PRFileDesc *fd = PR_GetSpecialFD((PRSpecialFD)i); // beware: cast !

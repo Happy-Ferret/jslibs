@@ -45,7 +45,7 @@ DEFINE_FUNCTION( open ) {
 	JL_ASSERT_WARN( alcGetCurrentContext() == NULL, E_LIB, E_STR("OpenAL"), E_OPEN );
 
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &deviceName) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &deviceName) );
 
 	// Doc: alcOpenDevice() open the Device specified. Current options are:
 	//   "Generic Hardware"
@@ -150,7 +150,7 @@ DEFINE_PROPERTY_GETTER( maxAuxiliarySends ) {
 	ALCdevice *pDevice = alcGetContextsDevice(pContext);
 	ALCint numSends;
 	alcGetIntegerv(pDevice, ALC_MAX_AUXILIARY_SENDS, 1, &numSends);
-	JL_CHK( JL_NativeToJsval(cx, numSends, vp) );
+	JL_CHK( jl::setValue(cx, vp, numSends) );
 	return true;
 	JL_BAD;
 }
@@ -172,7 +172,7 @@ DEFINE_FUNCTION( dopplerFactor ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	float value;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &value) );
 	alDopplerFactor( value );
 
 	JL_RVAL.setUndefined();
@@ -197,7 +197,7 @@ DEFINE_FUNCTION( dopplerVelocity ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	float value;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &value) );
 	alDopplerVelocity( value );
 
 	JL_RVAL.setUndefined();
@@ -222,7 +222,7 @@ DEFINE_FUNCTION( speedOfSound ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	float value;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &value) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &value) );
 	alSpeedOfSound( value );
 
 	JL_RVAL.setUndefined();
@@ -246,7 +246,7 @@ DEFINE_FUNCTION( distanceModel ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	unsigned int distanceModel;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &distanceModel) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &distanceModel) );
 	alDistanceModel( distanceModel );
 
 	JL_RVAL.setUndefined();
@@ -449,12 +449,12 @@ DEFINE_FUNCTION( getDouble ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
+			JL_CHK( jl::setValue(cx, tmpValue, params[count]) );
 			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
 		}
 	} else {
 
-		JL_CHK( JL_NativeToJsval(cx, params[0], *JL_RVAL) );
+		JL_CHK( jl::setValue(cx, JL_RVAL, params[0]) );
 	}
 	return true;
 	JL_BAD;
@@ -485,7 +485,7 @@ DEFINE_FUNCTION( listener ) {
 	if ( JL_ARG(2).isDouble() ) {
 
 		float param;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &param) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &param) );
 		alListenerf( JL_ARG(1).toInt32(), param );
 		return true;
 	}
@@ -494,7 +494,7 @@ DEFINE_FUNCTION( listener ) {
 		ALfloat params[16];
 		uint32_t length;
 //		J_JSVAL_TO_REAL_VECTOR( JL_ARG(2), params, length );
-		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, 16, &length) );
+		JL_CHK( jl::getVector(cx, JL_ARG(2), params, 16, &length) );
 		alListenerfv( JL_ARG(1).toInt32(), params );
 		return true;
 	}
@@ -535,12 +535,12 @@ DEFINE_FUNCTION( getListenerReal ) {
 		jsval tmpValue;
 		while ( count-- ) {
 			
-			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
+			JL_CHK( jl::setValue(cx, tmpValue, params[count]) );
 			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
 		}
 	} else {
 
-		JL_CHK(JL_NativeToJsval(cx, params[0], *JL_RVAL) );
+		JL_CHK(jl::setValue(cx, JL_RVAL, params[0]) );
 	}
 	return true;
 	JL_BAD;
@@ -561,7 +561,7 @@ DEFINE_FUNCTION( genSource ) {
 	JL_DEFINE_ARGS;
 	ALuint sourceID; // The OpenAL sound source
 	alGenSources(1, &sourceID);
-	JL_CHK( JL_NativeToJsval(cx, sourceID, *JL_RVAL) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, sourceID) );
 	return true;
 	JL_BAD;
 }
@@ -585,7 +585,7 @@ DEFINE_FUNCTION( source ) {
 	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	ALuint sid;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &sid ) );
 
 	JL_RVAL.setUndefined();
 	if ( JSVAL_IS_INT(JL_ARG(3)) ) {
@@ -596,7 +596,7 @@ DEFINE_FUNCTION( source ) {
 	if ( JL_ARG(3).isDouble() ) {
 
 		float param;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &param) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &param) );
 		alSourcef( sid, JL_ARG(2).toInt32(), param );
 		return true;
 	}
@@ -604,7 +604,7 @@ DEFINE_FUNCTION( source ) {
 
 		ALfloat params[16];
 		uint32_t length;
-		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
+		JL_CHK( jl::getVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
 		alSourcefv( sid, JL_ARG(2).toInt32(), params );
 		return true;
 	}
@@ -634,7 +634,7 @@ DEFINE_FUNCTION( getSourceReal ) {
 	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	ALuint sid;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &sid ) );
 
 	ALfloat params[16];
 
@@ -652,12 +652,12 @@ DEFINE_FUNCTION( getSourceReal ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
+			JL_CHK( jl::setValue(cx, tmpValue, params[count]) );
 			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
 		}
 	} else {
 
-		JL_CHK(JL_NativeToJsval(cx, params[0], *JL_RVAL) );
+		JL_CHK(jl::setValue(cx, JL_RVAL, params[0]) );
 	}
 	return true;
 	JL_BAD;
@@ -676,7 +676,7 @@ DEFINE_FUNCTION( getSourceInteger ) {
 	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	ALuint sid;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &sid ) );
 
 	ALint params[16];
 
@@ -695,12 +695,12 @@ DEFINE_FUNCTION( getSourceInteger ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
+			JL_CHK( jl::setValue(cx, tmpValue, params[count]) );
 			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
 		}
 	} else {
 
-		JL_CHK( JL_NativeToJsval(cx, params[0], *JL_RVAL) );
+		JL_CHK( jl::setValue(cx, JL_RVAL, params[0]) );
 	}
 	return true;
 	JL_BAD;
@@ -723,7 +723,7 @@ DEFINE_FUNCTION( deleteSource ) {
 	JL_ASSERT_ARG_IS_NUMBER(1);
 
 	ALuint sid;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &sid ) );
 	alDeleteSources(1, &sid);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
@@ -750,21 +750,21 @@ DEFINE_FUNCTION( sourceQueueBuffers ) {
 	JL_ASSERT_ARG_IS_NUMBER(1);
 
 	ALuint sid;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &sid ) );
 	JL_RVAL.setUndefined();
 
 	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) { // no array-like. We must exclude strings that may be converted in integer below.
 
 		ALuint params[1024];
  		uint32_t length = COUNTOF(params);
-		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, COUNTOF(params), &length) );
+		JL_CHK( jl::getVector(cx, JL_ARG(2), params, COUNTOF(params), &length) );
 		alSourceQueueBuffers( sid, length, params );
 		JL_CHK( CheckThrowCurrentOalError(cx) );
 		return true;
 	}
 
 	ALuint buffer;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &buffer) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &buffer) );
 	alSourceQueueBuffers( sid, 1, &buffer );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return true;
@@ -789,20 +789,20 @@ DEFINE_FUNCTION( sourceUnqueueBuffers ) {
 	JL_ASSERT_ARG_IS_NUMBER(1);
 
 	ALuint sid;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &sid ) );
 	JL_RVAL.setUndefined();
 
 	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) { // no array-like. We must exclude strings that may be converted in integer below.
 
 		ALuint params[1024];
 		uint32_t length;
-		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), params, COUNTOF(params), &length) );
+		JL_CHK( jl::getVector(cx, JL_ARG(2), params, COUNTOF(params), &length) );
 		alSourceUnqueueBuffers( sid, length, params );
 		return true;
 	}
 
 	ALuint buffer;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &buffer) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &buffer) );
 	alSourceUnqueueBuffers( sid, 1, &buffer );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return true;
@@ -851,7 +851,7 @@ DEFINE_FUNCTION( buffer ) {
 	alBufferData(bufferID, format, data.GetConstStr(), (ALsizei)data.Length(), rate);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_NativeToJsval(cx, bufferID, *JL_RVAL) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, bufferID) );
 	return true;
 	JL_BAD;
 }
@@ -889,12 +889,12 @@ DEFINE_FUNCTION( getBufferReal ) {
 		jsval tmpValue;
 		while ( count-- ) {
 
-			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
+			JL_CHK( jl::setValue(cx, tmpValue, params[count]) );
 			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
 		}
 	} else {
 
-		JL_CHK(JL_NativeToJsval(cx, params[0], *JL_RVAL) );
+		JL_CHK(jl::setValue(cx, JL_RVAL, params[0]) );
 	}
 	return true;
 	JL_BAD;
@@ -932,12 +932,12 @@ DEFINE_FUNCTION( getBufferInteger ) {
 		jsval tmpValue;
 		while (count--) {
 
-			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
+			JL_CHK( jl::setValue(cx, tmpValue, params[count]) );
 			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
 		}
 	} else {
 
-		JL_CHK( JL_NativeToJsval(cx, params[0], *JL_RVAL) );
+		JL_CHK( jl::setValue(cx, JL_RVAL, params[0]) );
 	}
 	return true;
 	JL_BAD;
@@ -964,7 +964,7 @@ DEFINE_FUNCTION( deleteBuffer ) {
 	JL_ASSERT_ARG_IS_NUMBER(1);
 
 	ALuint bufferId;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &bufferId ) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &bufferId ) );
 //	alBufferData(bufferId, 0, NULL, 0, 0);
 	alDeleteBuffers(1, &bufferId);
 
@@ -988,7 +988,7 @@ DEFINE_FUNCTION( playSource ) {
 	JL_ASSERT_ARG_IS_NUMBER(1);
 
 	ALuint sid;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &sid ) );
 	alSourcePlay(sid);
 
 	JL_RVAL.setUndefined();
@@ -1011,7 +1011,7 @@ DEFINE_FUNCTION( stopSource ) {
 	JL_ASSERT_ARG_IS_NUMBER(1);
 
 	ALuint sid;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &sid ) );
 	alSourceStop(sid);
 
 	JL_RVAL.setUndefined();
@@ -1034,7 +1034,7 @@ DEFINE_FUNCTION( pauseSource ) {
 	JL_ASSERT_ARG_IS_NUMBER(1);
 
 	ALuint sid;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &sid ) );
 	alSourcePause(sid);
 
 	JL_RVAL.setUndefined();
@@ -1057,7 +1057,7 @@ DEFINE_FUNCTION( rewindSource ) {
 	JL_ASSERT_ARG_IS_NUMBER(1);
 
 	ALuint sid;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sid ) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &sid ) );
 	alSourceRewind(sid);
 
 	JL_RVAL.setUndefined();
@@ -1093,7 +1093,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( deleteEffect ) {
 
 	ALuint eid;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &eid) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &eid) );
 	alDeleteEffects(1, eid);
 	return true;
 	JL_BAD;

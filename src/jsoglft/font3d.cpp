@@ -41,10 +41,10 @@ class ColorTess : public OGLFT::ColorTess {
 
 		JSContext *cx = JL_GetFirstContext(_rt);
 		jsval arg[2] = { JSVAL_NULL, JSVAL_NULL }; // memset(arg, 0, sizeof(arg));
-		JL_CHK( JL_NativeVectorToJsval(cx, p, 3, &arg[1], false) );
+		JL_CHK( jl::setVector(cx, arg[1], p, 3, false) );
 		JL_CHK( JS_CallFunctionValue(cx, _obj, _function, COUNTOF(arg)-1, arg+1, arg) );
 		uint32_t length;
-		JL_CHK( JL_JsvalToNativeVector(cx, *arg, _colorTmp, COUNTOF(_colorTmp), &length) );
+		JL_CHK( jl::getVector(cx, *arg, _colorTmp, COUNTOF(_colorTmp), &length) );
 		return _colorTmp;
 	bad:
 		JS_ReportPendingException(cx);
@@ -73,7 +73,7 @@ BEGIN_CLASS( Font3D ) // Start the definition of the class. It defines some symb
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime())->canSkipCleanup )
 		return;
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
@@ -135,7 +135,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JSObject *fontObj = &JL_ARG(1).toObject();
 
-	JL_ASSERT_INSTANCE( fontObj, JL_GetCachedClass(JL_GetHostPrivate(cx), "Font") );
+	JL_ASSERT_INSTANCE( fontObj, jl::Host::getHost(cx).getCachedClasp("Font") );
 
 	FT_Face ftface = GetJsfontPrivate(cx, fontObj)->face;
 	JL_ASSERT_OBJECT_STATE( ftface, JL_GetClassName(fontObj) );
@@ -143,7 +143,7 @@ DEFINE_CONSTRUCTOR() {
 	float currentSize = (float)ftface->size->metrics.y_scale / (float)ftface->units_per_EM;
 	float size;
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &size) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &size) );
 	else
 		size = currentSize;
 
@@ -151,7 +151,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ALLOC(pv);
 	JL_updateMallocCounter(cx, sizeof(Private));
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &pv->style) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &pv->style) );
 	switch ( pv->style ) {
 		case OUTLINE:
 			pv->face = new OGLFT::Outline(ftface, size);
@@ -234,11 +234,11 @@ DEFINE_FUNCTION( measure ) {
 
 	bool absolute;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &absolute) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &absolute) );
 	else
 		absolute = false;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 
 	{
 		OGLFT::BBox bbox = absolute ? pv->face->measure(str) : pv->face->measureRaw(str);
@@ -279,7 +279,7 @@ DEFINE_FUNCTION( width ) {
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 
 	float vector_scale_ = ( pv->size * 100 ) / ( 72.f * pv->ftface->units_per_EM );
 
@@ -323,13 +323,13 @@ DEFINE_FUNCTION( draw ) {
 //	const char *str;
 //	size_t length;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &str, &length) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 
 	if ( JL_ARGC >= 2 ) {
 
 		float x, y;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &x) );
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &y) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &x) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &y) );
 		pv->face->draw(x, y, str);
 	} else {
 
@@ -367,7 +367,7 @@ DEFINE_FUNCTION( compile ) {
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 	GLuint list = pv->face->compile(str);
 	*JL_RVAL = INT_TO_JSVAL(list);
 
@@ -407,7 +407,7 @@ DEFINE_FUNCTION( setColor ) {
 
 	GLfloat color[4];
 	uint32_t len;
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), color, COUNTOF(color), &len) );
+	JL_CHK( jl::getVector(cx, JL_ARG(1), color, COUNTOF(color), &len) );
 //	JL_ASSERT( len >= 3, "Invalid color." );
 	if ( len < 4 )
 		color[3] = 1.f;
@@ -451,7 +451,7 @@ DEFINE_FUNCTION( setBackgroundColor ) {
 
 	GLfloat color[4];
 	uint32_t len;
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), color, COUNTOF(color), &len) );
+	JL_CHK( jl::getVector(cx, JL_ARG(1), color, COUNTOF(color), &len) );
 //	JL_ASSERT( len >= 3, "Invalid color." );
 	if ( len < 4 )
 		color[3] = 1.f;
@@ -506,7 +506,7 @@ DEFINE_PROPERTY_SETTER( advance ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	bool advance;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &advance) );
+	JL_CHK( jl::getValue(cx, *vp, &advance) );
 	pv->face->setAdvance(advance);
 	return true;
 	JL_BAD;
@@ -539,7 +539,7 @@ DEFINE_PROPERTY_SETTER( tessellationSteps ) {
 	poly = static_cast<OGLFT::Polygonal*>(pv->face);
 
 	int tess;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &tess) );
+	JL_CHK( jl::getValue(cx, *vp, &tess) );
 	JL_ASSERT( tess >= 1, E_VALUE, E_MIN, E_NUM(1) ); 
 
 	poly->setTessellationSteps(tess);

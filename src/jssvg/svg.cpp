@@ -38,7 +38,7 @@ bool RequestPixbufImage(JSContext *cx, JSObject *obj, const char *name, GdkPixbu
 	if ( JL_ValueIsCallable(cx, onImageFct) ) {
 
 		jsval nameVal, image;
-		JL_CHK( JL_NativeToJsval(cx, name, &nameVal) );
+		JL_CHK( jl::setValue(cx, &nameVal, name) );
 		JL_CHK( JS_CallFunctionValue(cx, obj, onImageFct, 1, &nameVal, &image) );
 
 		if ( JSVAL_IS_OBJECT( image ) ) {
@@ -87,7 +87,7 @@ BEGIN_CLASS( SVG ) // Start the definition of the class. It defines some symbols
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime())->canSkipCleanup )
 		return;
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
@@ -162,7 +162,7 @@ DEFINE_FUNCTION( write ) {
 //	const char *data;
 //	size_t length;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &data, &length) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &data) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
 
 	GError *error = NULL;
 	gboolean status;
@@ -282,8 +282,8 @@ DEFINE_FUNCTION( renderImage ) { // using cairo
 	if ( JL_ARG_ISDEF(1) ) {
 
 		JL_ASSERT_ARGC_MIN(2);
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &imageWidth) );
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &imageHeight) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &imageWidth) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &imageHeight) );
 	} else {
 
 		imageWidth = dim.width;
@@ -293,7 +293,7 @@ DEFINE_FUNCTION( renderImage ) { // using cairo
 	size_t channels;
 	if ( JL_ARG_ISDEF(3) ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &channels) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &channels) );
 		JL_ASSERT( channels == 1 || channels == 3 || channels == 4, E_ARG, E_NUM(3), E_EQUALS, E_NUM(1), E_OR, E_NUM(3), E_OR, E_NUM(4) );
 	} else {
 
@@ -303,7 +303,7 @@ DEFINE_FUNCTION( renderImage ) { // using cairo
 	if ( JL_ARG_ISDEF(4) ) { // fit
 
 		bool fit;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &fit) );
+		JL_CHK( jl::getValue(cx, JL_ARG(4), &fit) );
 		if ( fit ) {
 
 			cairo_matrix_t tmp;
@@ -320,7 +320,7 @@ DEFINE_FUNCTION( renderImage ) { // using cairo
 		JL_ASSERT_ARG_IS_ARRAY(4);
 		double trVector[6];
 		size_t currentLength;
-		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(4), trVector, COUNTOF(trVector), &currentLength ) );
+		JL_CHK( jl::getVector(cx, JL_ARG(4), trVector, COUNTOF(trVector), &currentLength ) );
 		JL_ASSERT( currentLength == 6, "Invalid transformation matrix size." );
 		cairo_matrix_t tmp = *(cairo_matrix_t*)&trVector;
 		cairo_matrix_multiply(&tr, &tmp, &tr);
@@ -330,7 +330,7 @@ DEFINE_FUNCTION( renderImage ) { // using cairo
 //	const char *id;
 	if ( JL_ARG_ISDEF(5) ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &id) );
+		JL_CHK( jl::getValue(cx, JL_ARG(5), &id) );
 		JL_ASSERT( id.IsSet() && id.GetConstStrZ()[0] == '#', E_ARG, E_NUM(5), E_INVALID );
 	}
 
@@ -462,11 +462,11 @@ DEFINE_FUNCTION( setVisible ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	RsvgHandle *handle = pv->handle;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &id) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &id) );
 	JL_ASSERT( id.IsSet() && id.GetConstStrZ()[0] == '#', E_ARG, E_NUM(1), E_INVALID );
 
 	bool visible;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &visible) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &visible) );
 
 	RsvgNode *drawsub = rsvg_defs_lookup (handle->priv->defs, id.GetStrConstOrNull());
 
@@ -500,8 +500,8 @@ DEFINE_FUNCTION( scale ) {
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	double sx, sy;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &sx) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &sy) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &sx) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &sy) );
 	cairo_matrix_scale(&pv->transformation, sx, sy);
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
@@ -525,7 +525,7 @@ DEFINE_FUNCTION( rotate ) {
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	double angle;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &angle) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &angle) );
 	cairo_matrix_rotate(&pv->transformation, angle);
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
@@ -549,8 +549,8 @@ DEFINE_FUNCTION( translate ) {
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	double tx, ty;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &tx) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &ty) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &tx) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &ty) );
 	cairo_matrix_translate(&pv->transformation, tx, ty);
 
 	*JL_RVAL = OBJECT_TO_JSVAL(obj);
@@ -585,7 +585,7 @@ DEFINE_PROPERTY_SETTER( dpi ) {
 	if ( vp.isNumber() ) {
 
 		size_t dpi;
-		JL_CHK( JL_JsvalToNative(cx, *vp, &dpi) );
+		JL_CHK( jl::getValue(cx, *vp, &dpi) );
 		rsvg_handle_set_dpi(handle, dpi);
 	} else
 	if ( JL_ValueIsArray(cx, *vp) ) { // array-like does not make sense here.
@@ -593,9 +593,9 @@ DEFINE_PROPERTY_SETTER( dpi ) {
 		size_t dpiX, dpiY;
 		jsval tmp;
 		JL_CHK( JL_GetElement(cx, &vp.toObject(), 0, &tmp) );
-		JL_CHK( JL_JsvalToNative(cx, tmp, &dpiX) );
+		JL_CHK( jl::getValue(cx, tmp, &dpiX) );
 		JL_CHK( JL_GetElement(cx, &vp.toObject(), 1, &tmp) );
-		JL_CHK( JL_JsvalToNative(cx, tmp, &dpiY) );
+		JL_CHK( jl::getValue(cx, tmp, &dpiY) );
 		rsvg_handle_set_dpi_x_y(handle, dpiX, dpiY);
 	}
 	
@@ -619,7 +619,7 @@ DEFINE_PROPERTY_GETTER( width ) {
 
 	RsvgDimensionData dim;
 	rsvg_handle_get_dimensions(handle, &dim);
-	JL_CHK( JL_NativeToJsval(cx, dim.width, vp) );
+	JL_CHK( jl::setValue(cx, vp, dim.width) );
 	return true;
 	JL_BAD;
 }
@@ -640,7 +640,7 @@ DEFINE_PROPERTY_GETTER( height ) {
 
 	RsvgDimensionData dim;
 	rsvg_handle_get_dimensions(handle, &dim);
-	JL_CHK( JL_NativeToJsval(cx, dim.height, vp) );
+	JL_CHK( jl::setValue(cx, vp, dim.height) );
 	return true;
 	JL_BAD;
 }
@@ -661,7 +661,7 @@ DEFINE_PROPERTY_GETTER( title ) {
 
 	const char *title = rsvg_handle_get_title(handle);
 	if ( title != NULL )
-		JL_CHK( JL_NativeToJsval(cx, title, vp) );
+		JL_CHK( jl::setValue(cx, vp, title) );
 	else
 		*vp = JSVAL_VOID;
 	return true;
@@ -684,7 +684,7 @@ DEFINE_PROPERTY_GETTER( metadata ) {
 
 	const char *metadata = rsvg_handle_get_metadata(handle);
 	if ( metadata != NULL )
-		JL_CHK( JL_NativeToJsval(cx, metadata, vp) );
+		JL_CHK( jl::setValue(cx, vp, metadata) );
 	else
 		*vp = JSVAL_VOID;
 	return true;
@@ -707,7 +707,7 @@ DEFINE_PROPERTY_GETTER( description ) {
 
 	const char *description = rsvg_handle_get_desc(handle);
 	if ( description != NULL )
-		JL_CHK( JL_NativeToJsval(cx, description, vp) );
+		JL_CHK( jl::setValue(cx, vp, description) );
 	else
 		*vp = JSVAL_VOID;
 	return true;

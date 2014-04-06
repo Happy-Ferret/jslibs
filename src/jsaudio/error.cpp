@@ -47,7 +47,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 	if ( vp.isUndefined() )
 		return true;
 	int errorCode;
-	JL_CHK( JL_JsvalToNative(cx, vp, &errorCode) );
+	JL_CHK( jl::getValue(cx, vp, &errorCode) );
 	char *errStr;
 	switch (errorCode) {
 		case AL_NO_ERROR:
@@ -90,7 +90,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 	if ( vp.isUndefined() )
 		return true;
 	int errorCode;
-	JL_CHK( JL_JsvalToNative(cx, vp, &errorCode) );
+	JL_CHK( jl::getValue(cx, vp, &errorCode) );
 	char *errStr;
 	switch (errorCode) {
 		case AL_NO_ERROR:
@@ -213,11 +213,11 @@ END_CLASS
 NEVER_INLINE bool FASTCALL
 ThrowOalError( JSContext *cx, ALenum err ) {
 
-	JS::RootedObject error(cx, JL_NewObjectWithGivenProto( cx, JL_CLASS(OalError), JL_CLASS_PROTOTYPE(cx, OalError)));
+	JS::RootedObject error(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(OalError), JL_CLASS_PROTOTYPE(cx, OalError)));
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JS::RootedValue errVal(cx);
-	JL_CHK( JL_NativeToJsval(cx, err, errVal) );
+	JL_CHK( jl::setValue(cx, errVal, err) );
 	JL_CHK( JL_SetReservedSlot(  error, 0, errVal ) );
-	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
+	JL_SAFE( jl::setScriptLocation(cx, error) );
 	JL_BAD;
 }

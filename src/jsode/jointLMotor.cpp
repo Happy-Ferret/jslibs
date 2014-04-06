@@ -92,13 +92,13 @@ DEFINE_FUNCTION( setAxis ) {
 	JL_RVAL.setUndefined();
 
 	int anum, rel;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &anum) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &anum) );
 	if ( !JL_ARG_ISDEF(3) ) {
 		
 		ode::dJointSetLMotorNumAxes(jointId, anum+1);
 		return true;
 	}
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &rel) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &rel) );
 	
 	ode::dVector3 vector;
 	uint32_t length;

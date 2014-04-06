@@ -47,11 +47,11 @@ bool JidToJsval( JSContext *cx, const JID *jid, jsval *rval ) {
 
 	JSObject *jidObj = JL_NewObj(cx);
 	*rval = OBJECT_TO_JSVAL(jidObj);
-	JL_CHK( JL_NativeToProperty(cx, jidObj, "bare", jid->bare().c_str()) );
-	JL_CHK( JL_NativeToProperty(cx, jidObj, "full", jid->full().c_str()) );
-	JL_CHK( JL_NativeToProperty(cx, jidObj, "server", jid->server().c_str()) );
-	JL_CHK( JL_NativeToProperty(cx, jidObj, "username", jid->username().c_str()) );
-	JL_CHK( JL_NativeToProperty(cx, jidObj, "resource", jid->resource().c_str()) );
+	JL_CHK( jl::setProperty(cx, jidObj, "bare", jid->bare().c_str()) );
+	JL_CHK( jl::setProperty(cx, jidObj, "full", jid->full().c_str()) );
+	JL_CHK( jl::setProperty(cx, jidObj, "server", jid->server().c_str()) );
+	JL_CHK( jl::setProperty(cx, jidObj, "username", jid->username().c_str()) );
+	JL_CHK( jl::setProperty(cx, jidObj, "resource", jid->resource().c_str()) );
 	return true;
 	JL_BAD;
 }
@@ -100,21 +100,21 @@ private:
 		}
 
 		JSObject *infoObj = JL_NewObj(_cx);
-		JL_NativeToProperty(_cx, _obj, "chain", info.chain);
-		JL_NativeToProperty(_cx, _obj, "issuer", info.issuer.c_str());
-		JL_NativeToProperty(_cx, _obj, "server", info.server.c_str());
-		JL_NativeToProperty(_cx, _obj, "dateFrom", info.date_from);
-		JL_NativeToProperty(_cx, _obj, "dateTo", info.date_to);
-		JL_NativeToProperty(_cx, _obj, "protocol", info.protocol.c_str());
-		JL_NativeToProperty(_cx, _obj, "cipher", info.cipher.c_str());
-		JL_NativeToProperty(_cx, _obj, "mac", info.mac.c_str());
-		JL_NativeToProperty(_cx, _obj, "compression", info.compression.c_str());
+		jl::setProperty(_cx, _obj, "chain", info.chain);
+		jl::setProperty(_cx, _obj, "issuer", info.issuer.c_str());
+		jl::setProperty(_cx, _obj, "server", info.server.c_str());
+		jl::setProperty(_cx, _obj, "dateFrom", info.date_from);
+		jl::setProperty(_cx, _obj, "dateTo", info.date_to);
+		jl::setProperty(_cx, _obj, "protocol", info.protocol.c_str());
+		jl::setProperty(_cx, _obj, "cipher", info.cipher.c_str());
+		jl::setProperty(_cx, _obj, "mac", info.mac.c_str());
+		jl::setProperty(_cx, _obj, "compression", info.compression.c_str());
 
 		jsval argv[] = { OBJECT_TO_JSVAL(infoObj) };
 		JS_CallFunctionValue(_cx, _obj, fval, COUNTOF(argv), argv, &rval); // errors will be managed later by JL_IsExceptionPending(cx)
 
 		bool res;
-		JL_JsvalToNative(_cx, rval, &res);
+		jl::getValue(_cx, rval, &res);
 		return res;
 	}
 
@@ -267,8 +267,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( pv );
 	pv->handlers = NULL;
 	pv->client = NULL;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &jid) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &password) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &jid) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &password) );
 	pv->handlers = new Handlers(obj);
 	pv->client = new Client(JID(jid.GetConstStrZ()), password.GetConstStrZ());
 	pv->client->logInstance().registerLogHandler(LogLevelDebug, LogAreaAll, pv->handlers); // LogLevelDebug
@@ -315,12 +315,12 @@ DEFINE_FUNCTION( connect ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &serverName) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &serverName) );
 	pv->client->setServer( serverName.GetConstStrZ() );
 	if ( JL_ARG_ISDEF(2) ) {
 
 		int port;
-		JL_JsvalToNative(cx, JL_ARG(2), &port);
+		jl::getValue(cx, JL_ARG(2), &port);
 		pv->client->setPort( port);
 	}
 	pv->handlers->_cx = cx;
@@ -417,8 +417,8 @@ DEFINE_FUNCTION( sendMessage ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &to) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &body) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &to) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &body) );
 
 	Tag *message = new Tag( "message" );
 	message->addAttribute( "type", "chat" );
@@ -509,7 +509,7 @@ DEFINE_PROPERTY_SETTER( status ) {
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_CHK( JL_JsvalToNative(cx, *vp, &status) );
+	JL_CHK( jl::getValue(cx, *vp, &status) );
 	pv->client->setPresence(pv->client->presence(), pv->client->priority(), status.GetConstStrZ());
 	return true;
 	JL_BAD;
@@ -540,7 +540,7 @@ DEFINE_PROPERTY_SETTER( presence ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	int presence;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &presence) );
+	JL_CHK( jl::getValue(cx, *vp, &presence) );
 	pv->client->setPresence((Presence)presence, pv->client->priority(), pv->client->status());
 	return true;
 	JL_BAD;
@@ -552,7 +552,7 @@ DEFINE_PROPERTY( roster ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-//	JSObject *rosterObj = JL_NewProtolessObj(cx);
+//	JSObject *rosterObj = jl::newObjectWithoutProto(cx);
 	Roster *roster = pv->client->rosterManager()->roster();
 	JSObject *rosterList = JS_NewArrayObject(cx, roster->size(), NULL);
 	int i = 0;

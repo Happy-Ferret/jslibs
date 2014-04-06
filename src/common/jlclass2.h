@@ -235,7 +235,7 @@ namespace jl2 { //JL_BEGIN_NAMESPACE
 				ASSERT( clasp.name && clasp.name[0] ); // Invalid class name.
 
 				HostPrivate *hpv;
-				hpv = JL_GetHostPrivate(cx);
+				hpv = jl::Host::getHost(cx);
 
 				JSObject *parentProto;
 				if ( parentProtoName != NULL ) {
@@ -289,8 +289,8 @@ namespace jl2 { //JL_BEGIN_NAMESPACE
 				if ( init )
 					JL_CHK( init(cx, this, proto, ctor) );
 
-				ASSERT( JL_GetCachedClass(hpv, clasp.name) == &clasp );
-				ASSERT( JL_GetCachedProto(hpv, clasp.name) == proto );
+				ASSERT( hpv.getCachedClasp(clasp.name) == &clasp );
+				ASSERT( hpv.getCachedClasp(clasp.name) == proto );
 			}
 
 			return true;

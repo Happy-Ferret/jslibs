@@ -189,11 +189,11 @@ NEVER_INLINE bool FASTCALL
 ThrowCryptError( JSContext *cx, int errorCode ) {
 
 //	JS_ReportWarning( cx, "CryptError exception" );
-	JS::RootedObject error(cx, JL_NewObjectWithGivenProto( cx, JL_CLASS(CryptError), JL_CLASS_PROTOTYPE(cx, CryptError)));
+	JS::RootedObject error(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(CryptError), JL_CLASS_PROTOTYPE(cx, CryptError)));
 	JS::RootedValue errorVal(cx);
 	errorVal.setObject(*error);
-	JL_CHK( JL_NativeToReservedSlot(cx, error, 0, errorCode) );
-	JL_SAFE( JL_ExceptionSetScriptLocation(cx, &error) );
+	JL_CHK( jl::setSlot(cx, error, 0, errorCode) );
+	JL_SAFE( jl::setScriptLocation(cx, &error) );
 
 	JS_SetPendingException(cx, errorVal);
 

@@ -89,7 +89,7 @@ DEFINE_FUNCTION( write ) {
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	if ( hStdout == NULL )
 		return WinThrowError(cx, GetLastError());
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 	DWORD written;
 	BOOL status = ::WriteConsole(hStdout, str.GetConstStr(), str.Length(), &written, NULL);
 	if ( status == FALSE )
@@ -124,7 +124,7 @@ DEFINE_FUNCTION( read ) {
 	DWORD length;
 	if ( JL_ARG_ISDEF(1) ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &length) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &length) );
 	} else {
 
 		length = sizeof(buffer);
@@ -151,7 +151,7 @@ DEFINE_FUNCTION( setConsoleMode ) {
 	JL_ASSERT_ARGC(1);
 
 	DWORD mode;
-	JL_JsvalToNative(cx, JL_ARG(1), &mode);
+	jl::getValue(cx, JL_ARG(1), &mode);
 
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
 	BOOL res = SetConsoleMode(hStdin, mode);
@@ -183,7 +183,7 @@ DEFINE_FUNCTION( writeConsoleOutput ) {
 		return WinThrowError(cx, GetLastError());
 
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &str) );
+	JL_CHK( jl::getValue(cx, JL_ARG(3), &str) );
 	JL_ASSERT( str.LengthOrZero() == 1, E_ARGVALUE, E_NUM(1), E_LENGTH, E_NUM(1) );
 	CHAR_INFO charInfo;
 	charInfo.Char.UnicodeChar = str.GetConstWStrOrNull()[0];
@@ -191,12 +191,12 @@ DEFINE_FUNCTION( writeConsoleOutput ) {
 	int color, backgroundColor;
 	
 	if ( JL_ARG_ISDEF(4) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &color) );
+		JL_CHK( jl::getValue(cx, JL_ARG(4), &color) );
 	else
 		color = 0;
 
 	if ( JL_ARG_ISDEF(5) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &backgroundColor) );
+		JL_CHK( jl::getValue(cx, JL_ARG(5), &backgroundColor) );
 	else
 		backgroundColor = 0;
 
@@ -211,8 +211,8 @@ DEFINE_FUNCTION( writeConsoleOutput ) {
 	coord.Y = 0;
 
 	SMALL_RECT writeRegion;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &writeRegion.Left) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &writeRegion.Top) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &writeRegion.Left) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &writeRegion.Top) );
 
 	writeRegion.Left += consoleScreenBufferInfo.srWindow.Left;
 	writeRegion.Top += consoleScreenBufferInfo.srWindow.Top;
@@ -244,19 +244,19 @@ DEFINE_FUNCTION( fillConsoleOutput ) {
 	JL_ASSERT_ARGC(6);
 
 	COORD size;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &size.X) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &size.Y) );
+	JL_CHK( jl::getValue(cx, JL_ARG(3), &size.X) );
+	JL_CHK( jl::getValue(cx, JL_ARG(4), &size.Y) );
 
 	if ( size.X > 0 && size.Y > 0 ) {
 
 		HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &str) );
+		JL_CHK( jl::getValue(cx, JL_ARG(5), &str) );
 		JL_ASSERT( str.LengthOrZero() == 1, E_ARGVALUE, E_NUM(1), E_LENGTH, E_NUM(1) );
 		WCHAR unicodeChar = str.GetConstWStrOrNull()[0];
 
 		WORD attributes;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &attributes) );
+		JL_CHK( jl::getValue(cx, JL_ARG(6), &attributes) );
 
 		CONSOLE_SCREEN_BUFFER_INFO consoleScreenBufferInfo;
 		res = GetConsoleScreenBufferInfo(hStdout, &consoleScreenBufferInfo);
@@ -269,8 +269,8 @@ DEFINE_FUNCTION( fillConsoleOutput ) {
 
 
 		SMALL_RECT writeRegion;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &writeRegion.Left) );
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &writeRegion.Top) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &writeRegion.Left) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &writeRegion.Top) );
 
 		writeRegion.Left += consoleScreenBufferInfo.srWindow.Left;
 		writeRegion.Top += consoleScreenBufferInfo.srWindow.Top;
@@ -311,7 +311,7 @@ DEFINE_FUNCTION( scrollY ) {
 
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	SHORT iRows;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &iRows) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &iRows) );
 
 	CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
 	BOOL res;
@@ -619,7 +619,7 @@ DEFINE_PROPERTY_SETTER( title ) {
 	JL_IGNORE(strict, id, obj);
 
 	JLData str;
-	JL_CHK( JL_JsvalToNative(cx, vp, &str) );
+	JL_CHK( jl::getValue(cx, vp, &str) );
 	SetConsoleTitle(str);
 	return true;
 	JL_BAD;
@@ -654,7 +654,7 @@ DEFINE_PROPERTY_SETTER( width ) {
 	res = GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	JL_CHK( JL_JsvalToNative(cx, vp, &csbiInfo.srWindow.Right) );
+	JL_CHK( jl::getValue(cx, vp, &csbiInfo.srWindow.Right) );
 	csbiInfo.srWindow.Right += csbiInfo.srWindow.Left - 1;
 
 	// GetLargestConsoleWindowSize
@@ -697,7 +697,7 @@ DEFINE_PROPERTY_SETTER( height ) {
 	res = GetConsoleScreenBufferInfo(hStdout, &csbiInfo);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
-	JL_CHK( JL_JsvalToNative(cx, vp, &csbiInfo.srWindow.Bottom) );
+	JL_CHK( jl::getValue(cx, vp, &csbiInfo.srWindow.Bottom) );
 	csbiInfo.srWindow.Bottom += csbiInfo.srWindow.Top - 1;
 	res = SetConsoleWindowInfo(hStdout, TRUE, &csbiInfo.srWindow);
 	if ( res == 0 )
@@ -733,7 +733,7 @@ DEFINE_PROPERTY_SETTER( textAttribute ) {
 
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	WORD attributes;
-	JL_CHK( JL_JsvalToNative(cx, vp, &attributes) );
+	JL_CHK( jl::getValue(cx, vp, &attributes) );
 	BOOL res = SetConsoleTextAttribute(hStdout, attributes);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
@@ -786,8 +786,8 @@ DEFINE_PROPERTY_SETTER( cursorPositionX ) {
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
 	SHORT x;
-	JL_CHK( JL_JsvalToNative(cx, vp, &x) );
-	consoleScreenBufferInfo.dwCursorPosition.X = consoleScreenBufferInfo.srWindow.Left + JL_MINMAX(x, 0, consoleScreenBufferInfo.srWindow.Right - consoleScreenBufferInfo.srWindow.Left);
+	JL_CHK( jl::getValue(cx, vp, &x) );
+	consoleScreenBufferInfo.dwCursorPosition.X = consoleScreenBufferInfo.srWindow.Left + jl::minmax(x, 0, consoleScreenBufferInfo.srWindow.Right - consoleScreenBufferInfo.srWindow.Left);
 	res = SetConsoleCursorPosition(hStdout, consoleScreenBufferInfo.dwCursorPosition);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
@@ -825,8 +825,8 @@ DEFINE_PROPERTY_SETTER( cursorPositionY ) {
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
 	SHORT y;
-	JL_CHK( JL_JsvalToNative(cx, vp, &y) );
-	consoleScreenBufferInfo.dwCursorPosition.Y = consoleScreenBufferInfo.srWindow.Top + JL_MINMAX(y, 0, consoleScreenBufferInfo.srWindow.Bottom - consoleScreenBufferInfo.srWindow.Top);
+	JL_CHK( jl::getValue(cx, vp, &y) );
+	consoleScreenBufferInfo.dwCursorPosition.Y = consoleScreenBufferInfo.srWindow.Top + jl::minmax(y, 0, consoleScreenBufferInfo.srWindow.Bottom - consoleScreenBufferInfo.srWindow.Top);
 	res = SetConsoleCursorPosition(hStdout, consoleScreenBufferInfo.dwCursorPosition);
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
@@ -845,8 +845,8 @@ DEFINE_FUNCTION( setCursorPosition ) {
 	JL_ASSERT_ARGC(2);
 
 	COORD position;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &position.X) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &position.Y) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &position.X) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &position.Y) );
 
 	BOOL res;
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -899,7 +899,7 @@ DEFINE_PROPERTY_SETTER( cursorSize ) {
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
 	DWORD size;
-	JL_CHK( JL_JsvalToNative(cx, vp, &size) );
+	JL_CHK( jl::getValue(cx, vp, &size) );
 	if ( size == 0 ) {
 
 		cursorInfo.bVisible = FALSE;

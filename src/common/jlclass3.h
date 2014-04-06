@@ -784,5 +784,5 @@ struct TRANGE {
 
 #undef JL_THIS_CLASS_PROTOTYPE
 #define JL_THIS_CLASS_PROTOTYPE \
-	(JL_GetCachedProto(JL_GetHostPrivate(cx), JL_THIS_CLASS->name))
+	(JL_GetCachedProto(jl::Host::getHost(cx), JL_THIS_CLASS->name))
 

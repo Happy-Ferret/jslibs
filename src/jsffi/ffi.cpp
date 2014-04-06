@@ -740,7 +740,7 @@ JL_GetReservedSlot( obj, 1, &val); // ..., JSVAL_TO_OBJECT(val)
 
     case FFI_TYPE_POINTER: // PU32[0] = nativeData ...
       {
-        if ( JSVAL_IS_OBJECT( *vp ) && JL_ObjectIsInstanceOf(cx, JSVAL_TO_OBJECT( *vp ), &NativeData) ) {
+        if ( JSVAL_IS_OBJECT( *vp ) && jl::isInstanceOf(cx, JSVAL_TO_OBJECT( *vp ), &NativeData) ) {
 
           ((void**)*pptr)[index] = *(void**)JL_GetPrivate( JSVAL_TO_OBJECT( *vp ) );
 
@@ -891,7 +891,7 @@ bool NativeData_setter_String(JSContext *cx, JSObject *obj, jsid id, bool strict
 //	  return false;
 
 	JLData str;
-	if ( !JL_JsvalToNative(cx, *vp, &str) )
+	if ( !jl::getValue(cx, *vp, &str) )
 		return false;
 
   void** pptr = (void**)JL_GetPrivate( obj );
@@ -982,7 +982,7 @@ bool NativeProc_Call(JSContext *cx, unsigned argc, jsval *vp) {
   for ( unsigned int argIterator = 0; argIterator < argc; ++argIterator ) {
 
     jsval currentArg = JS_ARGV(cx, vp)[argIterator];
-    if ( JSVAL_IS_PRIMITIVE(currentArg) || !JL_ObjectIsInstanceOf(cx, JSVAL_TO_OBJECT( currentArg ), &NativeType) ) {
+    if ( JSVAL_IS_PRIMITIVE(currentArg) || !jl::isInstanceOf(cx, JSVAL_TO_OBJECT( currentArg ), &NativeType) ) {
 
       JS_ReportError( cx, "argument %d must be a NativeType ( current type: %d )", argIterator+1, JS_TypeOfValue( cx, currentArg ) );
       return false;
@@ -997,7 +997,7 @@ JL_GetReservedSlot( JSVAL_TO_OBJECT( currentArg ), 1, &val); // ..., JSVAL_TO_OB
     ffiValueList[argIterator] = *((void**)JL_GetPrivate( JSVAL_TO_OBJECT(val) ) );
   }
 
-  JSObject *thisObj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp)); // get 'this' object of the current object ... TODO: check JL_ObjectIsInstanceOf(cx, thisObj, &NativeProc)
+  JSObject *thisObj = JSVAL_TO_OBJECT(JS_CALLEE(cx, vp)); // get 'this' object of the current object ... TODO: check jl::isInstanceOf(cx, thisObj, &NativeProc)
 
   jsval val;
   JL_GetReservedSlot( thisObj, 1, &val );
@@ -1014,7 +1014,7 @@ JL_GetReservedSlot( JSVAL_TO_OBJECT( currentArg ), 1, &val); // ..., JSVAL_TO_OB
 //	  return false;
 
   JLData procName;
-  if ( !JL_JsvalToNative(cx, id, &procName) )
+  if ( !jl::getValue(cx, id, &procName) )
 	  return false;
 
 
@@ -1073,7 +1073,7 @@ bool NativeModule_Construct(JSContext *cx, unsigned argc, jsval *vp) {
 //    return false;
 
 	JLData libName;
-	if ( !JL_JsvalToNative(cx, JS_ARGV(cx, vp)[0], &libName) )
+	if ( !jl::getValue(cx, JS_ARGV(cx, vp)[0], &libName) )
 		return false;
 
 

@@ -39,6 +39,6 @@ inline bool GetMatrixHelper( JSContext *cx, JS::MutableHandleValue val, float **
 			return true;
 		}
 	}
-	return JL_JsvalToMatrix44(cx, val, m);
+	return jl::getMatrix44(cx, val, m);
 	JL_BAD;
 }

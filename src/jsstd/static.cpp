@@ -88,7 +88,7 @@ DEFINE_FUNCTION( expand ) {
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &srcStr) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &srcStr) );
 
 	if ( JL_ARG_ISDEF(2) && jl::isCallable(cx, JL_ARG(2)) ) {
 			
@@ -114,7 +114,7 @@ DEFINE_FUNCTION( expand ) {
 		key = txt;
 		do {
 
-			key = js_strchr_limit(key, L('$'), srcEnd);
+			key = jl::strchr_limit(key, L('$'), srcEnd);
 			if ( key == NULL || ++key == srcEnd ) {
 
 				++stack;
@@ -137,7 +137,7 @@ DEFINE_FUNCTION( expand ) {
 			}
 
 			++key;
-			keyEnd = js_strchr_limit(key, L(')'), srcEnd);
+			keyEnd = jl::strchr_limit(key, L(')'), srcEnd);
 			
 			if ( keyEnd ) {
 
@@ -146,7 +146,7 @@ DEFINE_FUNCTION( expand ) {
 
 				if ( hasMapFct ) {
 
-					JL_CHK( JL_NativeToJsval(cx, key, keyEnd - key, &value) );
+					JL_CHK( jl::setValue(cx, &value, jl::strSpec(key, keyEnd - key)) );
 					JL_CHK( jl::call(cx, JL_OBJ, JL_ARG(2), &value, value) );
 				} else if ( JL_SARG(2).isObject() ) {
 
@@ -193,7 +193,7 @@ assemble:
 	for ( ; stack; --stack ) {
 
 		tmp -= stack->count;
-		js_strncpy(tmp, stack->chars, stack->count);
+		jl::strncpy(tmp, stack->chars, stack->count);
 		if ( stack->root != NULL )
 			JS_RemoveStringRoot(cx, &stack->root);
 	}
@@ -524,7 +524,7 @@ DEFINE_FUNCTION( warning ) {
 
 //	const char *message;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 	JL_CHK( JS_ReportWarning(cx, "%s", str.GetConstStrZ()) );
 	
 	JL_RVAL.setUndefined();
@@ -559,12 +559,12 @@ DEFINE_FUNCTION( assert ) {
 	// see. js_DecompileValueGenerator  (http://infomonkey.cdleary.com/questions/144/how-to-get-the-script-text-code-at-runtime)
 
 	bool assert;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &assert) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &assert) );
 	if ( !assert ) {
 
 		JLData str;
 		if ( JL_ARG_ISDEF(2) )
-			JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &str) );
+			JL_CHK( jl::getValue(cx, JL_ARG(2), &str) );
 		else
 			str = JLData("Assertion failed.", true);
 		
@@ -592,7 +592,7 @@ DEFINE_FUNCTION( collectGarbage ) {
 	size_t gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES);
 	JS_GC(JL_GetRuntime(cx));
 	gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES) - gcBytesDiff;
-	return JL_NativeToJsval(cx, gcBytesDiff, JL_RVAL);
+	return jl::setValue(cx, JL_RVAL, gcBytesDiff);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -611,7 +611,7 @@ DEFINE_FUNCTION( maybeCollectGarbage ) {
 	size_t gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES);
 	JS_MaybeGC( cx );
 	gcBytesDiff = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_BYTES) - gcBytesDiff;
-	return JL_NativeToJsval(cx, gcBytesDiff, JL_RVAL);
+	return jl::setValue(cx, JL_RVAL, gcBytesDiff);
 }
 
 
@@ -629,12 +629,12 @@ DEFINE_FUNCTION( sleep ) {
 	
 	bool accurate;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &accurate) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &accurate) );
 	else
 		accurate = false;
 
 	unsigned int time;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &time) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &time) );
 
 	if ( accurate )
 		jl::SleepMillisecondsAccurate(time);
@@ -676,7 +676,7 @@ DEFINE_FUNCTION( timeCounter ) {
 	JL_DEFINE_ARGS;
 
 	JL_IGNORE(argc);
-	return JL_NativeToJsval(cx, jl::AccurateTimeCounter(), JL_RVAL);
+	return jl::setValue(cx, JL_RVAL, jl::AccurateTimeCounter());
 }
 
 
@@ -700,7 +700,7 @@ DEFINE_FUNCTION( stringRepeat ) {
 	JL_ASSERT_ARGC(2);
 
 	size_t count;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &count) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &count) );
 	if ( count == 0 ) {
 
 		JL_RVAL.set(JL_GetEmptyStringValue(cx));
@@ -713,7 +713,7 @@ DEFINE_FUNCTION( stringRepeat ) {
 	}
 
 	size_t len;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 	len = str.Length();
 
 	if ( len == 0 ) {
@@ -823,7 +823,7 @@ DEFINE_FUNCTION( exec ) {
 
 	bool useAndSaveCompiledScripts;
 	useAndSaveCompiledScripts = !JL_ARG_ISDEF(2) || JL_ARG(2).isTrue();
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &fileName) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &fileName) );
 
 	{
 
@@ -1023,7 +1023,7 @@ bool SandboxMaxOperationCallback(JSContext *cx) {
 		oldCompartment = JS_EnterCompartment(cx, cpc->proto);
 		JL_CHK( oldCompartment );
 		JSObject *branchLimitExceptionObj;
-		branchLimitExceptionObj = JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto);
+		branchLimitExceptionObj = jl::newObjectWithGivenProto(cx, cpc->clasp, cpc->proto);
 		
 		branchLimitExceptionVal.setObject(*branchLimitExceptionObj);
 		JS_SetPendingException(cx, branchLimitExceptionVal);
@@ -1092,7 +1092,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 	}
 
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &pv.maxExecutionTime) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &pv.maxExecutionTime) );
 	else
 		pv.maxExecutionTime = 1000; // default value
 
@@ -1197,7 +1197,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 	}
 
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &pv.maxExecutionTime) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &pv.maxExecutionTime) );
 	else
 		pv.maxExecutionTime = 1000; // default value
 
@@ -1319,8 +1319,8 @@ DEFINE_FUNCTION( isStatementValid ) {
 	//const char *buffer;
 	//size_t length;
 	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
-	JL_CHK( JL_NativeToJsval(cx, JS_BufferIsCompilableUnit(cx, JL_OBJ, str.GetConstStr(), str.Length()), JL_RVAL) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, JS_BufferIsCompilableUnit(cx, JL_OBJ, str.GetConstStr(), str.Length())) );
 	return true;
 	JL_BAD;
 }
@@ -1475,7 +1475,7 @@ DEFINE_PROPERTY_GETTER( currentMemoryUsage ) {
 
 #endif
 
-	JL_CHK( JL_NewNumberValue(cx, bytes, vp) );
+	vp.setNumber(bytes);
 	return true;
 	JL_BAD;
 }
@@ -1670,8 +1670,8 @@ DEFINE_PROPERTY_GETTER( currentFilename ) {
 	JL_IGNORE(id, obj);
 
 	const char *filename;
-	JL_CHK( JL_GetCurrentLocation(cx, &filename, NULL) );
-	JL_CHK( JL_NativeToJsval(cx, filename, vp) );
+	JL_CHK( jl::getScriptLocation(cx, &filename, NULL) );
+	JL_CHK( jl::setValue(cx, vp, filename) );
 	return true;
 	JL_BAD;
 }
@@ -1691,8 +1691,8 @@ DEFINE_PROPERTY_GETTER( currentLineNumber ) {
 	JL_IGNORE(id, obj);
 
 	unsigned lineno;
-	JL_CHK( JL_GetCurrentLocation(cx, NULL, &lineno) );
-	JL_CHK( JL_NativeToJsval(cx, lineno, vp) );
+	JL_CHK( jl::getScriptLocation(cx, NULL, &lineno) );
+	JL_CHK( jl::setValue(cx, vp, lineno) );
 	return true;
 	JL_BAD;
 }
@@ -1721,7 +1721,7 @@ DEFINE_PROPERTY_GETTER( processTime ) {
     kernel.HighPart = kernelTime.dwHighDateTime;
     user.LowPart  = userTime.dwLowDateTime;
     user.HighPart = userTime.dwHighDateTime;
-	return JL_NativeToJsval(cx, (kernel.QuadPart + user.QuadPart) / (double)10000, vp);
+	return jl::setValue(cx, vp, (kernel.QuadPart + user.QuadPart) / (double)10000);
 
 #else
 
@@ -1780,7 +1780,7 @@ DEFINE_PROPERTY_GETTER( cpuLoad ) {
 	if ( status != ERROR_SUCCESS && status != PDH_CALC_NEGATIVE_DENOMINATOR )
 		return JL_ThrowOSErrorCode(cx, status, "pdh.dll");
 
-	return JL_NativeToJsval(cx, value.doubleValue, vp);
+	return jl::setValue(cx, vp, value.doubleValue);
 
 #else
 
@@ -1813,7 +1813,7 @@ DEFINE_PROPERTY_GETTER( cpuId ) {
 
 	jl::CpuInfo_t info;
 	jl::CPUInfo(info);
-	return JL_NativeToJsval(cx, info, sizeof(info), vp);
+	return jl::setValue(cx, vp, jl::strSpec(info, sizeof(info)));
 }
 
 
@@ -1881,7 +1881,7 @@ DEFINE_FUNCTION( jsstdTest ) {
 
 /*
 	JLData str;
-	JL_JsvalToNative(cx, JL_ARG(1), &str);
+	jl::getValue(cx, JL_ARG(1), &str);
 	JSObject *scriptObj;
 
 	//	scriptObj = JS_CompileFile(cx, JL_GetGlobal(cx), str.GetConstStrZ());

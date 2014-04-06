@@ -89,7 +89,7 @@ ModuleInit(JSContext *cx, JS::HandleObject obj, uint32_t id) {
 
 	mpv->GetFTSymbols = GetFTSymbols;
 
-	JL_CHK( JL_DefineProperty(cx, JL_GetHostPrivate(cx)->hostObject, "_jsfontModulePrivate", (void*)mpv, false, false) );
+	JL_CHK( JL_DefineProperty(cx, jl::Host::getHost(cx)->hostObject, "_jsfontModulePrivate", (void*)mpv, false, false) );
 
 	INIT_CLASS(Font);
 

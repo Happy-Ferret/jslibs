@@ -282,7 +282,7 @@ END_CLASS
 NEVER_INLINE bool FASTCALL
 ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) {
 
-	JS::RootedObject error(cx, JL_NewObjectWithGivenProto( cx, JL_CLASS(IoError), JL_CLASS_PROTOTYPE(cx, IoError)));
+	JS::RootedObject error(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(IoError), JL_CLASS_PROTOTYPE(cx, IoError)));
 	JS::RootedValue tmp(cx);
 	tmp.setObject(*error);
 	JS_SetPendingException( cx, tmp );
@@ -291,6 +291,6 @@ ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) {
 	JL_CHK( JL_SetReservedSlot( error, 0, tmp ) );
 	tmp.setInt32(osError);
 	JL_CHK( JL_SetReservedSlot( error, 1, tmp ) );
-	JL_SAFE( JL_ExceptionSetScriptLocation(cx, &error) );
+	JL_SAFE( jl::setScriptLocation(cx, &error) );
 	JL_BAD;
 }

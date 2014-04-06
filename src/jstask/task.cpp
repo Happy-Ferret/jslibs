@@ -254,8 +254,8 @@ TaskThreadProc( void *threadArg ) {
 	if ( cx == NULL ) // out of memory
 		JLThreadExit(0);
 
-	HostPrivate *hpv;
-	hpv = JL_GetHostPrivate(cx);
+	jl::Host& hpv;
+	hpv = jl::Host::getHost(cx);
 
 // allocator must be threadsafe !
 	hpv->alloc.malloc = jl_malloc;
@@ -365,7 +365,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(2) ) {
 
 		int p;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &p) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &p) );
 		switch ( p ) {
 			case 0:
 				priority = JL_THREAD_PRIORITY_NORMAL;

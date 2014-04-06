@@ -180,13 +180,13 @@ sf_count_t SfGetFilelen(void *user_data) {
 	JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
 	if ( tmpVal.isUndefined() )
 		return -1;
-	JL_JsvalToNative(pv->cx, tmpVal, &position); // (TBD) manage error
+	jl::getValue(pv->cx, tmpVal, &position); // (TBD) manage error
 
 	int available;
 	JS_GetProperty(pv->cx, pv->obj, "available", &tmpVal); // (TBD) manage error
 	if ( tmpVal.isUndefined() )
 		return -1;
-	JL_JsvalToNative(pv->cx, tmpVal, &available); // (TBD) manage error
+	jl::getValue(pv->cx, tmpVal, &available); // (TBD) manage error
 
 	return position + available;
 }
@@ -210,7 +210,7 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 			JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
 			if ( tmpVal.isUndefined() )
 				return -1;
-			JL_JsvalToNative(pv->cx, tmpVal, &position); // (TBD) manage error
+			jl::getValue(pv->cx, tmpVal, &position); // (TBD) manage error
 
 			position += size_t(offset);
 			JL_CHK( jl::setProperty(pv->cx, pv->obj, "position", position) ); // (TBD) manage error
@@ -220,16 +220,16 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 			JS_GetProperty(pv->cx, pv->obj, "available", &tmpVal);
 			if ( tmpVal.isUndefined() )
 				return -1;
-			JL_JsvalToNative(pv->cx, tmpVal, &available);
+			jl::getValue(pv->cx, tmpVal, &available);
 
 			JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
 			if ( tmpVal.isUndefined() )
 				return -1;
-			JL_JsvalToNative(pv->cx, tmpVal, &position);
+			jl::getValue(pv->cx, tmpVal, &position);
 
 			if ( offset > 0 || -offset > position + available )
 				return -1;
-			JL_JsvalToNative(pv->cx, tmpVal, &position);
+			jl::getValue(pv->cx, tmpVal, &position);
 			JL_CHK( jl::setProperty(pv->cx, pv->obj, "position", position + available + offset) ); // the pointer is set to the size of the file plus offset.
 			return 0;
 
@@ -247,7 +247,7 @@ sf_count_t SfTell(void *user_data) {
 	JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
 	if ( tmpVal.isUndefined() )
 		return -1;
-	JL_JsvalToNative(pv->cx, tmpVal, &position);
+	jl::getValue(pv->cx, tmpVal, &position);
 
 	return position;
 }

@@ -902,7 +902,7 @@ DEFINE_FUNCTION( loadModule ) {
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 
 	char libFileName[PATH_MAX];
-	strncpy( libFileName, str.GetConstStr(), str.Length() );
+	jl::strncpy( libFileName, str.GetConstStr(), str.Length() );
 	libFileName[str.Length()] = '\0';
 	strcat( libFileName, DLL_EXT );
 // MAC OSX: 	'@executable_path' ??
@@ -1104,7 +1104,7 @@ Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 	JL_MACRO_BEGIN \
 		size_t remaining = sizeof(buffer)-(buf-buffer); \
 		if ( remaining == 0 ) break; \
-		size_t len = JL_MIN(strlen(STR), remaining); \
+		size_t len = jl::min(strlen(STR), remaining); \
 		jl::memcpy(buf, STR, len); \
 		buf += len; \
 	JL_MACRO_END
@@ -1113,7 +1113,7 @@ Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 	JL_MACRO_BEGIN \
 		size_t remaining = sizeof(buffer)-(buf-buffer); \
 		if ( remaining == 0 ) break; \
-		size_t len = JL_MIN(size_t((SIZE)*(COUNT)), remaining); \
+		size_t len = jl::min(size_t((SIZE)*(COUNT)), remaining); \
 		jl::memcpy(buf, (STR), len); \
 		buf += len; \
 	JL_MACRO_END
@@ -1431,7 +1431,7 @@ Host::setHostArguments( char **hostArgv, size_t hostArgc ) {
 	JSContext *cx = _hostRuntime.context();
 	JS::RootedValue argumentsVal(_hostRuntime.runtime());
 
-	JL_CHK( JL_NativeVectorToJsval(cx, hostArgv, hostArgc, &argumentsVal) );
+	JL_CHK( jl::setVector(cx, &argumentsVal, hostArgv, hostArgc) );
 	JL_CHK( JS_SetPropertyById(cx, _hostObject, JLID(cx, arguments), argumentsVal) );
 	return true;
 	JL_BAD;
@@ -1441,7 +1441,7 @@ bool
 Host::setHostPath( const char *hostPath) {
 
 	JSContext *cx = _hostRuntime.context();
-	JL_CHK( JL_NativeToProperty(cx, _hostObject, JLID(cx, path), hostPath) );
+	JL_CHK( jl::setProperty(cx, _hostObject, JLID(cx, path), hostPath) );
 	return true;
 	JL_BAD;
 }
@@ -1450,7 +1450,7 @@ bool
 Host::setHostName( const char *hostName ) {
 
 	JSContext *cx = _hostRuntime.context();
-	JL_CHK( JL_NativeToProperty(cx, _hostObject, JLID(cx, name), hostName) );
+	JL_CHK( jl::setProperty(cx, _hostObject, JLID(cx, name), hostName) );
 	return true;
 	JL_BAD;
 }

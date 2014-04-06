@@ -79,7 +79,7 @@ DEFINE_FUNCTION( valueOf ) {
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_CHK( JL_NativeToJsval(cx, pv->effectSlot, *JL_RVAL) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, pv->effectSlot) );
 	return true;
 	JL_BAD;
 }
@@ -100,7 +100,7 @@ DEFINE_PROPERTY_SETTER( effect ) {
 
 	ALuint effect;
 	if ( !vp.isUndefined() )
-		JL_CHK( JL_JsvalToNative(cx, vp, &effect) );
+		JL_CHK( jl::getValue(cx, vp, &effect) );
 	else
 		effect = AL_EFFECT_NULL;
 
@@ -121,7 +121,7 @@ DEFINE_PROPERTY_SETTER( effectGain ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	float gain;
-	JL_CHK( JL_JsvalToNative(cx, vp, &gain) );
+	JL_CHK( jl::getValue(cx, vp, &gain) );
 	alAuxiliaryEffectSlotf( pv->effectSlot, AL_EFFECTSLOT_GAIN, gain );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return true;
@@ -139,7 +139,7 @@ DEFINE_PROPERTY_GETTER( effectGain ) {
 	float gain;
 	alGetAuxiliaryEffectSlotf( pv->effectSlot, AL_EFFECTSLOT_GAIN, &gain );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK(JL_NativeToJsval(cx, gain, vp) );
+	JL_CHK(jl::setValue(cx, vp, gain) );
 	return true;
 	JL_BAD;
 }
@@ -154,7 +154,7 @@ DEFINE_PROPERTY_SETTER( effectSendAuto ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	bool sendAuto;
-	JL_CHK( JL_JsvalToNative(cx, vp, &sendAuto) );
+	JL_CHK( jl::getValue(cx, vp, &sendAuto) );
 	alAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, sendAuto ? AL_TRUE : AL_FALSE );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return true;
@@ -172,7 +172,7 @@ DEFINE_PROPERTY_GETTER( effectSendAuto ) {
 	int sendAuto;
 	alGetAuxiliaryEffectSloti( pv->effectSlot, AL_EFFECTSLOT_AUXILIARY_SEND_AUTO, &sendAuto );
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK(JL_NativeToJsval(cx, sendAuto == AL_TRUE ? true : false, vp) );
+	JL_CHK(jl::setValue(cx, vp, sendAuto == AL_TRUE ? true : false) );
 	return true;
 	JL_BAD;
 }

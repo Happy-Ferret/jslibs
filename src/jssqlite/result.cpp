@@ -24,10 +24,10 @@ bool SqliteToJsval( JSContext *cx, sqlite3_value *value, OUT JS::MutableHandleVa
 	switch( sqlite3_value_type(value) ) {
 
 		case SQLITE_INTEGER:
-			JL_CHK( JL_NativeToJsval(cx, sqlite3_value_int(value), rval) );
+			JL_CHK( jl::setValue(cx, rval, sqlite3_value_int(value)) );
 			break;
 		case SQLITE_FLOAT:
-			JL_CHK( JL_NativeToJsval(cx, sqlite3_value_double(value), rval) );
+			JL_CHK( jl::setValue(cx, rval, sqlite3_value_double(value)) );
 			break;
 		case SQLITE_BLOB:
 			JL_CHK( JL_NewBufferCopyN(cx, sqlite3_value_blob(value), sqlite3_value_bytes(value), rval) );
@@ -138,7 +138,7 @@ bool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JS::HandleValue ar
 				} else {
 
 					double jd;
-					JL_CHK( JL_JsvalToNative(cx, val, &jd) );
+					JL_CHK( jl::getValue(cx, val, &jd) );
 					if ( jd >= INT_MIN && jd <= INT_MAX && jd == (int)jd )
 						ret = sqlite3_bind_int( pStmt, param, (int)jd );
 					else
@@ -157,7 +157,7 @@ bool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JS::HandleValue ar
 				if ( jl::isData(cx, val) ) {
 
 					JLData data;
-					JL_CHK( JL_JsvalToNative(cx, val, &data) );
+					JL_CHK( jl::getValue(cx, val, &data) );
 					if ( sqlite3_bind_blob(pStmt, param, data.GetConstStr(), data.Length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 						return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 					break;
@@ -167,7 +167,7 @@ bool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JS::HandleValue ar
 			case JSTYPE_STRING: {
 
 				JLData str;
-				JL_CHK( JL_JsvalToNative(cx, val, &str) );
+				JL_CHK( jl::getValue(cx, val, &str) );
 
 				if ( sqlite3_bind_text(pStmt, param, str.GetConstStr(), str.Length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
@@ -462,7 +462,7 @@ DEFINE_FUNCTION( col ) {
 	pStmt = (sqlite3_stmt*)JL_GetPrivate( JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 	int col;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &col) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &col) );
 	JL_CHK( SqliteToJsval(cx, sqlite3_column_value(pStmt, col), JL_RVAL) );
 	return true;
 	JL_BAD;
@@ -496,7 +496,7 @@ DEFINE_FUNCTION( row ) {
 	// returns an array [ row1Data, row2Data, ... ] else return an object { row1Name:row1Data, row2Name:row2Data,  ... }
 	bool namedRows;
 	if ( argc >= 1 )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &namedRows) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &namedRows) );
 	else
 		namedRows = false; // default value
 
@@ -724,7 +724,7 @@ DEFINE_PROPERTY_GETTER( sql ) {
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
-	JL_CHK( JL_NativeToJsval(cx, sqlite3_sql(pStmt), vp) );
+	JL_CHK( jl::setValue(cx, vp, sqlite3_sql(pStmt)) );
 
 	return jl::StoreProperty(cx, obj, id, vp, false);
 	JL_BAD;

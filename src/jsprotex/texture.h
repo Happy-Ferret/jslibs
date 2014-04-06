@@ -42,6 +42,6 @@ ALWAYS_INLINE JSClass* JL_TextureJSClass( JSContext *cx ) {
 
 	static JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
 	if (unlikely( clasp == NULL ))
-		clasp = JL_GetCachedClass(JL_GetHostPrivate(cx), "Texture");
+		clasp = jl::Host::getHost(cx).getCachedClasp("Texture");
 	return clasp;
 }

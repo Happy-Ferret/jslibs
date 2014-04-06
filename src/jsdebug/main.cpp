@@ -252,7 +252,7 @@ bool GetScriptLocation( JSContext *cx, jsval *val, unsigned lineno, JSScript **s
 		jl::Queue *scriptFileList = &((ModulePrivate*)JL_GetModulePrivate(cx, _moduleId))->scriptFileList;
 
 		JLData fileName;
-		JL_CHK( JL_JsvalToNative(cx, *val, &fileName) );
+		JL_CHK( jl::getValue(cx, *val, &fileName) );
 		*script = ScriptByLocation(cx, scriptFileList, fileName, lineno);
 		if ( *script == NULL )
 			return true;
@@ -319,7 +319,7 @@ ModuleRelease(JSContext *cx) {
 	JS_SetNewScriptHookProc(JL_GetRuntime(cx), NULL, NULL);
 	JS_SetDestroyScriptHookProc(JL_GetRuntime(cx), NULL, NULL);
 
-	if ( JL_GetHostPrivate(JL_GetRuntime(cx))->canSkipCleanup ) // do not cleanup in unsafe mode.
+	if ( jl::Host::getHost(JL_GetRuntime(cx))->canSkipCleanup ) // do not cleanup in unsafe mode.
 		return true;
 
 	jl::Queue *scriptFileList = &((ModulePrivate*)JL_GetModulePrivate(cx, _moduleId))->scriptFileList;

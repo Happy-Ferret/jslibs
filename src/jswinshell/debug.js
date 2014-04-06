@@ -7,7 +7,19 @@ loadModule('jswinshell');
 //loadModule('jssvg');
 
 
+//jswinshelltest();
 
+
+print(Audio.inputDeviceList)
+
+var a = new Audio("test");
+
+
+
+//processEvents(host.endSignalEvents());
+
+
+throw 0;
 
 const RUN_KEY = 'HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run';
 

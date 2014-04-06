@@ -36,7 +36,7 @@ DEFINE_FINALIZE() {
 	if ( alcGetCurrentContext() )
 		alDeleteFilters(1, &pv->filter);
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime())->canSkipCleanup )
 		return;
 
 	JS_freeop(fop, pv);
@@ -95,7 +95,7 @@ DEFINE_FUNCTION( valueOf ) {
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_CHK( JL_NativeToJsval(cx, pv->filter, *JL_RVAL) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, pv->filter) );
 	return true;
 	JL_BAD;
 }
@@ -128,7 +128,7 @@ DEFINE_PROPERTY_SETTER( type ) {
 	if ( vp.isUndefined() )
 		filterType = AL_FILTER_NULL;
 	else
-		JL_CHK( JL_JsvalToNative(cx, vp, &filterType) );
+		JL_CHK( jl::getValue(cx, vp, &filterType) );
 	alFilteri(pv->filter, AL_FILTER_TYPE, filterType);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return true;
@@ -150,7 +150,7 @@ DEFINE_PROPERTY_GETTER( type ) {
 	if ( filterType == AL_FILTER_NULL )
 		vp.setUndefined();
 	else
-		JL_CHK( JL_NativeToJsval(cx, filterType, vp) );
+		JL_CHK( jl::setValue(cx, vp, filterType) );
 
 	return true;
 	JL_BAD;
@@ -168,7 +168,7 @@ DEFINE_PROPERTY_SETTER( filterFloat ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	float f;
-	JL_CHK( JL_JsvalToNative(cx, vp, &f) );
+	JL_CHK( jl::getValue(cx, vp, &f) );
 	alFilterf(pv->filter, param, f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return true;
@@ -185,7 +185,7 @@ DEFINE_PROPERTY_GETTER( filterFloat ) {
 	float f;
 	alGetFilterf(pv->filter, param, &f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK(JL_NativeToJsval(cx, f, vp) );
+	JL_CHK(jl::setValue(cx, vp, f) );
 	return true;
 	JL_BAD;
 }

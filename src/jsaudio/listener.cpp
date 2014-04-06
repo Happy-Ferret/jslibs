@@ -35,7 +35,7 @@ DEFINE_PROPERTY_SETTER( position ) {
 
 	float pos[3];
 	uint32_t len;
-	JL_CHK( JL_JsvalToNativeVector(cx, vp, pos, 3, &len) );
+	JL_CHK( jl::getVector(cx, vp, pos, 3, &len) );
 
 	alListener3f(AL_POSITION, pos[0], pos[1], pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -53,7 +53,7 @@ DEFINE_PROPERTY_GETTER( position ) {
 	alGetListener3f(AL_POSITION, &pos[0], &pos[1], &pos[2]);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_NativeVectorToJsval(cx, pos, 3, vp) );
+	JL_CHK( jl::setVector(cx, vp, pos, 3) );
 	return true;
 	JL_BAD;
 }
@@ -69,7 +69,7 @@ DEFINE_PROPERTY_SETTER( metersPerUnit ) {
 	JL_IGNORE( strict, id, obj );
 
 	float metersPerUnit;
-	JL_CHK( JL_JsvalToNative(cx, vp, &metersPerUnit) );
+	JL_CHK( jl::getValue(cx, vp, &metersPerUnit) );
 
 	alListenerf(AL_METERS_PER_UNIT, metersPerUnit);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -87,7 +87,7 @@ DEFINE_PROPERTY_GETTER( metersPerUnit ) {
 	alGetListenerf(AL_METERS_PER_UNIT, &metersPerUnit);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK(JL_NativeToJsval(cx, metersPerUnit, vp) );
+	JL_CHK(jl::setValue(cx, vp, metersPerUnit) );
 	return true;
 	JL_BAD;
 }

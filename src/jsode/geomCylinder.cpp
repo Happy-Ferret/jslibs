@@ -81,7 +81,7 @@ DEFINE_PROPERTY_SETTER( radius ) {
 		ode::dReal radius, length;
 	ode::dGeomCylinderGetParams(geom, &radius, &length);
 	double value;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &value) );
+	JL_CHK( jl::getValue(cx, *vp, &value) );
 	ode::dGeomCylinderSetParams(geom, (ode::dReal)value, length);
 	return true;
 	JL_BAD;
@@ -110,7 +110,7 @@ DEFINE_PROPERTY_SETTER( length ) {
 	ode::dReal radius, length;
 	ode::dGeomCylinderGetParams(geom, &radius, &length);
 	double value;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &value) );
+	JL_CHK( jl::getValue(cx, *vp, &value) );
 	ode::dGeomCylinderSetParams(geom, radius, (ode::dReal)value);
 	return true;
 	JL_BAD;

@@ -88,7 +88,7 @@ DEFINE_FUNCTION( adjust ) {
 
 	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
 	double newMass;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &newMass) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &newMass) );
 	ode::dMassAdjust(&mass, (ode::dReal)newMass);
 	ode::dBodySetMass(bodyID, &mass);
 	
@@ -135,7 +135,7 @@ DEFINE_FUNCTION( setBoxTotal ) {
 	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
 // arg 0
 	double totalMass;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &totalMass) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &totalMass) );
 // arg 1
 	real dimensions[3];
 	//	JL_CHK( FloatArrayToVector(cx, 3, &argv[1], dimensions) );
@@ -170,7 +170,7 @@ DEFINE_PROPERTY_SETTER( value ) {
 
 	JL_CHK( GetBodyAndMass(cx, obj, &bodyID, &mass) );
 	double massValue;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &massValue) );
+	JL_CHK( jl::getValue(cx, *vp, &massValue) );
 	mass.mass = (ode::dReal)massValue;
 	ode::dBodySetMass(bodyID, &mass);
 	return true;

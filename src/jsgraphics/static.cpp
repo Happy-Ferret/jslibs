@@ -53,25 +53,25 @@ DEFINE_FUNCTION( vec3 ) {
 
 		if ( /*JL_ValueIsArray(cx, JL_ARG(1))*/ JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
 
-			JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &v.x) );
+			JL_CHK( jl::getValue(cx, JL_ARG(1), &v.x) );
 			v.z = v.y = v.x;
 		} else {
 
 			uint32_t len;
-			JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
+			JL_CHK( jl::getVector(cx, JL_ARG(1), v.raw, 3, &len) );
 			JL_CHKM( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 		}
 	} else
 	if ( argc == 3 ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &v.x) );
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &v.y) );
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v.z) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &v.x) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &v.y) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &v.z) );
 	}
 //	else
 //		JL_ERR( E_INVALID, E_STR("vector3") );
 
-	return JL_NativeVectorToJsval(cx, v.raw, 3, *JL_RVAL);
+	return jl::setVector(cx, JL_RVAL, v.raw, 3);
 	JL_BAD;
 }
 
@@ -95,7 +95,7 @@ DEFINE_FUNCTION( vec3Length ) {
 	Vector3 v;
 	if ( argc == 1 )	{
 
-		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
+		JL_CHK( jl::getVector(cx, JL_ARG(1), v.raw, 3, &len) );
 
 		JL_CHKM( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 	} else
@@ -103,8 +103,8 @@ DEFINE_FUNCTION( vec3Length ) {
 
 		Vector3 v2;
 		
-		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
-		JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
+		JL_CHK( jl::getVector(cx, JL_ARG(1), v.raw, 3, &len) );
+		JL_CHK( jl::getVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
 
 		JL_CHKM( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 		JL_CHKM( len2 >= 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NVECTOR(3) );
@@ -113,9 +113,9 @@ DEFINE_FUNCTION( vec3Length ) {
 	} else
 	if ( argc == 3 ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &v.x) );
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &v.y) );
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &v.z) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &v.x) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &v.y) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &v.z) );
 	}
 //	else
 //		JL_ERR( E_INVALID, E_STR("vector3") );
@@ -151,7 +151,7 @@ DEFINE_FUNCTION( vec3Normalize ) {
 
 	Vector3 v;
 	uint32_t len;
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
+	JL_CHK( jl::getVector(cx, JL_ARG(1), v.raw, 3, &len) );
 
 	JL_CHKM( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 
@@ -159,7 +159,7 @@ DEFINE_FUNCTION( vec3Normalize ) {
 
 	bool hasDest = JL_ARG_ISDEF(2);
 	*JL_RVAL = JL_ARG(hasDest ? 2 : 1);
-	return JL_NativeVectorToJsval(cx, v.raw, 3, *JL_RVAL, true);
+	return jl::setVector(cx, JL_RVAL, v.raw, 3, true);
 	JL_BAD;
 }
 
@@ -179,8 +179,8 @@ DEFINE_FUNCTION( vec3Add ) {
 
 	Vector3 v, v2;
 	uint32_t len, len2;
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
+	JL_CHK( jl::getVector(cx, JL_ARG(1), v.raw, 3, &len) );
+	JL_CHK( jl::getVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
 
 	JL_CHKM( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 	JL_CHKM( len2 >= 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NVECTOR(3) );
@@ -189,7 +189,7 @@ DEFINE_FUNCTION( vec3Add ) {
 
 	bool hasDest = JL_ARG_ISDEF(3);
 	*JL_RVAL = JL_ARG(hasDest ? 3 : 1);
-	return JL_NativeVectorToJsval(cx, v.raw, 3, *JL_RVAL, true);
+	return jl::setVector(cx, JL_RVAL, v.raw, 3, true);
 	JL_BAD;
 }
 
@@ -209,8 +209,8 @@ DEFINE_FUNCTION( vec3Sub ) {
 
 	Vector3 v, v2;
 	unsigned len, len2;
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
+	JL_CHK( jl::getVector(cx, JL_ARG(1), v.raw, 3, &len) );
+	JL_CHK( jl::getVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
 
 	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 	JL_ASSERT( len2 >= 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NVECTOR(3) );
@@ -219,7 +219,7 @@ DEFINE_FUNCTION( vec3Sub ) {
 
 	bool hasDest = JL_ARG_ISDEF(3);
 	*JL_RVAL = JL_ARG(hasDest ? 3 : 1);
-	return JL_NativeVectorToJsval(cx, v.raw, 3, *JL_RVAL, true);
+	return jl::setVector(cx, JL_RVAL, v.raw, 3, true);
 	JL_BAD;
 }
 
@@ -239,8 +239,8 @@ DEFINE_FUNCTION( vec3Cross ) {
 
 	Vector3 v, v2;
 	uint32_t len, len2;
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
+	JL_CHK( jl::getVector(cx, JL_ARG(1), v.raw, 3, &len) );
+	JL_CHK( jl::getVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
 
 	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 	JL_ASSERT( len2 >= 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NVECTOR(3) );
@@ -249,7 +249,7 @@ DEFINE_FUNCTION( vec3Cross ) {
 
 	bool hasDest = JL_ARG_ISDEF(3);
 	*JL_RVAL = JL_ARG(hasDest ? 3 : 1);
-	return JL_NativeVectorToJsval(cx, v.raw, 3, *JL_RVAL, true);
+	return jl::setVector(cx, JL_RVAL, v.raw, 3, true);
 	JL_BAD;
 }
 
@@ -267,8 +267,8 @@ DEFINE_FUNCTION( vec3Dot ) {
 
 	Vector3 v, v2;
 	uint32_t len, len2;
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v.raw, 3, &len) );
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
+	JL_CHK( jl::getVector(cx, JL_ARG(1), v.raw, 3, &len) );
+	JL_CHK( jl::getVector(cx, JL_ARG(2), v2.raw, 3, &len2) );
 
 	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 	JL_ASSERT( len2 >= 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NVECTOR(3) );
@@ -340,7 +340,7 @@ DEFINE_FUNCTION( frustumSphere ) {
 	bool hasDest = JL_ARG_ISDEF(2);
 	if ( hasDest )
 		*JL_RVAL = JL_ARG(2);
-	JL_CHK( JL_NativeVectorToJsval(cx, p1.raw, 3, *JL_RVAL, hasDest) );
+	JL_CHK( jl::setVector(cx, JL_RVAL, p1.raw, 3, hasDest) );
 
 	jsval tmpVal;
 	JL_CHK( JL_NativeToJsval(cx, radius, tmpVal) );
@@ -366,7 +366,7 @@ DEFINE_FUNCTION( boxToCircumscribedSphere ) {
 	float aabb[6];
 
 	uint32_t len;
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), aabb, 6, &len) );
+	JL_CHK( jl::getVector(cx, JL_ARG(1), aabb, 6, &len) );
 	JL_CHKM( len == 6, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(6) );
 
 	Vector3 v1, v2, center;
@@ -379,7 +379,7 @@ DEFINE_FUNCTION( boxToCircumscribedSphere ) {
 	Vector3AddVector3(&center, &center, &v2);
 	
 	*JL_RVAL = JL_ARG(1);
-	JL_CHK( JL_NativeVectorToJsval(cx, center.raw, 3, *JL_RVAL, true) );
+	JL_CHK( jl::setVector(cx, JL_RVAL, center.raw, 3, true) );
 	jsval tmpVal;
 	JL_CHK( JL_NativeToJsval(cx, radius, tmpVal) );
 	JL_CHK( JL_SetElement(cx, &JL_RVAL.toObject(), 3, tmpVal) );
@@ -406,7 +406,7 @@ DEFINE_FUNCTION( quaternionToEuler ) {
 	Vector4 quat;
 	Vector3 euler;
 	uint32_t len;
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), quat.raw, 4, &len) );
+	JL_CHK( jl::getVector(cx, JL_ARG(1), quat.raw, 4, &len) );
 	JL_CHKM( len == 4, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(4), E_COMMENT("quaternion") );
 
 /*
@@ -452,7 +452,7 @@ DEFINE_FUNCTION( quaternionToEuler ) {
 	euler.z = atan2f(-(2*(q1q2-q0q3)),(q0q0+q1q1-q2q2-q3q3));
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
-	JL_CHK( JL_NativeVectorToJsval(cx, euler.raw, 3, *JL_RVAL, true) );
+	JL_CHK( jl::setVector(cx, JL_RVAL, euler.raw, 3, true) );
 	return true;
 	JL_BAD;
 }
@@ -473,7 +473,7 @@ DEFINE_FUNCTION( eulerToQuaternion ) {
 	Vector3 euler;
 	Vector4 quat;
 	uint32_t len;
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), euler.raw, 3, &len) );
+	JL_CHK( jl::getVector(cx, JL_ARG(1), euler.raw, 3, &len) );
 	JL_CHKM( len == 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3), E_COMMENT("euler rotation") );
 	
 	float cosx,cosy,cosz,sinx,siny,sinz,cc,cs,sc,ss;
@@ -510,7 +510,7 @@ DEFINE_FUNCTION( eulerToQuaternion ) {
 */
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
-	JL_CHK( JL_NativeVectorToJsval(cx, quat.raw, 4, *JL_RVAL, true) );
+	JL_CHK( jl::setVector(cx, JL_RVAL, quat.raw, 4, true) );
 	return true;
 	JL_BAD;
 }
@@ -530,7 +530,7 @@ DEFINE_FUNCTION( quaternionToAxisAngle ) {
 
 	Vector4 quat;
 	uint32_t len;
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), quat.raw, 4, &len) );
+	JL_CHK( jl::getVector(cx, JL_ARG(1), quat.raw, 4, &len) );
 	JL_CHKM( len == 4, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(4), E_COMMENT("quaternion") );
 
 	float halfAngle, sn;
@@ -547,7 +547,7 @@ DEFINE_FUNCTION( quaternionToAxisAngle ) {
 	}
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
-	JL_CHK( JL_NativeVectorToJsval(cx, quat.raw, 4, *JL_RVAL, true) );
+	JL_CHK( jl::setVector(cx, JL_RVAL, quat.raw, 4, true) );
 	return true;
 	JL_BAD;
 }
@@ -566,7 +566,7 @@ DEFINE_FUNCTION( axisAngleToQuaternion ) {
 
 	Vector4 axisAngle;
 	uint32_t len;
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), axisAngle.raw, 4, &len) );
+	JL_CHK( jl::getVector(cx, JL_ARG(1), axisAngle.raw, 4, &len) );
 	JL_CHKM( len == 4, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(4), E_COMMENT("quaternion") );
 
 	float halfAngle, cs, sn;
@@ -578,7 +578,7 @@ DEFINE_FUNCTION( axisAngleToQuaternion ) {
 	axisAngle.w = cs;
 
 	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
-	JL_CHK( JL_NativeVectorToJsval(cx, axisAngle.raw, 4, *JL_RVAL, true) );
+	JL_CHK( jl::setVector(cx, JL_RVAL, axisAngle.raw, 4, true) );
 	return true;
 	JL_BAD;
 }
@@ -603,7 +603,7 @@ DEFINE_FUNCTION( getMatrix ) {
 	JL_CHKM( fct, E_ARG, E_NUM(1), E_SEP, E_INTERFACE, E_STR("Matrix44Get"), E_NOTSUPPORTED );
 
 	JL_CHK( fct(cx, matrixObj, &m) );
-	JL_CHK( JL_NativeVectorToJsval(cx, m, 16, *JL_RVAL, false) );
+	JL_CHK( jl::setVector(cx, JL_RVAL, m, 16, false) );
 	return true;
 	JL_BAD;
 }
@@ -624,9 +624,9 @@ DEFINE_FUNCTION( planeFromPoints ) {
 	float plane[4], v0[3], v1[3], v2[3];
 
 	unsigned len1, len2, len3;
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), v0, 3, &len1) );
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), v1, 3, &len2) );
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(3), v2, 3, &len3) );
+	JL_CHK( jl::getVector(cx, JL_ARG(1), v0, 3, &len1) );
+	JL_CHK( jl::getVector(cx, JL_ARG(2), v1, 3, &len2) );
+	JL_CHK( jl::getVector(cx, JL_ARG(3), v2, 3, &len3) );
 
 	JL_CHKM( len1 == 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 	JL_CHKM( len2 == 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NVECTOR(3) );
@@ -650,7 +650,7 @@ DEFINE_FUNCTION( planeFromPoints ) {
 
 	plane[3] = -(plane[0] * v0[0] + plane[1] * v0[1] + plane[2] * v0[2]);
 
-	return JL_NativeVectorToJsval(cx, plane, 4, *JL_RVAL, false);
+	return jl::setVector(cx, JL_RVAL, plane, 4, false);
 	JL_BAD;
 }
 
@@ -672,8 +672,8 @@ DEFINE_FUNCTION( shadowMatrix ) {
 	double shadowMat[4][4], plane[4], lightpos[4];
 
 	uint32_t len, len1;
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(1), plane, 4, &len) );
-	JL_CHK( JL_JsvalToNativeVector(cx, JL_ARG(2), lightpos, 4, &len1) );
+	JL_CHK( jl::getVector(cx, JL_ARG(1), plane, 4, &len) );
+	JL_CHK( jl::getVector(cx, JL_ARG(2), lightpos, 4, &len1) );
 	
 	JL_CHKM( len == 4, E_ARG, E_NUM(1), E_LENGTH, E_NUM(4) );
 	JL_CHKM( len1 == 4, E_ARG, E_NUM(2), E_LENGTH, E_NUM(4) );
@@ -706,10 +706,10 @@ DEFINE_FUNCTION( shadowMatrix ) {
 
 		JL_ASSERT_ARG_IS_ARRAY(3);
 		*JL_RVAL = JL_ARG(3);
-		return JL_NativeVectorToJsval(cx, (double*)shadowMat, 16, *JL_RVAL, true);
+		return jl::setVector(cx, JL_RVAL, (double*)shadowMat, 16, true);
 	} else {
 
-		return JL_NativeVectorToJsval(cx, (double*)shadowMat, 16, *JL_RVAL, false);
+		return jl::setVector(cx, JL_RVAL, (double*)shadowMat, 16, false);
 	}
 	JL_BAD;
 }

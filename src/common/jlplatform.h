@@ -654,20 +654,103 @@ static const union {
 
 
 
-#define JL_MIN(a,b) ((a) < (b) ? (a) : (b))
-
-#define JL_MAX(a,b) ((a) > (b) ? (a) : (b))
-
-#define JL_MINMAX(v,a,b) ((v) > (b) ? (b) : (v) < (a) ? (a) : (v))
-
-
 JL_BEGIN_NAMESPACE
+	
 
-template <class T> ALWAYS_INLINE bool isTypeDouble(T) { return false; }
-ALWAYS_INLINE bool isTypeDouble(double) { return true; }
+template<typename A, typename B>
+ALWAYS_INLINE A
+min(const A a, const B b) {
+	
+	return a < static_cast<A>(b) ? a : static_cast<A>(b);
+}
 
-template <class T> ALWAYS_INLINE bool isTypeFloat(T) { return false; }
-ALWAYS_INLINE bool isTypeFloat(float) { return true; }
+template<typename A, typename B>
+ALWAYS_INLINE A
+max(const A a, const B b) {
+	
+	return a > static_cast<A>(b) ? a : static_cast<A>(b);
+}
+
+template<typename V, typename A, typename B>
+ALWAYS_INLINE V
+minmax(const V v, const A a, const B b) {
+	
+	return v > static_cast<V>(b) ? static_cast<V>(b) : v < static_cast<V>(a) ? static_cast<V>(a) : v;
+}
+
+
+
+template<class T, class U>
+ALWAYS_INLINE bool
+isInRange(T val, U vmin, U vmax) {
+
+	return val >= vmin && val <= vmax; // note: unsigned(val - vmin) <= unsigned(vmax - vmin) is 10 cycles faster.
+}
+
+
+template <typename T, typename T1>
+ALWAYS_INLINE bool
+isIn(T val, T1 v1) {
+	
+	return val == v1;
+}
+
+template <typename T, typename T1, typename T2>
+ALWAYS_INLINE bool
+isIn(T val, T1 v1, T2 v2) {
+	
+	return val == v1 || val == v2;
+}
+
+template <typename T, typename T1, typename T2, typename T3>
+ALWAYS_INLINE bool
+isIn(T val, T1 v1, T2 v2, T2 v3) {
+	
+	return val == v1 || val == v2 || val == v3;
+}
+
+
+
+
+ALWAYS_INLINE NOALIAS int
+DoubleIsNegZero(const double &d) {
+#ifdef WIN32
+	return (d == 0 && (_fpclass(d) & _FPCLASS_NZ));
+#elif defined(SOLARIS)
+	return (d == 0 && copysign(1, d) < 0);
+#else
+	return (d == 0 && signbit(d));
+#endif
+}
+
+
+ALWAYS_INLINE NOALIAS bool
+DoubleIsNeg(const double &d) {
+#ifdef WIN32
+	return d < 0 || DoubleIsNegZero(d);
+#elif defined(SOLARIS)
+	return copysign(1, d) < 0;
+#else
+	return signbit(d);
+#endif
+}
+
+
+template <typename T>
+ALWAYS_INLINE bool
+IsIntegerValue(T num) {
+
+	//return ::std::modf(num, 0) == 0.0;
+	return num == floor(num);
+}
+
+
+
+template <class T> ALWAYS_INLINE bool isTypeFloat64(T) { return false; }
+ALWAYS_INLINE bool isTypeFloat64(double) { return true; }
+
+template <class T> ALWAYS_INLINE bool isTypeFloat32(T) { return false; }
+ALWAYS_INLINE bool isTypeFloat32(float) { return true; }
 
 
 // 2^53 = 9007199254740992. since double(9007199254740992) == double(9007199254740993), and double(-9007199254740992) == double(-9007199254740993)  we must subtract 1.
@@ -690,16 +773,16 @@ template<typename Source> struct SignificandValue {
 	static Source min() { return ::std::numeric_limits<Source>::min(); }
 };
 
-S_ASSERT( ::std::numeric_limits<float>::digits < 32 );
-template<> struct SignificandValue<float> {
-	static float max() { return (uint32_t(1)<<::std::numeric_limits<float>::digits)-1; }
-	static float min() { return -max(); }
+S_ASSERT( ::std::numeric_limits<float32_t>::digits < 32 );
+template<> struct SignificandValue<float32_t> {
+	static float32_t max() { return (uint32_t(1)<<::std::numeric_limits<float32_t>::digits)-1; }
+	static float32_t min() { return -max(); }
 };
 
-S_ASSERT( ::std::numeric_limits<double>::digits < 64 );
-template<> struct SignificandValue<double> {
-	static double max() { return (uint64_t(1)<<::std::numeric_limits<double>::digits)-1; }
-	static double min() { return -max(); }
+S_ASSERT( ::std::numeric_limits<float64_t>::digits < 64 );
+template<> struct SignificandValue<float64_t> {
+	static float64_t max() { return (uint64_t(1)<<::std::numeric_limits<float64_t>::digits)-1; }
+	static float64_t min() { return -max(); }
 };
 
 
@@ -779,121 +862,6 @@ template <typename Target, typename Source> static inline bool isInBounds(Source
 
 
 
-
-
-template <typename T, typename T1>
-ALWAYS_INLINE bool
-isIn(T val, T1 v1) {
-	
-	return val == v1;
-}
-
-template <typename T, typename T1, typename T2>
-ALWAYS_INLINE bool
-isIn(T val, T1 v1, T2 v2) {
-	
-	return val == v1 || val == v2;
-}
-
-template <typename T, typename T1, typename T2, typename T3>
-ALWAYS_INLINE bool
-isIn(T val, T1 v1, T2 v2, T2 v3) {
-	
-	return val == v1 || val == v2 || val == v3;
-}
-
-
-
-
-ALWAYS_INLINE NOALIAS int
-DoubleIsNegZero(const double &d) {
-#ifdef WIN32
-	return (d == 0 && (_fpclass(d) & _FPCLASS_NZ));
-#elif defined(SOLARIS)
-	return (d == 0 && copysign(1, d) < 0);
-#else
-	return (d == 0 && signbit(d));
-#endif
-}
-
-
-ALWAYS_INLINE NOALIAS bool
-DoubleIsNeg(const double &d) {
-#ifdef WIN32
-	return d < 0 || DoubleIsNegZero(d);
-#elif defined(SOLARIS)
-	return copysign(1, d) < 0;
-#else
-	return signbit(d);
-#endif
-}
-
-
-template <typename T>
-ALWAYS_INLINE bool
-IsIntegerValue(T num) {
-
-	//return ::std::modf(num, 0) == 0.0;
-	return num == floor(num);
-}
-
-/*
-template<class T>
-ALWAYS_INLINE T
-IsSigned(T a) {
-
-	return a > (T)-1;
-}
-*/
-
-template<class T, class U>
-ALWAYS_INLINE bool
-IsInRange(T val, U vmin, U vmax) {
-
-	return val >= vmin && val <= vmax; // note: unsigned(val - vmin) <= unsigned(vmax - vmin) is 10 cycles faster.
-}
-
-
-// eg. if ( IsSafeCast<int>(size_t(12345)) ) ...
-template <class D, class S>
-ALWAYS_INLINE bool
-IsSafeCast(S src) {
-
-	D dsrc = static_cast<D>(src);
-	return static_cast<S>(dsrc) == src && (src < 0) == (dsrc < 0); // compare converted value and sign.
-}
-
-
-// eg. int i; if ( IsSafeCast(size_t(12345), i) ) ...
-template <class D, class S>
-ALWAYS_INLINE bool
-IsSafeCast(S src, D) {
-
-	D dsrc = static_cast<D>(src);
-	return static_cast<S>(dsrc) == src && (src < 0) == (dsrc < 0); // compare converted value and sign.
-}
-
-
-// eg. int i = SafeCast<int>(size_t(12345));
-template <class D, class S>
-ALWAYS_INLINE D
-SafeCast(S src) {
-
-	ASSERT( (IsSafeCast<D>(src)) );
-	return static_cast<D>(src);
-}
-
-
-// eg. int i; i = SafeCast(size_t(12345), i);
-template <class D, class S>
-ALWAYS_INLINE D
-SafeCast(S src, D) {
-
-	ASSERT( (IsSafeCast<D>(src)) );
-	return static_cast<D>(src);
-}
-
-
 //Macro that avoid multicharacter constant: From gcc page:
 //`-Wno-multichar'
 //     Do not warn if a multicharacter constant (`'FOOF'') is used.
@@ -923,7 +891,6 @@ CastUint32ToCStr( uint32_t val, char *cstr ) {
 	cstr[3] = (val & 0xFF000000) >> 24 & 0xFF;
 	return cstr[0] ? cstr[1] ? cstr[2] ? cstr[3] ? 4 : 3 : 2 : 1 : 0;
 }
-
 
 
 ALWAYS_INLINE void *
@@ -1317,18 +1284,89 @@ Network64ToHost64( void *pval ) {
 }
 
 
+////
+
+ALWAYS_INLINE void FASTCALL
+strncpy(char *dst, const char *src, size_t nelem) {
+
+    memcpy(dst, src, nelem * sizeof(char));
+}
+
+ALWAYS_INLINE void FASTCALL
+strncpy(wchar_t *dst, const wchar_t *src, size_t nelem) {
+
+    memcpy(dst, src, nelem * sizeof(wchar_t)); // wcsncpy ?
+}
+
+////
+
+ALWAYS_INLINE const char* FASTCALL
+strchr(const char *s, char c) {
+
+	return ::strchr(s, c);
+}
+
+ALWAYS_INLINE char* FASTCALL
+strchr(char *s, char c) {
+
+	return ::strchr(s, c);
+}
+
+//
+
+ALWAYS_INLINE const wchar_t* FASTCALL
+strchr(const wchar_t *s, wchar_t c) {
+
+	return ::wcschr(s, c);
+}
+
+ALWAYS_INLINE wchar_t* FASTCALL
+strchr(wchar_t *s, wchar_t c) {
+
+	return ::wcschr(s, c);
+}
+
+////
+
+
+ALWAYS_INLINE char* FASTCALL
+strchr_limit(const char *s, char c, const char *limit) {
+
+    while (s < limit) {
+        if (*s == c)
+            return (char *)s;
+        s++;
+    }
+    return NULL;
+}
+
+ALWAYS_INLINE wchar_t* FASTCALL
+strchr_limit(const wchar_t *s, wchar_t c, const wchar_t *limit) {
+
+    while (s < limit) {
+        if (*s == c)
+            return (wchar_t *)s;
+        s++;
+    }
+    return NULL;
+}
+
+////
+
 
 ALWAYS_INLINE size_t FASTCALL
-getStringLength(const char *str) {
+strlen(const char *str) {
 
-	return strlen(str);
+	return ::strlen(str);
 }
 
 ALWAYS_INLINE size_t FASTCALL
-getStringLength(const wchar_t *str) {
+strlen(const wchar_t *str) {
 
-	return wcslen(str);
+	return ::wcslen(str);
 }
+
+////
 
 
 INLINE NEVER_INLINE long FASTCALL
@@ -1339,7 +1377,8 @@ atoi(const char *buf, int base) {
 
 
 // \0 not included !
-#define IToA10MaxDigits(TYPE) (  (::std::numeric_limits<TYPE>::is_signed ? 1 : 0) + ::std::numeric_limits<TYPE>::digits10 + 1  )
+#define IToA10MaxDigits(TYPE) \
+	( (::std::numeric_limits<TYPE>::is_signed ? 1 : 0) + ::std::numeric_limits<TYPE>::digits10 + 1 )
 
 
 template <typename T>
@@ -1811,7 +1850,7 @@ DetectEncoding(uint8_t **buf, size_t *size) {
 		return ENC_UTF16be;
 	}
 
-	size_t scanLen = JL_MIN(*size, 1024);
+	size_t scanLen = jl::min(*size, 1024);
 	
 	if ( IsASCII(*buf, scanLen) )
 		return ENC_ASCII;
@@ -2096,7 +2135,6 @@ JL_enableLowFragmentationHeap() {
 ///////////////////////////////////////////////////////////////////////////////
 // cpu
 //
-
 
 ALWAYS_INLINE bool
 JL_setMonoCPU() {
@@ -3276,7 +3314,7 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 			fileName[0] = '\0';
 			return;
 		}
-		int len = JL_MIN(strlen(info.dli_fname), maxFileNameLength-1);
+		int len = jl::min(strlen(info.dli_fname), maxFileNameLength-1);
 		jl::memcpy(fileName, info.dli_fname, len);
 		fileName[len] = '\0';
 	#else

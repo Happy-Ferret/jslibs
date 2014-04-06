@@ -64,17 +64,16 @@ protected:
 		if ( i >= JSVAL_INT_MIN && i <= JSVAL_INT_MAX )
 			return INT_TO_JSVAL(i);
 		jsval rval;
-		if ( !JL_NewNumberValue(_cx, i, &rval) )
-			throw JsException(_cx, "cannot convert integer to a jsval");
+		rval.setNumber(i);
 		return rval;
 	}
 
 	inline double JsvalToReal( jsval val ) {
 
-		if ( val == JL_GetNaNValue(_cx) ) // (TBD) needed ?
+		if ( val == JS_GetNaNValue(_cx) ) // (TBD) needed ?
 			throw JsException(_cx, "not a number");
 		double d;
-		if ( !JL_JsvalToNative(_cx, val, &d) )
+		if ( !jl::getValue(_cx, val, &d) )
 			throw JsException(_cx, "cannot convert to a real");
 		return d;
 	}
@@ -82,9 +81,8 @@ protected:
 	inline jsval RealToJsval( double d ) {
 
 		jsval rval;
-		if ( !JL_NewNumberValue(_cx, d, &rval) )
-			throw JsException(_cx, "cannot convert the double to a jsval");
-		if ( rval == JL_GetNaNValue(_cx) ) // (TBD) needed ?
+		rval.setNumber(d);
+		if ( rval == JS_GetNaNValue(_cx) ) // (TBD) needed ?
 			throw JsException(_cx, "not a number");
 		return rval;
 	}
@@ -208,14 +206,14 @@ protected:
 
 	inline bool InstanceOf( JSObject *obj, JSClass *jsClass ) {
 
-		return JL_ObjectIsInstanceOf(_cx, obj, jsClass) == true;
+		return jl::isInstanceOf(_cx, obj, jsClass) == true;
 	}
 
 	inline bool InstanceOf( jsval val, JSClass *jsClass ) {
 
 		if ( !JSVAL_IS_PRIMITIVE(val) )
 			return false;
-		return JL_ObjectIsInstanceOf(_cx, JSVAL_TO_OBJECT(val), jsClass) == true;
+		return jl::isInstanceOf(_cx, JSVAL_TO_OBJECT(val), jsClass) == true;
 	}
 
 	inline bool JsvalIsCallable( jsval val ) {

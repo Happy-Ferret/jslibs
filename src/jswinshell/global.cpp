@@ -48,11 +48,11 @@ DEFINE_FUNCTION( extractIcon ) {
 
 	UINT iconIndex = 0;
 	if ( argc >= 2 )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &iconIndex) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &iconIndex) );
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	if ( hInst == NULL )
 		return JL_ThrowOSError(cx);
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &fileName) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &fileName) );
 	HICON hIcon = ExtractIcon( hInst, fileName, iconIndex ); // see SHGetFileInfo(
 	if ( hIcon == NULL ) {
 
@@ -64,7 +64,7 @@ DEFINE_FUNCTION( extractIcon ) {
 
 	{
 
-	JS::RootedObject icon(cx, JL_NewObjectWithGivenProto(cx, JL_CLASS(Icon), JL_CLASS_PROTOTYPE(cx, Icon)));
+	JS::RootedObject icon(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(Icon), JL_CLASS_PROTOTYPE(cx, Icon)));
 	HICON *phIcon = (HICON*)jl_malloc(sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
 	JL_ASSERT_ALLOC( phIcon );
 	*phIcon = hIcon;
@@ -135,12 +135,12 @@ DEFINE_FUNCTION( messageBox ) {
 
 	UINT type = 0;
 	if ( argc >= 3 )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &type) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &type) );
 
 	if ( argc >= 2 && !JL_ARG(2).isUndefined() )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &caption) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &caption) );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &text) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &text) );
 
 	int res = MessageBox(NULL, text.GetConstStrZ(), caption.GetConstStrZOrNULL(), type);
 	if ( res == 0 )
@@ -173,16 +173,16 @@ DEFINE_FUNCTION( createProcess ) {
 	JL_ASSERT_ARGC_MIN(1);
 
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &applicationName) ); // warning: GC on the returned buffer !
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &applicationName) ); // warning: GC on the returned buffer !
 
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &commandLine) ); // warning: GC on the returned buffer !
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &commandLine) ); // warning: GC on the returned buffer !
 
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &environment) ); // warning: GC on the returned buffer !
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &environment) ); // warning: GC on the returned buffer !
 
 	if ( JL_ARG_ISDEF(4) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &currentDirectory) ); // warning: GC on the returned buffer !
+		JL_CHK( jl::getValue(cx, JL_ARG(4), &currentDirectory) ); // warning: GC on the returned buffer !
 
 	STARTUPINFO si;
 	ZeroMemory(&si, sizeof(STARTUPINFO));
@@ -224,7 +224,7 @@ DEFINE_FUNCTION( fileOpenDialog ) {
 	if ( argc >= 1 && !JL_ARG(1).isUndefined() ) {
 
 		JLData str;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 		strcpy( filter, str );
 		for ( char *tmp = filter; (tmp = strchr(tmp, '|')) != 0; tmp++ )
 			*tmp = '\0'; // doc: Pointer to a buffer containing pairs of null-terminated filter strings.
@@ -235,7 +235,7 @@ DEFINE_FUNCTION( fileOpenDialog ) {
 	if ( argc >= 2 && !JL_ARG(2).isUndefined() ) {
 
 		JLData tmp;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &tmp) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &tmp) );
 		strcpy( fileName, tmp );
 	} else {
 		*fileName = '\0';
@@ -270,7 +270,7 @@ DEFINE_FUNCTION( expandEnvironmentStrings ) {
 	JLData src;
 	JL_ASSERT_ARGC_MIN(1);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &src) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &src) );
 	TCHAR dst[PATH_MAX];
 	DWORD res = ExpandEnvironmentStrings( src, dst, sizeof(dst) );
 	if ( res == 0 )
@@ -300,7 +300,7 @@ DEFINE_FUNCTION( messageBeep ) {
 
 	UINT type = (UINT)-1;
 	if ( argc >= 1 )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &type) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &type) );
 	MessageBeep(type);
 
 	JL_RVAL.setUndefined();
@@ -322,8 +322,8 @@ DEFINE_FUNCTION( beep ) {
 	JL_ASSERT_ARGC_MIN(2);
 
 	unsigned int freq, duration;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &freq) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &duration) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &freq) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &duration) );
 	Beep(freq, duration);
 
 	JL_RVAL.setUndefined();
@@ -459,7 +459,7 @@ DEFINE_FUNCTION( registrySet ) {
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(3);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &subKeyStr) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &subKeyStr) );
 	subKey = subKeyStr.GetConstStrZ();
 
 	size_t length;
@@ -488,7 +488,7 @@ DEFINE_FUNCTION( registrySet ) {
 		if ( st != ERROR_SUCCESS )
 			return WinThrowError(cx, st);
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &valueNameStr) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &valueNameStr) );
 
 		if ( value.isUndefined() ) {
 
@@ -501,26 +501,26 @@ DEFINE_FUNCTION( registrySet ) {
 		if ( JSVAL_IS_INT(value) ) {
 
 			DWORD num;
-			JL_CHK( JL_JsvalToNative(cx, value, &num) );
+			JL_CHK( jl::getValue(cx, value, &num) );
 			st = RegSetValueEx(hKey, valueNameStr, 0, REG_DWORD, (LPBYTE)&num, sizeof(DWORD));
 		} else
 		if ( value.isDouble() ) {
 
 			uint64_t num;
-			JL_CHK( JL_JsvalToNative(cx, value, &num) );
+			JL_CHK( jl::getValue(cx, value, &num) );
 			st = RegSetValueEx(hKey, valueNameStr, 0, REG_QWORD, (LPBYTE)&num, sizeof(uint64_t));
 		} else
 		if ( value.isString() ) {
 
 			JLData tmp;
-			JL_CHK( JL_JsvalToNative(cx, value, &tmp) );
+			JL_CHK( jl::getValue(cx, value, &tmp) );
 			// doc: When writing a string to the registry, you must specify the length of the string, including the terminating null character (\0).
 			st = RegSetValueEx(hKey, valueNameStr, 0, REG_SZ, (LPBYTE)tmp.GetConstStrZ(), tmp.Length() + 1);
 		} else
 		if ( jl::isData(cx, value) ) {
 
 			JLData tmp;
-			JL_CHK( JL_JsvalToNative(cx, value, &tmp) );
+			JL_CHK( jl::getValue(cx, value, &tmp) );
 			st = RegSetValueEx(hKey, valueNameStr, 0, REG_BINARY, (LPBYTE)tmp.GetConstStr(), tmp.Length());
 		}
 
@@ -569,7 +569,7 @@ DEFINE_FUNCTION( registryGet ) {
 	JL_ASSERT_ARGC_RANGE(1,2);
 
 	const char *path;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pathStr) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &pathStr) );
 	path = pathStr.GetConstStrZ();
 
 	size_t length;
@@ -607,7 +607,7 @@ DEFINE_FUNCTION( registryGet ) {
 			if ( st != ERROR_SUCCESS )
 				break;
 			JS::RootedValue strName(cx);
-			JL_CHK( JL_NativeToJsval(cx, name, nameLength, &strName) );
+			JL_CHK( jl::setValue(cx, &strName, jl::strSpec(name, nameLength)) );
 			JL_CHK( JL_SetElement(cx, arrObj, index, strName) );
 			index++;
 		}
@@ -618,7 +618,7 @@ DEFINE_FUNCTION( registryGet ) {
 		return true;
 	}
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &valueName) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &valueName) );
 
 	DWORD type, size;
 
@@ -651,11 +651,11 @@ DEFINE_FUNCTION( registryGet ) {
 			JL_CHK( JL_NewBufferGetOwnership(cx, buffer, size, JL_RVAL) );
 			break;
 		case REG_DWORD:
-			JL_CHK( JL_NativeToJsval(cx, *(DWORD*)buffer, JL_RVAL) );
+			JL_CHK( jl::setValue(cx, JL_RVAL, *(DWORD*)buffer) );
 			JL_DataBufferFree(cx, buffer);
 			break;
 		case REG_QWORD:
-			JL_CHK( JL_NativeToJsval(cx, (double)*(DWORD64*)buffer, JL_RVAL) );
+			JL_CHK( jl::setValue(cx, JL_RVAL, (double)*(DWORD64*)buffer) );
 			break;
 		case REG_LINK: {
 			JSString *jsstr = JL_NewUCString(cx, (jschar*)buffer, size/2);
@@ -730,14 +730,14 @@ DEFINE_FUNCTION( directoryChangesInit ) {
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(2,3);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pathName) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &pathName) );
 
 	unsigned int notifyFilter;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &notifyFilter) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &notifyFilter) );
 
 	bool watchSubtree;
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &watchSubtree) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &watchSubtree) );
 	else
 		watchSubtree = false;
 
@@ -785,7 +785,7 @@ DEFINE_FUNCTION( directoryChangesLookup ) {
 
 	bool wait;
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &wait) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &wait) );
 	else
 		wait = false;
 
@@ -974,7 +974,7 @@ DEFINE_FUNCTION( guidToString ) {
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 
 	JL_ASSERT( str.Length() == sizeof(GUID), E_ARG, E_NUM(1), E_LENGTH, E_NUM(sizeof(GUID)) );
 
@@ -985,7 +985,7 @@ DEFINE_FUNCTION( guidToString ) {
 	ASSERT( len == COUNTOF(szGuid) );
 	ASSERT( szGuid[COUNTOF(szGuid)-1] == 0 );
 
-	JL_CHK( JL_NativeToJsval(cx, szGuid, COUNTOF(szGuid)-1, JL_RVAL) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, jl::strSpec(szGuid, COUNTOF(szGuid)-1)) );
 
 	return true;
 	JL_BAD;
@@ -1052,7 +1052,7 @@ DEFINE_PROPERTY_SETTER( clipboard ) {
 		res = OpenClipboard(NULL);
 		if ( res == 0 )
 			return JL_ThrowOSError(cx);
-		JL_CHK( JL_JsvalToNative(cx, vp, &str) );
+		JL_CHK( jl::getValue(cx, vp, &str) );
 		HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, str.Length() + 1);
 		JL_ASSERT_ALLOC( hglbCopy );
 		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
@@ -1117,17 +1117,17 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( numlockState ) {
 
-	JL_IGNORE( id, obj );
+	JL_DEFINE_PROP_ARGS;
 
-	return JL_NativeToJsval(cx, GetKeyState(VK_NUMLOCK) & 1, vp);
+	return jl::setValue(cx, JL_RVAL, GetKeyState(VK_NUMLOCK) & 1);
 }
 
 DEFINE_PROPERTY_SETTER( numlockState ) {
 
-	JL_IGNORE( strict, id, obj );
+	JL_DEFINE_PROP_ARGS;
 
 	bool state;
-	JL_CHK( JL_JsvalToNative(cx, vp, &state) );
+	JL_CHK( jl::getValue(cx, JL_RVAL, &state) );
 	SetKeyState(VK_NUMLOCK, state);
 	return true;
 	JL_BAD;
@@ -1140,16 +1140,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( capslockState ) {
 
-	JL_IGNORE( id, obj );
-	return JL_NativeToJsval(cx, GetKeyState(VK_CAPITAL) & 1, vp);
+	JL_DEFINE_PROP_ARGS;
+	return jl::setValue(cx, JL_RVAL, GetKeyState(VK_CAPITAL) & 1);
 }
 
 DEFINE_PROPERTY_SETTER( capslockState ) {
 
-	JL_IGNORE( strict, id, obj );
-
+	JL_DEFINE_PROP_ARGS;
 	bool state;
-	JL_CHK( JL_JsvalToNative(cx, vp, &state) );
+	JL_CHK( jl::getValue(cx, JL_RVAL, &state) );
 	SetKeyState(VK_CAPITAL, state);
 	return true;
 	JL_BAD;
@@ -1162,17 +1161,17 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( scrolllockState ) {
 
-	JL_IGNORE( id, obj );
+	JL_DEFINE_PROP_ARGS;
 
-	return JL_NativeToJsval(cx, GetKeyState(VK_SCROLL) & 1, vp);
+	return jl::setValue(cx, JL_RVAL, GetKeyState(VK_SCROLL) & 1);
 }
 
 DEFINE_PROPERTY_SETTER( scrolllockState ) {
 
-	JL_IGNORE( strict, id, obj );
+	JL_DEFINE_PROP_ARGS;
 
 	bool state;
-	JL_CHK( JL_JsvalToNative(cx, vp, &state) );
+	JL_CHK( jl::getValue(cx, vp, &state) );
 	SetKeyState(VK_SCROLL, state);
 	return true;
 	JL_BAD;
@@ -1186,13 +1185,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( lastInputTime ) {
 
-	JL_IGNORE( id, obj );
+	JL_DEFINE_PROP_ARGS;
 
 	LASTINPUTINFO lastInputInfo = {0};
 	lastInputInfo.cbSize = sizeof(LASTINPUTINFO);
 	if ( ::GetLastInputInfo(&lastInputInfo) == FALSE )
 		return WinThrowError(cx, GetLastError());
-	return JL_NativeToJsval(cx, ::GetTickCount() - lastInputInfo.dwTime, vp);
+	return jl::setValue(cx, JL_RVAL, ::GetTickCount() - lastInputInfo.dwTime);
 }
 
 
@@ -1265,11 +1264,11 @@ new File( DESKTOP+'\\test.txt' ).content = '1234';
 
 DEFINE_PROPERTY_GETTER( folderPath ) {
 
-	JL_IGNORE( obj );
+	JL_DEFINE_PROP_ARGS;
 
 	TCHAR path[PATH_MAX];
 	if ( SUCCEEDED( SHGetFolderPath(NULL, JSID_TO_INT(id), NULL, 0, path) ) ) // |CSIDL_FLAG_CREATE
-		return JL_NativeToJsval(cx, path, vp);
+		return jl::setValue(cx, JL_RVAL, path);
 	vp.setUndefined();
 	return true;
 }
@@ -1337,12 +1336,86 @@ DEFINE_PROPERTY_GETTER_SWITCH(WINDOWS                  , folderPath, CSIDL_WINDO
 
 
 #ifdef DEBUG
-DEFINE_FUNCTION( jswinshelltest ) {
 
-	JL_IGNORE( argc, cx );
+#include <Mmsystem.h>
+
+void CALLBACK waveOutProc( HWAVEOUT hwo, UINT uMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2 ) {
+	
+
+}
+
+
+DEFINE_FUNCTION( jswinshelltest ) {
 
 	JL_DEFINE_ARGS;
 	JL_RVAL.setUndefined();
+
+	MMRESULT res;
+
+	WAVEFORMATEX wfx;
+	wfx.nSamplesPerSec = 44100;
+	wfx.wBitsPerSample = 16;
+	wfx.nChannels = 2;
+
+
+	wfx.cbSize = 0;
+	wfx.wFormatTag = WAVE_FORMAT_PCM;
+	wfx.nBlockAlign = (wfx.wBitsPerSample * wfx.nChannels) / 8;
+	wfx.nAvgBytesPerSec = wfx.nBlockAlign * wfx.nSamplesPerSec;
+
+
+//	res = waveOutOpen(&hwo, WAVE_MAPPER, &wfx, NULL, NULL, CALLBACK_NULL);
+
+
+	UINT uDeviceID;
+	MMRESULT mmResult;
+	UINT uNumDevs = waveInGetNumDevs();
+	for (uDeviceID = 0; uDeviceID < uNumDevs; uDeviceID++) {
+		
+		// Take a look at the driver capabilities.
+		WAVEINCAPS wic;
+		mmResult = waveInGetDevCaps(uDeviceID, &wic, sizeof(wic));
+
+		if ( strcmp(wic.szPname, "Rec. Playback (IDT High Definit") == 0 )
+			break;
+		ASSERT( mmResult == MMSYSERR_NOERROR );
+	}
+
+	HWAVEIN hwi;
+	res = waveInOpen(&hwi, uDeviceID, &wfx, NULL, NULL, WAVE_FORMAT_DIRECT);
+
+	const int NUMPTS = 44100 * 2 * 10;   // 3 seconds
+    short int waveIn[NUMPTS];
+
+	WAVEHDR waveHeader;
+
+	// Set up and prepare header for input
+    waveHeader.lpData = (LPSTR)waveIn;
+    waveHeader.dwBufferLength = NUMPTS*2;
+    waveHeader.dwBytesRecorded=0;
+    waveHeader.dwUser = 0L;
+    waveHeader.dwFlags = 0L;
+    waveHeader.dwLoops = 0L;
+    waveInPrepareHeader(hwi, &waveHeader, sizeof(WAVEHDR));
+
+	res = waveInAddBuffer(hwi, &waveHeader, sizeof(WAVEHDR));
+
+	res = waveInStart(hwi);
+
+    do {
+
+		waveHeader.dwBytesRecorded = 0;
+	
+	} while ((res = waveInUnprepareHeader(hwi, &waveHeader, sizeof(WAVEHDR))) == WAVERR_STILLPLAYING);
+
+
+	waveInClose(hwi);
+
+
+
+
+//	ASSERT( res == MMSYSERR_NOERROR );
+
 	return true;
 }
 #endif //DEBUG

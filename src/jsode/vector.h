@@ -28,7 +28,7 @@ struct VectorPrivate {
 
 ALWAYS_INLINE bool CreateVector( JSContext *cx, JSObject *parent, void *userData, VectorSet_t set, VectorGet_t get, jsval *val ) {
 	
-	JSObject *obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(Vector), JL_CLASS_PROTOTYPE(cx, Vector));
+	JSObject *obj = jl::newObjectWithGivenProto(cx, JL_CLASS(Vector), JL_CLASS_PROTOTYPE(cx, Vector));
 	JL_CHK(obj);
 	JL_CHK( JL_SetReservedSlot( obj, 0, OBJECT_TO_JSVAL(parent)) );
 	VectorPrivate *pv = (VectorPrivate*)JS_malloc(cx, sizeof(VectorPrivate));

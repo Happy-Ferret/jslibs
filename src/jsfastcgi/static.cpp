@@ -75,7 +75,7 @@ DEFINE_FUNCTION( getParam ) {
 	if ( argc >= 1 ) {
 
 		JLData paramName;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &paramName) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &paramName) );
 		char *paramValue = FCGX_GetParam(paramName, _request.envp);
 		if ( paramValue != NULL ) {
 
@@ -102,7 +102,7 @@ DEFINE_FUNCTION( getParam ) {
 			*separator = '\0';
 //			JSString *value = JS_NewStringCopyZ(cx, separator + 1);
 //			JS_DefineProperty(cx, argsObj, *ptr, STRING_TO_JSVAL(value), NULL, NULL, JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT);
-			JL_CHK( JL_NativeToProperty(cx, argsObj, *ptr, separator + 1) );
+			JL_CHK( jl::setProperty(cx, argsObj, *ptr, separator + 1) );
 			*separator = '=';
 		}
 		*JL_RVAL = OBJECT_TO_JSVAL(argsObj);
@@ -116,7 +116,7 @@ DEFINE_FUNCTION( read ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	size_t len;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &len) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &len) );
 	char* str;
 	str = (char*)JS_malloc(cx, len + 1);
 	int result;
@@ -139,7 +139,7 @@ DEFINE_FUNCTION( write ) {
 
 	JL_ASSERT_ARGC_MIN( 1 );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 	int result;
 	result = FCGX_PutStr(str.GetConstStr(), (int)str.Length(), _request.out);
 	if ( result >= 0 && (size_t)result < str.Length() ) { // returns unwritten data
@@ -172,7 +172,7 @@ DEFINE_FUNCTION( log ) {
 
 	JL_ASSERT_ARGC(1);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &str) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 	int result;
 	result = FCGX_PutStr(str.GetConstStr(), (int)str.Length(), _request.err);
 	JL_ASSERT( result != -1, E_LIB, E_INTERNAL ); // "fcgi log write"
@@ -202,7 +202,7 @@ DEFINE_FUNCTION( urlEncode ) {
 	size_t srcLen;
 
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &src, &srcLen) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &srcStr) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &srcStr) );
 	srcLen = srcStr.Length();
 	src = srcStr.GetConstStr();
 
@@ -242,7 +242,7 @@ DEFINE_FUNCTION( urlDecode ) {
 	size_t srcLen;
 
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &src, &srcLen) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &srcStr) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &srcStr) );
 	srcLen = srcStr.Length();
 	src = srcStr.GetConstStr();
 
@@ -514,7 +514,7 @@ DEFINE_FUNCTION( makeEndRequestBody ) {
 	JL_CHK( body );
 
 	unsigned long appStatus;
-	JL_CHK( JL_JsvalToNative(cx, argv[0], &appStatus) );
+	JL_CHK( jl::getValue(cx, argv[0], &appStatus) );
 	body->appStatusB0 = appStatus & 0xFF;
 	body->appStatusB1 = (appStatus >> 8) & 0xFF;
 	body->appStatusB2 = (appStatus >> 16) & 0xFF;

@@ -60,7 +60,7 @@ SetStreamSource(JSContext *cx, JS::HandleObject obj, JS::HandleValue srcVal) {
 ALWAYS_INLINE bool
 SetPosition(JSContext *cx, JS::HandleObject obj, size_t position) {
 
-	JL_CHK( JL_NativeToReservedSlot(cx, obj, SLOT_STREAM_POSITION, position) );
+	JL_CHK( jl::setSlot(cx, obj, SLOT_STREAM_POSITION, position) );
 	return true;
 	JL_BAD;
 }
@@ -68,7 +68,7 @@ SetPosition(JSContext *cx, JS::HandleObject obj, size_t position) {
 ALWAYS_INLINE bool
 GetPosition(JSContext *cx, JS::HandleObject obj, size_t *position) {
 
-	JL_CHK( JL_ReservedSlotToNative(cx, obj, SLOT_STREAM_POSITION, position) );
+	JL_CHK( jl::getSlot(cx, obj, SLOT_STREAM_POSITION, position) );
 	return true;
 	JL_BAD;
 }

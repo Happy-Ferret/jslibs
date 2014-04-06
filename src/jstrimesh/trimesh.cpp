@@ -39,7 +39,7 @@ BEGIN_CLASS( Trimesh ) // Start the definition of the class. It defines some sym
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup ) // do not cleanup in unsafe mode.
+	if ( jl::Host::getHost(fop->runtime())->canSkipCleanup ) // do not cleanup in unsafe mode.
 		return;
 
 	Surface *pv = (Surface*)JL_GetPrivate(obj);
@@ -91,9 +91,9 @@ DEFINE_FUNCTION( addVertex ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	double x, y, z;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &y) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &z) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &x) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &y) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &z) );
 
 	if ( pv->verticesDataSize < (pv->vertexCount + 1) * 3 * sizeof(SURFACE_REAL_TYPE) ) {
 		
@@ -122,9 +122,9 @@ DEFINE_FUNCTION( addTriangle ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	INDEX i1, i2, i3;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &i1) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &i2) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &i3) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &i1) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &i2) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &i3) );
 
 //	pv->indices = (INDEX*)JS_realloc(cx, pv->indices, (pv->indexCount + 1) * 3 * sizeof(SURFACE_REAL_TYPE));
 
@@ -165,7 +165,7 @@ DEFINE_FUNCTION( addIndices ) {
 	SURFACE_INDEX_TYPE index;
 	for ( size_t i = 0; i < argc; i++ ) {
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(i+1), &index) );
+		JL_CHK( jl::getValue(cx, JL_ARG(i+1), &index) );
 		*(pos++) = index;
 	}
 
@@ -205,9 +205,9 @@ DEFINE_FUNCTION( defineVertexBuffer ) {
 
 		JL_CHK( JL_GetElement(cx, arrayObj, i, &item) );
 //		if ( sizeof(SURFACE_REAL_TYPE) == sizeof(float) )
-		JL_CHK( JL_JsvalToNative(cx, item, &pv->vertex[i]) );
+		JL_CHK( jl::getValue(cx, item, &pv->vertex[i]) );
 //		else
-//			JL_CHK( JL_JsvalToNative(cx, item, &pv->vertex[i]) );
+//			JL_CHK( jl::getValue(cx, item, &pv->vertex[i]) );
 	}
 	pv->vertexCount = count / 3;
 	return true;
@@ -243,7 +243,7 @@ DEFINE_FUNCTION( defineNormalBuffer ) {
 	for ( unsigned i = 0; i < count; i++ ) {
 
 		JL_CHK( JL_GetElement(cx, arrayObj, i, &item) );
-		JL_CHK( JL_JsvalToNative(cx, item, &pv->normal[i]) );
+		JL_CHK( jl::getValue(cx, item, &pv->normal[i]) );
 	}
 	return true;
 	JL_BAD;
@@ -278,7 +278,7 @@ DEFINE_FUNCTION( defineTextureCoordinateBuffer ) {
 	for ( unsigned i = 0; i < count; i++ ) {
 
 		JL_CHK( JL_GetElement(cx, arrayObj, i, &item) );
-		JL_CHK( JL_JsvalToNative(cx, item, &pv->textureCoordinate[i]) );
+		JL_CHK( jl::getValue(cx, item, &pv->textureCoordinate[i]) );
 	}
 	return true;
 	JL_BAD;
@@ -313,7 +313,7 @@ DEFINE_FUNCTION( defineColorBuffer ) {
 	for ( unsigned i = 0; i < count; i++ ) {
 
 		JL_CHK( JL_GetElement(cx, arrayObj, i, &item) );
-		JL_CHK( JL_JsvalToNative(cx, item, &pv->color[i]) );
+		JL_CHK( jl::getValue(cx, item, &pv->color[i]) );
 	}
 	return true;
 	JL_BAD;
@@ -348,7 +348,7 @@ DEFINE_FUNCTION( defineIndexBuffer ) {
 	for ( unsigned i = 0; i < count; i++ ) {
 
 		JL_CHK( JL_GetElement(cx, arrayObj, i, &item) );
-		JL_CHK( JL_JsvalToNative(cx, item, &pv->index[i]) );
+		JL_CHK( jl::getValue(cx, item, &pv->index[i]) );
 	}
 	pv->indexCount = count;
 	return true;
@@ -360,7 +360,7 @@ DEFINE_PROPERTY_GETTER( vertexCount ) {
 
 	Surface *pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_CHK( JL_NativeToJsval(cx, pv->vertexCount, vp) );
+	JL_CHK( jl::setValue(cx, vp, pv->vertexCount) );
 	return true;
 	JL_BAD;
 }
@@ -369,7 +369,7 @@ DEFINE_PROPERTY_GETTER( indexCount ) {
 
 	Surface *pv = (Surface*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_CHK( JL_NativeToJsval(cx, pv->indexCount, vp) );
+	JL_CHK( jl::setValue(cx, vp, pv->indexCount) );
 	return true;
 	JL_BAD;
 }

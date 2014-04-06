@@ -95,12 +95,12 @@ DEFINE_CONSTRUCTOR() {
 	int hotX, hotY;
 
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &hotX) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &hotX) );
 	else
 		hotX = 0;
 	
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &hotY) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &hotY) );
 	else
 		hotY = 0;
 		

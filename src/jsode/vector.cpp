@@ -33,7 +33,7 @@ DEFINE_PROPERTY( xSetter ) {
 	
 	VectorPrivate *pv = (VectorPrivate*)JL_GetPrivate(obj);
 	float f;
-	bool ok = JL_JsvalToNative(cx, *vp, &f);
+	bool ok = jl::getValue(cx, *vp, &f);
 	pv->Set(pv->userData, 0, f);
 	return ok;
 }
@@ -48,7 +48,7 @@ DEFINE_PROPERTY( ySetter ) {
 	
 	VectorPrivate *pv = (VectorPrivate*)JL_GetPrivate(obj);
 	float f;
-	bool ok = JL_JsvalToNative(cx, *vp, &f);
+	bool ok = jl::getValue(cx, *vp, &f);
 	pv->Set(pv->userData, 1, f);
 	return ok;
 }
@@ -63,7 +63,7 @@ DEFINE_PROPERTY( zSetter ) {
 	
 	VectorPrivate *pv = (VectorPrivate*)JL_GetPrivate(obj);
 	float f;
-	bool ok = JL_JsvalToNative(cx, *vp, &f);
+	bool ok = jl::getValue(cx, *vp, &f);
 	pv->Set(pv->userData, 2, f);
 	return ok;
 }

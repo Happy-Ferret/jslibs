@@ -86,7 +86,7 @@ struct Private {
 
 
 
-bool PrepareReadCurrentFile( JSContext *cx, JSObject *obj ) {
+bool PrepareReadCurrentFile( JSContext *cx, JS::HandleObject obj ) {
 
 	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -98,10 +98,11 @@ bool PrepareReadCurrentFile( JSContext *cx, JSObject *obj ) {
 	if ( pfile_info.flag & 1 ) { // has password
 
 		JLData password;
-		jsval tmp;
+		JS::RootedValue tmp(cx);
+
 		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTPASSWORD, &tmp) );
 		if ( !tmp.isUndefined() )
-			JL_CHK( JL_JsvalToNative(cx, tmp, &password) );
+			JL_CHK( jl::getValue(cx, tmp, &password) );
 		if ( !password.IsSet() )
 			return ThrowZipFileError(cx, JLERR_PASSWORDREQUIRED);
 		UNZ_CHK( unzOpenCurrentFilePassword(pv->uf, password) );
@@ -119,9 +120,10 @@ bool PrepareReadCurrentFile( JSContext *cx, JSObject *obj ) {
 
 
 
-bool NativeInterfaceStreamRead( JSContext *cx, JSObject *obj, char *buf, size_t *amount ) {
+bool NativeInterfaceStreamRead( JSContext *cx, JS::HandleObject obj, char *buf, size_t *amount ) {
 
-	JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
+
 	Private *pv = (Private *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -153,7 +155,7 @@ DEFINE_FINALIZE() {
 
 	JL_IGNORE( fop );
 
-	Private *pv = (Private *)JL_GetPrivate(obj);
+	Private *pv = (Private*)js::GetObjectPrivate(obj);
 	if ( pv ) {
 
 		if ( pv->zf ) {
@@ -187,11 +189,13 @@ DEFINE_CONSTRUCTOR() {
 
 	Private *pv = NULL;
 
+	JL_DEFINE_ARGS;
+
 	JL_ASSERT_CONSTRUCTING();
 	JL_ASSERT_ARGC(1);
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	
-	JL_CHK( JL_SetReservedSlot( obj, SLOT_FILENAME, JL_ARG(1)) );
+	JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_FILENAME, JL_ARG(1)) );
 
 	pv = (Private*)jl_calloc(sizeof(Private), 1);
 	JL_ASSERT_ALLOC(pv);
@@ -203,9 +207,9 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT( !pv->inZipOpened );
 
 	//JL_CHK( ReserveStreamReadInterface(cx, obj) );
-	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
+	JL_CHK( SetStreamReadInterface(cx, JL_OBJ, NativeInterfaceStreamRead) );
 
-	JL_SetPrivate(obj, pv);
+	JL_SetPrivate(JL_OBJ, pv);
 	return true;
 
 bad:
@@ -239,15 +243,17 @@ DEFINE_FUNCTION( open ) {
 	int mode;
 	JLData filename;
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
-	Private *pv = (Private *)JL_GetPrivate(obj);
+	Private *pv = (Private *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JL_CHK( JL_ReservedSlotToNative(cx, obj, SLOT_FILENAME, &filename) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &mode) );
+	JL_CHK( jl::getSlot(cx, JL_OBJ, SLOT_FILENAME, &filename) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &mode) );
 
 	if ( mode < 0 ) {
 
@@ -280,11 +286,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( close ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
-	Private *pv = (Private *)JL_GetPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 
@@ -297,10 +305,10 @@ DEFINE_FUNCTION( close ) {
 
 		ASSERT( !pv->uf );
 		JLData comment;
-		jsval tmp;
-		JL_CHK( JL_GetReservedSlot( obj, SLOT_GLOBALCOMMENT, &tmp) );
+		JS::RootedValue tmp(cx);
+		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_GLOBALCOMMENT, &tmp) );
 		if ( !tmp.isUndefined() )
-			JL_CHK( JL_JsvalToNative(cx, tmp, &comment) );
+			JL_CHK( jl::getValue(cx, tmp, &comment) );
 		ZIP_CHK( zipClose(pv->zf, comment.GetConstStrZOrNULL()) );
 	}
 
@@ -308,7 +316,7 @@ DEFINE_FUNCTION( close ) {
 	//memset(pv, 0, sizeof(Private));
 
 	jl_free(pv);
-	JL_SetPrivate( obj, NULL);
+	JL_SetPrivate(JL_OBJ, NULL);
 
 	JL_RVAL.setUndefined();
 	return true;
@@ -339,11 +347,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( select ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
-	Private *pv = (Private *)JL_GetPrivate(obj);
+	Private *pv = (Private *)JL_GetPrivate(JL_OBJ);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
@@ -359,7 +369,7 @@ DEFINE_FUNCTION( select ) {
 			pv->inZipOpened = false;
 		}
 
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &inZipFilename) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &inZipFilename) );
 		int status;
 		status = unzLocateFile(pv->uf, inZipFilename, 1); // iCaseSenisivity = 1, comparision is case sensitivity (like strcmp)
 		if ( status == UNZ_END_OF_LIST_OF_FILE ) {
@@ -377,7 +387,7 @@ DEFINE_FUNCTION( select ) {
 			ZIP_CHK( zipCloseFileInZip(pv->zf) );
 			pv->inZipOpened = false;
 		}
-		JL_CHK( JL_SetReservedSlot( obj, SLOT_INZIPFILENAME, JL_ARG(1)) );
+		JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_INZIPFILENAME, JL_ARG(1)) );
 	}
 
 	return true;
@@ -401,11 +411,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( goFirst ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
-	Private *pv = (Private *)JL_GetPrivate(obj);
+	Private *pv = (Private *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->uf, E_THISOPERATION, E_NOTSUPPORTED );
@@ -432,11 +444,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( goNext ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
-	Private *pv = (Private *)JL_GetPrivate(obj);
+	Private *pv = (Private *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->uf, E_THISOPERATION, E_NOTSUPPORTED );
@@ -475,11 +489,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( goTo ) {
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
-	Private *pv = (Private *)JL_GetPrivate(obj);
+	Private *pv = (Private *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->uf, E_THISOPERATION, E_NOTSUPPORTED );
@@ -487,7 +503,7 @@ DEFINE_FUNCTION( goTo ) {
 	JL_RVAL.setUndefined();
 
 	uLong index;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &index) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &index) );
 
 	if ( pv->inZipOpened ) {
 
@@ -526,11 +542,13 @@ DEFINE_FUNCTION( read ) {
 
 	uint8_t *buffer = NULL;
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(0, 1);
 
-	Private *pv = (Private *)JL_GetPrivate(obj);
+	Private *pv = (Private *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ASSERT( pv && !pv->uf == !!pv->zf );
 
@@ -544,7 +562,7 @@ DEFINE_FUNCTION( read ) {
 
 	if ( !pv->inZipOpened ) {
 
-		JL_CHK( PrepareReadCurrentFile(cx, obj) );
+		JL_CHK( PrepareReadCurrentFile(cx, JL_OBJ) );
 	}
 
 	if ( pv->remainingLength == 0 ) {
@@ -557,8 +575,8 @@ DEFINE_FUNCTION( read ) {
 	if ( JL_ARG_ISDEF(1) ) {
 
 		JL_ASSERT_ARG_IS_NUMBER(1);
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &requestedLength) );
-		requestedLength = JL_MIN(requestedLength, pv->remainingLength);
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &requestedLength) );
+		requestedLength = jl::min(requestedLength, pv->remainingLength);
 	} else {
 
 		requestedLength = pv->remainingLength;
@@ -590,11 +608,13 @@ DEFINE_FUNCTION( write ) {
 
 	JLData data;
 
+	JL_DEFINE_ARGS;
+
 	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
-	Private *pv = (Private *)JL_GetPrivate(obj);
+	Private *pv = (Private *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	ASSERT( pv && !pv->uf == !!pv->zf );
 
@@ -610,8 +630,8 @@ DEFINE_FUNCTION( write ) {
 		zipfi.external_fa = 0;
 		zipfi.internal_fa = 0;
 
-		jsval tmp;
-		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTDATE, &tmp) );
+		JS::RootedValue tmp(cx);
+		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_CURRENTDATE, &tmp) );
 		if ( tmp.isUndefined() ) {
 
 			zipfi.tmz_date.tm_sec = 0;
@@ -622,11 +642,10 @@ DEFINE_FUNCTION( write ) {
 			zipfi.tmz_date.tm_year = 1980;
 		} else {
 
-			ASSERT( tmp.isObject() && JS_ObjectIsDate(cx, &tmp.toObject()) );
-
-			JSObject *dateObj;
-			dateObj = &tmp.toObject();
-			zipfi.tmz_date.tm_sec = js_DateGetSeconds(cx, dateObj);
+			ASSERT( tmp.isObject() );
+			JS::RootedObject dateObj(cx, &tmp.toObject());
+			ASSERT( JS_ObjectIsDate(cx, dateObj) );
+			zipfi.tmz_date.tm_sec = js_DateGetSeconds(dateObj);
 			zipfi.tmz_date.tm_min = js_DateGetMinutes(cx, dateObj);
 			zipfi.tmz_date.tm_hour = js_DateGetHours(cx, dateObj);
 			zipfi.tmz_date.tm_mday = js_DateGetDate(cx, dateObj);
@@ -634,19 +653,19 @@ DEFINE_FUNCTION( write ) {
 			zipfi.tmz_date.tm_year = js_DateGetYear(cx, dateObj);
 		}
 
-		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTEXTRAFIELD, &tmp) );
+		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_CURRENTEXTRAFIELD, &tmp) );
 		if ( !tmp.isUndefined() )
-			JL_CHK( JL_JsvalToNative(cx, tmp, &currentExtraField) );
+			JL_CHK( jl::getValue(cx, tmp, &currentExtraField) );
 
-		JL_CHK( JL_ReservedSlotToNative(cx, obj, SLOT_INZIPFILENAME, &inZipFilename) );
+		JL_CHK( jl::getSlot(cx, JL_OBJ, SLOT_INZIPFILENAME, &inZipFilename) );
 
 		int level;
-		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTLEVEL, &tmp) );
+		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_CURRENTLEVEL, &tmp) );
 		if ( !tmp.isUndefined() ) {
 
-			JL_CHK( JL_JsvalToNative(cx, tmp, &level) );
+			JL_CHK( jl::getValue(cx, tmp, &level) );
 			//JL_ASSERT_ARG_VAL_RANGE( level, Z_NO_COMPRESSION, Z_BEST_COMPRESSION, 2 );
-			level = JL_MINMAX(level, Z_NO_COMPRESSION, Z_BEST_COMPRESSION);
+			level = jl::minmax(level, Z_NO_COMPRESSION, Z_BEST_COMPRESSION);
 		} else {
 
 			level = Z_DEFAULT_COMPRESSION;
@@ -656,7 +675,7 @@ DEFINE_FUNCTION( write ) {
 		pv->inZipOpened = true;
 	}
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &data) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
 	ASSERT( data.IsSet() );
 
 	ZIP_CHK( zipWriteInFileInZip(pv->zf, data.GetConstStr(), data.Length()) );
@@ -681,7 +700,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( globalComment ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(obj);
@@ -715,7 +734,7 @@ DEFINE_PROPERTY_GETTER( globalComment ) {
 
 DEFINE_PROPERTY_SETTER( globalComment ) {
 
-	JL_IGNORE(id, strict);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(obj);
@@ -723,7 +742,7 @@ DEFINE_PROPERTY_SETTER( globalComment ) {
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
 
-	JL_CHK( JL_SetReservedSlot( obj, SLOT_GLOBALCOMMENT, *vp) );
+	JL_CHK( JL_SetReservedSlot(obj, SLOT_GLOBALCOMMENT, JL_RVAL) );
 	return true;
 	JL_BAD;
 }
@@ -743,7 +762,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( eol ) {
 	
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(obj);
@@ -751,7 +770,7 @@ DEFINE_PROPERTY_GETTER( eol ) {
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->uf, E_VALUE, E_READ );
 
-	return JL_NativeToJsval(cx, pv->eol, vp);
+	return jl::setValue(cx, JL_RVAL, pv->eol);
 	JL_BAD;
 }
 
@@ -762,7 +781,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( filename ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(obj);
@@ -797,7 +816,7 @@ DEFINE_PROPERTY_GETTER( filename ) {
 		}
 
 		bool ok;
-		ok = JL_NativeToJsval(cx, filename, pfile_info.size_filename, vp);
+		ok = jl::setValue(cx, vp, jl::strSpec(filename, pfile_info.size_filename));
 		
 		if ( filename != buffer )
 			jl_freea(filename);
@@ -822,7 +841,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( level ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(obj);
@@ -852,7 +871,7 @@ DEFINE_PROPERTY_GETTER( level ) {
 				case 0: level = 5; break;
 			}
 		}
-		*JL_RVAL = INT_TO_JSVAL(level);
+		JL_RVAL.setInt32(level);
 	} else
 	if ( pv->zf ) {
 
@@ -865,7 +884,7 @@ DEFINE_PROPERTY_GETTER( level ) {
 
 DEFINE_PROPERTY_SETTER( level ) {
 
-	JL_IGNORE(id, strict);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(obj);
@@ -874,7 +893,7 @@ DEFINE_PROPERTY_SETTER( level ) {
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
 
 	JL_ASSERT( vp.isUndefined() || vp.isNumber(), E_TYPE, E_TY_NUMBER );
-	JL_CHK( JL_SetReservedSlot( obj, SLOT_CURRENTLEVEL, *vp) );
+	JL_CHK( JL_SetReservedSlot(obj, SLOT_CURRENTLEVEL, JL_RVAL) );
 
 	return true;
 	JL_BAD;
@@ -899,7 +918,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( date ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(obj);
@@ -922,12 +941,12 @@ DEFINE_PROPERTY_GETTER( date ) {
 		const tm_unz *d = &pfile_info.tmu_date;
 		if ( d->tm_year == 1980 && d->tm_mon == 0 && d->tm_mday == 0 && d->tm_hour == 0 && d->tm_min == 0 && d->tm_sec == 0 ) {
 
-			*vp = JSVAL_VOID;
+			vp.setUndefined();
 		} else {
 		
-			JSObject *dateObj = JS_NewDateObject(cx, d->tm_year, d->tm_mon, d->tm_mday, d->tm_hour, d->tm_min, d->tm_sec);
+			JS::RootedObject dateObj(cx, JS_NewDateObject(cx, d->tm_year, d->tm_mon, d->tm_mday, d->tm_hour, d->tm_min, d->tm_sec));
 			JL_CHK( dateObj );
-			*vp = OBJECT_TO_JSVAL( dateObj );
+			JL_RVAL.setObject(*dateObj);
 		}
 	} else
 	if ( pv->zf ) {
@@ -941,7 +960,7 @@ DEFINE_PROPERTY_GETTER( date ) {
 
 DEFINE_PROPERTY_SETTER( date ) {
 
-	JL_IGNORE(id, strict);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(obj);
@@ -949,8 +968,8 @@ DEFINE_PROPERTY_SETTER( date ) {
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
 
-	JL_ASSERT( vp.isUndefined() || vp.isObject() && JS_ObjectIsDate(cx, &vp.toObject()), E_VALUE, E_INVALID );
-	JL_CHK( JL_SetReservedSlot( obj, SLOT_CURRENTDATE, *vp) );
+	JL_ASSERT( vp.isUndefined() || jl::isDate(cx, vp), E_VALUE, E_INVALID );
+	JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_CURRENTDATE, JL_RVAL) );
 
 	return true;
 	JL_BAD;
@@ -965,7 +984,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( extra ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(obj);
@@ -999,7 +1018,7 @@ DEFINE_PROPERTY_GETTER( extra ) {
 	} else
 	if ( pv->zf ) {
 
-		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTEXTRAFIELD, vp) );
+		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_CURRENTEXTRAFIELD, JL_RVAL) );
 	}
 
 	return true;
@@ -1008,7 +1027,7 @@ DEFINE_PROPERTY_GETTER( extra ) {
 
 DEFINE_PROPERTY_SETTER( extra ) {
 
-	JL_IGNORE(id, strict);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(obj);
@@ -1016,7 +1035,7 @@ DEFINE_PROPERTY_SETTER( extra ) {
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->zf, E_FILE, E_WRITE );
 
-	JL_CHK( JL_SetReservedSlot( obj, SLOT_CURRENTEXTRAFIELD, *vp) );
+	JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_CURRENTEXTRAFIELD, JL_RVAL) );
 	return true;
 	JL_BAD;
 }
@@ -1031,7 +1050,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( password ) {
 
-	JL_IGNORE(id, strict);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 	Private *pv = (Private *)JL_GetPrivate(obj);
@@ -1039,7 +1058,7 @@ DEFINE_PROPERTY_SETTER( password ) {
 	ASSERT( pv && !pv->uf == !!pv->zf );
 	JL_ASSERT( pv->uf, E_THISOPERATION, E_INVALID );
 
-	JL_CHK( JL_SetReservedSlot( obj, SLOT_CURRENTPASSWORD, *vp) );
+	JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_CURRENTPASSWORD, JL_RVAL) );
 	return true;
 	JL_BAD;
 }
@@ -1143,30 +1162,30 @@ const char *ZipFileErrorConstString( int errorCode ) {
 
 DEFINE_PROPERTY_GETTER( const ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_GetReservedSlot( obj, 0, vp);
 	if ( vp.isUndefined() )
 		return true;
-	int errorCode = vp.toInt32();
-	JSString *str = JS_NewStringCopyZ( cx, ZipFileErrorConstString(errorCode) );
-	*vp = STRING_TO_JSVAL( str );
+	JSString *str = JS_NewStringCopyZ( cx, ZipFileErrorConstString(vp.toInt32()) );
+	JL_ASSERT_ALLOC( str );
+	JL_RVAL.setString(str);
 	return true;
+	JL_BAD;
 }
 
 DEFINE_PROPERTY_GETTER( code ) {
 
-	JL_IGNORE(id, cx);
+	JL_DEFINE_PROP_ARGS;
 
 	return JL_GetReservedSlot( obj, 0, vp);
 }
 
 DEFINE_FUNCTION( toString ) {
 
-	JL_IGNORE(argc);
+	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	return _constGetter(cx, obj, JSID_EMPTY, JL_RVAL);
+	return jl::getProperty(cx, JL_OBJ, L("const"), JL_RVAL);
 }
 
 CONFIGURE_CLASS
@@ -1193,10 +1212,10 @@ NEVER_INLINE bool FASTCALL
 ThrowZipFileError( JSContext *cx, int errorCode ) {
 
 	ASSERT( errorCode <= 0 );
-	JSObject *error = JL_NewObjectWithGivenProto(cx, JL_CLASS(ZipFileError), JL_CLASS_PROTOTYPE(cx, ZipFileError));
-	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
-	JL_CHK( JL_SetReservedSlot( error, 0, INT_TO_JSVAL(errorCode)) );
-	JL_SAFE( JL_ExceptionSetScriptLocation(cx, error) );
+	JS::RootedObject error(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(ZipFileError), JL_CLASS_PROTOTYPE(cx, ZipFileError)));
+	JL_CHK( jl::setException(cx, error) );
+	JL_CHK( jl::setSlot(cx, error, 0, errorCode) );
+	JL_SAFE( jl::setScriptLocation(cx, &error) );
 	return false;
 	JL_BAD;
 }

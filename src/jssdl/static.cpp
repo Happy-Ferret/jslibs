@@ -223,13 +223,13 @@ DEFINE_FUNCTION( getVideoModeList ) {
 	if ( JL_ARG_ISDEF(1) ) {
 
 		Uint8 bpp;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &bpp) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &bpp) );
 		format.BitsPerPixel = bpp;
 		format.BytesPerPixel = bpp / 8; // (TBD) need to set both ?
 	}
 
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &flags) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &flags) );
 	else
 		flags = 0;
 
@@ -281,24 +281,24 @@ DEFINE_FUNCTION( videoModeOK ) {
 	Uint32 flags;
 
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &width) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &width) );
 	else
 		width = 0; // by default, use current width
 
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &height) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &height) );
 	else
 		height = 0; // by default, use current height
 
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &bpp) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &bpp) );
 	else
 		bpp = 0; // by default, use current bpp
 
 	if ( JL_ARG_ISDEF(4) ) {
 
 		double tmp;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &tmp) ); // we need to use doubles because some values are greater than 2^31
+		JL_CHK( jl::getValue(cx, JL_ARG(4), &tmp) ); // we need to use doubles because some values are greater than 2^31
 		flags = (Uint32)tmp;
 	} else
 		flags = 0;
@@ -334,24 +334,24 @@ DEFINE_FUNCTION( setVideoMode ) {
 //	SDL_PixelFormat format = *videoInfo->vfmt;
 
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &width) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &width) );
 	else
 		width = _surface != NULL ? _surface->w : 0; // by default, use current width
 
 	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &height) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &height) );
 	else
 		height = _surface != NULL ? _surface->h : 0; // by default, use current height
 
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &bpp) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &bpp) );
 	else
 		bpp = _surface != NULL ? _surface->format->BitsPerPixel : 0; // by default, use current or the default bpp
 
 	if ( JL_ARG_ISDEF(4) ) {
 
 		double tmp;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &tmp) ); // we need to use doubles because some values are greater than 2^31
+		JL_CHK( jl::getValue(cx, JL_ARG(4), &tmp) ); // we need to use doubles because some values are greater than 2^31
 		flags = (Uint32)tmp;
 	} else {
 
@@ -359,7 +359,7 @@ DEFINE_FUNCTION( setVideoMode ) {
 	}
 
 	//if ( JL_ARG_ISDEF(5) )
-	//	JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &fullscreen) ); // we need to use doubles because some values are greater than 2^31
+	//	JL_CHK( jl::getValue(cx, JL_ARG(5), &fullscreen) ); // we need to use doubles because some values are greater than 2^31
 	//else
 	//	fullscreen = surface != NULL ? (surface->flags & SDL_FULLSCREEN) != 0 : 0;
 	//flags = flags & ~SDL_FULLSCREEN;
@@ -587,9 +587,9 @@ DEFINE_FUNCTION( setGamma ) {
 	JL_ASSERT_ARGC_MIN(3);
 
 	float r,g,b;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &r) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &g) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &b) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &r) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &g) );
+	JL_CHK( jl::getValue(cx, JL_ARG(3), &b) );
 	if ( SDL_SetGamma(r, g, b) != 0 )
 		return ThrowSdlError(cx);
 	
@@ -611,7 +611,7 @@ DEFINE_FUNCTION( glSwapBuffers ) {
 
 	bool async;
 	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &async) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &async) );
 	else
 		async = false;
 
@@ -641,8 +641,8 @@ DEFINE_FUNCTION( glSetAttribute ) {
 	int value;
 	JL_ASSERT_ARGC_MIN(2);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &attr) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &value) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &attr) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &value) );
 	if ( SDL_GL_SetAttribute((SDL_GLattr)attr, value) == -1 )
 		return ThrowSdlError(cx);
 	
@@ -667,7 +667,7 @@ DEFINE_FUNCTION( glGetAttribute ) {
 	int value;
 	JL_ASSERT_ARGC_MIN(2);
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &attr) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &attr) );
 	if ( SDL_GL_GetAttribute((SDL_GLattr)attr, &value) == -1 )
 		return ThrowSdlError(cx);
 	JL_CHK( JL_NativeToJsval(cx, value, JL_RVAL) );
@@ -687,7 +687,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( caption ) {
 
 	JLData title;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &title) );
+	JL_CHK( jl::getValue(cx, *vp, &title) );
 	SDL_WM_SetCaption(title, NULL);
 	return true;
 	JL_BAD;
@@ -724,7 +724,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( grabInput ) {
 
 	bool grab;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &grab) );
+	JL_CHK( jl::getValue(cx, *vp, &grab) );
 	SDL_WM_GrabInput( grab ? SDL_GRAB_ON : SDL_GRAB_OFF );
 	return true;
 	JL_BAD;
@@ -747,7 +747,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( showCursor ) {
 
 	bool show;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &show) );
+	JL_CHK( jl::getValue(cx, *vp, &show) );
 	SDL_ShowCursor( show ? 1 : 0 );
 	return true;
 	JL_BAD;
@@ -873,8 +873,8 @@ DEFINE_FUNCTION( warpMouse ) {
 	JL_ASSERT_ARGC_MIN(2);
 
 	Uint16 x, y;
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &x) );
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &y) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &x) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &y) );
 	SDL_WarpMouse(x, y);
 
 	JL_RVAL.setUndefined();
@@ -1016,7 +1016,7 @@ DEFINE_PROPERTY_SETTER( keyRepeatDelay ) {
 
 	int delay, interval;
 	SDL_GetKeyRepeat(&delay, &interval);
-	JL_CHK( JL_JsvalToNative(cx, *vp, &delay) );
+	JL_CHK( jl::getValue(cx, *vp, &delay) );
 	int status = SDL_EnableKeyRepeat(delay, interval);
 	if ( status == -1 )
 		return ThrowSdlError(cx);
@@ -1044,7 +1044,7 @@ DEFINE_PROPERTY_SETTER( keyRepeatInterval ) {
 
 	int delay, interval;
 	SDL_GetKeyRepeat(&delay, &interval);
-	JL_CHK( JL_JsvalToNative(cx, *vp, &interval) );
+	JL_CHK( jl::getValue(cx, *vp, &interval) );
 	int status = SDL_EnableKeyRepeat(delay, interval);
 	if ( status == -1 )
 		return ThrowSdlError(cx);
@@ -1070,7 +1070,7 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( unicodeKeyboardTranslation ) {
 
 	bool enable;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &enable) );
+	JL_CHK( jl::getValue(cx, *vp, &enable) );
 	SDL_EnableUNICODE(enable ? 1 : 0);
 	return true;
 	JL_BAD;
@@ -1224,7 +1224,7 @@ DEFINE_PROPERTY_SETTER( maxFPS ) {
 	} else {
 
 		unsigned int value;
-		JL_CHK( JL_JsvalToNative(cx, *vp, &value) );
+		JL_CHK( jl::getValue(cx, *vp, &value) );
 		_maxFPS = value;
 	}
 	return true;

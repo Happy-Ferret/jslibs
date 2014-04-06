@@ -162,7 +162,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_ASSERT_ARGC_MIN( 3 );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &modeName) ); // warning: GC on the returned buffer !
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &modeName) ); // warning: GC on the returned buffer !
 
 	CryptMode mode;
 	if ( strcasecmp( modeName, "ECB" ) == 0 )
@@ -182,21 +182,21 @@ DEFINE_CONSTRUCTOR() {
 	else
 		JL_ERR( E_ARG, E_NUM(1), E_INVALID, E_SEP, E_NAME(modeName), E_NOTSUPPORTED );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &cipherName) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &key) ); // warning: GC on the returned buffer !
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &cipherName) ); // warning: GC on the returned buffer !
+	JL_CHK( jl::getValue(cx, JL_ARG(3), &key) ); // warning: GC on the returned buffer !
 
 	if ( argc >= 4 && !JL_ARG(4).isUndefined() )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &IV) ); // warning: GC on the returned buffer !
+		JL_CHK( jl::getValue(cx, JL_ARG(4), &IV) ); // warning: GC on the returned buffer !
 	else
 		IV = JLData::Empty();
 
 	if ( argc >= 5 && !JL_ARG(5).isUndefined() )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(5), &optarg) ); // warning: GC on the returned buffer !
+		JL_CHK( jl::getValue(cx, JL_ARG(5), &optarg) ); // warning: GC on the returned buffer !
 
    int numRounds;
    numRounds = 0; // default value, us a default number of rounds.
 	if ( argc >= 6 && !JL_ARG(6).isUndefined() )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(6), &numRounds) );
+		JL_CHK( jl::getValue(cx, JL_ARG(6), &numRounds) );
 
 	pv = (CipherPrivate*)jl_malloc(sizeof(CipherPrivate));
 	JL_CHK( pv );
@@ -345,7 +345,7 @@ DEFINE_FUNCTION( encrypt ) {
 	pv = (CipherPrivate *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pt) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &pt) );
 
 	uint8_t *ct;
 	ct = JL_NewBuffer(cx, pt.Length(), JL_RVAL);
@@ -418,7 +418,7 @@ DEFINE_FUNCTION( decrypt ) {
 //	const char *ct;
 //	size_t ctLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &ct, &ctLength) ); // warning: GC on the returned buffer !
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &ct) );
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &ct) );
 
 	uint8_t *pt;
 	pt = JL_NewBuffer(cx, ct.Length(), JL_RVAL);
@@ -549,7 +549,7 @@ DEFINE_PROPERTY_SETTER( IV ) {
 //	const char *IV;
 //	size_t IVLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &IV, &IVLength) );
-	JL_CHK( JL_JsvalToNative(cx, JL_RVAL, &IV) );
+	JL_CHK( jl::getValue(cx, JL_RVAL, &IV) );
 
 	int err;
 	switch ( pv->mode ) {

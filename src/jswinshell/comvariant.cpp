@@ -146,7 +146,7 @@ private:
 bool BlobToVariant( JSContext *cx, JS::HandleValue val, VARIANT *variant ) {
 
 	JLData buf;
-	JL_CHK( JL_JsvalToNative(cx, val, &buf) );
+	JL_CHK( jl::getValue(cx, val, &buf) );
 	variant->vt = VT_ARRAY | VT_UI1;
 	SAFEARRAYBOUND rgsabound[1];
 	rgsabound[0].cElements = buf.Length();
@@ -195,7 +195,7 @@ bool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *varia
 			// see also: Write and read binary data in VARIANT - http://www.ucosoft.com/write-and-read-binary-data-in-variant.html
 			
 			JLData buf;
-			JL_CHK( JL_JsvalToNative(cx, value, &buf) );
+			JL_CHK( jl::getValue(cx, value, &buf) );
 			V_VT(variant) = VT_BSTR;
 			V_BSTR(variant) = SysAllocStringByteLen(buf.GetConstStr(), buf.Length());
 			return true;
@@ -467,10 +467,10 @@ bool VariantToJsval( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rva
 			rval.setInt32(isRef ? *V_I2REF(variant) : V_I2(variant));
 			break;
 		case VT_I4:
-			JL_CHK( JL_NativeToJsval(cx, isRef ? *V_I4REF(variant) : V_I4(variant), rval) );
+			JL_CHK( jl::setValue(cx, rval, isRef ? *V_I4REF(variant) : V_I4(variant)) );
 			break;
 		case VT_INT:
-			JL_CHK( JL_NativeToJsval(cx, isRef ? *V_INTREF(variant) : V_INT(variant), rval) );
+			JL_CHK( jl::setValue(cx, rval, isRef ? *V_INTREF(variant) : V_INT(variant)) );
 			break;
 
 		case VT_UI1:
@@ -480,10 +480,10 @@ bool VariantToJsval( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rva
 			rval.setInt32(isRef ? *V_UI2REF(variant) : V_UI2(variant));
 			break;
 		case VT_UI4:
-			JL_CHK( JL_NativeToJsval(cx, isRef ? *V_UI4REF(variant) : V_UI4(variant), rval) );
+			JL_CHK( jl::setValue(cx, rval, isRef ? *V_UI4REF(variant) : V_UI4(variant)) );
 			break;
 		case VT_UINT:
-			JL_CHK( JL_NativeToJsval(cx, isRef ? *V_UINTREF(variant) : V_UINT(variant), rval) );
+			JL_CHK( jl::setValue(cx, rval, isRef ? *V_UINTREF(variant) : V_UINT(variant)) );
 			break;
 
 		case VT_DISPATCH:
@@ -662,7 +662,7 @@ DEFINE_FUNCTION( toTypeName ) {
 	}
 	strcat(str, "]");
 
-	return JL_NativeToJsval(cx, str, JL_RVAL);
+	return jl::setValue(cx, JL_RVAL, str);
 	JL_BAD;
 }
 
@@ -695,7 +695,7 @@ END_CLASS
 // acquire the ownership of the variant
 bool NewComVariant( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rval ) {
 
-	JS::RootedObject varObj(cx, JL_NewObjectWithGivenProto(cx, JL_CLASS(ComVariant), JL_CLASS_PROTOTYPE(cx, ComVariant)));
+	JS::RootedObject varObj(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(ComVariant), JL_CLASS_PROTOTYPE(cx, ComVariant)));
 	JL_CHK( varObj );
 	rval.setObject(*varObj);
 	JL_SetPrivate(varObj, variant);

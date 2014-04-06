@@ -189,7 +189,7 @@ NEVER_INLINE bool FASTCALL
 WinNewError( JSContext *cx, DWORD errorCode, JS::MutableHandleValue rval ) {
 
 	// (TBD) understand why it must have a constructor to be throwed in an exception
-	JS::RootedObject error(cx, JL_NewObjectWithGivenProto( cx, JL_CLASS(WinError), JL_CLASS_PROTOTYPE(cx, WinError) ));
+	JS::RootedObject error(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(WinError), JL_CLASS_PROTOTYPE(cx, WinError) ));
 	rval.setObject(*error);
 	JL_CHK( jl::setSlot(cx, error, SLOT_WIN_ERROR_CODE_HI, HIWORD(errorCode)) );
 	JL_CHK( jl::setSlot(cx, error, SLOT_WIN_ERROR_CODE_LO, LOWORD(errorCode)) );
@@ -201,7 +201,7 @@ NEVER_INLINE bool FASTCALL
 WinThrowError( JSContext *cx, DWORD errorCode ) {
 
 //	JL_SAFE(	JS_ReportWarning( cx, "WinError exception" ) );
-	JS::RootedObject error(cx, JL_NewObjectWithGivenProto( cx, JL_CLASS(WinError), JL_CLASS_PROTOTYPE(cx, WinError) )); // (TBD) understand why it must have a constructor to be throwed in an exception
+	JS::RootedObject error(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(WinError), JL_CLASS_PROTOTYPE(cx, WinError) )); // (TBD) understand why it must have a constructor to be throwed in an exception
 //	JL_ASSERT( error != NULL, "Unable to create WinError object." );
 
 	JS::RootedValue errorVal(cx);
@@ -211,7 +211,7 @@ WinThrowError( JSContext *cx, DWORD errorCode ) {
 
 	JL_CHK( jl::setSlot(cx, error, SLOT_WIN_ERROR_CODE_HI, HIWORD(errorCode)) );
 	JL_CHK( jl::setSlot(cx, error, SLOT_WIN_ERROR_CODE_LO, LOWORD(errorCode)) );
-	JL_SAFE( JL_ExceptionSetScriptLocation(cx, &error) );
+	JL_SAFE( jl::setScriptLocation(cx, &error) );
 	return false;
 	JL_BAD;
 }

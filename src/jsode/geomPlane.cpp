@@ -111,7 +111,7 @@ DEFINE_PROPERTY( lengthsSetter ) {
 	ode::dVector3 vector;
 //	FloatArrayToVector(cx, 3, vp, vector);
 	size_t length;
-	JL_CHK( JL_JsvalToNativeVector(cx, *vp, vector, 3, &length) );
+	JL_CHK( jl::getVector(cx, *vp, vector, 3, &length) );
 	JL_ASSERT( length >= 3, "Invalid array size." );
 	ode::dGeomPlaneSetLengths(geom, vector[0], vector[1], vector[2]);
 	return true;

@@ -12,7 +12,7 @@ var loadModule = host.loadModule;
 //new Array(100000).map(function() { return { a:'sdjhgskdljfghdskljghlsdkjfghldskjfgh' } });
 //[].forEach(function(){});
 
-loadModule('jsstd');
+//loadModule('jsstd');
 
 jslangTest();
 

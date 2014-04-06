@@ -34,7 +34,7 @@ DEFINE_FINALIZE() {
 	if ( alcGetCurrentContext() )
 		alDeleteEffects(1, &pv->effect);
 
-	if ( JL_GetHostPrivate(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost(fop->runtime())->canSkipCleanup )
 		return;
 
 	JS_freeop(fop, pv);
@@ -96,7 +96,7 @@ DEFINE_FUNCTION( valueOf ) {
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	JL_CHK( JL_NativeToJsval(cx, pv->effect, *JL_RVAL) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, pv->effect) );
 	return true;
 	JL_BAD;
 }
@@ -134,7 +134,7 @@ DEFINE_PROPERTY_SETTER( type ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	int effectType;
-	JL_CHK( JL_JsvalToNative(cx, vp, &effectType) );
+	JL_CHK( jl::getValue(cx, vp, &effectType) );
 
 	alEffecti(pv->effect, AL_EFFECT_TYPE, effectType);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
@@ -156,7 +156,7 @@ DEFINE_PROPERTY_GETTER( type ) {
 	alGetEffecti(pv->effect, AL_EFFECT_TYPE, &effectType);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 
-	JL_CHK( JL_NativeToJsval(cx, effectType, vp) );
+	JL_CHK( jl::setValue(cx, vp, effectType) );
 	return true;
 	JL_BAD;
 }
@@ -186,7 +186,7 @@ DEFINE_PROPERTY_SETTER( effectFloat ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	float f;
-	JL_CHK( JL_JsvalToNative(cx, vp, &f) );
+	JL_CHK( jl::getValue(cx, vp, &f) );
 	alEffectf(pv->effect, param, f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return true;
@@ -203,7 +203,7 @@ DEFINE_PROPERTY_GETTER( effectFloat ) {
 	float f;
 	alGetEffectf(pv->effect, param, &f);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK(JL_NativeToJsval(cx, f, vp) );
+	JL_CHK(jl::setValue(cx, vp, f) );
 	return true;
 	JL_BAD;
 }
@@ -218,7 +218,7 @@ DEFINE_PROPERTY_SETTER( effectInt ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	int i;
-	JL_CHK( JL_JsvalToNative(cx, vp, &i) );
+	JL_CHK( jl::getValue(cx, vp, &i) );
 	alEffecti(pv->effect, param, i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return true;
@@ -235,7 +235,7 @@ DEFINE_PROPERTY_GETTER( effectInt ) {
 	int i;
 	alGetEffecti(pv->effect, param, &i);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
-	JL_CHK( JL_NativeToJsval(cx, i, vp) );
+	JL_CHK( jl::setValue(cx, vp, i) );
 	return true;
 	JL_BAD;
 }
@@ -250,7 +250,7 @@ DEFINE_PROPERTY_SETTER( effectBool ) {
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	ALenum param = JSID_TO_INT(id);
 	bool b;
-	JL_CHK( JL_JsvalToNative(cx, vp, &b) );
+	JL_CHK( jl::getValue(cx, vp, &b) );
 	alEffecti(pv->effect, param, b ? AL_TRUE : AL_FALSE);
 	JL_CHK( CheckThrowCurrentOalError(cx) );
 	return true;

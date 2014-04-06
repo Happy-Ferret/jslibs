@@ -15,7 +15,7 @@
 
 #pragma once
 
-#define JsvalToODERealVector JL_JsvalToNativeVector
+#define JsvalToODERealVector jl::getVector
 #define ODERealVectorToJsval JL_NativeVectorToJsval
-#define JsvalToODEReal JL_JsvalToNative
+#define JsvalToODEReal jl::getValue
 #define ODERealToJsval JL_NativeToJsval

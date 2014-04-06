@@ -508,7 +508,7 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 //	typedef void* (__cdecl *glGetProcAddress_t)(const char*);
 
 // // JL_CHK( SetNativePrivatePointer(cx, JL_GetGlobal(cx), "_glGetProcAddress", (glGetProcAddress_t)SDL_GL_GetProcAddress) );
-// JL_CHK( JL_PropertyToNative(cx, GetHostObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
+// JL_CHK( jl::getProperty(cx, GetHostObject(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );
 
 
 //	SDL_EnableUNICODE(1); // see unicodeKeyboardTranslation property

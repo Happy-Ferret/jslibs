@@ -34,7 +34,7 @@ struct Private {
 
 DEFINE_FINALIZE() {
 
-	if ( obj == JL_GetCachedProto(JL_GetHostPrivate(fop->runtime()), className) )
+	if ( obj == jl::Host::getHost(fop->runtime()).getCachedProto(className) )
 		return;
 
 	Private *pv;
@@ -70,12 +70,12 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( !JL_ARG(1).isString() ) {
 		
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pv->deviceID) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &pv->deviceID) );
 		JL_ASSERT_ARG_VAL_RANGE( pv->deviceID, 0, numDevices-1, 1 );
 	} else {
 	
 		JLData requiredDeviceName;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &requiredDeviceName) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &requiredDeviceName) );
 		for ( int i = 0; i < numDevices; i++ ) {
 
 			if ( strstr(videoInput::getDeviceName(i), requiredDeviceName) != NULL ) {
@@ -90,15 +90,15 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(4) ) {
 
 		int fps;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &fps) );
+		JL_CHK( jl::getValue(cx, JL_ARG(4), &fps) );
 		vi->setIdealFramerate(pv->deviceID, fps); // vi->VDList[deviceId]->requestedFrameTime;
 	}
 	
 	if ( JL_ARG_ISDEF(2) && JL_ARG_ISDEF(3) ) {
 		
 		int width, height;
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &width) );
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &height) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &width) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &height) );
 		vi->setupDevice(pv->deviceID, width, height);
 	} else {
 	
@@ -106,12 +106,12 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	if ( JL_ARG_ISDEF(5) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pv->flipImageY) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &pv->flipImageY) );
 	else
 		pv->flipImageY = true;
 
 	if ( JL_ARG_ISDEF(6) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(1), &pv->flipImageRedBlue) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &pv->flipImageRedBlue) );
 	else
 		pv->flipImageRedBlue = true;
 
@@ -305,7 +305,7 @@ DEFINE_PROPERTY_GETTER( hasNewFrame ) {
 	pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JL_CHK(JL_NativeToJsval(cx, vi->isFrameNew(pv->deviceID), vp) );
+	JL_CHK(jl::setValue(cx, vp, vi->isFrameNew(pv->deviceID)) );
 
 	return true;
 	JL_BAD;
@@ -323,7 +323,7 @@ DEFINE_PROPERTY_GETTER( width ) {
 	pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JL_CHK( JL_NativeToJsval(cx, vi->getWidth(pv->deviceID), vp) );
+	JL_CHK( jl::setValue(cx, vp, vi->getWidth(pv->deviceID)) );
 
 	return true;
 	JL_BAD;
@@ -341,7 +341,7 @@ DEFINE_PROPERTY_GETTER( height ) {
 	pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JL_CHK( JL_NativeToJsval(cx, vi->getHeight(pv->deviceID), vp) );
+	JL_CHK( jl::setValue(cx, vp, vi->getHeight(pv->deviceID)) );
 
 	return true;
 	JL_BAD;
@@ -363,7 +363,7 @@ DEFINE_PROPERTY_GETTER( channels ) {
 	int height = vi->getHeight(pv->deviceID);
 	int dataSize = vi->getSize(pv->deviceID);
 
-	JL_CHK( JL_NativeToJsval(cx, dataSize / (width * height), vp) ); 
+	JL_CHK( jl::setValue(cx, vp, dataSize / (width * height)) ); 
 
 	return true;
 	JL_BAD;
@@ -381,7 +381,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 	pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JL_CHK( JL_NativeToJsval(cx, videoInput::getDeviceName(pv->deviceID), vp) );
+	JL_CHK( jl::setValue(cx, vp, videoInput::getDeviceName(pv->deviceID)) );
 
 	return true;
 	JL_BAD;
@@ -397,7 +397,7 @@ DEFINE_PROPERTY_GETTER( hasDevice ) {
 	JL_IGNORE(id, obj);
 
 	int numDevices = videoInput::listDevices(true);
-	JL_CHK(JL_NativeToJsval(cx, numDevices > 0, vp) ); 
+	JL_CHK(jl::setValue(cx, vp, numDevices > 0) ); 
 	return true;
 	JL_BAD;
 }
@@ -419,7 +419,7 @@ DEFINE_PROPERTY_GETTER( list ) {
 	int i;
 	for ( i = 0; i < numDevices; i++ ) {
 
-		JL_CHK( JL_NativeToJsval(cx, videoInput::getDeviceName(i), value) );
+		JL_CHK( jl::setValue(cx, value, videoInput::getDeviceName(i)) );
 		JL_CHK( JL_SetElement(cx, list, i, value ) );
 	}
 

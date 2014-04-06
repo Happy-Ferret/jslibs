@@ -77,28 +77,28 @@ bool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) { // (T
 
 	switch( ode::dGeomGetClass(geomId) ) {
 		case ode::dSphereClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomSphere), JL_CLASS_PROTOTYPE(cx, GeomSphere));
+			*obj = jl::newObjectWithGivenProto(cx, JL_CLASS(GeomSphere), JL_CLASS_PROTOTYPE(cx, GeomSphere));
 			break;
 		case ode::dBoxClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomBox), JL_CLASS_PROTOTYPE(cx, GeomBox));
+			*obj = jl::newObjectWithGivenProto(cx, JL_CLASS(GeomBox), JL_CLASS_PROTOTYPE(cx, GeomBox));
 			break;
 		case ode::dCapsuleClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomCapsule), JL_CLASS_PROTOTYPE(cx, GeomCapsule));
+			*obj = jl::newObjectWithGivenProto(cx, JL_CLASS(GeomCapsule), JL_CLASS_PROTOTYPE(cx, GeomCapsule));
 			break;
 		case ode::dCylinderClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomCylinder), JL_CLASS_PROTOTYPE(cx, GeomCylinder));
+			*obj = jl::newObjectWithGivenProto(cx, JL_CLASS(GeomCylinder), JL_CLASS_PROTOTYPE(cx, GeomCylinder));
 			break;
 		case ode::dPlaneClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomPlane), JL_CLASS_PROTOTYPE(cx, GeomPlane));
+			*obj = jl::newObjectWithGivenProto(cx, JL_CLASS(GeomPlane), JL_CLASS_PROTOTYPE(cx, GeomPlane));
 			break;
 		case ode::dRayClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomRay), JL_CLASS_PROTOTYPE(cx, GeomRay));
+			*obj = jl::newObjectWithGivenProto(cx, JL_CLASS(GeomRay), JL_CLASS_PROTOTYPE(cx, GeomRay));
 			break;
 		case ode::dConvexClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomConvex), JL_CLASS_PROTOTYPE(cx, GeomConvex));
+			*obj = jl::newObjectWithGivenProto(cx, JL_CLASS(GeomConvex), JL_CLASS_PROTOTYPE(cx, GeomConvex));
 			break;
 		case ode::dTriMeshClass:
-			*obj = JL_NewObjectWithGivenProto(cx, JL_CLASS(GeomTrimesh), JL_CLASS_PROTOTYPE(cx, GeomTrimesh));
+			*obj = jl::newObjectWithGivenProto(cx, JL_CLASS(GeomTrimesh), JL_CLASS_PROTOTYPE(cx, GeomTrimesh));
 			break;
 		default:
 			ASSERT(false);
@@ -209,7 +209,7 @@ DEFINE_PROPERTY_SETTER( disabled ) {
 	ode::dGeomID geom = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(geom);
 	bool disabled;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &disabled) );
+	JL_CHK( jl::getValue(cx, *vp, &disabled) );
 	if ( disabled )
 		ode::dGeomDisable(geom);
 	else
@@ -241,7 +241,7 @@ DEFINE_PROPERTY_SETTER( temporalCoherence ) {
 	ode::dGeomID geomId = (ode::dGeomID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(geomId);
 	bool enableState;
-	JL_CHK( JL_JsvalToNative(cx, *vp, &enableState) );
+	JL_CHK( jl::getValue(cx, *vp, &enableState) );
 	ode::dGeomTriMeshEnableTC(geomId, ode::dGeomGetClass(geomId), enableState ? 1 : 0 );
 	return true;
 	JL_BAD;

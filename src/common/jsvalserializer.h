@@ -349,7 +349,7 @@ public:
 
 			bool found;
 			JS::RootedValue tmp(cx);
-			for ( int i = 0; i < jl::SafeCast<int>(length); ++i ) {
+			for ( int i = 0; i < jl::isInBounds<int>(length); ++i ) {
 
 				JL_CHK( JL_GetElement(cx, obj, i, &tmp) );
 				if ( tmp.isUndefined() ) {
@@ -388,7 +388,7 @@ public:
 
 			JL_ASSERT( jl::isCallable(cx, serializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_serialize"), E_DEFINED );
 
-			if ( !JL_ObjectIsObject(cx, obj ) ) {
+			if ( !jl::isObjectObject(cx, obj ) ) {
 
 				JL_CHK( Write(cx, JLSTSerializableNativeObject) );
 				JL_CHK( Write(cx, JL_GetClassName(obj)) );
@@ -443,14 +443,14 @@ public:
 		}
 
 		// StopIteration object
-		if ( JL_IsStopIteration(cx, obj) ) {
+		if ( jl::isStopIteration(cx, obj) ) {
 			
 			JL_CHK( Write(cx, JLSTStopIteration) );
 			return true;
 		}
 
 		// simple object
-		if ( JL_ObjectIsObject(cx, obj) ) {
+		if ( jl::isObjectObject(cx, obj) ) {
 
 			JL_CHK( Write(cx, JLSTObject) );
 			JL_CHK( Write(cx, SerializerObjectOwnProperties(*obj.address())) );
@@ -458,7 +458,7 @@ public:
 		}
 
 		// all JS errors objects
-		if ( JL_ObjectIsError(cx, obj) ) {
+		if ( jl::isError(cx, obj) ) {
 
 			JS::RootedObject constructor(cx, JL_GetConstructor(cx, obj));
 
@@ -491,7 +491,7 @@ public:
 		
 		JS::RootedValue tmp(cx);
 		tmp.setObject(*obj);
-		JL_CHK( JL_JsvalToPrimitive(cx, tmp, &tmp) );
+		JL_CHK( jl::getPrimitive(cx, tmp, &tmp) );
 		JL_CHK( Write(cx, JLSTObjectValue) );
 		JL_CHK( Write(cx, JL_GetClass(obj)->name) );
 		JL_CHK( Write(cx, tmp) );
@@ -713,7 +713,7 @@ public:
 			}
 			case JLSTProtolessObject: {
 
-				JS::RootedObject obj(cx, JL_NewProtolessObj(cx));
+				JS::RootedObject obj(cx, jl::newObjectWithoutProto(cx));
 				JL_CHK( obj );
 				val.setObject(*obj);
 				SerializerObjectOwnProperties sop(*obj.address());
@@ -759,7 +759,7 @@ public:
 				//const ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), className);
 
 				JL_CHKM( cpc != NULL, E_CLASS, E_NAME(className), E_NOTFOUND );
-				JS::RootedObject newObj(cx, JL_NewObjectWithGivenProto(cx, cpc->clasp, cpc->proto));
+				JS::RootedObject newObj(cx, jl::newObjectWithGivenProto(cx, cpc->clasp, cpc->proto));
 				JL_CHK( newObj );
 
 				JS::RootedValue arg(cx);
@@ -963,7 +963,7 @@ public:
 ALWAYS_INLINE bool
 JsvalIsSerializer( JSContext *cx, JS::HandleValue val ) {
 
-	return jl::isClass(cx, val, JL_GetCachedClass(JL_GetHostPrivate(cx), "Serializer"));
+	return jl::isClass(cx, val, jl::Host::getHost(cx).getCachedClasp("Serializer"));
 }
 
 ALWAYS_INLINE Serializer*
@@ -976,7 +976,7 @@ JsvalToSerializer( JSContext *cx, JS::MutableHandleValue val ) {
 ALWAYS_INLINE bool
 JsvalIsUnserializer( JSContext *cx, JS::HandleValue val ) {
 
-	return jl::isClass(cx, val, JL_GetCachedClass(JL_GetHostPrivate(cx), "Unserializer"));
+	return jl::isClass(cx, val, jl::Host::getHost(cx).getCachedClasp("Unserializer"));
 }
 
 ALWAYS_INLINE Unserializer*

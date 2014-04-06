@@ -45,19 +45,19 @@ DEFINE_FUNCTION( draw3DText ) {
 
 	FT_Face ftface = GetJsfontPrivate(cx, fontObj)->face;
 
-	JL_CHK( JL_JsvalToNative(cx, JL_ARG(2), &text) );
+	JL_CHK( jl::getValue(cx, JL_ARG(2), &text) );
 
 //	JsoglftPrivate *mpv = (JsoglftPrivate*)ModulePrivateGet();
 
 	float size;
 	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(3), &size) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &size) );
 	else
 		size = float(ftface->size->metrics.y_scale / ftface->units_per_EM);
 
 	bool compile;
 	if ( JL_ARG_ISDEF(4) )
-		JL_CHK( JL_JsvalToNative(cx, JL_ARG(4), &compile) );
+		JL_CHK( jl::getValue(cx, JL_ARG(4), &compile) );
 	else
 		compile = false;
 

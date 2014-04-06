@@ -501,7 +501,7 @@ int main(int argc, char* argv[]) {
 		hostPathLength = hostName-hostFullPath;
 
 		char hostPath[PATH_MAX];
-		strncpy(hostPath, hostFullPath, hostPathLength);
+		jl::strncpy(hostPath, hostFullPath, hostPathLength);
 		hostPath[hostPathLength] = '\0';
 
 		host.setHostPath(hostPath);
@@ -568,7 +568,7 @@ int main(int argc, char* argv[]) {
 
 				JS::RootedValue ex(cx);
 				JS_GetPendingException(cx, &ex);
-				JL_JsvalToPrimitive(cx, ex, &ex);
+				JL_CHK( jl::getPrimitive(cx, ex, &ex) );
 				if ( JSVAL_IS_INT(ex) ) {
 
 					exitValue = ex.toInt32();

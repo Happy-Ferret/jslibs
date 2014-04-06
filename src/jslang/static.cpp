@@ -225,7 +225,7 @@ DEFINE_FUNCTION( join ) {
 			length += strList->Length();
 			avr.append(val);
 		}
-		JL_CHK( JL_IsStopIterationExceptionPending(cx) );
+		JL_CHK( jl::isStopIterationExceptionPending(cx) );
 		JS_ClearPendingException(cx);
 	}
 
@@ -749,7 +749,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 //	// see Bug 688510
 	TEST( JS_GetParent(JS_NewObject(cx, NULL, NULL, NULL)) != NULL );
-//	TEST( JS_GetParent(JL_NewObjectWithGivenProto(cx, NULL, NULL, NULL)) != NULL );
+//	TEST( JS_GetParent(jl::newObjectWithGivenProto(cx, NULL, NULL, NULL)) != NULL );
 
 
 	JS_ThrowStopIteration(cx);
@@ -1211,10 +1211,10 @@ DEFINE_FUNCTION( jslangTest ) {
 */
 
 
-	ASSERT( jl::isTypeDouble(dbl) );
-	ASSERT( !jl::isTypeDouble(flt) );
-	ASSERT( jl::isTypeFloat(flt) );
-	ASSERT( !jl::isTypeFloat(dbl) );
+	ASSERT( jl::isTypeFloat64(dbl) );
+	ASSERT( !jl::isTypeFloat64(flt) );
+	ASSERT( jl::isTypeFloat32(flt) );
+	ASSERT( !jl::isTypeFloat32(dbl) );
 
 
 	JL_CHK( jl::call(cx, obj, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
@@ -1265,6 +1265,8 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	{
 
+	JL_ASSERT( jl::getProperty(cx, obj, "TEST", mhVal) );
+
 	JL_ASSERT( jl::getProperty(cx, obj, "TEST", &int32) );
 
 	JL_ASSERT( jl::getProperty(cx, obj, "TEST", &val) );
@@ -1290,7 +1292,7 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	JL_ASSERT( jl::getElement(cx, obj, 0, &val) );
 	JL_ASSERT( jl::getElement(cx, obj, 0, mhVal) );
-	JL_ASSERT( jl::getElement(cx, obj, 0, &int32) );
+	JL_ASSERT( !jl::getElement(cx, obj, 0, &int32) );
 
 
 	}
@@ -1313,7 +1315,10 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	jl::setVector(cx, &val, &uint8, 1);
 	uint32_t act;
-	jl::getVector(cx, val, &uint8, 1, act);
+	jl::getVector(cx, val, &uint8, 1, &act);
+
+
+	JL_ASSERT( jl::getValue(cx, numval, mhVal) );
 
 
 	jl::setValue(cx, &numval, "123");
@@ -1435,7 +1440,7 @@ DEFINE_FUNCTION( jslangTest ) {
 		testFct(cx);
 		count = (rdtsc() - count) / 8;
 		sum += count;
-		min = JL_MIN(min, count);
+		min = jl::min(min, count);
 	}
 
 	printf("min cycles: %I64d\n", min);
