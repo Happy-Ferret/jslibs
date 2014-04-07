@@ -204,11 +204,7 @@ WinThrowError( JSContext *cx, DWORD errorCode ) {
 	JS::RootedObject error(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(WinError), JL_CLASS_PROTOTYPE(cx, WinError) )); // (TBD) understand why it must have a constructor to be throwed in an exception
 //	JL_ASSERT( error != NULL, "Unable to create WinError object." );
 
-	JS::RootedValue errorVal(cx);
-	errorVal.setObject(*error);
-
-	JS_SetPendingException(cx, errorVal);
-
+	JL_CHK( jl::setException(cx, error) );
 	JL_CHK( jl::setSlot(cx, error, SLOT_WIN_ERROR_CODE_HI, HIWORD(errorCode)) );
 	JL_CHK( jl::setSlot(cx, error, SLOT_WIN_ERROR_CODE_LO, LOWORD(errorCode)) );
 	JL_SAFE( jl::setScriptLocation(cx, &error) );

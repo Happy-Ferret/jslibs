@@ -10,13 +10,42 @@ loadModule('jswinshell');
 //jswinshelltest();
 
 
-print(Audio.inputDeviceList)
+var audio = new Audio(Audio.inputDeviceList[0], 100);
 
-var a = new Audio("test");
+audio.start();
+
+
+for (;;) {
+
+	processEvents(host.endSignalEvents(function() { throw 0 }), audio.events(function() { print('.') } ) );
+}
+
+audio.stop();
+
+
+throw 0;
 
 
 
-//processEvents(host.endSignalEvents());
+var s = new Audio(Audio.inputDeviceList[0], 100);
+
+s.start();
+
+print( 'start\n' );
+
+sleep(1000);
+
+s.stop();
+
+var a = [];
+var f;
+while ( f=s.read() ) {
+
+	a.push(f);
+	print( f.frames, '\n' );
+}
+
+print( a.length, '\n' );
 
 
 throw 0;

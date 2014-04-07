@@ -1036,6 +1036,31 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 
+	ASSERT( jl::tstrcmp( ("abc"), L("abc")) == 0 );
+	ASSERT( jl::tstrcmp(L("abc"),  ("abc")) == 0 );
+
+	ASSERT( jl::tstrcmp( ("abc"), L("abd")) == -1 );
+	ASSERT( jl::tstrcmp(L("abc"),  ("abd")) == -1 );
+
+	ASSERT( jl::tstrncmp(  ("abcd"), L("abce"), 3) == 0 );
+	ASSERT( jl::tstrncmp( L("abcd"),  ("abce"), 3) == 0 );
+
+	ASSERT( jl::tstrncmp( ("abcd"), L("abde"), 3) == -1 );
+	ASSERT( jl::tstrncmp(L("abcd"),  ("abde"), 3) == -1 );
+
+	ASSERT( jl::tstrncmp( ("ab"), L("abcd"), 3) != 0 );
+	ASSERT( jl::tstrncmp(L("ab"),  ("abcd"), 3) != 0 );
+
+	ASSERT( jl::tstrncmp( ("abcd"), L("ab"), 3) != 0 );
+	ASSERT( jl::tstrncmp(L("abcd"),  ("ab"), 3) != 0 );
+
+	ASSERT( jl::tstrncmp( ("abcd"), L("abc"), 3) == 0 );
+	ASSERT( jl::tstrncmp(L("abcd"),  ("abc"), 3) == 0 );
+
+	ASSERT( jl::tstrncmp( ("abc"), L("abcd"), 3) == 0 );
+	ASSERT( jl::tstrncmp(L("abc"),  ("abcd"), 3) == 0 );
+
+
 	JS::RootedValue rval(cx);
 
 

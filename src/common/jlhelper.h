@@ -1754,7 +1754,7 @@ JL_ChangeBufferLength( JSContext *cx, IN OUT JS::MutableHandleValue vp, size_t n
 class JLData {
 
 	mutable void *_buf;
-	size_t _len;
+	mutable size_t _len;
 	bool _own; // has ownership
 	bool _nt; // null-terminated
 	bool _w; // is wide-char
@@ -1893,7 +1893,7 @@ class JLData {
 	NEVER_INLINE size_t FASTCALL Length_slow() {
 
 		ASSERT( _nt );
-		return _len = _w ? wcslen((const wchar_t*)_buf) : strlen((const char*)_buf);
+		return _len = _w ? ::wcslen((const wchar_t*)_buf) : ::strlen((const char*)_buf);
 	}
 
 private:
@@ -2194,7 +2194,31 @@ public:
 
 		return GetConstWStrZ();
 	}
+
+
+	template <typename T>
+	ALWAYS_INLINE bool
+	equals(const T *str) {
+
+		if ( _nt ) {
+				
+			if ( _w )
+				return jl::tstrcmp(static_cast<const wchar_t*>(_buf), str) == 0;
+			else
+				return jl::tstrcmp(static_cast<const char*>(_buf), str) == 0;
+		} else {
+
+			if ( _w )
+				return jl::tstrncmp(static_cast<const wchar_t*>(_buf), str, Length()) == 0;
+			else
+				return jl::tstrncmp(static_cast<const char*>(_buf), str, Length()) == 0;
+		}
+	}
+
 };
+
+
+
 
 
 JL_BEGIN_NAMESPACE
@@ -2930,6 +2954,7 @@ setSlot( JSContext *cx, JS::HandleObject obj, size_t slotIndex, const T &val ) {
 	JL_CHK( setValue(cx, &tmp, val) );
 	//return JL_SetReservedSlot(obj, slotIndex, v);
 	js::SetReservedSlot(obj, slotIndex, tmp); // jsfriendapi
+	return true;
 	JL_BAD;
 }
 
@@ -5429,9 +5454,9 @@ JL_NewByteAudioObject( JSContext *cx, T bits, U channels, V frames, W rate, OUT 
 
 	JL_CHK( audioObj );
 	vp.setObject(*audioObj);
-	data = JL_NewBuffer(cx, (bits/8) * channels * frames, dataVal);
+	data = JL_NewBuffer(cx, (bits/8) * channels * frames, &dataVal);
 	JL_CHK( data );
-	JL_CHK( JS_SetPropertyById(cx, audioObj, JLID(cx, data), &dataVal) );
+	JL_CHK( JS_SetPropertyById(cx, audioObj, JLID(cx, data), dataVal) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, bits), bits) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, channels), channels) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, frames), frames) );
@@ -5453,8 +5478,8 @@ JL_NewByteAudioObjectOwner( JSContext *cx, uint8_t* buffer, T bits, U channels, 
 	JS::RootedObject audioObj(cx, JL_NewObj(cx));
 	JL_CHK( audioObj );
 	vp.setObject(*audioObj);
-	JL_CHK( JL_NewBufferGetOwnership(cx, buffer, (bits/8) * channels * frames, dataVal) );
-	JL_CHK( JS_SetPropertyById(cx, audioObj, JLID(cx, data), &dataVal) );
+	JL_CHK( JL_NewBufferGetOwnership(cx, buffer, (bits/8) * channels * frames, &dataVal) );
+	JL_CHK( JS_SetPropertyById(cx, audioObj, JLID(cx, data), dataVal) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, bits), bits) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, channels), channels) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, frames), frames) );

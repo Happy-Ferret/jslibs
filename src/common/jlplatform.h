@@ -1368,6 +1368,52 @@ strlen(const wchar_t *str) {
 
 ////
 
+template <typename T>
+ALWAYS_INLINE size_t FASTCALL
+tstrlen(const T* s) {
+
+	const T *t;
+    for (t = s; *t != 0; t++)
+        continue;
+    return (size_t)(t - s);
+}
+
+
+template <typename T, typename U>
+int32_t
+tstrcmp(const T *lhs, const U *rhs) {
+
+	while ( true ) {
+
+		if ( *lhs != static_cast<T>(*rhs) )
+			return int32_t(*lhs) - int32_t(*rhs);
+		if ( *lhs == 0 )
+			return 0;
+		++lhs, ++rhs;
+	}
+}
+
+
+template <typename T, typename U>
+int32_t
+tstrncmp(const T *lhs, const U *rhs, size_t max) {
+
+	const T *limit = lhs + max;
+	while ( lhs < limit ) {
+
+		if ( *lhs != static_cast<T>(*rhs) )
+			return int32_t(*lhs) - int32_t(*rhs);
+		if ( *lhs == 0 )
+			return 0;
+		++lhs, ++rhs;
+	}
+	return 0;
+}
+
+
+
+////
+
 
 INLINE NEVER_INLINE long FASTCALL
 atoi(const char *buf, int base) {

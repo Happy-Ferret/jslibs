@@ -247,26 +247,28 @@ inline QueueCell *SearchFirstData( Queue *queue, void *data ) {
 */
 
 
-template <class T, class A>
-class NOVTABLE Queue1 : private A {
+template <class T, template<class> class A = DefaultAlloc>
+class NOVTABLE Queue1 {
 
 public:
-	struct QueueItem /*: A*/ {
+	struct Item {
 
-		QueueItem *prev;
-		QueueItem *next;
+		Item *prev;
+		Item *next;
 		T data;
 	};
 
 private:
-	QueueItem *_begin;
-	QueueItem *_end;
+	Item *_begin;
+	Item *_end;
+
+	A<Item> allocator;
 
 public:
 
 	typedef Queue1<T,A> ThisType;
 	typedef T ValueType;
-	enum { itemSize = sizeof(QueueItem) };
+	enum { itemSize = sizeof(Item) };
 
 
 	Queue1() : _begin(NULL), _end(NULL) {
@@ -276,9 +278,10 @@ public:
 
 		while ( _begin ) {
 		
-			QueueItem *tmp = _begin;
+			Item *tmp = _begin;
 			_begin = _begin->next;
-			delete tmp;
+			tmp->Item::~Item();
+			allocator.Free(tmp);
 		}
 	}
 
@@ -287,19 +290,19 @@ public:
 		return _begin != NULL;
 	}
 
-	ALWAYS_INLINE QueueItem* Begin() const {
+	ALWAYS_INLINE Item* Begin() const {
 
 		return _begin;
 	}
 
-	ALWAYS_INLINE QueueItem* End() const {
+	ALWAYS_INLINE Item* End() const {
 
 		return _end;
 	}
 
 	ALWAYS_INLINE void AddEnd() {
 
-		QueueItem *newItem = new QueueItem;
+		Item *newItem = ::new(allocator.Alloc()) Item;
 		if ( _end != NULL ) {
 
 			newItem->prev = _end;
@@ -317,7 +320,7 @@ public:
 
 	ALWAYS_INLINE void RemoveEnd() {
 
-		QueueItem *oldItem = _end;
+		Item *oldItem = _end;
 		if ( _begin != _end ) { // do we have only one cell ?
 
 			_end = oldItem->prev;
@@ -327,12 +330,13 @@ public:
 			_begin = NULL;
 			_end = NULL;
 		}
-		delete oldItem;
+		oldItem->Item::~Item();
+		allocator.Free(oldItem);
 	}
 
 	ALWAYS_INLINE void AddBegin() {
 
-		QueueItem *newItem = new QueueItem;
+		Item *newItem = ::new(allocator.Alloc()) Item;
 		if ( _begin != NULL ) {
 
 			newItem->prev = NULL;
@@ -350,7 +354,7 @@ public:
 
 	ALWAYS_INLINE void RemoveBegin() {
 
-		QueueItem *oldItem = _begin;
+		Item *oldItem = _begin;
 		if ( _begin != _end ) { // do we have only one cell ?
 
 			_begin = oldItem->next;
@@ -360,10 +364,11 @@ public:
 			_begin = NULL;
 			_end = NULL;
 		}
-		delete oldItem;
+		oldItem->Item::~Item();
+		allocator.Free(oldItem);
 	}
 
-	ALWAYS_INLINE void Remove( QueueItem *item ) {
+	ALWAYS_INLINE void Remove( Item *item ) {
 
 		if ( item == _begin )
 			return RemoveBegin();
@@ -371,10 +376,11 @@ public:
 			return RemoveEnd();
 		item->prev->next = item->next;
 		item->next->prev = item->prev;
-		delete item;
+		item->Item::~Item();
+		allocator.Free(item);
 	}
 
-	ALWAYS_INLINE void Insert( QueueItem *nextItem, const T &data ) {
+	ALWAYS_INLINE void Insert( Item *nextItem, const T &data ) {
 
 		if ( nextItem == Begin() ) {
 
@@ -382,7 +388,7 @@ public:
 			Begin()->data = data;
 		}
 		
-		QueueItem *newItem = new QueueItem;
+		Item *newItem = ::new(allocator.Alloc()) Item;
 		newItem->data = data;
 		newItem->next = nextItem;
 		newItem->prev = nextItem->prev;
@@ -391,9 +397,9 @@ public:
 	}
 
 
-	ALWAYS_INLINE QueueItem* Find( const T &data ) const {
+	ALWAYS_INLINE Item* Find( const T &data ) const {
 
-		for ( QueueItem *it = _begin; it; it = it->next )
+		for ( Item *it = _begin; it; it = it->next )
 			if ( it->data == data )
 				return it;
 		return NULL;
