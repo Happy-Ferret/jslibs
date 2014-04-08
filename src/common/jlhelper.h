@@ -1625,6 +1625,8 @@ jl::isInstanceOf( JSContext *, JS::HandleObject obj, JSClass *clasp ) {
 ///////////////////////////////////////////////////////////////////////////////
 // Buffer
 
+// JS_AllocateArrayBufferContents
+
 ALWAYS_INLINE uint8_t* FASTCALL
 JL_DataBufferAlloc( JSContext *, size_t nbytes ) {
 

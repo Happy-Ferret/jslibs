@@ -14,8 +14,66 @@ var loadModule = host.loadModule;
 
 //loadModule('jsstd');
 
-jslangTest();
 
+
+loadModule('jsio');
+loadModule('jsstd');
+loadModule('jswinshell');
+//loadModule('jssvg');
+
+
+//jswinshelltest();
+
+var deviceName = Audio.inputDeviceList[0];
+print(deviceName, '\n');
+var audio = new Audio(deviceName, 20);
+audio.start();
+for (;;) {
+
+	processEvents(host.endSignalEvents(function() { throw 0 }), audio.events(function() {
+	
+		var s;
+		while ( s = this.read() ) {
+
+			var arr = new Int16Array(s.data);
+			var sum = 0;
+			for ( var len = arr.length, i = 0; i < len; ++i )
+				sum += arr[i];
+			
+			stringRepeat('-', -1 )
+
+			//print(stringRepeat('-', Math.floor(sum/len)), stringRepeat(' ', 50), '\r');
+
+		}
+
+	} ) );
+}
+
+audio.stop();
+throw 0;
+
+
+
+
+loadModule('jsstd');
+loadModule('jswinshell');
+
+var deviceName = Audio.inputDeviceList[0];
+print(deviceName, '\n');
+var audio = new Audio(deviceName, 20);
+audio.start();
+for (;;) {
+
+	processEvents(host.endSignalEvents(function() { throw "456" }), audio.events(function() { throw "123"; }) );
+}
+
+
+audio.stop();
+throw 0;
+
+
+
+jslangTest();
 throw 0;
 
 

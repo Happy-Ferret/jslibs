@@ -251,8 +251,8 @@ template <class T, template<class> class A = DefaultAlloc>
 class NOVTABLE Queue1 {
 
 public:
-	struct Item {
-
+	class Item {
+		friend Queue1;
 		Item *prev;
 		Item *next;
 		T data;
@@ -261,15 +261,12 @@ public:
 private:
 	Item *_begin;
 	Item *_end;
-
 	A<Item> allocator;
 
 public:
-
 	typedef Queue1<T,A> ThisType;
 	typedef T ValueType;
 	enum { itemSize = sizeof(Item) };
-
 
 	Queue1() : _begin(NULL), _end(NULL) {
 	}
@@ -277,7 +274,7 @@ public:
 	~Queue1() {
 
 		while ( _begin ) {
-		
+
 			Item *tmp = _begin;
 			_begin = _begin->next;
 			tmp->Item::~Item();
@@ -418,9 +415,11 @@ public:
 		RemoveEnd();
 	}
 
-	ALWAYS_INLINE void Pop() {
+	ALWAYS_INLINE T Pop() {
 
+		T item = End()->data;
 		RemoveEnd();
+		return item;
 	}
 
 	ALWAYS_INLINE void Unshift( const T &item ) {

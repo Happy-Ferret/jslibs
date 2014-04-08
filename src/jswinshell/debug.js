@@ -9,25 +9,46 @@ loadModule('jswinshell');
 
 //jswinshelltest();
 
-
-var audio = new Audio(Audio.inputDeviceList[0], 100);
-
+var deviceName = AudioIn.inputDeviceList[0];
+print(deviceName, '\n');
+var audio = new AudioIn(deviceName, 44100, 16, 2, 20);
 audio.start();
-
-
 for (;;) {
 
-	processEvents(host.endSignalEvents(function() { throw 0 }), audio.events(function() { print('.') } ) );
+	processEvents(host.endSignalEvents(function() { throw 0 }), audio.events(function() {
+	
+		var s;
+		while ( s = this.read() ) {
+
+			var arr = new Int16Array(s.data);
+			var sum = 0;
+			for ( var len = arr.length, i = 0; i < len; ++i )
+				sum += arr[i];
+			
+			var w = Math.min(Math.floor(sum/len), 80);
+			print(stringRepeat('o', w), '\n');
+
+		}
+
+	} ) );
 }
 
 audio.stop();
-
-
 throw 0;
 
 
 
-var s = new Audio(Audio.inputDeviceList[0], 100);
+var audio = new AudioIn(AudioIn.inputDeviceList[0], 10);
+audio.start();
+sleep(100);
+audio.stop();
+//while ( audio.read() );
+throw 0;
+
+
+
+
+var s = new AudioIn(AudioIn.inputDeviceList[0], 100);
 
 s.start();
 
@@ -39,7 +60,7 @@ s.stop();
 
 var a = [];
 var f;
-while ( f=s.read() ) {
+while ( (f=s.read()) ) {
 
 	a.push(f);
 	print( f.frames, '\n' );

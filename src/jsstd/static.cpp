@@ -699,9 +699,9 @@ DEFINE_FUNCTION( stringRepeat ) {
 
 	JL_ASSERT_ARGC(2);
 
-	size_t count;
+	int32_t count;
 	JL_CHK( jl::getValue(cx, JL_ARG(2), &count) );
-	if ( count == 0 ) {
+	if ( count <= 0 ) {
 
 		JL_RVAL.set(JL_GetEmptyStringValue(cx));
 		return true;
@@ -735,7 +735,7 @@ DEFINE_FUNCTION( stringRepeat ) {
 
 	jschar *tmp;
 	tmp = newBuf;
-	size_t i;
+	int32_t i;
 	for ( i = 0; i < count; ++i ) {
 
 		jl::memcpy(tmp, buf, len * sizeof(jschar));

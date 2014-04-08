@@ -4,6 +4,9 @@ var loadModule = host.loadModule;
 
 loadModule('jsstd');
 
+stringRepeat('-', -1 )
+throw 0;
+
 print( 'peakMemoryUsage: '+(peakMemoryUsage/(1024*1024)).toFixed(0) + 'MB\n' );
 print( 'privateMemoryUsage: '+(privateMemoryUsage/(1024*1024)).toFixed(0) + 'MB\n' );
 print( 'processTime: '+processTime.toFixed(0) + 'ms\n' );

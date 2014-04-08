@@ -16,17 +16,168 @@
 #include "error.h"
 #include <mmsystem.h>
 
+
+class AutoCriticalSection {
+	CRITICAL_SECTION &_cs;
+	bool _in;
+public:
+	AutoCriticalSection(CRITICAL_SECTION &cs)
+	: _cs(cs), _in(true) {
+
+		EnterCriticalSection(&_cs);
+	}
+	~AutoCriticalSection() {
+		
+		if ( _in )
+			LeaveCriticalSection(&_cs);
+	}
+	void leave() {
+
+		ASSERT( _in );
+		LeaveCriticalSection(&_cs);
+		_in = false;
+	}
+};
+
+
+
+BEGIN_CLASS( WinAudioError )
+
+DEFINE_PROPERTY_GETTER( code ) {
+
+	JL_DEFINE_PROP_ARGS;
+
+	UINT errorCode;
+	JL_CHK( jl::getSlot(cx, JL_OBJ, 0, &errorCode) );
+	JL_CHK( jl::setValue(cx, vp, errorCode) );
+	return true;
+	JL_BAD;
+}
+
+const char *ErrorToConstName( UINT errorCode ) {
+
+	switch ( errorCode ) {
+		case WAVERR_BADFORMAT     : return "WAVERR_BADFORMAT";
+		case WAVERR_STILLPLAYING  : return "WAVERR_STILLPLAYING";
+		case WAVERR_UNPREPARED    : return "WAVERR_UNPREPARED";
+		case WAVERR_SYNC          : return "WAVERR_SYNC";
+		case MMSYSERR_ERROR       : return "MMSYSERR_ERROR";
+		case MMSYSERR_BADDEVICEID : return "MMSYSERR_BADDEVICEID";
+		case MMSYSERR_NOTENABLED  : return "MMSYSERR_NOTENABLED";
+		case MMSYSERR_ALLOCATED   : return "MMSYSERR_ALLOCATED";
+		case MMSYSERR_INVALHANDLE : return "MMSYSERR_INVALHANDLE";
+		case MMSYSERR_NODRIVER    : return "MMSYSERR_NODRIVER";
+		case MMSYSERR_NOMEM       : return "MMSYSERR_NOMEM";
+		case MMSYSERR_NOTSUPPORTED: return "MMSYSERR_NOTSUPPORTED";
+		case MMSYSERR_BADERRNUM   : return "MMSYSERR_BADERRNUM";
+		case MMSYSERR_INVALFLAG   : return "MMSYSERR_INVALFLAG";
+		case MMSYSERR_INVALPARAM  : return "MMSYSERR_INVALPARAM";
+		case MMSYSERR_HANDLEBUSY  : return "MMSYSERR_HANDLEBUSY";
+		case MMSYSERR_INVALIDALIAS: return "MMSYSERR_INVALIDALIAS";
+		case MMSYSERR_BADDB       : return "MMSYSERR_BADDB";
+		case MMSYSERR_KEYNOTFOUND : return "MMSYSERR_KEYNOTFOUND";
+		case MMSYSERR_READERROR   : return "MMSYSERR_READERROR";
+		case MMSYSERR_WRITEERROR  : return "MMSYSERR_WRITEERROR";
+		case MMSYSERR_DELETEERROR : return "MMSYSERR_DELETEERROR";
+		case MMSYSERR_VALNOTFOUND : return "MMSYSERR_VALNOTFOUND";
+		case MMSYSERR_NODRIVERCB  : return "MMSYSERR_NODRIVERCB";
+		case MMSYSERR_MOREDATA    : return "MMSYSERR_MOREDATA";
+		default: return NULL;
+	}
+}
+
+DEFINE_PROPERTY_GETTER( const ) {
+
+	JL_DEFINE_PROP_ARGS;
+
+	UINT errorCode;
+	JL_CHK( jl::getSlot(cx, JL_OBJ, 0, &errorCode) );
+	JL_CHK( jl::setValue(cx, vp, ErrorToConstName(errorCode)) );
+	return true;
+	JL_BAD;
+}
+
+
+DEFINE_PROPERTY_GETTER( text ) {
+
+	JL_DEFINE_PROP_ARGS;
+
+	UINT errorCode;
+	JL_CHK( jl::getSlot(cx, JL_OBJ, 0, &errorCode) );
+	CHAR errorText[MAXERRORLENGTH];
+	waveInGetErrorText(errorCode, errorText, COUNTOF(errorText));
+	JL_CHK( jl::setValue(cx, vp, errorText) );
+
+	return true;
+	JL_BAD;
+}
+
+
+DEFINE_FUNCTION( toString ) {
+
+	JL_DEFINE_ARGS;
+	JL_DEFINE_FUNCTION_OBJ;
+
+	UINT errorCode;
+	JL_CHK( jl::getSlot(cx, JL_OBJ, 0, &errorCode) );
+	CHAR errorText[MAXERRORLENGTH];
+	waveInGetErrorText(errorCode, errorText, COUNTOF(errorText));
+	JL_CHK( jl::setValue(cx, JL_RVAL, errorText) );
+
+	return true;
+	JL_BAD;
+}
+
+CONFIGURE_CLASS
+
+	REVISION(jl::SvnRevToInt("$Revision: 3524 $"))
+	HAS_RESERVED_SLOTS(2)
+
+	IS_UNCONSTRUCTIBLE
+
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_GETTER( code )
+		PROPERTY_GETTER( const )
+		PROPERTY_GETTER( text )
+	END_PROPERTY_SPEC
+
+	BEGIN_FUNCTION_SPEC
+		FUNCTION(toString)
+	END_FUNCTION_SPEC
+
+END_CLASS
+
+
+NEVER_INLINE bool FASTCALL
+ThrowWinAudioError( JSContext *cx, UINT errorCode ) {
+
+	JS::RootedObject error(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(WinAudioError), JL_CLASS_PROTOTYPE(cx, WinAudioError) ));
+
+	JL_CHK( jl::setException(cx, error) );
+	JL_CHK( jl::setSlot(cx, error, 0, errorCode) );
+	JL_SAFE( jl::setScriptLocation(cx, &error) );
+	return false;
+	JL_BAD;
+}
+
+
+
+
+
+
 /**doc
 $CLASS_HEADER
 $SVN_REVISION $Revision: 3533 $
 **/
-BEGIN_CLASS( Audio )
+BEGIN_CLASS( AudioIn )
 
 struct Private : public jl::CppAllocators {
 	CRITICAL_SECTION cs;
 	HWAVEIN hwi;
 	HANDLE thread;
-	HANDLE ev;
+	HANDLE audioEvent;
+	HANDLE bufferReadyEvent;
+	bool end;
 
 	int frameLatency;
 
@@ -35,29 +186,22 @@ struct Private : public jl::CppAllocators {
 	int32_t audioRate;
 
 	jl::Queue1<void*> bufferList;
-	bool end;
-
-
 };
+
 
 DWORD WINAPI 
 WaveInThreadProc( LPVOID lpParam ) {
 
-	Private *pv = (Private*)lpParam;
-
-	size_t bufferLength = pv->frameLatency * pv->audioChannels * pv->audioBits/8;
-	
+	Private *pv = static_cast<Private*>(lpParam);
 	MMRESULT res;
 	WAVEHDR waveHeader[2];
+	size_t bufferLength = pv->frameLatency * pv->audioChannels * pv->audioBits/8;
 
 	for ( int i = 0; i < COUNTOF(waveHeader); ++i ) {
 
 		waveHeader[i].lpData = (LPSTR)jl_malloc(bufferLength);
 		waveHeader[i].dwBufferLength = bufferLength;
 		waveHeader[i].dwFlags = 0;
-
-//		waveHeader[i].dwBytesRecorded = 0;
-//		waveHeader[i].dwLoops = 0;
 
 		res = waveInPrepareHeader(pv->hwi, &waveHeader[i], sizeof(WAVEHDR));
 		ASSERT( res == MMSYSERR_NOERROR );
@@ -66,11 +210,11 @@ WaveInThreadProc( LPVOID lpParam ) {
 		ASSERT( res == MMSYSERR_NOERROR );
 	}
 
-	PulseEvent(pv->ev); // first pulse
+	PulseEvent(pv->audioEvent); // first pulse
 
-	for ( size_t index = 0 ; ; ++index ) {
+	for ( size_t index = 0; ; ++index ) {
 
-		DWORD result = WaitForSingleObject(pv->ev, INFINITE);
+		DWORD result = WaitForSingleObject(pv->audioEvent, INFINITE);
 		if ( pv->end )
 			break;
 
@@ -82,6 +226,7 @@ WaveInThreadProc( LPVOID lpParam ) {
 		EnterCriticalSection(&pv->cs);
 		pv->bufferList.Push(waveHeader[bufferIndex].lpData);
 		LeaveCriticalSection(&pv->cs);
+		PulseEvent(pv->bufferReadyEvent);
 
 		waveHeader[bufferIndex].lpData = (LPSTR)jl_malloc(bufferLength);
 		waveHeader[bufferIndex].dwFlags = 0;
@@ -112,15 +257,17 @@ DEFINE_FINALIZE() {
 	if ( !pv )
 		return;
 
-//	MMRESULT res;
-
 	pv->end = true;
-	PulseEvent(pv->ev);
+	PulseEvent(pv->audioEvent);
 	WaitForSingleObject(pv->thread, INFINITE);
-	CloseHandle(pv->thread);
+	if ( pv->thread )
+		CloseHandle(pv->thread);
 	waveInClose(pv->hwi);
-	CloseHandle(pv->ev);
+	CloseHandle(pv->audioEvent);
 	DeleteCriticalSection(&pv->cs);
+
+	while ( pv->bufferList )
+		jl_free(pv->bufferList.Pop());
 
 	delete pv;
 }
@@ -129,12 +276,13 @@ DEFINE_FINALIZE() {
 
 /**doc
 $TOC_MEMBER $INAME
- $INAME( deviceName | $UNDEF, msLatency )
+ $INAME( deviceName | $UNDEF, rate | $UNDEF, bits | $UNDEF, channels | $UNDEF, msLatency )
 **/
 DEFINE_CONSTRUCTOR() {
 
 	JL_DEFINE_ARGS;
 	JL_DEFINE_CONSTRUCTOR_OBJ;
+	JL_ASSERT_ARGC_RANGE(0,5);
 
 	Private *pv = new Private();
 	JL_ASSERT_ALLOC(pv);
@@ -145,7 +293,6 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(1) ) {
 
 		JLData deviceName;
-
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &deviceName) );
 
 		MMRESULT mmResult;
@@ -155,9 +302,6 @@ DEFINE_CONSTRUCTOR() {
 			// Take a look at the driver capabilities.
 			WAVEINCAPS wic;
 			mmResult = waveInGetDevCaps(uDeviceID, &wic, sizeof(wic));
-			
-			//if ( mmResult != MMSYSERR_NOERROR )
-			//	JL_CHK( WinThrowError(cx, mmResult) );
 			ASSERT( mmResult == MMSYSERR_NOERROR );
 
 			if ( deviceName.equals(wic.szPname) )
@@ -168,20 +312,39 @@ DEFINE_CONSTRUCTOR() {
 		uDeviceID = WAVE_MAPPER;
 	}
 
-	int32_t msLatency;
 	if ( JL_ARG_ISDEF(2) ) {
 
-		JL_CHK( jl::getValue(cx, JL_ARG(2), &msLatency) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &pv->audioRate) );
+	} else {
+		
+		pv->audioRate = 44100;
+	}
+
+	if ( JL_ARG_ISDEF(3) ) {
+
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &pv->audioBits) );
+	} else {
+		
+		pv->audioBits = 16;
+	}
+
+	if ( JL_ARG_ISDEF(4) ) {
+
+		JL_CHK( jl::getValue(cx, JL_ARG(4), &pv->audioChannels) );
+	} else {
+		
+		pv->audioChannels = 2;
+	}
+
+	int32_t msLatency;
+	if ( JL_ARG_ISDEF(5) ) {
+
+		JL_CHK( jl::getValue(cx, JL_ARG(5), &msLatency) );
 	} else {
 		
 		msLatency = 1000;
 	}
 
-	MMRESULT res;
-
-	pv->audioBits = 16;
-	pv->audioRate = 44100;
-	pv->audioChannels = 2;
 
 	pv->frameLatency = pv->audioRate * msLatency/1000;
 
@@ -197,16 +360,21 @@ DEFINE_CONSTRUCTOR() {
 	pv->end = false;
 
 	InitializeCriticalSection(&pv->cs);
-	pv->ev = CreateEvent(NULL, FALSE, FALSE, NULL);
+	pv->audioEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	pv->bufferReadyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
-	res = waveInOpen(&pv->hwi, uDeviceID, &wfx, (DWORD_PTR)pv->ev, NULL, WAVE_FORMAT_DIRECT | CALLBACK_EVENT);
-	ASSERT( res == MMSYSERR_NOERROR );
+	pv->thread = NULL;
+
+	MMRESULT res;
+	res = waveInOpen(&pv->hwi, uDeviceID, &wfx, (DWORD_PTR)pv->audioEvent, NULL, WAVE_FORMAT_DIRECT | CALLBACK_EVENT);
+	if ( res != MMSYSERR_NOERROR )
+		return ThrowWinAudioError(cx, res);
 
 	pv->thread = CreateThread(NULL, 0, WaveInThreadProc, pv, CREATE_SUSPENDED, NULL);
 	SetThreadPriority(pv->thread, THREAD_PRIORITY_ABOVE_NORMAL);
 	ResumeThread(pv->thread);
 
-	WaitForSingleObject(pv->ev, INFINITE); // first pulse
+	WaitForSingleObject(pv->audioEvent, INFINITE); // first pulse
 		
 	return true;
 	JL_BAD;
@@ -226,7 +394,6 @@ DEFINE_FUNCTION( start ) {
 
 	res = waveInStart(pv->hwi);
 	ASSERT( res == MMSYSERR_NOERROR );
-	// waveInGetErrorText 
 
 	return true;
 	JL_BAD;
@@ -251,21 +418,6 @@ DEFINE_FUNCTION( stop ) {
 }
 
 
-class AutoCriticalSection {
-
-	CRITICAL_SECTION &_cs;
-public:
-	AutoCriticalSection(CRITICAL_SECTION cs)
-	: _cs(cs) {
-
-		EnterCriticalSection(&_cs);
-	}
-	~AutoCriticalSection() {
-
-		LeaveCriticalSection(&_cs);
-	}
-};
-
 
 /**doc
 $TOC_MEMBER $INAME
@@ -278,22 +430,22 @@ DEFINE_FUNCTION( read ) {
 	Private *pv = (Private*)js::GetObjectPrivate(JL_OBJ);
 
 	{
-	
 	AutoCriticalSection acs(pv->cs);
 
 	if ( !pv->bufferList ) {
-	
+		
+		acs.leave();
 		JL_RVAL.setUndefined();
 		return true;
 	}
 
 	void *buffer;
 	pv->bufferList.Pop(buffer);
+	acs.leave();
+
 	JL_CHK( JL_NewByteAudioObjectOwner(cx, (uint8_t*)buffer, pv->audioBits, pv->audioChannels, pv->frameLatency, pv->audioRate, JL_RVAL) );
 
 	}
-
-	//
 
 	return true;
 	JL_BAD;
@@ -316,13 +468,12 @@ DEFINE_PROPERTY_GETTER( inputDeviceList ) {
 	UINT uDeviceID;
 	MMRESULT mmResult;
 	UINT uNumDevs = waveInGetNumDevs();
-	for (uDeviceID = 0; uDeviceID < uNumDevs; uDeviceID++) {
+	for ( uDeviceID = 0; uDeviceID < uNumDevs; ++uDeviceID ) {
 		
 		// Take a look at the driver capabilities.
 		WAVEINCAPS wic;
 		mmResult = waveInGetDevCaps(uDeviceID, &wic, sizeof(wic));
 		ASSERT( mmResult == MMSYSERR_NOERROR );
-
 		jl::pushElement(cx, list, wic.szPname);
 	}
 
@@ -330,9 +481,15 @@ DEFINE_PROPERTY_GETTER( inputDeviceList ) {
 }
 
 
+
 struct AudioEvent : public ProcessEvent2 {
 	HANDLE cancelEvent;
 	HANDLE audioEvent;
+	Private *_pv;
+
+	AudioEvent(Private *pv)
+	: _pv(pv) {
+	}
 
 	~AudioEvent() {
 
@@ -350,7 +507,6 @@ struct AudioEvent : public ProcessEvent2 {
 		HANDLE events[] = { audioEvent, cancelEvent };
 		DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
 		ASSERT( status != WAIT_FAILED );
-
 	}
 
 	bool cancelWait() {
@@ -361,20 +517,17 @@ struct AudioEvent : public ProcessEvent2 {
 
 	bool endWait(bool *hasEvent, JSContext *cx, JS::HandleObject) {
 
-		JS::RootedObject audioObj(cx, &slot(0).toObject());
-		Private *pv = (Private*)JL_GetPrivate(audioObj);
+		DWORD status = WaitForSingleObject(audioEvent, 0);
+		ASSERT( status != WAIT_FAILED );
 
-		EnterCriticalSection(&pv->cs);
-		*hasEvent = !!pv->bufferList;
-		LeaveCriticalSection(&pv->cs);
+		EnterCriticalSection(&_pv->cs);
+		*hasEvent = !!_pv->bufferList;
+		LeaveCriticalSection(&_pv->cs);
 
-		if ( !*hasEvent )
-			return true;
-
-		if ( slot(1) != JL_ZInitValue() ) {
+		if ( *hasEvent && slot(1) != JL_ZInitValue() ) {
 		
 			JS::Value rval; // rval is unused then there is no need to root it
-			JL_CHK( JS_CallFunctionValue(cx, audioObj, hslot(1), JS::HandleValueArray::empty(), JS::MutableHandleValue::fromMarkedLocation(&rval)) );
+			JL_CHK( jl::call(cx, hslot(0), hslot(1), JS::MutableHandleValue::fromMarkedLocation(&rval)) );
 		}
 		return true;
 		JL_BAD;
@@ -392,10 +545,10 @@ DEFINE_FUNCTION( events ) {
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	AudioEvent *upe = new AudioEvent();
+	AudioEvent *upe = new AudioEvent(pv);
 	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
 
-	upe->slot(0) = JL_OBJVAL;
+	upe->slot(0) = JL_OBJVAL; // Audio object
 	if ( JL_ARG_ISDEF(1) ) {
 
 		JL_ASSERT_ARG_IS_CALLABLE(1);
@@ -406,8 +559,7 @@ DEFINE_FUNCTION( events ) {
 	if ( upe->cancelEvent == NULL )
 		JL_CHK( JL_ThrowOSError(cx) );
 	
-	HANDLE currentProcess = GetCurrentProcess();
-	BOOL st = DuplicateHandle(currentProcess, pv->ev, currentProcess, &upe->audioEvent, 0, FALSE, DUPLICATE_SAME_ACCESS);
+	BOOL st = DuplicateHandle(GetCurrentProcess(), pv->bufferReadyEvent, GetCurrentProcess(), &upe->audioEvent, 0, FALSE, DUPLICATE_SAME_ACCESS);
 	if ( !st )
 		JL_CHK( JL_ThrowOSError(cx) );
 

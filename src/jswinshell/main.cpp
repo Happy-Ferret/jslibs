@@ -19,11 +19,12 @@
 
 #include "error.h"
 
+DECLARE_CLASS( WinAudioError )
 DECLARE_STATIC()
 DECLARE_CLASS( Icon )
 DECLARE_CLASS( Systray )
 DECLARE_CLASS( Console )
-DECLARE_CLASS( Audio )
+DECLARE_CLASS( AudioIn )
 
 
 /**doc t:header
@@ -40,11 +41,12 @@ bool ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	JL_ASSERT(jl::Host::getHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 
 	INIT_CLASS( WinError );
+	INIT_CLASS( WinAudioError );
 	INIT_STATIC();
 	INIT_CLASS( Icon );
 	INIT_CLASS( Systray );
 	INIT_CLASS( Console );
-	INIT_CLASS( Audio );
+	INIT_CLASS( AudioIn );
 
 	HRESULT hr;
 	hr = CoInitialize(NULL);
