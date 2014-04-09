@@ -247,6 +247,7 @@ inline QueueCell *SearchFirstData( Queue *queue, void *data ) {
 */
 
 
+
 template <class T, template<class> class A = DefaultAlloc>
 class NOVTABLE Queue1 {
 
@@ -268,7 +269,8 @@ public:
 	typedef T ValueType;
 	enum { itemSize = sizeof(Item) };
 
-	Queue1() : _begin(NULL), _end(NULL) {
+	Queue1()
+	: _begin(NULL), _end(NULL) {
 	}
 
 	~Queue1() {

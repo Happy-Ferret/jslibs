@@ -41,127 +41,9 @@ public:
 
 
 
-BEGIN_CLASS( WinAudioError )
-
-DEFINE_PROPERTY_GETTER( code ) {
-
-	JL_DEFINE_PROP_ARGS;
-
-	UINT errorCode;
-	JL_CHK( jl::getSlot(cx, JL_OBJ, 0, &errorCode) );
-	JL_CHK( jl::setValue(cx, vp, errorCode) );
-	return true;
-	JL_BAD;
-}
-
-const char *ErrorToConstName( UINT errorCode ) {
-
-	switch ( errorCode ) {
-		case WAVERR_BADFORMAT     : return "WAVERR_BADFORMAT";
-		case WAVERR_STILLPLAYING  : return "WAVERR_STILLPLAYING";
-		case WAVERR_UNPREPARED    : return "WAVERR_UNPREPARED";
-		case WAVERR_SYNC          : return "WAVERR_SYNC";
-		case MMSYSERR_ERROR       : return "MMSYSERR_ERROR";
-		case MMSYSERR_BADDEVICEID : return "MMSYSERR_BADDEVICEID";
-		case MMSYSERR_NOTENABLED  : return "MMSYSERR_NOTENABLED";
-		case MMSYSERR_ALLOCATED   : return "MMSYSERR_ALLOCATED";
-		case MMSYSERR_INVALHANDLE : return "MMSYSERR_INVALHANDLE";
-		case MMSYSERR_NODRIVER    : return "MMSYSERR_NODRIVER";
-		case MMSYSERR_NOMEM       : return "MMSYSERR_NOMEM";
-		case MMSYSERR_NOTSUPPORTED: return "MMSYSERR_NOTSUPPORTED";
-		case MMSYSERR_BADERRNUM   : return "MMSYSERR_BADERRNUM";
-		case MMSYSERR_INVALFLAG   : return "MMSYSERR_INVALFLAG";
-		case MMSYSERR_INVALPARAM  : return "MMSYSERR_INVALPARAM";
-		case MMSYSERR_HANDLEBUSY  : return "MMSYSERR_HANDLEBUSY";
-		case MMSYSERR_INVALIDALIAS: return "MMSYSERR_INVALIDALIAS";
-		case MMSYSERR_BADDB       : return "MMSYSERR_BADDB";
-		case MMSYSERR_KEYNOTFOUND : return "MMSYSERR_KEYNOTFOUND";
-		case MMSYSERR_READERROR   : return "MMSYSERR_READERROR";
-		case MMSYSERR_WRITEERROR  : return "MMSYSERR_WRITEERROR";
-		case MMSYSERR_DELETEERROR : return "MMSYSERR_DELETEERROR";
-		case MMSYSERR_VALNOTFOUND : return "MMSYSERR_VALNOTFOUND";
-		case MMSYSERR_NODRIVERCB  : return "MMSYSERR_NODRIVERCB";
-		case MMSYSERR_MOREDATA    : return "MMSYSERR_MOREDATA";
-		default: return NULL;
-	}
-}
-
-DEFINE_PROPERTY_GETTER( const ) {
-
-	JL_DEFINE_PROP_ARGS;
-
-	UINT errorCode;
-	JL_CHK( jl::getSlot(cx, JL_OBJ, 0, &errorCode) );
-	JL_CHK( jl::setValue(cx, vp, ErrorToConstName(errorCode)) );
-	return true;
-	JL_BAD;
-}
-
-
-DEFINE_PROPERTY_GETTER( text ) {
-
-	JL_DEFINE_PROP_ARGS;
-
-	UINT errorCode;
-	JL_CHK( jl::getSlot(cx, JL_OBJ, 0, &errorCode) );
-	CHAR errorText[MAXERRORLENGTH];
-	waveInGetErrorText(errorCode, errorText, COUNTOF(errorText));
-	JL_CHK( jl::setValue(cx, vp, errorText) );
-
-	return true;
-	JL_BAD;
-}
-
-
-DEFINE_FUNCTION( toString ) {
-
-	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-
-	UINT errorCode;
-	JL_CHK( jl::getSlot(cx, JL_OBJ, 0, &errorCode) );
-	CHAR errorText[MAXERRORLENGTH];
-	waveInGetErrorText(errorCode, errorText, COUNTOF(errorText));
-	JL_CHK( jl::setValue(cx, JL_RVAL, errorText) );
-
-	return true;
-	JL_BAD;
-}
-
-CONFIGURE_CLASS
-
-	REVISION(jl::SvnRevToInt("$Revision: 3524 $"))
-	HAS_RESERVED_SLOTS(2)
-
-	IS_UNCONSTRUCTIBLE
-
-	BEGIN_PROPERTY_SPEC
-		PROPERTY_GETTER( code )
-		PROPERTY_GETTER( const )
-		PROPERTY_GETTER( text )
-	END_PROPERTY_SPEC
-
-	BEGIN_FUNCTION_SPEC
-		FUNCTION(toString)
-	END_FUNCTION_SPEC
-
-END_CLASS
-
 
 NEVER_INLINE bool FASTCALL
-ThrowWinAudioError( JSContext *cx, UINT errorCode ) {
-
-	JS::RootedObject error(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(WinAudioError), JL_CLASS_PROTOTYPE(cx, WinAudioError) ));
-
-	JL_CHK( jl::setException(cx, error) );
-	JL_CHK( jl::setSlot(cx, error, 0, errorCode) );
-	JL_SAFE( jl::setScriptLocation(cx, &error) );
-	return false;
-	JL_BAD;
-}
-
-
-
+ThrowWinAudioError( JSContext *cx, UINT errorCode );
 
 
 
@@ -177,15 +59,18 @@ struct Private : public jl::CppAllocators {
 	HANDLE thread;
 	HANDLE audioEvent;
 	HANDLE bufferReadyEvent;
-	bool end;
 
-	int frameLatency;
+	enum {
+		RUNNING,
+		ENDING,
+	} state;
 
+	int32_t frameLatency;
 	int32_t audioBits;
 	int32_t audioChannels;
 	int32_t audioRate;
 
-	jl::Queue1<void*> bufferList;
+	jl::Queue1<jl::ArrayBuffer, jl::StaticAllocMedium> bufferList;
 };
 
 
@@ -195,11 +80,14 @@ WaveInThreadProc( LPVOID lpParam ) {
 	Private *pv = static_cast<Private*>(lpParam);
 	MMRESULT res;
 	WAVEHDR waveHeader[2];
+	jl::ArrayBuffer arrayBuf[2];
+
 	size_t bufferLength = pv->frameLatency * pv->audioChannels * pv->audioBits/8;
 
-	for ( int i = 0; i < COUNTOF(waveHeader); ++i ) {
+	for ( int i = 0; i < 2; ++i ) {
 
-		waveHeader[i].lpData = (LPSTR)jl_malloc(bufferLength);
+		arrayBuf[i].alloc(bufferLength);
+		waveHeader[i].lpData = (LPSTR)arrayBuf[i].data();
 		waveHeader[i].dwBufferLength = bufferLength;
 		waveHeader[i].dwFlags = 0;
 
@@ -214,8 +102,10 @@ WaveInThreadProc( LPVOID lpParam ) {
 
 	for ( size_t index = 0; ; ++index ) {
 
-		DWORD result = WaitForSingleObject(pv->audioEvent, INFINITE);
-		if ( pv->end )
+		DWORD status = WaitForSingleObject(pv->audioEvent, INFINITE);
+		ASSERT( status != WAIT_FAILED );
+
+		if ( pv->state == Private::ENDING )
 			break;
 
 		size_t bufferIndex = index % 2;
@@ -224,11 +114,12 @@ WaveInThreadProc( LPVOID lpParam ) {
 		ASSERT( res == MMSYSERR_NOERROR );
 
 		EnterCriticalSection(&pv->cs);
-		pv->bufferList.Push(waveHeader[bufferIndex].lpData);
+		pv->bufferList.Push(arrayBuf[bufferIndex]);
 		LeaveCriticalSection(&pv->cs);
 		PulseEvent(pv->bufferReadyEvent);
 
-		waveHeader[bufferIndex].lpData = (LPSTR)jl_malloc(bufferLength);
+		arrayBuf[bufferIndex].alloc(bufferLength);
+		waveHeader[bufferIndex].lpData = (LPSTR)arrayBuf[bufferIndex].data();
 		waveHeader[bufferIndex].dwFlags = 0;
 
 		res = waveInPrepareHeader(pv->hwi, &waveHeader[bufferIndex], sizeof(WAVEHDR));
@@ -240,11 +131,10 @@ WaveInThreadProc( LPVOID lpParam ) {
 
 	res = waveInReset(pv->hwi);
 
-	for ( int i = 0; i < COUNTOF(waveHeader); ++i ) {
+	for ( int i = 0; i < 2; ++i ) {
 
 		res = waveInUnprepareHeader(pv->hwi, &waveHeader[i], sizeof(WAVEHDR));
 		ASSERT( res == MMSYSERR_NOERROR );
-		jl_free(waveHeader[i].lpData);
 	}
 
 	return 0;
@@ -257,7 +147,7 @@ DEFINE_FINALIZE() {
 	if ( !pv )
 		return;
 
-	pv->end = true;
+	pv->state = Private::ENDING;
 	PulseEvent(pv->audioEvent);
 	WaitForSingleObject(pv->thread, INFINITE);
 	if ( pv->thread )
@@ -265,13 +155,8 @@ DEFINE_FINALIZE() {
 	waveInClose(pv->hwi);
 	CloseHandle(pv->audioEvent);
 	DeleteCriticalSection(&pv->cs);
-
-	while ( pv->bufferList )
-		jl_free(pv->bufferList.Pop());
-
 	delete pv;
 }
-
 
 
 /**doc
@@ -295,15 +180,13 @@ DEFINE_CONSTRUCTOR() {
 		JLData deviceName;
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &deviceName) );
 
-		MMRESULT mmResult;
 		UINT uNumDevs = waveInGetNumDevs();
 		for ( uDeviceID = 0; uDeviceID < uNumDevs; uDeviceID++ ) {
 		
 			// Take a look at the driver capabilities.
 			WAVEINCAPS wic;
-			mmResult = waveInGetDevCaps(uDeviceID, &wic, sizeof(wic));
-			ASSERT( mmResult == MMSYSERR_NOERROR );
-
+			MMRESULT result = waveInGetDevCaps(uDeviceID, &wic, sizeof(wic));
+			ASSERT( result == MMSYSERR_NOERROR );
 			if ( deviceName.equals(wic.szPname) )
 				break;
 		}
@@ -345,7 +228,6 @@ DEFINE_CONSTRUCTOR() {
 		msLatency = 1000;
 	}
 
-
 	pv->frameLatency = pv->audioRate * msLatency/1000;
 
 	WAVEFORMATEX wfx;
@@ -357,7 +239,7 @@ DEFINE_CONSTRUCTOR() {
 	wfx.nBlockAlign = (wfx.wBitsPerSample * wfx.nChannels) / 8;
 	wfx.nAvgBytesPerSec = wfx.nBlockAlign * wfx.nSamplesPerSec;
 
-	pv->end = false;
+	pv->state = Private::RUNNING;
 
 	InitializeCriticalSection(&pv->cs);
 	pv->audioEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -374,8 +256,34 @@ DEFINE_CONSTRUCTOR() {
 	SetThreadPriority(pv->thread, THREAD_PRIORITY_ABOVE_NORMAL);
 	ResumeThread(pv->thread);
 
-	WaitForSingleObject(pv->audioEvent, INFINITE); // first pulse
+	DWORD status = WaitForSingleObject(pv->audioEvent, INFINITE); // first pulse
+	ASSERT( status != WAIT_FAILED );
 		
+	return true;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $INAME()
+**/
+DEFINE_FUNCTION( read ) {
+
+	JL_DEFINE_ARGS;
+	Private *pv = (Private*)js::GetObjectPrivate(JL_OBJ);
+	{
+	AutoCriticalSection acs(pv->cs);
+	if ( !pv->bufferList ) {
+		
+		acs.leave();
+		JL_RVAL.setUndefined();
+		return true;
+	}
+	jl::ArrayBuffer buffer = pv->bufferList.Pop();
+	acs.leave();
+	JL_CHK( JL_NewByteAudioObjectOwner(cx, buffer, pv->audioBits, pv->audioChannels, pv->frameLatency, pv->audioRate, JL_RVAL) );
+	}
 	return true;
 	JL_BAD;
 }
@@ -416,42 +324,6 @@ DEFINE_FUNCTION( stop ) {
 	return true;
 	JL_BAD;
 }
-
-
-
-/**doc
-$TOC_MEMBER $INAME
- $INAME()
-**/
-DEFINE_FUNCTION( read ) {
-
-	JL_DEFINE_ARGS;
-
-	Private *pv = (Private*)js::GetObjectPrivate(JL_OBJ);
-
-	{
-	AutoCriticalSection acs(pv->cs);
-
-	if ( !pv->bufferList ) {
-		
-		acs.leave();
-		JL_RVAL.setUndefined();
-		return true;
-	}
-
-	void *buffer;
-	pv->bufferList.Pop(buffer);
-	acs.leave();
-
-	JL_CHK( JL_NewByteAudioObjectOwner(cx, (uint8_t*)buffer, pv->audioBits, pv->audioChannels, pv->frameLatency, pv->audioRate, JL_RVAL) );
-
-	}
-
-	return true;
-	JL_BAD;
-}
-
-
 
 
 /**doc
@@ -576,8 +448,8 @@ CONFIGURE_CLASS
 	HAS_PRIVATE
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION(start)
 		FUNCTION(read)
+		FUNCTION(start)
 		FUNCTION(stop)
 		FUNCTION(events)
 	END_FUNCTION_SPEC
@@ -596,3 +468,125 @@ END_CLASS
 {{{
 }}}
 **/
+
+
+
+BEGIN_CLASS( WinAudioError )
+
+DEFINE_PROPERTY_GETTER( code ) {
+
+	JL_DEFINE_PROP_ARGS;
+
+	UINT errorCode;
+	JL_CHK( jl::getSlot(cx, JL_OBJ, 0, &errorCode) );
+	JL_CHK( jl::setValue(cx, vp, errorCode) );
+	return true;
+	JL_BAD;
+}
+
+const char *ErrorToConstName( UINT errorCode ) {
+
+	switch ( errorCode ) {
+		case WAVERR_BADFORMAT     : return "WAVERR_BADFORMAT";
+		case WAVERR_STILLPLAYING  : return "WAVERR_STILLPLAYING";
+		case WAVERR_UNPREPARED    : return "WAVERR_UNPREPARED";
+		case WAVERR_SYNC          : return "WAVERR_SYNC";
+		case MMSYSERR_ERROR       : return "MMSYSERR_ERROR";
+		case MMSYSERR_BADDEVICEID : return "MMSYSERR_BADDEVICEID";
+		case MMSYSERR_NOTENABLED  : return "MMSYSERR_NOTENABLED";
+		case MMSYSERR_ALLOCATED   : return "MMSYSERR_ALLOCATED";
+		case MMSYSERR_INVALHANDLE : return "MMSYSERR_INVALHANDLE";
+		case MMSYSERR_NODRIVER    : return "MMSYSERR_NODRIVER";
+		case MMSYSERR_NOMEM       : return "MMSYSERR_NOMEM";
+		case MMSYSERR_NOTSUPPORTED: return "MMSYSERR_NOTSUPPORTED";
+		case MMSYSERR_BADERRNUM   : return "MMSYSERR_BADERRNUM";
+		case MMSYSERR_INVALFLAG   : return "MMSYSERR_INVALFLAG";
+		case MMSYSERR_INVALPARAM  : return "MMSYSERR_INVALPARAM";
+		case MMSYSERR_HANDLEBUSY  : return "MMSYSERR_HANDLEBUSY";
+		case MMSYSERR_INVALIDALIAS: return "MMSYSERR_INVALIDALIAS";
+		case MMSYSERR_BADDB       : return "MMSYSERR_BADDB";
+		case MMSYSERR_KEYNOTFOUND : return "MMSYSERR_KEYNOTFOUND";
+		case MMSYSERR_READERROR   : return "MMSYSERR_READERROR";
+		case MMSYSERR_WRITEERROR  : return "MMSYSERR_WRITEERROR";
+		case MMSYSERR_DELETEERROR : return "MMSYSERR_DELETEERROR";
+		case MMSYSERR_VALNOTFOUND : return "MMSYSERR_VALNOTFOUND";
+		case MMSYSERR_NODRIVERCB  : return "MMSYSERR_NODRIVERCB";
+		case MMSYSERR_MOREDATA    : return "MMSYSERR_MOREDATA";
+		default: return NULL;
+	}
+}
+
+DEFINE_PROPERTY_GETTER( const ) {
+
+	JL_DEFINE_PROP_ARGS;
+
+	UINT errorCode;
+	JL_CHK( jl::getSlot(cx, JL_OBJ, 0, &errorCode) );
+	JL_CHK( jl::setValue(cx, vp, ErrorToConstName(errorCode)) );
+	return true;
+	JL_BAD;
+}
+
+
+DEFINE_PROPERTY_GETTER( text ) {
+
+	JL_DEFINE_PROP_ARGS;
+
+	UINT errorCode;
+	JL_CHK( jl::getSlot(cx, JL_OBJ, 0, &errorCode) );
+	CHAR errorText[MAXERRORLENGTH];
+	waveInGetErrorText(errorCode, errorText, COUNTOF(errorText));
+	JL_CHK( jl::setValue(cx, vp, errorText) );
+
+	return true;
+	JL_BAD;
+}
+
+
+DEFINE_FUNCTION( toString ) {
+
+	JL_DEFINE_ARGS;
+	JL_DEFINE_FUNCTION_OBJ;
+
+	UINT errorCode;
+	JL_CHK( jl::getSlot(cx, JL_OBJ, 0, &errorCode) );
+	CHAR errorText[MAXERRORLENGTH];
+	waveInGetErrorText(errorCode, errorText, COUNTOF(errorText));
+	JL_CHK( jl::setValue(cx, JL_RVAL, errorText) );
+
+	return true;
+	JL_BAD;
+}
+
+CONFIGURE_CLASS
+
+	REVISION(jl::SvnRevToInt("$Revision: 3524 $"))
+	HAS_RESERVED_SLOTS(2)
+
+	IS_UNCONSTRUCTIBLE
+
+	BEGIN_PROPERTY_SPEC
+		PROPERTY_GETTER( code )
+		PROPERTY_GETTER( const )
+		PROPERTY_GETTER( text )
+	END_PROPERTY_SPEC
+
+	BEGIN_FUNCTION_SPEC
+		FUNCTION(toString)
+	END_FUNCTION_SPEC
+
+END_CLASS
+
+
+NEVER_INLINE bool FASTCALL
+ThrowWinAudioError( JSContext *cx, UINT errorCode ) {
+
+	JS::RootedObject error(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(WinAudioError), JL_CLASS_PROTOTYPE(cx, WinAudioError) ));
+
+	JL_CHK( jl::setException(cx, error) );
+	JL_CHK( jl::setSlot(cx, error, 0, errorCode) );
+	JL_SAFE( jl::setScriptLocation(cx, &error) );
+	return false;
+	JL_BAD;
+}
+

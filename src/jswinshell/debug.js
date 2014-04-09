@@ -7,12 +7,161 @@ loadModule('jswinshell');
 //loadModule('jssvg');
 
 
+//exec('..\\..\\..\\audioToPhone\\webbroadcast.js', false);
+
+
+var loadModule = host.loadModule;
+loadModule('jsio');
+loadModule('jsstd');
+loadModule('jsz');
+loadModule('jswinshell');
+
+
+function SimpleHTTPServer(port, bind, basicAuth, requestHandler) {
+
+	var pendingRequestList = [], serverSocket = new Socket(), socketList = [serverSocket], deflate = new Z(Z.DEFLATE, Z.BEST_SPEED);
+
+	function closeSocket(s) {
+
+		s.close();
+		socketList.splice(socketList.indexOf(s), 1);
+	}
+
+	function processRequest(s) {
+
+		var buf = s.read();
+		if ( buf == undefined )
+			return closeSocket(s);
+		s.data += stringify(buf);
+		var eoh = s.data.indexOf('\r\n\r\n');
+		if ( eoh == -1 )
+			return undefined;
+		var headers = s.data.substring(0, eoh);
+		var contentLength = (/^content-length: ?(.*)$/im.exec(headers)||[])[1];
+		var authorization = (/^authorization: ?Basic (.*)$/im.exec(headers)||[])[1];
+
+		s.data = s.data.substring(eoh+4);
+		(function(s) {
+	
+			if ( s.data.length < contentLength ) {
+
+				s.readable = arguments.callee;
+				var buf = stringify(s.read());
+				if ( buf == undefined )
+					return closeSocket(s);						
+				s.data += buf;
+				return undefined;
+			}
+
+			if ( basicAuth && authorization != base64Encode(basicAuth) ) {
+
+				sleep(2000);
+				s.write('HTTP/1.1 401 Authorization Required\r\nWWW-Authenticate: Basic realm="debugger"\r\nContent-length: 0\r\n\r\n');
+				return undefined;
+			}
+
+			delete s.readable;
+			requestHandler(s.data.substring(0, contentLength), function(response) {
+
+				if ( s.connectionClosed )
+					return closeSocket(s);
+				if ( response == undefined )
+					s.write('HTTP/1.1 204 No Content\r\n\r\n');
+				else {
+					var head = 'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n';
+					if ( response.length >= 1460 ) {
+
+						response = deflate(response, true);
+						head += 'Content-encoding: deflate\r\n';
+					}
+					s.write(head + 'Content-length: '+response.length+'\r\n\r\n' + response);
+				}
+				s.readable = processRequest;
+				return true;
+			});
+
+			s.data = s.data.substring(contentLength);
+			return undefined;
+		})(s);
+		return undefined;
+	}
+
+	serverSocket.readable = function() {
+
+		var clientSocket = serverSocket.accept();
+		socketList.push(clientSocket);
+		clientSocket.data = '';
+		clientSocket.readable = processRequest;
+	}
+
+	serverSocket.nonblocking = true;
+	serverSocket.bind(port, bind);
+	serverSocket.listen();
+
+	this.events = function() { return Descriptor.events(socketList) };
+}
+
+
+
+
+function ProcessAudio(latency, http) {
+	
+	var bufferList = [];
+
+	var deviceName = AudioIn.inputDeviceList[0];
+	var audio = new AudioIn(deviceName, 44100, 16, 2, latency);
+
+	this.start = function() {
+
+		audio.start();
+	}
+
+	this.stop = function() {
+
+		audio.stop();
+	}
+
+	this.events = audio.events(function() {
+	
+		var s;
+		while ( (s = this.read()) )
+			bufferList.push(s);
+	});
+}
+
+
+function requestHandler(content, response) {
+
+	print('http!\n');
+	response(content);
+}
+
+var http = new SimpleHTTPServer(80, undefined, '', requestHandler);
+var audio = new ProcessAudio(50, http);
+audio.start();
+
+for (;;) {
+	
+	print('.');	
+	processEvents(host.endSignalEvents(function() { throw 0 }), audio.events, http.events() );
+}
+
+audio.stop();
+
+
+
+
+
+
+throw 0;
+
 //jswinshelltest();
 
 var deviceName = AudioIn.inputDeviceList[0];
 print(deviceName, '\n');
-var audio = new AudioIn(deviceName, 44100, 16, 2, 20);
+var audio = new AudioIn(deviceName, 44100, 16, 2, 50);
 audio.start();
+
 for (;;) {
 
 	processEvents(host.endSignalEvents(function() { throw 0 }), audio.events(function() {
@@ -34,6 +183,38 @@ for (;;) {
 }
 
 audio.stop();
+
+/*
+// Fix up prefixing
+window.AudioContext = window.AudioContext || window.webkitAudioContext;
+var context = new AudioContext();
+
+function playSound(buffer) {
+
+  var source = context.createBufferSource(); // creates a sound source
+  source.buffer = buffer;                    // tell the source which sound to play
+  source.connect(context.destination);       // connect the source to the context's destination (the speakers)
+  source.start(0);                           // play the source now
+                                             // note: on older systems, may have to use deprecated noteOn(time);
+}
+...
+
+http://creativejs.com/resources/web-audio-api-getting-started/
+
+var request = new XMLHttpRequest();
+request.open("GET", audioFileUrl, true);
+request.responseType = "arraybuffer";
+ 
+// Our asynchronous callback
+request.onload = function() {
+    var audioData = request.response;
+    createSoundSource(audioData);
+};
+request.send();
+
+*/
+
+
 throw 0;
 
 

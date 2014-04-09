@@ -1748,8 +1748,6 @@ JL_ChangeBufferLength( JSContext *cx, IN OUT JS::MutableHandleValue vp, size_t n
 
 
 
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // JLData class
 
@@ -5322,6 +5320,98 @@ JL_JsidToJsval( JSContext * RESTRICT cx, IN jsid id, OUT JS::MutableHandleValue 
 
 
 
+///////////////////////////////////////////////////////////////////////////////
+
+JL_BEGIN_NAMESPACE
+
+
+// There is only one owner of the buffer at one time.
+// The ownership is tested by !!_contents
+class ArrayBuffer : public jl::CppAllocators {
+	mutable void *_contents;
+	uint8_t *_data;
+public:
+	ArrayBuffer()
+	: _contents(NULL) {
+	}
+
+	ArrayBuffer( uint32_t nbytes ) {
+
+		alloc(nbytes);
+	}
+
+	ArrayBuffer( const ArrayBuffer &arrayBuf )
+	: _contents(arrayBuf._contents), _data(arrayBuf._data) {
+		
+		arrayBuf._contents = NULL;
+	}
+
+	void
+	operator =( const ArrayBuffer &arrayBuf ) {
+		
+		_contents = arrayBuf._contents;
+		_data = arrayBuf._data;
+		arrayBuf._contents = NULL;
+	}
+
+	~ArrayBuffer() {
+
+		if ( _contents )
+			js_free(_contents);
+	}
+
+	void
+	alloc( uint32_t nbytes ) {
+
+		bool result = JS_AllocateArrayBufferContents(nullptr, nbytes, &_contents, &_data);
+		ASSERT( result ); // oom ?
+	}
+
+	void
+	realloc( uint32_t nbytes ) {
+
+		ASSERT( _contents );
+		bool result = JS_ReallocateArrayBufferContents(nullptr, nbytes, &_contents, &_data);
+		ASSERT( result ); // oom ?
+	}
+
+	void
+	free() {
+
+		ASSERT( _contents );
+		js_free(_contents);
+		_contents = NULL;
+	}
+
+	void*
+	privateData() {
+	
+		return _contents;
+	};
+
+	uint8_t*
+	data() {
+	
+		return _data;
+	};
+
+	JSObject*
+	getArrayOwnership( JSContext *cx ) {
+		
+		ASSERT( _contents );
+		JS::RootedObject arrayObject(cx, JS_NewArrayBufferWithContents(cx, _contents));
+		_contents = NULL;
+		return arrayObject;
+	}
+
+	bool
+	steal( JSContext *cx, JS::HandleObject obj ) {
+		
+		return JS_StealArrayBufferContents(cx, obj, &_contents, &_data);
+	}
+};
+
+JL_END_NAMESPACE
 
 
 
@@ -5451,21 +5541,20 @@ JL_NewByteAudioObject( JSContext *cx, T bits, U channels, V frames, W rate, OUT 
 	ASSERT( bits > 0 && (bits % 8) == 0 && channels > 0 && frames >= 0 && rate > 0 );
 
 	uint8_t *data;
-	JS::RootedValue dataVal(cx);
-	JS::RootedObject audioObj(cx, JL_NewObj(cx));
 
+	JS::RootedObject audioObj(cx, JL_NewObj(cx));
+	JS::RootedValue dataVal(cx);
 	JL_CHK( audioObj );
 	vp.setObject(*audioObj);
 	data = JL_NewBuffer(cx, (bits/8) * channels * frames, &dataVal);
 	JL_CHK( data );
-	JL_CHK( JS_SetPropertyById(cx, audioObj, JLID(cx, data), dataVal) );
+	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, data), dataVal) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, bits), bits) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, channels), channels) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, frames), frames) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, rate), rate) );
 	return data;
-bad:
-	return NULL;
+	JL_BADVAL(NULL);
 }
 
 template <class T, class U, class V, class W>
@@ -5476,12 +5565,12 @@ JL_NewByteAudioObjectOwner( JSContext *cx, uint8_t* buffer, T bits, U channels, 
 	ASSERT( bits > 0 && (bits % 8) == 0 && channels > 0 && frames >= 0 && rate > 0 );
 	ASSERT_IF( buffer != NULL, jl_msize(buffer) >= (size_t)( (bits/8) * channels * frames ) );
 
-	JS::RootedValue dataVal(cx);
 	JS::RootedObject audioObj(cx, JL_NewObj(cx));
+	JS::RootedValue dataVal(cx);
 	JL_CHK( audioObj );
 	vp.setObject(*audioObj);
 	JL_CHK( JL_NewBufferGetOwnership(cx, buffer, (bits/8) * channels * frames, &dataVal) );
-	JL_CHK( JS_SetPropertyById(cx, audioObj, JLID(cx, data), dataVal) );
+	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, data), dataVal) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, bits), bits) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, channels), channels) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, frames), frames) );
@@ -5489,6 +5578,28 @@ JL_NewByteAudioObjectOwner( JSContext *cx, uint8_t* buffer, T bits, U channels, 
 	return true;
 	JL_BAD;
 }
+
+template <class T, class U, class V, class W>
+ALWAYS_INLINE bool FASTCALL
+JL_NewByteAudioObjectOwner( JSContext *cx, jl::ArrayBuffer &buffer, T bits, U channels, V frames, W rate, OUT JS::MutableHandleValue vp ) {
+
+	ASSERT( bits > 0 && (bits % 8) == 0 && channels > 0 && frames >= 0 && rate > 0 );
+
+	JS::RootedObject audioObj(cx, JL_NewObj(cx));
+	JS::RootedObject dataObj(cx, buffer.getArrayOwnership(cx));
+	JL_CHK( audioObj );
+	JL_CHK( dataObj );
+	vp.setObject(*audioObj);
+	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, data), dataObj) );
+	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, bits), bits) );
+	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, channels), channels) );
+	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, frames), frames) );
+	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, rate), rate) );
+	return true;
+	JL_BAD;
+}
+
+
 
 template <class T, class U, class V, class W>
 ALWAYS_INLINE JLData FASTCALL
