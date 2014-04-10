@@ -1622,129 +1622,6 @@ jl::isInstanceOf( JSContext *, JS::HandleObject obj, JSClass *clasp ) {
 */
 
 
-///////////////////////////////////////////////////////////////////////////////
-// Buffer
-
-// JS_AllocateArrayBufferContents
-
-ALWAYS_INLINE uint8_t* FASTCALL
-JL_DataBufferAlloc( JSContext *, size_t nbytes ) {
-
-	return (uint8_t*)jl_malloc(nbytes);
-}
-
-ALWAYS_INLINE uint8_t* FASTCALL
-JL_DataBufferRealloc( JSContext *, uint8_t *data, size_t nbytes ) {
-
-	return (uint8_t*)jl_realloc(data, nbytes);
-}
-
-ALWAYS_INLINE void FASTCALL
-JL_DataBufferFree( JSContext *, uint8_t *data ) {
-
-	return jl_free(data);
-}
-
-//
-
-ALWAYS_INLINE uint8_t* FASTCALL
-JL_NewBuffer( JSContext *cx, size_t nbytes, OUT JS::MutableHandleValue vp ) {
-
-	JS::RootedObject bufferObj(cx, JS_NewArrayBuffer(cx, nbytes));
-	if ( bufferObj ) {
-
-		vp.setObject(*bufferObj);
-		return JS_GetArrayBufferData(bufferObj);
-	} else {
-
-		return NULL;
-	}
-}
-
-ALWAYS_INLINE bool FASTCALL
-JL_NewBufferCopyN( JSContext *cx, IN const void *src, IN size_t nbytes, OUT JS::MutableHandleValue vp ) {
-
-	JS::RootedObject bufferObj(cx, JS_NewArrayBuffer(cx, nbytes));
-	if ( !bufferObj )
-		return false;
-	void *data = JS_GetArrayBufferData(bufferObj);
-	if ( !data )
-		return false;
-	jl::memcpy(data, src, nbytes);
-	vp.setObject(*bufferObj);
-	return true;
-}
-
-ALWAYS_INLINE bool FASTCALL
-JL_NewBufferGetOwnership( JSContext *cx, IN void *src, IN size_t nbytes, OUT JS::MutableHandleValue rval ) {
-
-	// (TBD) need to handle ownership properly
-	bool ok = JL_NewBufferCopyN(cx, src, nbytes, rval);
-	jl_free(src);
-	return ok;
-}
-
-ALWAYS_INLINE bool FASTCALL
-JL_NewEmptyBuffer( JSContext *cx, OUT JS::MutableHandleValue vp ) {
-
-	JS::RootedObject obj(cx, JS_NewArrayBuffer(cx, 0));
-	if ( obj ) {
-
-		vp.setObject(*obj);
-		return true;
-	}
-	return false;
-}
-
-template <class T>
-ALWAYS_INLINE bool FASTCALL
-JL_FreeBuffer( JSContext *, T ) {
-
-	// do nothing at the moment. The CG will free the buffer.
-	return true;
-}
-
-
-ALWAYS_INLINE uint8_t* FASTCALL
-JL_ChangeBufferLength( JSContext *cx, IN OUT JS::MutableHandleValue vp, size_t nbytes ) {
-
-	// need to create a new buffer because ArrayBuffer does not support realloc nor length changing, then we copy it in a new one.
-	// see JS_ReallocateArrayBufferContents
-
-	ASSERT( vp.isObject() );
-	JS::RootedObject arrayBufferObj(cx, &vp.toObject());
-	ASSERT( JS_IsArrayBufferObject(arrayBufferObj) );
-	uint32_t bufferLen = JS_GetArrayBufferByteLength(arrayBufferObj);
-	void *bufferData = JS_GetArrayBufferData(arrayBufferObj);
-
-	if ( nbytes == bufferLen )
-		return (uint8_t*)bufferData;
-
-	JS::RootedObject newBufferObj(cx);
-	void *newBufferData;
-	if ( nbytes < bufferLen ) {
-
-		newBufferObj = JS_NewArrayBuffer(cx, nbytes);
-		void *data = JS_GetArrayBufferData(newBufferObj);
-		jl::memcpy(data, bufferData, nbytes);
-
-		if ( !newBufferObj )
-			return false;
-		newBufferData = JS_GetArrayBufferData(arrayBufferObj);
-	} else {
-
-		newBufferObj = JS_NewArrayBuffer(cx, nbytes);
-		if ( !newBufferObj )
-			return false;
-		newBufferData = JS_GetArrayBufferData(arrayBufferObj);
-		jl::memcpy(newBufferData, bufferData, bufferLen);
-	}
-	vp.setObject(*newBufferObj);
-	return (uint8_t*)newBufferData;
-}
-
-
-
 
 
 
@@ -5316,6 +5193,129 @@ JL_JsidToJsval( JSContext * RESTRICT cx, IN jsid id, OUT JS::MutableHandleValue 
 	if ( JL_ARG_ISDEF(N) ) \
 		JL_CHK( jl::getValue(cx, JL_ARG(n), &arg##N) ); \
 
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Buffer
+
+// JS_AllocateArrayBufferContents
+
+ALWAYS_INLINE uint8_t* FASTCALL
+JL_DataBufferAlloc( JSContext *, size_t nbytes ) {
+
+	return (uint8_t*)jl_malloc(nbytes);
+}
+
+ALWAYS_INLINE uint8_t* FASTCALL
+JL_DataBufferRealloc( JSContext *, uint8_t *data, size_t nbytes ) {
+
+	return (uint8_t*)jl_realloc(data, nbytes);
+}
+
+ALWAYS_INLINE void FASTCALL
+JL_DataBufferFree( JSContext *, uint8_t *data ) {
+
+	return jl_free(data);
+}
+
+//
+
+ALWAYS_INLINE uint8_t* FASTCALL
+JL_NewBuffer( JSContext *cx, size_t nbytes, OUT JS::MutableHandleValue vp ) {
+
+	JS::RootedObject bufferObj(cx, JS_NewArrayBuffer(cx, nbytes));
+	if ( bufferObj ) {
+
+		vp.setObject(*bufferObj);
+		return JS_GetArrayBufferData(bufferObj);
+	} else {
+
+		return NULL;
+	}
+}
+
+ALWAYS_INLINE bool FASTCALL
+JL_NewBufferCopyN( JSContext *cx, IN const void *src, IN size_t nbytes, OUT JS::MutableHandleValue vp ) {
+
+	JS::RootedObject bufferObj(cx, JS_NewArrayBuffer(cx, nbytes));
+	if ( !bufferObj )
+		return false;
+	void *data = JS_GetArrayBufferData(bufferObj);
+	if ( !data )
+		return false;
+	jl::memcpy(data, src, nbytes);
+	vp.setObject(*bufferObj);
+	return true;
+}
+
+ALWAYS_INLINE bool FASTCALL
+JL_NewBufferGetOwnership( JSContext *cx, IN void *src, IN size_t nbytes, OUT JS::MutableHandleValue rval ) {
+
+	// (TBD) need to handle ownership properly
+	bool ok = JL_NewBufferCopyN(cx, src, nbytes, rval);
+	jl_free(src);
+	return ok;
+}
+
+ALWAYS_INLINE bool FASTCALL
+JL_NewEmptyBuffer( JSContext *cx, OUT JS::MutableHandleValue vp ) {
+
+	JS::RootedObject obj(cx, JS_NewArrayBuffer(cx, 0));
+	if ( obj ) {
+
+		vp.setObject(*obj);
+		return true;
+	}
+	return false;
+}
+
+template <class T>
+ALWAYS_INLINE bool FASTCALL
+JL_FreeBuffer( JSContext *, T ) {
+
+	// do nothing at the moment. The CG will free the buffer.
+	return true;
+}
+
+
+ALWAYS_INLINE uint8_t* FASTCALL
+JL_ChangeBufferLength( JSContext *cx, IN OUT JS::MutableHandleValue vp, size_t nbytes ) {
+
+	// need to create a new buffer because ArrayBuffer does not support realloc nor length changing, then we copy it in a new one.
+	// see JS_ReallocateArrayBufferContents
+
+	ASSERT( vp.isObject() );
+	JS::RootedObject arrayBufferObj(cx, &vp.toObject());
+	ASSERT( JS_IsArrayBufferObject(arrayBufferObj) );
+	uint32_t bufferLen = JS_GetArrayBufferByteLength(arrayBufferObj);
+	void *bufferData = JS_GetArrayBufferData(arrayBufferObj);
+
+	if ( nbytes == bufferLen )
+		return (uint8_t*)bufferData;
+
+	JS::RootedObject newBufferObj(cx);
+	void *newBufferData;
+	if ( nbytes < bufferLen ) {
+
+		newBufferObj = JS_NewArrayBuffer(cx, nbytes);
+		void *data = JS_GetArrayBufferData(newBufferObj);
+		jl::memcpy(data, bufferData, nbytes);
+
+		if ( !newBufferObj )
+			return false;
+		newBufferData = JS_GetArrayBufferData(arrayBufferObj);
+	} else {
+
+		newBufferObj = JS_NewArrayBuffer(cx, nbytes);
+		if ( !newBufferObj )
+			return false;
+		newBufferData = JS_GetArrayBufferData(arrayBufferObj);
+		jl::memcpy(newBufferData, bufferData, bufferLen);
+	}
+	vp.setObject(*newBufferObj);
+	return (uint8_t*)newBufferData;
+}
 
 
 

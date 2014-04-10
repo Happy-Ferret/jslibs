@@ -22,7 +22,7 @@ loadModule('jswinshell');
 //loadModule('jssvg');
 
 
-//jswinshelltest();
+jslangTest(); throw 0;
 
 var deviceName = Audio.inputDeviceList[0];
 print(deviceName, '\n');

@@ -1036,6 +1036,15 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_DEFINE_ARGS;
 	JL_DEFINE_FUNCTION_OBJ;
 
+	{
+
+		void *contents;
+		uint8_t *data;
+		JS_AllocateArrayBufferContents(nullptr, 100, &contents, &data);
+
+	}
+
+
 	ASSERT( jl::tstrcmp( ("abc"), L("abc")) == 0 );
 	ASSERT( jl::tstrcmp(L("abc"),  ("abc")) == 0 );
 

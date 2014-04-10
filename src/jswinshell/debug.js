@@ -7,17 +7,22 @@ loadModule('jswinshell');
 //loadModule('jssvg');
 
 
-//exec('..\\..\\..\\audioToPhone\\webbroadcast.js', false);
 
+//print( stringify(new File('test.html').content).length );
+//throw 0;
+
+
+//exec('..\\..\\..\\audioToPhone\\webbroadcast.js', false);
 
 var loadModule = host.loadModule;
 loadModule('jsio');
 loadModule('jsstd');
 loadModule('jsz');
+loadModule('jscrypt');
 loadModule('jswinshell');
+const CRLF = '\r\n';
 
-
-function SimpleHTTPServer(port, bind, basicAuth, requestHandler) {
+function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler) {
 
 	var pendingRequestList = [], serverSocket = new Socket(), socketList = [serverSocket], deflate = new Z(Z.DEFLATE, Z.BEST_SPEED);
 
@@ -32,20 +37,34 @@ function SimpleHTTPServer(port, bind, basicAuth, requestHandler) {
 		var buf = s.read();
 		if ( buf == undefined )
 			return closeSocket(s);
+
+		//print( '[:'+s.peerPort+']' + stringify(buf) )
+
 		s.data += stringify(buf);
-		var eoh = s.data.indexOf('\r\n\r\n');
+
+		var eoh = s.data.indexOf(CRLF+CRLF);
 		if ( eoh == -1 )
 			return undefined;
-		var headers = s.data.substring(0, eoh);
-		var contentLength = (/^content-length: ?(.*)$/im.exec(headers)||[])[1];
-		var authorization = (/^authorization: ?Basic (.*)$/im.exec(headers)||[])[1];
+		var headerStr = s.data.substring(0, eoh);
+
+		var headerLines = headerStr.split(CRLF);
+		var status = headerLines.shift().split(' ');
+		var headers = {};
+		for ( var h of headerLines ) {
+
+			var line = h.split(/: ?/);
+			headers[line[0].toLowerCase()] = line[1];
+		}
+
+		var basicAuth = (/^Basic (.*)/.exec(headers['authorization'])||[])[1];
+		var contentLength = parseInt(headers['content-length'], 10);
 
 		s.data = s.data.substring(eoh+4);
-		(function(s) {
+		(function processSocket(s) {
 	
 			if ( s.data.length < contentLength ) {
 
-				s.readable = arguments.callee;
+				s.readable = processSocket;
 				var buf = stringify(s.read());
 				if ( buf == undefined )
 					return closeSocket(s);						
@@ -53,28 +72,52 @@ function SimpleHTTPServer(port, bind, basicAuth, requestHandler) {
 				return undefined;
 			}
 
-			if ( basicAuth && authorization != base64Encode(basicAuth) ) {
+			if ( basicAuthRequest && basicAuth != base64Encode(basicAuthRequest) ) {
 
 				sleep(2000);
-				s.write('HTTP/1.1 401 Authorization Required\r\nWWW-Authenticate: Basic realm="debugger"\r\nContent-length: 0\r\n\r\n');
+				s.write('HTTP/1.1 401 Authorization Required'+CRLF+'WWW-Authenticate: Basic realm="test"'+CRLF+'Content-length: 0'+CRLF+CRLF);
 				return undefined;
 			}
 
 			delete s.readable;
-			requestHandler(s.data.substring(0, contentLength), function(response) {
+
+			if ( headers['connection'] == 'Upgrade' && headers['upgrade'] == 'websocket' ) {
+
+				var head = 'HTTP/1.1 101 Switching Protocols'+CRLF;
+				var sha1 = new Hash('sha1');
+				sha1.write(headers['sec-websocket-key'] + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11');
+				head += 'sec-websocket-accept:'+base64Encode(sha1.done())+CRLF;
+				// head += 'sec-websocket-extensions: '+CRLF;
+				head += 'connection:Upgrade'+CRLF;
+				head += 'upgrade:WebSocket'+CRLF;
+				s.write(head+CRLF);
+
+
+				
+				return true;
+			}
+
+
+			requestHandler(status[0], status[1], status[2], s.data.substring(0, contentLength), function(response, responseHeaders) {
 
 				if ( s.connectionClosed )
 					return closeSocket(s);
-				if ( response == undefined )
-					s.write('HTTP/1.1 204 No Content\r\n\r\n');
-				else {
-					var head = 'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n';
+				if ( response == undefined ) {
+
+					s.write('HTTP/1.1 204 No Content'+CRLF+CRLF);
+				} else {
+
+					var head = 'HTTP/1.1 200 OK';
+					head += 'content-type: text/plain'+CRLF;
+
 					if ( response.length >= 1460 ) {
 
-						response = deflate(response, true);
-						head += 'Content-encoding: deflate\r\n';
+						response = deflate.process(response, true);
+						head += 'content-encoding: deflate'+CRLF;
 					}
-					s.write(head + 'Content-length: '+response.length+'\r\n\r\n' + response);
+					print( response.constructor.name, '\n\n\n')
+					head += 'content-length: '+response.length + CRLF;
+					s.write(head + responseHeaders + CRLF + response);
 				}
 				s.readable = processRequest;
 				return true;
@@ -87,6 +130,8 @@ function SimpleHTTPServer(port, bind, basicAuth, requestHandler) {
 	}
 
 	serverSocket.readable = function() {
+		
+		print('  [incomming connection]  ');
 
 		var clientSocket = serverSocket.accept();
 		socketList.push(clientSocket);
@@ -98,7 +143,21 @@ function SimpleHTTPServer(port, bind, basicAuth, requestHandler) {
 	serverSocket.bind(port, bind);
 	serverSocket.listen();
 
-	this.events = function() { return Descriptor.events(socketList) };
+	this.events = Descriptor.events(socketList);
+}
+
+	var inflate = new Z(Z.INFLATE);
+	var deflate = new Z(Z.DEFLATE);
+
+
+var test = 0;
+function requestHandler(method, url, status, content, response) {
+
+	if ( url == '/' ) {
+
+		response( new File('test.html').content, 'content-type: text/html'+CRLF );
+		return;
+	}
 }
 
 
@@ -130,30 +189,30 @@ function ProcessAudio(latency, http) {
 }
 
 
-function requestHandler(content, response) {
 
-	print('http!\n');
-	response(content);
-}
-
-var http = new SimpleHTTPServer(80, undefined, '', requestHandler);
+var http = new SimpleHTTPServer(80, '127.0.0.1', '', requestHandler);
 var audio = new ProcessAudio(50, http);
 audio.start();
 
 for (;;) {
 	
-	print('.');	
-	processEvents(host.endSignalEvents(function() { throw 0 }), audio.events, http.events() );
+	processEvents(host.endSignalEvents(function() { throw 0 }), audio.events, http.events );
 }
 
 audio.stop();
 
-
-
-
-
-
 throw 0;
+
+
+
+
+
+
+
+
+
+
+
 
 //jswinshelltest();
 

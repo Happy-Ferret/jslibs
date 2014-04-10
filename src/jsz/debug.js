@@ -1,6 +1,7 @@
 var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
- loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsz'); throw 0;
+// loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsz'); throw 0;
+
 
 
 loadModule('jsstd');
@@ -24,6 +25,25 @@ loadModule('jsz');
 
 
 throw 0;
+
+
+
+loadModule('jsstd');
+loadModule('jsio');
+loadModule('jsz');
+
+
+	var deflate = new Z(Z.DEFLATE);
+	var inflate = new Z(Z.INFLATE);
+
+	var data = inflate.process(new File('testdata.txt').content, true);
+
+
+	print(data.quote());
+
+ throw 0;
+
+
 
 
 var g = new ZipFile('test.zip');
