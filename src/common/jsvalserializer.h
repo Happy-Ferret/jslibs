@@ -740,7 +740,9 @@ public:
 				JL_CHK( JS_GetProperty(cx, scope, className, &prop) );
 				JL_CHK( prop.isObject() );
 
-				JS::RootedObject newObj(cx, JS_New(cx, &prop.toObject(), 1, value.address()));
+				JS::RootedObject propObj(cx, &prop.toObject());
+
+				JS::RootedObject newObj(cx, JS_New(cx, propObj, value));
 				JL_CHK( newObj );
 				val.setObject(*newObj);
 				break;
@@ -898,7 +900,9 @@ public:
 				JL_CHK( Read(cx, constructorArgs[2]) ); // lineNumber
 				JL_CHK( Read(cx, stack) );
 
-				JS::RootedObject errorObj(cx, JS_New(cx, &constructor.toObject(), constructorArgs.length(), constructorArgs.begin()));
+				JS::RootedObject constructorObj(cx, &constructor.toObject());
+
+				JS::RootedObject errorObj(cx, JS_New(cx, constructorObj, constructorArgs));
 				JL_CHK( errorObj );
 				val.setObject(*errorObj);
 

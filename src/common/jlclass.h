@@ -340,8 +340,8 @@ JL_END_NAMESPACE
 #define END_STATIC_FUNCTION_SPEC JS_FS_END }; cs.static_fs = static_fs;
 
 // properties
-#define BEGIN_PROPERTY_SPEC static JSPropertySpec ps[] = { // *name, tinyid, flags, getter, setter
-#define END_PROPERTY_SPEC {NULL, 0, 0, NULL, NULL}}; cs.ps = ps;
+#define BEGIN_PROPERTY_SPEC static JSPropertySpec ps[] = { // *name, flags, getter, setter
+#define END_PROPERTY_SPEC {NULL, 0, NULL, NULL}}; cs.ps = ps;
 
 #define BEGIN_STATIC_PROPERTY_SPEC static JSPropertySpec static_ps[] = {
 #define END_STATIC_PROPERTY_SPEC {NULL, 0, 0, NULL, NULL}}; cs.static_ps = static_ps;
@@ -360,9 +360,9 @@ JL_END_NAMESPACE
 #define FUNCTION_ALIAS(alias, existingName) JS_FN( #alias, _##existingName, 0, FUNCTION_DEFAULT_FLAGS ),
 
 // doc: JSPROP_SHARED - https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
-#define PROPERTY(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, JSOP_WRAPPER(_##name##Getter), JSOP_WRAPPER(_##name##Setter) },
-#define PROPERTY_GETTER(name) { #name, 0, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, JSOP_WRAPPER(_##name##Getter), JSOP_NULLWRAPPER },
-#define PROPERTY_SETTER(name) { #name, 0, JSPROP_PERMANENT|JSPROP_SHARED, JSOP_NULLWRAPPER, JSOP_WRAPPER(_##name##Setter) },
+#define PROPERTY(name) { #name, JSPROP_PERMANENT|JSPROP_SHARED, JSOP_WRAPPER(_##name##Getter), JSOP_WRAPPER(_##name##Setter) },
+#define PROPERTY_GETTER(name) { #name, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, JSOP_WRAPPER(_##name##Getter), JSOP_NULLWRAPPER },
+#define PROPERTY_SETTER(name) { #name, JSPROP_PERMANENT|JSPROP_SHARED, JSOP_NULLWRAPPER, JSOP_WRAPPER(_##name##Setter) },
 //#define PROPERTY_SWITCH(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_SHARED, JSOP_WRAPPER(_##function##Getter), JSOP_WRAPPER(_##function##Setter) }, // Used to define multiple properties with only one pair of getter/setter functions (an enum has to be defiend with less than 256 items !)
 //#define PROPERTY_SWITCH_GETTER(name, function) { #name, name, JSPROP_PERMANENT|JSPROP_READONLY|JSPROP_SHARED, JSOP_WRAPPER(_##function##Getter), JSOP_NULLWRAPPER },
 //#define PROPERTY_CREATE(name,id,flags,getter,setter) { #name, id, flags, JSOP_WRAPPER(_##getter), JSOP_WRAPPER(_##setter) },

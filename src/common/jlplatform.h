@@ -538,7 +538,6 @@ JL_Break() {
 #endif
 }
 
-
 // from jsutil.cpp
 ALWAYS_INLINE void
 JL_AssertFailure( const char *message, const char *location ) {
@@ -547,7 +546,6 @@ JL_AssertFailure( const char *message, const char *location ) {
 	fflush(stderr);
 	JL_Break();
 }
-
 
 #ifdef DEBUG
 #define ASSERT(expr) \
@@ -559,6 +557,13 @@ JL_AssertFailure( const char *message, const char *location ) {
 #define ASSERT(expr) ((void)0) // (ASSUME(expr))
 #define ASSERT_IF(cond, expr) ((void)0)
 #endif // DEBUG
+
+
+/*
+#include "mozilla/Assertions.h"
+#define ASSERT(expr)           MOZ_ASSERT(expr)
+#define ASSERT_IF(cond, expr)  MOZ_ASSERT_IF(cond, expr)
+*/
 
 
 ///////////////////////////////////////////////////////////////////////////////

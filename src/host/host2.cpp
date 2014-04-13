@@ -445,7 +445,9 @@ const JSClass HostRuntime::_globalClass_lazy = {
 	JS_PropertyStub, JS_DeletePropertyStub,
 	JS_PropertyStub, JS_StrictPropertyStub,
 	_globalClass_lazy_enumerate, (JSResolveOp)_globalClass_lazy_resolve,
-	JS_ConvertStub
+	JS_ConvertStub, nullptr,
+    nullptr, nullptr, nullptr,
+	JS_GlobalObjectTraceHook
 };
 
 const JSClass HostRuntime::_globalClass = {
@@ -453,7 +455,9 @@ const JSClass HostRuntime::_globalClass = {
 	JS_PropertyStub, JS_DeletePropertyStub,
 	JS_PropertyStub, JS_StrictPropertyStub,
 	JS_EnumerateStub, JS_ResolveStub,
-	JS_ConvertStub
+	JS_ConvertStub, nullptr,
+    nullptr, nullptr, nullptr,
+	JS_GlobalObjectTraceHook
 };
 
 
@@ -504,13 +508,14 @@ HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota
 	cx = JS_NewContext(rt, 8192); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 	JL_CHK( cx ); //, "unable to create the context." );
 
+	JS_BeginRequest(cx);
+
 	// Info: Increasing JSContext stack size slows down my scripts:
 	//   http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 
 	JS_SetErrorReporter(cx, errorReporterBasic);
 
 	JS::RuntimeOptionsRef(cx)
-		.setTypeInference(true)
 		.setIon(true)
 	;
 
@@ -589,6 +594,7 @@ HostRuntime::destroy(bool skipCleanup) {
 		
 	// see create()
 	JS_LeaveCompartment(cx, NULL);
+	JS_EndRequest(cx);
 	JS_DestroyContext(cx);
 	cx = NULL;
 
@@ -1245,6 +1251,8 @@ Host::Host( HostRuntime &hr, StdIO &hostStdIO, bool unsafeMode )
 	IFDEBUG( js_free(jl_malloc(256)) );
 
 	_ids.constructAll(hr.runtime());
+	ASSERT( !JSID_IS_ZERO(_ids.get(0)) );
+	ASSERT( !JSID_IS_ZERO(_ids.get(LAST_JSID-1)) );
 }
 
 // init the host for jslibs usage (modules, errors, ...)

@@ -325,19 +325,21 @@ JL_UNDEFINED() {
 	return JS::HandleValue::fromMarkedLocation(&JS::UndefinedValue());
 }
 
+
 ALWAYS_INLINE JS::HandleObject FASTCALL
 JL_NULL() {
 
 	return JS::HandleObject::fromMarkedLocation(NULL);
 }
 
-
+/*
 ALWAYS_INLINE JS::HandleId FASTCALL
 JL_IDEMPTY() {
 
 	const jsid emptyIdValue = JSID_EMPTY;
 	return JS::HandleId::fromMarkedLocation(&emptyIdValue);
 }
+*/
 
 // useful for structure with jsid initialized to 0.
 ALWAYS_INLINE JS::HandleId FASTCALL
@@ -345,8 +347,9 @@ JL_IDZ() {
 
 	jsid tmp;
 	JSID_BITS(tmp) = 0;
-	ASSERT( JSID_IS_ZERO(tmp) );
+	ASSERT( JSID_IS_ZERO(INT_TO_JSID(0)) );
 	return JS::HandleId::fromMarkedLocation(&tmp);
+//	return JS::HandleId::fromMarkedLocation(&INT_TO_JSID(0));
 }
 
 
@@ -363,8 +366,7 @@ JL_StringToJsid( JSContext *cx, JS::HandleString jsstr ) {
 
 	ASSERT( jsstr != NULL );
 	JS::RootedString tmp(cx, JS_InternJSString(cx, jsstr)); // if ( !JS_StringHasBeenInterned(cx, jsstr) )
-	if ( !tmp )
-		return JL_IDZ();
+	ASSERT( tmp );
 	JS::RootedId id(cx, INTERNED_STRING_TO_JSID(cx, jsstr));
 	return id;
 }
@@ -375,8 +377,7 @@ JL_StringToJsid( JSContext *cx, const jschar *wstr ) {
 
 	ASSERT( wstr != NULL );
 	JS::RootedString jsstr(cx, JS_InternUCString(cx, wstr));
-	if ( jsstr == NULL )
-		return JL_IDZ();
+	ASSERT( jsstr );
 	JS::RootedId id(cx, JL_StringToJsid(cx, jsstr));
 	ASSERT( JSID_IS_STRING(id) );
 	return id;
@@ -3342,7 +3343,7 @@ construct( JSContext *cx, JS::HandleObject proto ) {
 
 	JS::RootedObject ctor(cx, JL_GetConstructor(cx, proto));
 	JL_CHK( ctor );
-	return JS_New(cx, ctor, 0, NULL);
+	return JS_New(cx, ctor, JS::HandleValueArray::empty());
 	JL_BADVAL(nullptr);
 }
 
@@ -3354,7 +3355,7 @@ construct( JSContext *cx, JS::HandleObject proto, const T1 &v1 ) {
 	JS::RootedObject ctor(cx, JL_GetConstructor(cx, proto));
 	JL_CHK( ctor );
 	JL_CHK( setValue(cx, ava[0], v1) );
-	return JS_New(cx, ctor, ava.length(), ava.begin());
+	return JS_New(cx, ctor, ava);
 	JL_BADVAL(nullptr);
 }
 
@@ -5327,7 +5328,6 @@ JL_BEGIN_NAMESPACE
 
 class ArrayBuffer : public jl::CppAllocators {
 	void *_contents;
-	uint8_t *_data;
 	size_t _size;
 public:
 
@@ -5346,8 +5346,8 @@ public:
 	void
 	alloc( uint32_t nbytes ) {
 
-		bool result = JS_AllocateArrayBufferContents(nullptr, nbytes, &_contents, &_data);
-		ASSERT( result ); // oom ?
+		_contents = jl_malloc(nbytes);
+		ASSERT( _contents ); // oom ?
 		_size = nbytes;
 	}
 
@@ -5355,8 +5355,8 @@ public:
 	realloc( uint32_t nbytes ) {
 
 		ASSERT( _contents );
-		bool result = JS_ReallocateArrayBufferContents(nullptr, nbytes, &_contents, &_data);
-		ASSERT( result ); // oom ?
+		_contents = jl_realloc(_contents, nbytes);
+		ASSERT( _contents ); // oom ?
 		_size = nbytes;
 	}
 
@@ -5367,11 +5367,11 @@ public:
 		IFDEBUG( _contents = NULL );
 	}
 
-	uint8_t*
+	void*
 	data() const {
 	
 		ASSERT( _contents );
-		return _data;
+		return _contents;
 	};
 
 	bool
@@ -5379,7 +5379,7 @@ public:
 		
 		ASSERT( !_contents );
 		_size = JS_GetArrayBufferByteLength(obj);
-		return JS_StealArrayBufferContents(cx, obj, &_contents, &_data);
+		_contents = JS_StealArrayBufferContents(cx, obj);
 	}
 
 	// this lose the ownership of _contents
@@ -5387,7 +5387,7 @@ public:
 	toArrayBufferObject( JSContext *cx ) {
 		
 		ASSERT( _contents );
-		JS::RootedObject arrayObject(cx, JS_NewArrayBufferWithContents(cx, _contents));
+		JS::RootedObject arrayObject(cx, JS_NewArrayBufferWithContents(cx, _size, _contents));
 		IFDEBUG( _contents = NULL );
 		return arrayObject;
 	}
@@ -5423,8 +5423,8 @@ public:
 		size_t length = _size/2;
 		realloc(_size + 2); // see JS_ASSERT(chars[length] == 0);
 
-		reinterpret_cast<jschar*>(_data)[length] = 0;
-		JS::RootedString str(cx, JS_NewExternalString(cx, reinterpret_cast<jschar*>(_data), length, new ExternalStringFinalizer(_contents)));
+		reinterpret_cast<jschar*>(_contents)[length] = 0;
+		JS::RootedString str(cx, JS_NewExternalString(cx, reinterpret_cast<jschar*>(_contents), length, new ExternalStringFinalizer(_contents)));
 		IFDEBUG( _contents = NULL );
 		return str;
 	}
@@ -5438,16 +5438,16 @@ public:
 		size_t length = _size;
 		realloc((_size+1) * 2); // see JS_ASSERT(chars[length] == 0);
 		
-		jschar* jsstr = reinterpret_cast<jschar*>(_data);
+		jschar* jsstr = reinterpret_cast<jschar*>(_contents);
 		jsstr[length] = 0;
 
-		uint8_t *src = _data + length;
+		uint8_t *src = reinterpret_cast<uint8_t*>(_contents) + length;
 		jschar *dst = jsstr + length;
 
 		while ( dst != jsstr )
 			*(--dst) = *(--src);
 
-		JS::RootedString str(cx, JS_NewExternalString(cx, reinterpret_cast<jschar*>(_data), length, new ExternalStringFinalizer(_contents)));
+		JS::RootedString str(cx, JS_NewExternalString(cx, reinterpret_cast<jschar*>(_contents), length, new ExternalStringFinalizer(_contents)));
 		IFDEBUG( _contents = NULL );
 		return str;
 	}
@@ -6251,7 +6251,7 @@ ExecuteScriptText( JSContext *cx, IN JS::HandleObject obj, const char *scriptTex
 
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
 	if ( !compileOnly )
-		JL_CHK( JS_ExecuteScript(cx, obj, script, rval.address()) ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
+		JL_CHK( JS_ExecuteScript(cx, obj, script, rval) ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
 	else
 		rval.setUndefined();
 
@@ -6274,7 +6274,7 @@ ExecuteScriptFileName( JSContext *cx, IN JS::HandleObject obj, const char *scrip
 
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
 	if ( !compileOnly )
-		JL_CHK( JS_ExecuteScript(cx, obj, script, rval.address()) ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
+		JL_CHK( JS_ExecuteScript(cx, obj, script, rval) ); // MUST be executed only once ( JSOPTION_COMPILE_N_GO )
 	else
 		rval.setUndefined();
 

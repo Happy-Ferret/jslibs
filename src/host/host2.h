@@ -121,40 +121,33 @@ public:
 template <class T, const size_t ITEM_COUNT>
 class StaticArray {
 	uint8_t data[ITEM_COUNT * sizeof(T)];
-	T* items; // for easy debug
-
 public:
 	enum {
 		length = ITEM_COUNT
 	};
 
-	StaticArray()
-	: items(reinterpret_cast<T*>(data)) {
+	StaticArray() {
 	}
 
-	StaticArray(bool construct)
-	: items(reinterpret_cast<T*>(data)) {
+	StaticArray(bool construct) {
 
 		constructAll();
 	}
 
 	template <typename P1>
-	StaticArray(bool construct, P1 p1)
-	: items(reinterpret_cast<T*>(data)) {
+	StaticArray(bool construct, P1 p1) {
 
 		constructAll(p1);
 	}
 
 	template <typename P1, typename P2>
-	StaticArray(bool construct, P1 p1, P2 p2)
-	: items(reinterpret_cast<T*>(data)) {
+	StaticArray(bool construct, P1 p1, P2 p2) {
 
 		constructAll(p1, p2);
 	}
 
 	template <typename P1, typename P2, typename P3>
-	StaticArray(bool construct, P1 p1, P2 p2, P3 p3)
-	: items(reinterpret_cast<T*>(data)) {
+	StaticArray(bool construct, P1 p1, P2 p2, P3 p3) {
 
 		constructAll(p1, p2, p3);
 	}
@@ -163,22 +156,27 @@ public:
 	get(size_t slotIndex) {
 
 		ASSERT( slotIndex < length );
-		return items[slotIndex];
+		return reinterpret_cast<T*>(data)[slotIndex];
 	}
 
 	const T&
 	getConst(size_t slotIndex) const {
 
 		ASSERT( slotIndex < length );
-		return items[slotIndex];
+		return reinterpret_cast<const T*>(data)[slotIndex];
+	}
+
+	T&
+	operator[](size_t index) {
+
+		return get(index);
 	}
 
 
 	void
 	destruct(size_t item) {
 
-		(&get(item))->T::~T();
-		//memchr(&get(item), 0, sizeof(T));
+		get(item).T::~T();
 	}
 
 	void
@@ -213,7 +211,7 @@ public:
 
 		for ( size_t i = 0; i < length; ++i ) {
 			
-			(&get(i))->T::~T();
+			destruct(i);
 		}
 	}
 
@@ -222,7 +220,7 @@ public:
 		
 		for ( size_t i = 0; i < length; ++i ) {
 			
-			::new (&get(i)) T();
+			construct(i);
 		}
 	}
 
@@ -232,7 +230,7 @@ public:
 		
 		for ( size_t i = 0; i < length; ++i ) {
 			
-			::new (&get(i)) T(p1);
+			construct(i, p1);
 		}
 	}
 
@@ -242,7 +240,7 @@ public:
 		
 		for ( size_t i = 0; i < length; ++i ) {
 			
-			::new (&get(i)) T(p1, p2);
+			construct(i, p1, p2);
 		}
 	}
 
@@ -252,7 +250,7 @@ public:
 		
 		for ( size_t i = 0; i < length; ++i ) {
 			
-			::new (&get(i)) T(p1, p2, p3);
+			construct(i, p1, p2, p3);
 		}
 	}
 };
@@ -979,6 +977,7 @@ public:
 	getId( int index, const jschar *name ) {
 
 		JS::PersistentRootedId &id = _ids.get(index);
+		ASSERT( !JSID_IS_ZERO(id) );
 		if ( JSID_IS_VOID(id) ) {
 
 			getPrivateJsidSlow(_hostRuntime.context(), id, name);
