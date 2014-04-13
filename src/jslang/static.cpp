@@ -1037,12 +1037,25 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_DEFINE_FUNCTION_OBJ;
 
 	{
-
 		void *contents;
 		uint8_t *data;
 		JS_AllocateArrayBufferContents(nullptr, 100, &contents, &data);
-
 	}
+
+	{
+		jl::ArrayBuffer ab(2);
+		ab.data()[0] = 1;
+		ab.data()[1] = 2;
+		JS::RootedString rstr(cx, ab.toExternalStringUC(cx));
+	}
+
+	{
+		jl::ArrayBuffer ab(2);
+		ab.data()[0] = 100;
+		ab.data()[1] = 101;
+		JS::RootedString rstr(cx, ab.toExternalString(cx));
+	}
+
 
 
 	ASSERT( jl::tstrcmp( ("abc"), L("abc")) == 0 );

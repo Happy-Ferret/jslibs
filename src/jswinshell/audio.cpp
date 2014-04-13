@@ -135,6 +135,7 @@ WaveInThreadProc( LPVOID lpParam ) {
 
 		res = waveInUnprepareHeader(pv->hwi, &waveHeader[i], sizeof(WAVEHDR));
 		ASSERT( res == MMSYSERR_NOERROR );
+		arrayBuf[i].free();
 	}
 
 	return 0;
@@ -155,6 +156,10 @@ DEFINE_FINALIZE() {
 	waveInClose(pv->hwi);
 	CloseHandle(pv->audioEvent);
 	DeleteCriticalSection(&pv->cs);
+
+	while ( pv->bufferList )
+		pv->bufferList.Pop().free();
+
 	delete pv;
 }
 

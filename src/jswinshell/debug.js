@@ -8,9 +8,71 @@ loadModule('jswinshell');
 
 
 
+
+var deviceName = AudioIn.inputDeviceList[0];
+print(deviceName, '\n');
+var audio = new AudioIn(deviceName, 44100, 16, 2, 100);
+audio.start();
+
+for (;;) {
+
+	processEvents(host.endSignalEvents(function() { throw 0 }), audio.events(function() {
+	
+		var s;
+		while ( s = this.read() ) {
+
+			var arr = new Int16Array(s.data);
+			var sum = 0;
+			for ( var len = arr.length, i = 0; i < len; ++i )
+				sum += arr[i];
+			
+			var w = Math.min(Math.floor(sum/len), 80);
+			print(stringRepeat('o', w), '\n');
+
+		}
+
+	} ) );
+}
+
+audio.stop();
+
+
+throw 0;
+
+
+
 //print( stringify(new File('test.html').content).length );
 //throw 0;
 
+
+/*
+// Fix up prefixing
+window.AudioContext = window.AudioContext || window.webkitAudioContext;
+var context = new AudioContext();
+
+function playSound(buffer) {
+
+  var source = context.createBufferSource(); // creates a sound source
+  source.buffer = buffer;                    // tell the source which sound to play
+  source.connect(context.destination);       // connect the source to the context's destination (the speakers)
+  source.start(0);                           // play the source now
+                                             // note: on older systems, may have to use deprecated noteOn(time);
+}
+...
+
+http://creativejs.com/resources/web-audio-api-getting-started/
+
+var request = new XMLHttpRequest();
+request.open("GET", audioFileUrl, true);
+request.responseType = "arraybuffer";
+ 
+// Our asynchronous callback
+request.onload = function() {
+    var audioData = request.response;
+    createSoundSource(audioData);
+};
+request.send();
+*/
 
 //exec('..\\..\\..\\audioToPhone\\webbroadcast.js', false);
 
@@ -211,70 +273,6 @@ throw 0;
 
 
 
-
-
-
-//jswinshelltest();
-
-var deviceName = AudioIn.inputDeviceList[0];
-print(deviceName, '\n');
-var audio = new AudioIn(deviceName, 44100, 16, 2, 50);
-audio.start();
-
-for (;;) {
-
-	processEvents(host.endSignalEvents(function() { throw 0 }), audio.events(function() {
-	
-		var s;
-		while ( s = this.read() ) {
-
-			var arr = new Int16Array(s.data);
-			var sum = 0;
-			for ( var len = arr.length, i = 0; i < len; ++i )
-				sum += arr[i];
-			
-			var w = Math.min(Math.floor(sum/len), 80);
-			print(stringRepeat('o', w), '\n');
-
-		}
-
-	} ) );
-}
-
-audio.stop();
-
-/*
-// Fix up prefixing
-window.AudioContext = window.AudioContext || window.webkitAudioContext;
-var context = new AudioContext();
-
-function playSound(buffer) {
-
-  var source = context.createBufferSource(); // creates a sound source
-  source.buffer = buffer;                    // tell the source which sound to play
-  source.connect(context.destination);       // connect the source to the context's destination (the speakers)
-  source.start(0);                           // play the source now
-                                             // note: on older systems, may have to use deprecated noteOn(time);
-}
-...
-
-http://creativejs.com/resources/web-audio-api-getting-started/
-
-var request = new XMLHttpRequest();
-request.open("GET", audioFileUrl, true);
-request.responseType = "arraybuffer";
- 
-// Our asynchronous callback
-request.onload = function() {
-    var audioData = request.response;
-    createSoundSource(audioData);
-};
-request.send();
-
-*/
-
-
-throw 0;
 
 
 

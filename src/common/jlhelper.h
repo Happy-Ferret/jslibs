@@ -5325,39 +5325,22 @@ JL_ChangeBufferLength( JSContext *cx, IN OUT JS::MutableHandleValue vp, size_t n
 JL_BEGIN_NAMESPACE
 
 
-// There is only one owner of the buffer at one time.
-// The ownership is tested by !!_contents
 class ArrayBuffer : public jl::CppAllocators {
-	mutable void *_contents;
+	void *_contents;
 	uint8_t *_data;
+	size_t _size;
 public:
-	ArrayBuffer()
-	: _contents(NULL) {
+
+	ArrayBuffer() {
+
+		IFDEBUG( _contents = NULL );
 	}
 
 	ArrayBuffer( uint32_t nbytes ) {
 
+		IFDEBUG( _contents = NULL );
 		alloc(nbytes);
-	}
-
-	ArrayBuffer( const ArrayBuffer &arrayBuf )
-	: _contents(arrayBuf._contents), _data(arrayBuf._data) {
-		
-		arrayBuf._contents = NULL;
-	}
-
-	void
-	operator =( const ArrayBuffer &arrayBuf ) {
-		
-		_contents = arrayBuf._contents;
-		_data = arrayBuf._data;
-		arrayBuf._contents = NULL;
-	}
-
-	~ArrayBuffer() {
-
-		if ( _contents )
-			js_free(_contents);
+		_size = nbytes;
 	}
 
 	void
@@ -5365,6 +5348,7 @@ public:
 
 		bool result = JS_AllocateArrayBufferContents(nullptr, nbytes, &_contents, &_data);
 		ASSERT( result ); // oom ?
+		_size = nbytes;
 	}
 
 	void
@@ -5373,43 +5357,104 @@ public:
 		ASSERT( _contents );
 		bool result = JS_ReallocateArrayBufferContents(nullptr, nbytes, &_contents, &_data);
 		ASSERT( result ); // oom ?
+		_size = nbytes;
 	}
 
 	void
 	free() {
 
-		ASSERT( _contents );
 		js_free(_contents);
-		_contents = NULL;
+		IFDEBUG( _contents = NULL );
 	}
 
-	void*
-	privateData() {
-	
-		return _contents;
-	};
-
 	uint8_t*
-	data() {
+	data() const {
 	
+		ASSERT( _contents );
 		return _data;
 	};
 
-	JSObject*
-	getArrayOwnership( JSContext *cx ) {
+	bool
+	fromArrayBufferObject( JSContext *cx, JS::HandleObject obj ) {
+		
+		ASSERT( !_contents );
+		_size = JS_GetArrayBufferByteLength(obj);
+		return JS_StealArrayBufferContents(cx, obj, &_contents, &_data);
+	}
+
+	// this lose the ownership of _contents
+	JSObject *
+	toArrayBufferObject( JSContext *cx ) {
 		
 		ASSERT( _contents );
 		JS::RootedObject arrayObject(cx, JS_NewArrayBufferWithContents(cx, _contents));
-		_contents = NULL;
+		IFDEBUG( _contents = NULL );
 		return arrayObject;
 	}
 
-	bool
-	steal( JSContext *cx, JS::HandleObject obj ) {
+	class ExternalStringFinalizer : public JSStringFinalizer, public jl::CppAllocators {
+		void *_contents;
+		static void
+		finalizeExternalString( const JSStringFinalizer *fin, jschar *chars ) {
+
+			delete static_cast<const ExternalStringFinalizer*>(fin);
+		}
+	public:
+
+		~ExternalStringFinalizer() {
+			
+			js_free(_contents);
+		}
+
+		ExternalStringFinalizer( void *contents )
+		: _contents(contents) {
+
+			finalize = finalizeExternalString;
+		}
+	};
+
+	// this lose the ownership of _contents
+	JSString *
+	toExternalStringUC( JSContext *cx ) {
+
+		ASSERT( _contents );
+		ASSERT( _size % 2 == 0 );
 		
-		return JS_StealArrayBufferContents(cx, obj, &_contents, &_data);
+		size_t length = _size/2;
+		realloc(_size + 2); // see JS_ASSERT(chars[length] == 0);
+
+		reinterpret_cast<jschar*>(_data)[length] = 0;
+		JS::RootedString str(cx, JS_NewExternalString(cx, reinterpret_cast<jschar*>(_data), length, new ExternalStringFinalizer(_contents)));
+		IFDEBUG( _contents = NULL );
+		return str;
+	}
+	
+	// this lose the ownership of _contents
+	JSString *
+	toExternalString( JSContext *cx ) {
+
+		ASSERT( _contents );
+
+		size_t length = _size;
+		realloc((_size+1) * 2); // see JS_ASSERT(chars[length] == 0);
+		
+		jschar* jsstr = reinterpret_cast<jschar*>(_data);
+		jsstr[length] = 0;
+
+		uint8_t *src = _data + length;
+		jschar *dst = jsstr + length;
+
+		while ( dst != jsstr )
+			*(--dst) = *(--src);
+
+		JS::RootedString str(cx, JS_NewExternalString(cx, reinterpret_cast<jschar*>(_data), length, new ExternalStringFinalizer(_contents)));
+		IFDEBUG( _contents = NULL );
+		return str;
 	}
 };
+
+
+
 
 JL_END_NAMESPACE
 
@@ -5586,7 +5631,7 @@ JL_NewByteAudioObjectOwner( JSContext *cx, jl::ArrayBuffer &buffer, T bits, U ch
 	ASSERT( bits > 0 && (bits % 8) == 0 && channels > 0 && frames >= 0 && rate > 0 );
 
 	JS::RootedObject audioObj(cx, JL_NewObj(cx));
-	JS::RootedObject dataObj(cx, buffer.getArrayOwnership(cx));
+	JS::RootedObject dataObj(cx, buffer.toArrayBufferObject(cx));
 	JL_CHK( audioObj );
 	JL_CHK( dataObj );
 	vp.setObject(*audioObj);
