@@ -6360,7 +6360,8 @@ JL_DebugPrintScriptLocation( JSContext *cx ) {
 ALWAYS_INLINE bool
 ReserveNativeInterface( JSContext *cx, JS::HandleObject obj, JS::HandleId id ) {
 
-	ASSERT( id != JL_IDZ() );
+	JSID_IS_STRING(id) && !JSID_IS_ZERO(id);
+
 	return JS_DefinePropertyById(cx, obj, id, JSVAL_VOID, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
 }
 
@@ -6369,7 +6370,8 @@ template <class T>
 ALWAYS_INLINE bool
 SetNativeInterface( JSContext *cx, JS::HandleObject obj, JS::HandleId id, const T nativeFct ) {
 
-	ASSERT( id != JL_IDZ() );
+	JSID_IS_STRING(id) && !JSID_IS_ZERO(id);
+
 	if ( nativeFct != NULL ) {
 
 		JL_CHK( JS_DefinePropertyById(cx, obj, id, JSVAL_TRUE, NULL, (JSStrictPropertyOp)nativeFct, JSPROP_READONLY | JSPROP_PERMANENT) ); // hacking the setter of a read-only property seems safe.
@@ -6386,7 +6388,8 @@ template <class T>
 ALWAYS_INLINE const T
 GetNativeInterface( JSContext *cx, JS::HandleObject obj, JS::HandleId id ) {
 
-	ASSERT( id != JL_IDZ() );
+	ASSERT( JSID_IS_STRING(id) && !JSID_IS_ZERO(id) );
+	
 	JS::Rooted<JSPropertyDescriptor> desc(cx);
 	if ( JS_GetPropertyDescriptorById(cx, obj, id, 0, &desc) ) {
 

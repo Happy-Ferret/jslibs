@@ -7,44 +7,6 @@ loadModule('jswinshell');
 //loadModule('jssvg');
 
 
-
-
-var deviceName = AudioIn.inputDeviceList[0];
-print(deviceName, '\n');
-var audio = new AudioIn(deviceName, 44100, 16, 2, 100);
-audio.start();
-
-for (;;) {
-
-	processEvents(host.endSignalEvents(function() { throw 0 }), audio.events(function() {
-	
-		var s;
-		while ( s = this.read() ) {
-
-			var arr = new Int16Array(s.data);
-			var sum = 0;
-			for ( var len = arr.length, i = 0; i < len; ++i )
-				sum += arr[i];
-			
-			var w = Math.min(Math.floor(sum/len), 80);
-			print(stringRepeat('o', w), '\n');
-
-		}
-
-	} ) );
-}
-
-audio.stop();
-
-
-throw 0;
-
-
-
-//print( stringify(new File('test.html').content).length );
-//throw 0;
-
-
 /*
 // Fix up prefixing
 window.AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -82,6 +44,13 @@ loadModule('jsstd');
 loadModule('jsz');
 loadModule('jscrypt');
 loadModule('jswinshell');
+
+function log(msg) {
+
+	print( msg.replace(/\n/g, '\n   '), '\n' );
+}
+
+
 const CRLF = '\r\n';
 
 function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler) {
@@ -92,6 +61,60 @@ function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler) {
 
 		s.close();
 		socketList.splice(socketList.indexOf(s), 1);
+		log('[connection closed]');
+	}
+
+	function processWebSocket(s) {
+
+		var buf = s.read();
+		if ( buf == undefined )
+			return closeSocket(s);
+		
+
+		var fin = !!(buf[0] & 0x80);
+		var opcode = buf[0] & 0x0F;
+		var masked = !!(buf[1] & 0x80);
+		var mask;
+		var dataOffset;
+		var maskOffset;
+		
+		var length = buf[1] & 0x7F;
+		if ( length == 126 ) {
+			
+			length = buf[2] << 8 | buf[3];
+			if ( masked ) {
+				
+				mask = [buf[4], buf[5], buf[6], buf[7]];
+				dataOffset = 8;
+			} else {
+				
+				dataOffset = 4;
+			}
+		} else 
+		if ( length == 127 ) {
+
+			// TBD
+		} else {
+
+			if ( masked ) {
+				
+				mask = [buf[2], buf[3], buf[4], buf[5]];
+				dataOffset = 6;
+			} else {
+				
+				dataOffset = 2;
+			}
+		}
+
+
+
+
+		s.data += stringify(buf);
+
+
+
+		log('[webSocket:'+s.peerPort+']' + s.data);
+
 	}
 
 	function processRequest(s) {
@@ -100,7 +123,7 @@ function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler) {
 		if ( buf == undefined )
 			return closeSocket(s);
 
-		//print( '[:'+s.peerPort+']' + stringify(buf) )
+		log('[http:'+s.peerPort+']' + stringify(buf));
 
 		s.data += stringify(buf);
 
@@ -122,6 +145,7 @@ function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler) {
 		var contentLength = parseInt(headers['content-length'], 10);
 
 		s.data = s.data.substring(eoh+4);
+
 		(function processSocket(s) {
 	
 			if ( s.data.length < contentLength ) {
@@ -144,21 +168,19 @@ function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler) {
 			delete s.readable;
 
 			if ( headers['connection'] == 'Upgrade' && headers['upgrade'] == 'websocket' ) {
+				
+				// https://tools.ietf.org/html/rfc6455
 
 				var head = 'HTTP/1.1 101 Switching Protocols'+CRLF;
 				var sha1 = new Hash('sha1');
 				sha1.write(headers['sec-websocket-key'] + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11');
 				head += 'sec-websocket-accept:'+base64Encode(sha1.done())+CRLF;
-				// head += 'sec-websocket-extensions: '+CRLF;
 				head += 'connection:Upgrade'+CRLF;
 				head += 'upgrade:WebSocket'+CRLF;
 				s.write(head+CRLF);
-
-
-				
+				s.readable = processWebSocket;
 				return true;
 			}
-
 
 			requestHandler(status[0], status[1], status[2], s.data.substring(0, contentLength), function(response, responseHeaders) {
 
@@ -177,13 +199,13 @@ function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler) {
 						response = deflate.process(response, true);
 						head += 'content-encoding: deflate'+CRLF;
 					}
-					print( response.constructor.name, '\n\n\n')
 					head += 'content-length: '+response.length + CRLF;
 					s.write(head + responseHeaders + CRLF + response);
 				}
 				s.readable = processRequest;
 				return true;
 			});
+
 
 			s.data = s.data.substring(contentLength);
 			return undefined;
@@ -193,7 +215,7 @@ function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler) {
 
 	serverSocket.readable = function() {
 		
-		print('  [incomming connection]  ');
+		log('[incomming connection]');
 
 		var clientSocket = serverSocket.accept();
 		socketList.push(clientSocket);
@@ -208,8 +230,8 @@ function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler) {
 	this.events = Descriptor.events(socketList);
 }
 
-	var inflate = new Z(Z.INFLATE);
-	var deflate = new Z(Z.DEFLATE);
+var inflate = new Z(Z.INFLATE);
+var deflate = new Z(Z.DEFLATE);
 
 
 var test = 0;
@@ -217,10 +239,50 @@ function requestHandler(method, url, status, content, response) {
 
 	if ( url == '/' ) {
 
-		response( new File('test.html').content, 'content-type: text/html'+CRLF );
+		response( webRoot, 'content-type: text/html'+CRLF );
 		return;
 	}
 }
+
+
+
+var webRoot = (function() {/*
+<script>
+	var socket = new WebSocket('ws://localhost/');
+
+	function log(msg) {
+
+		var output = document.getElementById("output");
+		var pre = document.createElement("p");
+		pre.style.wordWrap = "break-word";
+		pre.innerHTML = msg;
+		output.appendChild(pre);
+	}
+
+	socket.onopen = function(evt) {
+		
+		log('OPEN')
+		socket.send('test');
+		socket.send('test');
+		socket.send('test');
+	}
+	socket.onclose = function(evt) {
+		
+		log('CLOSE')
+	}
+	socket.onerror = function(evt) {
+		
+		log('ERROR')
+	};
+	socket.onmessage = function(evt) {
+
+		log('MESSAGE:')
+		log(evt.data);
+	}
+</script>
+<div id="output"></div>
+*/}).toString().match(/\/\*([^]*)\*\//)[1];
+
 
 
 
@@ -271,6 +333,34 @@ throw 0;
 
 
 
+
+
+var deviceName = AudioIn.inputDeviceList[0];
+print(deviceName, '\n');
+var audio = new AudioIn(deviceName, 44100, 16, 2, 100);
+audio.start();
+
+for (;;) {
+
+	processEvents(host.endSignalEvents(function() { throw 0 }), audio.events(function() {
+	
+		var s;
+		while ( s = this.read() ) {
+
+			var arr = new Int16Array(s.data);
+			var sum = 0;
+			for ( var len = arr.length, i = 0; i < len; ++i )
+				sum += arr[i];
+			
+			var w = Math.min(Math.floor(sum/len), 80);
+			print(stringRepeat('o', w), '\n');
+
+		}
+
+	} ) );
+}
+audio.stop();
+throw 0;
 
 
 

@@ -48,12 +48,17 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	JL_ASSERT(jl::Host::getHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 
-	if ( instanceCount == 0 && !PR_Initialized() ) {
+	if ( PR_AtomicIncrement(&instanceCount) == 1 ) {
 
-		PR_Init(PR_SYSTEM_THREAD, PR_PRIORITY_NORMAL, 0); // NSPR ignores threads of type PR_SYSTEM_THREAD when determining when a call to PR_Cleanup should return.
-		PR_DisableClockInterrupts();
+		if ( PR_Initialized() ) {
+		
+			PR_AtomicIncrement(&instanceCount);
+		} else {
+
+			PR_Init(PR_SYSTEM_THREAD, PR_PRIORITY_NORMAL, 0); // NSPR ignores threads of type PR_SYSTEM_THREAD when determining when a call to PR_Cleanup should return.
+			PR_DisableClockInterrupts();
+		}
 	}
-	PR_AtomicIncrement(&instanceCount);
 
 	JsioPrivate *mpv;
 	mpv = (JsioPrivate*)jl_calloc(sizeof(JsioPrivate), 1);
@@ -94,11 +99,14 @@ bool ModuleRelease(JSContext *cx) {
 //	JL_BAD;
 }
 
-void ModuleFree(bool skipCleanup) {
+void ModuleFree(bool skipCleanup, void* pv) {
 
-	PR_AtomicDecrement(&instanceCount);
-	if ( !skipCleanup && instanceCount == 0 && PR_Initialized() ) {
+	if ( skipCleanup )
+		return;
 
+	if ( PR_AtomicDecrement(&instanceCount) == 0 ) {
+
+		ASSERT( PR_Initialized() );
 		PR_Cleanup(); // doc. PR_Cleanup must be called by the primordial thread near the end of the main function.
 		// (TBD) manage PR_Cleanup's return value
 	}

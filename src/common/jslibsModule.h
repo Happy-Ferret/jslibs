@@ -26,16 +26,16 @@ struct JSContext;
 
 typedef bool (*ModuleInitFunction)(JSContext *, JS::HandleObject);
 typedef bool (*ModuleReleaseFunction)(JSContext *);
-typedef void (*ModuleFreeFunction)(bool skipCleanup);
+typedef void (*ModuleFreeFunction)(bool skipCleanup, void *);
 
 // jlModuleInit ?
 EXTERN_C DLLEXPORT bool ModuleInit(JSContext *cx, JS::HandleObject obj); // JSContext *cx, JS::HandleObject obj, ModuleReleaseFunction *moduleReleaseFct, ModuleFreeFunction *moduleFreeFct)
 EXTERN_C DLLEXPORT bool ModuleRelease(JSContext *cx);
-EXTERN_C DLLEXPORT void ModuleFree(bool skipCleanup);
+EXTERN_C DLLEXPORT void ModuleFree(bool skipCleanup, void *pv);
 
 bool ModuleInit(JSContext *cx, JS::HandleObject obj);
 bool ModuleRelease(JSContext *cx);
-void ModuleFree(bool skipCleanup);
+void ModuleFree(bool skipCleanup, void *);
 
 typedef ptrdiff_t moduleId_t;
 

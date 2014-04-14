@@ -99,7 +99,7 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 }
 
 void
-ModuleFree() {
+ModuleFree(bool skipCleanup, void *pv) {
 
 	sqlite3_shutdown();
 }

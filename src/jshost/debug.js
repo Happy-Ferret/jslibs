@@ -16,10 +16,17 @@ var loadModule = host.loadModule;
 
 
 
+//for ( var i = 0; i < 1000000; ++i );
+
+//processEvents(host.endSignalEvents(function() { throw 0 }));
+
+
+
 loadModule('jsio');
 loadModule('jsstd');
 loadModule('jswinshell');
 //loadModule('jssvg');
+throw 0;
 
 
 jslangTest(); throw 0;

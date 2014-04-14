@@ -337,7 +337,7 @@ WatchDog::interruptCallback(JSContext *cx) {
 
 	JSRuntime *rt = JL_GetRuntime(cx);
 
-	JSInterruptCallback tmp = JS_SetInterruptCallback(rt, NULL);
+//	JSInterruptCallback tmp = JS_SetInterruptCallback(rt, NULL);
 
 	//For a collection to be carried out incrementally the following conditions must be met:
 	// - The collection must be run by calling JS::IncrementalGC() rather than JS_GC().
@@ -351,7 +351,7 @@ WatchDog::interruptCallback(JSContext *cx) {
 	//JS_GC(rt);
 	//JS::IncrementalGC(rt, JS::gcreason::MAYBEGC);
 
-	JS_SetInterruptCallback(rt, tmp);
+//	JS_SetInterruptCallback(rt, tmp);
 	return true;
 }
 
@@ -368,7 +368,7 @@ WatchDog::watchDogThreadProc(void *threadArg) {
 			break;
 		JSRuntime *rt = watchDog._hostRuntime.runtime();
 
-//		ASSERT( JS_GetOperationCallback(rt) );
+		ASSERT( JS_GetInterruptCallback(rt) );
 		JS_RequestInterruptCallback(rt);
 	}
 	JLThreadExit(0);
@@ -747,7 +747,7 @@ ModuleManager::freeModules(bool skipCleanup) {
 			ModuleFreeFunction moduleFree = (ModuleFreeFunction)JLDynamicLibrarySymbol(module.moduleHandle, NAME_MODULE_FREE);
 			if ( moduleFree != NULL ) {
 		
-				moduleFree(skipCleanup);
+				moduleFree(skipCleanup, module.privateData);
 			}
 
 			//#ifndef DEBUG // else the memory block was allocated in a DLL that was unloaded prior to the _CrtMemDumpAllObjectsSince() call.
@@ -1330,7 +1330,7 @@ Host::free(bool skipCleanup) {
 
 		_moduleManager.freeModules(skipCleanup);
 		ASSERT( jslangModuleFree != (ModuleFreeFunction)NULL);
-		jslangModuleFree(skipCleanup);
+		jslangModuleFree(skipCleanup, NULL);
 	}
 }
 

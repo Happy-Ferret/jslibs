@@ -497,3 +497,142 @@ void MemoryPoolFinalize() {
 	}
 }
 */
+
+
+
+template <class T, const size_t ITEM_COUNT>
+class StaticArray {
+	uint8_t data[ITEM_COUNT * sizeof(T)];
+public:
+	enum {
+		length = ITEM_COUNT
+	};
+
+	StaticArray() {
+	}
+
+	StaticArray(bool construct) {
+
+		constructAll();
+	}
+
+	template <typename P1>
+	StaticArray(bool construct, P1 p1) {
+
+		constructAll(p1);
+	}
+
+	template <typename P1, typename P2>
+	StaticArray(bool construct, P1 p1, P2 p2) {
+
+		constructAll(p1, p2);
+	}
+
+	template <typename P1, typename P2, typename P3>
+	StaticArray(bool construct, P1 p1, P2 p2, P3 p3) {
+
+		constructAll(p1, p2, p3);
+	}
+
+	T&
+	get(size_t slotIndex) {
+
+		ASSERT( slotIndex < length );
+		return reinterpret_cast<T*>(data)[slotIndex];
+	}
+
+	const T&
+	getConst(size_t slotIndex) const {
+
+		ASSERT( slotIndex < length );
+		return reinterpret_cast<const T*>(data)[slotIndex];
+	}
+
+	T&
+	operator[](size_t index) {
+
+		return get(index);
+	}
+
+
+	void
+	destruct(size_t item) {
+
+		get(item).T::~T();
+	}
+
+	void
+	construct(size_t item) {
+		
+		::new (&get(item)) T();
+	}
+
+	template <typename P1>
+	void
+	construct(size_t item, P1 p1) {
+		
+		::new (&get(item)) T(p1);
+	}
+
+	template <typename P1, typename P2>
+	void
+	construct(size_t item, P1 p1, P2 p2) {
+		
+		::new (&get(item)) T(p1, p2);
+	}
+
+	template <typename P1, typename P2, typename P3>
+	void
+	construct(size_t item, P1 p1, P2 p2, P3 p3) {
+		
+		::new (&get(item)) T(p1, p2, p3);
+	}
+
+	void
+	destructAll() {
+
+		for ( size_t i = 0; i < length; ++i ) {
+			
+			destruct(i);
+		}
+	}
+
+	void
+	constructAll() {
+		
+		for ( size_t i = 0; i < length; ++i ) {
+			
+			construct(i);
+		}
+	}
+
+	template <typename P1>
+	void
+	constructAll(P1 p1) {
+		
+		for ( size_t i = 0; i < length; ++i ) {
+			
+			construct(i, p1);
+		}
+	}
+
+	template <typename P1, typename P2>
+	void
+	constructAll(P1 p1, P2 p2) {
+		
+		for ( size_t i = 0; i < length; ++i ) {
+			
+			construct(i, p1, p2);
+		}
+	}
+
+	template <typename P1, typename P2, typename P3>
+	void
+	constructAll(P1 p1, P2 p2, P3 p3) {
+		
+		for ( size_t i = 0; i < length; ++i ) {
+			
+			construct(i, p1, p2, p3);
+		}
+	}
+};

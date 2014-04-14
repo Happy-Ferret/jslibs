@@ -21,7 +21,7 @@
 +extern JS_PUBLIC_DATA(js_jl_realloc_t) js_jl_realloc;
 +extern JS_PUBLIC_DATA(js_jl_free_t) js_jl_free;
 +static inline void* js_malloc(size_t size) { return js_jl_malloc(size); }
-+static inline void* js_calloc(size_t size) { return js_jl_calloc(1, size); }
++static inline void* js_calloc(size_t size, size_t count = 1) { return js_jl_calloc(size, count); }
 +static inline void* js_realloc(void* ptr, size_t size) { return js_jl_realloc(ptr, size); }
 +static inline void js_free(void* ptr) { js_jl_free(ptr); }
 +// /HAS_JL_ALLOCATORS

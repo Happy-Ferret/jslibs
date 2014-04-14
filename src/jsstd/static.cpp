@@ -373,10 +373,13 @@ DEFINE_FUNCTION( countProperties ) {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
+	{
+	JS::RootedObject argObj(cx, &JL_ARG(1).toObject());
 	JSIdArray *arr;
-	arr = JS_Enumerate(cx, &JL_ARG(1).toObject());
+	arr = JS_Enumerate(cx, argObj);
 	JL_RVAL.setInt32(JS_IdArrayLength(cx, arr));
 	JS_DestroyIdArray(cx, arr);
+	}
 
 	return true;
 	JL_BAD;
@@ -831,7 +834,7 @@ DEFINE_FUNCTION( exec ) {
 	JL_CHK( script );
 
 	// doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
-	JL_CHK( JS_ExecuteScript(cx, JL_OBJ, script, JL_RVAL.address()) );
+	JL_CHK( JS_ExecuteScript(cx, JL_OBJ, script, JL_RVAL) );
 	
 	}
 

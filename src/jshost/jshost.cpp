@@ -427,12 +427,12 @@ volatile bool NedAllocators::_skipCleanup = false;
 
 #endif // USE_NEDMALLOC
 
-IFDEBUG( int jshost_test(); )
-
+	
 // see |int wmain(int argc, wchar_t* argv[])| for wide char
 int main(int argc, char* argv[]) {
 
-	IFDEBUG( return jshost_test() );
+//	IFDEBUG( int main_test1(int argc, char* argv[]); )
+//	IFDEBUG( return main_test1(argc, argv) );
 
 	using namespace jl;
 
@@ -469,7 +469,7 @@ int main(int argc, char* argv[]) {
 		//alloc.setSkipCleanup(true);
 		//nedAlloc.setSkipCleanup(true);
 
-		HostRuntime hostRuntime(allocators, 0); // 0 mean no periodical GC
+		HostRuntime hostRuntime(allocators, args.maybeGCInterval * 1000); // 0 mean no periodical GC
 
 		// HOST_MAIN_ASSERT
 		JL_CHK( hostRuntime.create((uint32_t)-1, (uint32_t)-1, HOST_STACK_SIZE) );
@@ -632,7 +632,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef DEBUG
 
-int jshost_test() {
+int main_test1(int argc, char* argv[]) {
 
 	const JSClass global_class = {
 		"global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub, JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub,
@@ -642,53 +642,17 @@ int jshost_test() {
 	JS_Init();
 
 	JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
-
-	JS_SetGCParameter(rt, JSGC_MAX_BYTES, 0xffffffff);
-	JS_SetGCParametersBasedOnAvailableMemory(rt, 1000000);
-	JS_SetNativeStackQuota(rt, 128 * sizeof(size_t) * 1024);
 	JSContext *cx = JS_NewContext(rt, 8192);
-
 	JS_BeginRequest(cx);
 
-    JS_SetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES, 16 * 1024 * 1024);
-	JS::ContextOptionsRef(cx).setVarObjFix(true);
-//	JS_SetErrorReporter(cx, my_ErrorReporter);
-	JS::CompartmentOptions globalOptions;
-    globalOptions.setVersion(JSVERSION_LATEST);
 	{
 
-	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &global_class, nullptr, JS::DontFireOnNewGlobalHook, globalOptions));
+	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &global_class, nullptr, JS::FireOnNewGlobalHook));
 	JSAutoCompartment ac(cx, globalObject);
 	JS_InitStandardClasses(cx, globalObject);
-	JS_FireOnNewGlobalObject(cx, globalObject);
 
-	{
-
-
-		jl::StaticArray< JS::PersistentRootedId, 100 > ids;
-
-		ids.construct(1, cx);
-		ids.destruct(1);
-
-
-//		ids.constructAll(cx);
-
-//		ids[0].get().asBits = 0;
-
-
-
-		{
-		//JS::PersistentRootedObject pr(cx);
-
-		JS::RootedObject pr(cx);
-		
-		
-		JS_GC(rt);
-		}
-
-//		ids.destructAll();
-
-	}
+	JS::PersistentRootedObject pr(cx);
+	JS_GC(rt);
 
 	}
 
@@ -700,8 +664,6 @@ int jshost_test() {
 }
 
 #endif // DEBUG
-
-
 
 
 /**doc

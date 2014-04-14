@@ -68,7 +68,7 @@ ModuleRelease(JSContext *) {
 }
 
 void
-ModuleFree() {
+ModuleFree(bool skipCleanup, void *pv) {
 
 	CoUninitialize();
 }

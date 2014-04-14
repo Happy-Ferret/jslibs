@@ -41,18 +41,18 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../libs/nspr/$(Platform)_$(Configuration)/dist/include/nspr;../../libs/nspr/$(Platform)_$(Configuration)/dist/include/nspr/private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\libs\js\$(IntDir)dist\include\nspr;..\..\libs\js\$(IntDir)dist\include\nspr\private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>../../libs/nspr/$(Platform)_$(Configuration)/dist/lib/nspr4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\..\libs\js\$(IntDir)dist\lib\nspr4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../libs/nspr/$(Platform)_$(Configuration)/dist/include/nspr;../../libs/nspr/$(Platform)_$(Configuration)/dist/include/nspr/private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\libs\js\$(IntDir)dist\include\nspr;..\..\libs\js\$(IntDir)dist\include\nspr\private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>../../libs/nspr/$(Platform)_$(Configuration)/dist/lib/nspr4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\..\libs\js\$(IntDir)dist\lib\nspr4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

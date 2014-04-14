@@ -99,7 +99,7 @@ DEFINE_FUNCTION( stringify ) {
 		return true;
 	}
 
-	if ( JL_ARGC == 0 || (JL_ARGC == 1 && JL_ARG(1).isUndefined()) ) { // undefined
+	if ( JL_ARGC == 0 || (JL_ARGC == 1 && JL_ARG(1).isUndefined()) ) { // preserve undefined
 
 		JL_RVAL.setUndefined();
 		return true;
@@ -441,8 +441,11 @@ DEFINE_FUNCTION( processEvents ) {
 	}
 
 	// wait !
+
+//	JS_EndRequest(cx);
 	JLSemaphoreAcquire(mpv->processEventSignalEventSem); // wait for an event (timeout can also be managed here)
 	JLSemaphoreRelease(mpv->processEventSignalEventSem);
+//	JS_BeginRequest(cx);
 
 	// cancel other waits
 	for ( i = 0; i < argc; ++i ) {
