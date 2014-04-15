@@ -19,16 +19,18 @@ TARGET_FILES=$(INT_DIR)dist/bin/*.{so,dll}
 
 TIP_NAME=mozilla-central-????????????
 
-./src.zip:
-	wget http://hg.mozilla.org/mozilla-central/archive/tip.zip
-	-unzip -nq tip.zip $(TIP_NAME)/{nsprpub/*,mfbt/*,python/*,testing/*,build/*,config/*,intl/*,js/public/*,js/src/*,dom/bindings/mozwebidlcodegen/*,media/webrtc/trunk/tools/gyp/*,moz.build,Makefile.in,mozilla-config.h.in,aclocal.m4,configure.in} -x $(TIP_NAME)/{js/src/jit-test/*,js/src/tests/*,js/src/v8/*}
+./src.zip: tip.zip
+	#-unzip -nq tip.zip $(TIP_NAME)/{nsprpub/*,mfbt/*,python/*,testing/*,build/*,config/*,intl/*,js/public/*,js/src/*,dom/bindings/mozwebidlcodegen/*,media/webrtc/trunk/tools/gyp/*,moz.build,Makefile.in,mozilla-config.h.in,aclocal.m4,configure.in} -x $(TIP_NAME)/{js/src/jit-test/*,js/src/tests/*,js/src/v8/*}
+	7z x tip.zip $(TIP_NAME)/{nsprpub/*,mfbt/*,python/*,testing/*,build/*,config/*,intl/*,js/public/*,js/src/*,dom/bindings/mozwebidlcodegen/*,media/webrtc/trunk/tools/gyp/*,moz.build,Makefile.in,mozilla-config.h.in,aclocal.m4,configure.in} -x\!$(TIP_NAME)/{js/src/jit-test/*,js/src/tests/*,js/src/v8/*} > /dev/null
 	echo $(TIP_NAME) > $(TIP_NAME)/tip.txt
 	mv $(TIP_NAME) src
 	touch --reference=tip.zip src/tip.txt
-	zip -rq src.zip src
+	#zip -rq src.zip src
+	7z -mx9 a src.zip src > /dev/null
 
 ./src: src.zip
-	unzip -nq src.zip
+	#unzip -nq src.zip
+	7z x src.zip > /dev/null
 	touch -c ./src
 
 ./src/js/src/configure: ./src

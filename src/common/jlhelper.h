@@ -2274,7 +2274,7 @@ getValue_slow( JSContext *cx, JS::HandleValue val, JLData* data ) {
 				if ( JS_GetArrayBufferViewType(obj) == js::ArrayBufferView::TYPE_UINT16 )
 					*data = JLData((const jschar*)JS_GetUint16ArrayData(obj), false, length);
 				else
-					*data = JLData((const char*)JS_GetInt8ArrayData(obj), false, length);
+					*data = JLData((const char*)JS_GetArrayBufferViewData(obj), false, length);
 			} else {
 
 				*data = JLData::Empty();

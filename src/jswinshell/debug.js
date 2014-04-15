@@ -47,8 +47,108 @@ loadModule('jswinshell');
 
 function log(msg) {
 
-	print( msg.replace(/\n/g, '\n   '), '\n' );
+	print( stringify(msg).replace(/\n/g, '\n   '), '\n' );
 }
+
+
+function Buffer() {
+
+	var chunkList = [];
+	var length = 0;
+
+	this.length = function() { return length }
+
+	this.write = function(data) {
+		
+		var tmp = new Uint8Array(data);
+		chunkList.push(tmp);
+		length += tmp.length;
+	}
+	
+	this.unread = function(data) {
+
+		chunkList.unshift(new Uint8Array(data));
+		length += data.length;
+	}
+
+	this.read = function(amount) {
+
+		amount = Math.min(amount || length, length);
+		var dst = new ArrayBuffer(amount);
+		var dstOffset = 0;
+		for ( var remain ; remain = amount - dstOffset ; ) {
+
+			var chunk = chunkList.shift();
+			if ( remain >= chunk.length ) {
+
+				new Uint8Array(dst, dstOffset).set(new Uint8Array(chunk));
+				dstOffset += chunk.length;
+				length -= chunk.length;
+			} else {
+
+				new Uint8Array(dst, dstOffset).set(chunk.subarray(0, remain));
+				chunkList.unshift(chunk.subarray(remain));
+				length -= remain;
+				break;
+			}
+		}
+		return Uint8Array(dst);
+	}
+
+
+	this.indexOf = function(sub) {
+
+		if ( chunkList.length == 0 )
+			return -1;
+
+		var offset = 0;
+		var chunkIdx = 0;
+		var chunkOff = 0;
+		var subOff = 0;
+		
+		for (;;) {
+			
+			if ( sub[subOff] == chunkList[chunkIdx][chunkOff] ) {
+		
+				subOff++;
+				if ( subOff >= sub.length )
+					return offset;
+
+			} else {
+
+				subOff = 0;
+			}
+
+			chunkOff++;
+			if ( chunkOff >= chunkList[chunkIdx].length )
+				chunkIdx++;
+			if ( chunkIdx >= chunkList.length )
+				return -1;
+			offset++;
+		}
+	}
+}
+
+
+function str2ab(str) {
+
+	var buf = new ArrayBuffer(str.length);
+	for ( var i = 0, strLen = str.length; i < strLen; ++i ) {
+		
+		buf[i] = str.charCodeAt(i);
+	}
+	return buf;
+}
+
+
+var b = new Buffer();
+b.write(str2ab('abcd'));
+b.write(str2ab('efgh'));
+
+print( b.indexOf(str2ab('a')) );
+
+
+throw 0;
 
 
 const CRLF = '\r\n';
@@ -69,53 +169,64 @@ function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler) {
 		var buf = s.read();
 		if ( buf == undefined )
 			return closeSocket(s);
-		
 
-		var fin = !!(buf[0] & 0x80);
-		var opcode = buf[0] & 0x0F;
-		var masked = !!(buf[1] & 0x80);
-		var mask;
-		var dataOffset;
-		var maskOffset;
-		
-		var length = buf[1] & 0x7F;
+		log('[webSocket:'+s.peerPort+']');
+
+		var buffer = s.data;
+		buffer.write(buf);
+
+		var header = buffer.read(2);
+		var fin = !!(header[0] & 0x80);
+		var opcode = header[0] & 0x0F;
+		var mask = null;
+		var length = header[1] & 0x7F;
 		if ( length == 126 ) {
 			
-			length = buf[2] << 8 | buf[3];
-			if ( masked ) {
-				
-				mask = [buf[4], buf[5], buf[6], buf[7]];
-				dataOffset = 8;
-			} else {
-				
-				dataOffset = 4;
-			}
-		} else 
+			var tmp = buffer.read(2);
+			length = tmp[0] << 8 | tmp[1];
+		} else
 		if ( length == 127 ) {
 
-			// TBD
-		} else {
-
-			if ( masked ) {
-				
-				mask = [buf[2], buf[3], buf[4], buf[5]];
-				dataOffset = 6;
-			} else {
-				
-				dataOffset = 2;
-			}
+			var tmp = buffer.read(8);
+			length = tmp[4] << 24 | tmp[5] << 16 | tmp[6] << 8 | tmp[7]; // only handle 32bit
 		}
+		if ( header[1] & 0x80 ) // masked
+			mask = buffer.read(4);
+
+		log('h-fin:'+fin);
+		log('h-length:'+length);
+		log('h-opcode:'+opcode);
 
 
+		function processPayload() {
 
+			var buf = s.read();
+			if ( buf == undefined )
+				return closeSocket(s);
+			buffer.write(buf);
+			if ( buffer.length() < length ) {
+				
+				s.readable = processPayload;
+				return;
+			}
 
-		s.data += stringify(buf);
+			var data = buffer.read(length);
+			if ( mask ) {
 
+				for ( var i = 0; i < length; ++i ) {
 
+					data[i] = data[i] ^ mask[i%4];
+				}
+			}
 
-		log('[webSocket:'+s.peerPort+']' + s.data);
+			log( 'data: '+ stringify(data) );
 
+			s.readable = processWebSocket;
+		};
+
+		s.readable = processPayload;
 	}
+
 
 	function processRequest(s) {
 
@@ -178,6 +289,11 @@ function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler) {
 				head += 'connection:Upgrade'+CRLF;
 				head += 'upgrade:WebSocket'+CRLF;
 				s.write(head+CRLF);
+
+				var buffer = new Buffer();
+				buffer.write(str2ab(s.data));
+				s.data = buffer;
+
 				s.readable = processWebSocket;
 				return true;
 			}
@@ -215,12 +331,26 @@ function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler) {
 
 	serverSocket.readable = function() {
 		
-		log('[incomming connection]');
-
 		var clientSocket = serverSocket.accept();
+
+		log('[incomming:'+clientSocket.peerPort+']');
+
 		socketList.push(clientSocket);
+
 		clientSocket.data = '';
-		clientSocket.readable = processRequest;
+
+
+		clientSocket.state = processRequest;
+
+		clientSocket.readable = function(s) {
+
+			var buf = s.read();
+			if ( buf == undefined )
+				return closeSocket(s);
+
+			clientSocket.state();
+
+		}
 	}
 
 	serverSocket.nonblocking = true;
@@ -230,9 +360,9 @@ function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler) {
 	this.events = Descriptor.events(socketList);
 }
 
+
 var inflate = new Z(Z.INFLATE);
 var deflate = new Z(Z.DEFLATE);
-
 
 var test = 0;
 function requestHandler(method, url, status, content, response) {
@@ -245,10 +375,9 @@ function requestHandler(method, url, status, content, response) {
 }
 
 
-
 var webRoot = (function() {/*
 <script>
-	var socket = new WebSocket('ws://localhost/');
+	var socket = new WebSocket('ws://localhost:81/');
 
 	function log(msg) {
 
@@ -262,9 +391,11 @@ var webRoot = (function() {/*
 	socket.onopen = function(evt) {
 		
 		log('OPEN')
-		socket.send('test');
-		socket.send('test');
-		socket.send('test');
+		socket.send('Hello');
+		socket.send(' ');
+		socket.send('World');
+		//socket.send(Array(70000 +1).join('d'));
+
 	}
 	socket.onclose = function(evt) {
 		
@@ -314,16 +445,18 @@ function ProcessAudio(latency, http) {
 
 
 
-var http = new SimpleHTTPServer(80, '127.0.0.1', '', requestHandler);
-var audio = new ProcessAudio(50, http);
-audio.start();
+var http = new SimpleHTTPServer(81, '127.0.0.1', '', requestHandler);
+
+//var audio = new ProcessAudio(50, http);
+//audio.start();
 
 for (;;) {
 	
-	processEvents(host.endSignalEvents(function() { throw 0 }), audio.events, http.events );
+	processEvents(host.endSignalEvents(function() { throw 0 }), /*audio.events, */ http.events );
+	print('.');
 }
 
-audio.stop();
+//audio.stop();
 
 throw 0;
 
