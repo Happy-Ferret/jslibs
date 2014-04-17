@@ -517,6 +517,7 @@ HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota
 
 	JS::RuntimeOptionsRef(cx)
 		.setIon(true)
+		.setAsmJS(true)
 	;
 
 	JS::ContextOptionsRef(cx)
