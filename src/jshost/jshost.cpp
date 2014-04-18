@@ -431,8 +431,7 @@ volatile bool NedAllocators::_skipCleanup = false;
 // see |int wmain(int argc, wchar_t* argv[])| for wide char
 int main(int argc, char* argv[]) {
 
-//	IFDEBUG( int main_test1(int argc, char* argv[]); )
-//	IFDEBUG( return main_test1(argc, argv) );
+	//IFDEBUG( int main_test1(int argc, char* argv[]); ); IFDEBUG( return main_test1(argc, argv) );
 
 	using namespace jl;
 
@@ -489,7 +488,7 @@ int main(int argc, char* argv[]) {
 
 		JL_CHKM( initInterrupt(), E_HOST, E_INTERNAL );
 		// https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
-		JL_CHK( JS_DefineProperty(cx, host.hostObject(), "endSignal", JSVAL_VOID, EndSignalGetter, EndSignalSetter, JSPROP_SHARED) );
+		JL_CHK( JS_DefineProperty(cx, host.hostObject(), "endSignal", JL_UNDEFINED(), JSPROP_SHARED, EndSignalGetter, EndSignalSetter) );
 		JL_CHK( JS_DefineFunction(cx, host.hostObject(), "endSignalEvents", EndSignalEvents, 1, 0) );
 
 

@@ -127,10 +127,10 @@ print( b.indexOf(str2ab('\r\n\r\n')) );
 
 
 var audioFormat = {
-	bits:16, 
+	bits:16,
 	channels:2,
 	rate:44100,
-	frames: /*10 * 44100 / 1000*/  1500/4
+	frames: 10  * 44100 / 1000
 };
 
 
@@ -149,12 +149,13 @@ var webPage = (function() {/*
 </body>
 <script>
 
+	var logindex = 0;
 	function log(msg) {
 
 		var output = document.getElementById("output");
 		var pre = document.createElement("p");
 		pre.style.wordWrap = "break-word";
-		pre.innerHTML = Date.now()+msg;
+		pre.innerHTML = ''+(logindex++)+msg;
 		output.insertBefore(pre, output.firstElementChild);
 	}
 
@@ -169,11 +170,7 @@ var webPage = (function() {/*
 
 	socket.onopen = function(ev) {
 		
-		log('OPEN')
-		//socket.send('Hello');
-		//socket.send('World');
-		//socket.send(Array(76543 +1).join('d'));
-
+//		log('OPEN')
 	}
 
 	socket.onclose = function(ev) {
@@ -189,64 +186,63 @@ var webPage = (function() {/*
 
 	window.AudioContext = window.AudioContext||window.webkitAudioContext;
 	var audioCtx = new AudioContext();
-	var startTime = 0.25;
 
-	function AudioSource(channels, frames, rate) {
-	
-		var source;
-		var audioBuffer = audioCtx.createBuffer(channels, frames, rate);
+	var chunkList = [];
+	var chunkByteOffset = 0;
 
-		this.playPCMDataAt = function(data, startTime) {
-			"use asm";
+	var audioNode = audioCtx.createScriptProcessor(256, 0, 2);
+	audioNode.onaudioprocess = function(audioProcessingEvent) {
 
-			source = audioCtx.createBufferSource();
-			source.connect(audioCtx.destination);
-			source.buffer = audioBuffer;
+		if ( chunkList.length < 1 )
+			return;
 
-			var pcm = new DataView(data);
-			var l = audioBuffer.getChannelData(0);
-			var r = audioBuffer.getChannelData(1);
+		var outputBuffer = audioProcessingEvent.outputBuffer;
+		var l = outputBuffer.getChannelData(0);
+		var r = outputBuffer.getChannelData(1);
 
-			for ( var i = 0; i < frames; ++i ) {
-			
-				l[i] = pcm.getInt16(i*4, true) / 32768;
-				r[i] = pcm.getInt16(i*4+2, true) / 32768;
+		var chunk = chunkList[0];
+		var chunkByteLength = chunk.byteLength;
+		
+		for ( var i = 0; i < outputBuffer.length; ++i ) {
+
+			if ( chunkByteOffset >= chunkByteLength ) {
+
+				chunkList.shift();
+				if ( chunkList.length == 0 )
+					return;
+				chunk = chunkList[0];
+				var chunkByteLength = chunk.byteLength;
+				chunkByteOffset = 0;
 			}
-			source.start(startTime);
-			return audioBuffer.duration;
+
+			l[i] = chunk.getInt16(chunkByteOffset, true) / 32768;
+			r[i] = chunk.getInt16(chunkByteOffset+2, true) / 32768;
+			chunkByteOffset += 4;
 		}
 	}
+	audioNode.connect(audioCtx.destination);
 
-	var bufferIndex = 0;
-	var buffers;
 
 	socket.onmessage = function(ev) {
-		"use asm";
 
 		if ( typeof(ev.data) == 'string' ) {
 			
 			var msg = JSON.parse(ev.data);
-			if ( msg.init ) {
-
-				var format = msg.init.format;
-				buffers = [ new AudioSource(format.channels, format.frames, format.rate), new AudioSource(format.channels, format.frames, format.rate) ];
-			}
+			log(ev.data);
 			return;
 		}
-
-		startTime += buffers[bufferIndex++%2].playPCMDataAt(ev.data, startTime);
+		chunkList.push(new DataView(ev.data));
 	}
+
 </script>
 </html>
 */}).toString().match(/\/\*([^]*)\*\//)[1];
 
 
 
-
-function ProcessAudio(framesPerBuffer, audioHandler) {
+function ProcessAudio(framesPerBuffer, audioFormat, audioHandler) {
 	
-	var deviceName = AudioIn.inputDeviceList[0];
-	var audio = new AudioIn(deviceName, audioFormat.rate, audioFormat.bits, audioFormat.channels, framesPerBuffer);
+	var audio = new AudioIn(AudioIn.inputDeviceList[0], audioFormat.rate, audioFormat.bits, audioFormat.channels, framesPerBuffer);
 
 	this.read = function() {
 		
@@ -486,6 +482,8 @@ function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler, wsHandle
 	serverSocket.readable = function() {
 		
 		var clientSocket = serverSocket.accept();
+		clientSocket.noDelay = true;
+
 		log('[incomming:'+clientSocket.peerPort+']');
 		socketList.push(clientSocket);
 		clientSocket.buffer = new Buffer();
@@ -522,7 +520,6 @@ function requestHandler(method, url, status, content, response) {
 
 var audioListeners = [];
 
-
 function wsHandler(send) {
 
 	send(JSON.stringify({ init: { format: audioFormat } }), WS_TEXT_DATA);
@@ -549,7 +546,7 @@ function wsHandler(send) {
 
 var http = new SimpleHTTPServer(81, undefined, '', requestHandler, wsHandler);
 
-var audio = new ProcessAudio(audioFormat.frames, function(chunkList) {
+var audio = new ProcessAudio(audioFormat.frames, audioFormat, function(chunkList) {
 	
 	for ( var listener of audioListeners )
 		listener(chunkList);

@@ -82,7 +82,7 @@ ALWAYS_INLINE bool FASTCALL
 DefineClassProperties(JSContext *cx, IN JS::HandleObject obj, IN JSPropertySpec *ps) {
 
 	for ( ; ps->name; ++ps )
-		JL_CHK( JS_DefineProperty(cx, obj, ps->name, JSVAL_VOID, ps->getter.propertyOp.op, ps->setter.propertyOp.op, ps->flags) );
+		JL_CHK( JS_DefineProperty(cx, obj, ps->name, JL_UNDEFINED(), ps->flags, ps->getter.propertyOp.op, ps->setter.propertyOp.op) );
 	return true;
 	JL_BAD;
 }
@@ -101,8 +101,12 @@ DefineFunctions(JSContext *cx, JS::HandleObject obj, JSFunctionSpec *fs) {
 ALWAYS_INLINE bool FASTCALL
 DefineConstValues(JSContext *cx, JS::HandleObject obj, ConstValueSpec *cs) {
 
-    for ( ; cs->name; cs++ )
-		JL_CHK( JS_DefineProperty(cx, obj, cs->name, cs->val, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	JS::RootedValue tmp(cx);
+    for ( ; cs->name; cs++ ) {
+
+		tmp.set(cs->val);
+		JL_CHK( JS_DefineProperty(cx, obj, cs->name, tmp, JSPROP_READONLY | JSPROP_PERMANENT) );
+	}
 	return true;
 	JL_BAD;
 }

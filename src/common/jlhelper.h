@@ -5004,13 +5004,13 @@ ALWAYS_INLINE bool FASTCALL
 JL_DefineProperty( JSContext *cx, IN JS::HandleObject obj, const char *name, const T &cval, bool visible = true, bool modifiable = true ) {
 
 	JS::RootedValue tmp(cx);
-	return jl::setValue(cx, tmp, cval) && JS_DefineProperty(cx, obj, name, tmp, NULL, NULL, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
+	return jl::setValue(cx, tmp, cval) && JS_DefineProperty(cx, obj, name, tmp, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
 }
 
 ALWAYS_INLINE bool FASTCALL
 JL_DefineProperty( JSContext *cx, IN JS::HandleObject obj, const char *name, IN JS::HandleValue val, bool visible = true, bool modifiable = true ) {
 
-	return JS_DefineProperty(cx, obj, name, val, NULL, NULL, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
+	return JS_DefineProperty(cx, obj, name, val, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
 }
 
 
@@ -5019,7 +5019,7 @@ ALWAYS_INLINE bool FASTCALL
 JL_DefineProperty( JSContext *cx, IN JS::HandleObject obj, jsid id, const T &cval, bool visible = true, bool modifiable = true ) {
 
 	JS::RootedValue tmp(cx);
-	return jl::setValue(cx, tmp, cval) && JS_DefinePropertyById(cx, obj, id, tmp, NULL, NULL, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
+	return jl::setValue(cx, tmp, cval) && JS_DefinePropertyById(cx, obj, id, tmp, (modifiable ? 0 : JSPROP_READONLY | JSPROP_PERMANENT) | (visible ? JSPROP_ENUMERATE : 0) );
 }
 
 ALWAYS_INLINE bool FASTCALL

@@ -49,7 +49,7 @@ BEGIN_STATIC
 **/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
+/* *doc
 $TOC_MEMBER $INAME
  $STR $INAME( str , object|function )
   Return an expanded string using key/value stored in _obj_ or the falue computed by a function.
@@ -63,15 +63,15 @@ $TOC_MEMBER $INAME
   {{{
   expand('$(foo)-$(bar)', function(id) '<'+id+'>' ); // returns "<foo>-<bar>"
   }}}
-**/
+** /
 
-typedef struct {
+class ExpandChunk {
+public:
 	const jschar *chars;
 	size_t count;
-	JSString *root;
-} ExpandChunk;
-
-
+	JS::PersistentRootedString root;
+	ExpandChunk(JSContext *cx) : root(cx) {}
+} ;
 
 
 DEFINE_FUNCTION( expand ) {
@@ -80,7 +80,9 @@ DEFINE_FUNCTION( expand ) {
 
 	// look at jslang: ::join()
 
-	jl::Stack<ExpandChunk, jl::StaticAllocMedium> stack;
+	//jl::Stack<ExpandChunk, jl::StaticAllocMedium> stack;
+
+
 	JLData srcStr;
 	bool hasMapFct;
 	JS::RootedValue value(cx);
@@ -165,8 +167,8 @@ DEFINE_FUNCTION( expand ) {
 				if ( !value.isString() ) { // 'convert to string' and 'root new string' if necessary.
 
 					stack->root = JS::ToString(cx, value);
-					JL_CHK( stack->root );
-					JL_CHK( JS_AddStringRoot(cx, &stack->root) );
+//					JL_CHK( stack->root );
+//					JL_CHK( JS::AddStringRoot(cx, &stack->root) );
 					stack->chars = JS_GetStringCharsAndLength(cx, stack->root, &stack->count);
 			} else {
 
@@ -194,8 +196,8 @@ assemble:
 
 		tmp -= stack->count;
 		jl::strncpy(tmp, stack->chars, stack->count);
-		if ( stack->root != NULL )
-			JS_RemoveStringRoot(cx, &stack->root);
+//		if ( stack->root != NULL )
+//			JS_RemoveStringRoot(cx, &stack->root);
 	}
 
 	JSString *jsstr;
@@ -208,13 +210,14 @@ assemble:
 bad:
 	while ( stack ) {
 
-		if ( stack->root != NULL )
-			JS_RemoveStringRoot(cx, &stack->root);
+//		if ( stack->root != NULL )
+//			JS_RemoveStringRoot(cx, &stack->root);
 		--stack;
 	}
 	return false;
 }
 
+*/
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1931,7 +1934,7 @@ CONFIGURE_STATIC
 	HAS_INIT
 
 	BEGIN_STATIC_FUNCTION_SPEC
-		FUNCTION_ARGC( expand, 2 )
+//		FUNCTION_ARGC( expand, 2 )
 		FUNCTION_ARGC( switchCase, 4 )
 		FUNCTION_ARGC( internString, 1 )
 		FUNCTION_ARGC( deepFreezeObject, 1 )

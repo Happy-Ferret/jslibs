@@ -82,9 +82,11 @@ struct ConstLink {
 
 	bool Register( JSContext *cx, JS::MutableHandleObject obj ) {
 
+		JS::RootedValue tmp(cx);
 		for ( const ConstLink *it = this; it; it = it->_prev ) {
-
-			JL_CHK( JS_DefineProperty(cx, obj, it->name, it->value, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+			
+			tmp.set(it->value);
+			JL_CHK( JS_DefineProperty(cx, obj, it->name, tmp, JSPROP_READONLY | JSPROP_PERMANENT) );
 		}
 		return true;
 		bad: return false;
@@ -155,7 +157,7 @@ struct PropLink {
 				
 				if ( nameIt->tinyid == NameLink::noTinyId ) {
 
-					JL_CHK( JS_DefineProperty(cx, obj, nameIt->name, JSVAL_VOID, it->getter, it->setter, attrs) );
+					JL_CHK( JS_DefineProperty(cx, obj, nameIt->name, JL_UNDEFINED(), attrs, it->getter, it->setter) );
 				} else {
 
 					ASSERT(false); //JL_CHK( JS_DefinePropertyWithTinyId(cx, obj, nameIt->name, nameIt->tinyid, JSVAL_VOID, it->getter, it->setter, attrs) );
