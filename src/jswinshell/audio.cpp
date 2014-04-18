@@ -65,7 +65,7 @@ struct Private : public jl::CppAllocators {
 		ENDING,
 	} state;
 
-	int32_t frameLatency;
+	int32_t frames;
 	int32_t audioBits;
 	int32_t audioChannels;
 	int32_t audioRate;
@@ -82,7 +82,7 @@ WaveInThreadProc( LPVOID lpParam ) {
 	WAVEHDR waveHeader[2];
 	jl::ArrayBuffer arrayBuf[2];
 
-	size_t bufferLength = pv->frameLatency * pv->audioChannels * pv->audioBits/8;
+	size_t bufferLength = pv->frames * pv->audioChannels * pv->audioBits/8;
 
 	for ( int i = 0; i < 2; ++i ) {
 
@@ -224,16 +224,16 @@ DEFINE_CONSTRUCTOR() {
 		pv->audioChannels = 2;
 	}
 
-	int32_t msLatency;
+	int32_t framesPerBuffer;
 	if ( JL_ARG_ISDEF(5) ) {
 
-		JL_CHK( jl::getValue(cx, JL_ARG(5), &msLatency) );
+		JL_CHK( jl::getValue(cx, JL_ARG(5), &framesPerBuffer) );
 	} else {
 		
-		msLatency = 1000;
+		framesPerBuffer = 44100; // 1s
 	}
 
-	pv->frameLatency = pv->audioRate * msLatency/1000;
+	pv->frames = framesPerBuffer; //pv->audioRate * msLatency/1000;
 
 	WAVEFORMATEX wfx;
 	wfx.nSamplesPerSec = pv->audioRate;
@@ -241,7 +241,7 @@ DEFINE_CONSTRUCTOR() {
 	wfx.nChannels = pv->audioChannels;
 	wfx.wFormatTag = WAVE_FORMAT_PCM;
 	wfx.cbSize = 0;
-	wfx.nBlockAlign = (wfx.wBitsPerSample * wfx.nChannels) / 8;
+	wfx.nBlockAlign = (wfx.wBitsPerSample/8) * wfx.nChannels;
 	wfx.nAvgBytesPerSec = wfx.nBlockAlign * wfx.nSamplesPerSec;
 
 	pv->state = Private::RUNNING;
@@ -258,7 +258,7 @@ DEFINE_CONSTRUCTOR() {
 		return ThrowWinAudioError(cx, res);
 
 	pv->thread = CreateThread(NULL, 0, WaveInThreadProc, pv, CREATE_SUSPENDED, NULL);
-	SetThreadPriority(pv->thread, THREAD_PRIORITY_ABOVE_NORMAL);
+	SetThreadPriority(pv->thread, THREAD_PRIORITY_HIGHEST);
 	ResumeThread(pv->thread);
 
 	DWORD status = WaitForSingleObject(pv->audioEvent, INFINITE); // first pulse
@@ -287,7 +287,7 @@ DEFINE_FUNCTION( read ) {
 	}
 	jl::ArrayBuffer buffer = pv->bufferList.Pop();
 	acs.leave();
-	JL_CHK( JL_NewByteAudioObjectOwner(cx, buffer, pv->audioBits, pv->audioChannels, pv->frameLatency, pv->audioRate, JL_RVAL) );
+	JL_CHK( JL_NewByteAudioObjectOwner(cx, buffer, pv->audioBits, pv->audioChannels, pv->frames, pv->audioRate, JL_RVAL) );
 	}
 	return true;
 	JL_BAD;

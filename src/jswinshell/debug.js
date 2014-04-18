@@ -16,6 +16,9 @@ loadModule('jsz');
 loadModule('jscrypt');
 loadModule('jswinshell');
 
+const CRLF = '\r\n';
+
+
 function log(msg) {
 
 	print( stringify(msg).replace(/\n/g, '\n   '), '\n' );
@@ -43,8 +46,9 @@ function Buffer() {
 	
 	this.unread = function(data) {
 
-		chunkList.unshift(Uint8Array(data));
-		length += data.length;
+		var tmp = new Uint8Array(data);
+		chunkList.unshift(tmp);
+		length += tmp.length;
 	}
 
 	this.read = function(amount) {
@@ -68,13 +72,13 @@ function Buffer() {
 				break;
 			}
 		}
-		return Uint8Array(dst);
+		return new Uint8Array(dst);
 	}
 
 
 	this.indexOf = function(subRaw) {
 
-		var sub = Uint8Array(subRaw);
+		var sub = new Uint8Array(subRaw);
 		var sMax = sub.length;
 		if ( length >= sMax && sMax > 0 ) {
 
@@ -121,9 +125,13 @@ b.write(str2ab('\r\n\r\nbefgh'));
 print( b.indexOf(str2ab('\r\n\r\n')) );
 */
 
-const CRLF = '\r\n';
 
-
+var audioFormat = {
+	bits:16, 
+	channels:2,
+	rate:44100,
+	frames: /*10 * 44100 / 1000*/  1500/4
+};
 
 
 
@@ -131,11 +139,12 @@ var webPage = (function() {/*
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="initial-scale=1">
+<meta name="viewport" content="initial-scale=1.5">
 <title>Exemple</title>
 </head>
 <body>
-<input type="button" onclick="socket.close()"></div>
+<input type="button" value="stop" onclick="socket.close()"></div>
+<input type="button" value="reload" onclick="location.reload(true)"></div>
 <div id="output"></div>
 </body>
 <script>
@@ -158,11 +167,6 @@ var webPage = (function() {/*
 	var socket = new WebSocket('ws://'+location.host+'/');
 	socket.binaryType = "arraybuffer";
 
-
-	window.AudioContext = window.AudioContext||window.webkitAudioContext;
-	var audioCtx = new AudioContext();
-	var startTime = 0;
-
 	socket.onopen = function(ev) {
 		
 		log('OPEN')
@@ -171,39 +175,66 @@ var webPage = (function() {/*
 		//socket.send(Array(76543 +1).join('d'));
 
 	}
+
 	socket.onclose = function(ev) {
 		
 		log('CLOSE')
 	}
+
 	socket.onerror = function(ev) {
 		
 		log('ERROR:'+ev.data)
 	};
 
-	socket.onmessage = function(ev) {
 
-		var pcm = DataView(ev.data);
-		var frames = ev.data.byteLength / 4;
+	window.AudioContext = window.AudioContext||window.webkitAudioContext;
+	var audioCtx = new AudioContext();
+	var startTime = 0.25;
 
-		var audioBuffer = audioCtx.createBuffer(2, frames, 44100);
+	function AudioSource(channels, frames, rate) {
+	
+		var source;
+		var audioBuffer = audioCtx.createBuffer(channels, frames, rate);
 
-		var l = audioBuffer.getChannelData(0);
-		var r = audioBuffer.getChannelData(1);
-		for ( var i = 0; i < frames; ++i ) {
+		this.playPCMDataAt = function(data, startTime) {
+			"use asm";
+
+			source = audioCtx.createBufferSource();
+			source.connect(audioCtx.destination);
+			source.buffer = audioBuffer;
+
+			var pcm = new DataView(data);
+			var l = audioBuffer.getChannelData(0);
+			var r = audioBuffer.getChannelData(1);
+
+			for ( var i = 0; i < frames; ++i ) {
 			
-			l[i] = pcm.getInt16(i<<1+1, true) / 32768;
-			r[i] = pcm.getInt16(i<<1+1, true) / 32768;
+				l[i] = pcm.getInt16(i*4, true) / 32768;
+				r[i] = pcm.getInt16(i*4+2, true) / 32768;
+			}
+			source.start(startTime);
+			return audioBuffer.duration;
 		}
-		
-		var source = audioCtx.createBufferSource();
-		source.buffer = audioBuffer;
-		source.connect(audioCtx.destination);
-		source.start(startTime);
+	}
 
-		startTime += audioBuffer.duration;
+	var bufferIndex = 0;
+	var buffers;
 
-		log('play:'+pcm[0])
+	socket.onmessage = function(ev) {
+		"use asm";
 
+		if ( typeof(ev.data) == 'string' ) {
+			
+			var msg = JSON.parse(ev.data);
+			if ( msg.init ) {
+
+				var format = msg.init.format;
+				buffers = [ new AudioSource(format.channels, format.frames, format.rate), new AudioSource(format.channels, format.frames, format.rate) ];
+			}
+			return;
+		}
+
+		startTime += buffers[bufferIndex++%2].playPCMDataAt(ev.data, startTime);
 	}
 </script>
 </html>
@@ -212,12 +243,10 @@ var webPage = (function() {/*
 
 
 
-
-
-function ProcessAudio(latency, audioHandler) {
+function ProcessAudio(framesPerBuffer, audioHandler) {
 	
 	var deviceName = AudioIn.inputDeviceList[0];
-	var audio = new AudioIn(deviceName, 44100, 16, 2, latency);
+	var audio = new AudioIn(deviceName, audioFormat.rate, audioFormat.bits, audioFormat.channels, framesPerBuffer);
 
 	this.read = function() {
 		
@@ -244,6 +273,9 @@ function ProcessAudio(latency, audioHandler) {
 	});
 }
 
+
+const WS_TEXT_DATA = 1;
+const WS_BINARY_DATA = 2;
 
 function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler, wsHandler) {
 
@@ -306,13 +338,24 @@ function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler, wsHandle
 				head += 'upgrade:WebSocket'+CRLF;
 				s.write(head+CRLF);
 
-				function wsSend(d) {
+				function wsSend(d, dataType) {
+					
+					if ( typeof(d) == 'string' ) {
 
-					var data = Uint8Array(d);
+						var data = new Uint8Array(d.length);
+						for ( var i = 0, strLen = d.length; i < strLen; ++i ) {
+		
+							data[i] = d.charCodeAt(i);
+						}
+					} else {
+					
+						var data = new Uint8Array(d);
+					}
+
 					
 					var header = new Uint8Array(10);
 					var dataLen = data.length;
-					header[0] = 0x82;
+					header[0] = 0x80 | (dataType & 0xF) ;
 					if ( dataLen < 126 ) {
 						
 						header[1] = dataLen;
@@ -321,12 +364,12 @@ function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler, wsHandle
 					if ( dataLen > 65535 ) {
 						
 						header[1] = 127;
-						DataView(header.buffer).setInt32(6, dataLen);
+						new DataView(header.buffer).setInt32(6, dataLen);
 						s.write(header.subarray(0, 10));
 					} else {
 
 						header[1] = 126;
-						DataView(header.buffer).setInt16(2, dataLen);
+						new DataView(header.buffer).setInt16(2, dataLen);
 						s.write(header.subarray(0, 4));
 					}
 
@@ -363,11 +406,11 @@ function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler, wsHandle
 					var length = header[1] & 0x7F;
 					if ( length == 126 ) {
 			
-						length = DataView(b.read(2).buffer).getInt16(0);
+						length = new DataView(b.read(2).buffer).getInt16(0);
 					} else
 					if ( length == 127 ) {
 
-						length = DataView(b.read(8).buffer).getInt32(4); // only handle 32bit
+						length = new DataView(b.read(8).buffer).getInt32(4); // only handle 32bit
 					}
 					if ( header[1] & 0x80 ) // masked
 						mask = b.read(4);
@@ -466,13 +509,7 @@ function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler, wsHandle
 	this.events = Descriptor.events(socketList);
 }
 
-
-var inflate = new Z(Z.INFLATE);
-var deflate = new Z(Z.DEFLATE);
-
-
 ///
-
 
 function requestHandler(method, url, status, content, response) {
 
@@ -487,55 +524,40 @@ var audioListeners = [];
 
 
 function wsHandler(send) {
+
+	send(JSON.stringify({ init: { format: audioFormat } }), WS_TEXT_DATA);
 	
 	function audioListener(chunkList) {
 		
 		for ( var chunk of chunkList )
-			send(chunk.data);
+			send(chunk.data, WS_BINARY_DATA);
 	}
 	
 	audioListeners.push(audioListener);
 
 	return function(data) {
 		
-		if ( data == undefined ) {
+		if ( data == undefined ) { // ws closed
 			
 			audioListeners.splice(audioListeners.indexOf(audioListener), 1);
-			log('*** close');
 			return
 		}
-		
-		log('ws message:\n'+data);
-		//send(data);
 	}
 }
-
-
 
 
 
 var http = new SimpleHTTPServer(81, undefined, '', requestHandler, wsHandler);
 
-var audio = new ProcessAudio(5000, function(chunkList) {
+var audio = new ProcessAudio(audioFormat.frames, function(chunkList) {
 	
-	for ( var listener of audioListeners ) {
-		
+	for ( var listener of audioListeners )
 		listener(chunkList);
-	}
-
 });
 
 audio.start();
-
-
-
-
-
-for (;;) {
-	
+for (;;)
 	processEvents(host.endSignalEvents(function() { throw 0 }), audio.events, http.events );
-}
-
 audio.stop();
 
 throw 0;
