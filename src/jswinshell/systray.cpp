@@ -15,7 +15,7 @@
 #include "stdafx.h"
 #include "error.h"
 
-#include <js/Tracer.h>
+#include <js/TracingAPI.h>
 
 
 DECLARE_CLASS( Icon )

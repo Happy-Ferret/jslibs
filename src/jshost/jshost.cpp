@@ -431,8 +431,6 @@ volatile bool NedAllocators::_skipCleanup = false;
 // see |int wmain(int argc, wchar_t* argv[])| for wide char
 int main(int argc, char* argv[]) {
 
-	//IFDEBUG( int main_test1(int argc, char* argv[]); ); IFDEBUG( return main_test1(argc, argv) );
-
 	using namespace jl;
 
 	int exitValue;
@@ -629,13 +627,11 @@ int main(int argc, char* argv[]) {
 
 }
 
-#ifdef DEBUG
 
-int main_test1(int argc, char* argv[]) {
+int XXXmain(int argc, char* argv[]) {
 
 	const JSClass global_class = {
-		"global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub, JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub,
-		nullptr, nullptr, nullptr, nullptr, JS_GlobalObjectTraceHook
+		"global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub, JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, nullptr, nullptr, nullptr, nullptr, JS_GlobalObjectTraceHook
 	};
 
 	JS_Init();
@@ -653,6 +649,13 @@ int main_test1(int argc, char* argv[]) {
 	JS::PersistentRootedObject pr(cx);
 	JS_GC(rt);
 
+	JS::CompileOptions compileOptions(cx, JSVERSION_LATEST);
+
+	JS::RootedScript script(cx);
+	char scriptText[] = "";
+	script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), compileOptions);
+
+
 	}
 
 	JS_EndRequest(cx);
@@ -662,7 +665,40 @@ int main_test1(int argc, char* argv[]) {
 	return 0;
 }
 
-#endif // DEBUG
+/*
+int main_test2(int argc, char* argv[]) {
+
+	const JSClass global_class = {
+		"global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub, JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, nullptr, nullptr, nullptr, nullptr, JS_GlobalObjectTraceHook
+	};
+
+	JS_Init();
+
+	JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
+	JSContext *cx = JS_NewContext(rt, 8192);
+	JS_BeginRequest(cx);
+	{
+	JS::CompileOptions compileOptions(cx, JSVERSION_LATEST);
+
+	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &global_class, nullptr, JS::FireOnNewGlobalHook));
+	JSAutoCompartment ac(cx, globalObject);
+	JS_InitStandardClasses(cx, globalObject);
+
+////
+	JS::RootedScript script(cx);
+	char scriptText[] = "";
+	script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), compileOptions);
+////
+
+	}
+
+	JS_EndRequest(cx);
+	JS_DestroyContext(cx);
+	JS_DestroyRuntime(rt);
+	JS_ShutDown();
+	return 0;
+}
+*/
 
 
 /**doc

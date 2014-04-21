@@ -1,4 +1,4 @@
-#define XP_WIN
+//#define XP_WIN
 
 #include <wchar.h>
 
@@ -986,7 +986,7 @@ int main_run(JSContext *cx) {
 // I want to call a template function: template <class T> void test(JS::MutableHandle<T> mutableHandle) like this: JS::RootedValue rval(cx); test(&rval); but the compiler say it cannot deduce 'JS::Handle<T>' from 'JS::RootedValue *'
 
 
-	bool ok = JS_ExecuteScript(cx, globalObject, script, rval.address());
+	bool ok = JS_ExecuteScript(cx, globalObject, script, rval);
 
 
 	return true;

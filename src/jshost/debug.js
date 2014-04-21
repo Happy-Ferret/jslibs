@@ -14,22 +14,29 @@ var loadModule = host.loadModule;
 
 //loadModule('jsstd');
 
-
-
 //for ( var i = 0; i < 1000000; ++i );
-
 //processEvents(host.endSignalEvents(function() { throw 0 }));
-
 
 
 loadModule('jsio');
 loadModule('jsstd');
 loadModule('jswinshell');
 //loadModule('jssvg');
+
+//jslangTest(); throw 0;
+
+
+//var res = sandboxEval('Math+" "+Math+" "+query()', function() 123);
+//var res = sandboxEval('Math').cos;
+
+var res = sandboxEval('for ( var i = 0; i < 1000000; ++i );', undefined, 1000);
+
+//var res = sandboxEval('throw ({})', undefined, 1000);
+
+print(res, '\n');
 throw 0;
 
 
-jslangTest(); throw 0;
 
 var deviceName = Audio.inputDeviceList[0];
 print(deviceName, '\n');

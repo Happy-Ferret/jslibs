@@ -14,7 +14,7 @@
 
 #include "stdafx.h"
 #include "handlePub.h"
-#include <js/Tracer.h>
+#include <js/TracingAPI.h>
 
 // the aim of *globalKey* is to ensure that a pointer in the process's virtual memory space can be serialized and unserializes safely.
 static uint32_t globalKey = 0;

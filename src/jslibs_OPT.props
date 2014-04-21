@@ -25,7 +25,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_USRDLL;_SECURE_SCL_THROWS=0;_SECURE_SCL=0;_HAS_ITERATOR_DEBUGGING=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WINDOWS;WIN32;NDEBUG;_USRDLL;_SECURE_SCL_THROWS=0;_SECURE_SCL=0;_HAS_ITERATOR_DEBUGGING=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\common;$(jslibsRootDir)libs\js\$(jslibsIntDir)dist\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>false</ExceptionHandling>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>

@@ -23,17 +23,14 @@ tip.zip:
 	wget http://hg.mozilla.org/mozilla-central/archive/tip.zip
 
 ./src.zip: tip.zip
-	#-unzip -nq tip.zip $(TIP_NAME)/{nsprpub/*,mfbt/*,python/*,testing/*,build/*,config/*,intl/*,js/public/*,js/src/*,dom/bindings/mozwebidlcodegen/*,media/webrtc/trunk/tools/gyp/*,moz.build,Makefile.in,mozilla-config.h.in,aclocal.m4,configure.in} -x $(TIP_NAME)/{js/src/jit-test/*,js/src/tests/*,js/src/v8/*}
 	7z x tip.zip $(TIP_NAME)/{nsprpub/*,mfbt/*,python/*,testing/*,build/*,config/*,intl/*,js/public/*,js/src/*,dom/bindings/mozwebidlcodegen/*,media/webrtc/trunk/tools/gyp/*,moz.build,Makefile.in,mozilla-config.h.in,aclocal.m4,configure.in} -x\!$(TIP_NAME)/{js/src/jit-test/*,js/src/tests/*,js/src/v8/*} > /dev/null
 	echo -n $(TIP_NAME) > tip.txt
 	mv $(TIP_NAME) src
 	mv tip.txt src
-	#touch --reference=tip.zip src/tip.txt
-	#zip -rq src.zip src
+	touch -c src
 	7z -mx9 a src.zip src > /dev/null
 
 ./src: src.zip
-	#unzip -nq src.zip
 	7z x src.zip > /dev/null
 	touch -c ./src
 
@@ -57,9 +54,8 @@ $(INT_DIR)Makefile: ./src/js/src/configure
 	# rm tmp.rej
 
 	mkdir -p $(INT_DIR)
-	cd $(INT_DIR) && CXXFLAGS="$(_CFLAGS)" ../src/js/src/configure $(_CONFIGURE_OPTIONS) --enable-threadsafe --disable-gcgenerational --enable-exact-rooting --without-intl-api   --with-windows-version=601 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements --disable-tests
+	cd $(INT_DIR) && CXXFLAGS="$(_CFLAGS)" ../src/js/src/configure $(_CONFIGURE_OPTIONS) --enable-threadsafe --enable-gcgenerational --enable-exact-rooting --without-intl-api --enable-ctypes  --with-windows-version=601 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements --disable-tests
 	#	--enable-intl-api (require to remove --disable-intl-api and to add jslibs/libs/js/src/intl directory)
-	#	--enable-ctypes (require to be linked with NSPR)
 
 all:: $(INT_DIR)Makefile
 	$(MAKE) -C $(INT_DIR) $@

@@ -14,6 +14,35 @@
 
 #pragma once
 
+/*
+__GNUC__
+__MINGW32__
+_MSC_VER
+_WIN32
+_WIN64
+__APPLE__
+
+#ifdef _WIN64
+   //define something for Windows (64-bit)
+#elif _WIN32
+   //define something for Windows (32-bit)
+#elif __APPLE__
+    #include "TargetConditionals.h"
+    #if TARGET_OS_MAC
+        // Other kinds of Mac OS
+    #else
+        // Unsupported platform
+    #endif
+#elif __linux
+    // linux
+#elif __unix // all unices not caught above
+    // Unix
+#elif __posix
+    // POSIX
+#endif
+
+*/
+
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous
 
@@ -323,7 +352,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Platform specific configuration
 
-#if defined(_WINDOWS) || defined(WIN32) // Windows platform
+#if defined(_WINDOWS) || defined(WIN32) // Windows platform // WIN64 ?
 
 #if defined(REPORT_MEMORY_LEAKS)
 	// the following code make issue with jstl.h (js\src\jstl.h(244) : error C2039: '_malloc_dbg' : is not a member of 'JSContext')

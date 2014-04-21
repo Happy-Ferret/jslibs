@@ -997,12 +997,11 @@ static JSClass sandbox_class = {
     JS_PropertyStub,   JS_DeletePropertyStub,
     JS_PropertyStub,   JS_StrictPropertyStub,
     sandboxClass_lazy_enumerate, (JSResolveOp)sandboxClass_lazy_resolve,
-    JS_ConvertStub,    NULL
+	JS_ConvertStub, nullptr, nullptr, nullptr, nullptr, JS_GlobalObjectTraceHook
 };
 
 class SandboxContextPrivate {
 public:
-
 	SandboxContextPrivate(JSContext *cx) : queryFunctionValue(cx) {
 	}
 
@@ -1028,14 +1027,15 @@ bool SandboxMaxOperationCallback(JSContext *cx) {
 
 		oldCompartment = JS_EnterCompartment(cx, cpc->proto);
 		JL_CHK( oldCompartment );
-		JSObject *branchLimitExceptionObj;
-		branchLimitExceptionObj = jl::newObjectWithGivenProto(cx, cpc->clasp, cpc->proto);
-		
+		{
+		JS::RootedObject branchLimitExceptionObj(cx, jl::newObjectWithGivenProto(cx, cpc->clasp, cpc->proto));
+	
 		branchLimitExceptionVal.setObject(*branchLimitExceptionObj);
 		JS_SetPendingException(cx, branchLimitExceptionVal);
 		JS_LeaveCompartment(cx, oldCompartment);
 		JL_CHK( branchLimitExceptionObj );
 		JS_SetInterruptCallback(JL_GetRuntime(cx), tmp);
+		}
 		JL_BAD;
 	}
 	return pv->prevInterruptCallback(cx);

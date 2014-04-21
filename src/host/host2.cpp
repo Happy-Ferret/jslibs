@@ -490,7 +490,7 @@ HostRuntime::HostRuntime(Allocators allocators, uint32_t maybeGCIntervalMs)
 bool
 HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota, bool lazyStandardClasses ) {
 
-	rt = JS_NewRuntime(maxAlloc, JS_NO_HELPER_THREADS); // JSGC_MAX_MALLOC_BYTES
+	rt = JS_NewRuntime(maxAlloc, JS_USE_HELPER_THREADS); // JSGC_MAX_MALLOC_BYTES
 	JL_CHK( rt );
 
 	// Number of JS_malloc bytes before last ditch GC.
@@ -498,6 +498,8 @@ HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota
 
 	// doc: maxMem specifies the number of allocated bytes after which garbage collection is run. Maximum nominal heap before last ditch GC.
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem); 
+	JS_SetNativeStackQuota(rt, 128 * sizeof(size_t) * 1024); // doc. To disable stack size checking pass 0.
+
 
 	//JS::DisableGenerationalGC(rt);
 
@@ -514,7 +516,6 @@ HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota
 	//   http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 
 	JS_SetErrorReporter(cx, errorReporterBasic);
-
 	JS::RuntimeOptionsRef(cx)
 		.setIon(true)
 		.setAsmJS(true)
@@ -524,7 +525,7 @@ HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota
 		// doc. VarObjFix is recommended.  Without it, the two scripts "x = 1" and "var x = 1", where no variable x is in scope, do two different things.
 		//      The former creates a property on the global object.  The latter creates a property on obj.  With this flag, both create a global property.
 		.setVarObjFix(true)
-//		.setCloneSingletons(false)
+//		.setCloneSingletons(true)
 	;
 
 	//JS_SetNativeStackQuota(cx, DEFAULT_MAX_STACK_SIZE); // see https://developer.mozilla.org/En/SpiderMonkey/JSAPI_User_Guide
@@ -1232,7 +1233,11 @@ Host::hostStderrWrite(const char *message, size_t length) {
 		
 	JS::RootedValue rval(cx);
 	JS::RootedValue fct(cx);
-	JL_CHK( JS_GetPropertyById(cx, _hostObject, JLID(cx, stderr), &fct) );
+	JS::RootedObject hostObj(cx, _hostObject);
+
+	JL_CHK( JS_WrapObject(cx, &hostObj) );
+
+	JL_CHK( jl::getProperty(cx, hostObj, JLID(cx, stderr), &fct) );
 	JL_CHK( jl::isCallable(cx, fct) );
 	JL_CHK( jl::call(cx, globalObject, fct, &rval, jl::strSpec(message, length)) ); // beware out of memory case !
 

@@ -6134,6 +6134,8 @@ JL_LoadScript(JSContext * RESTRICT cx, IN JS::HandleObject obj, const char * RES
 			compileOptions.setFileAndLine(fileName, 1);
 			compileOptions.setCompileAndGo(true);
 
+			//printf("DEBUG %p", obj.address());
+
 			script = JS_CompileScript(cx, obj, scriptText, scriptTextLength, compileOptions);
 			break;
 		}

@@ -4,6 +4,30 @@ var loadModule = host.loadModule;
 
 loadModule('jsstd');
 
+
+
+//var res = sandboxEval('Math+" "+Math+" "+query()', function() 123); print(res, '\n');
+//sandboxEval('', function() 123);
+//sandboxEval('typeof query');
+//sandboxEval('query()', function() 123);
+
+//var res = sandboxEval('for ( var i = 0; i < 1000000; ++i );', undefined, 1000);
+
+try {
+//var res = sandboxEval('throw ({x:123})', undefined, 1000);
+var res = sandboxEval('for ( var i = 0; i < 1000000; ++i );', undefined, 100);
+
+} catch(ex if ex instanceof OperationLimit) {
+
+	print(ex);
+}
+
+throw ({})
+
+
+throw 0;
+
+
 stringRepeat('-', -1 )
 throw 0;
 
@@ -20,23 +44,6 @@ loadModule('jsstd');
 throw 0;
 
 
-
-loadModule('jsstd');
-var res = sandboxEval('Math+" "+Math+" "+query()', function() 123);
-
-//sandboxEval('', function() 123);
-
-//sandboxEval('typeof query');
-//sandboxEval('query()', function() 123);
-
-print(res, '\n');
-
-
-
-
-
-
-throw 0;
 
 //jsstdTest();
 

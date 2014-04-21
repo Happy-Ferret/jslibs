@@ -17,7 +17,7 @@
 #ifdef WIN32
 	#define _CRT_SECURE_NO_WARNINGS
 	#define _CRT_NONSTDC_NO_WARNINGS
-	#define XP_WIN
+//	#define XP_WIN
 	#include <io.h>
 #else // Linux
 	#define XP_UNIX
@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) {
 	const JSClass global_class = {
 		 "global", JSCLASS_GLOBAL_FLAGS,
 		 JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
-		 JS_EnumerateStub, JS_ResolveStub
+		 JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, nullptr, nullptr, nullptr, nullptr, JS_GlobalObjectTraceHook
 	};
 
 	JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
@@ -177,6 +177,7 @@ int main(int argc, char* argv[]) {
 	JS_SetNativeStackQuota(rt, 128 * sizeof(size_t) * 1024);
 
 	JSContext *cx = JS_NewContext(rt, 8192);
+	JS_BeginRequest(cx);
 	
     //JS_SetGCParameter(rt, JSGC_MODE, JSGC_MODE_INCREMENTAL);
     JS_SetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES, 16 * 1024 * 1024);
@@ -275,6 +276,7 @@ int main(int argc, char* argv[]) {
 
 	}
 
+	JS_EndRequest(cx);
 	JS_DestroyContextNoGC(cx);
 	JS_DestroyRuntime(rt);
 	JS_ShutDown();
