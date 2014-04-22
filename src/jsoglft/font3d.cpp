@@ -225,8 +225,7 @@ DEFINE_FUNCTION( measure ) {
 
 	JLData str;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE( 1, 2 );
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
@@ -272,8 +271,7 @@ DEFINE_FUNCTION( width ) {
 	
 	JLData str;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC( 1 );
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
@@ -313,8 +311,7 @@ DEFINE_FUNCTION( draw ) {
 
 	JLData str;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE( 1, 3 );
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
@@ -361,8 +358,7 @@ DEFINE_FUNCTION( compile ) {
 
 	JLData str;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC( 1 );
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
@@ -388,8 +384,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( setColor ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE( 0, 1 );
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
@@ -431,8 +426,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( setBackgroundColor ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE( 0, 1 );
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);

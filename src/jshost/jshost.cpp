@@ -19,9 +19,9 @@
 #define HOST_STACK_SIZE 4194304 // = 4 * 1024 * 1024
 
 // set stack to 4MB:
-#if defined(XP_WIN)
+#if defined(MSC)
 	#pragma comment (linker, JL_TOSTRING(/STACK:HOST_STACK_SIZE))
-#elif defined(XP_UNIX)
+#elif defined(GCC)
 	#pragma stacksize HOST_STACK_SIZE
 	//char stack[HOST_STACK_SIZE] __attribute__ ((section ("STACK"))) = { 0 };
 	//init_sp(stack + sizeof (stack));
@@ -29,7 +29,7 @@
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 
-#if defined(XP_WIN)
+#if defined(WIN)
 #define USE_NEDMALLOC
 #endif
 
@@ -212,7 +212,7 @@ EndSignalSetter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, b
 	JL_BAD;
 }
 
-#if defined(XP_WIN)
+#if defined(WIN)
 
 BOOL WINAPI
 Interrupt( DWORD CtrlType ) {
@@ -241,7 +241,7 @@ Interrupt( DWORD CtrlType ) {
 	return TRUE;
 }
 
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 
 void
 Interrupt( int CtrlType ) {
@@ -346,7 +346,7 @@ initInterrupt() {
 	gEndSignalLock = JLMutexCreate();
 	gEndSignalCond = JLCondCreate();
 
-#if defined(XP_WIN)
+#if defined(WIN)
 	JL_CHK( SetProcessShutdownParameters(0x180, SHUTDOWN_NORETRY) ); // last shutdown range: 100-1FF
 
 //	DWORD shutdownlevel, shutdownflags;
@@ -354,7 +354,7 @@ initInterrupt() {
 //	SetProcessShutdownParameters(shutdownlevel+1, SHUTDOWN_NORETRY);
 
 	JL_CHK( SetConsoleCtrlHandler(Interrupt, TRUE) );
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 	signal(SIGINT, Interrupt);
 	signal(SIGTERM, Interrupt);
 	signal(SIGKILL, Interrupt);
@@ -368,9 +368,9 @@ initInterrupt() {
 bool
 freeInterrupt() {
 
-#if defined(XP_WIN)
+#if defined(WIN)
 	SetConsoleCtrlHandler((PHANDLER_ROUTINE)&Interrupt, FALSE);
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 	signal(SIGINT, SIG_DFL);
 	signal(SIGTERM, SIG_DFL);
 	signal(SIGKILL, SIG_DFL);
@@ -466,7 +466,7 @@ int main(int argc, char* argv[]) {
 		//alloc.setSkipCleanup(true);
 		//nedAlloc.setSkipCleanup(true);
 
-		HostRuntime hostRuntime(allocators, args.maybeGCInterval * 1000); // 0 mean no periodical GC
+		HostRuntime hostRuntime(allocators, uint32_t(args.maybeGCInterval * 1000)); // 0 mean no periodical GC
 
 		// HOST_MAIN_ASSERT
 		JL_CHK( hostRuntime.create((uint32_t)-1, (uint32_t)-1, HOST_STACK_SIZE) );
@@ -609,7 +609,7 @@ int main(int argc, char* argv[]) {
 #endif // DBG_ALLOC
 */
 /*
-#if defined(XP_WIN) && defined(DEBUG) && defined(REPORT_MEMORY_LEAKS)
+#if defined(WIN) && defined(DEBUG) && defined(REPORT_MEMORY_LEAKS)
 	if ( debug ) {
 		_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 		_CrtSetReportMode( _CRT_WARN, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG );
@@ -618,7 +618,7 @@ int main(int argc, char* argv[]) {
 #endif
 */
 /*
-#if defined(XP_WIN) && defined(DEBUG) && defined(REPORT_MEMORY_LEAKS)
+#if defined(WIN) && defined(DEBUG) && defined(REPORT_MEMORY_LEAKS)
 	if ( debug ) {
 //		_CrtMemDumpAllObjectsSince(NULL);
 	}
@@ -628,7 +628,7 @@ int main(int argc, char* argv[]) {
 }
 
 
-int XXXmain(int argc, char* argv[]) {
+int xxxmain(int argc, char* argv[]) {
 
 	const JSClass global_class = {
 		"global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub, JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, nullptr, nullptr, nullptr, nullptr, JS_GlobalObjectTraceHook
@@ -645,15 +645,19 @@ int XXXmain(int argc, char* argv[]) {
 	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &global_class, nullptr, JS::FireOnNewGlobalHook));
 	JSAutoCompartment ac(cx, globalObject);
 	JS_InitStandardClasses(cx, globalObject);
-
+/*
 	JS::PersistentRootedObject pr(cx);
 	JS_GC(rt);
+*/
 
 	JS::CompileOptions compileOptions(cx, JSVERSION_LATEST);
+	compileOptions
+		.setFileAndLine(__FILE__, __LINE__)
+		.setNoScriptRval(true)
+	;
 
-	JS::RootedScript script(cx);
 	char scriptText[] = "";
-	script = JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), compileOptions);
+	JS::RootedScript script(cx, JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), compileOptions));
 
 
 	}

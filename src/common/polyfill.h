@@ -49,25 +49,6 @@ extern JS_FRIEND_API(bool)
 js_CloseIterator(JSContext *cx, JSObject *iterObj);
 */
 
-// only defined as JS_FRIEND_API in js/src/js/src/jsdate.h
-
-extern JS_FRIEND_API(int)
-js_DateGetYear(JSContext *cx, JSObject* obj);
-
-extern JS_FRIEND_API(int)
-js_DateGetMonth(JSContext *cx, JSObject* obj);
-
-extern JS_FRIEND_API(int)
-js_DateGetDate(JSContext *cx, JSObject* obj);
-
-extern JS_FRIEND_API(int)
-js_DateGetHours(JSContext *cx, JSObject* obj);
-
-extern JS_FRIEND_API(int)
-js_DateGetMinutes(JSContext *cx, JSObject* obj);
-
-extern JS_FRIEND_API(int)
-js_DateGetSeconds(JSObject* obj);
 
 
 /*

@@ -30,8 +30,7 @@ DEFINE_FINALIZE() {
 
 DEFINE_FUNCTION( alloc ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
+		JL_ASSERT_INSTANCE(obj, JL_THIS_CLASS);
 	JL_ASSERT_ARGC_MIN(1);
 
 	void *data;
@@ -71,8 +70,7 @@ DEFINE_CONSTRUCTOR() {
 DEFINE_FUNCTION( free ) {
 
 	JL_IGNORE(argc);
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_RVAL.setUndefined();
+		JL_RVAL.setUndefined();
 
 	void *data = JL_GetPrivate(obj);
 	if ( data != NULL ) {
@@ -86,8 +84,7 @@ DEFINE_FUNCTION( free ) {
 
 DEFINE_FUNCTION( trim ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN(1);
+		JL_ASSERT_ARGC_MIN(1);
 
 	int vect[4];
 	//IntArrayToVector(cx, 4, &argv[0], vect);

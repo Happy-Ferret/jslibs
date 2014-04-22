@@ -7239,7 +7239,7 @@ DEFINE_INIT() {
 
 	ASSERT( glGetProcAddress == NULL );
 
-#ifdef XP_WIN
+#ifdef WIN
 	glGetProcAddress = windowsGLGetProcAddress;
 #else
 	//	JL_CHK( GetPrivateNativeFunction(cx, JL_GetGlobal(cx), "_glGetProcAddress", (void**)&glGetProcAddress) );

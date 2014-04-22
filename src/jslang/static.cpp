@@ -1033,8 +1033,7 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_IGNORE(cx, argc, vp);
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-
+	
 	{
 		jl::ArrayBuffer ab(2);
 		((uint8_t*)ab.data())[0] = 1;

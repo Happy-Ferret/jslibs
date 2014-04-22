@@ -116,8 +116,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( destroy ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INHERITANCE();
+		JL_ASSERT_THIS_INHERITANCE();
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( jointId );

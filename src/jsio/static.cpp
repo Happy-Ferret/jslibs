@@ -624,18 +624,18 @@ DEFINE_FUNCTION( availableSpace ) {
 
 	double available;
 
-#ifdef XP_WIN
+#ifdef WIN
 	ULARGE_INTEGER freeBytesAvailable;
 	BOOL res = ::GetDiskFreeSpaceEx(path, &freeBytesAvailable, NULL, NULL);
 	if ( res == 0 )
 		JL_ThrowOSError(cx);
 	available = (double)freeBytesAvailable.QuadPart;
-#else // now for XP_UNIX an MacOS ?
+#else // now for UNIX and  MAC ?
 	struct statvfs fsd;
 	if ( statvfs(path, &fsd) < 0 )
 		JL_ThrowOSError(cx);
 	available = (double)fsd.f_bsize * (double)fsd.f_bavail;
-#endif // XP_WIN
+#endif
 
 	JL_RVAL.setDouble(available);
 
@@ -689,7 +689,7 @@ DEFINE_FUNCTION( configureSerialPort ) {
 
 	JL_ASSERT( fd, E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_CLASS_NAME(File)), E_CLOSED );
 
-#ifdef XP_WIN
+#ifdef WIN
 
 	DWORD baudRate;
 	BYTE byteSize, parity, stopBits;
@@ -751,15 +751,15 @@ DEFINE_FUNCTION( configureSerialPort ) {
 	status = SetCommState(fh, &dcb);
 	if ( status == 0 )
 		JL_ThrowOSError(cx);
-#endif // XP_WIN
+#endif // WIN
 
-#ifdef XP_UNIX
+#ifdef UNIX
 
 //	struct termios tio;
 //	tcgetattr(
 	// (TBD) see http://www.comptechdoc.org/os/linux/programming/c/linux_pgcserial.html
 
-#endif // XP_UNIX
+#endif // UNIX
 
 
 	JL_RVAL.setUndefined();
@@ -969,12 +969,12 @@ DEFINE_PROPERTY_GETTER( currentDirectory ) {
 	JL_DEFINE_PROP_ARGS;
 
 	char buf[PATH_MAX];
-#ifdef XP_WIN
+#ifdef WIN
 //	_getcwd(buf, sizeof(buf));
 	::GetCurrentDirectory(COUNTOF(buf), buf);
-#else // XP_WIN
+#else
 	getcwd(buf, sizeof(buf)); // need  #include <direct.h>
-#endif // XP_WIN
+#endif // WIN
 	JSString *str = JS_NewStringCopyZ(cx, buf);
 	JL_CHK( str );
 	vp.setString(str);
@@ -988,12 +988,12 @@ DEFINE_PROPERTY_SETTER( currentDirectory ) {
 
 	JLData dir;
 	JL_CHK( jl::getValue(cx, vp, &dir ) );
-#ifdef XP_WIN
+#ifdef WIN
 //	_chdir(dir);
 	::SetCurrentDirectory(dir);
-#else // XP_WIN
+#else
 	chdir(dir);
-#endif // XP_WIN
+#endif // WIN
 	return true;
 	JL_BAD;
 }

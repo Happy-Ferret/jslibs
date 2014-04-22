@@ -81,8 +81,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( alignToZAxis ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-
+	
 	// fc. http://opende.sourceforge.net/wiki/index.php/Manual_(Joint_Types_and_Functions)#Plane_2D
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !

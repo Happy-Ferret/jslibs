@@ -14,34 +14,57 @@
 
 #pragma once
 
-/*
-__GNUC__
-__MINGW32__
-_MSC_VER
-_WIN32
-_WIN64
-__APPLE__
 
+// platform: http://nadeausoftware.com/articles/2012/01/c_c_tip_how_use_compiler_predefined_macros_detect_operating_system
 #ifdef _WIN64
-   //define something for Windows (64-bit)
+	#define WIN
 #elif _WIN32
-   //define something for Windows (32-bit)
-#elif __APPLE__
+	#define WIN
+#elif defined(__APPLE__) && defined(__MACH__)
     #include "TargetConditionals.h"
-    #if TARGET_OS_MAC
-        // Other kinds of Mac OS
+    #if TARGET_OS_MAC == 1
+		#define MAC
     #else
-        // Unsupported platform
+        #error Unsupported OS
     #endif
 #elif __linux
-    // linux
-#elif __unix // all unices not caught above
-    // Unix
-#elif __posix
-    // POSIX
+	#define UNIX
+#elif __unix
+	#define UNIX
+#else
+	#error Unsupported OS
 #endif
 
-*/
+// platform bits: http://nadeausoftware.com/articles/2012/02/c_c_tip_how_detect_processor_type_using_compiler_predefined_macros
+#if defined(_WIN64) || defined(_M_X64) || defined(__x86_64__) || defined(__ppc64__)
+	#define BITS64
+#elif defined(_WIN32) || defined(_M_IX86) || defined(__i386) || defined(__ppc__)
+	#define BITS32
+#else
+	#error Unsupported architecture
+#endif
+
+#define PLATFORM_BITS \
+	(sizeof(ptrdiff_t) * 8)
+
+
+// compiler: http://nadeausoftware.com/articles/2012/10/c_c_tip_how_detect_compiler_name_and_version_using_compiler_predefined_macros
+#ifdef _MSC_VER
+	#define MSC
+#elif  defined(__GNUC__) || defined(__GNUG__) || defined(__clang__)
+	#define GCC
+#elif defined(__MINGW32__)
+	#define GCC
+#else
+	#error Unsupported compiler
+#endif
+
+// debug
+#if defined(_DEBUG) && !defined(DEBUG)
+	#define DEBUG
+#endif
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous
@@ -82,7 +105,7 @@ __APPLE__
 ///////////////////////////////////////////////////////////////////////////////
 // Compiler specific configuration
 
-#if defined(_MSC_VER)
+#if defined(MSC)
 	// disable warnings:
 	#pragma warning(disable : 4127) // no "conditional expression is constant" complaints
 	#pragma warning(disable : 4996) // 'function': was declared deprecated
@@ -111,14 +134,11 @@ __APPLE__
 	#ifdef DEBUG
 		#pragma warning(error : 4701) // potentially uninitialized local variable 'XXX' used
 	#endif
-#endif // _MSC_VER
-
-
-#if defined(__GNUC__)
+#elif defined(GCC)
 	// # pragma GCC diagnostic ignored "-Wformat"  /* Ignore Warning about printf format /
 	// # pragma GCC diagnostic ignored "-Wunused-parameter"  / Ignore Warning about unused function parameter */
 	#pragma GCC diagnostic error "-Wdiv-by-zero"
-#endif // __GNUC__
+#endif
 
 
 #ifndef IN
@@ -131,13 +151,6 @@ __APPLE__
 
 #ifndef OPTIONAL
 	#define OPTIONAL
-#endif
-
-
-#if defined(_DEBUG)
-	#if !defined(DEBUG)
-		#define DEBUG
-	#endif
 #endif
 
 
@@ -352,7 +365,7 @@ __APPLE__
 ///////////////////////////////////////////////////////////////////////////////
 // Platform specific configuration
 
-#if defined(_WINDOWS) || defined(WIN32) // Windows platform // WIN64 ?
+#if defined(WIN)
 
 #if defined(REPORT_MEMORY_LEAKS)
 	// the following code make issue with jstl.h (js\src\jstl.h(244) : error C2039: '_malloc_dbg' : is not a member of 'JSContext')
@@ -361,10 +374,6 @@ __APPLE__
 	# include <crtdbg.h>
 	#endif // _DEBUG
 #endif // REPORT_MEMORY_LEAKS
-
-	#ifndef XP_WIN
-	#define XP_WIN // used by SpiderMonkey and jslibs
-	#endif
 
 	// doc: _WIN32_WINNT_WS03 = 0x0502 = Windows Server 2003 with SP1, Windows XP with SP2.
 	// note: SpiderMionkey compilation option: --with-windows-version=502
@@ -428,10 +437,10 @@ __APPLE__
 	#define snprintf _snprintf
 
 
-#elif defined(_MACOSX) // MacosX platform
+#elif defined(MAC) // MacosX platform
 
-	#ifndef XP_UNIX
-	#define XP_UNIX // used by SpiderMonkey and jslibs
+	#ifndef UNIX
+	#define UNIX // used by SpiderMonkey and jslibs
 	#endif
 
 	#include <unistd.h>
@@ -445,11 +454,9 @@ __APPLE__
 	#define LIST_SEPARATOR_STRING ":"
 	#define LIST_SEPARATOR ':'
 
-#else // Linux platform
+	#error TBD
 
-	#ifndef XP_UNIX
-	#define XP_UNIX // used by SpiderMonkey and jslibs
-	#endif
+#else // Linux platform
 
 	#include <unistd.h>
 	#include <sys/time.h>
@@ -498,9 +505,6 @@ __APPLE__
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous
 
-#define PLATFORM_BITS \
-	(sizeof(ptrdiff_t) * 8)
-
 #define S_ASSERT(cond) \
 	extern void STATIC_ASSERT_DUMMY(int arg[(cond) ? 1 : -1])
 
@@ -509,7 +513,7 @@ __APPLE__
 #define PTRDIFF_MAX ((ptrdiff_t)(SIZE_MAX / 2))
 #endif
 
-#ifdef _MSC_VER
+#ifdef MSC
 #define UNLIKELY_SPLIT_BEGIN(...) { struct { INLINE NEVER_INLINE bool FASTCALL operator()( ##__VA_ARGS__ ) {
 #define UNLIKELY_SPLIT_END(...) } } inner; if ( inner( ##__VA_ARGS__ ) ) return true; else goto bad; JL_BAD; }
 #else
@@ -518,7 +522,8 @@ __APPLE__
 #endif
 
 
-#ifdef WIN32
+
+#ifdef WIN
 
 #define L(CSTRING) (L##CSTRING)
 
@@ -748,7 +753,7 @@ isIn(T val, T1 v1, T2 v2, T2 v3) {
 
 ALWAYS_INLINE NOALIAS int
 DoubleIsNegZero(const double &d) {
-#ifdef WIN32
+#ifdef WIN
 	return (d == 0 && (_fpclass(d) & _FPCLASS_NZ));
 #elif defined(SOLARIS)
 	return (d == 0 && copysign(1, d) < 0);
@@ -760,7 +765,7 @@ DoubleIsNegZero(const double &d) {
 
 ALWAYS_INLINE NOALIAS bool
 DoubleIsNeg(const double &d) {
-#ifdef WIN32
+#ifdef WIN
 	return d < 0 || DoubleIsNegZero(d);
 #elif defined(SOLARIS)
 	return copysign(1, d) < 0;
@@ -937,6 +942,7 @@ memcpy(void *dst_, const void *src_, size_t len) {
 	return ::memcpy(dst, src, len);
 }
 
+
 /*
 ALWAYS_INLINE void *
 memset(void *dst, size_t len, uint8_t val) {
@@ -1046,14 +1052,16 @@ template <class T>
 ALWAYS_INLINE T
 LeastSignificantBit(register T x) {
 
-	#ifdef XP_WIN
-	#pragma warning(push)
-	#pragma warning(disable : 4146) // warning C4146: unary minus operator applied to unsigned type, result still unsigned
-	#endif // XP_WIN
+	#ifdef MSC
+		#pragma warning(push)
+		#pragma warning(disable : 4146) // warning C4146: unary minus operator applied to unsigned type, result still unsigned
+	#endif // WIN
+
 	return x & -x;
-	#ifdef XP_WIN
-	#pragma warning(pop)
-	#endif // XP_WIN
+
+	#ifdef MSC
+		#pragma warning(pop)
+	#endif // WIN
 }
 
 
@@ -1105,7 +1113,7 @@ INLINE bool FASTCALL
 fpipe( FILE **read, FILE **write ) {
 
 	int readfd, writefd;
-#if defined(XP_WIN)
+#if defined(WIN)
 	HANDLE readPipe, writePipe;
 	if ( CreatePipe(&readPipe, &writePipe, NULL, 65536) == 0 )
 		return false;
@@ -1117,7 +1125,7 @@ fpipe( FILE **read, FILE **write ) {
 	writefd = _open_osfhandle((intptr_t)writePipe, _O_WRONLY);
 	if ( writefd == -1 )
 		return false;
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 	int fd[2];
 	if ( pipe(fd) == -1 )
 		return false;
@@ -1137,7 +1145,8 @@ fpipe( FILE **read, FILE **write ) {
 */
 
 
-#ifdef XP_UNIX
+#ifdef UNIX
+
 INLINE void GetAbsoluteModulePath( char* moduleFileName, size_t size, char *modulePath ) {
 
 	if ( modulePath[0] == PATH_SEPARATOR ) { //  /jshost
@@ -1201,15 +1210,16 @@ INLINE void GetAbsoluteModulePath( char* moduleFileName, size_t size, char *modu
 	moduleFileName[0] = '\0';
 	return;
 }
-#endif //XP_UNIX
+
+#endif //UNIX
 
 
 ALWAYS_INLINE bool
 GetModuleFileName(char *hostFullPath) {
-#if defined(XP_WIN)
+#if defined(WIN)
 // get hostpath and hostname
 	return GetModuleFileName((HINSTANCE)GetModuleHandle(NULL), hostFullPath, PATH_MAX) != 0;
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 //	jl::GetAbsoluteModulePath(hostFullPath, PATH_MAX, argv0);
 	int len = readlink("/proc/self/exe", moduleFileName, sizeof(moduleFileName)); // doc: readlink does not append a NUL character to buf.
 	moduleFileName[len] = '\0';
@@ -1514,34 +1524,43 @@ itoa10(T val, char *buf) {
 
 // ReaD Time Stamp Counter (rdtsc)
 
-#if defined(XP_WIN)
+#if defined(WIN)
+
 INLINE uint64_t
 rdtsc(void) {
 
   return __rdtsc();
 }
-#elif defined(XP_UNIX)
+
+#elif defined(UNIX)
+
 #ifdef __i386
+
 INLINE uint64_t
 rdtsc() {
   uint64_t x;
   __asm__ volatile ("rdtsc" : "=A" (x));
   return x;
 }
+
 #elif defined __amd64
+
 INLINE uint64_t
 rdtsc() {
   uint64_t a, d;
   __asm__ volatile ("rdtsc" : "=a" (a), "=d" (d));
   return (d<<32) | a;
 }
+
 #endif
+
 #else
 	#error NOT IMPLEMENTED YET
 #endif
 
+
 /*
-#if defined(XP_WIN)
+#if defined(WIN)
 INLINE DWORD
 GetCurrentProcessor(void) {
 #if defined(__i386__) || defined(__x86_64__)
@@ -1570,7 +1589,7 @@ GetCurrentProcessor(void) {
 INLINE double FASTCALL
 AccurateTimeCounter() {
 
-#if defined(XP_WIN)
+#if defined(WIN)
 
 	// see article http://www.virtualdub.org/blog/pivot/entry.php?id=106
 	// beware: rdtsc is a per-cpu operation. On multiprocessor systems, be careful that calls to rdtsc are actually executing on the same cpu.
@@ -1601,7 +1620,7 @@ AccurateTimeCounter() {
 	JL_IGNORE( result );
 	return (double)1000 * (performanceCount.QuadPart - initTime) / (double)frequency.QuadPart;
 
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 
 	static volatile long initTime = 0; // initTime helps in avoiding precision waste.
 	struct timeval tv;
@@ -1631,11 +1650,11 @@ AccurateTimeCounter() {
 ALWAYS_INLINE void
 SleepMilliseconds(uint32_t ms) {
 
-#if defined(XP_WIN)
+#if defined(WIN)
 
 	Sleep(ms); // winbase.h
 
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 
 	usleep(ms * 1000); // unistd.h // (TBD) obsolete, use nanosleep() instead.
 
@@ -1654,14 +1673,14 @@ SleepMillisecondsAccurate(uint32_t ms) {
 	if ( ms == 0 )
 		return;
 
-#if defined(XP_WIN)
+#if defined(WIN)
 
 	double aim = AccurateTimeCounter() + (double)ms;
 	Sleep(ms-1); // winbase.h
 	while ( AccurateTimeCounter() < aim )
 		Sleep(0);
 
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 
 	usleep(ms * 1000); // unistd.h // (TBD) obsolete, use nanosleep() instead.
 
@@ -1682,11 +1701,11 @@ JLPageSize() {
 	static size_t pageSize = 0;
 	if ( pageSize )
 		return pageSize;
-#if defined(XP_WIN)
+#if defined(WIN)
 	SYSTEM_INFO siSysInfo;
 	GetSystemInfo(&siSysInfo); // WinBase.h
 	pageSize = siSysInfo.dwPageSize;
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 	pageSize = sysconf(_SC_PAGESIZE); // unistd.h
 #elif defined(__i386__) || defined(__x86_64__)
     pageSize = 4096;
@@ -1697,7 +1716,7 @@ JLPageSize() {
 }
 
 
-#if defined(XP_WIN)
+#if defined(MSC)
 INLINE NEVER_INLINE __declspec(naked) size_t 
 GetEIP() {
 
@@ -1710,9 +1729,9 @@ GetEIP() {
 ALWAYS_INLINE void
 cpuid( int info[4], int type ) {
 
-#if defined(XP_WIN)
+#if defined(MSC)
 	__cpuid(info, type);
-#elif defined(XP_UNIX)
+#elif defined(GCC)
 	asm("cpuid":"=a" (info[0]), "=b" (info[1]), "=c" (info[2]), "=d" (info[3]) : "a" (type));
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
@@ -1751,7 +1770,7 @@ CPUInfo( CpuInfo_t info ) {
 }
 
 
-#if defined(XP_WIN)
+#if defined(WIN)
 ALWAYS_INLINE HMODULE
 GetCurrentModule() {
 
@@ -1769,19 +1788,20 @@ GetCurrentModule() {
 
 }
 
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
+
 	int dladdr(void *addr, Dl_info *info);
-	...
-}
+	#error TBD
+
 #endif
 
 
 ALWAYS_INLINE int
 ProcessId() {
 
-#if defined(XP_WIN)
+#if defined(WIN)
 	return getpid();
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 	return getpid();
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
@@ -1795,19 +1815,19 @@ SessionId() {
 	uint32_t r = 0x12345678;
 	r ^= (uint32_t)AccurateTimeCounter();
 	r ^= (uint32_t)ProcessId();
-//#if defined(XP_WIN)
+//#if defined(WIN)
 ////	r ^= (u_int32_t)GetModuleHandle(NULL);
 //	MEMORYSTATUS status;
 //	GlobalMemoryStatus( &status );
 //	r ^= (uint32_t)status.dwAvailPhys;
-//#endif // XP_WIN
+//#endif // WIN
 	return r ? r : 1; // avoid returning 0
 }
 
 
 ALWAYS_INLINE size_t
 RemainingStackSize() {
-#if defined(XP_WIN)
+#if defined(WIN)
 /*
 	#pragma warning(push)
 	#pragma warning(disable : 4312) // warning C4312: 'operation' : conversion from 'type1' to 'type2' of greater size
@@ -1819,9 +1839,10 @@ RemainingStackSize() {
 	__asm mov [currentSP], esp;
 	return currentSP - (BYTE*)tib->StackLimit;
 
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 
 	return (size_t)-1;
+	#error TBD
 
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
@@ -1831,7 +1852,7 @@ RemainingStackSize() {
 /*
 ALWAYS_INLINE size_t
 ThreadStackSize() {
-#if defined(XP_WIN)
+#if defined(WIN)
 
 	//#pragma warning(push)
 	//#pragma warning(disable : 4312) // warning C4312: 'operation' : conversion from 'type1' to 'type2' of greater size
@@ -1847,7 +1868,7 @@ ThreadStackSize() {
 	DWORD stackLimit = (DWORD)tib->StackLimit;
 	return stackLimit - stackBase;
 
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 
 	struct rlimit limit;
 	getrlimit (RLIMIT_STACK, &limit);
@@ -1953,10 +1974,10 @@ DetectEncoding(uint8_t **buf, size_t *size) {
 }
 
 
-#ifdef _MSC_VER
-#pragma warning( push )
-#pragma warning( disable : 4244 ) // warning C4244: '=' : conversion from 'unsigned int' to 'unsigned short', possible loss of data
-#endif // _MSC_VER
+#ifdef MSC
+	#pragma warning( push )
+	#pragma warning( disable : 4244 ) // warning C4244: '=' : conversion from 'unsigned int' to 'unsigned short', possible loss of data
+#endif
 
 #define xmlLittleEndian (JLHostEndian == JLLittleEndian)
 
@@ -2061,8 +2082,8 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 
 #undef xmlLittleEndian
 
-#ifdef _MSC_VER
-#pragma warning( pop )
+#ifdef MSC
+	#pragma warning( pop )
 #endif // _MSC_VER
 
 
@@ -2170,7 +2191,7 @@ Match(const T *text, size_t textlen, const T *pat, size_t patlen) {
         return -1;
 
 	return
-	#if !defined(__linux__)
+	#if !defined(UNIX)
 		patlen > 128 ? UnrolledMatch< MemCmp<T> >(text, textlen, pat, patlen) :
 	#endif
 		UnrolledMatch< ManualCmp<T> >(text, textlen, pat, patlen);
@@ -2183,8 +2204,9 @@ JL_END_NAMESPACE
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-#if defined(XP_WIN)
-#elif defined(XP_UNIX)
+#if defined(WIN)
+
+#elif defined(UNIX)
 	#include <pthread.h>
 	#include <sched.h>
 	#include <semaphore.h>
@@ -2200,12 +2222,12 @@ JL_END_NAMESPACE
 ALWAYS_INLINE bool
 JL_enableLowFragmentationHeap() {
 
-#ifdef XP_WIN
+#ifdef WIN
 	// enable low fragmentation heap
 	HANDLE heap = GetProcessHeap();
 	ULONG enable = 2;
 	return HeapSetInformation(heap, HeapCompatibilityInformation, &enable, sizeof(enable)) == TRUE;
-#endif // XP_WIN
+#endif // WIN
 
 	return true; // not implemented
 }
@@ -2219,11 +2241,11 @@ JL_enableLowFragmentationHeap() {
 ALWAYS_INLINE bool
 JL_setMonoCPU() {
 
-#ifdef XP_WIN
+#ifdef WIN
 
 	return SetProcessAffinityMask(GetCurrentProcess(), 1) != FALSE;
 
-#elif XP_UNIX
+#elif UNIX
 
 	cpu_set_t  mask;
 	CPU_ZERO(&mask);
@@ -2247,9 +2269,9 @@ JL_setMonoCPU() {
 // system errors
 //
 
-#if defined(XP_WIN)
+#if defined(WIN)
 	typedef DWORD JLSystemErrorCode;
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 	typedef int JLSystemErrorCode;
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
@@ -2259,7 +2281,7 @@ JL_setMonoCPU() {
 INLINE NEVER_INLINE void NOALIAS FASTCALL
 JLSysetmErrorMessage( char *message, size_t maxLength, JLSystemErrorCode errorCode, const char *moduleName ) {
 
- #if defined(XP_WIN)
+ #if defined(WIN)
 	
 	LPCVOID source;
 	DWORD flags;
@@ -2280,7 +2302,7 @@ JLSysetmErrorMessage( char *message, size_t maxLength, JLSystemErrorCode errorCo
 		*message = '\0';
 	}
 
- #elif defined(XP_UNIX)
+ #elif defined(UNIX)
 	
 	const char *msgBuf = strerror(errorCode); // wcserror
 	if ( msgBuf != NULL ) {
@@ -2303,11 +2325,11 @@ JLSysetmErrorMessage( char *message, size_t maxLength, JLSystemErrorCode errorCo
 INLINE NEVER_INLINE void NOALIAS FASTCALL
 JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
 
- #if defined(XP_WIN)
+ #if defined(WIN)
 	
 	JLSysetmErrorMessage(message, maxLength, ::GetLastError(), NULL);
 
- #elif defined(XP_UNIX)
+ #elif defined(UNIX)
 	
 	JLSysetmErrorMessage(message, maxLength, errno, NULL);
 
@@ -2333,7 +2355,7 @@ JLTemporaryFilename(char *path) {
 	return true;
 
 /*
-#if defined(XP_WIN)
+#if defined(WIN)
 
 	TCHAR lpTempPathBuffer[PATH_MAX];
 	DWORD dwRetVal;
@@ -2349,7 +2371,7 @@ JLTemporaryFilename(char *path) {
 	return true;
 
 
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 
 
 #else
@@ -2366,13 +2388,13 @@ JLTemporaryFilename(char *path) {
 ALWAYS_INLINE bool FASTCALL
 JLDisableThreadNotifications() {
 
-#ifdef XP_WIN
+#ifdef WIN
 	// doc:
 	//   Disables the DLL_THREAD_ATTACH and DLL_THREAD_DETACH notifications for the specified dynamic-link library (DLL).
 	//   This can reduce the size of the working set for some applications.
 	BOOL st = ::DisableThreadLibraryCalls(jl::GetCurrentModule());
 	return !!st;
-#endif // XP_WIN
+#endif // WIN
 	return true;
 }
 
@@ -2395,9 +2417,9 @@ JLDisableThreadNotifications() {
 // Linux: http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
 
 ALWAYS_INLINE int JLAtomicExchange(volatile long *ptr, long val) {
-#if defined(XP_WIN)
+#if defined(WIN)
 	return InterlockedExchange(ptr, val);
-#elif defined(XP_UNIX) // #elif ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) && ... //  #if defined(HAVE_GCC_ATOMIC32)
+#elif defined(UNIX) // #elif ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)) && ... //  #if defined(HAVE_GCC_ATOMIC32)
 	return __sync_lock_test_and_set(ptr, val);
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
@@ -2405,9 +2427,9 @@ ALWAYS_INLINE int JLAtomicExchange(volatile long *ptr, long val) {
 }
 
 ALWAYS_INLINE long JLAtomicIncrement(volatile int32_t *ptr) {
-#if defined(XP_WIN)
+#if defined(WIN)
 	return _InterlockedIncrement((volatile LONG*)ptr); // Increments the value of the specified 32-bit variable as an atomic operation.
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 	return __sync_add_and_fetch(ptr, 1);
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
@@ -2415,9 +2437,9 @@ ALWAYS_INLINE long JLAtomicIncrement(volatile int32_t *ptr) {
 }
 
 ALWAYS_INLINE long JLAtomicDecrement(volatile int32_t *ptr) {
-#if defined(XP_WIN)
+#if defined(WIN)
 	return _InterlockedDecrement((volatile LONG*)ptr);
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 	return __sync_sub_and_fetch(ptr, 1);
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
@@ -2425,9 +2447,9 @@ ALWAYS_INLINE long JLAtomicDecrement(volatile int32_t *ptr) {
 }
 
 ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
-#if defined(XP_WIN)
+#if defined(WIN)
 	return _InterlockedExchangeAdd((volatile LONG*)ptr, val) + val; // Performs an atomic addition of two 32-bit values and returns the initial value of the Addend parameter.
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 	return __sync_add_and_fetch(ptr, val);
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
@@ -2440,9 +2462,9 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 // semaphores
 //
 
-#if defined(XP_WIN)
+#if defined(WIN)
 	typedef HANDLE JLSemaphoreHandler;
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 	typedef sem_t* JLSemaphoreHandler;
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
@@ -2451,9 +2473,9 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 
 	ALWAYS_INLINE JLSemaphoreHandler JLSemaphoreCreate( int initCount ) {
 
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		return CreateSemaphore(NULL, initCount, LONG_MAX, NULL);
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		sem_t *sem = (sem_t*)malloc(sizeof(sem_t));
 		if ( sem == NULL )
 			return NULL;
@@ -2472,11 +2494,11 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 /*
 	ALWAYS_INLINE int JLSemaphoreGetValue( JLSemaphoreHandler semaphore ) {
 
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		LONG count;
 		ReleaseSemaphore(semaphore, 0, &count); // INVALID
 		return count;
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		int value;
 		sem_getvalue(semaphore, &value);
 		return value;
@@ -2491,13 +2513,13 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 	INLINE int JLSemaphoreAcquire( JLSemaphoreHandler semaphore, int msTimeout = JLINFINITE ) {
 
 		ASSERT( JLSemaphoreOk(semaphore) );
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		DWORD status = WaitForSingleObject(semaphore, msTimeout == JLINFINITE ? INFINITE : msTimeout);
 		ASSERT( status != WAIT_FAILED );
 		if ( status == WAIT_TIMEOUT )
 			return JLTIMEOUT;
 		return JLOK;
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		int st;
 		if ( msTimeout == JLINFINITE ) {
 
@@ -2545,10 +2567,10 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 	ALWAYS_INLINE void JLSemaphoreRelease( JLSemaphoreHandler semaphore ) {
 
 		ASSERT( JLSemaphoreOk(semaphore) );
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		BOOL st = ReleaseSemaphore(semaphore, 1, NULL);
 		ASSERT( st != FALSE );
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		int st = sem_post(semaphore);
 		ASSERT( st == 0 );
 		JL_IGNORE( st );
@@ -2560,10 +2582,10 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 	ALWAYS_INLINE void JLSemaphoreFree( JLSemaphoreHandler *pSemaphore ) {
 
 		ASSERT( pSemaphore != NULL && JLSemaphoreOk(*pSemaphore) );
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		BOOL st = CloseHandle(*pSemaphore);
 		ASSERT( st != FALSE );
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		int st = sem_destroy(*pSemaphore);
 		ASSERT( st == 0 );
 		free(*pSemaphore);
@@ -2588,9 +2610,9 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 //  each successful lock request that it has outstanding on the mutex.
 //  PTHREAD_MUTEX_RECURSIVE
 
-#if defined(XP_WIN)
+#if defined(WIN)
 	typedef CRITICAL_SECTION* JLMutexHandler; // doc. critical section objects provide a slightly faster, more efficient mechanism for mutual-exclusion synchronization.
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 	typedef pthread_mutex_t* JLMutexHandler;
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
@@ -2609,9 +2631,9 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 		JLMutexHandler mutex = (JLMutexHandler)malloc(sizeof(*mutex));
 		if ( mutex == NULL )
 			return NULL;
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		InitializeCriticalSection(mutex);
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		int st = pthread_mutex_init(mutex, NULL);
 		ASSERT( st == 0 );
 		JL_IGNORE( st );
@@ -2624,9 +2646,9 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 	ALWAYS_INLINE void JLMutexFree( JLMutexHandler *pMutex ) {
 
 		ASSERT( *pMutex != NULL && JLMutexOk(*pMutex) );
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		DeleteCriticalSection(*pMutex);
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		int st = pthread_mutex_destroy(*pMutex);
 		ASSERT( st == 0 );
 		JL_IGNORE( st );
@@ -2640,9 +2662,9 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 	ALWAYS_INLINE void JLMutexAcquire( JLMutexHandler mutex ) {
 
 		ASSERT( JLMutexOk(mutex) );
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		EnterCriticalSection(mutex);
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		int st = pthread_mutex_lock(mutex); // doc. shall not return an error code of [EINTR].
 		ASSERT( st == 0 );
 		JL_IGNORE( st );
@@ -2654,9 +2676,9 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 	ALWAYS_INLINE void JLMutexRelease( JLMutexHandler mutex ) {
 
 		ASSERT( JLMutexOk(mutex) );
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		LeaveCriticalSection(mutex);
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		int st = pthread_mutex_unlock(mutex);
 		ASSERT( st == 0 );
 		JL_IGNORE( st );
@@ -2674,7 +2696,7 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 
 #define JLCondInvalideHandler ((JLCondHandler)0)
 
-#if defined(XP_WIN)
+#if defined(WIN)
 
 typedef struct __JLCondHandler {
 	unsigned int waiters_count;
@@ -2768,7 +2790,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	}
 }
 
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 
 typedef struct __JLCondHandler {
 	pthread_cond_t cond;
@@ -2826,11 +2848,11 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 // 5. Implementing Events on non-Win32 Platforms ( http://www.cs.wustl.edu/~schmidt/win32-cv-2.html )
 
 	typedef struct __JLEventHandler {
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		HANDLE hEvent;
 		LONG waitingThreadCount;
 		CRITICAL_SECTION cs;
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		pthread_mutex_t mutex;
 		pthread_cond_t cond;
 		bool triggered;
@@ -2850,13 +2872,13 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		JLEventHandler ev = (JLEventHandler)malloc(sizeof(*ev));
 		if ( ev == NULL )
 			return NULL;
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		InitializeCriticalSection(&ev->cs);
 		ev->waitingThreadCount = 0;
 		ev->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 		if ( ev->hEvent == NULL )
 			return NULL;
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		pthread_mutex_init(&ev->mutex, 0);
 		pthread_cond_init(&ev->cond, 0);
 		ev->triggered = false;
@@ -2870,11 +2892,11 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	ALWAYS_INLINE void JLEventFree( JLEventHandler *ev ) {
 
 		ASSERT( ev != NULL && JLEventOk(*ev) );
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		DeleteCriticalSection(&(*ev)->cs);
 		BOOL st = CloseHandle((*ev)->hEvent);
 		ASSERT( st != FALSE );
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		int st = pthread_cond_destroy(&(*ev)->cond);
 		ASSERT( st == 0 );
 		st = pthread_mutex_destroy(&(*ev)->mutex);
@@ -2889,7 +2911,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	INLINE void JLEventTrigger( JLEventHandler ev ) {
 
 		ASSERT( JLEventOk(ev) );
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		EnterCriticalSection(&ev->cs);
 		if ( ev->waitingThreadCount != 0 || !ev->autoReset ) {
 
@@ -2898,7 +2920,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 			JL_IGNORE(st);
 		}
 		LeaveCriticalSection(&ev->cs);
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		pthread_mutex_lock(&ev->mutex);
 		ev->triggered = true;
 		pthread_cond_broadcast(&ev->cond); // pthread_cond_signal
@@ -2913,13 +2935,13 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	ALWAYS_INLINE void JLEventReset( JLEventHandler ev ) {
 
 		ASSERT( JLEventOk(ev) );
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		EnterCriticalSection(&ev->cs);
 		BOOL st = ResetEvent(ev->hEvent);
 		ASSERT( st != FALSE );
 		JL_IGNORE(st);
 		LeaveCriticalSection(&ev->cs);
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		pthread_mutex_lock(&ev->mutex);
 		ev->triggered = false;
 		pthread_mutex_unlock(&ev->mutex);
@@ -2932,7 +2954,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	INLINE int JLEventWait( JLEventHandler ev, int msTimeout ) {
 
 		ASSERT( JLEventOk(ev) );
-	#if defined(XP_WIN)
+	#if defined(WIN)
 
 		EnterCriticalSection(&ev->cs);
 		ev->waitingThreadCount++;
@@ -2954,7 +2976,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 			return JLTIMEOUT;
 		return JLOK;
 
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		int st;
 		if ( msTimeout == JLINFINITE ) {
 
@@ -3002,7 +3024,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 // thread
 //   Linux: https://computing.llnl.gov/tutorials/pthreads/#PthreadsAPI
 
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		#define JL_THREAD_PRIORITY_LOWEST THREAD_PRIORITY_LOWEST
 		#define JL_THREAD_PRIORITY_LOW THREAD_PRIORITY_BELOW_NORMAL
 		#define JL_THREAD_PRIORITY_NORMAL THREAD_PRIORITY_NORMAL
@@ -3014,7 +3036,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		#define JLThreadFuncDecl DWORD WINAPI
 //		typedef unsigned (__stdcall *JLThreadRoutine)(void *);
 		typedef PTHREAD_START_ROUTINE JLThreadRoutine;
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		#define JL_THREAD_PRIORITY_LOWEST 32
 		#define JL_THREAD_PRIORITY_LOW 48
 		#define JL_THREAD_PRIORITY_NORMAL 64
@@ -3039,13 +3061,13 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 	ALWAYS_INLINE JLThreadHandler JLThreadStart( JLThreadRoutine threadRoutine, void *pv = NULL ) {
 
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		// The new thread handle is created with the THREAD_ALL_ACCESS access right.
 		// If a security descriptor is not provided when the thread is created, a default security descriptor is constructed for the new thread using the primary token of the process that is creating the thread.
 		// When a caller attempts to access the thread with the OpenThread function, the effective token of the caller is evaluated against this security descriptor to grant or deny access.
 		return CreateThread(NULL, 0, threadRoutine, pv, 0, NULL);
 //		return (JLThreadHandler)_beginthreadex(NULL, 0, threadRoutine, pv, 0, NULL);
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		pthread_t *thread = (pthread_t*)malloc(sizeof(pthread_t));
 		if ( thread == NULL )
 			return NULL;
@@ -3068,7 +3090,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	ALWAYS_INLINE bool JLThreadIsActive( JLThreadHandler thread ) { // (TBD) how to manage errors ?
 
 		ASSERT( JLThreadOk(thread) );
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		DWORD status;
 //		status = WaitForSingleObject(thread, 0);
 //		ASSERT( status != WAIT_FAILED );
@@ -3077,7 +3099,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		status = GetExitCodeThread(thread, &exitValue);
 		ASSERT( status != FALSE );
 		return exitValue == STILL_ACTIVE;
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		int policy;
 		struct sched_param param;
 		return pthread_getschedparam(*thread, &policy, &param) != ESRCH; // errno.h
@@ -3090,11 +3112,11 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	ALWAYS_INLINE void JLThreadFree( JLThreadHandler *pThread ) {
 
 		ASSERT( pThread != NULL && JLThreadOk(*pThread) );
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		BOOL st = CloseHandle(*pThread);
 		ASSERT( st != FALSE );
 		JL_IGNORE(st);
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		if ( JLThreadIsActive( *pThread ) ) {
 
 			int st = pthread_detach(**pThread);
@@ -3111,11 +3133,11 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 	ALWAYS_INLINE void JLThreadExit( unsigned int exitValue ) {
 
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		ASSERT( exitValue != STILL_ACTIVE ); // see JLThreadIsActive(), doc: GetExitCodeProcess function (http://msdn.microsoft.com/en-us/library/windows/desktop/ms683189(v=vs.85).aspx)
 		ExitThread(exitValue);
 //		_endthreadex(exitValue); // doc: _endthreadex does not close the thread handle.
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		pthread_exit((void*)exitValue);
 	#else
 		#error NOT IMPLEMENTED YET	// (TBD)
@@ -3126,12 +3148,12 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	ALWAYS_INLINE void JLThreadCancel( JLThreadHandler thread ) {
 
 		ASSERT( JLThreadOk(thread) );
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		// yes, using TerminateThread can lead to memory leaks and worse.
 		// doc. The handle must have the THREAD_TERMINATE access right. ... Use the GetExitCodeThread function to retrieve a thread's exit value.
 		BOOL st = TerminateThread(thread, 0);
 		ASSERT( st != 0 );
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		int st = pthread_cancel(*thread);
 		ASSERT( st == 0 );
 		JL_IGNORE( st );
@@ -3144,10 +3166,10 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	ALWAYS_INLINE void JLThreadPriority( JLThreadHandler thread, JLThreadPriorityType priority ) {
 
 		ASSERT( JLThreadOk(thread) );
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		BOOL st = SetThreadPriority(thread, priority);
 		ASSERT( st != FALSE );
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		int st;
 		int policy;
 		struct sched_param param;
@@ -3168,12 +3190,12 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	ALWAYS_INLINE void JLThreadWait( JLThreadHandler thread, unsigned int *exitValue = NULL ) {
 
 		ASSERT( JLThreadOk(thread) );
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		BOOL st = WaitForSingleObject(thread, INFINITE);
 		ASSERT( st == WAIT_OBJECT_0 );
 		if ( exitValue != NULL )
 			GetExitCodeThread(thread, (DWORD*)exitValue);
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		int st = pthread_join(*thread, (void**)exitValue); // doc. The thread exit status returned by pthread_join() on a canceled thread is PTHREAD_CANCELED. pthread_join shall not return an error code of [EINTR].
 		ASSERT( st == 0 );
 		JL_IGNORE( st );
@@ -3188,9 +3210,9 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 // thread-local storage
 //
 
-#if defined(XP_WIN)
+#if defined(WIN)
 	typedef DWORD JLTLSKey;
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 	typedef pthread_key_t JLTLSKey;
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
@@ -3200,11 +3222,11 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 ALWAYS_INLINE JLTLSKey JLTLSAllocKey() {
 	JLTLSKey key;
-#if defined(XP_WIN)
+#if defined(WIN)
 	key = TlsAlloc();
 	ASSERT( key != TLS_OUT_OF_INDEXES );
 	key++;
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 	int st = pthread_key_create(&key, NULL);
 	ASSERT( st == 0 );
 	JL_IGNORE( st );
@@ -3216,13 +3238,13 @@ ALWAYS_INLINE JLTLSKey JLTLSAllocKey() {
 
 
 ALWAYS_INLINE void JLTLSFreeKey( JLTLSKey key ) {
-#if defined(XP_WIN)
+#if defined(WIN)
 	ASSERT( key != 0 );
 	key--;
 	ASSERT( key >= 0 && key < TLS_MINIMUM_AVAILABLE );
 	BOOL st = TlsFree(key);
 	ASSERT( st != FALSE );
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 	int st = pthread_key_delete(key);
 	ASSERT( st == 0 );
 #else
@@ -3233,13 +3255,13 @@ ALWAYS_INLINE void JLTLSFreeKey( JLTLSKey key ) {
 
 
 ALWAYS_INLINE void JLTLSSet( JLTLSKey key, void *value ) {
-#if defined(XP_WIN)
+#if defined(WIN)
 	ASSERT( key != 0 );
 	key--;
 	ASSERT( key >= 0 && key < TLS_MINIMUM_AVAILABLE );
 	BOOL st = TlsSetValue(key, value);
 	ASSERT( st != FALSE );
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 	int st = pthread_setspecific(key, value);
 	ASSERT( st == 0 );
 #else
@@ -3250,7 +3272,7 @@ ALWAYS_INLINE void JLTLSSet( JLTLSKey key, void *value ) {
 
 
 ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
-#if defined(XP_WIN)
+#if defined(WIN)
 	ASSERT( key != 0 );
 	key--;
 	void *value;
@@ -3258,7 +3280,7 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 	value = TlsGetValue(key);
 	ASSERT( value != 0 || GetLastError() == ERROR_SUCCESS  );
 	return value;
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 	return pthread_getspecific(key);
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
@@ -3271,9 +3293,9 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 // dynamic libraries
 //
 
-#if defined(XP_WIN)
+#if defined(WIN)
 	typedef HMODULE JLLibraryHandler;
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 	typedef void* JLLibraryHandler;
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
@@ -3293,17 +3315,17 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 
 	ALWAYS_INLINE JLLibraryHandler JLDynamicLibraryOpen( const char *filename ) {
 
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		// GetErrorMode() only exists on Vista and higher,
 		// call SetErrorMode() twice to achieve the same effect.
 		// see also SetThreadErrorMode()
-//		UINT oldErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
-//		SetErrorMode( oldErrorMode | SEM_FAILCRITICALERRORS ); // avoid error popups
+		UINT oldErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
+		SetErrorMode( oldErrorMode | SEM_FAILCRITICALERRORS ); // avoid error popups
 		HMODULE hModule = LoadLibrary(filename); // If the function fails, the return value is NULL. 
 		// Restore previous error mode.
-//		SetErrorMode(oldErrorMode);
+		SetErrorMode(oldErrorMode);
 		return hModule;
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		dlerror(); // Resets the error indicator.
 		return dlopen(filename, RTLD_LAZY | RTLD_LOCAL); // shall return NULL on error. // see. RTLD_NOW / RTLD_GLOBAL
 	#else
@@ -3313,10 +3335,10 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 
 	ALWAYS_INLINE void JLDynamicLibraryClose( JLLibraryHandler *libraryHandler ) {
 
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		BOOL st = FreeLibrary(*libraryHandler);
 		ASSERT( st != FALSE );
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		dlerror(); // Resets the error indicator.
 		int st = dlclose(*libraryHandler);
 		ASSERT( st == 0 );
@@ -3330,7 +3352,7 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 	INLINE NEVER_INLINE void FASTCALL
 	JLDynamicLibraryLastErrorMessage( char *message, size_t maxLength ) {
 
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		DWORD errorCode = ::GetLastError();
 		LPVOID lpMsgBuf;
 		DWORD result = ::FormatMessage(
@@ -3342,7 +3364,7 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 			message[maxLength-1] = '\0';
 		} else
 			*message = '\0';
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		const char *msgBuf = dlerror();
 		if ( msgBuf != NULL ) {
 
@@ -3357,9 +3379,9 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 
 	ALWAYS_INLINE void *JLDynamicLibrarySymbol( JLLibraryHandler libraryHandler, const char *symbolName ) {
 
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		return (void*)GetProcAddress(libraryHandler, symbolName);
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		dlerror(); // Resets the error indicator.
 		return dlsym(libraryHandler, symbolName);
 	#else
@@ -3371,7 +3393,7 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 
 		// DWORD st = GetModuleFileName(libraryHandler, (LPCH)fileName, (DWORD)fileNameSize); ASSERT( st != ERROR_INSUFFICIENT_BUFFER );
 		ASSERT( maxFileNameLength > 0 );
-	#if defined(XP_WIN)
+	#if defined(WIN)
 		HMODULE libraryHandler;
 		if ( !GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)addr, &libraryHandler) ) { // requires XP or 2003
 			
@@ -3387,7 +3409,7 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 		//	}
 		//	HMODULE libraryHandler = (HMODULE)mem.AllocationBase;
 		GetModuleFileName(libraryHandler, (LPCH)fileName, maxFileNameLength);
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 		Dl_info info;
 		if ( !dladdr(addr, &info) || !info.dli_fbase || !info.dli_fname ) {
 
@@ -3408,12 +3430,12 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 ///////////////////////////////////////////////////////////////////////////////
 // condvar
 //
-#if defined(XP_WIN)
+#if defined(WIN)
 	typedef struct {
 		HANDLE mutex;
 		HANDLE event;
 	} *JLCondHandler;
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 	typedef struct {
 		pthread_mutex_t mutex;
 		pthread_cond_t cond;
@@ -3423,7 +3445,7 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 #endif
 
 
-	#if defined(XP_WIN)
+	#if defined(WIN)
 	ALWAYS_INLINE JLCondHandler JLCreateCond() {
 
 		JLCondHandler cond = (JLCondHandler)malloc(sizeof(*cond));
@@ -3431,7 +3453,7 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 		cond->event = CreateEvent(NULL, TRUE, FALSE, NULL); // lpEventAttributes, bManualReset, bInitialState, lpName
 		return cond;
 	}
-	#elif defined(XP_UNIX)
+	#elif defined(UNIX)
 	ALWAYS_INLINE JLCondHandler JLCreateCond() {
 
 		JLCondHandler cond = (JLCondHandler)malloc(sizeof(*cond));

@@ -56,8 +56,7 @@ DEFINE_FUNCTION( translate ) {
 	ode::dBodyID bodyID;
 	ode::dMass mass;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN(1);
+		JL_ASSERT_ARGC_MIN(1);
 
 	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
 	real translation[3];
@@ -83,8 +82,7 @@ DEFINE_FUNCTION( adjust ) {
 	ode::dBodyID bodyID;
 	ode::dMass mass;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN(1);
+		JL_ASSERT_ARGC_MIN(1);
 
 	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
 	double newMass;
@@ -105,8 +103,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( setZero ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-
+	
 	ode::dBodyID bodyID;
 	ode::dMass mass;
 	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
@@ -129,8 +126,7 @@ DEFINE_FUNCTION( setBoxTotal ) {
 	ode::dMass mass;
 	ode::dBodyID bodyID;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN(2);
+		JL_ASSERT_ARGC_MIN(2);
 
 	JL_CHK( GetBodyAndMass(cx, JL_OBJ, &bodyID, &mass) );
 // arg 0

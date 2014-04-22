@@ -178,8 +178,7 @@ DEFINE_FUNCTION( addIndices ) {
 
 DEFINE_FUNCTION( defineVertexBuffer ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN( 1 );
+		JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_ARRAY(1);
 	
 	Surface *pv;
@@ -217,8 +216,7 @@ DEFINE_FUNCTION( defineVertexBuffer ) {
 
 DEFINE_FUNCTION( defineNormalBuffer ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN( 1 );
+		JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_ARRAY(1);
 	
 	Surface *pv;
@@ -252,8 +250,7 @@ DEFINE_FUNCTION( defineNormalBuffer ) {
 
 DEFINE_FUNCTION( defineTextureCoordinateBuffer ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN( 1 );
+		JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_ARRAY(1);
 	
 	Surface *pv;
@@ -287,8 +284,7 @@ DEFINE_FUNCTION( defineTextureCoordinateBuffer ) {
 
 DEFINE_FUNCTION( defineColorBuffer ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN( 1 );
+		JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_ARRAY(1);
 	
 	Surface *pv;
@@ -322,8 +318,7 @@ DEFINE_FUNCTION( defineColorBuffer ) {
 
 DEFINE_FUNCTION( defineIndexBuffer ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN( 1 );
+		JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_ARRAY(1);
 	
 	Surface *pv;

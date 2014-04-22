@@ -235,8 +235,7 @@ DEFINE_FUNCTION( wipe ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	FinalizeAsymmetricCipher(JL_OBJ, true);
 	JL_SetPrivate( JL_OBJ, NULL);
 	JL_RVAL.setUndefined();
@@ -263,8 +262,7 @@ DEFINE_FUNCTION( createKeys ) { // ( bitsSize )
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	AsymmetricCipherPrivate *pv;
@@ -356,8 +354,7 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 	uint8_t *out = NULL;
 	JLData in;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	AsymmetricCipherPrivate *pv;
@@ -452,8 +449,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 	uint8_t *out = NULL;
 	JLData in;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	AsymmetricCipherPrivate *pv;
@@ -547,8 +543,7 @@ DEFINE_FUNCTION( sign ) { // ( data [, saltLength] )
 	uint8_t *out = NULL;
 	JLData in;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	AsymmetricCipherPrivate *pv;
@@ -626,8 +621,7 @@ DEFINE_FUNCTION( verifySignature ) { // ( data, signature [, saltLength] )
 
 	JLData data, sign;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 2 );
 
 	AsymmetricCipherPrivate *pv;

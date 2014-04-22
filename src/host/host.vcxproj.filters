@@ -40,6 +40,12 @@
     <ClInclude Include="host2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\libs\js\Win32_dbg\dist\include\jsapi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libs\js\Win32_opt\dist\include\jsapi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="host_qa.js" />

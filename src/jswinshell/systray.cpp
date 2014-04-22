@@ -519,8 +519,7 @@ DEFINE_FUNCTION( close ) {
 	JL_IGNORE( argc );
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_SetPrivate(JL_OBJ, NULL);
@@ -560,7 +559,7 @@ bool ProcessSystrayMessage( JSContext *cx, JS::HandleObject obj, const MSGInfo *
 			JL_CHK( jl::getProperty(cx, obj, "onchar", &functionVal) );
 			if ( jl::isCallable(cx, functionVal) ) {
 
-				char c = jl::isInBounds<char>(wParam);
+				wchar_t c = wParam;
 				JL_CHK( jl::call(cx, obj, functionVal, rval, jl::strSpec(&c,1)) );
 			}
 			break;
@@ -666,8 +665,7 @@ DEFINE_FUNCTION( processEvents ) {
 	JL_IGNORE( argc );
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -757,8 +755,7 @@ struct SystrayEvent : public ProcessEvent2 {
 DEFINE_FUNCTION( events ) {
 	
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
@@ -792,8 +789,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( focus ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -1059,8 +1055,7 @@ systray.popupMenu([
 DEFINE_FUNCTION( popupMenu ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
@@ -1098,8 +1093,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( popupBalloon ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -1212,8 +1206,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( position ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);

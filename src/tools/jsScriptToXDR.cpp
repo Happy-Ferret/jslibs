@@ -17,10 +17,8 @@
 #ifdef WIN32
 	#define _CRT_SECURE_NO_WARNINGS
 	#define _CRT_NONSTDC_NO_WARNINGS
-//	#define XP_WIN
 	#include <io.h>
 #else // Linux
-	#define XP_UNIX
 	#include <unistd.h>
 #endif
 

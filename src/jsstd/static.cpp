@@ -20,16 +20,15 @@
 
 //#include <../host/host2.h>
 
-#ifdef XP_WIN
-#include <Psapi.h>
 
+#ifdef WIN
+	#include <Psapi.h>
 	#pragma comment(lib,"Psapi.lib") // need for currentMemoryUsage()
 	#include <Psapi.h>
 	#pragma comment(lib,"pdh.lib") // need for performance counters usage
 	#include <pdh.h>
 	#include <PDHMsg.h>
-
-#endif // XP_WIN
+#endif
 
 
 DECLARE_CLASS( OperationLimit )
@@ -87,8 +86,7 @@ DEFINE_FUNCTION( expand ) {
 	bool hasMapFct;
 	JS::RootedValue value(cx);
 	
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_RANGE(1, 2);
+		JL_ASSERT_ARGC_RANGE(1, 2);
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &srcStr) );
 
@@ -824,8 +822,7 @@ DEFINE_FUNCTION( exec ) {
 	JLData fileName;
 //	JSObject *scriptObjRoot;
 	
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_RANGE(1, 2);
+		JL_ASSERT_ARGC_RANGE(1, 2);
 
 	bool useAndSaveCompiledScripts;
 	useAndSaveCompiledScripts = !JL_ARG_ISDEF(2) || JL_ARG(2).isTrue();
@@ -1319,8 +1316,7 @@ DEFINE_FUNCTION( isStatementValid ) {
 	JL_DEFINE_ARGS;
 
 	JLData str;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC(1);
+		JL_ASSERT_ARGC(1);
 
 	//const char *buffer;
 	//size_t length;
@@ -1348,7 +1344,8 @@ bad:
 }
 
 
-#ifdef XP_UNIX
+#ifdef UNIX
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -1444,7 +1441,7 @@ bool GetProcInfo( pid_t pid, LinuxProcInfo *pinfo ) {
 	return true;
 }
 
-#endif // XP_UNIX
+#endif // UNIX
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1459,7 +1456,7 @@ DEFINE_PROPERTY_GETTER( currentMemoryUsage ) {
 
 	uint32_t bytes;
 
-#if defined(XP_WIN)
+#if defined(WIN)
 
 	PROCESS_MEMORY_COUNTERS_EX pmc;
 	BOOL status = ::GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
@@ -1467,7 +1464,7 @@ DEFINE_PROPERTY_GETTER( currentMemoryUsage ) {
 		return JL_ThrowOSError(cx);
 	bytes = pmc.WorkingSetSize; // same value as "windows task manager" "mem usage"
 
-#elif defined(XP_UNIX)
+#elif defined(UNIX)
 
 	// VmRSS in /proc/self/status
 
@@ -1497,7 +1494,7 @@ DEFINE_PROPERTY_GETTER( peakMemoryUsage ) {
 
 	JL_IGNORE( id, obj );
 
-#if defined(XP_WIN)
+#if defined(WIN)
 
 /*
 	DWORD  dwMin, dwMax;
@@ -1553,7 +1550,7 @@ DEFINE_PROPERTY_GETTER( privateMemoryUsage ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-#if defined(XP_WIN)
+#if defined(WIN)
 
 /*
 	// see also. http://www.codeproject.com/KB/cpp/XPWSPrivate.aspx (Calculate Memory (Working Set - Private) Programmatically in Windows XP/2000)
@@ -1636,6 +1633,7 @@ DEFINE_PROPERTY_GETTER( privateMemoryUsage ) {
 		CloseHandle( hProcess );
 	}
 	return true;
+
 #else
 
 
@@ -1714,7 +1712,7 @@ DEFINE_PROPERTY_GETTER( processTime ) {
 
 	JL_IGNORE( id, obj );
 
-#if defined(XP_WIN)
+#if defined(WIN)
 
 	FILETIME creationTime, exitTime, kernelTime, userTime;
 	BOOL status = ::GetProcessTimes(GetCurrentProcess(), &creationTime, &exitTime, &kernelTime, &userTime);
@@ -1755,7 +1753,7 @@ DEFINE_PROPERTY_GETTER( cpuLoad ) {
 
 	JL_IGNORE( id, obj );
 
-#if defined(XP_WIN)
+#if defined(WIN)
 
   static PDH_STATUS status;
   static PDH_FMT_COUNTERVALUE value;

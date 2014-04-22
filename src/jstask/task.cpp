@@ -475,8 +475,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( close ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
 	if ( JL_GetPrivate(JL_OBJ) != NULL ) {
@@ -501,8 +500,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( request ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(JL_OBJ);
@@ -538,8 +536,7 @@ DEFINE_FUNCTION( response ) {
 
 	JL_IGNORE( argc );
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	TaskPrivate *pv;
 	pv = (TaskPrivate*)JL_GetPrivate(JL_OBJ);
@@ -788,8 +785,7 @@ bool TaskEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSOb
 
 DEFINE_FUNCTION( events ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC(0);
+		JL_ASSERT_ARGC(0);
 	JL_ASSERT_THIS_INSTANCE();
 
 	TaskPrivate *pv;

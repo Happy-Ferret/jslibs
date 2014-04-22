@@ -125,8 +125,7 @@ DEFINE_FUNCTION( wait ) {
 	JL_IGNORE( argc );
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	ClassPrivate *pv;
 	pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
@@ -152,8 +151,7 @@ DEFINE_FUNCTION( post ) {
 	JL_IGNORE( argc );
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	ClassPrivate *pv;
 	pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
@@ -282,8 +280,7 @@ public:
 DEFINE_FUNCTION( events ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INHERITANCE();
+		JL_ASSERT_THIS_INHERITANCE();
 	JL_ASSERT_ARGC_RANGE(0, 1);
 
 	SemProcessEvent *upe = new SemProcessEvent();

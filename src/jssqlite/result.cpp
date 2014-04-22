@@ -258,8 +258,7 @@ DEFINE_FUNCTION( close ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
@@ -436,8 +435,7 @@ DEFINE_FUNCTION( step ) {
 	JL_IGNORE( argc );
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	return DoStep(cx, JL_OBJ, JL_RVAL);
 	JL_BAD;
@@ -454,8 +452,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( col ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
 
 	sqlite3_stmt *pStmt;
@@ -480,8 +477,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( row ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
@@ -538,8 +534,7 @@ DEFINE_FUNCTION( next ) { // for details, see Row() function thet is the base of
 	JL_IGNORE( argc );
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
@@ -580,8 +575,7 @@ DEFINE_FUNCTION( reset ) {
 	JL_IGNORE( argc );
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt *)JL_GetPrivate( JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );

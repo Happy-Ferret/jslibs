@@ -354,12 +354,12 @@ int VideoThread( void * ) {
 //					}
 
 
-#ifdef XP_WIN
+#ifdef WIN
 					RECT rect;
 					GetWindowRect(WindowFromDC(_hdc), &rect);
 					MoveWindow(WindowFromDC(_hdc), rect.left, rect.top, rect.right-rect.left, rect.bottom-rect.top-1, FALSE);
 					MoveWindow(WindowFromDC(_hdc), rect.left, rect.top, rect.right-rect.left, rect.bottom-rect.top, FALSE);
-#endif // XP_WIN
+#endif // WIN
 
 				}
 				ASSERT( wglGetCurrentContext() );

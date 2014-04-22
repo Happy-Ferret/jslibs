@@ -342,14 +342,14 @@ public:
 
 		if ( jl::isArray(cx, obj) ) { // real array object, not array-like !!
 
-			unsigned length;
+			uint32_t length;
 			JL_CHK( JS_GetArrayLength(cx, obj, &length) );
 			JL_CHK( Write(cx, JLSTArray) );
 			JL_CHK( Write(cx, length) );
 
 			bool found;
 			JS::RootedValue tmp(cx);
-			for ( int i = 0; i < jl::isInBounds<int>(length); ++i ) {
+			for ( uint32_t i = 0; i < length; ++i ) {
 
 				JL_CHK( JL_GetElement(cx, obj, i, &tmp) );
 				if ( tmp.isUndefined() ) {
@@ -998,7 +998,6 @@ JL_END_NAMESPACE
 
 DEFINE_FUNCTION( _serialize ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT( jl::JsvalIsSerializer(cx, JL_ARG(1)), "Invalid serializer object." );
 	jl::Serializer *ser;
@@ -1013,7 +1012,6 @@ DEFINE_FUNCTION( _serialize ) {
 
 DEFINE_FUNCTION( _unserialize ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT( jl::JsvalIsUnserializer(cx, JL_ARG(1)), "Invalid unserializer object." );
 	jl::Unserializer *unser;

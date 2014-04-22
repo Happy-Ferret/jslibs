@@ -59,6 +59,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\libs\js\Win32_dbg\dist\include\jsapi.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="..\..\libs\js\Win32_opt\dist\include\jsapi.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="..\common\jlalloc.h" />
     <ClInclude Include="..\common\jlclass.h" />
     <ClInclude Include="..\common\jlhelper.h" />

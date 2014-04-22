@@ -237,8 +237,8 @@ DEFINE_CONSTRUCTOR() {
 
 	WAVEFORMATEX wfx;
 	wfx.nSamplesPerSec = pv->audioRate;
-	wfx.wBitsPerSample = pv->audioBits;
-	wfx.nChannels = pv->audioChannels;
+	wfx.wBitsPerSample = (WORD)pv->audioBits;
+	wfx.nChannels = (WORD)pv->audioChannels;
 	wfx.wFormatTag = WAVE_FORMAT_PCM;
 	wfx.cbSize = 0;
 	wfx.nBlockAlign = (wfx.wBitsPerSample/8) * wfx.nChannels;
@@ -415,8 +415,7 @@ struct AudioEvent : public ProcessEvent2 {
 DEFINE_FUNCTION( events ) {
 	
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(0, 1);
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
@@ -551,8 +550,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 DEFINE_FUNCTION( toString ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-
+	
 	UINT errorCode;
 	JL_CHK( jl::getSlot(cx, JL_OBJ, 0, &errorCode) );
 	CHAR errorText[MAXERRORLENGTH];

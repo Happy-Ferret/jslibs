@@ -1093,8 +1093,7 @@ DEFINE_PROPERTY_SETTER( uniqueID ) {
 // Send MIDI events back to Host application
 DEFINE_FUNCTION( sendVstEventToHost ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN( 1 );
+		JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	JsVst *vstPlugin = (JsVst *)JL_GetPrivate(JL_OBJ);

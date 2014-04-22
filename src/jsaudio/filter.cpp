@@ -90,8 +90,7 @@ DEFINE_FUNCTION( valueOf ) {
 	JL_IGNORE( argc );
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );

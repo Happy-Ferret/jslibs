@@ -178,8 +178,7 @@ DEFINE_FUNCTION( read ) {
 	uint8_t *buffer = NULL;
 	
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(0, 1);
 
 	size_t amount, available;

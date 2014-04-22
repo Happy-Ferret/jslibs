@@ -88,7 +88,6 @@ bad:
 /*
 DEFINE_FUNCTION( free ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
 	ALuint bid = (ALuint) JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( bid );
 	alBufferData(bid, AL_FORMAT_MONO8, NULL, 0, 0);
@@ -106,7 +105,6 @@ DEFINE_FUNCTION( valueOf ) {
 	JL_IGNORE( argc );
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_THIS_INSTANCE();
 
 	ALuint bid = (ALuint) JL_GetPrivate(JL_OBJ);

@@ -176,8 +176,7 @@ DEFINE_FUNCTION( load ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -229,8 +228,7 @@ DEFINE_FUNCTION( clear ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -254,8 +252,7 @@ DEFINE_FUNCTION( clearRotation ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -276,8 +273,7 @@ DEFINE_FUNCTION( clearTranslation ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -302,8 +298,7 @@ DEFINE_FUNCTION( loadRotation ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
@@ -345,8 +340,7 @@ DEFINE_FUNCTION( loadTranslation ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
@@ -381,8 +375,7 @@ DEFINE_FUNCTION( translate ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(3);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
@@ -425,8 +418,7 @@ DEFINE_FUNCTION( scale ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
@@ -479,8 +471,7 @@ DEFINE_FUNCTION( rotationFromQuaternion ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(4);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
@@ -536,8 +527,7 @@ DEFINE_FUNCTION( taitBryanRotation ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(3);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
@@ -571,8 +561,7 @@ DEFINE_FUNCTION( rotate ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(4);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
@@ -619,8 +608,7 @@ DEFINE_FUNCTION( rotateX ) {
 	
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
@@ -660,8 +648,7 @@ DEFINE_FUNCTION( rotateY ) {
 	
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
@@ -701,8 +688,7 @@ DEFINE_FUNCTION( rotateZ ) {
 	
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
@@ -758,8 +744,7 @@ DEFINE_FUNCTION( lookAt ) {
 	
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(6, 9);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
@@ -817,8 +802,7 @@ DEFINE_FUNCTION( rotateToVector ) {
 	
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(3);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
@@ -863,8 +847,7 @@ DEFINE_FUNCTION( invert ) {
 	
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
@@ -890,8 +873,7 @@ DEFINE_FUNCTION( product ) {
 	
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
@@ -933,8 +915,7 @@ DEFINE_FUNCTION( transformVector ) {
 	
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_ARRAY(1);
 

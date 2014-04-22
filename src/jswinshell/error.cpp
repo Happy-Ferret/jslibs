@@ -97,8 +97,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 DEFINE_FUNCTION( toString ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-
+	
 	{
 
 	JS::RootedObject rtobj(cx, JL_OBJ);
@@ -117,8 +116,7 @@ DEFINE_FUNCTION( toString ) {
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC(1);
+		JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_TYPE( jl::JsvalIsSerializer(cx, JL_ARG(1)), 1, "Serializer" );
 
 	jl::Serializer *ser;
@@ -141,8 +139,7 @@ DEFINE_FUNCTION( _serialize ) {
 DEFINE_FUNCTION( _unserialize ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC(1);
+		JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_TYPE( jl::JsvalIsUnserializer(cx, JL_ARG(1)), 1, "Unserializer" );
 
 	jl::Unserializer *unser;

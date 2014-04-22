@@ -39,8 +39,7 @@ DEFINE_FUNCTION( base64Encode ) {
 
 	JLData in;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN( 1 );
+		JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
 
 //	const char *in;

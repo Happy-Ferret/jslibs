@@ -131,7 +131,6 @@ DEFINE_FUNCTION( toString ) {
 	JL_IGNORE(argc);
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
 
 	JS::RootedObject rtobj(cx, obj);
 	JS::RootedId rtid(cx, JSID_EMPTY);
@@ -145,7 +144,6 @@ DEFINE_FUNCTION( toString ) {
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
 
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_TYPE( jl::JsvalIsSerializer(cx, JL_ARG(1)), 1, "Serializer" );
@@ -168,8 +166,7 @@ DEFINE_FUNCTION( _serialize ) {
 DEFINE_FUNCTION( _unserialize ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-
+	
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_TYPE( jl::JsvalIsUnserializer(cx, JL_ARG(1)), 1, "Unserializer" );
 

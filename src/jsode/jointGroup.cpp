@@ -58,8 +58,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( destroy ) {
 	
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	ode::dJointGroupID groupId = (ode::dJointGroupID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(groupId);
 	ode::dJointGroupDestroy(groupId);
@@ -76,8 +75,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( empty ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	ode::dJointGroupID groupId = (ode::dJointGroupID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(groupId);

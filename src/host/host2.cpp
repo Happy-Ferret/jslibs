@@ -231,7 +231,7 @@ volatile int32_t CountedAlloc::_freeAmount;
 
 Allocators CountedAlloc::_base;
 
-void*
+RESTRICT_DECL void*
 CountedAlloc::_malloc( size_t size ) {
 	
 	JLAtomicIncrement(&CountedAlloc::_allocCount);
@@ -241,7 +241,7 @@ CountedAlloc::_malloc( size_t size ) {
 	return mem;
 }
 
-void*
+RESTRICT_DECL void*
 CountedAlloc::_calloc( size_t num, size_t size ) {
 	
 	JLAtomicIncrement(&CountedAlloc::_allocCount);
@@ -251,7 +251,7 @@ CountedAlloc::_calloc( size_t num, size_t size ) {
 	return mem;
 }
 
-void*
+RESTRICT_DECL void*
 CountedAlloc::_memalign( size_t alignment, size_t size ) {
 	
 	JLAtomicIncrement(&CountedAlloc::_allocCount);
@@ -346,6 +346,8 @@ WatchDog::interruptCallback(JSContext *cx) {
  
 	JS::IncrementalGC(rt, JS::gcreason::NO_REASON);
 	bool fin = !JS::IsIncrementalGCInProgress(rt);
+
+	ASSERT( fin );
 
 	//JS_MaybeGC(cx);
 	//JS_GC(rt);
@@ -483,10 +485,10 @@ HostRuntime::errorReporterBasic(JSContext *cx, const char *message, JSErrorRepor
 
 
 HostRuntime::HostRuntime(Allocators allocators, uint32_t maybeGCIntervalMs)
-: _allocators(allocators), rt(NULL), cx(NULL), _isEnding(false), _skipCleanup(false), _watchDog(*this, maybeGCIntervalMs) {
+: _allocators(allocators), rt(NULL), cx(NULL), _isEnding(false), _skipCleanup(false), _watchDog(*MOZ_THIS_IN_INITIALIZER_LIST(), maybeGCIntervalMs) {
 }
 
-
+ 
 bool
 HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota, bool lazyStandardClasses ) {
 
@@ -498,8 +500,8 @@ HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota
 
 	// doc: maxMem specifies the number of allocated bytes after which garbage collection is run. Maximum nominal heap before last ditch GC.
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem); 
-	JS_SetNativeStackQuota(rt, 128 * sizeof(size_t) * 1024); // doc. To disable stack size checking pass 0.
-
+	//JS_SetNativeStackQuota(rt, 128 * sizeof(size_t) * 1024); // doc. To disable stack size checking pass 0.
+	JS_SetNativeStackQuota(rt, 0);
 
 	//JS::DisableGenerationalGC(rt);
 
@@ -900,11 +902,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( loadModule ) {
 
-	JLLibraryHandler module = JLDynamicLibraryNullHandler;
+	// JLLibraryHandler module = JLDynamicLibraryNullHandler;
 	JLData str;
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
 	JL_ASSERT_ARGC(1);
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );

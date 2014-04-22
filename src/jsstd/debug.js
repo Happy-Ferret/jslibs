@@ -5,13 +5,17 @@ var loadModule = host.loadModule;
 loadModule('jsstd');
 
 
-
 //var res = sandboxEval('Math+" "+Math+" "+query()', function() 123); print(res, '\n');
 //sandboxEval('', function() 123);
 //sandboxEval('typeof query');
 //sandboxEval('query()', function() 123);
 
-//var res = sandboxEval('for ( var i = 0; i < 1000000; ++i );', undefined, 1000);
+// var res = sandboxEval('for ( var i = 0; i < 1000000; ++i );', undefined, 1000);
+
+var res = sandboxEval('for ( var i = 0; i < 100000; ++i );');
+
+
+
 
 try {
 //var res = sandboxEval('throw ({x:123})', undefined, 1000);

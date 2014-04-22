@@ -152,8 +152,7 @@ DEFINE_FUNCTION( write ) {
 
 	JLData data;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -262,8 +261,7 @@ DEFINE_FUNCTION( renderImage ) { // using cairo
 
 	JLData id;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
@@ -454,8 +452,7 @@ DEFINE_FUNCTION( setVisible ) {
 
 	JLData id;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(2);
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
@@ -493,8 +490,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( scale ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(2);
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
@@ -518,8 +514,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( rotate ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
@@ -542,8 +537,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( translate ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(2);
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);

@@ -82,8 +82,7 @@ DEFINE_FUNCTION( open ) {
 	JLData str;
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-
+	
 	JS::RootedValue jsvalDirectoryName(cx);
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );
@@ -113,8 +112,7 @@ DEFINE_FUNCTION( close ) {
 	JL_IGNORE( argc );
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	JL_RVAL.setUndefined();
 
@@ -145,8 +143,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( read ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	PRDir *dd;
 	dd = (PRDir *)JL_GetPrivate(JL_OBJ);
@@ -191,8 +188,7 @@ DEFINE_FUNCTION( make ) {
 
 	JLData str;
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-
+	
 	JS::RootedValue jsvalDirectoryName(cx);
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );
@@ -224,8 +220,7 @@ DEFINE_FUNCTION( remove ) {
 
 	JLData str;
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-
+	
 	JS::RootedValue jsvalDirectoryName(cx);
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );

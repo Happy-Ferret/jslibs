@@ -17,20 +17,10 @@
 #define HOST_STACK_SIZE 4194304 // = 4 * 1024 * 1024
 
 // set stack to 4MB:
-#if defined(XP_WIN)
-	#pragma comment (linker, JL_TOSTRING(/STACK:HOST_STACK_SIZE))
-#elif defined(XP_UNIX)
-	#pragma stacksize HOST_STACK_SIZE
-	//char stack[HOST_STACK_SIZE] __attribute__ ((section ("STACK"))) = { 0 };
-	//init_sp(stack + sizeof (stack));
-#else
-	#error NOT IMPLEMENTED YET	// (TBD)
-#endif
+#pragma comment (linker, JL_TOSTRING(/STACK:HOST_STACK_SIZE))
 
-
-#if defined(XP_WIN)
 #define USE_NEDMALLOC
-#endif
+
 
 static unsigned char embeddedBootstrapScript[] =
 	#include "embeddedBootstrapScript.js.xdr.cres"

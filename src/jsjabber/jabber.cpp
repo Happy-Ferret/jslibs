@@ -308,8 +308,7 @@ DEFINE_FUNCTION( connect ) {
 
 	JLData serverName;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
@@ -352,8 +351,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( disconnect ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -378,8 +376,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( process ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -410,8 +407,7 @@ DEFINE_FUNCTION( sendMessage ) {
 
 	JLData to, body;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(2);
 
 	Private *pv = (Private*)JL_GetPrivate(obj);

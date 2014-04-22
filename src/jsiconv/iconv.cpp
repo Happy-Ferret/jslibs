@@ -138,8 +138,7 @@ DEFINE_FUNCTION( process ) {
 
 	char *outBuf = NULL; // keep on top
 	JLData data;
-	JL_DEFINE_FUNCTION_OBJ;
-
+	
 	JL_ASSERT_INSTANCE(JL_OBJ, JL_CLASS(Iconv));
 
 	Private *pv;

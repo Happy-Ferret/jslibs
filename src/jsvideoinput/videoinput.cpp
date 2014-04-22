@@ -140,8 +140,7 @@ DEFINE_FUNCTION( close ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC(0);
+		JL_ASSERT_ARGC(0);
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(obj);
@@ -230,8 +229,7 @@ DEFINE_FUNCTION( events ) {
 	
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
 	Private *pv;
@@ -266,8 +264,7 @@ DEFINE_FUNCTION( next ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC(0);
+		JL_ASSERT_ARGC(0);
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(JL_OBJ);

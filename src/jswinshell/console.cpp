@@ -589,8 +589,7 @@ struct ConsoleProcessEvent : public ProcessEvent2 {
 DEFINE_FUNCTION( events ) {
 	
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC(0);
+		JL_ASSERT_ARGC(0);
 
 	ConsoleProcessEvent *upe = new ConsoleProcessEvent();
 	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );

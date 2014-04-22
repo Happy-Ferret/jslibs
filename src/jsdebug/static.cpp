@@ -440,8 +440,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getObjectPrivate ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN( 1 );
+		JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
 	if ( !(JL_GetClass(obj)->flags & JSCLASS_HAS_PRIVATE) ) {
@@ -1256,11 +1255,10 @@ DEFINE_FUNCTION( debugBreak ) {
 
 DEFINE_FUNCTION( crashGuard ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC(1);
+		JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_CALLABLE(1);
 
-#if defined XP_WIN
+#if defined(WIN)
 	EXCEPTION_POINTERS * eps = 0;
 	__try {
 
@@ -1272,7 +1270,7 @@ DEFINE_FUNCTION( crashGuard ) {
 		
 		*JL_RVAL = JSVAL_FALSE;
 	}
-#elif defined XP_UNIX
+#elif defined UNIX
 
 	JS_CallFunctionValue(cx, JL_OBJ, JL_ARG(1), 0, NULL, JL_RVAL);
 	*JL_RVAL = JSVAL_TRUE;
@@ -1340,8 +1338,7 @@ DEFINE_FUNCTION( test2Debug ) {
 	JL_RVAL.setUndefined();
 	return true;
 
-//	JL_DEFINE_FUNCTION_OBJ;
-//	jsval arg = JSVAL_ONE;
+//	//	jsval arg = JSVAL_ONE;
 //	return JS_CallFunctionValue(cx, JL_OBJ, JL_ARG(1), 1, &arg, JL_RVAL );
 }
 

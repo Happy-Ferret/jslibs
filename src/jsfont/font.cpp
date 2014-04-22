@@ -202,8 +202,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( drawChar ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN(1);
+		JL_ASSERT_ARGC_MIN(1);
 
 	JsfontPrivate *pv;
 	pv = (JsfontPrivate*)JL_GetPrivate(JL_OBJ);
@@ -259,8 +258,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( drawString ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_RANGE(1, 3);
+		JL_ASSERT_ARGC_RANGE(1, 3);
 
 	JsfontPrivate *pv;
 	pv = (JsfontPrivate*)JL_GetPrivate(JL_OBJ);

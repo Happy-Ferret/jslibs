@@ -130,7 +130,7 @@ var audioFormat = {
 	bits:16,
 	channels:2,
 	rate:44100,
-	frames: 10  * 44100 / 1000
+	frames: 1000  * 44100 / 1000
 };
 
 

@@ -144,8 +144,7 @@ DEFINE_FUNCTION( toString ) {
 	JL_IGNORE( argc );
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	
+		
 //	JS::RootedObject hobj(cx, JS_OBJ);
 //	JS::RootedValue hrval(cx, JL_RVAL);
 
@@ -158,8 +157,7 @@ DEFINE_FUNCTION( toString ) {
 DEFINE_FUNCTION( _serialize ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC(1);
+		JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_TYPE( jl::JsvalIsSerializer(cx, JL_ARG(1)), 1, "Serializer" );
 
 	jl::Serializer *ser;
@@ -182,8 +180,7 @@ DEFINE_FUNCTION( _serialize ) {
 DEFINE_FUNCTION( _unserialize ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC(1);
+		JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_TYPE( jl::JsvalIsUnserializer(cx, JL_ARG(1)), 1, "Unserializer" );
 
 	jl::Unserializer *unser;

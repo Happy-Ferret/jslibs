@@ -17,13 +17,14 @@ var loadModule = host.loadModule;
 //for ( var i = 0; i < 1000000; ++i );
 //processEvents(host.endSignalEvents(function() { throw 0 }));
 
+loadModule('jsstd');
+exec('test.js'); throw 0;
 
 loadModule('jsio');
 loadModule('jsstd');
 loadModule('jswinshell');
-//loadModule('jssvg');
+loadModule('jssqlite');
 
-//jslangTest(); throw 0;
 
 
 //var res = sandboxEval('Math+" "+Math+" "+query()', function() 123);

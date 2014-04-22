@@ -39,9 +39,9 @@ DEFINE_FINALIZE() {
 		PR_DetachProcess(process); // may crash ?
 }
 
-#ifdef XP_WIN
-#include <direct.h>
-#endif // XP_WIN
+#ifdef WIN
+	#include <direct.h>
+#endif
 
 /**doc
 $TOC_MEMBER $INAME
@@ -222,8 +222,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( wait ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(JL_OBJ);
@@ -247,8 +246,7 @@ DEFINE_FUNCTION( detach ) {
 	JL_IGNORE( argc );
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(JL_OBJ);
@@ -271,8 +269,7 @@ DEFINE_FUNCTION( kill ) {
 	JL_IGNORE( argc );
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	PRProcess *process;
 	process = (PRProcess*)JL_GetPrivate(JL_OBJ);

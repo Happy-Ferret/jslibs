@@ -1,5 +1,3 @@
-//#define XP_WIN
-
 #include <wchar.h>
 
 // #define USE_JL

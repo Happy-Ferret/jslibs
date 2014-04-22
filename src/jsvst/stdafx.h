@@ -19,14 +19,14 @@
 #include <jlclass.h>
 
 #include <fcntl.h>
-#ifdef XP_WIN
+#ifdef WIN
 	#include <io.h>
 #endif
 
-#ifdef XP_UNIX
+#ifdef UNIX
 	#include <unistd.h>
 	#include <dlfcn.h>
-#endif //XP_UNIX
+#endif
 
 
 //#include <stdio.h>
@@ -46,14 +46,14 @@
 #include <jlplatform.h>
 
 #include <fcntl.h>
-#ifdef XP_WIN
+#ifdef WIN
 	#include <io.h>
 #endif
 
-#ifdef XP_UNIX
+#ifdef UNIX
 	#include <unistd.h>
 	#include <dlfcn.h>
-#endif //XP_UNIX
+#endif
 
 
 //#include <stdio.h>

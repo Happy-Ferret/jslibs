@@ -82,8 +82,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( addTorque0 ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN( 1 );
+		JL_ASSERT_ARGC_MIN( 1 );
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
@@ -103,8 +102,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( addTorque1 ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN( 1 );
+		JL_ASSERT_ARGC_MIN( 1 );
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
@@ -124,8 +122,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( addTorque2 ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN( 1 );
+		JL_ASSERT_ARGC_MIN( 1 );
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
@@ -148,8 +145,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( setAxis ) {
 	
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN( 3 );
+		JL_ASSERT_ARGC_MIN( 3 );
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !
@@ -184,8 +180,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( setAngle ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC(2);
+		JL_ASSERT_ARGC(2);
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId); // (TBD) check if NULL is meaningful for joints !

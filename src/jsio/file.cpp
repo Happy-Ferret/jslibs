@@ -14,7 +14,8 @@
 
 #include "stdafx.h"
 
-#if defined XP_WIN
+#if defined(WIN)
+	// see id function
 	#include <winioctl.h>
 #endif
 
@@ -148,8 +149,7 @@ DEFINE_FUNCTION( open ) {
 	JLData str;
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MAX(2);
 	JL_ASSERT( JL_GetPrivate(JL_OBJ) == NULL, E_FILE, E_OPEN );
 
@@ -222,8 +222,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( seek ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate(JL_OBJ);
@@ -253,7 +252,9 @@ DEFINE_FUNCTION( seek ) {
 	if ( ret == -1 )
 		return ThrowIoError(cx);
 
-	JL_RVAL.setDouble(ret);
+	JL_ASSERT( jl::isInBounds<double>(ret), E_VALUE, E_PRECISION );
+
+	JL_RVAL.setDouble((double)ret);
 	return true;
 	JL_BAD;
 }
@@ -273,8 +274,7 @@ DEFINE_FUNCTION( delete ) {
 	JLData str;
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate(JL_OBJ);
@@ -301,8 +301,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( lock ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	PRFileDesc *fd;
@@ -331,8 +330,7 @@ DEFINE_FUNCTION( move ) {
 	JLData fileName, destDirName;
 	
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	PRFileDesc *fd;
@@ -755,7 +753,7 @@ DEFINE_PROPERTY_GETTER( id ) {
 	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
-#if defined XP_WIN
+#if defined(WIN)
 
 	HANDLE fileHandle = (HANDLE)PR_FileDesc2NativeHandle(fd);
 	JL_ASSERT_THIS_OBJECT_STATE( fileHandle && fileHandle != INVALID_HANDLE_VALUE );
@@ -765,7 +763,7 @@ DEFINE_PROPERTY_GETTER( id ) {
 		return JL_ThrowOSError(cx);
 	return jl::setValue(cx, JL_RVAL, jl::strSpec((const char *)&buf.ObjectId, sizeof(buf.ObjectId)));
 
-#elif defined XP_UNIX
+#elif defined(UNIX)
 
 	int fileHandle;
 	fileHandle = (int)PR_FileDesc2NativeHandle(fd);
@@ -781,7 +779,7 @@ DEFINE_PROPERTY_GETTER( id ) {
 
 	JL_ERR( E_API, E_NOTIMPLEMENTED );
 
-#endif // XP_WIN
+#endif
 
 	return true;
 	JL_BAD;

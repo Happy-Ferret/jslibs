@@ -830,8 +830,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( pollEvent ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	SDL_Event ev;
+		SDL_Event ev;
 	SDL_PumpEvents();
 
 	//	SDL_EventState(SDL_USEREVENT, SDL_IGNORE);

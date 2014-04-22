@@ -142,8 +142,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( destroy ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId ); // (TBD) manage world-connected ( when bodyId == 0 )
 //	JL_SetReservedSlot( obj, BODY_SLOT_WORLD, JSVAL_VOID);
@@ -170,8 +169,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( isConnectedTo ) {
 	
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
 
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate( obj );
@@ -192,8 +190,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getGeom ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( JL_OBJ );
@@ -218,8 +215,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getJoint ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( JL_OBJ );
@@ -252,8 +248,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( addForce ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
 	
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate(obj);
@@ -284,8 +279,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( addTorque ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
 	
 	ode::dBodyID thisBodyID = (ode::dBodyID)JL_GetPrivate(obj);
@@ -308,8 +302,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( setDampingDefaults ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
@@ -327,8 +320,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getRelativeVelocityValue ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
 
@@ -366,8 +358,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getRelPointVel ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );
@@ -393,8 +384,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( vector3ToWorld ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 	ode::dBodyID bodyId = (ode::dBodyID)JL_GetPrivate( JL_OBJ );
 	JL_ASSERT_THIS_OBJECT_STATE( bodyId );

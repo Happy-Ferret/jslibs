@@ -27,14 +27,20 @@ DECLARE_CLASS( Vector )
 
 
 
-#ifdef XP_WIN
+#ifdef WIN
 	// The following avoid the need for ODE to be linked with User32.lib ( MessageBox* symbol is used in ../ode/src/ode/src/error.cpp )
 	// see ode link options
-	#pragma warning( push )
-	#pragma warning(disable : 4273)
+	#ifdef MSC
+		#pragma warning( push )
+		#pragma warning(disable : 4273)
+	#endif
+
 	int WINAPI MessageBoxA(HWND, LPCSTR, LPCSTR, UINT) { return IDOK; }
 	int WINAPI MessageBoxW(HWND, LPCWSTR, LPCWSTR, UINT) { return IDOK; }
-	#pragma warning( pop )
+
+	#ifdef MSC
+		#pragma warning( pop )
+	#endif
 #endif
 
 

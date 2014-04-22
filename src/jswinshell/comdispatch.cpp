@@ -32,8 +32,7 @@ DEFINE_FINALIZE() {
 bool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 
 /*
 #ifdef DEBUG
@@ -348,8 +347,7 @@ bad:
 DEFINE_FUNCTION( equals ) {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC(1);
+		JL_ASSERT_ARGC(1);
 
 	JL_RVAL.setBoolean(JL_ARG(1).isObject() && &JL_ARG(1).toObject() == JL_OBJ);
 	

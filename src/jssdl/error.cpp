@@ -42,15 +42,13 @@ DEFINE_PROPERTY_GETTER( text ) {
 DEFINE_FUNCTION( toString ) {
 
 	JL_IGNORE(argc);
-	JL_DEFINE_FUNCTION_OBJ;
-	return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
+		return _textGetter(cx, obj, JSID_EMPTY, JL_RVAL);
 }
 
 
 DEFINE_FUNCTION( _serialize ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC(1);
+		JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_TYPE( jl::JsvalIsSerializer(cx, JL_ARG(1)), 1, "Serializer" );
 
 	jl::Serializer *ser;
@@ -70,8 +68,7 @@ DEFINE_FUNCTION( _serialize ) {
 
 DEFINE_FUNCTION( _unserialize ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC(1);
+		JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_TYPE( jl::JsvalIsUnserializer(cx, JL_ARG(1)), 1, "Unserializer" );
 
 	jl::Unserializer *unser;

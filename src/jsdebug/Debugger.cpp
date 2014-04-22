@@ -406,8 +406,7 @@ DEFINE_FUNCTION( toggleBreakpoint ) {
 
 	jsval prevClosure;
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN( 3 );
+		JL_ASSERT_ARGC_MIN( 3 );
 
 	bool polarity;
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &polarity) );

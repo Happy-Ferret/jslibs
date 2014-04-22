@@ -43,7 +43,7 @@ ModuleFree() {
 }
 
 
-#if defined(_WINDLL)
+#ifdef _WINDLL
 
 EXTERN_C BOOL WINAPI pango_DllMain(HINSTANCE, DWORD, LPVOID);
 
@@ -52,4 +52,4 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 	return pango_DllMain(hinstDLL, fdwReason, lpvReserved);
 }
 
-#endif // XP_WIN
+#endif

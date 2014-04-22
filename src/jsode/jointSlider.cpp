@@ -80,8 +80,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( addForce ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_ARGC_MIN(1);
+		JL_ASSERT_ARGC_MIN(1);
 
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);

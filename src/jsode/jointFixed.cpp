@@ -79,8 +79,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( set ) {
 
-	JL_DEFINE_FUNCTION_OBJ;
-	JL_ASSERT_THIS_INSTANCE();
+		JL_ASSERT_THIS_INSTANCE();
 	ode::dJointID jointId = (ode::dJointID)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(jointId);
 	ode::dJointSetFixed(jointId);
