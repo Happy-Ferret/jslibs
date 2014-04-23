@@ -321,6 +321,7 @@ JL_ZInitValue() {
 
 	ASSERT(JS::Value().asRawBits() == 0);
 	ASSERT(!JS::Value().isMarkable());
+	ASSERT(JS::Value().isDouble());
 	return JS::Value();
 }
 
@@ -2194,6 +2195,16 @@ setSlot( JSContext *cx, JS::HandleObject obj, size_t slotIndex, const T &val ) {
 	JL_BAD;
 }
 
+ALWAYS_INLINE bool FASTCALL
+setSlot( JSContext *cx, JS::HandleObject obj, size_t slotIndex, JS::HandleValue val ) {
+	
+	ASSERT( JS_IsNative(obj) );
+	js::SetReservedSlot(obj, slotIndex, val); // jsfriendapi
+	return true;
+}
+
+//
+
 template <class T>
 ALWAYS_INLINE bool FASTCALL
 getSlot( JSContext *cx, JS::HandleObject obj, size_t slotIndex, T* rval ) {
@@ -2209,7 +2220,8 @@ getSlot( JSContext *cx, JS::HandleObject obj, size_t slotIndex, T* rval ) {
 ALWAYS_INLINE bool FASTCALL
 getSlot( JSContext *cx, JS::HandleObject obj, size_t slotIndex, JS::MutableHandleValue v ) {
 
-	return getSlot(cx, obj, slotIndex, &v);
+	v.set(js::GetReservedSlot(obj, slotIndex)); // jsfriendapi
+	return true;
 }
 
 
@@ -3500,133 +3512,194 @@ JL_ChangeBufferLength( JSContext *cx, IN OUT JS::MutableHandleValue vp, size_t n
 JL_BEGIN_NAMESPACE
 
 
-class ArrayBuffer : public jl::CppAllocators {
-	void *_contents;
+class Buffer : public jl::CppAllocators {
+protected:
+	void *_data;
 	size_t _size;
 public:
 
-	ArrayBuffer() {
+	Buffer() {
 
-		IFDEBUG( _contents = NULL );
+		IFDEBUG( _data = NULL );
 	}
 
-	ArrayBuffer( uint32_t nbytes ) {
+	Buffer( void *data, size_t nbytes )
+	: _data(data), _size(nbytes) {
 
-		IFDEBUG( _contents = NULL );
+		ASSERT_IF( data != NULL, jl_msize(data) >= nbytes );
+	}
+
+	Buffer( uint32_t nbytes ) {
+
+		IFDEBUG( _data = NULL );
+
 		alloc(nbytes);
-		_size = nbytes;
 	}
 
-	void
+	bool
 	alloc( uint32_t nbytes ) {
 
-		_contents = jl_malloc(nbytes);
-		ASSERT( _contents ); // oom ?
+		_data = jl_malloc(nbytes);
 		_size = nbytes;
+
+		ASSERT( _data ); // oom ?
+		return _data != NULL;
 	}
 
-	void
+	bool
 	realloc( uint32_t nbytes ) {
 
-		ASSERT( _contents );
-		_contents = jl_realloc(_contents, nbytes);
-		ASSERT( _contents ); // oom ?
+		ASSERT( _data );
+
+		_data = jl_realloc(_data, nbytes);
 		_size = nbytes;
+
+		ASSERT( _data ); // oom ?
+		return _data != NULL;
 	}
 
 	void
 	free() {
 
-		js_free(_contents);
-		IFDEBUG( _contents = NULL );
+		jl_free(_data);
+
+		IFDEBUG( _data = NULL );
 	}
 
 	void*
-	data() const {
+	getDataOwnership() {
 	
-		ASSERT( _contents );
-		return _contents;
+		ASSERT( _data );
+		void *data = _data;
+		_data = nullptr;
+		return data;
 	};
+
+	void*&
+	data() {
+	
+		ASSERT( _data );
+
+		return _data;
+	};
+
+	size_t&
+	size() {
+	
+		return _size;
+	};
+
+	operator bool() {
+
+		return _data != NULL;
+	}
 
 	bool
 	fromArrayBufferObject( JSContext *cx, JS::HandleObject obj ) {
 		
-		ASSERT( !_contents );
+		ASSERT( !_data );
+
 		_size = JS_GetArrayBufferByteLength(obj);
-		_contents = JS_StealArrayBufferContents(cx, obj);
+		_data = JS_StealArrayBufferContents(cx, obj);
 	}
 
-	// this lose the ownership of _contents
+	// this lose the ownership of _data
 	JSObject *
 	toArrayBufferObject( JSContext *cx ) {
 		
-		ASSERT( _contents );
-		JS::RootedObject arrayObject(cx, JS_NewArrayBufferWithContents(cx, _size, _contents));
-		IFDEBUG( _contents = NULL );
+		ASSERT_IF( !_data, _size == 0 );
+
+		JS::RootedObject arrayObject(cx, _size > 0 ? JS_NewArrayBufferWithContents(cx, size(), getDataOwnership()) : JS_NewArrayBuffer(cx, 0));
 		return arrayObject;
 	}
 
+
 	class ExternalStringFinalizer : public JSStringFinalizer, public jl::CppAllocators {
-		void *_contents;
+	public:
 		static void
 		finalizeExternalString( const JSStringFinalizer *fin, jschar *chars ) {
 
+			js_free(chars);
 			delete static_cast<const ExternalStringFinalizer*>(fin);
 		}
-	public:
 
-		~ExternalStringFinalizer() {
-			
-			js_free(_contents);
-		}
-
-		ExternalStringFinalizer( void *contents )
-		: _contents(contents) {
-
+		ExternalStringFinalizer() {
+		
 			finalize = finalizeExternalString;
 		}
 	};
 
-	// this lose the ownership of _contents
+	// this lose the ownership of _data
 	JSString *
 	toExternalStringUC( JSContext *cx ) {
 
-		ASSERT( _contents );
+		ASSERT( _data );
 		ASSERT( _size % 2 == 0 );
 		
 		size_t length = _size/2;
 		realloc(_size + 2); // see JS_ASSERT(chars[length] == 0);
 
-		reinterpret_cast<jschar*>(_contents)[length] = 0;
-		JS::RootedString str(cx, JS_NewExternalString(cx, reinterpret_cast<jschar*>(_contents), length, new ExternalStringFinalizer(_contents)));
-		IFDEBUG( _contents = NULL );
+		reinterpret_cast<jschar*>(_data)[length] = 0;
+		JS::RootedString str(cx, JS_NewExternalString(cx, reinterpret_cast<jschar*>(getDataOwnership()), length, new ExternalStringFinalizer()));
 		return str;
 	}
 	
-	// this lose the ownership of _contents
+	// this lose the ownership of _data
 	JSString *
 	toExternalString( JSContext *cx ) {
 
-		ASSERT( _contents );
+		ASSERT( _data );
 
 		size_t length = _size;
 		realloc((_size+1) * 2); // see JS_ASSERT(chars[length] == 0);
 		
-		jschar* jsstr = reinterpret_cast<jschar*>(_contents);
+		jschar* jsstr = reinterpret_cast<jschar*>(_data);
 		jsstr[length] = 0;
 
-		uint8_t *src = reinterpret_cast<uint8_t*>(_contents) + length;
+		char *src = reinterpret_cast<char*>(_data) + length;
 		jschar *dst = jsstr + length;
 
-		while ( dst != jsstr )
-			*(--dst) = *(--src);
+//		while ( dst != jsstr )
+//			*(--dst) = *(--src) & 0xFF;
 
-		JS::RootedString str(cx, JS_NewExternalString(cx, reinterpret_cast<jschar*>(_contents), length, new ExternalStringFinalizer(_contents)));
-		IFDEBUG( _contents = NULL );
+		size_t count = length;
+		while ( count-- > 0 )
+			*(dst++) = *(src++) & 0xFF;
+
+		JS::RootedString str(cx, JS_NewExternalString(cx, reinterpret_cast<jschar*>(getDataOwnership()), length, new ExternalStringFinalizer()));
 		return str;
 	}
 };
 
+
+class AutoBuffer : public Buffer {
+public:
+	AutoBuffer()
+	: Buffer(nullptr, 0) {
+	}
+
+	~AutoBuffer() {
+
+		if ( _data )
+			jl_free(_data);
+	}
+};
+
+class AutoWipeBuffer : public Buffer {
+public:
+	AutoWipeBuffer()
+	: Buffer(nullptr, 0) {
+	}
+
+	~AutoWipeBuffer() {
+
+		if ( _data ) {
+
+			ZeroMemory(_data, _size); // zeromem
+			jl_free(_data);
+		}
+	}
+};
 
 
 
@@ -3800,7 +3873,7 @@ JL_NewByteAudioObjectOwner( JSContext *cx, uint8_t* buffer, T bits, U channels, 
 
 template <class T, class U, class V, class W>
 ALWAYS_INLINE bool FASTCALL
-JL_NewByteAudioObjectOwner( JSContext *cx, jl::ArrayBuffer &buffer, T bits, U channels, V frames, W rate, OUT JS::MutableHandleValue vp ) {
+JL_NewByteAudioObjectOwner( JSContext *cx, jl::Buffer &buffer, T bits, U channels, V frames, W rate, OUT JS::MutableHandleValue vp ) {
 
 	ASSERT( bits > 0 && (bits % 8) == 0 && channels > 0 && frames >= 0 && rate > 0 );
 

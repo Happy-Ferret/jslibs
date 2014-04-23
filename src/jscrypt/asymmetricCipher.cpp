@@ -351,10 +351,11 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 	JL_DEFINE_ARGS;
 
 	unsigned long outLength = 4096;
-	uint8_t *out = NULL;
+	//uint8_t *out = NULL;
+	jl::AutoWipeBuffer out;
 	JLData in;
 
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	AsymmetricCipherPrivate *pv;
@@ -371,7 +372,8 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 //	JL_CHK( JL_JsvalToStringAndLength( cx, &JL_ARG(1), &in, &inLength ) );
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
 	
-	out = JL_DataBufferAlloc(cx, outLength);
+	out.alloc(outLength);
+	//out = JL_DataBufferAlloc(cx, outLength);
 	JL_ASSERT_ALLOC(out);
 
 	int err;
@@ -388,16 +390,16 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 			if ( argc >= 2 && !JL_ARG(2).isUndefined() )
 				JL_CHK( jl::getValue(cx, JL_ARG(2), &lparam) );
 			// doc. When performing v1.5 encryption, the hash and lparam parameters are totally ignored and can be set to NULL or zero (respectively).
-			err = rsa_encrypt_key_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, pv->hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
+			err = rsa_encrypt_key_ex( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out.data(), &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, pv->hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
 			break;
 		}
 		case ecc: {
-			err = ecc_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, prngState, prngIndex, pv->hashIndex, &pv->key.eccKey );
+			err = ecc_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out.data(), &outLength, prngState, prngIndex, pv->hashIndex, &pv->key.eccKey );
 			break;
 		}
 		case dsa: {
 			// if inlen > hash_descriptor[hash].hashsize => ERROR
-			err = dsa_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, prngState, prngIndex, pv->hashIndex, &pv->key.dsaKey );
+			err = dsa_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out.data(), &outLength, prngState, prngIndex, pv->hashIndex, &pv->key.dsaKey );
 			break;
 		}
 #ifdef MKAT
@@ -405,7 +407,7 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 			JLData lparam;
 			if ( argc >= 2 && !JL_ARG(2).isUndefined() )
 				JL_CHK( jl::getValue(cx, JL_ARG(2), &lparam) );
-			err = katja_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out, &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, pv->hashIndex, &pv->key.katjaKey );
+			err = katja_encrypt_key( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), out.data(), &outLength, (const unsigned char *)lparam.GetStrConstOrNull(), lparam.LengthOrZero(), prngState, prngIndex, pv->hashIndex, &pv->key.katjaKey );
 			break;
 		}
 #endif
@@ -416,13 +418,17 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 	if ( err != CRYPT_OK )
 		JL_CHK( ThrowCryptError(cx, err) );
 
-	JL_CHK( JL_NewBufferGetOwnership(cx, out, outLength, JL_RVAL) );
-	return true;
+	//JL_CHK( JL_NewBufferGetOwnership(cx, out, outLength, JL_RVAL) );
+	JL_CHK( BlobCreate(cx, out.data(), outLength, JL_RVAL) );
 
+	return true;
+/*
 bad:
 	zeromem(out, outLength); // safe clear
 	JL_DataBufferFree(cx, out);
 	return false;
+*/
+	JL_BAD;
 }
 
 

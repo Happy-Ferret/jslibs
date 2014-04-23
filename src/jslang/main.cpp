@@ -17,6 +17,7 @@
 
 
 DECLARE_CLASS( Handle )
+DECLARE_CLASS( Blob )
 DECLARE_CLASS( Stream )
 DECLARE_CLASS( Serializer )
 DECLARE_CLASS( Unserializer )
@@ -46,6 +47,7 @@ bool jslangModuleInit(JSContext *cx, JS::HandleObject obj) {
 	mpv->processEventSignalEventSem = JLSemaphoreCreate(0);
 
 	INIT_CLASS( Handle );
+	INIT_CLASS( Blob );
 	INIT_CLASS( Stream );
 	INIT_CLASS( Serializer );
 	INIT_CLASS( Unserializer );

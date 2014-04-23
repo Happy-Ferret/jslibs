@@ -18,13 +18,21 @@ var loadModule = host.loadModule;
 //processEvents(host.endSignalEvents(function() { throw 0 }));
 
 loadModule('jsstd');
-exec('test.js'); throw 0;
-
 loadModule('jsio');
-loadModule('jsstd');
 loadModule('jswinshell');
-loadModule('jssqlite');
+//loadModule('jssqlite');
 
+
+var data = jslangTest();
+
+print( data.arrayBuffer.byteLength, '\n' );
+//print( 'x'+data, '\n' );
+//print( data.ucString, '\n' );
+
+print( data.arrayBuffer, '\n' );
+
+
+throw 0;
 
 
 //var res = sandboxEval('Math+" "+Math+" "+query()', function() 123);

@@ -12,7 +12,6 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-
 #pragma once
 
 #include "stdafx.h"

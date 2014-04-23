@@ -742,7 +742,7 @@ int main_test_call(int argc, char* argv[]) {
 	void *tmp = JS_EncodeInterpretedFunction(cx, JSVAL_TO_OBJECT(rval), &xdrLength);
 
 	xdrData = malloc(xdrLength);
-	memcpy(xdrData, tmp, xdrLength);
+	jl::memcpy(xdrData, tmp, xdrLength);
 
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);

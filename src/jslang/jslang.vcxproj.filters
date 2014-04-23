@@ -29,6 +29,9 @@
     <ClCompile Include="stream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="blob.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="handlePub.h">
@@ -38,6 +41,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="blobPub.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

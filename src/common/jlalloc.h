@@ -187,7 +187,7 @@ strdup(const char * src) {
 	dst = (char*)jl_malloc(size);
 	if ( dst == NULL )
 		return NULL;
-	memcpy(dst, src, size);
+	jl::memcpy(dst, src, size);
 	return dst;
 }
 

@@ -38,7 +38,7 @@ DEFINE_FUNCTION( toString ) {
 
 	JL_DEFINE_ARGS;
 	JL_IGNORE( argc );
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 
 	HandlePrivate *pv = JL_HasPrivate(JL_OBJ) ? (HandlePrivate*)JL_GetPrivate(JL_OBJ) : NULL; // the prototype has no ptivate slot
 
@@ -167,11 +167,11 @@ CONFIGURE_CLASS
 END_CLASS
 
 
-
-
-
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
+
+
+
 
 /*
 

@@ -14,6 +14,7 @@
 
 #include "stdafx.h"
 #include "../jslang/handlePub.h"
+#include "../jslang/blobPub.h"
 #include "jslang.h"
 
 
@@ -655,7 +656,8 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	JL_IGNORE(cx, argc, vp);
 
 	void *contents = JS_AllocateArrayBufferContents(cx, 1000);
-
+	
+	JL_IGNORE(contents);
 
 	return true;
 
@@ -1033,16 +1035,24 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_IGNORE(cx, argc, vp);
 
 	JL_DEFINE_ARGS;
+
+	jl::AutoBuffer test;
+
+	test.alloc(2);
+
+	return BlobCreate(cx, test, JL_RVAL);
+
+
 	
 	{
-		jl::ArrayBuffer ab(2);
+		jl::Buffer ab(2);
 		((uint8_t*)ab.data())[0] = 1;
 		((uint8_t*)ab.data())[1] = 2;
 		JS::RootedString rstr(cx, ab.toExternalStringUC(cx));
 	}
 
 	{
-		jl::ArrayBuffer ab(2);
+		jl::Buffer ab(2);
 		((uint8_t*)ab.data())[0] = 100;
 		((uint8_t*)ab.data())[1] = 101;
 		JS::RootedString rstr(cx, ab.toExternalString(cx));

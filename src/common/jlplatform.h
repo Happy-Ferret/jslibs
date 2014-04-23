@@ -1333,13 +1333,13 @@ Network64ToHost64( void *pval ) {
 ALWAYS_INLINE void FASTCALL
 strncpy(char *dst, const char *src, size_t nelem) {
 
-    memcpy(dst, src, nelem * sizeof(char));
+    jl::memcpy(dst, src, nelem * sizeof(char));
 }
 
 ALWAYS_INLINE void FASTCALL
 strncpy(wchar_t *dst, const wchar_t *src, size_t nelem) {
 
-    memcpy(dst, src, nelem * sizeof(wchar_t)); // wcsncpy ?
+    jl::memcpy(dst, src, nelem * sizeof(wchar_t)); // wcsncpy ?
 }
 
 ////

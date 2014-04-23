@@ -1585,7 +1585,7 @@ DEFINE_FUNCTION( set ) {
 		JL_CHK( ValueToTexture(cx, JL_ARG(1), &tex1) );
 		
 		JL_ASSERT( TextureSameFormat(tex, tex1), E_STR("Texture"), E_FORMAT );
-		memcpy(tex->cbuffer, tex1->cbuffer, size * sizeof(PTYPE));
+		jl::memcpy(tex->cbuffer, tex1->cbuffer, size * sizeof(PTYPE));
 		return true;
 	}
 

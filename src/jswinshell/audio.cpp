@@ -70,7 +70,7 @@ struct Private : public jl::CppAllocators {
 	int32_t audioChannels;
 	int32_t audioRate;
 
-	jl::Queue1<jl::ArrayBuffer, jl::StaticAllocMedium> bufferList;
+	jl::Queue1<jl::Buffer, jl::StaticAllocMedium> bufferList;
 };
 
 
@@ -80,7 +80,7 @@ WaveInThreadProc( LPVOID lpParam ) {
 	Private *pv = static_cast<Private*>(lpParam);
 	MMRESULT res;
 	WAVEHDR waveHeader[2];
-	jl::ArrayBuffer arrayBuf[2];
+	jl::Buffer arrayBuf[2];
 
 	size_t bufferLength = pv->frames * pv->audioChannels * pv->audioBits/8;
 
@@ -285,7 +285,7 @@ DEFINE_FUNCTION( read ) {
 		JL_RVAL.setUndefined();
 		return true;
 	}
-	jl::ArrayBuffer buffer = pv->bufferList.Pop();
+	jl::Buffer buffer = pv->bufferList.Pop();
 	acs.leave();
 	JL_CHK( JL_NewByteAudioObjectOwner(cx, buffer, pv->audioBits, pv->audioChannels, pv->frames, pv->audioRate, JL_RVAL) );
 	}
