@@ -824,6 +824,7 @@ template<> struct SignificandValue<float64_t> {
 	static float64_t min() { return -max(); }
 };
 
+namespace pv {
 
 // Helper class used as a base for various type traits, exposed publicly because <type_traits> exposes it as well.
 template<typename T, T Value>
@@ -895,8 +896,10 @@ template <typename Target, typename Source> struct BoundsCheckElider<Target, Sou
 template <typename Target, typename Source> struct BoundsCheckElider<Target, Source, false> : public BoundsChecker<Target, Source> {
 };
 
+}; // pv namespace
+
 template <typename Target, typename Source> static inline bool isInBounds(Source value) {
-    return BoundsCheckElider<Target, Source>::inBounds(value);
+    return pv::BoundsCheckElider<Target, Source>::inBounds(value);
 }
 
 
@@ -940,6 +943,18 @@ memcpy(void *dst_, const void *src_, size_t len) {
     ASSERT_IF(dst >= src, (size_t) (dst - src) >= len);
     ASSERT_IF(src >= dst, (size_t) (src - dst) >= len);
 	return ::memcpy(dst, src, len);
+}
+
+
+ALWAYS_INLINE void*
+zeromem(void *dst, size_t length) {
+
+#ifdef WIN
+	return ::ZeroMemory(dst, length);
+#else
+	return ::zeromem(dst, length);
+#endif
+	
 }
 
 

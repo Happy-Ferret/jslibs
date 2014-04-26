@@ -22,3 +22,5 @@
 
 #include <stack.h>
 #include <buffer.h>
+
+#include "blobPub.h"

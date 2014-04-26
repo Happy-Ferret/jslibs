@@ -1040,6 +1040,9 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	test.alloc(2);
 
+	((uint8_t*)test.data())[0] = 100;
+	((uint8_t*)test.data())[1] = 101;
+
 	return BlobCreate(cx, test, JL_RVAL);
 
 

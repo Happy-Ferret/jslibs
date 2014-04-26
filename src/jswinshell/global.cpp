@@ -562,7 +562,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( registryGet ) {
 
-	uint8_t *buffer = NULL;
+	//uint8_t *buffer = NULL;
+	jl::AutoBuffer buffer;
 	JLData pathStr, valueName;
 
 	JL_DEFINE_ARGS;
@@ -638,36 +639,43 @@ DEFINE_FUNCTION( registryGet ) {
 		return WinThrowError(cx, st);
 	}
 
-	buffer = JL_DataBufferAlloc(cx, size);
-	st = RegQueryValueEx(hKey, valueName, NULL, NULL, buffer, &size);
+	//buffer = JL_DataBufferAlloc(cx, size);
+	buffer.alloc(size);
+	JL_ASSERT_ALLOC( buffer );
+
+	st = RegQueryValueEx(hKey, valueName, NULL, NULL, buffer.data(), &size);
 
 	// doc. http://msdn.microsoft.com/en-us/library/ms724884(VS.85).aspx
 	switch (type) {
 		case REG_NONE:
 			JL_RVAL.setNull();
-			JL_DataBufferFree(cx, buffer);
+			//JL_DataBufferFree(cx, buffer);
 			break;
 		case REG_BINARY:
-			JL_CHK( JL_NewBufferGetOwnership(cx, buffer, size, JL_RVAL) );
+			//JL_CHK( JL_NewBufferGetOwnership(cx, buffer, size, JL_RVAL) );
+			JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
 			break;
 		case REG_DWORD:
-			JL_CHK( jl::setValue(cx, JL_RVAL, *(DWORD*)buffer) );
-			JL_DataBufferFree(cx, buffer);
+			JL_CHK( jl::setValue(cx, JL_RVAL, *(DWORD*)buffer.data()) );
+			//JL_DataBufferFree(cx, buffer);
 			break;
 		case REG_QWORD:
-			JL_CHK( jl::setValue(cx, JL_RVAL, (double)*(DWORD64*)buffer) );
+			JL_CHK( jl::setValue(cx, JL_RVAL, (double)*(DWORD64*)buffer.data()) );
 			break;
 		case REG_LINK: {
-			JSString *jsstr = JL_NewUCString(cx, (jschar*)buffer, size/2);
-			JL_CHK( jsstr );
-			JL_RVAL.setString(jsstr);
+			//JSString *jsstr = JL_NewUCString(cx, (jschar*)buffer, size/2);
+			//JL_CHK( jsstr );
+			//JL_RVAL.setString(jsstr);
+			JL_RVAL.setString(buffer.toExternalStringUC(cx));
 			break;
 		}
 		case REG_EXPAND_SZ:
 		case REG_MULTI_SZ:
 		case REG_SZ: {
 			//JSString *jsstr = JL_NewString(cx, (char*)buffer, size-1); // note: ((char*)buffer)[size] already == '\0'
-			JL_CHK( JLData((char*)buffer, true, size-1).GetJSString(cx, JL_RVAL) );
+			//JL_CHK( JLData((char*)buffer, true, size-1).GetJSString(cx, JL_RVAL) );
+			buffer.setSize(size-1);
+			JL_RVAL.setString(buffer.toExternalStringUC(cx));
 			break;
 		}
 	}
@@ -675,9 +683,7 @@ DEFINE_FUNCTION( registryGet ) {
 	RegCloseKey(hKey);
 
 	return true;
-bad:
-	JL_DataBufferFree(cx, buffer);
-	return false;
+	JL_BAD;
 }
 
 

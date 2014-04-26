@@ -174,11 +174,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
-
-	uint8_t *buffer = NULL;
+	jl::AutoBuffer buffer;
 	
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(0, 1);
 
 	size_t amount, available;
@@ -206,27 +205,21 @@ DEFINE_FUNCTION( read ) {
 		return true;
 	}
 
-	buffer = JL_NewBuffer(cx, amount, JL_RVAL);
-	JL_CHK( buffer );
+	buffer.alloc(amount);
+	JL_ASSERT_ALLOC( buffer );
 
-	size_t readAmount;
-	readAmount = amount;
+	JL_CHK( StreamRead(cx, JL_OBJ, (char*)buffer.data(), &amount) );
 
-	JL_CHK( StreamRead(cx, JL_OBJ, (char*)buffer, &readAmount) );
-
-	if ( readAmount == 0 ) {
+	if ( amount == 0 ) {
 
 		JL_RVAL.setUndefined();
 		return true;
 	}
 
-	if ( readAmount != amount )
-		JL_ChangeBufferLength(cx, JL_RVAL, readAmount);
-
+	buffer.setSize(amount);
+	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
 	return true;
-bad:
-	JL_DataBufferFree(cx, buffer);
-	return false;
+	JL_BAD;
 }
 
 

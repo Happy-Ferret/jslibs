@@ -24,12 +24,12 @@ loadModule('jswinshell');
 
 
 var data = jslangTest();
+//var data = new Blob();
 
-print( data.arrayBuffer.byteLength, '\n' );
-//print( 'x'+data, '\n' );
+//print( data.arrayBuffer.byteLength, '\n' );
+print( 'data:', data, '\n' );
 //print( data.ucString, '\n' );
-
-print( data.arrayBuffer, '\n' );
+//print( data.arrayBuffer, '\n' );
 
 
 throw 0;

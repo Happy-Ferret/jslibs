@@ -44,11 +44,15 @@ BlobCreate( JSContext *cx, void *ownData, int32_t size, OUT JS::MutableHandleVal
 	ASSERT_IF( !ownData, size == 0 );
 
 	{
+
 	JS::RootedObject blobObj(cx, jl::newObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto));
+	//JS::RootedObject blobObj(cx, jl::construct(cx, classProtoCache->proto));
+
 	JL_CHK( blobObj );
 	rval.setObject(*blobObj);
 	JL_SetPrivate(blobObj, ownData);
 	JL_CHK( jl::setSlot(cx, blobObj, JL_BLOB_LENGTH, size) );
+	JL_updateMallocCounter(cx, size);
 	}
 
 	return true;
@@ -58,7 +62,7 @@ BlobCreate( JSContext *cx, void *ownData, int32_t size, OUT JS::MutableHandleVal
 ALWAYS_INLINE bool
 BlobCreate( JSContext *cx, jl::Buffer &buffer, OUT JS::MutableHandleValue rval ) {
 
-	return BlobCreate(cx, buffer.getDataOwnership(), buffer.size(), rval);
+	return BlobCreate(cx, buffer.stealData(), buffer.getSize(), rval);
 }
 
 ALWAYS_INLINE bool

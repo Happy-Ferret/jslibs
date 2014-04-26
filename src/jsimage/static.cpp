@@ -574,14 +574,14 @@ typedef struct {
 	png_structp png;
 	png_infop info;
 	size_t pos;
-	void *buffer;
+	jl::AutoBuffer buffer;
 } PngWriteUserStruct;
 
 
 void write_row_callback(png_structp png_ptr, png_bytep data, png_size_t size) {
 
 	PngWriteUserStruct *desc = (PngWriteUserStruct*)png_get_io_ptr(png_ptr);
-	jl::memcpy((char*)desc->buffer + desc->pos, data, size);
+	jl::memcpy(desc->buffer.data() + desc->pos, data, size);
 	desc->pos += size;
 }
 
@@ -597,7 +597,6 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( encodePngImage ) {
 
 	PngWriteUserStruct desc;
-	desc.buffer = NULL; // see bad:
 	JLData buffer;
 
 	JL_ASSERT_ARGC_MIN(1);
@@ -620,7 +619,8 @@ DEFINE_FUNCTION( encodePngImage ) {
 	JL_ASSERT( buffer.IsSet(), E_ARG, E_NUM(1), E_INVALID );
 	JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 
-	desc.buffer = JL_DataBufferAlloc(cx, sWidth * sHeight * sChannels + 1024); // destination
+	//desc.buffer = JL_DataBufferAlloc(cx, sWidth * sHeight * sChannels + 1024); // destination
+	desc.buffer.alloc(sWidth * sHeight * sChannels + 1024); // destination
 	JL_ASSERT_ALLOC( desc.buffer );
 	desc.pos = 0;
 
@@ -660,13 +660,14 @@ DEFINE_FUNCTION( encodePngImage ) {
 	png_destroy_write_struct(&desc.png, &desc.info);
 
 	// (TBD) use maybeRealloc here ?
-	desc.buffer = (void*)JL_DataBufferRealloc(cx, (uint8_t*)desc.buffer, desc.pos); // usually, compressed data is smaller that original one.
-	JL_ASSERT_ALLOC( desc.buffer );
-	JL_CHK( JL_NewBufferGetOwnership(cx, desc.buffer, desc.pos, *JL_RVAL) );
+	//desc.buffer = (void*)JL_DataBufferRealloc(cx, (uint8_t*)desc.buffer, desc.pos); // usually, compressed data is smaller that original one.
+	//JL_ASSERT_ALLOC( desc.buffer );
+	desc.buffer.setSize(desc.pos);
+	//JL_CHK( JL_NewBufferGetOwnership(cx, desc.buffer, desc.pos, *JL_RVAL) );
+	JL_CHK( BlobCreate(cx, desc.buffer, JL_RVAL) );
 	return true;
-bad:
-	JL_DataBufferFree(cx, (uint8_t*)desc.buffer);
-	return false;
+	JL_BAD;
+	//JL_DataBufferFree(cx, (uint8_t*)desc.buffer);
 }
 
 // (TBD) use these compilation options: PNG_SETJMP_NOT_SUPPORTED, PNG_NO_CONSOLE_IO, PNG_NO_STDIO, ...

@@ -19,6 +19,8 @@
 #include <jlclass.h>
 //#include <jsvalserializer.h>
 
+#include <../jslang/blobPub.h>
+
 #include <buffer.h>
 
 // Check if NSPR is build in release/debug 

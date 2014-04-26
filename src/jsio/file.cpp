@@ -435,7 +435,7 @@ DEFINE_PROPERTY_GETTER( content ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	uint8_t *buf = NULL;
+	jl::AutoBuffer buf;
 	JS::RootedValue jsvalFileName(cx);
 	JLData fileName;
 
@@ -473,7 +473,7 @@ DEFINE_PROPERTY_GETTER( content ) {
 	if ( available == 0 ) {
 
 		PR_Close(fd);
-		JL_CHK( JL_NewEmptyBuffer(cx, vp) );
+		JL_CHK( BlobCreateEmpty(cx, vp) );
 		return true;
 	}
 
@@ -489,11 +489,12 @@ DEFINE_PROPERTY_GETTER( content ) {
 		JL_ERR( E_DATASIZE, E_MAX, E_STR("2^32") );
 	}
 
-	buf = JL_DataBufferAlloc(cx, (size_t)available);
+	JL_CHKM( jl::isInBounds<size_t>(available), E_FILE, E_TOOBIG );
+	buf.alloc((size_t)available);
 	JL_ASSERT_ALLOC( buf );
 	
 	PRInt32 res;
-	res = PR_Read(fd, buf, (PRInt32)available);
+	res = PR_Read(fd, buf.data(), buf.getSize());
 	if (unlikely( res == -1 )) {
 
 		ThrowIoError(cx);
@@ -506,18 +507,10 @@ DEFINE_PROPERTY_GETTER( content ) {
 		JL_CHK( ThrowIoError(cx) );
 	}
 
-	if (unlikely( JL_MaybeRealloc((size_t)available, res) )) { // should never occured
-
-		buf = JL_DataBufferRealloc(cx, buf, res); // realloc the string using its real size
-		JL_ASSERT_ALLOC(buf);
-	}
-
-	JL_CHK( JL_NewBufferGetOwnership(cx, buf, res, vp) );
+	//JL_CHK( JL_NewBufferGetOwnership(cx, buf, res, vp) );
+	JL_CHK( BlobCreate(cx, buf, vp) );
 	return true;
-
-bad:
-	JL_DataBufferFree(cx, buf);
-	return false;
+	JL_BAD;
 }
 
 

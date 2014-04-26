@@ -10,15 +10,19 @@ loadModule('jsstd');
 loadModule('jsio');
 
 
-var s = new Semaphore(host.name);
-
-var b = new Semaphore('aaa');
-
-print( s.name, b.isOwner, '\n' );
-
-print( new File().name );
+	print( new File( '.\\test.tmp' ).content.length );
+throw 0;
 
 
+
+	new File( '.\\test.txt' ).content = '1234';
+throw 0;
+
+
+	var s = new Semaphore(host.name);
+	var b = new Semaphore('aaa');
+	print( s.name, b.isOwner, '\n' );
+	print( new File().name );
 throw 0;
 
 
@@ -422,11 +426,7 @@ throw 0;
 
 
 
-new File( DESKTOP+'\\test.txt' ).content = '1234';
 
-
-
-halt();
 
 
 

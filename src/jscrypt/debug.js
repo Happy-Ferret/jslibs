@@ -1,39 +1,35 @@
 var loadModule = host.loadModule;
  //loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('jscrypt'); throw 0;
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jscrypt'); throw 0;
 
 
 
 loadModule('jsstd');
 loadModule('jscrypt');
 
-var md5 = new Hash('md5');
 
-	md5.write('e');
-	print( base64Encode(md5.done()), '\n' );
-	print( base64Encode(md5.done()), '\n' );
 
+
+
+	var rnd = new Prng('fortuna');
+	rnd.autoEntropy(128); // give more entropy
+	//var plainText = 'this string has 24 chars';
+	var plainText = stringRepeat('x', 94);
+	plainText = plainText;
+	var rsa = new AsymmetricCipher('rsa', 'md5', rnd );
+	rsa.createKeys( 1024 );
+	var rsaPubKey = rsa.publicKey;
+	var rsa1 = new AsymmetricCipher( 'rsa', 'md5', rnd );
+	rsa1.publicKey = rsaPubKey;
+	var rsaEncryptedData = rsa1.encrypt( plainText ).string;
+	var res = rsa.decrypt( rsaEncryptedData ).string;
+	print ( res == plainText )
 throw 0;
 
-var cr = new Cipher("ECB", "cast5", "my");
-
-halt();
-
-
-var md5 = new Hash('md5');
-print( hexEncode(md5('qwe')), '\n' );
-
-var md5 = new Hash('md5');
-print( hexEncode(md5('qw')), '\n' );
-md5.process('e');
-print( hexEncode(md5.done()), '\n' );
-
-halt();
 
 
 var rnd = new Prng('yarrow');
-rnd(1);
-
+rnd.read(1);
 
 try {
 
@@ -71,28 +67,38 @@ try {
 	print( ex.const, '\n' );
 	print( ex.lineNumber, '\n' );
 }
-
 	
-halt();
+throw 0;
 
 
 
-		var rnd = new Prng('fortuna');
-		rnd.autoEntropy(128); // give more entropy
-		var plainText = 'totqutyvq8wyetvq7ewryt9vq78yrt987wveyrt98v7weyr9tv87wery9twev87y9r78o';
-		plainText = plainText;
-		var rsa = new AsymmetricCipher('rsa', 'md5', rnd );
-		rsa.createKeys( 1024 );
-		var rsaPubKey = rsa.publicKey;
-		var rsa1 = new AsymmetricCipher( 'rsa', 'md5', rnd );
-		rsa1.publicKey = rsaPubKey;
-		var rsaEncryptedData = rsa1.encrypt( plainText );
-		var res = rsa.decrypt( rsaEncryptedData );
-		print ( res == plainText )
 
-		
-		
-halt();
+var md5 = new Hash('md5');
+
+	md5.write('e');
+	print( base64Encode(md5.done()), '\n' );
+	print( base64Encode(md5.done()), '\n' );
+
+throw 0;
+
+
+
+var cr = new Cipher("ECB", "cast5", "my");
+
+throw 0;
+
+
+var md5 = new Hash('md5');
+print( hexEncode(md5('qwe')), '\n' );
+
+var md5 = new Hash('md5');
+print( hexEncode(md5('qw')), '\n' );
+md5.process('e');
+print( hexEncode(md5.done()), '\n' );
+
+throw 0;
+
+
 
 
 

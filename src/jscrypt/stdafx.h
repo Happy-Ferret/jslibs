@@ -17,6 +17,8 @@
 
 #include <jlhelper.h>
 #include <jlclass.h>
+#include <../jslang/blobPub.h>
+
 //#include <jsvalserializer.h>
 
 #include <tomcrypt.h>

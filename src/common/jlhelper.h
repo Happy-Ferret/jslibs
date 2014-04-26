@@ -793,6 +793,7 @@ enum E_TXTID {
 
 JL_BEGIN_NAMESPACE
 
+
 ALWAYS_INLINE JSObject* FASTCALL
 newObjectWithGivenProto( JSContext *cx, const JSClass *clasp, IN JS::HandleObject proto, IN JS::HandleObject parent = JS::NullPtr() );
 
@@ -848,7 +849,7 @@ struct Args {
 	void constructThis(JSClass *clasp, JS::HandleObject proto) {
 
 		ASSERT( isConstructing() );
-		_thisObj.set( jl::newObjectWithGivenProto(_cx, clasp, proto) ); // see JS_NewObjectForConstructor()
+		_thisObj.set( jl::newObjectWithGivenProto(_cx, clasp, proto) ); // JS_NewObjectForConstructor() use the callee to determine parentage and [[Prototype]].
 		rval().setObject(*_thisObj);
 		_jsargs.setThis(rval());
 	}
@@ -992,6 +993,9 @@ class JLData {
 
 	mutable void *_buf;
 	mutable size_t _len;
+
+// replace _own by _allocatedBytes. Then _allocatedBytes > 0 == own
+
 	bool _own; // has ownership
 	bool _nt; // null-terminated
 	bool _w; // is wide-char
@@ -3388,6 +3392,7 @@ JL_JsidToJsval( JSContext * RESTRICT cx, IN jsid id, OUT JS::MutableHandleValue 
 
 // JS_AllocateArrayBufferContents
 
+/*
 ALWAYS_INLINE uint8_t* FASTCALL
 JL_DataBufferAlloc( JSContext *, size_t nbytes ) {
 
@@ -3405,6 +3410,7 @@ JL_DataBufferFree( JSContext *, uint8_t *data ) {
 
 	return jl_free(data);
 }
+*/
 
 //
 
@@ -3512,104 +3518,149 @@ JL_ChangeBufferLength( JSContext *cx, IN OUT JS::MutableHandleValue vp, size_t n
 JL_BEGIN_NAMESPACE
 
 
-class Buffer : public jl::CppAllocators {
-protected:
-	void *_data;
+class BufferBase : public jl::CppAllocators {
+public:
+	typedef uint8_t* DataType;
+
+private:
+	DataType _data;
 	size_t _size;
+
 public:
 
-	Buffer() {
-
-		IFDEBUG( _data = NULL );
+	BufferBase() {
 	}
 
-	Buffer( void *data, size_t nbytes )
+	BufferBase( DataType data, size_t nbytes )
 	: _data(data), _size(nbytes) {
-
-		ASSERT_IF( data != NULL, jl_msize(data) >= nbytes );
+		ASSERT_IF( data == nullptr, nbytes == 0 );
 	}
 
-	Buffer( uint32_t nbytes ) {
+	operator bool() const {
 
-		IFDEBUG( _data = NULL );
+		return _data != nullptr;
+	}
+
+	DataType
+	stealData() {
+
+		DataType tmp = _data;
+		_data = nullptr;
+		return tmp;
+	};
+
+	DataType&
+	data() {
+	
+		return _data;
+	}
+
+	size_t
+	getSize() const {
+	
+		return _size;
+	}
+
+	void
+	setSize(size_t size) {
+
+		_size = size;
+	}
+};
+
+
+
+class Buffer : public BufferBase {
+	size_t _allocSize;
+public:
+
+	Buffer()
+	: BufferBase(nullptr, 0), _allocSize(0) {
+	}
+
+	Buffer( DataType data, size_t nbytes )
+	: BufferBase(data, nbytes) {
+		ASSERT_IF( !data, !nbytes );
+	}
+
+	Buffer( size_t nbytes ) {
 
 		alloc(nbytes);
 	}
 
-	bool
-	alloc( uint32_t nbytes ) {
+	void
+	setSize( size_t size ) {
 
-		_data = jl_malloc(nbytes);
-		_size = nbytes;
+		ASSERT( size <= _allocSize );
 
-		ASSERT( _data ); // oom ?
-		return _data != NULL;
+		BufferBase::setSize(size);
 	}
 
 	bool
-	realloc( uint32_t nbytes ) {
+	alloc( size_t nbytes ) {
 
-		ASSERT( _data );
+		data() = static_cast<DataType>(jl_malloc(nbytes));
+		_allocSize = nbytes;
+		setSize(nbytes);
 
-		_data = jl_realloc(_data, nbytes);
-		_size = nbytes;
-
-		ASSERT( _data ); // oom ?
-		return _data != NULL;
+		return data() != NULL;
 	}
+
+	bool
+	realloc( size_t nbytes ) {
+
+		ASSERT( data() );
+
+		data() = static_cast<DataType>(jl_realloc(data(), nbytes));
+		_allocSize = nbytes;
+		setSize(nbytes);
+
+		return data() != NULL;
+	}
+
+	DataType
+	stealData() {
+		
+		ASSERT( getSize() <= _allocSize );
+
+		if ( JL_MaybeRealloc(_allocSize, getSize()) ) {
+		
+			realloc( getSize() );
+			ASSERT( data() ); // assume it always possible to reduce the size of an allocated block
+		}
+
+		return BufferBase::stealData();
+	};
 
 	void
 	free() {
 
-		jl_free(_data);
-
-		IFDEBUG( _data = NULL );
+		jl_free(data());
+		data() = NULL;
+		setSize(0);
+		_allocSize = 0;
 	}
 
-	void*
-	getDataOwnership() {
-	
-		ASSERT( _data );
-		void *data = _data;
-		_data = nullptr;
-		return data;
-	};
-
-	void*&
-	data() {
-	
-		ASSERT( _data );
-
-		return _data;
-	};
-
-	size_t&
-	size() {
-	
-		return _size;
-	};
-
-	operator bool() {
-
-		return _data != NULL;
-	}
 
 	bool
 	fromArrayBufferObject( JSContext *cx, JS::HandleObject obj ) {
 		
-		ASSERT( !_data );
+		ASSERT( !data() );
 
-		_size = JS_GetArrayBufferByteLength(obj);
-		_data = JS_StealArrayBufferContents(cx, obj);
+		JL_ASSERT( JS_IsArrayBufferObject(obj), E_TY_ARRAYBUFFER, E_REQUIRED );
+		setSize( JS_GetArrayBufferByteLength(obj) );
+		data() = static_cast<DataType>(JS_StealArrayBufferContents(cx, obj));
+		return true;
+		JL_BAD;
 	}
 
 	// this lose the ownership of _data
 	JSObject *
 	toArrayBufferObject( JSContext *cx ) {
 		
-		ASSERT_IF( !_data, _size == 0 );
+		ASSERT_IF( !data(), getSize() == 0 );
 
-		JS::RootedObject arrayObject(cx, _size > 0 ? JS_NewArrayBufferWithContents(cx, size(), getDataOwnership()) : JS_NewArrayBuffer(cx, 0));
+		JS::RootedObject arrayObject(cx, getSize() > 0 ? JS_NewArrayBufferWithContents(cx, getSize(), stealData()) : JS_NewArrayBuffer(cx, 0));
 		return arrayObject;
 	}
 
@@ -3629,45 +3680,46 @@ public:
 		}
 	};
 
+
 	// this lose the ownership of _data
 	JSString *
 	toExternalStringUC( JSContext *cx ) {
 
-		ASSERT( _data );
-		ASSERT( _size % 2 == 0 );
+		ASSERT( data() );
+		ASSERT( getSize() % 2 == 0 );
 		
-		size_t length = _size/2;
-		realloc(_size + 2); // see JS_ASSERT(chars[length] == 0);
+		size_t length = getSize() / 2;
+		realloc(getSize() + 2); // see JS_ASSERT(chars[length] == 0);
 
-		reinterpret_cast<jschar*>(_data)[length] = 0;
-		JS::RootedString str(cx, JS_NewExternalString(cx, reinterpret_cast<jschar*>(getDataOwnership()), length, new ExternalStringFinalizer()));
-		return str;
+		jschar *wstr = reinterpret_cast<jschar*>(stealData());
+		wstr[length] = 0;
+		JS::RootedString jsstr(cx, JS_NewExternalString(cx, wstr, length, new ExternalStringFinalizer()));
+		return jsstr;
 	}
 	
+
 	// this lose the ownership of _data
 	JSString *
 	toExternalString( JSContext *cx ) {
 
-		ASSERT( _data );
+		ASSERT( data() );
 
-		size_t length = _size;
-		realloc((_size+1) * 2); // see JS_ASSERT(chars[length] == 0);
-		
-		jschar* jsstr = reinterpret_cast<jschar*>(_data);
-		jsstr[length] = 0;
+		size_t length = getSize();
+		realloc(getSize() * 2 + 2); // see JS_ASSERT(chars[length] == 0);
 
-		char *src = reinterpret_cast<char*>(_data) + length;
-		jschar *dst = jsstr + length;
+		char *str = reinterpret_cast<char*>(stealData());
+		jschar *wstr = reinterpret_cast<jschar*>(str);
 
-//		while ( dst != jsstr )
-//			*(--dst) = *(--src) & 0xFF;
+		char *src = str + length;
+		jschar *dst = wstr + length;
 
-		size_t count = length;
-		while ( count-- > 0 )
-			*(dst++) = *(src++) & 0xFF;
+		*dst = L('\0');
 
-		JS::RootedString str(cx, JS_NewExternalString(cx, reinterpret_cast<jschar*>(getDataOwnership()), length, new ExternalStringFinalizer()));
-		return str;
+		while ( src != str )
+			*(--dst) = *(--src) & 0xFF;
+
+		JS::RootedString jsstr(cx, JS_NewExternalString(cx, wstr, length, new ExternalStringFinalizer()));
+		return jsstr;
 	}
 };
 
@@ -3675,28 +3727,31 @@ public:
 class AutoBuffer : public Buffer {
 public:
 	AutoBuffer()
-	: Buffer(nullptr, 0) {
+	: Buffer() {
 	}
 
 	~AutoBuffer() {
 
-		if ( _data )
-			jl_free(_data);
+		if ( *this ) {
+
+			free();
+		}
 	}
 };
+
 
 class AutoWipeBuffer : public Buffer {
 public:
 	AutoWipeBuffer()
-	: Buffer(nullptr, 0) {
+	: Buffer() {
 	}
 
 	~AutoWipeBuffer() {
 
-		if ( _data ) {
+		if ( *this ) {
 
-			ZeroMemory(_data, _size); // zeromem
-			jl_free(_data);
+			jl::zeromem(data(), getSize());
+			free();
 		}
 	}
 };
@@ -3727,15 +3782,19 @@ JL_NewImageObject( IN JSContext *cx, IN T width, IN T height, IN U channels, IN 
 
 	ASSERT( width >= 0 && height >= 0 && channels > 0 );
 
-	uint8_t *data;
+	//uint8_t *data;
+	jl::AutoBuffer buffer;
 	JS::RootedValue dataVal(cx);
 	JS::RootedObject imageObj(cx, JL_NewObj(cx));
 
 	JL_CHK( imageObj );
 	vp.setObject(*imageObj);
-	data = JL_NewBuffer(cx, width * height* channels, dataVal);
-	JL_CHK( data );
-	JL_CHK( JS_SetPropertyById(cx, imageObj, JLID(cx, data), &dataVal) );
+	//data = JL_NewBuffer(cx, width * height* channels, dataVal);
+	buffer.alloc(width * height * channels);
+	JL_ASSERT_ALLOC(buffer);
+	uint8_t *data = buffer.data();
+	JL_CHK( BlobCreate(cx, buffer, &dataVal) );
+	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, data), &dataVal) );
 	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, width), width) );
 	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, height), height) );
 	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, channels), channels) );
@@ -4014,7 +4073,7 @@ JL_ReportExceptionToString( JSContext *cx, JSObject *obj, JLData  ) {
 ALWAYS_INLINE bool FASTCALL
 JL_MaybeRealloc( size_t requested, size_t received ) {
 
-	return requested != 0 && (128 * received / requested < 96) && (requested - received > 128);
+	return requested != 0 && (128 * received / requested < 96) && (requested - received > 128); // less than 75% AND at least 128 bytes more 
 }
 
 

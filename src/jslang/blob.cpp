@@ -24,6 +24,16 @@ invalidateBlob(JSContext *cx, JS::HandleObject obj) {
 	return jl::setSlot(cx, obj, JL_BLOB_LENGTH, JL_UNDEFINED());
 }
 
+/*
+DEFINE_CONSTRUCTOR() {
+
+	JL_DEFINE_ARGS;
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+	///
+	return true;
+	JL_BAD;
+}
+*/
 
 DEFINE_FINALIZE() { // see HandleClose()
 
@@ -50,7 +60,7 @@ DEFINE_PROPERTY_GETTER( arrayBuffer ) {
 	if ( !JL_RVAL.isUndefined() ) {
 
 		ASSERT( JL_RVAL.isInt32() );
-		void *pv = static_cast<void*>(JL_GetPrivate(JL_OBJ));
+		jl::Buffer::DataType pv = static_cast<jl::Buffer::DataType>(JL_GetPrivate(JL_OBJ));
 		JL_RVAL.setObject(*jl::Buffer(pv, JL_RVAL.toInt32()).toArrayBufferObject(cx));
 		JL_CHK( invalidateBlob(cx, JL_OBJ) );
 	}
@@ -69,7 +79,7 @@ DEFINE_PROPERTY_GETTER( string ) {
 		int32_t size = JL_RVAL.toInt32();
 		if ( size > 0 ) {
 
-			void *pv = static_cast<void*>(JL_GetPrivate(JL_OBJ));
+			jl::Buffer::DataType pv = static_cast<jl::Buffer::DataType>(JL_GetPrivate(JL_OBJ));
 			JL_RVAL.setString(jl::Buffer(pv, size).toExternalString(cx));
 		} else {
 
@@ -93,7 +103,7 @@ DEFINE_PROPERTY_GETTER( ucString ) {
 		if ( size > 0 ) {
 
 			JL_CHKM( size % 2 == 0, E_DATASIZE, E_INVALID );
-			void *pv = static_cast<void*>(JL_GetPrivate(JL_OBJ));
+			jl::Buffer::DataType pv = static_cast<jl::Buffer::DataType>(JL_GetPrivate(JL_OBJ));
 			JL_RVAL.setString(jl::Buffer(pv, size).toExternalStringUC(cx));
 		} else {
 
@@ -116,7 +126,7 @@ DEFINE_FUNCTION( toString ) {
 		int32_t size = JL_RVAL.toInt32();
 		if ( size > 0 ) {
 
-			void *pv = static_cast<void*>(JL_GetPrivate(JL_OBJ));
+			jl::Buffer::DataType pv = static_cast<jl::Buffer::DataType>(JL_GetPrivate(JL_OBJ));
 			JL_RVAL.setString(jl::Buffer(pv, size).toExternalString(cx));
 		} else {
 
@@ -149,6 +159,7 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(1)
 	HAS_FINALIZE
 	IS_UNCONSTRUCTIBLE
+	//HAS_CONSTRUCTOR
 
 	BEGIN_PROPERTY_SPEC
 		PROPERTY_GETTER( length )

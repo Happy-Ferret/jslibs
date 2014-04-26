@@ -496,11 +496,11 @@ DEFINE_FUNCTION( recvFrom ) {
 
 	JL_IGNORE( argc );
 
-	JS::RootedValue tmp(cx);
-	uint8_t *buffer = NULL;
+	//uint8_t *buffer = NULL;
+	jl::AutoBuffer buffer;
 
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 
 
 //	JL_ASSERT_INSTANCE( obj, _class );
@@ -522,18 +522,20 @@ DEFINE_FUNCTION( recvFrom ) {
 	if ( available == -1 )
 		return ThrowIoError(cx);
 
-	buffer = JL_DataBufferAlloc(cx, (size_t)available); // (TBD) optimize this if  available == 0 !!
-	JL_CHK( buffer );
+	//buffer = JL_DataBufferAlloc(cx, (size_t)available); // (TBD) optimize this if  available == 0 !!
+	//JL_CHKM( jl::isInBounds<size_t>(available), E_FILE, E_TOOBIG );
+	buffer.alloc((size_t)available);
+	JL_ASSERT_ALLOC( buffer );
 
 	PRNetAddr addr;
 	PRInt32 res;
-	res = PR_RecvFrom(fd, buffer, (PRInt32)available, 0, &addr, PR_INTERVAL_NO_TIMEOUT);
+	res = PR_RecvFrom(fd, buffer.data(), (PRInt32)buffer.getSize(), 0, &addr, PR_INTERVAL_NO_TIMEOUT);
 	JL_CHKB( res != -1, bad_ex );
 
 	char peerName[47]; // If addr is an IPv4 address, size needs to be at least 16. If addr is an IPv6 address, size needs to be at least 46.
 
 	{
-
+	JS::RootedValue tmp(cx);
 	JS::RootedObject arrayObject(cx, JS_NewArrayObject(cx, 3));
 	JL_CHK( arrayObject );
 	JL_RVAL.setObject( *arrayObject );
@@ -552,14 +554,16 @@ DEFINE_FUNCTION( recvFrom ) {
 	if (likely( res > 0 )) {
 
 		// (TBD) maybeRealloc ?
-		JL_CHK( JL_NewBufferGetOwnership(cx, buffer, res, &tmp) );
+		//JL_CHK( JL_NewBufferGetOwnership(cx, buffer, res, &tmp) );
+		buffer.setSize(res);
+		JL_CHK( BlobCreate(cx, buffer, &tmp) );
 		JL_CHK( JL_SetElement(cx, arrayObject, 0, tmp) );
 		return true;
 	} else
 	if ( res == 0 ) {
 
-		JL_DataBufferFree(cx, buffer);
-		tmp = JSVAL_VOID;
+		//JL_DataBufferFree(cx, buffer);
+		tmp.setUndefined();
 		JL_CHK( JL_SetElement(cx, arrayObject, 0, tmp) );
 	}
 
@@ -570,7 +574,7 @@ DEFINE_FUNCTION( recvFrom ) {
 bad_ex:
 	ThrowIoError(cx);
 bad:
-	JL_DataBufferFree(cx, buffer); // JS_free NULL pointer is legal.
+	//JL_DataBufferFree(cx, buffer); // JS_free NULL pointer is legal.
 	return false;
 }
 
