@@ -35,6 +35,8 @@ BlobCreate( JSContext *cx, void *ownData, int32_t size, OUT JS::MutableHandleVal
 	const jl::ProtoCache::Item *classProtoCache = jl::Host::getHost(cx).getCachedClassProto("Blob");
 	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME("Blob"), E_NOTFOUND );
 
+	{
+
 	// length > 0 && private != NULL => blob
 	// length == 0 => empty blob
 	// length == undefined => invalidated blob
@@ -42,8 +44,6 @@ BlobCreate( JSContext *cx, void *ownData, int32_t size, OUT JS::MutableHandleVal
 	// length == undefined && data != NULL => invalid case
 
 	ASSERT_IF( !ownData, size == 0 );
-
-	{
 
 	JS::RootedObject blobObj(cx, jl::newObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto));
 	//JS::RootedObject blobObj(cx, jl::construct(cx, classProtoCache->proto));
@@ -59,10 +59,15 @@ BlobCreate( JSContext *cx, void *ownData, int32_t size, OUT JS::MutableHandleVal
 	JL_BAD;
 }
 
-ALWAYS_INLINE bool
+
+ALWAYS_INLINE jl::Buffer::DataType
 BlobCreate( JSContext *cx, jl::Buffer &buffer, OUT JS::MutableHandleValue rval ) {
 
-	return BlobCreate(cx, buffer.stealData(), buffer.getSize(), rval);
+	size_t size = buffer.getSize();
+	jl::Buffer::DataType data = buffer.stealData();
+	if ( !BlobCreate(cx, data, size, rval) )
+		return NULL;
+	return data;
 }
 
 ALWAYS_INLINE bool

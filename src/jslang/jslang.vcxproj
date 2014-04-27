@@ -62,8 +62,10 @@
     <ClCompile Include="stream.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="audioPub.h" />
     <ClInclude Include="blobPub.h" />
     <ClInclude Include="handlePub.h" />
+    <ClInclude Include="imagePub.h" />
     <ClInclude Include="jslang.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>

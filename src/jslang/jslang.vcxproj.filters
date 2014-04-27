@@ -46,6 +46,12 @@
     <ClInclude Include="blobPub.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="imagePub.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="audioPub.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="blob_qa.js" />

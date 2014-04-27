@@ -1048,23 +1048,25 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	
 	{
-		jl::Buffer ab(2);
+		jl::Buffer ab;
+		ab.alloc(2);
 		((uint8_t*)ab.data())[0] = 1;
 		((uint8_t*)ab.data())[1] = 2;
-		JS::RootedString rstr(cx, ab.toExternalStringUC(cx));
+		ab.toExternalStringUC(cx, JL_RVAL);
 	}
 
+/*
 	{
-		jl::Buffer ab(2);
+		jl::Buffer ab;
+		ab.alloc(2);
 		((uint8_t*)ab.data())[0] = 100;
 		((uint8_t*)ab.data())[1] = 101;
-		JS::RootedString rstr(cx, ab.toExternalString(cx));
+		ab.toExternalString(cx, JL_RVAL);
 		bool match;
-		ASSERT( JS_StringEqualsAscii(cx, rstr, "de", &match) );
+		ASSERT( JS_StringEqualsAscii(cx, JL_RVAL, "de", &match) );
 		ASSERT( match );
-
 	}
-
+*/
 
 
 	ASSERT( jl::tstrcmp( ("abc"), L("abc")) == 0 );

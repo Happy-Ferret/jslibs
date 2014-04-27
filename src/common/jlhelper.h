@@ -3544,6 +3544,7 @@ public:
 	DataType
 	stealData() {
 
+		IFDEBUG( _size = 0 );
 		DataType tmp = _data;
 		_data = nullptr;
 		return tmp;
@@ -3582,12 +3583,12 @@ public:
 	: BufferBase(data, nbytes) {
 		ASSERT_IF( !data, !nbytes );
 	}
-
+/*
 	Buffer( size_t nbytes ) {
 
 		alloc(nbytes);
 	}
-
+*/
 	void
 	setSize( size_t size ) {
 
@@ -3655,13 +3656,13 @@ public:
 	}
 
 	// this lose the ownership of _data
-	JSObject *
-	toArrayBufferObject( JSContext *cx ) {
+	bool
+	toArrayBufferObject( JSContext *cx, JS::MutableHandleValue rval ) {
 		
 		ASSERT_IF( !data(), getSize() == 0 );
 
-		JS::RootedObject arrayObject(cx, getSize() > 0 ? JS_NewArrayBufferWithContents(cx, getSize(), stealData()) : JS_NewArrayBuffer(cx, 0));
-		return arrayObject;
+		rval.setObject(getSize() > 0 ? *JS_NewArrayBufferWithContents(cx, getSize(), stealData()) : *JS_NewArrayBuffer(cx, 0));
+		return true;
 	}
 
 
@@ -3682,30 +3683,31 @@ public:
 
 
 	// this lose the ownership of _data
-	JSString *
-	toExternalStringUC( JSContext *cx ) {
+	bool
+	toExternalStringUC( JSContext *cx, JS::MutableHandleValue rval ) {
 
 		ASSERT( data() );
 		ASSERT( getSize() % 2 == 0 );
 		
 		size_t length = getSize() / 2;
-		realloc(getSize() + 2); // see JS_ASSERT(chars[length] == 0);
+		JL_CHK( realloc(getSize() + 2) ); // see JS_ASSERT(chars[length] == 0);
 
 		jschar *wstr = reinterpret_cast<jschar*>(stealData());
 		wstr[length] = 0;
-		JS::RootedString jsstr(cx, JS_NewExternalString(cx, wstr, length, new ExternalStringFinalizer()));
-		return jsstr;
+		rval.setString(JS_NewExternalString(cx, wstr, length, new ExternalStringFinalizer()));
+		return true;
+		JL_BAD;
 	}
 	
 
 	// this lose the ownership of _data
-	JSString *
-	toExternalString( JSContext *cx ) {
+	bool
+	toExternalString( JSContext *cx, JS::MutableHandleValue rval ) {
 
 		ASSERT( data() );
 
 		size_t length = getSize();
-		realloc(getSize() * 2 + 2); // see JS_ASSERT(chars[length] == 0);
+		JL_CHK( realloc(getSize() * 2 + 2) ); // see JS_ASSERT(chars[length] == 0);
 
 		char *str = reinterpret_cast<char*>(stealData());
 		jschar *wstr = reinterpret_cast<jschar*>(str);
@@ -3718,8 +3720,9 @@ public:
 		while ( src != str )
 			*(--dst) = *(--src) & 0xFF;
 
-		JS::RootedString jsstr(cx, JS_NewExternalString(cx, wstr, length, new ExternalStringFinalizer()));
-		return jsstr;
+		rval.setString(JS_NewExternalString(cx, wstr, length, new ExternalStringFinalizer()));
+		return true;
+		JL_BAD;
 	}
 };
 
@@ -3761,219 +3764,6 @@ public:
 JL_END_NAMESPACE
 
 
-
-///////////////////////////////////////////////////////////////////////////////
-// Generic Image object
-
-enum ImageDataType {
-    TYPE_INT8    = js::ArrayBufferView::TYPE_INT8,
-    TYPE_UINT8   = js::ArrayBufferView::TYPE_UINT8,
-    TYPE_INT16   = js::ArrayBufferView::TYPE_INT16,
-    TYPE_UINT16  = js::ArrayBufferView::TYPE_UINT16,
-    TYPE_INT32   = js::ArrayBufferView::TYPE_INT32,
-    TYPE_UINT32  = js::ArrayBufferView::TYPE_UINT32,
-    TYPE_FLOAT32 = js::ArrayBufferView::TYPE_FLOAT32,
-    TYPE_FLOAT64 = js::ArrayBufferView::TYPE_FLOAT64,
-};
-
-template <class T, class U>
-ALWAYS_INLINE uint8_t* FASTCALL
-JL_NewImageObject( IN JSContext *cx, IN T width, IN T height, IN U channels, IN ImageDataType dataType, OUT JS::MutableHandleValue vp ) {
-
-	ASSERT( width >= 0 && height >= 0 && channels > 0 );
-
-	//uint8_t *data;
-	jl::AutoBuffer buffer;
-	JS::RootedValue dataVal(cx);
-	JS::RootedObject imageObj(cx, JL_NewObj(cx));
-
-	JL_CHK( imageObj );
-	vp.setObject(*imageObj);
-	//data = JL_NewBuffer(cx, width * height* channels, dataVal);
-	buffer.alloc(width * height * channels);
-	JL_ASSERT_ALLOC(buffer);
-	uint8_t *data = buffer.data();
-	JL_CHK( BlobCreate(cx, buffer, &dataVal) );
-	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, data), &dataVal) );
-	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, width), width) );
-	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, height), height) );
-	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, channels), channels) );
-	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, type), dataType) );
-	return data;
-bad:
-	return NULL;
-}
-
-template <class T, class U>
-ALWAYS_INLINE bool FASTCALL
-JL_NewImageObjectOwner( IN JSContext *cx, IN uint8_t* buffer, IN T width, IN T height, IN U channels, IN ImageDataType dataType, OUT JS::MutableHandleValue vp ) {
-
-	ASSERT_IF( buffer == NULL, width * height * channels == 0 );
-	ASSERT_IF( buffer != NULL, width > 0 && height > 0 && channels > 0 );
-	ASSERT_IF( buffer != NULL, jl_msize(buffer) >= (size_t)(width * height * channels) );
-
-	JS::RootedValue dataVal(cx);
-	JS::RootedObject imageObj(cx, JL_NewObj(cx));
-
-	JL_CHK( imageObj );
-	vp.setObject(*imageObj);
-	JL_CHK( JL_NewBufferGetOwnership(cx, buffer, width * height * channels, &dataVal) );
-	JL_CHK( JS_SetPropertyById(cx, imageObj, JLID(cx, data), &dataVal) );
-	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, width), width) );
-	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, height), height) );
-	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, channels), channels) );
-	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, type), dataType) );
-	return true;
-	JL_BAD;
-}
-
-
-template <class T, class U>
-ALWAYS_INLINE JLData FASTCALL
-JL_GetImageObject( IN JSContext *cx, IN JS::HandleValue val, OUT T *width, OUT T *height, OUT U *channels, OUT ImageDataType *dataType ) {
-
-	JLData data;
-	JL_CHK( val.isObject() );
-
-	{
-
-	JS::RootedObject imageObj(cx, &val.toObject());
-	JL_CHK( jl::getProperty(cx, imageObj, JLID(cx, data), &data) );
-	JL_CHK( jl::getProperty(cx, imageObj, JLID(cx, width), width) );
-	JL_CHK( jl::getProperty(cx, imageObj, JLID(cx, height), height) );
-	JL_CHK( jl::getProperty(cx, imageObj, JLID(cx, channels), channels) );
-	int tmp;
-	JL_CHK( jl::getProperty(cx, imageObj, JLID(cx, type), &tmp) );
-	S_ASSERT(sizeof(ImageDataType) == sizeof(int));
-	*dataType = (ImageDataType)tmp;
-
-	int dataTypeSize;
-	switch ( *dataType ) {
-		case TYPE_INT8:
-		case TYPE_UINT8:
-			dataTypeSize = 1;
-			break;
-		case TYPE_INT16:
-		case TYPE_UINT16:
-			dataTypeSize = 2;
-			break;
-		case TYPE_INT32:
-		case TYPE_UINT32:
-		case TYPE_FLOAT32:
-			dataTypeSize = 4;
-			break;
-		case TYPE_FLOAT64:
-			dataTypeSize = 8;
-			break;
-		default:
-			JL_CHK(false);
-	}
-
-	JL_CHK( *width >= 0 && *height >= 0 && *channels > 0 );
-	JL_CHK( data.IsSet() && jl::isInBounds<int>(data.Length()) && (int)data.Length() == (int)(*width * *height * *channels * dataTypeSize) );
-//	JL_ASSERT( width >= 0 && height >= 0 && channels > 0, E_STR("image"), E_FORMAT );
-//	JL_ASSERT( data.IsSet() && jl::SafeCast<int>(data.Length()) == (int)(*width * *height * *channels * 1), E_DATASIZE, E_INVALID );
-
-	}
-
-	return data;
-bad:
-	return JLData();
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-// Generic Audio object
-
-template <class T, class U, class V, class W>
-ALWAYS_INLINE uint8_t* FASTCALL
-JL_NewByteAudioObject( JSContext *cx, T bits, U channels, V frames, W rate, OUT JS::MutableHandleValue vp ) {
-
-	ASSERT( bits > 0 && (bits % 8) == 0 && channels > 0 && frames >= 0 && rate > 0 );
-
-	uint8_t *data;
-
-	JS::RootedObject audioObj(cx, JL_NewObj(cx));
-	JS::RootedValue dataVal(cx);
-	JL_CHK( audioObj );
-	vp.setObject(*audioObj);
-	data = JL_NewBuffer(cx, (bits/8) * channels * frames, &dataVal);
-	JL_CHK( data );
-	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, data), dataVal) );
-	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, bits), bits) );
-	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, channels), channels) );
-	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, frames), frames) );
-	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, rate), rate) );
-	return data;
-	JL_BADVAL(NULL);
-}
-
-template <class T, class U, class V, class W>
-ALWAYS_INLINE bool FASTCALL
-JL_NewByteAudioObjectOwner( JSContext *cx, uint8_t* buffer, T bits, U channels, V frames, W rate, OUT JS::MutableHandleValue vp ) {
-
-	ASSERT_IF( buffer == NULL, frames == 0 );
-	ASSERT( bits > 0 && (bits % 8) == 0 && channels > 0 && frames >= 0 && rate > 0 );
-	ASSERT_IF( buffer != NULL, jl_msize(buffer) >= (size_t)( (bits/8) * channels * frames ) );
-
-	JS::RootedObject audioObj(cx, JL_NewObj(cx));
-	JS::RootedValue dataVal(cx);
-	JL_CHK( audioObj );
-	vp.setObject(*audioObj);
-	JL_CHK( JL_NewBufferGetOwnership(cx, buffer, (bits/8) * channels * frames, &dataVal) );
-	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, data), dataVal) );
-	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, bits), bits) );
-	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, channels), channels) );
-	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, frames), frames) );
-	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, rate), rate) );
-	return true;
-	JL_BAD;
-}
-
-template <class T, class U, class V, class W>
-ALWAYS_INLINE bool FASTCALL
-JL_NewByteAudioObjectOwner( JSContext *cx, jl::Buffer &buffer, T bits, U channels, V frames, W rate, OUT JS::MutableHandleValue vp ) {
-
-	ASSERT( bits > 0 && (bits % 8) == 0 && channels > 0 && frames >= 0 && rate > 0 );
-
-	JS::RootedObject audioObj(cx, JL_NewObj(cx));
-	JS::RootedObject dataObj(cx, buffer.toArrayBufferObject(cx));
-	JL_CHK( audioObj );
-	JL_CHK( dataObj );
-	vp.setObject(*audioObj);
-	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, data), dataObj) );
-	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, bits), bits) );
-	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, channels), channels) );
-	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, frames), frames) );
-	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, rate), rate) );
-	return true;
-	JL_BAD;
-}
-
-
-
-template <class T, class U, class V, class W>
-ALWAYS_INLINE JLData FASTCALL
-JL_GetByteAudioObject( IN JSContext *cx, IN JS::HandleValue val, T *bits, U *channels, V *frames, W *rate ) {
-
-	JLData data;
-	//JL_ASSERT_IS_OBJECT(val, "audio");
-	JL_CHK( val.isObject() );
-	JS::RootedObject audioObj(cx, &val.toObject());
-	JL_CHK( jl::getProperty(cx, audioObj, JLID(cx, data), &data) );
-	JL_CHK( jl::getProperty(cx, audioObj, JLID(cx, bits), bits) );
-	JL_CHK( jl::getProperty(cx, audioObj, JLID(cx, channels), channels) );
-	JL_CHK( jl::getProperty(cx, audioObj, JLID(cx, frames), frames) );
-	JL_CHK( jl::getProperty(cx, audioObj, JLID(cx, rate), rate) );
-
-	//JL_ASSERT( *bits > 0 && (*bits % 8) == 0 && *rate > 0 && *channels > 0 && *frames >= 0, E_STR("audio"), E_FORMAT );
-	//JL_ASSERT( data.IsSet() && data.Length() == (size_t)( (*bits/8) * *channels * *frames ), E_DATASIZE, E_INVALID );
-	JL_CHK( *bits > 0 && (*bits % 8) == 0 && *rate > 0 && *channels > 0 && *frames >= 0 );
-	JL_CHK( data.IsSet() && data.Length() == (size_t)( (*bits/8) * *channels * *frames ) );
-	return data;
-bad:
-	return JLData();
-}
 
 
 
