@@ -16,6 +16,8 @@
 #include "error.h"
 #include <mmsystem.h>
 
+#include <../jslang/audioPub.h>
+
 
 class AutoCriticalSection {
 	CRITICAL_SECTION &_cs;

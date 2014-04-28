@@ -397,7 +397,7 @@ DEFINE_FUNCTION( sendTo ) {
 	JLData host, str;
 
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 3 );
 
 	PRFileDesc *fd;
@@ -461,7 +461,26 @@ DEFINE_FUNCTION( sendTo ) {
 
 	if ( sentAmount < str.Length() ) { // return unsent data
 
-		JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
+		//JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
+		//JL_CHK( BlobCreateCopy(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
+
+		//JLData data(str.GetConstStr() + sentAmount, str.Length() - sentAmount);
+
+		if ( JL_ARG(3).isString() ) {
+			
+			JS::RootedString tmp(cx, JL_ARG(3).toString());
+			JL_RVAL.setString(JS_NewDependentString(cx, tmp, sentAmount, str.Length() - sentAmount));
+		} else {
+			
+			//JL_CHK( jl::Buffer((jl::Buffer::DataType)data.Data(), data.Length()).toArrayBufferObject(cx, val) );
+
+
+			TBD
+			//JL_CHK( str.GetArrayBuffer(cx, JL_RVAL) );
+
+		}
+
+
 	} else if ( sentAmount == 0 ) { // nothing has been sent
 
 		if ( JL_ARG(3).isString() ) {
@@ -473,7 +492,8 @@ DEFINE_FUNCTION( sendTo ) {
 		}
 	} else { // nothing remains
 
-		JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
+		//JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
+		JL_CHK( BlobCreateEmpty(cx, JL_RVAL) );
 	}
 
 

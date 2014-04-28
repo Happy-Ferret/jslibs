@@ -15,6 +15,7 @@
 #include "stdafx.h"
 #include <jslibsModule.h>
 #include "../jslang/handlePub.h"
+#include "../jslang/blobPub.h"
 
 DECLARE_CLASS( Descriptor )
 DECLARE_CLASS( Pipe )
@@ -274,8 +275,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
+	jl::AutoBuffer buffer;
+
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INHERITANCE();
+	JL_ASSERT_THIS_INHERITANCE();
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc*)JL_GetPrivate(JL_OBJ);
@@ -305,7 +308,7 @@ DEFINE_FUNCTION( read ) {
 
 		if ( available == 0 ) {
 
-			amount = 1; // don't use 0 to avoid |res == amount == 0| case and wrongly return empty instead of undefined
+			amount = 1; // don't use 0 to avoid |res == amount == 0| case and wrongly return empty instead of undefined !!!
 		} else
 		if ( available == -1 ) { // API not available
 
@@ -318,24 +321,28 @@ DEFINE_FUNCTION( read ) {
 	}
 
 
-	uint8_t *buf;
-	buf = JL_NewBuffer(cx, amount, JL_RVAL);
-	JL_ASSERT_ALLOC( buf );
+	//uint8_t *buf;
+	//buf = JL_NewBuffer(cx, amount, JL_RVAL);
+	//JL_ASSERT_ALLOC( buf );
+
+	buffer.alloc(amount);
+	JL_ASSERT_ALLOC(buffer);
+
 
 	//PRIntervalTime timeout;
 	//GetTimeoutInterval(cx, JL_OBJ, &timeout);
 	//res = PR_Recv(fd, buf, amount, 0, timeout);
 
-	res = PR_Read(fd, buf, amount); // like recv() with PR_INTERVAL_NO_TIMEOUT
+	res = PR_Read(fd, buffer.data(), buffer.getSize()); // like recv() with PR_INTERVAL_NO_TIMEOUT
 
 	if (unlikely( res == -1 )) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
 		switch ( PR_GetError() ) { // see Write() for details about errors
 			case PR_WOULD_BLOCK_ERROR:
 
-				if ( amount > 0 )
-					JL_CHK( JL_ChangeBufferLength(cx, JL_RVAL, 0) ); // mean no data available, but connection still established.
-				return true;
+				//if ( amount > 0 )
+					//JL_CHK( JL_ChangeBufferLength(cx, JL_RVAL, 0) ); // mean no data available, but connection still established.
+				return BlobCreateEmpty(cx, JL_RVAL);
 
 			case PR_CONNECT_ABORTED_ERROR: // Connection aborted
 				//Network dropped connection on reset.
@@ -359,7 +366,8 @@ DEFINE_FUNCTION( read ) {
 				//  the host or remote network interface is disabled, or the remote host uses a hard close (see setsockopt for more information on the SO_LINGER option on the remote socket).
 				//  This error may also result if a connection was broken due to keep-alive activity detecting a failure while one or more operations are in progress.
 				//  Operations that were in progress fail with WSAENETRESET. Subsequent operations fail with WSAECONNRESET.
-				JL_CHK( JL_FreeBuffer(cx, JL_RVAL) );
+				
+				//JL_CHK( JL_FreeBuffer(cx, JL_RVAL) );
 				JL_RVAL.setUndefined();
 				return true;
 
@@ -368,26 +376,19 @@ DEFINE_FUNCTION( read ) {
 		}
 	}
 
-	if ( (uint32_t)res == amount ) { // also handle |res == amount == 0|
+	if ( amount == 0 )
+		return BlobCreateEmpty(cx, JL_RVAL);
 
-		return true;
-	}
-	
 	if ( res == 0 ) { // doc: 0 means end of file is reached or the network connection is closed.
 
-		JL_CHK( JL_FreeBuffer(cx, JL_RVAL) );
 		JL_RVAL.setUndefined();
 		return true;
 	}
 
-	if ( res > 0 ) { // doc: a positive number indicates the number of bytes actually read in.
+	if ( (uint32_t) res < amount )
+		buffer.setSize(res);
 
-		buf = JL_ChangeBufferLength(cx, JL_RVAL, res);
-		JL_CHK( buf );
-		return true;
-	}
-
-	return true;
+	return BlobCreate(cx, buffer, JL_RVAL);
 	JL_BAD;
 }
 
@@ -403,7 +404,7 @@ DEFINE_FUNCTION( write ) {
 	JLData str;
 
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INHERITANCE();
+	JL_ASSERT_THIS_INHERITANCE();
 	JL_ASSERT_ARGC( 1 );
 
 	PRFileDesc *fd;
@@ -469,7 +470,8 @@ DEFINE_FUNCTION( write ) {
 
 	if (likely( sentAmount == str.Length() )) { // nothing remains
 
-		JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
+		//JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
+		JL_CHK( BlobCreateEmpty(cx, JL_RVAL) );
 	} else if ( sentAmount == 0 ) { // nothing has been sent
 
 		if ( JL_ARG(1).isString() ) { // optimization (string are immutable)
@@ -477,11 +479,15 @@ DEFINE_FUNCTION( write ) {
 			JL_RVAL.set(JL_ARG(1));
 		} else {
 
-			JL_CHK( str.GetArrayBuffer(cx, JL_RVAL) );
+			//JL_CHK( str.GetArrayBuffer(cx, JL_RVAL) );
+			size_t size = str.Length();
+			char *data = str.GetStrOwnership();
+			JL_CHK( BlobCreate(cx, data, size, JL_RVAL) );
 		}
 	} else { // return unsent data
 
-		JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
+		//JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
+		JL_CHK( BlobCreateCopy(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
 	}
 
 	return true;

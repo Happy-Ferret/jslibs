@@ -272,8 +272,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
+	jl::AutoBuffer buffer;
+
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 
 	ClassPrivate *pv;
 	pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
@@ -294,12 +296,14 @@ DEFINE_FUNCTION( read ) {
 	else
 		dataLength = mh->currentDataLength;
 
-	uint8_t *data;
+	//uint8_t *data;
 	//data = (char*)jl_malloc(dataLength +1);
-	data = JL_NewBuffer(cx, dataLength, JL_RVAL);
-	JL_CHK( data );
+	//data = JL_NewBuffer(cx, dataLength, JL_RVAL);
+	//JL_CHK( data );
 
-	memmove( data, (char *)pv->mem + sizeof(MemHeader) + offset, dataLength );
+	//memmove( data, (char *)pv->mem + sizeof(MemHeader) + offset, dataLength ); // With memcpy, the destination cannot overlap the source at all. With memmove it can.
+
+	BlobCreateCopy(cx, (char*)pv->mem + sizeof(MemHeader) + offset, dataLength, JL_RVAL);
 
 	JL_CHK( Unlock(cx, pv) );
 
@@ -412,7 +416,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 
 DEFINE_PROPERTY_GETTER( content ) {
 
-	JL_IGNORE( id );
+	JL_DEFINE_PROP_ARGS;
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -422,14 +426,15 @@ DEFINE_PROPERTY_GETTER( content ) {
 	MemHeader *mh;
 	mh = (MemHeader*)pv->mem;
 
-	size_t dataLength;
-	dataLength = mh->currentDataLength;
-	uint8_t *data;
+	//size_t dataLength;
+	//dataLength = mh->currentDataLength;
+	
 	//data = (char*)jl_malloc(dataLength +1);
-	data = JL_NewBuffer(cx, dataLength, vp);
-	JL_CHK( data );
+	//data = JL_NewBuffer(cx, dataLength, vp);
+	//JL_CHK( data );
+	//memmove( data, (char *)pv->mem + sizeof(MemHeader), dataLength );
 
-	memmove( data, (char *)pv->mem + sizeof(MemHeader), dataLength );
+	JL_CHK( BlobCreateCopy(cx, (char*)pv->mem + sizeof(MemHeader), mh->currentDataLength, JL_RVAL) );
 
 	JL_CHK( Unlock(cx, pv) );
 

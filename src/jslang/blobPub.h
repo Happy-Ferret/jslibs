@@ -77,9 +77,10 @@ BlobCreateEmpty( JSContext *cx, OUT JS::MutableHandleValue rval ) {
 }
 
 ALWAYS_INLINE bool
-BlobCreateCopy( JSContext *cx, void *data, int32_t size, OUT JS::MutableHandleValue rval ) {
+BlobCreateCopy( JSContext *cx, const void *data, int32_t size, OUT JS::MutableHandleValue rval ) {
 
 	void *ownData;
+	IFDEBUG( ownData = NULL );
 	jl::memcpy(ownData, data, size);
 	return BlobCreate(cx, ownData, size, rval);
 }

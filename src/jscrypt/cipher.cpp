@@ -408,9 +408,10 @@ DEFINE_FUNCTION( decrypt ) {
 
 	JL_DEFINE_ARGS;
 
+	jl::AutoBuffer buffer;
 	JLData ct;
 
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	CipherPrivate *pv;
@@ -422,32 +423,34 @@ DEFINE_FUNCTION( decrypt ) {
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &ct, &ctLength) ); // warning: GC on the returned buffer !
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &ct) );
 
-	uint8_t *pt;
-	pt = JL_NewBuffer(cx, ct.Length(), JL_RVAL);
-	JL_CHK( pt );
+	//uint8_t *pt;
+	//pt = JL_NewBuffer(cx, ct.Length(), JL_RVAL);
+	//JL_CHK( pt );
+	buffer.alloc(ct.Length());
+	JL_ASSERT_ALLOC(buffer);
 
 	int err;
 	switch ( pv->mode ) {
 		case mode_ecb:
-			err = ecb_decrypt( (const unsigned char *)ct.GetConstStr(), pt, (unsigned long)ct.Length(), (symmetric_ECB *)pv->symmetric_XXX );
+			err = ecb_decrypt( (const unsigned char *)ct.GetConstStr(), buffer.data(), (unsigned long)ct.Length(), (symmetric_ECB *)pv->symmetric_XXX );
 			break;
 		case mode_cfb:
-			err = cfb_decrypt( (const unsigned char *)ct.GetConstStr(), pt, (unsigned long)ct.Length(), (symmetric_CFB *)pv->symmetric_XXX );
+			err = cfb_decrypt( (const unsigned char *)ct.GetConstStr(), buffer.data(), (unsigned long)ct.Length(), (symmetric_CFB *)pv->symmetric_XXX );
 			break;
 		case mode_ofb:
-			err = ofb_decrypt( (const unsigned char *)ct.GetConstStr(), pt, (unsigned long)ct.Length(), (symmetric_OFB *)pv->symmetric_XXX );
+			err = ofb_decrypt( (const unsigned char *)ct.GetConstStr(), buffer.data(), (unsigned long)ct.Length(), (symmetric_OFB *)pv->symmetric_XXX );
 			break;
 		case mode_cbc:
-			err = cbc_decrypt( (const unsigned char *)ct.GetConstStr(), pt, (unsigned long)ct.Length(), (symmetric_CBC *)pv->symmetric_XXX );
+			err = cbc_decrypt( (const unsigned char *)ct.GetConstStr(), buffer.data(), (unsigned long)ct.Length(), (symmetric_CBC *)pv->symmetric_XXX );
 			break;
 		case mode_ctr:
-			err = ctr_decrypt( (const unsigned char *)ct.GetConstStr(), pt, (unsigned long)ct.Length(), (symmetric_CTR *)pv->symmetric_XXX );
+			err = ctr_decrypt( (const unsigned char *)ct.GetConstStr(), buffer.data(), (unsigned long)ct.Length(), (symmetric_CTR *)pv->symmetric_XXX );
 			break;
 		case mode_lrw:
-			err = lrw_decrypt( (const unsigned char *)ct.GetConstStr(), pt, (unsigned long)ct.Length(), (symmetric_LRW *)pv->symmetric_XXX );
+			err = lrw_decrypt( (const unsigned char *)ct.GetConstStr(), buffer.data(), (unsigned long)ct.Length(), (symmetric_LRW *)pv->symmetric_XXX );
 			break;
 		case mode_f8:
-			err = f8_decrypt( (const unsigned char *)ct.GetConstStr(), pt, (unsigned long)ct.Length(), (symmetric_F8 *)pv->symmetric_XXX );
+			err = f8_decrypt( (const unsigned char *)ct.GetConstStr(), buffer.data(), (unsigned long)ct.Length(), (symmetric_F8 *)pv->symmetric_XXX );
 			break;
 		default:
 			IFDEBUG( err = 0 );
@@ -460,6 +463,7 @@ DEFINE_FUNCTION( decrypt ) {
 	//pt[ct.Length()] = '\0';
 	//JL_CHK( JL_NewBlob( cx, pt, ct.Length(), JL_RVAL ) );
 
+	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
 	return true;
 	JL_BAD;
 }
@@ -618,14 +622,17 @@ DEFINE_PROPERTY_GETTER( IV ) {
 
 	JL_DEFINE_PROP_ARGS;
 
+	jl::AutoBuffer IV;
+
 	JL_ASSERT_THIS_INSTANCE();
 
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	uint8_t *IV;
-	IV = NULL;
+	//uint8_t *IV;
+	//IV = NULL;
+
 	unsigned long IVLength;
 
 	int err;
@@ -638,49 +645,59 @@ DEFINE_PROPERTY_GETTER( IV ) {
 		case mode_cfb: {
 			symmetric_CFB *tmp = (symmetric_CFB *)pv->symmetric_XXX;
 			IVLength = tmp->blocklen;
-			IV = JL_NewBuffer(cx, IVLength, vp);
-			JL_CHK( IV );
-			err = cfb_getiv( IV, &IVLength, tmp );
+			//IV = JL_NewBuffer(cx, IVLength, vp);
+			//JL_CHK( IV );
+			err = cfb_getiv( IV.data(), &IVLength, tmp );
 			break;
 		}
 		case mode_ofb: {
 			symmetric_OFB *tmp = (symmetric_OFB *)pv->symmetric_XXX;
 			IVLength = tmp->blocklen;
-			IV = JL_NewBuffer(cx, IVLength, vp);
-			JL_CHK( IV );
-			err = ofb_getiv( IV, &IVLength, tmp );
+			IV.alloc(IVLength);
+			JL_ASSERT_ALLOC( IV );
+			//IV = JL_NewBuffer(cx, IVLength, vp);
+			//JL_CHK( IV );
+			err = ofb_getiv( IV.data(), &IVLength, tmp );
 			break;
 		}
 		case mode_cbc: {
 			symmetric_CBC *tmp = (symmetric_CBC *)pv->symmetric_XXX;
 			IVLength = tmp->blocklen;
-			IV = JL_NewBuffer(cx, IVLength, vp);
-			JL_CHK( IV );
-			err = cbc_getiv( IV, &IVLength, tmp );
+			IV.alloc(IVLength);
+			JL_ASSERT_ALLOC( IV );
+			//IV = JL_NewBuffer(cx, IVLength, vp);
+			//JL_CHK( IV );
+			err = cbc_getiv( IV.data(), &IVLength, tmp );
 			break;
 		}
 		case mode_ctr: {
 			symmetric_CTR *tmp = (symmetric_CTR *)pv->symmetric_XXX;
 			IVLength = tmp->blocklen;
-			IV = JL_NewBuffer(cx, IVLength, vp);
-			JL_CHK( IV );
-			err = ctr_getiv( IV, &IVLength, tmp );
+			IV.alloc(IVLength);
+			JL_ASSERT_ALLOC( IV );
+//			IV = JL_NewBuffer(cx, IVLength, vp);
+//			JL_CHK( IV );
+			err = ctr_getiv( IV.data(), &IVLength, tmp );
 			break;
 		}
 		case mode_lrw: {
 			symmetric_LRW *tmp = (symmetric_LRW *)pv->symmetric_XXX;
 			IVLength = 16;
-			IV = JL_NewBuffer(cx, IVLength, vp);
-			JL_CHK( IV );
-			err = lrw_getiv( IV, &IVLength, tmp );
+			IV.alloc(IVLength);
+			JL_ASSERT_ALLOC( IV );
+//			IV = JL_NewBuffer(cx, IVLength, vp);
+//			JL_CHK( IV );
+			err = lrw_getiv( IV.data(), &IVLength, tmp );
 			break;
 		}
 		case mode_f8: {
 			symmetric_F8 *tmp = (symmetric_F8 *)pv->symmetric_XXX;
 			IVLength = tmp->blocklen;
-			IV = JL_NewBuffer(cx, IVLength, vp);
-			JL_CHK( IV );
-			err = f8_getiv( IV, &IVLength, tmp );
+			IV.alloc(IVLength);
+			JL_ASSERT_ALLOC( IV );
+//			IV = JL_NewBuffer(cx, IVLength, vp);
+//			JL_CHK( IV );
+			err = f8_getiv( IV.data(), &IVLength, tmp );
 			break;
 		}
 		default:
@@ -694,6 +711,9 @@ DEFINE_PROPERTY_GETTER( IV ) {
 
 	//IV[IVLength] = '\0';
 	//JL_CHK( JL_NewBlob( cx, IV, IVLength, vp ) );
+
+	IV.setSize(IVLength);
+	JL_CHK( BlobCreate(cx, IV, JL_RVAL) );
 
 	return true;
 	JL_BAD;

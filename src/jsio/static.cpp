@@ -337,21 +337,30 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getRandomNoise ) {
 
+	jl::AutoBuffer buffer;
+
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
-	PRSize rndSize;
-	rndSize = JL_ARG(1).toInt32();
-	uint8_t *buf;
-	buf = JL_NewBuffer(cx, rndSize, JL_RVAL);
-	JL_CHK( buf );
-	PRSize size;
-	size = PR_GetRandomNoise(buf, rndSize);
-	if ( size <= 0 ) {
+	PRSize amount;
+	amount = JL_ARG(1).toInt32();
+	//uint8_t *buf;
+	//buf = JL_NewBuffer(cx, rndSize, JL_RVAL);
+	//JL_CHK( buf );
+
+	buffer.alloc(amount);
+	JL_ASSERT_ALLOC( buffer );
+
+	PRSize res;
+	res = PR_GetRandomNoise(buffer.data(), amount);
+	if ( res == 0 && amount > 0 ) {
 
 		JL_ERR( E_FUNC, E_NOTIMPLEMENTED );
 	}
+
+	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
+
 	return true;
 	JL_BAD;
 }

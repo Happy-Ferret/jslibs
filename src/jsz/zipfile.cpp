@@ -245,7 +245,6 @@ DEFINE_FUNCTION( open ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
@@ -288,7 +287,6 @@ DEFINE_FUNCTION( close ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
@@ -349,7 +347,6 @@ DEFINE_FUNCTION( select ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
@@ -413,7 +410,6 @@ DEFINE_FUNCTION( goFirst ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
@@ -446,7 +442,6 @@ DEFINE_FUNCTION( goNext ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
@@ -491,7 +486,6 @@ DEFINE_FUNCTION( goTo ) {
 
 	JL_DEFINE_ARGS;
 
-	JL_DEFINE_FUNCTION_OBJ
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
@@ -540,11 +534,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
-	uint8_t *buffer = NULL;
+	jl::AutoBuffer buffer;
 
 	JL_DEFINE_ARGS;
 
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(0, 1);
 
 	Private *pv = (Private *)JL_GetPrivate(JL_OBJ);
@@ -581,17 +575,22 @@ DEFINE_FUNCTION( read ) {
 		requestedLength = pv->remainingLength;
 	}
 	
-	buffer = JL_NewBuffer(cx, requestedLength, JL_RVAL);
+	//buffer = JL_NewBuffer(cx, requestedLength, JL_RVAL);
+	buffer.alloc(requestedLength);
 	JL_ASSERT_ALLOC(buffer);
+
 	int rd;
-	rd = unzReadCurrentFile(pv->uf, buffer, requestedLength);
+	rd = unzReadCurrentFile(pv->uf, buffer.data(), requestedLength);
 	if ( rd < 0 )
 		return ThrowZipFileError(cx, rd);
 	
 	ASSERT( (uLong)rd <= requestedLength );
-
 	pv->remainingLength -= rd;
 	ASSERT( unzeof(pv->uf) == (pv->remainingLength == 0) );
+
+	buffer.setSize(rd);
+	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
+
 	return true;
 bad:
 	return false;
@@ -706,21 +705,26 @@ DEFINE_PROPERTY_GETTER( globalComment ) {
 	ASSERT( pv && !pv->uf == !!pv->zf );
 
 	if ( pv->uf ) {
+		
+		jl::AutoBuffer buffer;
 
 		unz_global_info pglobal_info;
 		UNZ_CHK( unzGetGlobalInfo(pv->uf, &pglobal_info) );
 		
 		uLong commentLength = pglobal_info.size_comment;
-		uint8_t *comment;
-		comment = JL_NewBuffer(cx, commentLength, vp);
-		JL_ASSERT_ALLOC( comment );
+		//uint8_t *comment;
+		
+		//comment = JL_NewBuffer(cx, commentLength, vp);
+		buffer.alloc(commentLength);
+		JL_ASSERT_ALLOC( buffer );
 
 		int rd;
-		rd = unzGetGlobalComment(pv->uf, (char*)comment, commentLength);
+		rd = unzGetGlobalComment(pv->uf, (char*)buffer.data(), commentLength);
 		if ( rd < 0 )
 			return ThrowZipFileError(cx, rd);
 		ASSERT( (uLong)rd == commentLength );
-	} else 
+		JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
+	} else
 	if ( pv->zf ) {
 
 		JL_CHK( JL_GetReservedSlot( obj, SLOT_GLOBALCOMMENT, vp) );
@@ -991,6 +995,8 @@ DEFINE_PROPERTY_GETTER( extra ) {
 
 	if ( pv->uf ) {
 
+		jl::AutoBuffer buffer;
+
 		//if ( pv->eol ) {
 
 		//	*vp = JSVAL_VOID;
@@ -1004,15 +1010,17 @@ DEFINE_PROPERTY_GETTER( extra ) {
 		if ( extraLength < 0 )
 			return ThrowZipFileError(cx, extraLength);
 
-		uint8_t *buffer;
-		buffer = JL_NewBuffer(cx, extraLength, vp);
+		//uint8_t *buffer;
+		//buffer = JL_NewBuffer(cx, extraLength, vp);
+		buffer.alloc(extraLength);
 		JL_ASSERT_ALLOC( buffer );
 
 		int rd;
-		rd = unzGetLocalExtrafield(pv->uf, buffer, extraLength);
+		rd = unzGetLocalExtrafield(pv->uf, buffer.data(), extraLength);
 		if ( rd < 0 )
 			return ThrowZipFileError(cx, rd);
 		ASSERT( rd == extraLength );
+		JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
 	} else
 	if ( pv->zf ) {
 

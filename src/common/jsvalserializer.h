@@ -829,7 +829,12 @@ public:
 
 				SerializerConstBufferInfo data;
 				JL_CHK( Read(cx, data) );
-				JL_CHK( JL_NewBufferCopyN(cx, data.Data(), data.Length(), val) );
+
+				//JL_CHK( JL_NewBufferCopyN(cx, data.Data(), data.Length(), val) );
+				//JL_CHK( jl::Buffer((jl::Buffer::DataType)data.Data(), data.Length()).toArrayBufferObject(cx, val) );  need to copy !!!
+				void *arrayBufferContents = jl_malloc(data.Length());
+				jl::memcpy(arrayBufferContents, data.Data(), data.Length());
+				val.setObject(*JS_NewArrayBufferWithContents(cx, data.Length(), arrayBufferContents));
 				break;
 			}
 			case JLSTTypedArray: {
@@ -839,9 +844,12 @@ public:
 				JSArrayBufferViewType type;
 				JL_CHK( Read(cx, type) );
 				JL_CHK( Read(cx, data) );
-				JL_CHK( JL_NewBufferCopyN(cx, data.Data(), data.Length(), val) );
 
-				JS::RootedObject arrayBuffer(cx, &val.toObject());
+				//JL_CHK( JL_NewBufferCopyN(cx, data.Data(), data.Length(), val) );
+				//JL_CHK( jl::Buffer((jl::Buffer::DataType)data.Data(), data.Length()).toArrayBufferObject(cx, val) );  need to copy !!!
+				void *arrayBufferContents = jl_malloc(data.Length());
+				jl::memcpy(arrayBufferContents, data.Data(), data.Length());
+				JS::RootedObject arrayBuffer(cx, JS_NewArrayBufferWithContents(cx, data.Length(), arrayBufferContents));
 				JS::RootedObject typedArray(cx);
 				switch ( type ) {
 					case js::ArrayBufferView::TYPE_INT8:

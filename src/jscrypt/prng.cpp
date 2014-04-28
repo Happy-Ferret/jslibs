@@ -114,8 +114,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( read ) {
 
 	JL_DEFINE_ARGS;
+	
+	jl::AutoBuffer buffer;
 
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(0,1);
 
 	PrngPrivate *pv;
@@ -129,11 +131,17 @@ DEFINE_FUNCTION( read ) {
 	else
 		readCount = 1024;
 
-	uint8_t *pr;
-	pr = JL_NewBuffer(cx, readCount, JL_RVAL);
-	JL_CHK( pr );
-	actualRead = pv->prng.read( (unsigned char*)pr, readCount, &pv->state );
+	//uint8_t *pr;
+	//pr = JL_NewBuffer(cx, readCount, JL_RVAL);
+	//JL_CHK( pr );
+
+	buffer.alloc(readCount);
+	JL_ASSERT_ALLOC( buffer );
+
+	actualRead = pv->prng.read(buffer.data(), readCount, &pv->state);
 	JL_CHKM( actualRead == readCount, E_DATA, E_CREATE );
+
+	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
 	
 	return true;
 	JL_BAD;
@@ -214,7 +222,7 @@ DEFINE_PROPERTY_GETTER( state ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	JL_IGNORE(id);
+	jl::AutoBuffer buffer;
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -224,14 +232,18 @@ DEFINE_PROPERTY_GETTER( state ) {
 
 	unsigned long size;
 	size = pv->prng.export_size;
-	uint8_t *stateData;
-	stateData = JL_NewBuffer(cx, size, vp);
-	JL_CHK( stateData );
+	
+	//uint8_t *stateData;
+	//stateData = JL_NewBuffer(cx, size, vp);
+	//JL_CHK( stateData );
+
+	buffer.alloc(size);
+	JL_ASSERT_ALLOC(buffer);
 
 	unsigned long stateLength;
 	stateLength = size;
 	int err;
-	err = pv->prng.pexport(stateData, &stateLength, &pv->state);
+	err = pv->prng.pexport(buffer.data(), &stateLength, &pv->state);
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	
@@ -239,6 +251,8 @@ DEFINE_PROPERTY_GETTER( state ) {
 
 	//stateData[size] = '\0';
 	//JL_CHK( JL_NewBlob(cx, stateData, size, vp) );
+
+	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
 
 	return true;
 	JL_BAD;

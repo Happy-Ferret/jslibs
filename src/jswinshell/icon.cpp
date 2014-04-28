@@ -14,6 +14,7 @@
 
 #include "stdafx.h"
 
+#include <../jslang/imagePub.h>
 
 /**doc
 $CLASS_HEADER

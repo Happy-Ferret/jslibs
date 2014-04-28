@@ -218,24 +218,32 @@ DEFINE_FUNCTION( done ) {
 
 	JL_DEFINE_ARGS;
 
-		JL_ASSERT_THIS_INSTANCE();
+	jl::AutoBuffer buffer;
+
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv && pv->isValid );
-	unsigned long outLength;
-	outLength = pv->descriptor->hashsize;
-	uint8_t *out;
-	out = JL_NewBuffer(cx, outLength, JL_RVAL);
+	//unsigned long outLength;
+	//outLength = pv->descriptor->hashsize;
 	
-	JL_CHK( out );
+	//uint8_t *out;
+	//out = JL_NewBuffer(cx, outLength, JL_RVAL);
+
+	buffer.alloc(pv->descriptor->hashsize);
+	JL_ASSERT_ALLOC(buffer);
+	
+	//JL_CHK( out );
 	int err;
-	err = pv->descriptor->done(&pv->state, (unsigned char*)out); // Terminate the hash to get the digest
+	err = pv->descriptor->done(&pv->state, buffer.data()); // Terminate the hash to get the digest
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 
 	pv->isValid = false;
+
+	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
 
 	return true;
 	JL_BAD;

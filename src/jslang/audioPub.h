@@ -78,11 +78,11 @@ JL_NewByteAudioObjectOwner( JSContext *cx, jl::Buffer &buffer, T bits, U channel
 	ASSERT( bits > 0 && (bits % 8) == 0 && channels > 0 && frames >= 0 && rate > 0 );
 
 	JS::RootedObject audioObj(cx, JL_NewObj(cx));
-	JS::RootedObject dataObj(cx, buffer.toArrayBufferObject(cx));
+	JS::RootedValue dataVal(cx);
+	JL_CHK( buffer.toArrayBufferObject(cx, &dataVal) );
 	JL_CHK( audioObj );
-	JL_CHK( dataObj );
 	vp.setObject(*audioObj);
-	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, data), dataObj) );
+	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, data), dataVal) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, bits), bits) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, channels), channels) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, frames), frames) );

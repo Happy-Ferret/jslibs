@@ -103,8 +103,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
+	jl::AutoBuffer buffer;
+
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(0, 1);
 
 	Private *pv;
@@ -124,7 +126,8 @@ DEFINE_FUNCTION( read ) {
 
 		if ( amount == 0 && available > 0 ) { // not EOF
 
-			JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
+			//JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
+			JL_CHK( BlobCreateEmpty(cx, JL_RVAL) );
 			return true;
 		}
 
@@ -140,15 +143,18 @@ DEFINE_FUNCTION( read ) {
 		return true;
 	}
 
-	uint8_t *buffer;
-	buffer = JL_NewBuffer(cx, amount, JL_RVAL);
-	JL_CHK( buffer );
+	//uint8_t *buffer;
+	//buffer = JL_NewBuffer(cx, amount, JL_RVAL);
+	//JL_CHK( buffer );
 
-	int st = sqlite3_blob_read(pv->pBlob, buffer, amount, pv->position);
+	buffer.alloc(amount);
+	JL_ASSERT_ALLOC(buffer);
+
+	int st = sqlite3_blob_read(pv->pBlob, buffer.data(), amount, pv->position);
 	if ( st != SQLITE_OK )
 		JL_CHK( SqliteThrowErrorStatus(cx, st) );
-
 	pv->position += amount;
+	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
 
 	return true;
 	JL_BAD;

@@ -62,7 +62,7 @@ public:
 #define HOST_MAIN_ASSERT( condition, errorMessage ) \
 	JL_MACRO_BEGIN \
 		if ( !(condition) ) { \
-			hostIO.error(errorMessage, strlen(errorMessage)); \
+			hostIO.error(errorMessage, jl::strlen(errorMessage)); \
 			goto bad; \
 		} \
 	JL_MACRO_END
@@ -166,7 +166,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int ) {
 
 		JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL, NULL) ); // -1 because sizeof("") == 1
 		JL_CHK( script );
-		JL_CHK( JS_ExecuteScript(cx, globalObject, script, rval.address()) );
+		JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
 	}
 
 

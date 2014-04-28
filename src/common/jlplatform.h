@@ -943,6 +943,7 @@ memcpy(void *dst_, const void *src_, size_t len) {
     ASSERT_IF(dst >= src, (size_t) (dst - src) >= len);
     ASSERT_IF(src >= dst, (size_t) (src - dst) >= len);
 	return ::memcpy(dst, src, len);
+	//  Use memmove if the memory areas do overlap.
 }
 
 

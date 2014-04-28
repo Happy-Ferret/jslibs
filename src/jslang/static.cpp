@@ -237,16 +237,28 @@ DEFINE_FUNCTION( join ) {
 		toArrayBuffer = false;
 
 	if ( toArrayBuffer ) {
+
+		jl::AutoBuffer buffer;
 		
-		uint8_t *buf = JL_NewBuffer(cx, length, JL_RVAL);
-		JL_CHK( buf );
-		buf += length;
+		//uint8_t *buf = JL_NewBuffer(cx, length, JL_RVAL);
+		//JL_CHK( buf );
+
+		buffer.alloc(length);
+		JL_ASSERT_ALLOC(buffer);
+		
+		//buf += length;
+		uint8_t *buf;
+		buf = buffer.data() + length;
+
 		while ( strList ) {
 
 			buf -= strList->Length();
 			strList->CopyTo(buf);
 			--strList;
 		}
+
+		JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
+
 	} else {
 
 		jschar *buf = (jschar*)JS_malloc(cx, (length +1) * sizeof(jschar));

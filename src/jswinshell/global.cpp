@@ -666,7 +666,7 @@ DEFINE_FUNCTION( registryGet ) {
 			//JSString *jsstr = JL_NewUCString(cx, (jschar*)buffer, size/2);
 			//JL_CHK( jsstr );
 			//JL_RVAL.setString(jsstr);
-			JL_RVAL.setString(buffer.toExternalStringUC(cx));
+			JL_CHK( buffer.toExternalStringUC(cx, JL_RVAL) );
 			break;
 		}
 		case REG_EXPAND_SZ:
@@ -675,7 +675,7 @@ DEFINE_FUNCTION( registryGet ) {
 			//JSString *jsstr = JL_NewString(cx, (char*)buffer, size-1); // note: ((char*)buffer)[size] already == '\0'
 			//JL_CHK( JLData((char*)buffer, true, size-1).GetJSString(cx, JL_RVAL) );
 			buffer.setSize(size-1);
-			JL_RVAL.setString(buffer.toExternalStringUC(cx));
+			JL_CHK( buffer.toExternalStringUC(cx, JL_RVAL) );
 			break;
 		}
 	}

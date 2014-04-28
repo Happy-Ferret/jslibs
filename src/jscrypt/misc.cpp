@@ -74,6 +74,7 @@ DEFINE_FUNCTION( base64Decode ) {
 
 	JL_DEFINE_ARGS;
 
+	jl::AutoBuffer buffer;
 	JLData in;
 
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -85,18 +86,25 @@ DEFINE_FUNCTION( base64Decode ) {
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
 
 	unsigned long outLength;
-	outLength = 3 * ((unsigned long)in.Length()-2) / 4 +1;
-	uint8_t *out;
-	out = JL_NewBuffer(cx, outLength, JL_RVAL);
-	JL_CHK( out );
+	outLength = 3 * ((unsigned long)in.Length()-2) / 4 +1; // max outLength
+	//uint8_t *out;
+	//out = JL_NewBuffer(cx, outLength, JL_RVAL);
+	//JL_CHK( out );
+
+	buffer.alloc(outLength);
+	JL_ASSERT_ALLOC(buffer);
+
 
 	int err;
-	err = base64_decode( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength );
+	err = base64_decode( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), buffer.data(), &outLength );
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
 	//out[outLength] = '\0';
 	//JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
+
+	buffer.setSize(outLength);
+	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
 
 	return true;
 	JL_BAD;
@@ -167,6 +175,7 @@ DEFINE_FUNCTION( hexDecode ) {
 
 	JL_DEFINE_ARGS;
 
+	jl::AutoBuffer buffer;
 	JLData data;
 
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -181,15 +190,19 @@ DEFINE_FUNCTION( hexDecode ) {
 
 	size_t outLength;
 	outLength = inLength / 2;
-	uint8_t *out;
-	out = JL_NewBuffer(cx, outLength, JL_RVAL);
-	JL_CHK( out );
+	
+	//uint8_t *out;
+	//out = JL_NewBuffer(cx, outLength, JL_RVAL);
+	//JL_CHK( out );
+	buffer.alloc(outLength);
+	JL_ASSERT_ALLOC(buffer);
 
 	for ( unsigned long i=0; i<outLength; ++i )
-		out[i] = unhex[ (unsigned char)in[i*2] ] << 4 | unhex[ (unsigned char)in[i*2+1] ];
+		buffer.data()[i] = unhex[ (unsigned char)in[i*2] ] << 4 | unhex[ (unsigned char)in[i*2+1] ];
 
 	//out[outLength] = '\0';
 	//JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
+	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
 
 	return true;
 	JL_BAD;
