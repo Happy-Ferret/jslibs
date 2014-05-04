@@ -61,7 +61,8 @@ JL_NewByteAudioObjectOwner( JSContext *cx, uint8_t* buffer, T bits, U channels, 
 	JS::RootedValue dataVal(cx);
 	JL_CHK( audioObj );
 	vp.setObject(*audioObj);
-	JL_CHK( JL_NewBufferGetOwnership(cx, buffer, (bits/8) * channels * frames, &dataVal) );
+	//JL_CHK( JL_NewBufferGetOwnership(cx, buffer, (bits/8) * channels * frames, &dataVal) );
+	JL_CHK( BlobCreate(cx, buffer, (bits/8) * channels * frames, &dataVal) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, data), dataVal) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, bits), bits) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, channels), channels) );

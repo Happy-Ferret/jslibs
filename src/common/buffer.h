@@ -329,7 +329,7 @@ inline void BufferFinalize( Buffer *buffer ) {
 
 
 template <class T>
-class Buf {
+class ChunkedBuffer {
 
 	struct Chunk {
 		T *begin;
@@ -347,7 +347,7 @@ class Buf {
 	T _staticBuffer[8192];
 
 public:
-	~Buf() {
+	~ChunkedBuffer() {
 
 		for ( size_t i = _chunkList[0].begin == _staticBuffer ? 1 : 0; i <= _chunkPos; ++i )
 			jl_free(_chunkList[i].begin);
@@ -355,7 +355,7 @@ public:
 			jl_free(_chunkList);
 	}
 
-	Buf() {
+	ChunkedBuffer() {
 
 		_chunkList = _staticChunkList;
 		_chunkListSize = COUNTOF(_staticChunkList);

@@ -472,12 +472,11 @@ DEFINE_FUNCTION( sendTo ) {
 			JL_RVAL.setString(JS_NewDependentString(cx, tmp, sentAmount, str.Length() - sentAmount));
 		} else {
 			
-			//JL_CHK( jl::Buffer((jl::Buffer::DataType)data.Data(), data.Length()).toArrayBufferObject(cx, val) );
-
-
-			TBD
-			//JL_CHK( str.GetArrayBuffer(cx, JL_RVAL) );
-
+			size_t length = str.Length() - sentAmount;
+			void *data = jl_malloc(length);
+			JL_ASSERT_ALLOC(data);
+			jl::memcpy(data, str.GetConstStr() + sentAmount, length);
+			JL_RVAL.setObject(*JS_NewArrayBufferWithContents(cx, length, data));
 		}
 
 

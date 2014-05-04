@@ -80,7 +80,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( done ) {
 
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
 	jl::Serializer* ser;
@@ -95,7 +95,8 @@ DEFINE_FUNCTION( done ) {
 	delete ser;
 	JL_SetPrivate(JL_OBJ, NULL);
 	//JL_updateMallocCounter(cx, length);
-	JL_CHK( JL_NewBufferGetOwnership(cx, data, length, JL_RVAL) );
+	//JL_CHK( JL_NewBufferGetOwnership(cx, data, length, JL_RVAL) );
+	JL_CHK( BlobCreate(cx, data, length, JL_RVAL) );
 	return true;
 	JL_BAD;
 }

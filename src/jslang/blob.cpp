@@ -61,7 +61,7 @@ DEFINE_PROPERTY_GETTER( arrayBuffer ) {
 
 		ASSERT( JL_RVAL.isInt32() );
 		jl::Buffer::DataType pv = static_cast<jl::Buffer::DataType>(JL_GetPrivate(JL_OBJ));
-		jl::Buffer(pv, JL_RVAL.toInt32()).toArrayBufferObject(cx, JL_RVAL);
+		jl::Buffer(pv, JL_RVAL.toInt32()).toArrayBuffer(cx, JL_RVAL);
 		JL_CHK( invalidateBlob(cx, JL_OBJ) );
 	}
 	return true;
@@ -80,7 +80,7 @@ DEFINE_PROPERTY_GETTER( string ) {
 		if ( size > 0 ) {
 
 			jl::Buffer::DataType pv = static_cast<jl::Buffer::DataType>(JL_GetPrivate(JL_OBJ));
-			jl::Buffer(pv, size).toExternalString(cx, JL_RVAL);
+			jl::Buffer(pv, size).toCString(cx, JL_RVAL);
 		} else {
 
 			JL_RVAL.set(JL_GetEmptyStringValue(cx));
@@ -104,7 +104,7 @@ DEFINE_PROPERTY_GETTER( ucString ) {
 
 			JL_CHKM( size % 2 == 0, E_DATASIZE, E_INVALID );
 			jl::Buffer::DataType pv = static_cast<jl::Buffer::DataType>(JL_GetPrivate(JL_OBJ));
-			jl::Buffer(pv, size).toExternalStringUC(cx, JL_RVAL);
+			jl::Buffer(pv, size).toUCString(cx, JL_RVAL);
 		} else {
 
 			JL_RVAL.set(JL_GetEmptyStringValue(cx));
@@ -127,7 +127,7 @@ DEFINE_FUNCTION( toString ) {
 		if ( size > 0 ) {
 
 			jl::Buffer::DataType pv = static_cast<jl::Buffer::DataType>(JL_GetPrivate(JL_OBJ));
-			jl::Buffer(pv, size).toExternalString(cx, JL_RVAL);
+			jl::Buffer(pv, size).toCString(cx, JL_RVAL);
 		} else {
 
 			JL_RVAL.set(JL_GetEmptyStringValue(cx));

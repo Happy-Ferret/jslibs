@@ -420,8 +420,9 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 	if ( err != CRYPT_OK )
 		JL_CHK( ThrowCryptError(cx, err) );
 	
+	out.setSize(outLength);
 	//JL_CHK( JL_NewBufferGetOwnership(cx, out, outLength, JL_RVAL) );
-	JL_CHK( BlobCreate(cx, out.stealData(), outLength, JL_RVAL) );
+	JL_CHK( BlobCreate(cx, out, JL_RVAL) );
 	return true;
 /*
 bad:
@@ -608,8 +609,9 @@ DEFINE_FUNCTION( sign ) { // ( data [, saltLength] )
 	if ( err != CRYPT_OK )
 		JL_CHK( ThrowCryptError(cx, err) );
 
+	out.setSize(outLength);
 	//JL_CHK( JL_NewBufferGetOwnership(cx, out, outLength, JL_RVAL) );
-	JL_CHK( BlobCreate(cx, out.stealData(), outLength, JL_RVAL) );
+	JL_CHK( BlobCreate(cx, out, JL_RVAL) );
 	return true;
 	JL_BAD;
 }
@@ -897,8 +899,9 @@ DEFINE_PROPERTY_GETTER( key ) {
 	if ( err != CRYPT_OK )
 		JL_CHK( ThrowCryptError(cx, err) );
 
+	key.setSize(keyLength);
 	//JL_CHK( JL_NewBufferGetOwnership(cx, key, keyLength, vp) );
-	JL_CHK( BlobCreate(cx, key.stealData(), keyLength, JL_RVAL) );
+	JL_CHK( BlobCreate(cx, key, JL_RVAL) );
 	return true;
 	JL_BAD;
 }

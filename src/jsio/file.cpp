@@ -508,6 +508,7 @@ DEFINE_PROPERTY_GETTER( content ) {
 	}
 
 	//JL_CHK( JL_NewBufferGetOwnership(cx, buf, res, vp) );
+	buf.setSize(res);
 	JL_CHK( BlobCreate(cx, buf, vp) );
 	return true;
 	JL_BAD;

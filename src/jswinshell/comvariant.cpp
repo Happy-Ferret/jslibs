@@ -174,9 +174,9 @@ bool VariantToBlob( JSContext *cx, IN VARIANT *variant, OUT JS::MutableHandleVal
 	HRESULT hr = SafeArrayAccessData(variant->parray, &pArrayData);
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
-	JL_CHK( JL_NewBufferCopyN(cx, pArrayData, variant->parray->rgsabound[0].cElements, rval) );
+	//JL_CHK( JL_NewBufferCopyN(cx, pArrayData, variant->parray->rgsabound[0].cElements, rval) );
+	JL_CHK( BlobCreateCopy(cx, pArrayData, variant->parray->rgsabound[0].cElements, rval) );
 	SafeArrayUnaccessData(variant->parray);
-
 	return true;
 	JL_BAD;
 }

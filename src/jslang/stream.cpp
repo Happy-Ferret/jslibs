@@ -189,7 +189,8 @@ DEFINE_FUNCTION( read ) {
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &amount) );
 		if ( amount == 0 ) {
 
-			JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
+			//JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
+			JL_CHK( BlobCreateEmpty(cx, JL_RVAL) );
 			return true;
 		}
 		if ( available < amount )

@@ -119,7 +119,7 @@ DEFINE_FUNCTION( stringify ) {
 		NIStreamRead read = StreamReadInterface(cx, sobj);
 		if ( read ) {
 
-			jl::Buf<char> buf;
+			jl::ChunkedBuffer<char> buf;
 
 			size_t length;
 			do {
@@ -132,7 +132,8 @@ DEFINE_FUNCTION( stringify ) {
 
 			if ( toArrayBuffer ) {
 
-				JL_CHK( JL_NewBufferGetOwnership(cx, buf.GetDataOwnership(), buf.Length(), JL_RVAL) );
+				//JL_CHK( JL_NewBufferGetOwnership(cx, buf.GetDataOwnership(), buf.Length(), JL_RVAL) );
+				JL_CHK( BlobCreate(cx, buf.GetDataOwnership(), buf.Length(), JL_RVAL) );
 			} else {
 
 				JSString *jsstr = JS_NewStringCopyN(cx, buf.GetData(), buf.Length());
@@ -674,6 +675,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	return true;
 
 
+
 /*
 	JS::Value val = JS::Value();
 
@@ -806,7 +808,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 		ref[i] = rand() & 0xff; // 0->255
 	int refPos = 0;
 
-	jl::Buf<char> b;
+	jl::ChunkedBuffer<char> b;
 
 	for ( int i = 0; i < 100; i++ ) {
 
@@ -837,7 +839,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	// Buffer (2) ////////////////////////////////////////////////////
 
 	{
-	jl::Buf<char> resultBuffer;
+	jl::ChunkedBuffer<char> resultBuffer;
 	resultBuffer.Reserve(10000);
 	resultBuffer.Advance(10000);
 	jl_free( resultBuffer.GetDataOwnership() );
@@ -1048,6 +1050,7 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	JL_DEFINE_ARGS;
 
+/*
 	jl::AutoBuffer test;
 
 	test.alloc(2);
@@ -1056,6 +1059,27 @@ DEFINE_FUNCTION( jslangTest ) {
 	((uint8_t*)test.data())[1] = 101;
 
 	return BlobCreate(cx, test, JL_RVAL);
+*/
+	{
+		jl::Buf<jl::BufPartial> partBuf;
+		partBuf.alloc(100);
+		partBuf.setUsed(100);
+		//partBuf.reinterpret<jschar, char>();
+		//partBuf.reinterpret<char, jschar>();
+		
+		partBuf.toArrayBuffer(cx, JL_RVAL);
+	}
+
+	{
+		jl::BufString str(L("test"));
+
+		//str.toConstCString();
+		str.toString<const char *>();
+
+
+
+
+	}
 
 
 	
@@ -1064,7 +1088,7 @@ DEFINE_FUNCTION( jslangTest ) {
 		ab.alloc(2);
 		((uint8_t*)ab.data())[0] = 1;
 		((uint8_t*)ab.data())[1] = 2;
-		ab.toExternalStringUC(cx, JL_RVAL);
+		ab.toUCString(cx, JL_RVAL);
 	}
 
 /*
@@ -1078,7 +1102,7 @@ DEFINE_FUNCTION( jslangTest ) {
 		ASSERT( JS_StringEqualsAscii(cx, JL_RVAL, "de", &match) );
 		ASSERT( match );
 	}
-*/
+*/ 
 
 
 	ASSERT( jl::tstrcmp( ("abc"), L("abc")) == 0 );
@@ -1160,6 +1184,8 @@ DEFINE_FUNCTION( jslangTest ) {
 	int64_t int64 = 0;
 	double dbl = 0;
 	float flt = 0;
+
+	JL_IGNORE(uint8, int8, uint16, int16, uint32, int32, uint64, int64, dbl, flt);
 
 
 /*
@@ -1366,6 +1392,8 @@ DEFINE_FUNCTION( jslangTest ) {
 
 
 	}
+
+//	ASSERT( !JS_IsExceptionPending(cx) );
 	
 
 	JL_ASSERT( jl::hasProperty(cx, obj, "TEST") );
@@ -1418,9 +1446,13 @@ DEFINE_FUNCTION( jslangTest ) {
 	JS_ClearPendingException(cx);
 
 	unsigned long num = 123;
-	JL_ASSERT( jl::setValue(cx, &val, &num) );
+	JL_ASSERT( jl::setValue(cx, &val, num) );
+
+	char txt[] = "sdfgsdfg";
+	JL_ASSERT( jl::setValue(cx, &val, txt) );
 
 	}
+
 
 
 	{

@@ -487,7 +487,20 @@ DEFINE_FUNCTION( write ) {
 	} else { // return unsent data
 
 		//JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
-		JL_CHK( BlobCreateCopy(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
+		//JL_CHK( BlobCreateCopy(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
+
+		if ( JL_ARG(1).isString() ) {
+			
+			JS::RootedString tmp(cx, JL_ARG(3).toString());
+			JL_RVAL.setString(JS_NewDependentString(cx, tmp, sentAmount, str.Length() - sentAmount));
+		} else {
+			
+			size_t length = str.Length() - sentAmount;
+			void *data = jl_malloc(length);
+			JL_ASSERT_ALLOC(data);
+			jl::memcpy(data, str.GetConstStr() + sentAmount, length);
+			JL_RVAL.setObject(*JS_NewArrayBufferWithContents(cx, length, data));
+		}
 	}
 
 	return true;

@@ -358,7 +358,7 @@ DEFINE_FUNCTION( read ) {
 	} else {
 
 		sf_count_t items;
-		jl::Buf<uint8_t> buffer;
+		jl::ChunkedBuffer<uint8_t> buffer;
 		pv->cx = cx;
 		do {
 			

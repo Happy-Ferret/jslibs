@@ -984,7 +984,7 @@ int main_run(JSContext *cx) {
 // I want to call a template function: template <class T> void test(JS::MutableHandle<T> mutableHandle) like this: JS::RootedValue rval(cx); test(&rval); but the compiler say it cannot deduce 'JS::Handle<T>' from 'JS::RootedValue *'
 
 
-	bool ok = JS_ExecuteScript(cx, globalObject, script, rval);
+	//bool ok = JS_ExecuteScript(cx, globalObject, script, rval);
 
 
 	return true;
@@ -1074,7 +1074,6 @@ template <typename Target, typename Source> static inline bool isInBounds(Source
 
 #include <../common/jlplatform.h>
 
-
 int main_bound(int argc, char* argv[]) {
 
 	int32_t a = -1;
@@ -1087,12 +1086,96 @@ int main_bound(int argc, char* argv[]) {
 }
 
 
+
+
+template<class T>
+ALWAYS_INLINE
+T
+cleanHighBits(T value, size_t n) {
+
+	value <<= n;
+	value >>= n;
+	return value;
+}
+
+
+//#pragma runtime_checks( "c", off )
+
+#include <rtcapi.h>
+
+#define DISABLE_SMALLER_TYPE_CHECK \
+	int _prev_rtc_cvrt_loss_info = _RTC_SetErrorType(_RTC_CVRT_LOSS_INFO, _RTC_ERRTYPE_IGNORE)
+
+#define RESTORE_SMALLER_TYPE_CHECK \
+	_RTC_SetErrorType(_RTC_CVRT_LOSS_INFO, _prev_rtc_cvrt_loss_info)
+
+
+template<class D, class S>
+D
+setWithoutTypeCheck(S value) {
+
+	DISABLE_SMALLER_TYPE_CHECK;
+	D tmp = value;
+	RESTORE_SMALLER_TYPE_CHECK;
+	return tmp;
+}
+
+//#pragma runtime_checks( "c", restore )
+
+
+
+template<class D, class S>
+ALWAYS_INLINE void
+reinterpretBuffer(D *dst, S *src, size_t length) {
+
+	if ( sizeof(S) >= sizeof(D) ) {
+
+		S *end = src + length;
+		while ( src != end )
+			*(dst++) = setWithoutTypeCheck<D>(*(src++));
+	} else {
+
+		S *end = src;
+		dst += length;
+		src += length;
+		while ( src != end )
+			*(--dst) = *(--src);
+	}
+}
+
+
+int main_buf(int argc, char* argv[]) {
+
+	wchar_t *buf = (wchar_t *)malloc(100);
+	char *dst = (char *)buf;
+	reinterpretBuffer(dst, buf, 50);
+
+	wchar_t b = 1234;
+	char a = b;
+
+
+	//partBuf.reinterpret<char, jschar>();
+/*
+	uint8_t mask = 0xff;
+	wchar_t a = -1 & mask;
+	//scanf ("%d",&a);
+	a = cleanHighBits(a,8);
+	printf("%i\n", a);
+*/
+
+	return EXIT_SUCCESS;
+}
+
+
+
 int main(int argc, char* argv[]) {
 
 	//return main_test_class2(argc, argv);
 	//return main_PerfTest(argc, argv);
 	//return main_test_call(argc, argv);
 	//return main_min(argc, argv);
-	return main_bound(argc, argv);
+	//return main_bound(argc, argv);
+	return main_buf(argc, argv);
+	
 	
 }

@@ -74,7 +74,8 @@ JL_NewImageObjectOwner( IN JSContext *cx, IN uint8_t* buffer, IN T width, IN T h
 
 	JL_CHK( imageObj );
 	vp.setObject(*imageObj);
-	JL_CHK( JL_NewBufferGetOwnership(cx, buffer, width * height * channels, &dataVal) );
+	//JL_CHK( JL_NewBufferGetOwnership(cx, buffer, width * height * channels, &dataVal) );
+	JL_CHK( BlobCreate(cx, buffer, width * height * channels, &dataVal) );
 	JL_CHK( JS_SetPropertyById(cx, imageObj, JLID(cx, data), &dataVal) );
 	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, width), width) );
 	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, height), height) );

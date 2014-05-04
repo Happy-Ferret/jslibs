@@ -504,9 +504,12 @@ int main(int argc, char* argv[]) {
 		jl::strncpy(hostPath, hostFullPath, hostPathLength);
 		hostPath[hostPathLength] = '\0';
 
-		host.setHostPath(hostPath);
-		host.setHostName(hostName);
-		host.setHostArguments(args.jsArgv, args.jsArgc);
+		JL_CHK( host.setHostPath(hostPath) );
+		JL_CHK( host.setHostName(hostName) );
+		
+		ASSERT( !JS_IsExceptionPending(cx) );
+
+		JL_CHK( host.setHostArguments(args.jsArgv, args.jsArgc) );
 
 		JL_ASSERT_WARN( !(!args.inlineScript && args.jsArgc == 0 && !args.useFileBootstrapScript && sizeof(embeddedBootstrapScript)-1 == 0), E_SCRIPT, E_NOTFOUND );
 
@@ -629,6 +632,9 @@ int main(int argc, char* argv[]) {
 
 
 int xxxmain(int argc, char* argv[]) {
+
+
+
 
 	const JSClass global_class = {
 		"global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub, JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, nullptr, nullptr, nullptr, nullptr, JS_GlobalObjectTraceHook

@@ -168,7 +168,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( process ) {
 
-	jl::Buf<Bytef> resultBuffer;
+	jl::ChunkedBuffer<Bytef> resultBuffer;
 	JLData inputData;
 	int flushType;
 
@@ -242,7 +242,8 @@ DEFINE_FUNCTION( process ) {
 //			length = length * 2 + 4096;
 	}
 
-	JL_CHK( JL_NewBufferGetOwnership(cx, resultBuffer.GetDataOwnership(), resultBuffer.Length(), JL_RVAL) );
+	//JL_CHK( JL_NewBufferGetOwnership(cx, resultBuffer.GetDataOwnership(), resultBuffer.Length(), JL_RVAL) );
+	JL_CHK( BlobCreate(cx, resultBuffer.GetDataOwnership(), resultBuffer.Length(), JL_RVAL) );
 
 	// close the stream and free resources
 	if ( xflateStatus == Z_STREAM_END && flushType == Z_FINISH ) {

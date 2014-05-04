@@ -17,9 +17,9 @@ var loadModule = host.loadModule;
 //for ( var i = 0; i < 1000000; ++i );
 //processEvents(host.endSignalEvents(function() { throw 0 }));
 
-loadModule('jsstd');
-loadModule('jsio');
-loadModule('jswinshell');
+//loadModule('jsstd');
+//loadModule('jsio');
+//loadModule('jswinshell');
 //loadModule('jssqlite');
 
 
@@ -27,7 +27,7 @@ var data = jslangTest();
 //var data = new Blob();
 
 //print( data.arrayBuffer.byteLength, '\n' );
-print( 'data:', data, '\n' );
+//print( 'data:', data, '\n' );
 //print( data.ucString, '\n' );
 //print( data.arrayBuffer, '\n' );
 

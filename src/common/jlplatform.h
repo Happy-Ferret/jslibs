@@ -335,6 +335,24 @@
 #define NOTHROW throw()
 
 
+#if defined(MSC) && defined(DEBUG)
+
+#include <rtcapi.h>
+
+#define DISABLE_SMALLER_TYPE_CHECK \
+	int _prev_rtc_cvrt_loss_info = _RTC_SetErrorType(_RTC_CVRT_LOSS_INFO, _RTC_ERRTYPE_IGNORE); __pragma(warning(push)) __pragma(warning(disable:4244))
+
+#define RESTORE_SMALLER_TYPE_CHECK \
+	_RTC_SetErrorType(_RTC_CVRT_LOSS_INFO, _prev_rtc_cvrt_loss_info); __pragma(warning(pop))
+
+#else
+
+#define DISABLE_SMALLER_TYPE_CHECK ((void)0)
+#define RESTORE_SMALLER_TYPE_CHECK ((void)0)
+
+#endif
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <sys/types.h>
@@ -966,6 +984,33 @@ memset(void *dst, size_t len, uint8_t val) {
 	return ::memchr(dst, val, len);
 }
 */
+
+
+template<class D, class S>
+ALWAYS_INLINE void
+reinterpretBuffer(void* d, void* s, size_t length) {
+
+	D *dst = reinterpret_cast<D*>(d);
+	S *src = reinterpret_cast<S*>(s);
+
+	DISABLE_SMALLER_TYPE_CHECK;
+	if ( sizeof(D) < sizeof(S) ) {
+
+		S* end = src + length;
+		while ( src != end )
+			*(dst++) = *(src++);
+	} else {
+
+		S* end = src;
+		dst += length;
+		src += length;
+		while ( src != end )
+			*(--dst) = *(--src);
+	}
+	RESTORE_SMALLER_TYPE_CHECK;
+}
+
+
 
 INLINE unsigned long FASTCALL
 IntSqrt(unsigned long x) {

@@ -135,7 +135,7 @@ BEGIN_CLASS( Task )
 int
 TaskStdErrHostOutput( void *privateData, const char *buffer, size_t length ) {
 
-	jl::Buf<char> *errBuffer = static_cast<jl::Buf<char>*>(privateData);
+	jl::ChunkedBuffer<char> *errBuffer = static_cast<jl::ChunkedBuffer<char>*>(privateData);
 	errBuffer->Reserve(length);
 	jl::memcpy(errBuffer->Ptr(), buffer, length);
 	errBuffer->Advance(length);
@@ -248,7 +248,7 @@ JLThreadFuncDecl
 TaskThreadProc( void *threadArg ) {
 
 	TaskPrivate *pv = NULL;
-	jl::Buf<char> errBuffer;
+	jl::ChunkedBuffer<char> errBuffer;
 
 	JSContext *cx = CreateHost((uint32_t)-1, (uint32_t)-1, 0);
 	if ( cx == NULL ) // out of memory

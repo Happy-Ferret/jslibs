@@ -30,7 +30,8 @@ bool SqliteToJsval( JSContext *cx, sqlite3_value *value, OUT JS::MutableHandleVa
 			JL_CHK( jl::setValue(cx, rval, sqlite3_value_double(value)) );
 			break;
 		case SQLITE_BLOB:
-			JL_CHK( JL_NewBufferCopyN(cx, sqlite3_value_blob(value), sqlite3_value_bytes(value), rval) );
+			//JL_CHK( JL_NewBufferCopyN(cx, sqlite3_value_blob(value), sqlite3_value_bytes(value), rval) );
+			JL_CHK( BlobCreateCopy(cx, sqlite3_value_blob(value), sqlite3_value_bytes(value), rval) );
 			break;
 		case SQLITE_NULL:
 			rval.setNull();

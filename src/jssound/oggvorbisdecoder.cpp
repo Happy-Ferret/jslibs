@@ -357,7 +357,7 @@ DEFINE_FUNCTION( read ) {
 	} else {
 
 		long bytes;
-		jl::Buf<char> buffer;
+		jl::ChunkedBuffer<char> buffer;
 		int bitStream = 0;
 		pv->cx = cx;
 		do {

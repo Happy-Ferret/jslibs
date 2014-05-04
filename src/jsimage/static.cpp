@@ -391,7 +391,8 @@ DEFINE_FUNCTION( encodeJpegImage ) {
 
 	// store compressed data
 
-	JL_CHK( JL_NewBufferGetOwnership(cx, dest.buffer, dest.dataLength, *JL_RVAL) );
+	//JL_CHK( JL_NewBufferGetOwnership(cx, dest.buffer, dest.dataLength, *JL_RVAL) );
+	JL_CHK( BlobCreate(cx, dest.buffer, dest.dataLength, JL_RVAL) );
 
 	jpeg_destroy_compress(&cinfo);
 	return true;
