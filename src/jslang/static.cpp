@@ -1071,15 +1071,50 @@ DEFINE_FUNCTION( jslangTest ) {
 	}
 
 	{
-		jl::BufString str(L("test"));
-
-		//str.toConstCString();
-		str.toString<const char *>();
-
-
-
-
+		jl::BufString str;
+		str.length();
 	}
+
+
+	{
+		jl::BufString str("test");
+		str.toString<const jschar *>();
+		str.toString<const char *>();
+		jl_free( str.toString<char *>() );
+		jl_free( str.toString<jschar *>() );
+	}
+
+	{
+		jl::BufString str(L("test"));
+		str.toString<const jschar *>();
+		str.toString<const char *>();
+		jl_free( str.toString<char *>() );
+		jl_free( str.toString<jschar *>() );
+	}
+
+	{
+		char *mystr = (char *)jl_malloc(5);
+		strcpy(mystr, "test");
+		jl::BufString str(mystr);
+		str.toString<const jschar *>();
+		str.toString<const char *>();
+		jl_free( str.toString<char *>() );
+		jl_free( str.toString<jschar *>() );
+	}
+
+	{
+		jschar *mystr = (jschar *)jl_malloc(10);
+		wcscpy(mystr, L("test"));
+		jl::BufString str(mystr);
+		str.toString<const jschar *>();
+		str.toString<const char *>();
+		jl_free( str.toString<char *>() );
+		jl_free( str.toString<jschar *>() );
+	}
+
+
+
+
 
 
 	
