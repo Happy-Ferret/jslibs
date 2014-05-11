@@ -1060,19 +1060,28 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	return BlobCreate(cx, test, JL_RVAL);
 */
+
+	{
+		jl::BufBase b;
+	}
+
+	{
+		jl::BufBase b;
+		b.alloc(100);
+	}
+
+
 	{
 		jl::Buf<jl::BufPartial> partBuf;
 		partBuf.alloc(100);
 		partBuf.setUsed(100);
-		//partBuf.reinterpret<jschar, char>();
-		//partBuf.reinterpret<char, jschar>();
-		
 		partBuf.toArrayBuffer(cx, JL_RVAL);
 	}
 
 	{
 		jl::BufString str;
 		str.length();
+		str.data();
 	}
 
 
@@ -1080,7 +1089,6 @@ DEFINE_FUNCTION( jslangTest ) {
 		jl::BufString str("test");
 		str.toString<const jschar *>();
 		str.toString<const char *>();
-		jl_free( str.toString<char *>() );
 		jl_free( str.toString<jschar *>() );
 	}
 
@@ -1088,7 +1096,6 @@ DEFINE_FUNCTION( jslangTest ) {
 		jl::BufString str(L("test"));
 		str.toString<const jschar *>();
 		str.toString<const char *>();
-		jl_free( str.toString<char *>() );
 		jl_free( str.toString<jschar *>() );
 	}
 
@@ -1098,7 +1105,6 @@ DEFINE_FUNCTION( jslangTest ) {
 		jl::BufString str(mystr);
 		str.toString<const jschar *>();
 		str.toString<const char *>();
-		jl_free( str.toString<char *>() );
 		jl_free( str.toString<jschar *>() );
 	}
 
@@ -1108,7 +1114,6 @@ DEFINE_FUNCTION( jslangTest ) {
 		jl::BufString str(mystr);
 		str.toString<const jschar *>();
 		str.toString<const char *>();
-		jl_free( str.toString<char *>() );
 		jl_free( str.toString<jschar *>() );
 	}
 

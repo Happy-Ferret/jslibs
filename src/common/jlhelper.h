@@ -3606,22 +3606,35 @@ JL_BEGIN_NAMESPACE
 class BufBase : public jl::CppAllocators {
 public:
 	typedef uint8_t* Type;
+	static const size_t UnknownSize = size_t(~0);
+
 private:
 	Type _data;
 	size_t _size;
-	mutable bool _owner; // this object is responsible of freeing the memory pointed by _data
+	mutable bool _owner; // true if this object is responsible of freeing the memory pointed by _data
 
 	void operator =( const BufBase & );
 
 public:
+	static const BufBase
+	empty() {
+
+		return BufBase();
+	}
+
 	~BufBase() {
 
-		if ( _owner )
+		if ( _data && _owner )
 			free();
 	}
 
 	BufBase()
-	: _owner(false) {
+	: _data(nullptr), _owner(false) {
+	}
+
+	template <class T>
+	BufBase( const T *data )
+	: _data(reinterpret_cast<Type>(const_cast<T*>(data))), _size(UnknownSize), _owner(false) {
 	}
 
 	BufBase( const BufBase& buf )
@@ -3633,15 +3646,21 @@ public:
 
 		ASSERT( _owner );
 
+		//jl::zeromem(_data, _size);
 		jl_free(_data);
-
-		IFDEBUG( _data = reinterpret_cast<Type>(0xfeeefeee) );
-		_owner = false;
+		_data = nullptr;
 	}
 
 	template <class T>
 	T
 	dataAs() {
+
+		return reinterpret_cast<T>(_data);
+	}
+
+	template <class T>
+	const T
+	dataAsConst() const {
 
 		return reinterpret_cast<T>(_data);
 	}
@@ -3654,6 +3673,8 @@ public:
 
 	size_t
 	size() const {
+
+		ASSERT_IF( _data == nullptr, _size == 0 );
 
 		return _size;
 	}
@@ -3671,9 +3692,7 @@ public:
 	}
 
 	void
-	dropOwnership() {
-
-		ASSERT( _owner );
+	dropOwnership() const {
 
 		_owner = false;
 	}
@@ -3681,13 +3700,22 @@ public:
 	size_t
 	used() const {
 
+		ASSERT_IF( _data == nullptr, _size == 0 );
+
 		return _size;
+	}
+
+	
+	bool
+	is(const BufBase &buf) {
+		
+		return buf._data == this->_data;
 	}
 
 	void
 	steal(const BufBase &buf) {
 
-		if ( &buf == this )
+		if ( is(buf) )
 			return;
 		
 		if ( owner() )
@@ -3696,7 +3724,7 @@ public:
 		_data = buf._data;
 		_size = buf._size;
 		_owner = buf._owner;
-		buf._owner = false; // only one can free the buffer
+		buf.dropOwnership(); // only one can free the buffer
 	}
 
 	template <class T>
@@ -3724,28 +3752,12 @@ public:
 		jl::memcpy(data(), buf.data(), size());
 	}
 
-/*
-	void
-	copyTo( void * dst ) {
-		
-		jl::memcpy(dst, _data, _size);
-	}
-
-	void
-	copyFrom( BufBase &buf ) {
-		
-		jl::memcpy(_data, src, _size);
-	}
-*/
-
 	void
 	alloc( size_t size ) {
 		
 		ASSERT( !_owner ); // else memory leak
 
-		_data = static_cast<Type>(jl_malloc(size));
-		_size = size;
-		_owner = true;
+		set(jl_malloc(size), size, true);
 	}
 
 	void
@@ -3771,7 +3783,11 @@ class BufPartial : public BufBase {
 	size_t _used;
 	
 	void operator =( const BufPartial & );
+	BufPartial( const BufPartial & );
 public:
+
+	BufPartial() {
+	}
 
 	size_t
 	used() const {
@@ -3796,7 +3812,7 @@ public:
 	void
 	steal(const BufBase &buf) {
 
-		if ( &buf == this )
+		if ( is(buf) )
 			return;
 
 		BufBase::steal(buf);
@@ -3811,50 +3827,16 @@ public:
 		setUsed(size);
 	}
 	
-/*
-	void
-	set( const void *data, size_t size ) {
-
-		BufBase::set(data, size);
-		setUsed(size);
-	}
-*/
 	void
 	maybeRealloc() {
-
+		
+		ASSERT( owner() );
 		if ( JL_MaybeRealloc(size(), used()) ) {
 		
 			realloc(used());
 			ASSERT( data() ); // assume it always possible to reduce the size of an allocated block
 		}
 	}
-
-/*
-	template<class D, class S>
-	void
-	retype() {
-		
-		size_t currentLength = used() / sizeof(S);
-		size_t requiredSize = currentLength * sizeof(D);
-
-		if ( !isOwner() || requiredSize > size() ) {
-
-			BufBase dst;
-			dst.alloc(requiredSize);
-
-			reinterpretBuffer(reinterpret_cast<D*>(dst.data()), reinterpret_cast<S*>(data()), currentLength);
-
-			set(dst);
-
-		} else {
-
-			reinterpretBuffer(reinterpret_cast<D*>(data()), reinterpret_cast<S*>(data()), currentLength);
-		}
-
-		setUsed(requiredSize);
-	}
-*/
-
 };
 
 
@@ -3863,6 +3845,9 @@ class Buf : public B {
 
 	void operator =( const Buf & );
 public:
+
+	Buf() {
+	}
 
 	bool
 	stealArrayBuffer( JSContext *cx, JS::HandleObject obj ) {
@@ -3891,18 +3876,25 @@ public:
 class BufString : public jl::Buf<jl::BufPartial> {
 	typedef jschar WideChar;
 
-	static const size_t unknownSize = SIZE_MAX;
-	size_t _length;
-	bool _wide;
+	char _charSize;
 	bool _nt;
 
 	void operator =( const BufString & );
+	BufString( const BufString & );
 public:
+
+	char
+	charSize() const {
+
+		ASSERT( _charSize == sizeof(char) || _charSize == sizeof(WideChar) );
+
+		return _charSize;
+	}
 
 	bool
 	wide() const {
 
-		return _wide;
+		return _charSize == sizeof(WideChar);
 	}
 
 	bool
@@ -3911,71 +3903,67 @@ public:
 		return _nt;
 	}
 
-	BufString( const char *cstr )
-	: _wide(false), _nt(true) {
-		
-		set(cstr, unknownSize);
-		_length = unknownSize;
+	BufString() {
 	}
 
-	BufString( const char *cstr, size_t len )
-	: _wide(false), _nt(true) {
+	BufString( const char *str )
+	: _charSize(sizeof(*str)), _nt(true) {
 		
-		set(cstr, (len+1) * sizeof(char));
-		_length = len;
+		set(str, UnknownSize);
 	}
 
-	BufString( const WideChar *wstr )
-	: _wide(true), _nt(true) {
+	BufString( const char *str, size_t len )
+	: _charSize(sizeof(*str)), _nt(true) {
 		
-		set(wstr, unknownSize);
-		_length = unknownSize;
+		set(str, (len+1) * sizeof(char));
 	}
 
-	BufString( const WideChar *wstr, size_t len )
-	: _wide(true), _nt(true) {
+	BufString( const WideChar *str )
+	: _charSize(sizeof(*str)), _nt(true) {
 		
-		set(wstr, (len+1) * sizeof(WideChar));
-		_length = len;
+		set(str, UnknownSize);
+	}
+
+	BufString( const WideChar *str, size_t len )
+	: _charSize(sizeof(*str)), _nt(true) {
+		
+		set(str, (len+1) * sizeof(WideChar));
 	}
 
 //
 
-	BufString( char *cstr )
-	: _wide(false), _nt(true) {
+	BufString( char *str )
+	: _charSize(sizeof(*str)), _nt(true) {
 		
-		set(cstr, unknownSize, true);
-		_length = unknownSize;
+		set(str, UnknownSize, true);
 	}
 
-	BufString( char *cstr, size_t len )
-	: _wide(false), _nt(true) {
+	BufString( char *str, size_t len )
+	: _charSize(sizeof(*str)), _nt(true) {
 		
-		set(cstr, (len+1) * sizeof(char), true);
-		_length = len;
+		set(str, (len+1) * sizeof(char), true);
 	}
 
-	BufString( WideChar *wstr )
-	: _wide(true), _nt(true) {
+	BufString( WideChar *str )
+	: _charSize(sizeof(*str)), _nt(true) {
 		
-		set(wstr, unknownSize, true);
-		_length = unknownSize;
+		set(str, UnknownSize, true);
 	}
 
-	BufString( WideChar *wstr, size_t len )
-	: _wide(true), _nt(true) {
+	BufString( WideChar *str, size_t len )
+	: _charSize(sizeof(*str)), _nt(true) {
 		
-		set(wstr, (len+1) * sizeof(WideChar), true);
-		_length = len;
+		set(str, (len+1) * sizeof(WideChar), true);
 	}
 
 //
 
 	BufString( JSContext *cx, JS::HandleString str )
-	: _wide(true), _nt(false) {
+	: _charSize(sizeof(WideChar)), _nt(false) {
 
-		const jschar *chars = JS_GetStringCharsAndLength(cx, str, &_length);
-		set(chars, _length);
+		size_t used;
+		const jschar *chars = JS_GetStringCharsAndLength(cx, str, &used);
+		set(chars, used * sizeof(WideChar));
 	}
 
 //
@@ -3983,32 +3971,47 @@ public:
 	size_t
 	length() {
 
-		if ( _length == unknownSize ) {
+		if ( data() ) {
 
-			if ( wide() ) {
+			size_t len;
+			if ( used() == UnknownSize ) {
 
-				_length = jl::strlen(dataAs<WideChar*>());
-				setSize((_length + (nt() ? 1 : 0)) * sizeof(WideChar));
+				ASSERT( size() == UnknownSize );
+
+				len = wide() ? jl::strlen(dataAs<WideChar*>()) : jl::strlen(dataAs<char*>());
+				setSize((len + (nt() ? 1 : 0)) * charSize());
+				setUsed(size());
 			} else {
-
-				_length = jl::strlen(dataAs<char*>());
-				setSize((_length + (nt() ? 1 : 0)) * sizeof(char));
+				
+				len = used() / charSize() - (nt() ? 1 : 0);
 			}
-			setUsed(size());
+
+			ASSERT_IF( wide(), used() % 2 == 0 );
+			return len;
+		} else {
+
+			return 0;
 		}
-		ASSERT_IF( wide(), used() % 2 == 0 );
-		return _length;
 	}
 
 	bool
 	toString( JSContext *cx, JS::MutableHandleValue rval ) {
 
 		ASSERT( data() );
-		ASSERT( used() % 2 == 0 );
+
+		ASSERT_IF( nt() && wide(), dataAsConst<WideChar*>()[length()] == 0 );
+		ASSERT_IF( nt() && !wide(), dataAsConst<char*>()[length()] == 0 );
+
+		if ( length() == 0 ) {
+
+			rval.set(JL_GetEmptyStringValue(cx));
+			return true;
+		}
 
 		if ( !( wide() && owner() ) ) {
 
 			size_t len = length();
+			ASSERT_IF( wide(), used() % 2 == 0 );
 			size_t requiredSize = len * sizeof(WideChar); // nt not needed
 
 			BufBase dst(*this);
@@ -4019,7 +4022,7 @@ public:
 				reinterpretBuffer<WideChar, char>(dst.data(), data(), len);
 
 			steal(dst);
-			_wide = true;
+			_charSize = sizeof(WideChar);
 			_nt = false;
 		}
 
@@ -4040,12 +4043,13 @@ public:
 	const char *
 	toString<>() {
 			
-		ASSERT_IF( nt() && wide(), dataAs<WideChar*>()[length()] == 0 );
-		ASSERT_IF( nt() && !wide(), dataAs<char*>()[length()] == 0 );
+		ASSERT_IF( nt() && wide(), dataAsConst<WideChar*>()[length()] == 0 );
+		ASSERT_IF( nt() && !wide(), dataAsConst<char*>()[length()] == 0 );
 
 		if ( !( !wide() && nt() ) ) {
 			
 			size_t len = length();
+			ASSERT_IF( wide(), used() % 2 == 0 );
 			size_t requiredSize = (len+1) * sizeof(char);
 
 			BufBase dst(*this);
@@ -4057,9 +4061,8 @@ public:
 
 			dst.dataAs<char*>()[len] = 0;
 			steal(dst);
-			_wide = false;
+			_charSize = sizeof(char);
 			_nt = true;
-			maybeRealloc();
 		}
 		return dataAs<const char *>();
 	}
@@ -4068,9 +4071,13 @@ public:
 	char *
 	toString<>() {
 
+		ASSERT_IF( nt() && wide(), dataAsConst<WideChar*>()[length()] == 0 );
+		ASSERT_IF( nt() && !wide(), dataAsConst<char*>()[length()] == 0 );
+
 		if ( !( owner() && !wide() && nt() ) ) {
 			
 			size_t len = length();
+			ASSERT_IF( wide(), used() % 2 == 0 );
 			size_t requiredSize = (len+1) * sizeof(char);
 
 			BufBase dst(*this);
@@ -4082,7 +4089,7 @@ public:
 
 			dst.dataAs<char*>()[len] = 0;
 			steal(dst);
-			_wide = false;
+			_charSize = sizeof(char);
 			_nt = true;
 			maybeRealloc();
 		}
@@ -4095,11 +4102,14 @@ public:
 	const WideChar *
 	toString<>() {
 
+		ASSERT_IF( nt() && wide(), dataAsConst<WideChar*>()[length()] == 0 );
+		ASSERT_IF( nt() && !wide(), dataAsConst<char*>()[length()] == 0 );
+
 		if ( !( wide() && nt() ) ) {
 			
 			size_t len = length();
+			ASSERT_IF( wide(), used() % 2 == 0 );
 			size_t requiredSize = (len+1) * sizeof(WideChar);
-
 			BufBase dst(*this);
 			if ( size() < requiredSize || !owner() )
 				dst.alloc(requiredSize);
@@ -4109,9 +4119,8 @@ public:
 
 			dst.dataAs<WideChar*>()[len] = 0;
 			steal(dst);
-			_wide = true;
+			_charSize = sizeof(WideChar);
 			_nt = true;
-			maybeRealloc();
 		}
 
 		return dataAs<const WideChar *>();
@@ -4121,9 +4130,13 @@ public:
 	WideChar *
 	toString<>() {
 
+		ASSERT_IF( nt() && wide(), dataAsConst<WideChar*>()[length()] == 0 );
+		ASSERT_IF( nt() && !wide(), dataAsConst<char*>()[length()] == 0 );
+
 		if ( !( owner() && wide() && nt() ) ) { // there is some work
 			
 			size_t len = length();
+			ASSERT_IF( wide(), used() % 2 == 0 );
 			size_t requiredSize = (len+1) * sizeof(WideChar);
 
 			BufBase dst(*this);
@@ -4137,7 +4150,7 @@ public:
 
 			dst.dataAs<WideChar*>()[len] = 0;
 			steal(dst);
-			_wide = false;
+			_charSize = sizeof(char);
 			_nt = true;
 			maybeRealloc();
 		}
