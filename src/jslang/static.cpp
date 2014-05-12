@@ -1080,10 +1080,23 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	{
 		jl::BufString str;
-		str.length();
-		str.data();
+		str.lengthOrZero();
+		str.toStringOrNull<char*>();
 	}
 
+	{
+		jl::BufString str;
+		str.empty();
+		str.length();
+		str.toString<const char*>();
+	}
+
+	{
+		jl::BufString str("test", 4);
+		jl::BufBase buf(str);
+		jl::BufPartial pbuf(str);
+		jl::BufString str2(buf);
+	}
 
 	{
 		jl::BufString str("test");

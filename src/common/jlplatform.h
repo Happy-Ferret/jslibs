@@ -1491,7 +1491,7 @@ tstrcmp(const T *lhs, const U *rhs) {
 	while ( true ) {
 
 		if ( *lhs != static_cast<T>(*rhs) )
-			return int32_t(*lhs) - int32_t(*rhs);
+			return static_cast<int32_t>(*lhs) - static_cast<int32_t>(*rhs);
 		if ( *lhs == 0 )
 			return 0;
 		++lhs, ++rhs;
@@ -1507,7 +1507,7 @@ tstrncmp(const T *lhs, const U *rhs, size_t max) {
 	while ( lhs < limit ) {
 
 		if ( *lhs != static_cast<T>(*rhs) )
-			return int32_t(*lhs) - int32_t(*rhs);
+			return static_cast<int32_t>(*lhs) - static_cast<int32_t>(*rhs);
 		if ( *lhs == 0 )
 			return 0;
 		++lhs, ++rhs;
