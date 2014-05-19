@@ -27,7 +27,7 @@ JL_NewByteAudioObject( JSContext *cx, T bits, U channels, V frames, W rate, OUT 
 
 	ASSERT( bits > 0 && (bits % 8) == 0 && channels > 0 && frames >= 0 && rate > 0 );
 
-	jl::AutoBuffer buffer;
+	jl::BufBase buffer;
 
 	JS::RootedObject audioObj(cx, JL_NewObj(cx));
 	JS::RootedValue dataVal(cx);

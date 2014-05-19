@@ -921,6 +921,19 @@ template <typename Target, typename Source> static inline bool isInBounds(Source
 }
 
 
+/*
+Const
+*/
+template<class T> struct Const { typedef T Type; static const bool isConst = false; };
+template<class T> struct Const <const T> { typedef T Type; static const bool isConst = true; };
+template<class T> struct Const <const T[]> { typedef T Type[]; static const bool isConst = true; };
+template<class T, unsigned int N> struct Const <const T[N]> { typedef T Type[N]; static const bool isConst = true; };
+
+template<class T> struct Pointer { typedef T Type; static const bool isPointer = false; };
+template<class T> struct Pointer <T*> { typedef T Type; static const bool isPointer = true; };
+
+
+
 
 //Macro that avoid multicharacter constant: From gcc page:
 //`-Wno-multichar'

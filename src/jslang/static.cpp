@@ -92,7 +92,7 @@ ADD_DOC(stringify, "string|ArrayBuffer stringify(value [, toArrayBuffer])", "con
 DEFINE_FUNCTION( stringify ) {
 
 	JL_DEFINE_ARGS;
-	JLData str;
+	jl::BufString str;
 
 	if ( JL_ARGC == 1 && JL_ARG(1).isString() ) { // identity
 		
@@ -148,7 +148,7 @@ DEFINE_FUNCTION( stringify ) {
 
 	// fallback:
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-	JL_CHK( toArrayBuffer ? str.GetArrayBuffer(cx, JL_RVAL) : str.GetJSString(cx, JL_RVAL) );
+	JL_CHK( toArrayBuffer ? str.toArrayBuffer(cx, JL_RVAL) : str.toString(cx, JL_RVAL) );
 
 	return true;
 	JL_BAD;
@@ -193,7 +193,7 @@ DEFINE_FUNCTION( join ) {
 	JS::AutoValueVector avr(cx);
 	avr.reserve(16);
 
-	jl::Stack<JLData, jl::StaticAllocMedium> strList;
+	jl::Stack<jl::BufString, jl::StaticAllocMedium> strList;
 	size_t length = 0;
 
 	JS::RootedValue val(cx);
@@ -213,7 +213,7 @@ DEFINE_FUNCTION( join ) {
 
 			JL_CHK( JL_GetElement(cx, argObj, i, &val) );
 			JL_CHK( jl::getValue(cx, val, &*++strList) );
-			length += strList->Length();
+			length += strList->length();
 			avr.append(val);
 		}
 	} else {
@@ -224,7 +224,7 @@ DEFINE_FUNCTION( join ) {
 		while ( JS_CallFunctionValue(cx, argObj, nextFct, JS::HandleValueArray::empty(), &val) != false ) { // loop until StopIteration or error
 
 			JL_CHK( jl::getValue(cx, val, &*++strList) );
-			length += strList->Length();
+			length += strList->length();
 			avr.append(val);
 		}
 		JL_CHK( jl::isStopIterationExceptionPending(cx) );
@@ -239,13 +239,13 @@ DEFINE_FUNCTION( join ) {
 
 	if ( toArrayBuffer ) {
 
-		jl::AutoBuffer buffer;
+		jl::BufBase buffer;
 		
 		//uint8_t *buf = JL_NewBuffer(cx, length, JL_RVAL);
 		//JL_CHK( buf );
 
 		buffer.alloc(length);
-		JL_ASSERT_ALLOC(buffer);
+		JL_ASSERT_ALLOC(buffer.hasData());
 		
 		//buf += length;
 		uint8_t *buf;
@@ -253,8 +253,8 @@ DEFINE_FUNCTION( join ) {
 
 		while ( strList ) {
 
-			buf -= strList->Length();
-			strList->CopyTo(buf);
+			buf -= strList->length();
+			strList->copyTo(buf);
 			--strList;
 		}
 
@@ -268,8 +268,8 @@ DEFINE_FUNCTION( join ) {
 
 		while ( strList ) {
 
-			buf -= strList->Length();
-			strList->CopyTo(buf);
+			buf -= strList->length();
+			strList->copyTo(buf);
 			--strList;
 		}
 
@@ -296,7 +296,7 @@ DEFINE_FUNCTION( indexOf ) {
 
 	JL_DEFINE_ARGS;
 
-	JLData srcStr, patStr;
+	jl::BufString srcStr, patStr;
 	uint32_t start;
 	
 	JL_ASSERT_ARGC_MIN(2);
@@ -307,7 +307,7 @@ DEFINE_FUNCTION( indexOf ) {
 	if ( JL_ARG_ISDEF(3) ) {
 
 		JL_CHK( jl::getValue(cx, JL_ARG(3), &start) );
-		if ( start > srcStr.Length() - patStr.Length() ) {
+		if ( start > srcStr.length() - patStr.length() ) {
 			
 			JL_RVAL.setInt32(-1);
 			return true;
@@ -317,10 +317,10 @@ DEFINE_FUNCTION( indexOf ) {
 		start = 0;
 	}
 
-	if ( srcStr.IsWide() )
-		JL_RVAL.setInt32( jl::Match(srcStr.GetConstWStr()+start, srcStr.Length()-start, patStr.GetConstWStr(), patStr.Length()) );
+	if ( srcStr.wide() )
+		JL_RVAL.setInt32( jl::Match(srcStr.toData<const jschar *>()+start, srcStr.length()-start, patStr.toData<const jschar *>(), patStr.length()) );
 	else
-		JL_RVAL.setInt32( jl::Match(srcStr.GetConstStr()+start, srcStr.Length()-start, patStr.GetConstStr(), patStr.Length()) );
+		JL_RVAL.setInt32( jl::Match(srcStr.toData<const char *>()+start, srcStr.length()-start, patStr.toData<const char *>(), patStr.length()) );
 
 	return true;
 	JL_BAD;
@@ -1044,6 +1044,22 @@ bool test2() {
 }
 
 
+/*
+template <class T>
+struct is_const
+{
+  template <class U>
+  static char is_const_(const U t) { U &x = t };
+ 
+  template <class U>
+  static double is_const_(...);
+ 
+  static T t;
+  enum { value = sizeof(is_const_(t)) == sizeof(char) };
+};
+*/
+
+
 DEFINE_FUNCTION( jslangTest ) {
 
 	JL_IGNORE(cx, argc, vp);
@@ -1072,13 +1088,6 @@ DEFINE_FUNCTION( jslangTest ) {
 
 
 	{
-		jl::Buf<jl::BufPartial> partBuf;
-		partBuf.alloc(100);
-		partBuf.setUsed(100);
-		partBuf.toArrayBuffer(cx, JL_RVAL);
-	}
-
-	{
 		jl::BufString str;
 		str.lengthOrZero();
 		str.toStringOrNull<char*>();
@@ -1088,7 +1097,7 @@ DEFINE_FUNCTION( jslangTest ) {
 		jl::BufString str;
 		str.empty();
 		str.length();
-		str.toString<const char*>();
+		str.toStringZ<const char*>();
 	}
 
 	{
@@ -1099,35 +1108,42 @@ DEFINE_FUNCTION( jslangTest ) {
 	}
 
 	{
+		jl::BufString str("test", 4);
+		str.to<const jschar *, false>();
+		str.to<const char *, true>();
+		str.to<jschar *, true>();
+	}
+
+	{
 		jl::BufString str("test");
-		str.toString<const jschar *>();
-		str.toString<const char *>();
-		jl_free( str.toString<jschar *>() );
+		str.toStringZ<const jschar *>();
+		str.toStringZ<const char *>();
+		jl_free( str.toStringZ<jschar *>() );
 	}
 
 	{
 		jl::BufString str(L("test"));
-		str.toString<const jschar *>();
-		str.toString<const char *>();
-		jl_free( str.toString<jschar *>() );
+		str.toStringZ<const jschar *>();
+		str.toStringZ<const char *>();
+		jl_free( str.toStringZ<jschar *>() );
 	}
 
 	{
 		char *mystr = (char *)jl_malloc(5);
 		strcpy(mystr, "test");
 		jl::BufString str(mystr);
-		str.toString<const jschar *>();
-		str.toString<const char *>();
-		jl_free( str.toString<jschar *>() );
+		str.toStringZ<const jschar *>();
+		str.toStringZ<const char *>();
+		jl_free( str.toStringZ<jschar *>() );
 	}
 
 	{
 		jschar *mystr = (jschar *)jl_malloc(10);
 		wcscpy(mystr, L("test"));
 		jl::BufString str(mystr);
-		str.toString<const jschar *>();
-		str.toString<const char *>();
-		jl_free( str.toString<jschar *>() );
+		str.toStringZ<const jschar *>();
+		str.toStringZ<const char *>();
+		jl_free( str.toStringZ<jschar *>() );
 	}
 
 
@@ -1137,11 +1153,11 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	
 	{
-		jl::Buffer ab;
+		jl::BufString ab;
 		ab.alloc(2);
 		((uint8_t*)ab.data())[0] = 1;
 		((uint8_t*)ab.data())[1] = 2;
-		ab.toUCString(cx, JL_RVAL);
+		ab.toString(cx, JL_RVAL);
 	}
 
 /*

@@ -141,7 +141,7 @@ DEFINE_FINALIZE() {
 DEFINE_CONSTRUCTOR() {
 
 	jl::Unserializer *unser = NULL;
-	JLData str;
+	jl::BufString str;
 
 	JL_DEFINE_ARGS;
 	JL_DEFINE_CONSTRUCTOR_OBJ;
@@ -149,7 +149,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARG_IS_STRING(1);
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-	unser = new jl::Unserializer(cx, str.GetStrZOwnership(), str.Length(), OBJECT_TO_JSVAL(JL_OBJ));
+	unser = new jl::Unserializer(cx, str.toData<char *>(), str.length(), OBJECT_TO_JSVAL(JL_OBJ));
 	JL_ASSERT_ALLOC(unser);
 	jl::SourceId_t srcId;
 	JL_CHK( unser->Read(cx, srcId) );

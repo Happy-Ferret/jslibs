@@ -95,11 +95,11 @@ GetAvailable(JSContext *cx, JS::HandleObject obj, size_t *available) {
 		JL_CHK( jl::getValue(cx, val, &length) );
 	} else {
 
-		JLData data;
+		jl::BufString data;
 		val = OBJECT_TO_JSVAL(srcObj);
 		JL_CHK( jl::getValue(cx, val, &data) );
-		JL_CHK( data.IsSet() );
-		length = data.Length();
+		JL_CHK( data.hasData() );
+		length = data.length();
 	}
 
 	*available = length - position;
@@ -111,7 +111,7 @@ GetAvailable(JSContext *cx, JS::HandleObject obj, size_t *available) {
 ALWAYS_INLINE bool
 StreamRead( JSContext *cx, JS::HandleObject streamObj, char *buf, size_t *amount ) {
 
-	JLData data;
+	jl::BufString data;
 	size_t position;
 	JS::RootedValue source(cx);
 
@@ -121,7 +121,7 @@ StreamRead( JSContext *cx, JS::HandleObject streamObj, char *buf, size_t *amount
 	JL_CHK( JL_GetReservedSlot(streamObj, SLOT_STREAM_SOURCE, &source) );
 	JL_CHK( jl::getValue(cx, source, &data) );
 
-	size_t length = data.Length();
+	size_t length = data.length();
 	if ( length - position <= 0 ) { // position >= length
 
 		*amount = 0; // EOF
@@ -131,7 +131,7 @@ StreamRead( JSContext *cx, JS::HandleObject streamObj, char *buf, size_t *amount
 	if ( position + *amount > length )
 		*amount = length - position;
 
-	jl::memcpy( buf, data.GetConstStr() + position, *amount ); // (TBD) possible optimization. see JLData::CopyTo() ?
+	jl::memcpy( buf, data.toData<const char *>() + position, *amount ); // (TBD) possible optimization. see JLData::CopyTo() ?
 	JL_CHK( SetPosition(cx, streamObj, position + *amount) );
 	return true;
 	JL_BAD;
@@ -174,7 +174,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
-	jl::AutoBuffer buffer;
+	jl::BufBase buffer;
 	
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
@@ -207,7 +207,7 @@ DEFINE_FUNCTION( read ) {
 	}
 
 	buffer.alloc(amount);
-	JL_ASSERT_ALLOC( buffer );
+	JL_ASSERT_ALLOC( buffer.hasData() );
 
 	JL_CHK( StreamRead(cx, JL_OBJ, (char*)buffer.data(), &amount) );
 

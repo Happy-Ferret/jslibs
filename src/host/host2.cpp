@@ -836,12 +836,12 @@ DEFINE_FUNCTION( stdout ) {
 
 	JL_DEFINE_ARGS;
 	JL_RVAL.setUndefined();
-	JLData str;
+	jl::BufString str;
 	Host &host(Host::getHost(cx));
 	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( jl::getValue(cx, JL_ARG(i+1), &str) );
-		int status = host.stdIO().output(str.GetConstStr(), str.Length());
+		int status = host.stdIO().output(str.toData<const char *>(), str.length());
 		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdout"), E_WRITE );
 	}
 	return true;
@@ -857,12 +857,12 @@ DEFINE_FUNCTION( stderr ) {
 
 	JL_DEFINE_ARGS;
 	JL_RVAL.setUndefined();
-	JLData str;
+	jl::BufString str;
 	Host &host(Host::getHost(cx));
 	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( jl::getValue(cx, JL_ARG(i+1), &str) );
-		int status = host.stdIO().error(str.GetConstStr(), str.Length());
+		int status = host.stdIO().error(str.toData<const char *>(), str.length());
 		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stderr"), E_WRITE );
 	}
 	return true;
@@ -903,7 +903,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( loadModule ) {
 
 	// JLLibraryHandler module = JLDynamicLibraryNullHandler;
-	JLData str;
+	jl::BufString str;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
@@ -911,8 +911,9 @@ DEFINE_FUNCTION( loadModule ) {
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 
 	char libFileName[PATH_MAX];
-	jl::strncpy( libFileName, str.GetConstStr(), str.Length() );
-	libFileName[str.Length()] = '\0';
+	//jl::strncpy( libFileName, str.toData<const char *>(), str.length() ); // (TBD) use copyTo()
+	str.copyTo(libFileName);
+	libFileName[str.length()] = '\0';
 	strcat( libFileName, DLL_EXT );
 // MAC OSX: 	'@executable_path' ??
 
