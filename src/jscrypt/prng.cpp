@@ -53,7 +53,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_ARGS;
 
 	PrngPrivate *pv = NULL;
-	JLData prngName;
+	jl::BufString prngName;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_CONSTRUCTING();
@@ -115,7 +115,7 @@ DEFINE_FUNCTION( read ) {
 
 	JL_DEFINE_ARGS;
 	
-	jl::AutoBuffer buffer;
+	jl::BufString buffer;
 
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(0,1);
@@ -136,7 +136,7 @@ DEFINE_FUNCTION( read ) {
 	//JL_CHK( pr );
 
 	buffer.alloc(readCount);
-	JL_ASSERT_ALLOC( buffer );
+	JL_ASSERT_ALLOC( buffer.hasData() );
 
 	actualRead = pv->prng.read(buffer.data(), readCount, &pv->state);
 	JL_CHKM( actualRead == readCount, E_DATA, E_CREATE );
@@ -156,9 +156,9 @@ DEFINE_FUNCTION( addEntropy ) {
 
 	JL_DEFINE_ARGS;
 
-	JLData entropy;
+	jl::BufString entropy;
 
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	PrngPrivate *pv;
@@ -168,7 +168,7 @@ DEFINE_FUNCTION( addEntropy ) {
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &entropy) );
 
 	int err;
-	err = pv->prng.add_entropy( (const unsigned char *)entropy.GetConstStr(), (unsigned long)entropy.Length(), &pv->state );
+	err = pv->prng.add_entropy( entropy.toData<const unsigned char *>(), entropy.length(), &pv->state );
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	err = pv->prng.ready(&pv->state);
@@ -222,7 +222,7 @@ DEFINE_PROPERTY_GETTER( state ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	jl::AutoBuffer buffer;
+	jl::BufString buffer;
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -238,7 +238,7 @@ DEFINE_PROPERTY_GETTER( state ) {
 	//JL_CHK( stateData );
 
 	buffer.alloc(size);
-	JL_ASSERT_ALLOC(buffer);
+	JL_ASSERT_ALLOC(buffer.hasData());
 
 	unsigned long stateLength;
 	stateLength = size;
@@ -263,7 +263,7 @@ DEFINE_PROPERTY_SETTER( state ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	JLData state;
+	jl::BufString state;
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -271,10 +271,10 @@ DEFINE_PROPERTY_SETTER( state ) {
 	pv = (PrngPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 	JL_CHK( jl::getValue(cx, JL_RVAL, &state) );
-	JL_CHKM( state.Length() == (size_t)pv->prng.export_size, E_VALUE, E_LENGTH, E_NUM(pv->prng.export_size) );
+	JL_CHKM( state.length() == (size_t)pv->prng.export_size, E_VALUE, E_LENGTH, E_NUM(pv->prng.export_size) );
 
 	int err;
-	err = pv->prng.pimport((const unsigned char *)state.GetConstStr(), (unsigned long)state.Length(), &pv->state);
+	err = pv->prng.pimport(state.toData<const unsigned char *>(), state.length(), &pv->state);
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	return true;

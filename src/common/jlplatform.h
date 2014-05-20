@@ -929,6 +929,9 @@ template<class T> struct Const <const T> { typedef T Type; static const bool isC
 template<class T> struct Const <const T[]> { typedef T Type[]; static const bool isConst = true; };
 template<class T, unsigned int N> struct Const <const T[N]> { typedef T Type[N]; static const bool isConst = true; };
 
+/*
+Pointer
+*/
 template<class T> struct Pointer { typedef T Type; static const bool isPointer = false; };
 template<class T> struct Pointer <T*> { typedef T Type; static const bool isPointer = true; };
 

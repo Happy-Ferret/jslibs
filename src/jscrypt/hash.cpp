@@ -67,7 +67,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_ARGS;
 
 	HashPrivate *pv = NULL;
-	JLData hashName;
+	jl::BufString hashName;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_CONSTRUCTING();
@@ -171,8 +171,8 @@ DEFINE_FUNCTION( write ) {
 
 	JL_DEFINE_ARGS;
 
-	JLData in;
-		JL_ASSERT_THIS_INSTANCE();
+	jl::BufString in;
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
 	HashPrivate *pv;
@@ -184,10 +184,10 @@ DEFINE_FUNCTION( write ) {
 		JL_ASSERT_ARG_IS_STRING(1);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
 
-		unsigned long length = in.Length();
+		unsigned long length = in.length();
 
 		int err;
-		err = pv->descriptor->process(&pv->state, (const unsigned char *)in.GetConstStr(), length); // Process a block of memory though the hash
+		err = pv->descriptor->process(&pv->state, in.toData<const unsigned char *>(), length); // Process a block of memory though the hash
 		if ( err != CRYPT_OK )
 			return ThrowCryptError(cx, err);
 
@@ -218,7 +218,7 @@ DEFINE_FUNCTION( done ) {
 
 	JL_DEFINE_ARGS;
 
-	jl::AutoBuffer buffer;
+	jl::BufString buffer;
 
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
@@ -233,7 +233,7 @@ DEFINE_FUNCTION( done ) {
 	//out = JL_NewBuffer(cx, outLength, JL_RVAL);
 
 	buffer.alloc(pv->descriptor->hashsize);
-	JL_ASSERT_ALLOC(buffer);
+	JL_ASSERT_ALLOC(buffer.hasData());
 	
 	//JL_CHK( out );
 	int err;
@@ -374,9 +374,9 @@ DEFINE_FUNCTION( cipherHash ) {
 
 	JL_DEFINE_ARGS;
 
-	JLData cipherName;
+	jl::BufString cipherName;
 
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &cipherName) );

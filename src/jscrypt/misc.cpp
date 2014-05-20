@@ -37,9 +37,9 @@ DEFINE_FUNCTION( base64Encode ) {
 
 	JL_DEFINE_ARGS;
 
-	JLData in;
+	jl::BufString in;
 
-		JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
 
 //	const char *in;
@@ -48,18 +48,18 @@ DEFINE_FUNCTION( base64Encode ) {
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
 
 	unsigned long outLength;
-	outLength = 4 * (((unsigned long)in.Length() + 2) / 3) +1;
+	outLength = 4 * ((in.length() + 2) / 3) +1;
 	char *out;
 	out = (char *)JS_malloc( cx, outLength +1 );
 	JL_CHK( out );
 	out[outLength] = '\0';
 
 	int err;
-	err = base64_encode( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), (unsigned char *)out, &outLength );
+	err = base64_encode( in.toData<const unsigned char *>(), in.length(), (unsigned char *)out, &outLength );
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	JL_CHK( JLData(out, true, outLength).GetJSString(cx, JL_RVAL) ); // "unable to create the base64 string."
+	JL_CHK( jl::BufString(out, outLength, true).toString(cx, JL_RVAL) ); // "unable to create the base64 string."
 
 	return true;
 	JL_BAD;
@@ -74,8 +74,8 @@ DEFINE_FUNCTION( base64Decode ) {
 
 	JL_DEFINE_ARGS;
 
-	jl::AutoBuffer buffer;
-	JLData in;
+	jl::BufString buffer;
+	jl::BufString in;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
@@ -86,17 +86,17 @@ DEFINE_FUNCTION( base64Decode ) {
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
 
 	unsigned long outLength;
-	outLength = 3 * ((unsigned long)in.Length()-2) / 4 +1; // max outLength
+	outLength = 3 * (in.length()-2) / 4 +1; // max outLength
 	//uint8_t *out;
 	//out = JL_NewBuffer(cx, outLength, JL_RVAL);
 	//JL_CHK( out );
 
 	buffer.alloc(outLength);
-	JL_ASSERT_ALLOC(buffer);
+	JL_ASSERT_ALLOC(buffer.hasData());
 
 
 	int err;
-	err = base64_decode( (const unsigned char *)in.GetConstStr(), (unsigned long)in.Length(), buffer.data(), &outLength );
+	err = base64_decode( in.toData<const unsigned char *>(), in.length(), buffer.data(), &outLength );
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
@@ -122,7 +122,7 @@ DEFINE_FUNCTION( hexEncode ) {
 
 	JL_DEFINE_ARGS;
 
-	JLData data;
+	jl::BufString data;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
@@ -131,8 +131,8 @@ DEFINE_FUNCTION( hexEncode ) {
 	size_t inLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
-	in = data.GetConstStr();
-	inLength = data.Length();
+	in = data.toData<const char *>();
+	inLength = data.length();
 
 	size_t outLength;
 	outLength = inLength * 2;
@@ -149,7 +149,7 @@ DEFINE_FUNCTION( hexEncode ) {
 		out[i*2+1] = hex[ c & 0xF ];
 	}
 
-	JL_CHK( JLData(out, true, outLength).GetJSString(cx, JL_RVAL) ); // "unable to create the hex string."
+	JL_CHK( jl::BufString(out, outLength, true).toString(cx, JL_RVAL) ); // "unable to create the hex string."
 
 	return true;
 	JL_BAD;
@@ -175,8 +175,8 @@ DEFINE_FUNCTION( hexDecode ) {
 
 	JL_DEFINE_ARGS;
 
-	jl::AutoBuffer buffer;
-	JLData data;
+	jl::BufString buffer;
+	jl::BufString data;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
@@ -185,8 +185,8 @@ DEFINE_FUNCTION( hexDecode ) {
 	size_t inLength;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
-	in = data.GetConstStr();
-	inLength = data.Length();
+	in = data.toData<const char *>();
+	inLength = data.length();
 
 	size_t outLength;
 	outLength = inLength / 2;
@@ -195,7 +195,7 @@ DEFINE_FUNCTION( hexDecode ) {
 	//out = JL_NewBuffer(cx, outLength, JL_RVAL);
 	//JL_CHK( out );
 	buffer.alloc(outLength);
-	JL_ASSERT_ALLOC(buffer);
+	JL_ASSERT_ALLOC(buffer.hasData());
 
 	for ( unsigned long i=0; i<outLength; ++i )
 		buffer.data()[i] = unhex[ (unsigned char)in[i*2] ] << 4 | unhex[ (unsigned char)in[i*2+1] ];

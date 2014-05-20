@@ -1112,7 +1112,7 @@ public:
 		_size = size;
 	}
 
-	size_t
+	bool
 	owner() const {
 
 		return _owner;
@@ -1141,11 +1141,11 @@ public:
 
 	template <class T>
 	void
-	set( const T *data, size_t size, bool isOwner = false ) {
+	set( const T *data, size_t size, bool withOwnership = false ) {
 
 		setData(data);
 		_size = size;
-		_owner = isOwner;
+		_owner = withOwnership;
 	}
 
 	void
@@ -1284,9 +1284,9 @@ public:
 
 	template <class T>
 	ALWAYS_INLINE void
-	set( const T *data, size_t size, bool isOwner = false ) {
+	set( const T *data, size_t size, bool withOwnership = false ) {
 
-		BufBase::set(data, size, isOwner);
+		BufBase::set(data, size, withOwnership);
 		setUsed(size);
 	}
 
@@ -1311,6 +1311,7 @@ public:
 		}
 	}
 
+//
 
 	bool
 	stealArrayBuffer( JSContext *cx, JS::HandleObject obj ) {
@@ -1318,9 +1319,9 @@ public:
 		ASSERT( !owner() );
 
 		JL_ASSERT( JS_IsArrayBufferObject(obj), E_TY_ARRAYBUFFER, E_REQUIRED );
-		size_t length = JS_GetArrayBufferByteLength(obj);
+		size_t size = JS_GetArrayBufferByteLength(obj);
 		void *data = JS_StealArrayBufferContents(cx, obj);
-		BufPartial::set(data, length, true);
+		set(data, size, true);
 		JL_CHK( data != nullptr );
 		return true;
 		JL_BAD;
@@ -1337,18 +1338,10 @@ public:
 			rval.setObject(*JS_NewArrayBuffer(cx, 0));
 		} else {
 
-			void *tmp;
-			if ( owner() ) {
-
-				tmp = data();
-				dropOwnership();
-			} else {
-
-				tmp = jl_malloc(used());
-				JL_ASSERT_ALLOC(tmp);
-				jl::memcpy(tmp, data(), used());
-			}
-			rval.setObject(*JS_NewArrayBufferWithContents(cx, used(), tmp));
+			if ( !owner() )
+				owner();
+			rval.setObject(*JS_NewArrayBufferWithContents(cx, used(), data()));
+			dropOwnership();
 		}
 		JL_CHK( !rval.isNull() );
 		return true;
@@ -1363,19 +1356,10 @@ class BufString : public BufPartial {
 	typedef jschar WideChar;
 
 	uint8_t _charSize;
-	bool _nt;
+	bool _nt; // or _tl for terminatorLength 1/0
 
 	void operator =( const BufString & );
 	BufString( const BufString& buf );
-
-	INLINE NEVER_INLINE void
-	check() {
-
-		ASSERT( hasData() );
-
-		ASSERT_IF( nt() && wide(), dataAs<WideChar*>()[length()] == 0 );
-		ASSERT_IF( nt() && !wide(), dataAs<char*>()[length()] == 0 );
-	}
 
 public:
 
@@ -1393,8 +1377,14 @@ public:
 	charSize() const {
 
 		ASSERT( _charSize == sizeof(char) || _charSize == sizeof(WideChar) );
-
 		return _charSize;
+	}
+
+	ALWAYS_INLINE void
+	setCharSize( uint8_t charSize ) {
+
+		ASSERT( charSize == sizeof(char) || charSize == sizeof(WideChar) );
+		_charSize = charSize;
 	}
 
 	ALWAYS_INLINE bool
@@ -1407,6 +1397,12 @@ public:
 	nt() const {
 
 		return _nt;
+	}
+
+	ALWAYS_INLINE void
+	setNt( bool nullTerminated ) {
+
+		_nt = nullTerminated;
 	}
 
 	ALWAYS_INLINE void
@@ -1428,100 +1424,47 @@ public:
 
 	template <class T>
 	ALWAYS_INLINE void
-	set( const T *data, size_t size, bool isOwner = false, uint8_t charSize = 1, bool nt = false ) {
+	set( const T *data, size_t size, bool withOwnership = false, uint8_t charSize = 1, bool nt = false ) {
 
-		BufPartial::set(data, size, isOwner);
+		BufPartial::set(data, size, withOwnership);
 		_charSize = charSize;
 		_nt = nt;
 	}
 
-
+//
 
 	ALWAYS_INLINE
 	BufString() {
 	}
 
-	BufString( const BufBase& buf, bool stealOwnership = false ) {
+	BufString( const BufBase& buf, bool stealOwnership = false )
+	: _charSize(1), _nt(false) {
 
 		if ( stealOwnership )
 			BufPartial::steal(buf);
 		else
 			BufPartial::set(buf);
-
-		_charSize = 1;
-		_nt = false;
 	}
 
-	BufString( const BufPartial& buf, bool stealOwnership = false ) {
+	BufString( const BufPartial& buf, bool stealOwnership = false )
+	: _charSize(1), _nt(false) {
 
 		if ( stealOwnership )
 			BufPartial::steal(buf);
 		else
 			BufPartial::set(buf);
-
-		_charSize = 1;
-		_nt = false;
 	}
-	
+
+	template <class T>
 	ALWAYS_INLINE
-	BufString( const char *str )
-	: _charSize(sizeof(*str)), _nt(true) {
+	BufString( T str, size_t len = UnknownSize, bool nullTerminated = true )
+	: _charSize(sizeof(*str)), _nt(nullTerminated) {
 		
-		BufPartial::set(str, UnknownSize);
+		ASSERT_IF( len == UnknownSize, nullTerminated == true );
+		size_t size = len != UnknownSize ? sizeof(*str) * (len + (nullTerminated ? 1 : 0)) : UnknownSize;
+		BufPartial::set(str, size, !jl::Const<jl::Pointer<T>::Type>::isConst);
 	}
 
-	ALWAYS_INLINE
-	BufString( const char *str, size_t len )
-	: _charSize(sizeof(*str)), _nt(true) {
-		
-		BufPartial::set(str, (len+1) * sizeof(char));
-	}
-
-	ALWAYS_INLINE
-	BufString( const WideChar *str )
-	: _charSize(sizeof(*str)), _nt(true) {
-		
-		BufPartial::set(str, UnknownSize);
-	}
-
-	ALWAYS_INLINE
-	BufString( const WideChar *str, size_t len )
-	: _charSize(sizeof(*str)), _nt(true) {
-		
-		BufPartial::set(str, (len+1) * sizeof(WideChar));
-	}
-
-//
-
-	ALWAYS_INLINE
-	BufString( char *str )
-	: _charSize(sizeof(*str)), _nt(true) {
-		
-		BufPartial::set(str, UnknownSize, true);
-	}
-
-	ALWAYS_INLINE
-	BufString( char *str, size_t len )
-	: _charSize(sizeof(*str)), _nt(true) {
-		
-		BufPartial::set(str, (len+1) * sizeof(char), true);
-	}
-
-	ALWAYS_INLINE
-	BufString( WideChar *str )
-	: _charSize(sizeof(*str)), _nt(true) {
-		
-		BufPartial::set(str, UnknownSize, true);
-	}
-
-	ALWAYS_INLINE
-	BufString( WideChar *str, size_t len )
-	: _charSize(sizeof(*str)), _nt(true) {
-		
-		BufPartial::set(str, (len+1) * sizeof(WideChar), true);
-	}
-
-//
 
 	ALWAYS_INLINE
 	BufString( JSContext *cx, JS::HandleString str )
@@ -1589,6 +1532,8 @@ public:
 		return wide() ? dataAs<WideChar*>()[index] : dataAs<char*>()[index];
 	}
 
+//
+
 	ALWAYS_INLINE void
 	copyTo( WideChar *dst ) const {
 
@@ -1631,54 +1576,63 @@ public:
 
 //
 
-
 	template<class T, bool nullTerminated>
 	T
 	to() {
 
 		typedef Pointer<T>::Type Base;
 		typedef Const<Base>::Type MutableBase;
-		bool asConst = Const<Base>::isConst;
+		const bool asConst = Const<Base>::isConst;
 
 		ASSERT( hasData() );
 
 		size_t len = length();
 
-		ASSERT_IF( nt() && wide(), dataAs<WideChar*>()[length()] == 0 );
-		ASSERT_IF( nt() && !wide(), dataAs<char*>()[length()] == 0 );
-		ASSERT_IF( owner(), jl_msize(data()) >= used() );
+		ASSERT_IF( owner(), jl_msize(data()) >= size() );
+		ASSERT_IF( wide(), used() % 2 == 0 );
+		ASSERT_IF( nt() && wide(), dataAs<WideChar*>()[len] == Base(0) );
+		ASSERT_IF( nt() && !wide(), dataAs<char*>()[len] == Base(0) );
 
 		if ( len == 0 )
 			return nullptr;
 
+		// is there something to do ?
 		if ( sizeof(Base) != charSize() || (!asConst && !owner()) || (nullTerminated && !nt()) ) {
-			
-			BufBase dst(*this);
-			size_t requiredSize = (len + (nullTerminated ? 1 : 0)) * sizeof(Base);
 
+			const size_t requiredSize = (len + (nullTerminated ? 1 : 0)) * sizeof(Base);
+
+			BufBase dst(*this);
+
+			// two reasons to allocate
 			if ( size() < requiredSize || !owner() ) {
 
-				if ( sizeof(Base) != charSize() )
+				if ( sizeof(Base) != charSize() ) {
+
 					dst.alloc(requiredSize);
-				else
-					dst.realloc(requiredSize); // no copy required
+				} else {
+
+					realloc(requiredSize);
+					dst.set(*this); // sync
+				}
 			}
 
-			if ( sizeof(Base) != charSize() ) {
+			if ( charSize() == sizeof(Base) )
+				;// nothing
+			else
+			if ( charSize() == sizeof(char) )
+				reinterpretBuffer<MutableBase, char>(dst.data(), data(), len);
+			else
+			if ( charSize() == sizeof(WideChar) )
+				reinterpretBuffer<MutableBase, WideChar>(dst.data(), data(), len);
 
-				if ( charSize() == sizeof(char) )
-					reinterpretBuffer<MutableBase, char>(dst.data(), data(), len);
-				else
-				if ( charSize() == sizeof(WideChar) )
-					reinterpretBuffer<MutableBase, WideChar>(dst.data(), data(), len);
-			}
-			
 			if ( nullTerminated )
-				dst.dataAs<MutableBase*>()[len] = 0;
+				dst.dataAs<MutableBase*>()[len] = Base(0);
 
-			BufPartial::steal(dst);
-			_charSize = sizeof(Base);
-			_nt = nullTerminated;
+			if ( !is(dst) )
+				BufPartial::steal(dst);
+
+			setCharSize(sizeof(Base));
+			setNt(nullTerminated);
 		}
 
 		if ( !asConst )
@@ -1707,6 +1661,13 @@ public:
 
 	template<class T>
 	ALWAYS_INLINE T
+	toDataOrNull() {
+
+		return hasData() ? toData<T>() : nullptr;
+	}
+
+	template<class T>
+	ALWAYS_INLINE T
 	toStringOrNull() {
 
 		return hasData() ? toStringZ<T>() : nullptr;
@@ -1731,7 +1692,7 @@ public:
 		if ( len == 0 )
 			rval.set(JL_GetEmptyStringValue(cx));
 		else
-			rval.setString(JS_NewUCString(cx, toData<jschar*>(), len));
+			rval.setString(JS_NewUCString(cx, toStringZ<jschar*>(), len));
 		return true;
 		JL_BAD;
 	}
@@ -2809,7 +2770,7 @@ getValue( JSContext *cx, JS::HandleValue val, OUT jl::BufString* data ) {
 	if ( val.isString() ) { // for string literals
 
 		JS::RootedString tmp(cx, val.toString());
-		data->set(jl::BufString(cx, tmp));
+		data->set(cx, tmp);
 		return true;
 	}
 	return pv::getValue_slow(cx, val, data);
@@ -4355,7 +4316,7 @@ JL_BEGIN_NAMESPACE
 
 ////
 
-
+/*
 class BufferBase : public jl::CppAllocators {
 public:
 	typedef uint8_t* DataType;
@@ -4407,7 +4368,7 @@ public:
 		_size = size;
 	}
 };
-
+*/
 
 
 /*

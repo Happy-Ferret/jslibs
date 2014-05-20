@@ -523,13 +523,13 @@ DEFINE_FUNCTION( warning ) {
 
 	JL_DEFINE_ARGS;
 
-	JLData str;
+	jl::BufString str;
 	JL_ASSERT_ARGC(1);
 
 //	const char *message;
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-	JL_CHK( JS_ReportWarning(cx, "%s", str.GetConstStrZ()) );
+	JL_CHK( JS_ReportWarning(cx, "%s", str.toStringZ<const char *>()) );
 	
 	JL_RVAL.setUndefined();
 	return true;
@@ -566,13 +566,13 @@ DEFINE_FUNCTION( assert ) {
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &assert) );
 	if ( !assert ) {
 
-		JLData str;
+		jl::BufString str;
 		if ( JL_ARG_ISDEF(2) )
 			JL_CHK( jl::getValue(cx, JL_ARG(2), &str) );
 		else
-			str = JLData("Assertion failed.", true);
+			str.set("Assertion failed.");
 		
-		JS_ReportError( cx, "%s", str.GetConstStrZ());
+		JS_ReportError( cx, "%s", str.toStringZ<const char *>());
 		return false;
 	}
 
@@ -699,7 +699,7 @@ DEFINE_FUNCTION( stringRepeat ) {
 
 	JL_DEFINE_ARGS;
 
-	JLData str;
+	jl::BufString str;
 
 	JL_ASSERT_ARGC(2);
 
@@ -718,7 +718,7 @@ DEFINE_FUNCTION( stringRepeat ) {
 
 	size_t len;
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-	len = str.Length();
+	len = str.length();
 
 	if ( len == 0 ) {
 
@@ -735,7 +735,7 @@ DEFINE_FUNCTION( stringRepeat ) {
 	newBuf[newLen] = 0;
 	
 	const jschar *buf;
-	buf = str.GetConstWStr();
+	buf = str.toStringZ<const jschar *>();
 
 	jschar *tmp;
 	tmp = newBuf;
@@ -819,10 +819,10 @@ DEFINE_FUNCTION( exec ) {
 
 	JL_DEFINE_ARGS;
 
-	JLData fileName;
+	jl::BufString fileName;
 //	JSObject *scriptObjRoot;
 	
-		JL_ASSERT_ARGC_RANGE(1, 2);
+	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	bool useAndSaveCompiledScripts;
 	useAndSaveCompiledScripts = !JL_ARG_ISDEF(2) || JL_ARG(2).isTrue();
@@ -1315,14 +1315,14 @@ DEFINE_FUNCTION( isStatementValid ) {
 
 	JL_DEFINE_ARGS;
 
-	JLData str;
-		JL_ASSERT_ARGC(1);
+	jl::BufString str;
+	JL_ASSERT_ARGC(1);
 
 	//const char *buffer;
 	//size_t length;
 	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) );
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-	JL_CHK( jl::setValue(cx, JL_RVAL, JS_BufferIsCompilableUnit(cx, JL_OBJ, str.GetConstStr(), str.Length())) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, JS_BufferIsCompilableUnit(cx, JL_OBJ, str, str.length())) );
 	return true;
 	JL_BAD;
 }
@@ -1839,9 +1839,7 @@ DEFINE_FUNCTION( jsstdTest ) {
 	JL_IGNORE(vp, argc, cx);
 
 
-
-
-	void *test = &ModuleInit;
+//	void *test = &ModuleInit;
 
 
 /*

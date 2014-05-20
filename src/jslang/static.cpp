@@ -1086,6 +1086,11 @@ DEFINE_FUNCTION( jslangTest ) {
 		b.alloc(100);
 	}
 
+	{
+		jl::BufString a( "test" );
+
+	}
+
 
 	{
 		jl::BufString str;
@@ -1108,10 +1113,30 @@ DEFINE_FUNCTION( jslangTest ) {
 	}
 
 	{
+		void *tmp1, *tmp2;
 		jl::BufString str("test", 4);
 		str.to<const jschar *, false>();
 		str.to<const char *, true>();
-		str.to<jschar *, true>();
+		tmp1 = str.to<jschar *, true>();
+
+		str.to<const jschar *, true>();
+		str.to<const char *, true>();
+		tmp2 = str.to<char *, true>();
+
+		jl_free(tmp1);
+		jl_free(tmp2);
+	}
+
+	{
+		jl::BufString str;
+		str.set("Assertion failed.");
+		str.length();
+	}
+
+	{
+		jl::BufString str;
+		str.set("\xff abcdefg");
+		const unsigned char *tmp = str.toData<const unsigned char *>();
 	}
 
 	{
@@ -1146,15 +1171,13 @@ DEFINE_FUNCTION( jslangTest ) {
 		jl_free( str.toStringZ<jschar *>() );
 	}
 
-
-
-
-
-
-	
 	{
 		jl::BufString ab;
 		ab.alloc(2);
+
+		ab.setUsed(2);
+		ab.setNt(false);
+		ab.setCharSize(2);
 		((uint8_t*)ab.data())[0] = 1;
 		((uint8_t*)ab.data())[1] = 2;
 		ab.toString(cx, JL_RVAL);
