@@ -276,7 +276,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getEnv ) {
 
-	JLData name;
+	jl::BufString name;
 	
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
@@ -337,7 +337,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getRandomNoise ) {
 
-	jl::AutoBuffer buffer;
+	jl::BufPartial buffer;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -350,7 +350,7 @@ DEFINE_FUNCTION( getRandomNoise ) {
 	//JL_CHK( buf );
 
 	buffer.alloc(amount);
-	JL_ASSERT_ALLOC( buffer );
+	JL_ASSERT_ALLOC( buffer.hasData() );
 
 	PRSize res;
 	res = PR_GetRandomNoise(buffer.data(), amount);
@@ -404,7 +404,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( waitSemaphore ) {
 
-	JLData name;
+	jl::BufString name;
 	
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -461,7 +461,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( postSemaphore ) {
 
-	JLData name;
+	jl::BufString name;
 	
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -624,7 +624,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( availableSpace ) {
 
-	JLData path;
+	jl::BufString path;
 	
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -995,7 +995,7 @@ DEFINE_PROPERTY_SETTER( currentDirectory ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	JLData dir;
+	jl::BufString dir;
 	JL_CHK( jl::getValue(cx, vp, &dir ) );
 #ifdef WIN
 //	_chdir(dir);

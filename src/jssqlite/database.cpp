@@ -103,7 +103,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
-	jl::AutoBuffer buffer;
+	jl::BufPartial buffer;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
@@ -148,7 +148,7 @@ DEFINE_FUNCTION( read ) {
 	//JL_CHK( buffer );
 
 	buffer.alloc(amount);
-	JL_ASSERT_ALLOC(buffer);
+	JL_ASSERT_ALLOC(buffer.hasData());
 
 	int st = sqlite3_blob_read(pv->pBlob, buffer.data(), amount, pv->position);
 	if ( st != SQLITE_OK )
@@ -167,7 +167,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( write ) {
 
-	JLData data;
+	jl::BufString data;
 
 	JL_DEFINE_ARGS;
 		JL_ASSERT_THIS_INSTANCE();
@@ -182,11 +182,11 @@ DEFINE_FUNCTION( write ) {
 	// doc: Use the UPDATE SQL command to change the size of a blob.
 	// see sqlite3_bind_zeroblob() and sqlite3_result_zeroblob()
 
-	int st = sqlite3_blob_write(pv->pBlob, data.GetConstStr(), data.Length(), pv->position);
+	int st = sqlite3_blob_write(pv->pBlob, data.toData<const uint8_t*>(), data.length(), pv->position);
 	if ( st != SQLITE_OK )
 		JL_CHK( SqliteThrowErrorStatus(cx, st) );
 
-	pv->position += data.Length();
+	pv->position += data.length();
 
 	return true;
 	JL_BAD;
@@ -301,7 +301,7 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	DatabasePrivate *pv = NULL;
-	JLData fileName;
+	jl::BufString fileName;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_CONSTRUCTING();
@@ -322,7 +322,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(1) )
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &fileName) );
 	else
-		fileName = JLData(":memory:", true);
+		fileName.set(":memory:");
 
 	pv = (DatabasePrivate*)JS_malloc(cx, sizeof(DatabasePrivate));
 	JL_CHK(pv);
@@ -482,7 +482,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( openBlobStream ) {
 
-	JLData tableName, columnName;
+	jl::BufString tableName, columnName;
 	sqlite3_int64 rowid;
 	int flags;
 	BlobStream::Private *blobStreamPv = NULL;
@@ -593,7 +593,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( query ) {
 
-	JLData sql;
+	jl::BufString sql;
 	JL_DEFINE_ARGS;
 		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
@@ -610,9 +610,9 @@ DEFINE_FUNCTION( query ) {
 	// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 
 	const char *sqlStr;
-	sqlStr = sql.GetConstStr();
+	sqlStr = sql.toData<const char *>();
 	size_t sqlLen;
-	sqlLen = sql.Length();
+	sqlLen = sql.length();
 
 	if ( sqlite3_prepare_v2(pv->db, sqlStr, sqlLen, &pStmt, &szTail) != SQLITE_OK )
 		JL_CHK( SqliteThrowError(cx, pv->db) );
@@ -669,13 +669,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( exec ) {
 
-	JLData sql;
+	jl::BufString sql;
 
 	sqlite3_stmt *pStmt = NULL;
 	// see sqlite3_exec()
 	
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	DatabasePrivate *pv;
@@ -692,9 +692,9 @@ DEFINE_FUNCTION( exec ) {
 	// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 
 	const char *sqlStr;
-	sqlStr = sql.GetConstStr();
+	sqlStr = sql.toData<const char *>();
 	size_t sqlLen;
-	sqlLen = sql.Length();
+	sqlLen = sql.length();
 
 	if ( sqlite3_prepare_v2( pv->db, sqlStr, sqlLen, &pStmt, &szTail ) != SQLITE_OK )
 		JL_CHK( SqliteThrowError(cx, pv->db) );
@@ -899,9 +899,9 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 				//const char *data;
 				//size_t length;
 				//JL_CHKB( JL_JsvalToStringAndLength(cx, &rval, &data, &length), bad_unroot );
-				JLData data;
+				jl::BufString data;
 				JL_CHK( jl::getValue(cx, rval, &data) );
-				sqlite3_result_blob(sCx, data.GetConstStr(), data.Length(), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+				sqlite3_result_blob(sCx, data.toData<const uint8_t*>(), data.length(), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 				break;
 			}
 			// else:
@@ -912,9 +912,9 @@ void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArg
 //			size_t len;
 //			JL_CHKB( JL_JsvalToStringAndLength(cx, &rval, &str, &len), bad_unroot );
 
-			JLData str;
+			jl::BufString str;
 			JL_CHK( jl::getValue(cx, rval, &str) );
-			sqlite3_result_text(sCx, str.GetConstStr(), str.Length(), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
+			sqlite3_result_text(sCx, str.toData<const char*>(), str.length(), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
 			break;
 		}
 		default:

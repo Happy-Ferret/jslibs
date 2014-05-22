@@ -920,20 +920,71 @@ template <typename Target, typename Source> static inline bool isInBounds(Source
     return pv::BoundsCheckElider<Target, Source>::inBounds(value);
 }
 
+//mozilla::IsUnsigned
+
+/*
+Unsigned
+*/
+//template<class T> struct Unsigned { typedef T Type; static const bool isUnsigned = false; };
+//template<class T> struct Unsigned <unsigned T> { typedef T Type; static const bool isUnsigned = true; };
 
 /*
 Const
 */
+/*
 template<class T> struct Const { typedef T Type; static const bool isConst = false; };
 template<class T> struct Const <const T> { typedef T Type; static const bool isConst = true; };
 template<class T> struct Const <const T[]> { typedef T Type[]; static const bool isConst = true; };
 template<class T, unsigned int N> struct Const <const T[N]> { typedef T Type[N]; static const bool isConst = true; };
+*/
 
 /*
 Pointer
 */
+/*
 template<class T> struct Pointer { typedef T Type; static const bool isPointer = false; };
 template<class T> struct Pointer <T*> { typedef T Type; static const bool isPointer = true; };
+*/
+
+
+#define IsUnsigned(T) \
+	mozilla::IsUnsigned<T>::value
+
+#define RemoveUnsigned(T) \
+	mozilla::RemoveUnsigned<T>::Type
+
+//
+/*
+template<typename T> struct AddConst { typedef const T Type; };
+template<typename T> struct AddConst <const T> { typedef const T Type; };
+*/
+
+template<class T>
+const T *
+constPtr( T *v ) {
+	
+	return v;
+}
+
+
+#define IsConst(T) \
+	mozilla::IsConst<T>::value
+
+#define RemoveConst(T) \
+	mozilla::RemoveConst<T>::Type
+
+
+//
+
+template<class T> struct RemovePointer { typedef T Type; };
+template<class T> struct RemovePointer <T*> { typedef T Type; };
+
+#define IsPointer(T) \
+	mozilla::IsPointer<T>::value
+
+#define RemovePointer(T) \
+	jl::RemovePointer<T>::Type
+
 
 
 

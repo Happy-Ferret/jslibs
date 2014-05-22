@@ -81,7 +81,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( write ) {
 
-	JLData str;
+	jl::BufString str;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);

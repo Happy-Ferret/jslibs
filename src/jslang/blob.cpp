@@ -60,7 +60,7 @@ DEFINE_PROPERTY_GETTER( arrayBuffer ) {
 	if ( !JL_RVAL.isUndefined() ) {
 
 		ASSERT( JL_RVAL.isInt32() );
-		jl::BufPartial(jl::BufBase(JL_GetPrivate(JL_OBJ), JL_RVAL.toInt32(), true)).toArrayBuffer(cx, JL_RVAL);
+		jl::BufPartial(JL_GetPrivate(JL_OBJ), JL_RVAL.toInt32()).toArrayBuffer(cx, JL_RVAL);
 		JL_CHK( invalidateBlob(cx, JL_OBJ) );
 	}
 	return true;

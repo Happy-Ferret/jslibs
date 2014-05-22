@@ -76,11 +76,12 @@ DEFINE_CONSTRUCTOR() {
 
 		int width, height, channels;
 		ImageDataType dataType;
-		JLData data = JL_GetImageObject(cx, iconVal, &width, &height, &channels, &dataType); // source
-		JL_ASSERT( data.IsSet(), E_ARG, E_NUM(1), E_INVALID );
+		jl::BufString data(JL_GetImageObject(cx, iconVal, &width, &height, &channels, &dataType), true); // source
+		JL_ASSERT( data.hasData(), E_ARG, E_NUM(1), E_INVALID );
 		JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 
-		unsigned char *imageData = (unsigned char*)data.GetConstStr();
+		//unsigned char *imageData = (unsigned char*)data.GetConstStr();
+		const uint8_t *imageData = data.toData<const uint8_t*>();
 
 		// http://groups.google.com/group/microsoft.public.win32.programmer.gdi/browse_frm/thread/adaf38d715cef81/3825af9edde28cdc?lnk=st&q=RGB+CreateIcon&rnum=9&hl=en#3825af9edde28cdc
 		HDC screenDC = GetDC(NULL); // doc: If this value is NULL, GetDC retrieves the DC for the entire screen.
@@ -95,7 +96,7 @@ DEFINE_CONSTRUCTOR() {
 		for ( x = 0; x < width; x++ )
 			for ( y = 0; y < width; y++ ) {
 
-				unsigned char *offset = imageData + channels*(x + y * width);
+				const uint8_t *offset = imageData + channels*(x + y * width);
 				SetPixel(colorDC, x,y, RGB(offset[0],offset[1],offset[2]) );
 				if ( channels == 4 ) // image has alpha channel ?
 					SetPixel(maskDC, x,y, RGB( 255-offset[3], 255-offset[3], 255-offset[3] ) );

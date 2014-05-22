@@ -174,7 +174,7 @@ DEFINE_FUNCTION( bind ) {
 
 	if ( JL_ARG_ISDEF(2) ) { // if we have a second argument and this argument is not undefined
 
-		JLData host;
+		jl::BufString host;
 		JL_CHK( jl::getValue(cx, JL_ARG(2), &host) );
 
 		if ( PR_StringToNetAddr(host, &addr) != PR_SUCCESS )
@@ -323,10 +323,10 @@ $TOC_MEMBER $INAME
 //	descriptor writeable.
 DEFINE_FUNCTION( connect ) {
 
-	JLData host;
+	jl::BufString host;
 	
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(2);
 
 	PRFileDesc *fd;
@@ -394,7 +394,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( sendTo ) {
 
-	JLData host, str;
+	jl::BufString host, str;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
@@ -443,10 +443,10 @@ DEFINE_FUNCTION( sendTo ) {
 //	size_t len;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(3), &str, &len) );
 	JL_CHK( jl::getValue(cx, JL_ARG(3), &str) );
-	ASSERT( str.Length() <= PR_INT32_MAX );
+	ASSERT( str.length() <= PR_INT32_MAX );
 
 	PRInt32 res;
-	res = PR_SendTo(fd, str.GetConstStr(), (PRInt32)str.Length(), 0, &addr, PR_INTERVAL_NO_TIMEOUT );
+	res = PR_SendTo(fd, str.toData<const uint8_t*>(), (PRInt32)str.length(), 0, &addr, PR_INTERVAL_NO_TIMEOUT );
 
 	size_t sentAmount;
 	if ( res == -1 ) {
@@ -459,23 +459,23 @@ DEFINE_FUNCTION( sendTo ) {
 		sentAmount = res;
 
 
-	if ( sentAmount < str.Length() ) { // return unsent data
+	if ( sentAmount < str.length() ) { // return unsent data
 
-		//JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
-		//JL_CHK( BlobCreateCopy(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
+		//JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.length() - sentAmount, JL_RVAL) );
+		//JL_CHK( BlobCreateCopy(cx, str.GetConstStr() + sentAmount, str.length() - sentAmount, JL_RVAL) );
 
-		//JLData data(str.GetConstStr() + sentAmount, str.Length() - sentAmount);
+		//JLData data(str.GetConstStr() + sentAmount, str.length() - sentAmount);
 
 		if ( JL_ARG(3).isString() ) {
 			
 			JS::RootedString tmp(cx, JL_ARG(3).toString());
-			JL_RVAL.setString(JS_NewDependentString(cx, tmp, sentAmount, str.Length() - sentAmount));
+			JL_RVAL.setString(JS_NewDependentString(cx, tmp, sentAmount, str.length() - sentAmount));
 		} else {
 			
-			size_t length = str.Length() - sentAmount;
+			size_t length = str.length() - sentAmount;
 			void *data = jl_malloc(length);
 			JL_ASSERT_ALLOC(data);
-			jl::memcpy(data, str.GetConstStr() + sentAmount, length);
+			jl::memcpy(data, str.toData<const uint8_t*>() + sentAmount, length);
 			JL_RVAL.setObject(*JS_NewArrayBufferWithContents(cx, length, data));
 		}
 
@@ -487,7 +487,7 @@ DEFINE_FUNCTION( sendTo ) {
 			JL_RVAL.set(JL_ARG(3));
 		} else {
 
-			JL_CHK( str.GetArrayBuffer(cx, JL_RVAL) );
+			JL_CHK( str.toArrayBuffer(cx, JL_RVAL) );
 		}
 	} else { // nothing remains
 
@@ -516,7 +516,7 @@ DEFINE_FUNCTION( recvFrom ) {
 	JL_IGNORE( argc );
 
 	//uint8_t *buffer = NULL;
-	jl::AutoBuffer buffer;
+	jl::BufPartial buffer;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
@@ -544,11 +544,11 @@ DEFINE_FUNCTION( recvFrom ) {
 	//buffer = JL_DataBufferAlloc(cx, (size_t)available); // (TBD) optimize this if  available == 0 !!
 	//JL_CHKM( jl::isInBounds<size_t>(available), E_FILE, E_TOOBIG );
 	buffer.alloc((size_t)available);
-	JL_ASSERT_ALLOC( buffer );
+	JL_ASSERT_ALLOC( buffer.hasData() );
 
 	PRNetAddr addr;
 	PRInt32 res;
-	res = PR_RecvFrom(fd, buffer.data(), (PRInt32)buffer.getSize(), 0, &addr, PR_INTERVAL_NO_TIMEOUT);
+	res = PR_RecvFrom(fd, buffer.data(), (PRInt32)buffer.size(), 0, &addr, PR_INTERVAL_NO_TIMEOUT);
 	JL_CHKB( res != -1, bad_ex );
 
 	char peerName[47]; // If addr is an IPv4 address, size needs to be at least 16. If addr is an IPv6 address, size needs to be at least 46.
@@ -574,7 +574,7 @@ DEFINE_FUNCTION( recvFrom ) {
 
 		// (TBD) maybeRealloc ?
 		//JL_CHK( JL_NewBufferGetOwnership(cx, buffer, res, &tmp) );
-		buffer.setSize(res);
+		buffer.setUsed(res);
 		JL_CHK( BlobCreate(cx, buffer, &tmp) );
 		JL_CHK( JL_SetElement(cx, arrayObject, 0, tmp) );
 		return true;
@@ -617,10 +617,10 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( transmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
-	JLData headers;
+	jl::BufString headers;
 	
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(1,3);
 
 	PRFileDesc *socketFd;
@@ -665,14 +665,14 @@ DEFINE_FUNCTION( transmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
 //		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(3), &headers, &headerLength) );
 		JL_CHK( jl::getValue(cx, JL_ARG(3), &headers) );
-		ASSERT( headers.Length() <= PR_INT32_MAX );
+		ASSERT( headers.length() <= PR_INT32_MAX );
 	}
 
 	PRIntervalTime timeout;
 	JL_CHK( GetTimeoutInterval(cx, JL_OBJ, &timeout) );
 
 	PRInt32 bytes;
-	bytes = PR_TransmitFile(socketFd, fileFd, headers.GetStrConstOrNull(), (PRInt32)headers.LengthOrZero(), flag, timeout);
+	bytes = PR_TransmitFile(socketFd, fileFd, headers.toDataOrNull<const uint8_t*>(), (PRInt32)headers.lengthOrZero(), flag, timeout);
 	if ( bytes == -1 )
 		return ThrowIoError(cx);
 
@@ -1092,7 +1092,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getHostsByName ) {
 
-	JLData host;
+	jl::BufString host;
 	
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -1168,7 +1168,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( getHostsByAddr ) {
 
 	JS::RootedValue tmp(cx);
-	JLData addr;
+	jl::BufString addr;
 	
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC( 1 );

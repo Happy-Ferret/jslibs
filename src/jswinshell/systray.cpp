@@ -559,7 +559,7 @@ bool ProcessSystrayMessage( JSContext *cx, JS::HandleObject obj, const MSGInfo *
 			JL_CHK( jl::getProperty(cx, obj, "onchar", &functionVal) );
 			if ( jl::isCallable(cx, functionVal) ) {
 
-				wchar_t c = wParam;
+				wchar_t c = wParam & 0xffff;
 				JL_CHK( jl::call(cx, obj, functionVal, rval, jl::strSpec(&c,1)) );
 			}
 			break;
@@ -853,7 +853,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 			size_t length = ida.length();
 			for ( size_t j = 0; j < length; ++j ) {
 
-				JLData keyStr;
+				jl::BufString keyStr;
 				JS::RootedId itemId(cx, ida[j]);
 
 				JL_CHK( JS_IdToValue(cx, itemId, &key) );
@@ -945,7 +945,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 		}
 
 
-		JLData newItemStr;
+		jl::BufString newItemStr;
 		LPCTSTR lpNewItem;
 		UINT_PTR uIDNewItem;
 
@@ -967,7 +967,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 
 				JL_CHK( jl::getValue(cx, label, &newItemStr) );
 				
-				lpNewItem = newItemStr.GetConstStrZ();
+				lpNewItem = newItemStr.toStringZ<const char*>();
 				uFlags |= MF_STRING;
 			} else {
 
@@ -1109,31 +1109,36 @@ DEFINE_FUNCTION( popupBalloon ) {
 		JL_CHK( jl::getProperty(cx, infoObj, "infoTitle", JL_RVAL) );
 		if ( !JL_RVAL.isUndefined() ) {
 
-			JLData infoTitle;
+			jl::BufString infoTitle;
 			JL_CHK( jl::getValue(cx, JL_RVAL, &infoTitle) );
 
-			size_t len = jl::min(sizeof(pv->nid.szInfo)-1, infoTitle.Length());
-			jl::memcpy( pv->nid.szInfoTitle, infoTitle.GetConstStr(), jl::min(sizeof(pv->nid.szInfoTitle)-1, infoTitle.Length()) );
-			pv->nid.szInfoTitle[len] = '\0';
+			//size_t len = jl::min(sizeof(pv->nid.szInfo)-1, infoTitle.length());
+			//jl::memcpy( pv->nid.szInfoTitle, infoTitle.toData<const char*>(), jl::min(sizeof(pv->nid.szInfoTitle)-1, infoTitle.length()) );
+
+			size_t copiedLength;
+			copiedLength = infoTitle.copyTo(pv->nid.szInfoTitle, sizeof(pv->nid.szInfoTitle)-1);
+			pv->nid.szInfoTitle[copiedLength] = 0;
 		}
 
 		JL_CHK( jl::getProperty(cx, infoObj, "info", JL_RVAL) );
 		if ( !JL_RVAL.isUndefined() ) {
 
-			JLData infoStr;
+			jl::BufString infoStr;
 			JL_CHK( jl::getValue(cx, JL_RVAL, &infoStr) );
-			size_t len = jl::min(sizeof(pv->nid.szInfo)-1, infoStr.Length());
+			//size_t len = jl::min(sizeof(pv->nid.szInfo)-1, infoStr.length());
+			//JL_IGNORE(len);
+			//jl::memcpy( pv->nid.szInfo, infoStr.toData<const char*>(), infoStr.length() );
+			//JL_ASSERT( infoStr.length() < sizeof(pv->nid.szInfo), E_
 
-			JL_IGNORE(len);
-
-			jl::memcpy( pv->nid.szInfo, infoStr.GetConstStr(), infoStr.Length() );
-			pv->nid.szInfo[infoStr.Length()] = '\0';
+			size_t copiedLength;
+			copiedLength = infoStr.copyTo(pv->nid.szInfo, sizeof(pv->nid.szInfo)-1);
+			pv->nid.szInfo[copiedLength] = 0;
 		}
 
 		JL_CHK( jl::getProperty(cx, infoObj, "icon", JL_RVAL) );
 		if ( !JL_RVAL.isUndefined() ) {
 
-			JLData iconNameStr;
+			jl::BufString iconNameStr;
 			JL_CHK( jl::getValue(cx, JL_RVAL, &iconNameStr) );
 			
 			if ( strcmp(iconNameStr, "info") == 0 )
@@ -1330,16 +1335,20 @@ DEFINE_PROPERTY_SETTER( text ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	JLData tipText;
+	jl::BufString tipText;
 
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_CHK( jl::getValue(cx, vp, &tipText) );
-	size_t len = jl::min(sizeof(pv->nid.szTip)-1, tipText.Length());
-	jl::memcpy(pv->nid.szTip, tipText.GetConstStr(), tipText.Length());
-	pv->nid.szTip[len] = '\0';
+
+	//size_t len = jl::min(sizeof(pv->nid.szTip)-1, tipText.length());
+	//jl::memcpy(pv->nid.szTip, tipText.GetConstStr(), tipText.length());
+	
+	size_t copiedLength;
+	copiedLength = tipText.copyTo(pv->nid.szTip, sizeof(pv->nid.szTip)-1);
+	pv->nid.szTip[copiedLength] = 0;
 
 	pv->nid.uFlags |= NIF_TIP;
 

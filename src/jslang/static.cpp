@@ -1082,6 +1082,11 @@ DEFINE_FUNCTION( jslangTest ) {
 	}
 
 	{
+		const char test[1] = {0};
+		jl::BufPartial(jl::constPtr(test), 1);
+	}
+
+	{
 		jl::BufBase b;
 		b.alloc(100);
 	}
@@ -1095,7 +1100,7 @@ DEFINE_FUNCTION( jslangTest ) {
 	{
 		jl::BufString str;
 		str.lengthOrZero();
-		str.toStringOrNull<char*>();
+		str.toStringZOrNull<char*>();
 	}
 
 	{
@@ -1113,8 +1118,10 @@ DEFINE_FUNCTION( jslangTest ) {
 	}
 
 	{
+
+
 		void *tmp1, *tmp2;
-		jl::BufString str("test", 4);
+		jl::BufString str("test");
 		str.to<const jschar *, false>();
 		str.to<const char *, true>();
 		tmp1 = str.to<jschar *, true>();
@@ -1129,15 +1136,24 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	{
 		jl::BufString str;
-		str.set("Assertion failed.");
+		str.get("Assertion failed.");
 		str.length();
 	}
 
 	{
 		jl::BufString str;
-		str.set("\xff abcdefg");
+		str.get("\xff abcdefg");
 		const unsigned char *tmp = str.toData<const unsigned char *>();
 	}
+
+	{
+		const jl::BufString str("test");
+
+		bool test = IsConst(const jl::BufString);
+		ASSERT(test);
+	}
+
+
 
 	{
 		jl::BufString str("test");

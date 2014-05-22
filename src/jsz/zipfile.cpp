@@ -97,13 +97,13 @@ bool PrepareReadCurrentFile( JSContext *cx, JS::HandleObject obj ) {
 
 	if ( pfile_info.flag & 1 ) { // has password
 
-		JLData password;
+		jl::BufString password;
 		JS::RootedValue tmp(cx);
 
 		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTPASSWORD, &tmp) );
 		if ( !tmp.isUndefined() )
 			JL_CHK( jl::getValue(cx, tmp, &password) );
-		if ( !password.IsSet() )
+		if ( !password.hasData() )
 			return ThrowZipFileError(cx, JLERR_PASSWORDREQUIRED);
 		UNZ_CHK( unzOpenCurrentFilePassword(pv->uf, password) );
 	} else {
@@ -241,7 +241,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( open ) {
 
 	int mode;
-	JLData filename;
+	jl::BufString filename;
 
 	JL_DEFINE_ARGS;
 
@@ -302,12 +302,12 @@ DEFINE_FUNCTION( close ) {
 	if ( pv->zf ) {
 
 		ASSERT( !pv->uf );
-		JLData comment;
+		jl::BufString comment;
 		JS::RootedValue tmp(cx);
 		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_GLOBALCOMMENT, &tmp) );
 		if ( !tmp.isUndefined() )
 			JL_CHK( jl::getValue(cx, tmp, &comment) );
-		ZIP_CHK( zipClose(pv->zf, comment.GetConstStrZOrNULL()) );
+		ZIP_CHK( zipClose(pv->zf, comment) );
 	}
 
 	// handle reusability
@@ -358,7 +358,7 @@ DEFINE_FUNCTION( select ) {
 
 	if ( pv->uf ) {
 
-		JLData inZipFilename;
+		jl::BufString inZipFilename;
 
 		if ( pv->inZipOpened ) {
 
@@ -534,7 +534,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
-	jl::AutoBuffer buffer;
+	jl::BufPartial buffer;
 
 	JL_DEFINE_ARGS;
 
@@ -577,7 +577,7 @@ DEFINE_FUNCTION( read ) {
 	
 	//buffer = JL_NewBuffer(cx, requestedLength, JL_RVAL);
 	buffer.alloc(requestedLength);
-	JL_ASSERT_ALLOC(buffer);
+	JL_ASSERT_ALLOC(buffer.hasData());
 
 	int rd;
 	rd = unzReadCurrentFile(pv->uf, buffer.data(), requestedLength);
@@ -588,7 +588,7 @@ DEFINE_FUNCTION( read ) {
 	pv->remainingLength -= rd;
 	ASSERT( unzeof(pv->uf) == (pv->remainingLength == 0) );
 
-	buffer.setSize(rd);
+	buffer.setUsed(rd);
 	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
 
 	return true;
@@ -604,11 +604,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( write ) {
 
-	JLData data;
+	jl::BufString data;
 
 	JL_DEFINE_ARGS;
 
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
 	Private *pv = (Private *)JL_GetPrivate(JL_OBJ);
@@ -619,8 +619,7 @@ DEFINE_FUNCTION( write ) {
 
 	if ( !pv->inZipOpened ) {
 
-		JLData inZipFilename;
-		JLData currentExtraField;
+		jl::BufString inZipFilename, currentExtraField;
 
 		zip_fileinfo zipfi;
 		zipfi.dosDate = 0;
@@ -668,14 +667,14 @@ DEFINE_FUNCTION( write ) {
 			level = Z_DEFAULT_COMPRESSION;
 		}
 
-		ZIP_CHK( zipOpenNewFileInZip(pv->zf, inZipFilename, &zipfi, currentExtraField.GetConstStrZOrNULL(), currentExtraField.LengthOrZero(), NULL, NULL, NULL, level == 0 ? 0 : Z_DEFLATED, level) );
+		ZIP_CHK( zipOpenNewFileInZip(pv->zf, inZipFilename, &zipfi, currentExtraField.toStringZOrNull<const char*>(), currentExtraField.lengthOrZero(), NULL, NULL, NULL, level == 0 ? 0 : Z_DEFLATED, level) );
 		pv->inZipOpened = true;
 	}
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
-	ASSERT( data.IsSet() );
+	ASSERT( data.hasData() );
 
-	ZIP_CHK( zipWriteInFileInZip(pv->zf, data.GetConstStr(), data.Length()) );
+	ZIP_CHK( zipWriteInFileInZip(pv->zf, data.toData<const uint8_t*>(), data.length()) );
 
 	JL_RVAL.setUndefined();
 	return true;
@@ -706,7 +705,7 @@ DEFINE_PROPERTY_GETTER( globalComment ) {
 
 	if ( pv->uf ) {
 		
-		jl::AutoBuffer buffer;
+		jl::BufPartial buffer;
 
 		unz_global_info pglobal_info;
 		UNZ_CHK( unzGetGlobalInfo(pv->uf, &pglobal_info) );
@@ -716,7 +715,7 @@ DEFINE_PROPERTY_GETTER( globalComment ) {
 		
 		//comment = JL_NewBuffer(cx, commentLength, vp);
 		buffer.alloc(commentLength);
-		JL_ASSERT_ALLOC( buffer );
+		JL_ASSERT_ALLOC( buffer.hasData() );
 
 		int rd;
 		rd = unzGetGlobalComment(pv->uf, (char*)buffer.data(), commentLength);
@@ -995,7 +994,7 @@ DEFINE_PROPERTY_GETTER( extra ) {
 
 	if ( pv->uf ) {
 
-		jl::AutoBuffer buffer;
+		jl::BufPartial buffer;
 
 		//if ( pv->eol ) {
 
@@ -1013,7 +1012,7 @@ DEFINE_PROPERTY_GETTER( extra ) {
 		//uint8_t *buffer;
 		//buffer = JL_NewBuffer(cx, extraLength, vp);
 		buffer.alloc(extraLength);
-		JL_ASSERT_ALLOC( buffer );
+		JL_ASSERT_ALLOC( buffer.hasData() );
 
 		int rd;
 		rd = unzGetLocalExtrafield(pv->uf, buffer.data(), extraLength);

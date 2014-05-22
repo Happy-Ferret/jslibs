@@ -59,7 +59,7 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	ClassPrivate *pv = NULL;
-	JLData name;
+	jl::BufString name;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_CONSTRUCTING();
@@ -79,7 +79,7 @@ DEFINE_CONSTRUCTOR() {
 		mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
-	JL_ASSERT( name.Length() < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
+	JL_ASSERT( name.length() < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
 
 	pv = (ClassPrivate*)JS_malloc(cx, sizeof(ClassPrivate));
 	JL_CHK( pv );
@@ -95,8 +95,8 @@ DEFINE_CONSTRUCTOR() {
 		pv->owner = false;
 	}
 
-	jl::memcpy(pv->name, name.GetConstStr(), name.Length());
-	pv->name[name.Length()] = '\0';
+	jl::memcpy(pv->name, name.toData<const uint8_t*>(), name.length());
+	pv->name[name.length()] = '\0';
 
 	JL_SetPrivate(JL_OBJ, pv);
 	return true;

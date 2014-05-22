@@ -115,7 +115,7 @@ DEFINE_FUNCTION( read ) {
 
 	JL_DEFINE_ARGS;
 	
-	jl::BufString buffer;
+	jl::BufPartial buffer;
 
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(0,1);
@@ -222,7 +222,7 @@ DEFINE_PROPERTY_GETTER( state ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	jl::BufString buffer;
+	jl::BufPartial buffer;
 
 	JL_ASSERT_THIS_INSTANCE();
 

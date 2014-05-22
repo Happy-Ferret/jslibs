@@ -22,10 +22,10 @@
 
 #define DEFAULT_ACCESS_RIGHTS (PR_IRWXU | PR_IRWXG) // read, write, execute/search by owner & group ("770")
 
-PRIntn FileOpenFlagsFromString( JLData &str ) {
+PRIntn FileOpenFlagsFromString( jl::BufString &str ) {
 
-	size_t length = str.LengthOrZero();
-	const char *strFlags = str.GetConstStr();
+	size_t length = str.lengthOrZero();
+	const char *strFlags = str.toData<const char*>();
 
 	if ( length == 0 || length > 2 )
 		return 0;
@@ -60,9 +60,9 @@ PRIntn FileOpenFlagsFromString( JLData &str ) {
 }
 
 
-PRIntn FileOpenModeFromString( JLData &str ) {
+PRIntn FileOpenModeFromString( jl::BufString &str ) {
 	
-	PRIntn mode = jl::atoi(str.GetConstStrZ(), 8);
+	PRIntn mode = jl::atoi(str, 8);
 	ASSERT( mode < (PR_IRWXU | PR_IRWXG | PR_IRWXO) );
 	return mode;
 }
@@ -146,10 +146,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( open ) {
 
 	JS::RootedValue jsvalFileName(cx);
-	JLData str;
+	jl::BufString str;
 
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MAX(2);
 	JL_ASSERT( JL_GetPrivate(JL_OBJ) == NULL, E_FILE, E_OPEN );
 
@@ -161,7 +161,7 @@ DEFINE_FUNCTION( open ) {
 			JL_CHK( jl::getValue(cx, JL_ARG(1), &flags) );
 		} else {
 
-			JLData strFlags;
+			jl::BufString strFlags;
 			JL_CHK( jl::getValue(cx, JL_ARG(1), &strFlags) );
 			flags = FileOpenFlagsFromString(strFlags);
 		}
@@ -178,7 +178,7 @@ DEFINE_FUNCTION( open ) {
 			JL_CHK( jl::getValue(cx, JL_ARG(2), &mode) );
 		} else {
 
-			JLData strMode;
+			jl::BufString strMode;
 			JL_CHK( jl::getValue(cx, JL_ARG(2), &strMode) );
 			mode = FileOpenModeFromString(strMode);
 		}
@@ -195,7 +195,7 @@ DEFINE_FUNCTION( open ) {
 	JL_CHK( jl::getValue(cx, jsvalFileName, &str) );
 
 	PRFileDesc *fd;
-	fd = PR_OpenFile(str.GetConstStrZ(), flags, mode); // PR_OpenFile has the same prototype as PR_Open but implements the specified file mode where possible.
+	fd = PR_OpenFile(str, flags, mode); // PR_OpenFile has the same prototype as PR_Open but implements the specified file mode where possible.
 
 	if ( fd == NULL )
 		return ThrowIoError(cx);
@@ -271,10 +271,10 @@ DEFINE_FUNCTION( delete ) {
 	JL_IGNORE( argc );
 
 	JS::RootedValue jsvalFileName(cx);
-	JLData str;
+	jl::BufString str;
 
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate(JL_OBJ);
@@ -283,7 +283,7 @@ DEFINE_FUNCTION( delete ) {
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
 	JL_CHK( jl::getValue(cx, jsvalFileName, &str) );
-	if ( PR_Delete(str.GetConstStrZ()) != PR_SUCCESS )
+	if ( PR_Delete(str) != PR_SUCCESS )
 		return ThrowIoError(cx);
 
 	JL_RVAL.setUndefined();
@@ -327,7 +327,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( move ) {
 
 	JS::RootedValue jsvalFileName(cx);
-	JLData fileName, destDirName;
+	jl::BufString fileName, destDirName;
 	
 	JL_DEFINE_ARGS;
 		JL_ASSERT_THIS_INSTANCE();
@@ -351,7 +351,7 @@ DEFINE_FUNCTION( move ) {
 	if ( fileNameOnly == NULL )
 		fileNameOnly = fileName;
 
-	JL_ASSERT( destDirName.Length() + strlen(fileNameOnly) + 1 < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
+	JL_ASSERT( destDirName.length() + strlen(fileNameOnly) + 1 < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
 
 	char destFileName[PATH_MAX];
 	strcpy(destFileName, destDirName);
@@ -435,9 +435,9 @@ DEFINE_PROPERTY_GETTER( content ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	jl::AutoBuffer buf;
 	JS::RootedValue jsvalFileName(cx);
-	JLData fileName;
+	jl::BufPartial buf;
+	jl::BufString fileName;
 
 	JL_ASSERT( !JL_GetPrivate(JL_OBJ), E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) ); // (TBD) add somthing like J_SCHK instead
@@ -491,10 +491,10 @@ DEFINE_PROPERTY_GETTER( content ) {
 
 	JL_CHKM( jl::isInBounds<size_t>(available), E_FILE, E_TOOBIG );
 	buf.alloc((size_t)available);
-	JL_ASSERT_ALLOC( buf );
+	JL_ASSERT_ALLOC( buf.hasData() );
 	
 	PRInt32 res;
-	res = PR_Read(fd, buf.data(), buf.getSize());
+	res = PR_Read(fd, buf.data(), buf.size());
 	if (unlikely( res == -1 )) {
 
 		ThrowIoError(cx);
@@ -508,7 +508,7 @@ DEFINE_PROPERTY_GETTER( content ) {
 	}
 
 	//JL_CHK( JL_NewBufferGetOwnership(cx, buf, res, vp) );
-	buf.setSize(res);
+	buf.setUsed(res);
 	JL_CHK( BlobCreate(cx, buf, vp) );
 	return true;
 	JL_BAD;
@@ -519,7 +519,8 @@ DEFINE_PROPERTY_SETTER( content ) {
 
 	JL_IGNORE( strict, id );
 
-	JLData fileName, buf;
+	jl::BufString fileName;
+	jl::BufString buf;
 	JS::RootedValue jsvalFileName(cx);
 
 	JL_CHK( JL_GetReservedSlot( obj, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
@@ -549,16 +550,16 @@ DEFINE_PROPERTY_SETTER( content ) {
 	JL_CHK( jl::getValue(cx, vp, &buf) );
 	PRInt32 bytesSent;
 
-	ASSERT( buf.Length() <= PR_INT32_MAX );
-	bytesSent = PR_Write(fd, buf.GetConstStr(), (PRInt32)buf.Length());
+	ASSERT( buf.length() <= PR_INT32_MAX );
+	bytesSent = PR_Write(fd, buf.toData<const uint8_t*>(), (PRInt32)buf.length());
 	if ( bytesSent == -1 ) {
 		
 		PR_Close(fd);
 		return ThrowIoError(cx);
 	}
 
-	//JL_ASSERT( bytesSent == (int)buf.Length(), E_FILE, E_NAME(fileName), E_WRITE );
-	if ( bytesSent != (int)buf.Length() ) {
+	//JL_ASSERT( bytesSent == (int)buf.length(), E_FILE, E_NAME(fileName), E_WRITE );
+	if ( bytesSent != (int)buf.length() ) {
 
 		JL_ERR( E_FILE, E_NAME(fileName), E_WRITE );
 	}
@@ -587,7 +588,7 @@ DEFINE_PROPERTY_SETTER( name ) {
 	JL_DEFINE_PROP_ARGS;
 
 	JS::RootedValue jsvalFileName(cx);
-	JLData fromFileName, toFileName;
+	jl::BufString fromFileName, toFileName;
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate(JL_OBJ);
@@ -617,7 +618,7 @@ DEFINE_PROPERTY_GETTER( exist ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	JLData fileName;
+	jl::BufString fileName;
 	JS::RootedValue jsvalFileName(cx);
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
@@ -636,7 +637,7 @@ DEFINE_PROPERTY_GETTER( hasWriteAccess ) {
 	
 	JL_DEFINE_PROP_ARGS;
 
-	JLData fileName;
+	jl::BufString fileName;
 	JS::RootedValue jsvalFileName(cx);
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
@@ -655,7 +656,7 @@ DEFINE_PROPERTY_GETTER( hasReadAccess ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	JLData fileName;
+	jl::BufString fileName;
 	JS::RootedValue jsvalFileName(cx);
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
@@ -697,7 +698,7 @@ DEFINE_PROPERTY_GETTER( info ) {
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( obj );
 	if ( fd == NULL ) {
 
-		JLData fileName;
+		jl::BufString fileName;
 		JS::RootedValue jsvalFileName(cx);
 		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 		JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );

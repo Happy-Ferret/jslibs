@@ -663,7 +663,7 @@ DEFINE_FUNCTION( encodePngImage ) {
 	// (TBD) use maybeRealloc here ?
 	//desc.buffer = (void*)JL_DataBufferRealloc(cx, (uint8_t*)desc.buffer, desc.pos); // usually, compressed data is smaller that original one.
 	//JL_ASSERT_ALLOC( desc.buffer );
-	desc.buffer.setSize(desc.pos);
+	desc.buffer.setUsed(desc.pos);
 	//JL_CHK( JL_NewBufferGetOwnership(cx, desc.buffer, desc.pos, *JL_RVAL) );
 	JL_CHK( BlobCreate(cx, desc.buffer, JL_RVAL) );
 	return true;

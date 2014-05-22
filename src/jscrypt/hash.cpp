@@ -218,7 +218,7 @@ DEFINE_FUNCTION( done ) {
 
 	JL_DEFINE_ARGS;
 
-	jl::BufString buffer;
+	jl::BufPartial buffer;
 
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);

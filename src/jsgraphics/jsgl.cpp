@@ -5991,7 +5991,7 @@ DEFINE_FUNCTION( drawImage ) {
 	} else {
 
 		ImageDataType dataType;
-		JLData image = JL_GetImageObject(cx, JL_ARG(1), &width, &height, &channels, &dataType);
+		JLData image( JL_GetImageObject(cx, JL_ARG(1), &width, &height, &channels, &dataType) );
 		JL_ASSERT( image.IsSet(), E_ARG, E_NUM(1), E_INVALID );
 		switch ( dataType ) {
 			case TYPE_INT8:

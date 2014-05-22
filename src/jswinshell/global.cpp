@@ -42,7 +42,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( extractIcon ) {
 
-	JLData fileName;
+	jl::BufString fileName;
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 
@@ -128,7 +128,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( messageBox ) {
 
-	JLData caption, text;
+	jl::BufString caption, text;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
@@ -142,7 +142,7 @@ DEFINE_FUNCTION( messageBox ) {
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &text) );
 
-	int res = MessageBox(NULL, text.GetConstStrZ(), caption.GetConstStrZOrNULL(), type);
+	int res = MessageBox(NULL, text, caption, type);
 	if ( res == 0 )
 		return JL_ThrowOSError(cx);
 	JL_RVAL.setInt32(res);
@@ -167,7 +167,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( createProcess ) {
 
-	JLData applicationName, commandLine, environment, currentDirectory;
+	jl::BufString applicationName, commandLine, environment, currentDirectory;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
@@ -191,7 +191,7 @@ DEFINE_FUNCTION( createProcess ) {
 
 	// doc. commandLine parameter: The Unicode version of CreateProcess function, CreateProcessW, can modify the contents of this string !
 	PROCESS_INFORMATION pi;
-	BOOL st = CreateProcess( applicationName.GetStrConstOrNull(), (LPSTR)commandLine.GetStrConstOrNull(), NULL, NULL, FALSE, 0, (LPVOID)environment.GetStrConstOrNull(), currentDirectory.GetStrConstOrNull(), &si, &pi ); // doc: http://msdn2.microsoft.com/en-us/library/ms682425.aspx
+	BOOL st = CreateProcess( applicationName, (LPSTR)commandLine.toStringZ<const char*>(), NULL, NULL, FALSE, 0, (LPVOID)environment.toStringZOrNull<const char*>(), currentDirectory, &si, &pi ); // doc: http://msdn2.microsoft.com/en-us/library/ms682425.aspx
 	if ( st == FALSE )
 		return WinThrowError(cx, GetLastError());
 
@@ -223,18 +223,18 @@ DEFINE_FUNCTION( fileOpenDialog ) {
 
 	if ( argc >= 1 && !JL_ARG(1).isUndefined() ) {
 
-		JLData str;
+		jl::BufString str;
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 		strcpy( filter, str );
 		for ( char *tmp = filter; (tmp = strchr(tmp, '|')) != 0; tmp++ )
 			*tmp = '\0'; // doc: Pointer to a buffer containing pairs of null-terminated filter strings.
-		filter[str.Length() + 1] = '\0'; // The last string in the buffer must be terminated by two NULL characters.
+		filter[str.length() + 1] = '\0'; // The last string in the buffer must be terminated by two NULL characters.
 		ofn.lpstrFilter = filter;
 	}
 
 	if ( argc >= 2 && !JL_ARG(2).isUndefined() ) {
 
-		JLData tmp;
+		jl::BufString tmp;
 		JL_CHK( jl::getValue(cx, JL_ARG(2), &tmp) );
 		strcpy( fileName, tmp );
 	} else {
@@ -267,7 +267,7 @@ DEFINE_FUNCTION( expandEnvironmentStrings ) {
 
 	JL_DEFINE_ARGS;
 
-	JLData src;
+	jl::BufString src;
 	JL_ASSERT_ARGC_MIN(1);
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &src) );
@@ -453,14 +453,14 @@ ParseRootKey(IN const char *path, OUT size_t *length) {
 DEFINE_FUNCTION( registrySet ) {
 
 	JS::RootedValue value(cx);
-	JLData subKeyStr, valueNameStr;
+	jl::BufString subKeyStr, valueNameStr;
 	const char *subKey;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(3);
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &subKeyStr) );
-	subKey = subKeyStr.GetConstStrZ();
+	subKey = subKeyStr.toStringZ<const char*>();
 
 	size_t length;
 	HKEY rootHKey = ParseRootKey(subKey, &length);
@@ -512,16 +512,16 @@ DEFINE_FUNCTION( registrySet ) {
 		} else
 		if ( value.isString() ) {
 
-			JLData tmp;
+			jl::BufString tmp;
 			JL_CHK( jl::getValue(cx, value, &tmp) );
 			// doc: When writing a string to the registry, you must specify the length of the string, including the terminating null character (\0).
-			st = RegSetValueEx(hKey, valueNameStr, 0, REG_SZ, (LPBYTE)tmp.GetConstStrZ(), tmp.Length() + 1);
+			st = RegSetValueEx(hKey, valueNameStr, 0, REG_SZ, (LPBYTE)tmp.toStringZ<const char*>(), tmp.length() + 1);
 		} else
 		if ( jl::isData(cx, value) ) {
 
-			JLData tmp;
+			jl::BufString tmp;
 			JL_CHK( jl::getValue(cx, value, &tmp) );
-			st = RegSetValueEx(hKey, valueNameStr, 0, REG_BINARY, (LPBYTE)tmp.GetConstStr(), tmp.Length());
+			st = RegSetValueEx(hKey, valueNameStr, 0, REG_BINARY, tmp.toStringZ<const uint8_t*>(), tmp.length());
 		}
 
 		if ( st != ERROR_SUCCESS )
@@ -563,15 +563,15 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( registryGet ) {
 
 	//uint8_t *buffer = NULL;
-	jl::AutoBuffer buffer;
-	JLData pathStr, valueName;
+	jl::BufPartial buffer;
+	jl::BufString pathStr, valueName;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(1,2);
 
 	const char *path;
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &pathStr) );
-	path = pathStr.GetConstStrZ();
+	path = pathStr.toStringZ<const char *>();
 
 	size_t length;
 	HKEY rootHKey = ParseRootKey(path, &length);
@@ -641,7 +641,7 @@ DEFINE_FUNCTION( registryGet ) {
 
 	//buffer = JL_DataBufferAlloc(cx, size);
 	buffer.alloc(size);
-	JL_ASSERT_ALLOC( buffer );
+	JL_ASSERT_ALLOC( buffer.hasData() );
 
 	st = RegQueryValueEx(hKey, valueName, NULL, NULL, buffer.data(), &size);
 
@@ -666,7 +666,9 @@ DEFINE_FUNCTION( registryGet ) {
 			//JSString *jsstr = JL_NewUCString(cx, (jschar*)buffer, size/2);
 			//JL_CHK( jsstr );
 			//JL_RVAL.setString(jsstr);
-			JL_CHK( buffer.toExternalStringUC(cx, JL_RVAL) );
+			//JL_CHK( buffer.toExternalStringUC(cx, JL_RVAL) );
+
+			jl::BufString(buffer).setCharSize(2).toString(cx, JL_RVAL);
 			break;
 		}
 		case REG_EXPAND_SZ:
@@ -674,8 +676,9 @@ DEFINE_FUNCTION( registryGet ) {
 		case REG_SZ: {
 			//JSString *jsstr = JL_NewString(cx, (char*)buffer, size-1); // note: ((char*)buffer)[size] already == '\0'
 			//JL_CHK( JLData((char*)buffer, true, size-1).GetJSString(cx, JL_RVAL) );
-			buffer.setSize(size-1);
-			JL_CHK( buffer.toExternalStringUC(cx, JL_RVAL) );
+			buffer.setUsed(size-1);
+			//JL_CHK( buffer.toExternalStringUC(cx, JL_RVAL) );
+			jl::BufString(buffer).setCharSize(1).toString(cx, JL_RVAL);
 			break;
 		}
 	}
@@ -731,7 +734,7 @@ struct DirectoryChanges : public HandlePrivate {
 
 DEFINE_FUNCTION( directoryChangesInit ) {
 
-	JLData pathName;
+	jl::BufString pathName;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(2,3);
@@ -975,17 +978,17 @@ print(guidToString(f.id).quote());
 **/
 DEFINE_FUNCTION( guidToString ) {
 
-	JLData str;
+	jl::BufString str;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 
-	JL_ASSERT( str.Length() == sizeof(GUID), E_ARG, E_NUM(1), E_LENGTH, E_NUM(sizeof(GUID)) );
+	JL_ASSERT( str.length() == sizeof(GUID), E_ARG, E_NUM(1), E_LENGTH, E_NUM(sizeof(GUID)) );
 
 	GUID guid;
-	CopyMemory(&guid, str.GetConstStr(), sizeof(GUID));
+	CopyMemory(&guid, str.toData<const char*>(), sizeof(GUID));
 	WCHAR szGuid[39];
 	int len = StringFromGUID2(guid, szGuid, COUNTOF(szGuid));
 	ASSERT( len == COUNTOF(szGuid) );
@@ -1053,19 +1056,19 @@ DEFINE_PROPERTY_SETTER( clipboard ) {
 
 	if ( !vp.isNullOrUndefined() ) {
 
-		JLData str;
+		jl::BufString str;
 
 		res = OpenClipboard(NULL);
 		if ( res == 0 )
 			return JL_ThrowOSError(cx);
 		JL_CHK( jl::getValue(cx, vp, &str) );
-		HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, str.Length() + 1);
+		HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, str.length() + 1);
 		JL_ASSERT_ALLOC( hglbCopy );
 		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
 		if ( lptstrCopy == NULL )
 			return JL_ThrowOSError(cx);
-		jl::memcpy(lptstrCopy, str.GetConstStr(), str.Length() + 1);
-		lptstrCopy[str.Length()] = 0;
+		jl::memcpy(lptstrCopy, str.toData<const char*>(), str.length() + 1);
+		lptstrCopy[str.length()] = 0;
 		GlobalUnlock(hglbCopy);
 		HANDLE h = SetClipboardData(CF_TEXT, hglbCopy);
 		if ( h == NULL )

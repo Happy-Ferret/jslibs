@@ -157,9 +157,9 @@ bool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JS::HandleValue ar
 				}
 				if ( jl::isData(cx, val) ) {
 
-					JLData data;
+					jl::BufString data;
 					JL_CHK( jl::getValue(cx, val, &data) );
-					if ( sqlite3_bind_blob(pStmt, param, data.GetConstStr(), data.Length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+					if ( sqlite3_bind_blob(pStmt, param, data.toData<const uint8_t*>(), data.length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 						return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 					break;
 				}
@@ -167,10 +167,10 @@ bool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JS::HandleValue ar
 			case JSTYPE_FUNCTION: // (TBD) call the function and pass its result to SQLite ?
 			case JSTYPE_STRING: {
 
-				JLData str;
+				jl::BufString str;
 				JL_CHK( jl::getValue(cx, val, &str) );
 
-				if ( sqlite3_bind_text(pStmt, param, str.GetConstStr(), str.Length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+				if ( sqlite3_bind_text(pStmt, param, str.toData<const char*>(), str.length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 				}
 				break;

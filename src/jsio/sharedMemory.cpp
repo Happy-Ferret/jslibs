@@ -50,7 +50,7 @@ bool Unlock( JSContext *cx, ClassPrivate *pv ) {
 }
 
 
-bool SharedMemoryBufferGet( JSContext *cx, JS::HandleObject obj, JLData *str ) {
+bool SharedMemoryBufferGet( JSContext *cx, JS::HandleObject obj, jl::BufString *str ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivate(obj);
 	JL_ASSERT_OBJECT_STATE( pv, JL_CLASS_NAME(SharedMemory) );
@@ -58,7 +58,8 @@ bool SharedMemoryBufferGet( JSContext *cx, JS::HandleObject obj, JLData *str ) {
 	mh = (MemHeader*)pv->mem;
 //	*buf = (char *)pv->mem + sizeof(MemHeader);
 //	*size = mh->currentDataLength;
-	*str = JLData(((const char *)pv->mem) + sizeof(MemHeader), false, mh->currentDataLength);
+	//*str = JLData(((const char *)pv->mem) + sizeof(MemHeader), false, mh->currentDataLength);
+	str->set(((const char *)pv->mem) + sizeof(MemHeader), mh->currentDataLength, false);
 
 	return true;
 	JL_BAD;
@@ -133,7 +134,7 @@ DEFINE_CONSTRUCTOR() {
 	ClassPrivate *pv = NULL;
 	PRSem *accessSem = NULL;
 	PRSharedMemory *shm = NULL;
-	JLData name;
+	jl::BufString name;
 
 	JL_DEFINE_ARGS;
 	JL_DEFINE_CONSTRUCTOR_OBJ;
@@ -228,7 +229,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( write ) {
 
-	JLData data;
+	jl::BufString data;
 	
 	JL_DEFINE_ARGS;
 		JL_ASSERT_ARGC_MIN( 1 );
@@ -247,15 +248,15 @@ DEFINE_FUNCTION( write ) {
 //	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &data, &dataLength) );
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
 
-	JL_ASSERT( sizeof(MemHeader) + offset + data.Length() <= pv->size, E_DATASIZE, E_MAX, E_NUM(pv->size - sizeof(MemHeader) - offset) ); // JL_ASSERT( sizeof(MemHeader) + offset + data.Length() <= pv->size, "SharedMemory too small to hold the given data." );
+	JL_ASSERT( sizeof(MemHeader) + offset + data.length() <= pv->size, E_DATASIZE, E_MAX, E_NUM(pv->size - sizeof(MemHeader) - offset) ); // JL_ASSERT( sizeof(MemHeader) + offset + data.length() <= pv->size, "SharedMemory too small to hold the given data." );
 
 	JL_CHK( Lock(cx, pv) );
 
 	MemHeader *mh;
 	mh = (MemHeader*)pv->mem;
-	if ( offset + data.Length() > mh->currentDataLength )
-		mh->currentDataLength = offset + data.Length();
-	memmove( (char *)pv->mem + sizeof(MemHeader) + offset, data.GetConstStr(), data.Length() ); // doc. Use memmove to handle overlapping regions.
+	if ( offset + data.length() > mh->currentDataLength )
+		mh->currentDataLength = offset + data.length();
+	memmove( (char *)pv->mem + sizeof(MemHeader) + offset, data.toData<const uint8_t*>(), data.length() ); // doc. Use memmove to handle overlapping regions.
 
 	JL_CHK( Unlock(cx, pv) );
 
@@ -272,7 +273,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
-	jl::AutoBuffer buffer;
+//	jl::BufString buffer;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
@@ -392,20 +393,20 @@ DEFINE_PROPERTY_SETTER( content ) {
 		JL_CHK( Unlock(cx, pv) );
 	} else {
 
-		JLData data;
+		jl::BufString data;
 //		const char *data;
 //		size_t dataLength;
 //		JL_CHK( JL_JsvalToStringAndLength(cx, vp, &data, &dataLength) );
 		JL_CHK( jl::getValue(cx, vp, &data) );
 
-		JL_ASSERT( sizeof(MemHeader) + data.Length() <= pv->size, E_DATASIZE, E_MAX, E_NUM(pv->size - sizeof(MemHeader)) ); //JL_ASSERT( sizeof(MemHeader) + data.Length() <= pv->size, "SharedMemory too small to hold the given data." );
+		JL_ASSERT( sizeof(MemHeader) + data.length() <= pv->size, E_DATASIZE, E_MAX, E_NUM(pv->size - sizeof(MemHeader)) ); //JL_ASSERT( sizeof(MemHeader) + data.length() <= pv->size, "SharedMemory too small to hold the given data." );
 
 		JL_CHK( Lock(cx, pv) );
 
 		MemHeader *mh = (MemHeader*)pv->mem;
-		if ( data.Length() > mh->currentDataLength )
-			mh->currentDataLength = data.Length();
-		memmove( (char *)pv->mem + sizeof(MemHeader), data.GetConstStr(), data.Length() ); // doc. Use memmove to handle overlapping regions.
+		if ( data.length() > mh->currentDataLength )
+			mh->currentDataLength = data.length();
+		memmove( (char *)pv->mem + sizeof(MemHeader), data.toData<const uint8_t*>(), data.length() ); // doc. Use memmove to handle overlapping regions.
 
 		JL_CHK( Unlock(cx, pv) );
 	}

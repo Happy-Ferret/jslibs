@@ -174,7 +174,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
-	jl::BufBase buffer;
+	jl::BufPartial buffer;
 	
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
@@ -217,7 +217,7 @@ DEFINE_FUNCTION( read ) {
 		return true;
 	}
 
-	buffer.setSize(amount);
+	buffer.setUsed(amount);
 	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
 	return true;
 	JL_BAD;

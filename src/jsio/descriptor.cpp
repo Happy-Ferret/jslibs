@@ -275,7 +275,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
-	jl::AutoBuffer buffer;
+	jl::BufPartial buffer;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INHERITANCE();
@@ -326,14 +326,14 @@ DEFINE_FUNCTION( read ) {
 	//JL_ASSERT_ALLOC( buf );
 
 	buffer.alloc(amount);
-	JL_ASSERT_ALLOC(buffer);
+	JL_ASSERT_ALLOC( buffer.hasData() );
 
 
 	//PRIntervalTime timeout;
 	//GetTimeoutInterval(cx, JL_OBJ, &timeout);
 	//res = PR_Recv(fd, buf, amount, 0, timeout);
 
-	res = PR_Read(fd, buffer.data(), buffer.getSize()); // like recv() with PR_INTERVAL_NO_TIMEOUT
+	res = PR_Read(fd, buffer.data(), buffer.size()); // like recv() with PR_INTERVAL_NO_TIMEOUT
 
 	if (unlikely( res == -1 )) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
@@ -386,7 +386,7 @@ DEFINE_FUNCTION( read ) {
 	}
 
 	if ( (uint32_t) res < amount )
-		buffer.setSize(res);
+		buffer.setUsed(res);
 
 	return BlobCreate(cx, buffer, JL_RVAL);
 	JL_BAD;
@@ -401,7 +401,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( write ) {
 
-	JLData str;
+	jl::BufString str;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INHERITANCE();
@@ -414,10 +414,10 @@ DEFINE_FUNCTION( write ) {
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 
-	ASSERT( str.Length() <= PR_INT32_MAX );
+	ASSERT( str.length() <= PR_INT32_MAX );
 
 	PRInt32 res;
-	res = PR_Write( fd, str.GetConstStr(), (PRInt32)str.Length() );
+	res = PR_Write( fd, str.toData<const uint8_t*>(), (PRInt32)str.length() );
 	if (unlikely( res == -1 )) {
 
 		switch ( PR_GetError() ) {
@@ -466,9 +466,9 @@ DEFINE_FUNCTION( write ) {
 		sentAmount = res;
 	}
 
-	ASSERT( sentAmount <= str.Length() );
+	ASSERT( sentAmount <= str.length() );
 
-	if (likely( sentAmount == str.Length() )) { // nothing remains
+	if (likely( sentAmount == str.length() )) { // nothing remains
 
 		//JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
 		JL_CHK( BlobCreateEmpty(cx, JL_RVAL) );
@@ -480,25 +480,23 @@ DEFINE_FUNCTION( write ) {
 		} else {
 
 			//JL_CHK( str.GetArrayBuffer(cx, JL_RVAL) );
-			size_t size = str.Length();
-			char *data = str.GetStrOwnership();
-			JL_CHK( BlobCreate(cx, data, size, JL_RVAL) );
+			JL_CHK( BlobCreate(cx, str.toData<uint8_t*>(), str.length(), JL_RVAL) );
 		}
 	} else { // return unsent data
 
-		//JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
-		//JL_CHK( BlobCreateCopy(cx, str.GetConstStr() + sentAmount, str.Length() - sentAmount, JL_RVAL) );
+		//JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.length() - sentAmount, JL_RVAL) );
+		//JL_CHK( BlobCreateCopy(cx, str.GetConstStr() + sentAmount, str.length() - sentAmount, JL_RVAL) );
 
 		if ( JL_ARG(1).isString() ) {
 			
 			JS::RootedString tmp(cx, JL_ARG(3).toString());
-			JL_RVAL.setString(JS_NewDependentString(cx, tmp, sentAmount, str.Length() - sentAmount));
+			JL_RVAL.setString(JS_NewDependentString(cx, tmp, sentAmount, str.length() - sentAmount));
 		} else {
 			
-			size_t length = str.Length() - sentAmount;
+			size_t length = str.length() - sentAmount;
 			void *data = jl_malloc(length);
 			JL_ASSERT_ALLOC(data);
-			jl::memcpy(data, str.GetConstStr() + sentAmount, length);
+			jl::memcpy(data, str.toData<const uint8_t*>() + sentAmount, length);
 			JL_RVAL.setObject(*JS_NewArrayBufferWithContents(cx, length, data));
 		}
 	}

@@ -87,10 +87,10 @@ JL_NewImageObjectOwner( IN JSContext *cx, IN uint8_t* buffer, IN T width, IN T h
 
 
 template <class T, class U>
-ALWAYS_INLINE JLData FASTCALL
+ALWAYS_INLINE jl::BufString FASTCALL
 JL_GetImageObject( IN JSContext *cx, IN JS::HandleValue val, OUT T *width, OUT T *height, OUT U *channels, OUT ImageDataType *dataType ) {
 
-	JLData data;
+	jl::BufString data;
 	JL_CHK( val.isObject() );
 
 	{
@@ -128,7 +128,7 @@ JL_GetImageObject( IN JSContext *cx, IN JS::HandleValue val, OUT T *width, OUT T
 	}
 
 	JL_CHK( *width >= 0 && *height >= 0 && *channels > 0 );
-	JL_CHK( data.IsSet() && jl::isInBounds<int>(data.Length()) && (int)data.Length() == (int)(*width * *height * *channels * dataTypeSize) );
+	JL_CHK( data.hasData() && jl::isInBounds<int>(data.length()) && (int)data.length() == (int)(*width * *height * *channels * dataTypeSize) );
 //	JL_ASSERT( width >= 0 && height >= 0 && channels > 0, E_STR("image"), E_FORMAT );
 //	JL_ASSERT( data.IsSet() && jl::SafeCast<int>(data.Length()) == (int)(*width * *height * *channels * 1), E_DATASIZE, E_INVALID );
 
@@ -136,5 +136,5 @@ JL_GetImageObject( IN JSContext *cx, IN JS::HandleValue val, OUT T *width, OUT T
 
 	return data;
 bad:
-	return JLData();
+	return jl::BufString("");
 }

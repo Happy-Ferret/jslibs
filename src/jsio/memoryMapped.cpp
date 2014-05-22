@@ -27,12 +27,13 @@ struct MemoryMappedPrivate {
 	void *addr;
 };
 
-bool MemoryMappedBufferGet( JSContext *cx, JS::HandleObject obj, JLData *str ) {
+bool MemoryMappedBufferGet( JSContext *cx, JS::HandleObject obj, jl::BufString *str ) {
 
 	JL_IGNORE( cx );
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(obj);
-	*str = JLData(((const char*)pv->addr) + pv->offset, false, pv->size);
+	//*str = JLData(((const char*)pv->addr) + pv->offset, false, pv->size);
+	str->set(((const char*)pv->addr) + pv->offset, pv->size, false);
 	return true;
 }
 

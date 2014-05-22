@@ -22,8 +22,10 @@ var loadModule = host.loadModule;
 //loadModule('jswinshell');
 //loadModule('jssqlite');
 
+//print(new ArrayBuffer(0), 'x', '\n');
 
 var data = jslangTest();
+
 //var data = new Blob();
 
 //print( data.arrayBuffer.byteLength, '\n' );

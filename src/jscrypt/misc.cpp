@@ -74,7 +74,7 @@ DEFINE_FUNCTION( base64Decode ) {
 
 	JL_DEFINE_ARGS;
 
-	jl::BufString buffer;
+	jl::BufPartial buffer;
 	jl::BufString in;
 
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -103,7 +103,7 @@ DEFINE_FUNCTION( base64Decode ) {
 	//out[outLength] = '\0';
 	//JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
 
-	buffer.setSize(outLength);
+	buffer.setUsed(outLength);
 	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
 
 	return true;
@@ -175,7 +175,7 @@ DEFINE_FUNCTION( hexDecode ) {
 
 	JL_DEFINE_ARGS;
 
-	jl::BufString buffer;
+	jl::BufPartial buffer;
 	jl::BufString data;
 
 	JL_ASSERT_ARGC_MIN( 1 );

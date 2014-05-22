@@ -79,7 +79,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( open ) {
 
-	JLData str;
+	jl::BufString str;
 
 	JL_DEFINE_ARGS;
 	
@@ -91,7 +91,7 @@ DEFINE_FUNCTION( open ) {
 	JL_CHK( jl::getValue(cx, jsvalDirectoryName, &str) );
 
 	PRDir *dd;
-	dd = PR_OpenDir( str.GetConstStrZ() );
+	dd = PR_OpenDir(str);
 	if ( dd == NULL )
 		return ThrowIoError(cx);
 
@@ -186,7 +186,7 @@ DEFINE_FUNCTION( make ) {
 
 	JL_IGNORE( argc );
 
-	JLData str;
+	jl::BufString str;
 	JL_DEFINE_ARGS;
 	
 	JS::RootedValue jsvalDirectoryName(cx);
@@ -199,7 +199,7 @@ DEFINE_FUNCTION( make ) {
 
 	PRIntn mode;
 	mode = 0766; // the permissions need to be set to 766 (linux uses the eXecute bit on directory as permission to allow access to a directory).
-	if ( PR_MkDir(str.GetConstStrZ(), mode) != PR_SUCCESS )
+	if ( PR_MkDir(str, mode) != PR_SUCCESS )
 		return ThrowIoError(cx);
 
 	JL_RVAL.setUndefined();
@@ -218,7 +218,7 @@ DEFINE_FUNCTION( remove ) {
 
 	JL_IGNORE( argc );
 
-	JLData str;
+	jl::BufString str;
 	JL_DEFINE_ARGS;
 	
 	JS::RootedValue jsvalDirectoryName(cx);
@@ -257,7 +257,7 @@ DEFINE_PROPERTY_GETTER( exist ) {
 
 	JL_IGNORE( id );
 
-	JLData str;
+	jl::BufString str;
 
 	JS::RootedValue jsvalDirectoryName(cx);
 	JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName ) );
@@ -346,13 +346,13 @@ loadModule('jsio');
 **/
 DEFINE_FUNCTION( list ) {
 
-	JLData directoryName;
+	jl::BufString directoryName;
 	PRDir *dd = NULL;
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &directoryName) );
-	JL_ASSERT( directoryName.Length() < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
+	JL_ASSERT( directoryName.length() < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
 
 	PRDirFlags flags;
 	S_ASSERT( sizeof(PRDirFlags) == sizeof(int) );
@@ -402,10 +402,10 @@ DEFINE_FUNCTION( list ) {
 			// add dir separator if not present
 			char fileName[PATH_MAX];
 			char *tmp = fileName;
-			directoryName.CopyTo(tmp);
-			tmp += directoryName.Length();
+			directoryName.copyTo(tmp);
+			tmp += directoryName.length();
 
-			char lastDirNameChar = directoryName.GetCharAt(directoryName.Length()-1);
+			char lastDirNameChar = directoryName.getCharAt(directoryName.length()-1);
 			if ( lastDirNameChar != '/' && lastDirNameChar != dirSepChar ) {
 
 				*tmp = dirSepChar;

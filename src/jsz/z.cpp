@@ -169,7 +169,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( process ) {
 
 	jl::ChunkedBuffer<Bytef> resultBuffer;
-	JLData inputData;
+	jl::BufString inputData;
 	int flushType;
 
 	JL_DEFINE_ARGS;
@@ -208,9 +208,10 @@ DEFINE_FUNCTION( process ) {
 			JL_CHK( ThrowZError(cx, status, pv->stream.msg) );
 	}
 
-	ASSERT( inputData.LengthOrZero() <= UINT_MAX );
-	pv->stream.avail_in = (uInt)inputData.LengthOrZero();
-	pv->stream.next_in = (Bytef*)inputData.GetStrConstOrNull();
+	ASSERT( inputData.lengthOrZero() <= UINT_MAX );
+
+	pv->stream.avail_in = (uInt)inputData.lengthOrZero();
+	pv->stream.next_in = (Bytef*)inputData.toData<const Bytef*>();
 
 	// first length is a guess.
 	size_t length;

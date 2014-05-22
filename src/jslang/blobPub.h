@@ -63,11 +63,23 @@ BlobCreate( JSContext *cx, void *ownData, int32_t size, OUT JS::MutableHandleVal
 ALWAYS_INLINE jl::BufBase::Type
 BlobCreate( JSContext *cx, jl::BufBase &buffer, OUT JS::MutableHandleValue rval ) {
 
+	if ( !buffer.owner() )
+		buffer.own();
 	if ( !BlobCreate(cx, buffer.data(), buffer.size(), rval) )
 		return NULL;
 	buffer.dropOwnership();
 	return buffer.data();
 }
+
+ALWAYS_INLINE jl::BufBase::Type
+BlobCreate( JSContext *cx, jl::BufString &buffer, OUT JS::MutableHandleValue rval ) {
+
+	uint8_t *data = buffer.toData<uint8_t*>();
+	if ( !BlobCreate(cx, data, buffer.length(), rval) )
+		return NULL;
+	return data;
+}
+
 
 ALWAYS_INLINE bool
 BlobCreateEmpty( JSContext *cx, OUT JS::MutableHandleValue rval ) {

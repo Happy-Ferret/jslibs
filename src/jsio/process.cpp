@@ -58,8 +58,8 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JLData path;
-	JLData currentDir;
+	jl::BufString path;
+	jl::BufString currentDir;
 	PRProcessAttr *psattr = NULL;
 	PRProcess *process = NULL;
 
@@ -81,13 +81,16 @@ DEFINE_CONSTRUCTOR() {
 		processArgv = (const char**)alloca(sizeof(char**) * (processArgc +1)); // +1 because the NULL list terminator.
 		JL_ASSERT_ALLOC( processArgv );
 
-		JS::RootedValue propVal(cx);
 		for ( uint32_t i = 1; i < processArgc; ++i ) {
 
-			JLData tmp;
-			JL_CHK( JL_GetElement(cx, argObj, i -1, &propVal) ); // -1 because 0 is reserved to argv[0]
-			JL_CHK( jl::getValue(cx, propVal, &tmp) ); // warning: GC on the returned buffer !
-			processArgv[i] = tmp.GetStrZOwnership();
+			jl::BufString tmp;
+
+			//JL_CHK( JL_GetElement(cx, argObj, i -1, &propVal) ); // -1 because 0 is reserved to argv[0]
+			//JL_CHK( jl::getValue(cx, propVal, &tmp) ); // warning: GC on the returned buffer !
+
+			jl::getElement(cx, argObj, i - 1, &tmp);
+
+			processArgv[i] = tmp.toStringZ<char*>();
 		}
 	} else {
 
@@ -96,7 +99,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_ASSERT_ALLOC( processArgv );
 	}
 
-	processArgv[0] = path.GetConstStrZ();
+	processArgv[0] = path.toStringZ<const char *>();
 	processArgv[processArgc] = NULL;
 
 	if ( JL_ARG_ISDEF(3) )
@@ -112,12 +115,12 @@ DEFINE_CONSTRUCTOR() {
 	PRFileDesc *stdin_parent, *stdout_parent, *stderr_parent;
 	IFDEBUG( stdin_child = stdout_child = stderr_child = stdin_parent = stdout_parent = stderr_parent = NULL ); // avoid "potentially uninitialized local variable" warning
 
-	if ( stdioRedirect || currentDir.IsSet() ) {
+	if ( stdioRedirect || currentDir.hasData() ) {
 
 		psattr = PR_NewProcessAttr();
 		JL_CHKB( psattr, bad_throw );
 
-		if ( currentDir.IsSet() ) {
+		if ( currentDir.hasData() ) {
 			
 			JL_CHKB( PR_ProcessAttrSetCurrentDirectory(psattr, currentDir) == PR_SUCCESS, bad_throw );
 		}
