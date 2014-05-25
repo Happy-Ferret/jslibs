@@ -135,6 +135,7 @@ JL_GetImageObject( IN JSContext *cx, IN JS::HandleValue val, OUT T *width, OUT T
 	}
 
 	return data;
+
 bad:
-	return jl::BufString("");
+	return jl::BufString().setEmpty();
 }

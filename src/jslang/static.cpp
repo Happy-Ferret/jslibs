@@ -1094,8 +1094,48 @@ DEFINE_FUNCTION( jslangTest ) {
 	{
 		jl::BufString a( "test" );
 
+		ASSERT( a == "test" );
 	}
 
+	{
+		jl::BufString a( "test", 4, false );
+		a.toStringZ<char *>();
+		ASSERT( a == "test" );
+	}
+
+	{
+		jl::BufString str("abc");
+		ASSERT( str == "abc" );
+		ASSERT( str == L("abc") );
+
+		jl::BufString str1(L("abc"));
+		ASSERT( str1 == "abc" );
+		ASSERT( str1 == L("abc") );
+
+		jl::BufString str2(L("abc"));
+		ASSERT( !(str2 == "abcd") );
+		ASSERT( !(str2 == L("abcd")) );
+
+		jl::BufString str4("abc");
+		ASSERT( !(str4 == "abcd") );
+		ASSERT( !(str4 == L("abcd")) );
+
+		jl::BufString str3(L("abcd"));
+		ASSERT( !(str3 == "abc") );
+		ASSERT( !(str3 == L("abc")) );
+
+		jl::BufString str5("abcd");
+		ASSERT( !(str5 == "abc") );
+		ASSERT( !(str5 == L("abc")) );
+
+		jl::BufString str6("abc", 3, false);
+		ASSERT( !(str6 == "abcd") );
+		ASSERT( !(str6 == L("abcd")) );
+
+		jl::BufString str7("abc", 3, false);
+		ASSERT( str7 == "abc" );
+		ASSERT( str7 == L("abc") );
+	}
 
 	{
 		jl::BufString str;
@@ -1105,7 +1145,7 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	{
 		jl::BufString str;
-		str.empty();
+		str.setEmpty();
 		str.length();
 		str.toStringZ<const char*>();
 	}
@@ -1118,8 +1158,6 @@ DEFINE_FUNCTION( jslangTest ) {
 	}
 
 	{
-
-
 		void *tmp1, *tmp2;
 		jl::BufString str("test");
 		str.to<const jschar *, false>();
@@ -1152,8 +1190,6 @@ DEFINE_FUNCTION( jslangTest ) {
 		bool test = IsConst(const jl::BufString);
 		ASSERT(test);
 	}
-
-
 
 	{
 		jl::BufString str("test");
@@ -1198,6 +1234,9 @@ DEFINE_FUNCTION( jslangTest ) {
 		((uint8_t*)ab.data())[1] = 2;
 		ab.toString(cx, JL_RVAL);
 	}
+
+
+
 
 /*
 	{

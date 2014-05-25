@@ -91,7 +91,7 @@ DEFINE_FUNCTION( write ) {
 		return WinThrowError(cx, GetLastError());
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 	DWORD written;
-	BOOL status = ::WriteConsole(hStdout, str.GetConstStr(), str.Length(), &written, NULL);
+	BOOL status = ::WriteConsole(hStdout, str.toData<const char*>(), str.length(), &written, NULL);
 	if ( status == FALSE )
 		return WinThrowError(cx, GetLastError());
 
@@ -169,7 +169,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( writeConsoleOutput ) {
 
-	JLData str;
+	jl::BufString str;
 	BOOL res;
 
 	JL_DEFINE_ARGS;
@@ -184,9 +184,12 @@ DEFINE_FUNCTION( writeConsoleOutput ) {
 
 
 	JL_CHK( jl::getValue(cx, JL_ARG(3), &str) );
-	JL_ASSERT( str.LengthOrZero() == 1, E_ARGVALUE, E_NUM(1), E_LENGTH, E_NUM(1) );
+	JL_ASSERT( str.lengthOrZero() == 1, E_ARGVALUE, E_NUM(1), E_LENGTH, E_NUM(1) );
 	CHAR_INFO charInfo;
-	charInfo.Char.UnicodeChar = str.GetConstWStrOrNull()[0];
+	
+	//charInfo.Char.UnicodeChar = str.toDataOrNull<const WCHAR*>.GetConstWStrOrNull()[0];
+	//charInfo.Char.UnicodeChar = str.getWideCharAt(0);
+	charInfo.Char.UnicodeChar = str.charAt<WCHAR>(0);
 
 	int color, backgroundColor;
 	
@@ -237,7 +240,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( fillConsoleOutput ) {
 
-	JLData str;
+	jl::BufString str;
 	BOOL res;
 
 	JL_DEFINE_ARGS;
@@ -252,8 +255,8 @@ DEFINE_FUNCTION( fillConsoleOutput ) {
 		HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 		JL_CHK( jl::getValue(cx, JL_ARG(5), &str) );
-		JL_ASSERT( str.LengthOrZero() == 1, E_ARGVALUE, E_NUM(1), E_LENGTH, E_NUM(1) );
-		WCHAR unicodeChar = str.GetConstWStrOrNull()[0];
+		JL_ASSERT( str.lengthOrZero() == 1, E_ARGVALUE, E_NUM(1), E_LENGTH, E_NUM(1) );
+		WCHAR unicodeChar = str.charAt<WCHAR>(0); //.GetConstWStrOrNull()[0];
 
 		WORD attributes;
 		JL_CHK( jl::getValue(cx, JL_ARG(6), &attributes) );
@@ -617,7 +620,7 @@ DEFINE_PROPERTY_SETTER( title ) {
 	
 	JL_IGNORE(strict, id, obj);
 
-	JLData str;
+	jl::BufString str;
 	JL_CHK( jl::getValue(cx, vp, &str) );
 	SetConsoleTitle(str);
 	return true;

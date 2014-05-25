@@ -1557,7 +1557,8 @@ tstrcmp(const T *lhs, const U *rhs) {
 
 	while ( true ) {
 
-		if ( *lhs != static_cast<T>(*rhs) )
+		//if ( *lhs != static_cast<T>(*rhs) )
+		if ( *lhs != *rhs )
 			return static_cast<int32_t>(*lhs) - static_cast<int32_t>(*rhs);
 		if ( *lhs == 0 )
 			return 0;

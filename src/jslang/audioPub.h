@@ -74,13 +74,13 @@ JL_NewByteAudioObjectOwner( JSContext *cx, uint8_t* buffer, T bits, U channels, 
 
 template <class T, class U, class V, class W>
 ALWAYS_INLINE bool FASTCALL
-JL_NewByteAudioObjectOwner( JSContext *cx, jl::Buffer &buffer, T bits, U channels, V frames, W rate, OUT JS::MutableHandleValue vp ) {
+JL_NewByteAudioObjectOwner( JSContext *cx, jl::BufPartial &buffer, T bits, U channels, V frames, W rate, OUT JS::MutableHandleValue vp ) {
 
 	ASSERT( bits > 0 && (bits % 8) == 0 && channels > 0 && frames >= 0 && rate > 0 );
 
 	JS::RootedObject audioObj(cx, JL_NewObj(cx));
 	JS::RootedValue dataVal(cx);
-	JL_CHK( buffer.toArrayBufferObject(cx, &dataVal) );
+	JL_CHK( buffer.toArrayBuffer(cx, &dataVal) );
 	JL_CHK( audioObj );
 	vp.setObject(*audioObj);
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, data), dataVal) );
@@ -95,7 +95,7 @@ JL_NewByteAudioObjectOwner( JSContext *cx, jl::Buffer &buffer, T bits, U channel
 
 
 template <class T, class U, class V, class W>
-ALWAYS_INLINE JLData FASTCALL
+ALWAYS_INLINE jl::BufString FASTCALL
 JL_GetByteAudioObject( IN JSContext *cx, IN JS::HandleValue val, T *bits, U *channels, V *frames, W *rate ) {
 
 	JLData data;

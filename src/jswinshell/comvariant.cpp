@@ -145,11 +145,11 @@ private:
 
 bool BlobToVariant( JSContext *cx, JS::HandleValue val, VARIANT *variant ) {
 
-	JLData buf;
+	jl::BufString buf;
 	JL_CHK( jl::getValue(cx, val, &buf) );
 	variant->vt = VT_ARRAY | VT_UI1;
 	SAFEARRAYBOUND rgsabound[1];
-	rgsabound[0].cElements = buf.Length();
+	rgsabound[0].cElements = buf.length();
 	rgsabound[0].lLbound = 0;
 	variant->parray = SafeArrayCreate(VT_UI1, 1, rgsabound);
 	JL_ASSERT_ALLOC( variant->parray );
@@ -158,7 +158,7 @@ bool BlobToVariant( JSContext *cx, JS::HandleValue val, VARIANT *variant ) {
 	HRESULT hr = SafeArrayAccessData(variant->parray, &pArrayData);
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
-	jl::memcpy(pArrayData, buf.GetConstStr(), buf.Length());
+	jl::memcpy(pArrayData, buf.toData<const uint8_t*>(), buf.length());
 	SafeArrayUnaccessData(variant->parray);
 
 	return true;
@@ -194,10 +194,10 @@ bool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *varia
 
 			// see also: Write and read binary data in VARIANT - http://www.ucosoft.com/write-and-read-binary-data-in-variant.html
 			
-			JLData buf;
+			jl::BufString buf;
 			JL_CHK( jl::getValue(cx, value, &buf) );
 			V_VT(variant) = VT_BSTR;
-			V_BSTR(variant) = SysAllocStringByteLen(buf.GetConstStr(), buf.Length());
+			V_BSTR(variant) = SysAllocStringByteLen(buf, buf.length());
 			return true;
 		}
 

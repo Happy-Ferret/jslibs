@@ -188,7 +188,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( argc >= 4 && !JL_ARG(4).isUndefined() )
 		JL_CHK( jl::getValue(cx, JL_ARG(4), &IV) ); // warning: GC on the returned buffer !
 	else
-		IV.empty();
+		IV.setEmpty();
 
 	if ( argc >= 5 && !JL_ARG(5).isUndefined() )
 		JL_CHK( jl::getValue(cx, JL_ARG(5), &optarg) ); // warning: GC on the returned buffer !
