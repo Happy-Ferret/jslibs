@@ -491,7 +491,7 @@ DEFINE_PROPERTY_GETTER( content ) {
 
 	JL_CHKM( jl::isInBounds<size_t>(available), E_FILE, E_TOOBIG );
 	buf.alloc((size_t)available);
-	JL_ASSERT_ALLOC( buf.hasData() );
+	JL_ASSERT_ALLOC( buf );
 	
 	PRInt32 res;
 	res = PR_Read(fd, buf.data(), buf.size());

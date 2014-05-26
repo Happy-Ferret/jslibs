@@ -76,7 +76,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_ARGS;
 
 	Private *pv = NULL;
-	JLData tocode, fromcode;
+	jl::BufString tocode, fromcode;
 
 	JL_ASSERT_ARGC_RANGE(2, 4);
 	JL_ASSERT_CONSTRUCTING();
@@ -137,7 +137,7 @@ DEFINE_FUNCTION( process ) {
 	JL_DEFINE_ARGS;
 
 	char *outBuf = NULL; // keep on top
-	JLData data;
+	jl::BufString data;
 	
 	JL_ASSERT_INSTANCE(JL_OBJ, JL_CLASS(Iconv));
 
@@ -170,14 +170,14 @@ DEFINE_FUNCTION( process ) {
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
 
+	inLen = data.length();
 	if ( pv->wFrom ) {
 
-		inLen = data.Length() * 2;
-		inBuf =  (char*)data.GetConstWStr();
+		inLen *= 2;
+		inBuf =  (char*)data.toData<const jschar*>();
 	} else {
 
-		inLen = data.Length();
-		inBuf = (char*)data.GetConstStr();
+		inBuf = inBuf =  (char*)data.toData<const char*>();
 	}
 
 
@@ -321,7 +321,7 @@ DEFINE_FUNCTION( process ) {
 	} else {
 
 		//jsEncStr = JL_NewString(cx, outBuf, length); // loose outBuf ownership	// JL_CHK( StringAndLengthToJsval(cx, JL_RVAL, outBuf, length) );
-		JL_CHK( JLData(outBuf, true, length).GetJSString(cx, JL_RVAL) );
+		JL_CHK( jl::BufString(outBuf, length, true).toString(cx, JL_RVAL) );
 	}
 
 	return true;
@@ -340,7 +340,7 @@ DEFINE_PROPERTY_SETTER( invalidChar ) {
 
 	JL_IGNORE(id, strict);
 
-	JLData chr;
+	jl::BufString chr;
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
@@ -349,8 +349,8 @@ DEFINE_PROPERTY_SETTER( invalidChar ) {
 //	size_t length;
 //	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &chr, &length) );
 	JL_CHK( jl::getValue(cx, vp, &chr) );
-	JL_ASSERT_WARN( chr.Length() == 1, E_VALUE, E_LENGTH, E_NUM(1) );
-	pv->invalidChar = chr.GetConstStr()[0];
+	JL_ASSERT_WARN( chr.length() == 1, E_VALUE, E_LENGTH, E_NUM(1) );
+	pv->invalidChar = chr.charAt<char>(0);
 	return true;
 	JL_BAD;
 }

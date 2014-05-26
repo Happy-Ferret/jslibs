@@ -128,7 +128,7 @@ JL_GetImageObject( IN JSContext *cx, IN JS::HandleValue val, OUT T *width, OUT T
 	}
 
 	JL_CHK( *width >= 0 && *height >= 0 && *channels > 0 );
-	JL_CHK( data.hasData() && jl::isInBounds<int>(data.length()) && (int)data.length() == (int)(*width * *height * *channels * dataTypeSize) );
+	JL_CHK( data && jl::isInBounds<int>(data.length()) && (int)data.length() == (int)(*width * *height * *channels * dataTypeSize) );
 //	JL_ASSERT( width >= 0 && height >= 0 && channels > 0, E_STR("image"), E_FORMAT );
 //	JL_ASSERT( data.IsSet() && jl::SafeCast<int>(data.Length()) == (int)(*width * *height * *channels * 1), E_DATASIZE, E_INVALID );
 

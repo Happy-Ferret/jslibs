@@ -92,7 +92,7 @@ DEFINE_FUNCTION( base64Decode ) {
 	//JL_CHK( out );
 
 	buffer.alloc(outLength);
-	JL_ASSERT_ALLOC(buffer.hasData());
+	JL_ASSERT_ALLOC(buffer);
 
 
 	int err;
@@ -195,7 +195,7 @@ DEFINE_FUNCTION( hexDecode ) {
 	//out = JL_NewBuffer(cx, outLength, JL_RVAL);
 	//JL_CHK( out );
 	buffer.alloc(outLength);
-	JL_ASSERT_ALLOC(buffer.hasData());
+	JL_ASSERT_ALLOC(buffer);
 
 	for ( unsigned long i=0; i<outLength; ++i )
 		buffer.data()[i] = unhex[ (unsigned char)in[i*2] ] << 4 | unhex[ (unsigned char)in[i*2+1] ];

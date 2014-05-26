@@ -15,6 +15,7 @@ var loadModule = host.loadModule;
 //loadModule('jsstd');
 
 //for ( var i = 0; i < 1000000; ++i );
+
 //processEvents(host.endSignalEvents(function() { throw 0 }));
 
 //loadModule('jsstd');
@@ -24,7 +25,8 @@ var loadModule = host.loadModule;
 
 //print(new ArrayBuffer(0), 'x', '\n');
 
-var data = jslangTest();
+
+
 
 //var data = new Blob();
 
@@ -35,6 +37,10 @@ var data = jslangTest();
 
 
 throw 0;
+
+var data = jslangTest();
+throw 0;
+
 
 
 //var res = sandboxEval('Math+" "+Math+" "+query()', function() 123);

@@ -98,7 +98,7 @@ GetAvailable(JSContext *cx, JS::HandleObject obj, size_t *available) {
 		jl::BufString data;
 		val = OBJECT_TO_JSVAL(srcObj);
 		JL_CHK( jl::getValue(cx, val, &data) );
-		JL_CHK( data.hasData() );
+		JL_CHK( data );
 		length = data.length();
 	}
 
@@ -207,7 +207,7 @@ DEFINE_FUNCTION( read ) {
 	}
 
 	buffer.alloc(amount);
-	JL_ASSERT_ALLOC( buffer.hasData() );
+	JL_ASSERT_ALLOC( buffer );
 
 	JL_CHK( StreamRead(cx, JL_OBJ, (char*)buffer.data(), &amount) );
 

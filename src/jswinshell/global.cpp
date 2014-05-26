@@ -641,7 +641,7 @@ DEFINE_FUNCTION( registryGet ) {
 
 	//buffer = JL_DataBufferAlloc(cx, size);
 	buffer.alloc(size);
-	JL_ASSERT_ALLOC( buffer.hasData() );
+	JL_ASSERT_ALLOC( buffer );
 
 	st = RegQueryValueEx(hKey, valueName, NULL, NULL, buffer.data(), &size);
 

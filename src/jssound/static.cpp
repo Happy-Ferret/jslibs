@@ -32,10 +32,14 @@ DECLARE_STATIC()
 
 // doc. For seek_func(), you *MUST* return -1 if the stream is unseekable
 
-typedef struct {
+struct StreamReadInfo {
 	JSContext *cx;
-	JSObject *obj;
-} StreamReadInfo;
+	JS::PersistentRootedObject obj;
+
+	StreamReadInfo(JSContext *ctx, JSObject &aobj)
+	: cx(ctx), obj(cx, &aobj) {
+	}
+};
 
 
 /**doc fileIndex:topmost **/
@@ -92,11 +96,9 @@ DEFINE_FUNCTION( decodeOggVorbis ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	JSObject *streamObj = &JL_ARG(1).toObject();
+	{
 
-	StreamReadInfo pv; // = { cx, StreamObj };
-	pv.cx = cx;
-	pv.obj = streamObj;
+	StreamReadInfo pv(cx, JL_ARG(1).toObject());
 
 	OggVorbis_File descriptor;
 	ov_open_callbacks(&pv, &descriptor, NULL, 0, ovCallbacks);
@@ -149,7 +151,7 @@ DEFINE_FUNCTION( decodeOggVorbis ) {
 	// convert data chunks into a single memory buffer.
 	//char *buf = (char*)jl_malloc(totalSize +1);
 	uint8_t *buf;
-	buf = JL_NewByteAudioObject(cx, bits, info->channels, totalSize / (info->channels * (bits/8)), info->rate, *JL_RVAL);
+	buf = JL_NewByteAudioObject(cx, bits, info->channels, totalSize / (info->channels * (bits/8)), info->rate, JL_RVAL);
 	JL_CHK( buf );
 
 	ov_clear(&descriptor); // beware: info must be valid
@@ -166,6 +168,8 @@ DEFINE_FUNCTION( decodeOggVorbis ) {
 	}
 
 	return true;
+
+	}
 	JL_BAD;
 }
 
@@ -174,7 +178,7 @@ DEFINE_FUNCTION( decodeOggVorbis ) {
 sf_count_t SfGetFilelen(void *user_data) {
 
 	StreamReadInfo *pv = (StreamReadInfo *)user_data;
-	jsval tmpVal;
+	JS::RootedValue tmpVal(pv->cx);
 
 	int position;
 	JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal); // (TBD) manage error
@@ -196,7 +200,8 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 
 	StreamReadInfo *pv = (StreamReadInfo *)user_data;
 
-	jsval tmpVal;
+	JS::RootedValue tmpVal(pv->cx);
+
 	size_t position, available;
 
 	switch (whence) {
@@ -241,7 +246,7 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 sf_count_t SfTell(void *user_data) {
 
 	StreamReadInfo *pv = (StreamReadInfo *)user_data;
-	jsval tmpVal;
+	JS::RootedValue tmpVal(pv->cx);
 
 	int position;
 	JS_GetProperty(pv->cx, pv->obj, "position", &tmpVal);
@@ -286,12 +291,11 @@ DEFINE_FUNCTION( decodeSound ) {
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
+	
+	{
 
-	JSObject *streamObj = &JL_ARG(1).toObject();
+	StreamReadInfo pv(cx, JL_ARG(1).toObject());
 
-	StreamReadInfo pv;// = { cx, streamObj };
-	pv.cx = cx;
-	pv.obj = streamObj;
 	SF_INFO info;// = {0};
 	memset(&info, 0, sizeof(SF_INFO));
 
@@ -343,7 +347,7 @@ DEFINE_FUNCTION( decodeSound ) {
 
 	// convert data chunks into a single memory buffer.
 	uint8_t *buf;
-	buf = JL_NewByteAudioObject(cx, 16, info.channels, totalSize / (info.channels * (16 / 8)), info.samplerate, *JL_RVAL);
+	buf = JL_NewByteAudioObject(cx, 16, info.channels, totalSize / (info.channels * (16 / 8)), info.samplerate, JL_RVAL);
 	JL_CHK( buf );
 
 	sf_close(descriptor);
@@ -360,6 +364,7 @@ DEFINE_FUNCTION( decodeSound ) {
 	}
 
 	return true;
+	}
 	JL_BAD;
 }
 
@@ -375,30 +380,29 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( splitChannels ) {
 
-	JLData data;
-
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
+	{
+
 	int bits, rate, channels, frames;
-	data = JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &channels, &frames, &rate);
+	jl::BufString data( JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &channels, &frames, &rate) );
 
 	JL_ASSERT( bits == 8 || bits == 16, E_ARG, E_NUM(1), E_FORMAT, E_COMMENT_BEGIN, E_NUM(bits), E_STR("bit"), E_COMMENT_END );
-	JL_ASSERT( data.IsSet(), E_INVALID, E_DATA );
+	JL_ASSERT( data, E_INVALID, E_DATA );
 
 	const char *srcBuf;
-	srcBuf = data.GetConstStr();
+	srcBuf = data.toData<const char*>();
 
-	JSObject *destArray = JS_NewArrayObject(cx, 0);
-	*JL_RVAL = OBJECT_TO_JSVAL(destArray);
+	JS::RootedObject destArray(cx, JS_NewArrayObject(cx, 0));
+	JL_RVAL.setObject(*destArray);
 
-	jsval tmpVal;
+	JS::RootedValue tmpVal(cx);
 
 	for ( int c = 0; c < channels; c++ ) {
 
-		uint8_t *buf;
-		buf = JL_NewByteAudioObject(cx, bits, 1, frames, rate, tmpVal);
+		uint8_t *buf = JL_NewByteAudioObject(cx, bits, 1, frames, rate, &tmpVal);
 		JL_CHK( buf );
 		JL_CHK( JL_SetElement(cx, destArray, c, tmpVal) );
 
@@ -415,6 +419,7 @@ DEFINE_FUNCTION( splitChannels ) {
 	}
 
 	return true;
+	}
 	JL_BAD;
 }
 

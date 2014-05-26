@@ -115,12 +115,12 @@ DEFINE_CONSTRUCTOR() {
 	PRFileDesc *stdin_parent, *stdout_parent, *stderr_parent;
 	IFDEBUG( stdin_child = stdout_child = stderr_child = stdin_parent = stdout_parent = stderr_parent = NULL ); // avoid "potentially uninitialized local variable" warning
 
-	if ( stdioRedirect || currentDir.hasData() ) {
+	if ( stdioRedirect || currentDir ) {
 
 		psattr = PR_NewProcessAttr();
 		JL_CHKB( psattr, bad_throw );
 
-		if ( currentDir.hasData() ) {
+		if ( currentDir ) {
 			
 			JL_CHKB( PR_ProcessAttrSetCurrentDirectory(psattr, currentDir) == PR_SUCCESS, bad_throw );
 		}

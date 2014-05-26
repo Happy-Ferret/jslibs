@@ -103,7 +103,7 @@ bool PrepareReadCurrentFile( JSContext *cx, JS::HandleObject obj ) {
 		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTPASSWORD, &tmp) );
 		if ( !tmp.isUndefined() )
 			JL_CHK( jl::getValue(cx, tmp, &password) );
-		if ( !password.hasData() )
+		if ( !password )
 			return ThrowZipFileError(cx, JLERR_PASSWORDREQUIRED);
 		UNZ_CHK( unzOpenCurrentFilePassword(pv->uf, password) );
 	} else {
@@ -577,7 +577,7 @@ DEFINE_FUNCTION( read ) {
 	
 	//buffer = JL_NewBuffer(cx, requestedLength, JL_RVAL);
 	buffer.alloc(requestedLength);
-	JL_ASSERT_ALLOC(buffer.hasData());
+	JL_ASSERT_ALLOC(buffer);
 
 	int rd;
 	rd = unzReadCurrentFile(pv->uf, buffer.data(), requestedLength);
@@ -672,7 +672,7 @@ DEFINE_FUNCTION( write ) {
 	}
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
-	ASSERT( data.hasData() );
+	ASSERT( data );
 
 	ZIP_CHK( zipWriteInFileInZip(pv->zf, data.toData<const uint8_t*>(), data.length()) );
 
@@ -715,7 +715,7 @@ DEFINE_PROPERTY_GETTER( globalComment ) {
 		
 		//comment = JL_NewBuffer(cx, commentLength, vp);
 		buffer.alloc(commentLength);
-		JL_ASSERT_ALLOC( buffer.hasData() );
+		JL_ASSERT_ALLOC( buffer );
 
 		int rd;
 		rd = unzGetGlobalComment(pv->uf, (char*)buffer.data(), commentLength);
@@ -1012,7 +1012,7 @@ DEFINE_PROPERTY_GETTER( extra ) {
 		//uint8_t *buffer;
 		//buffer = JL_NewBuffer(cx, extraLength, vp);
 		buffer.alloc(extraLength);
-		JL_ASSERT_ALLOC( buffer.hasData() );
+		JL_ASSERT_ALLOC( buffer );
 
 		int rd;
 		rd = unzGetLocalExtrafield(pv->uf, buffer.data(), extraLength);

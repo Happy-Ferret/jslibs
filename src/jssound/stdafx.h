@@ -18,4 +18,6 @@
 #include <jlhelper.h>
 #include <jlclass.h>
 
+#include <../jslang/audioPub.h>
+
 #include <stack.h>

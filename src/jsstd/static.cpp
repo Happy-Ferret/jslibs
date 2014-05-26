@@ -570,7 +570,7 @@ DEFINE_FUNCTION( assert ) {
 		if ( JL_ARG_ISDEF(2) )
 			JL_CHK( jl::getValue(cx, JL_ARG(2), &str) );
 		else
-			str.set("Assertion failed.");
+			str.get("Assertion failed.");
 		
 		JS_ReportError( cx, "%s", str.toStringZ<const char *>());
 		return false;

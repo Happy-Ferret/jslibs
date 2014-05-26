@@ -33,7 +33,7 @@ bool MemoryMappedBufferGet( JSContext *cx, JS::HandleObject obj, jl::BufString *
 
 	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivate(obj);
 	//*str = JLData(((const char*)pv->addr) + pv->offset, false, pv->size);
-	str->set(((const char*)pv->addr) + pv->offset, pv->size, false);
+	str->get(((const char*)pv->addr) + pv->offset, pv->size, false);
 	return true;
 }
 

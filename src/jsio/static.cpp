@@ -350,7 +350,7 @@ DEFINE_FUNCTION( getRandomNoise ) {
 	//JL_CHK( buf );
 
 	buffer.alloc(amount);
-	JL_ASSERT_ALLOC( buffer.hasData() );
+	JL_ASSERT_ALLOC( buffer );
 
 	PRSize res;
 	res = PR_GetRandomNoise(buffer.data(), amount);

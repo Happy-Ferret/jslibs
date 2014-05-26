@@ -136,7 +136,7 @@ DEFINE_FUNCTION( read ) {
 	//JL_CHK( pr );
 
 	buffer.alloc(readCount);
-	JL_ASSERT_ALLOC( buffer.hasData() );
+	JL_ASSERT_ALLOC( buffer );
 
 	actualRead = pv->prng.read(buffer.data(), readCount, &pv->state);
 	JL_CHKM( actualRead == readCount, E_DATA, E_CREATE );
@@ -238,7 +238,7 @@ DEFINE_PROPERTY_GETTER( state ) {
 	//JL_CHK( stateData );
 
 	buffer.alloc(size);
-	JL_ASSERT_ALLOC(buffer.hasData());
+	JL_ASSERT_ALLOC(buffer);
 
 	unsigned long stateLength;
 	stateLength = size;

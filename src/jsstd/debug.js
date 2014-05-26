@@ -12,7 +12,7 @@ loadModule('jsstd');
 
 // var res = sandboxEval('for ( var i = 0; i < 1000000; ++i );', undefined, 1000);
 
-var res = sandboxEval('for ( var i = 0; i < 100000; ++i );');
+//var res = sandboxEval('for ( var i = 0; i < 100000; ++i );');
 
 
 

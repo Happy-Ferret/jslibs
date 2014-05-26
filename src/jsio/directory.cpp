@@ -79,19 +79,17 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( open ) {
 
-	jl::BufString str;
+	jl::BufString directoryName;
 
 	JL_DEFINE_ARGS;
 	
 	JS::RootedValue jsvalDirectoryName(cx);
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );
-//	const char *directoryName;
-//	JL_CHK( jl::getValue(cx, jsvalDirectoryName, &directoryName) );
-	JL_CHK( jl::getValue(cx, jsvalDirectoryName, &str) );
+	JL_CHK( jl::getValue(cx, jsvalDirectoryName, &directoryName) );
 
 	PRDir *dd;
-	dd = PR_OpenDir(str);
+	dd = PR_OpenDir(directoryName);
 	if ( dd == NULL )
 		return ThrowIoError(cx);
 
@@ -143,7 +141,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( read ) {
 
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 
 	PRDir *dd;
 	dd = (PRDir *)JL_GetPrivate(JL_OBJ);
@@ -186,20 +184,18 @@ DEFINE_FUNCTION( make ) {
 
 	JL_IGNORE( argc );
 
-	jl::BufString str;
+	jl::BufString directoryName;
 	JL_DEFINE_ARGS;
 	
 	JS::RootedValue jsvalDirectoryName(cx);
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );
-	
-//	const char *directoryName;
-//	JL_CHK( jl::getValue(cx, jsvalDirectoryName, &directoryName) );
-	JL_CHK( jl::getValue(cx, jsvalDirectoryName, &str) );
+
+	JL_CHK( jl::getValue(cx, jsvalDirectoryName, &directoryName) );
 
 	PRIntn mode;
 	mode = 0766; // the permissions need to be set to 766 (linux uses the eXecute bit on directory as permission to allow access to a directory).
-	if ( PR_MkDir(str, mode) != PR_SUCCESS )
+	if ( PR_MkDir(directoryName, mode) != PR_SUCCESS )
 		return ThrowIoError(cx);
 
 	JL_RVAL.setUndefined();
@@ -218,15 +214,15 @@ DEFINE_FUNCTION( remove ) {
 
 	JL_IGNORE( argc );
 
-	jl::BufString str;
+	jl::BufString directoryName;
 	JL_DEFINE_ARGS;
 	
 	JS::RootedValue jsvalDirectoryName(cx);
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );
-	JL_CHK( jl::getValue(cx, jsvalDirectoryName, &str) );
+	JL_CHK( jl::getValue(cx, jsvalDirectoryName, &directoryName) );
 
-	if ( PR_RmDir(str) != PR_SUCCESS ) { // PR_RmDir removes the directory specified by the pathname name. The directory must be empty. If the directory is not empty, PR_RmDir fails and PR_GetError returns the error code PR_DIRECTORY_NOT_EMPTY_ERROR.
+	if ( PR_RmDir(directoryName) != PR_SUCCESS ) { // PR_RmDir removes the directory specified by the pathname name. The directory must be empty. If the directory is not empty, PR_RmDir fails and PR_GetError returns the error code PR_DIRECTORY_NOT_EMPTY_ERROR.
 
 		PRErrorCode errorCode = PR_GetError();
 		if ( errorCode == PR_DIRECTORY_NOT_EMPTY_ERROR || errorCode == PR_READ_ONLY_FILESYSTEM_ERROR ) {
@@ -257,15 +253,15 @@ DEFINE_PROPERTY_GETTER( exist ) {
 
 	JL_IGNORE( id );
 
-	jl::BufString str;
+	jl::BufString directoryName;
 
 	JS::RootedValue jsvalDirectoryName(cx);
 	JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName ) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );
-	JL_CHK( jl::getValue(cx, jsvalDirectoryName, &str) );
+	JL_CHK( jl::getValue(cx, jsvalDirectoryName, &directoryName) );
 
 	PRDir *dd;
-	dd = PR_OpenDir(str);
+	dd = PR_OpenDir(directoryName);
 
 	if ( dd == NULL ) {
 		
@@ -295,7 +291,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( name ) {
 
-	JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, vp ) );
+	JL_CHK( JL_GetReservedSlot(obj, SLOT_JSIO_DIR_NAME, vp) );
 	JL_CHK( jl::StoreProperty(cx, obj, id, vp, false) );
 	return true;
 	JL_BAD;
@@ -405,7 +401,7 @@ DEFINE_FUNCTION( list ) {
 			directoryName.copyTo(tmp);
 			tmp += directoryName.length();
 
-			char lastDirNameChar = directoryName.getCharAt(directoryName.length()-1);
+			char lastDirNameChar = directoryName.charAt<char>(directoryName.length()-1);
 			if ( lastDirNameChar != '/' && lastDirNameChar != dirSepChar ) {
 
 				*tmp = dirSepChar;

@@ -544,7 +544,7 @@ DEFINE_FUNCTION( recvFrom ) {
 	//buffer = JL_DataBufferAlloc(cx, (size_t)available); // (TBD) optimize this if  available == 0 !!
 	//JL_CHKM( jl::isInBounds<size_t>(available), E_FILE, E_TOOBIG );
 	buffer.alloc((size_t)available);
-	JL_ASSERT_ALLOC( buffer.hasData() );
+	JL_ASSERT_ALLOC( buffer );
 
 	PRNetAddr addr;
 	PRInt32 res;

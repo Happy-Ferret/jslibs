@@ -221,7 +221,7 @@ DEFINE_CONSTRUCTOR() {
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IV == NULL, "Initialization vector is invalid for this mode." );
-			JL_ASSERT_WARN( !optarg.hasData(), E_ARG, E_NUM(5), E_IGNORED );
+			JL_ASSERT_WARN( !optarg, E_ARG, E_NUM(5), E_IGNORED );
 			err = ecb_start( cipherIndex, key.toData<const uint8_t*>(), (int)key.length(), numRounds, (symmetric_ECB *)pv->symmetric_XXX );
 			break;
 		}
@@ -230,7 +230,7 @@ DEFINE_CONSTRUCTOR() {
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			JL_ASSERT_WARN( !optarg.hasData(), E_ARG, E_NUM(5), E_IGNORED );
+			JL_ASSERT_WARN( !optarg, E_ARG, E_NUM(5), E_IGNORED );
 			err = cfb_start( cipherIndex, IV.toData<const uint8_t*>(), key.toData<const uint8_t*>(), (int)key.length(), numRounds, (symmetric_CFB *)pv->symmetric_XXX );
 			break;
 		}
@@ -239,7 +239,7 @@ DEFINE_CONSTRUCTOR() {
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			JL_ASSERT_WARN( !optarg.hasData(), E_ARG, E_NUM(5), E_IGNORED );
+			JL_ASSERT_WARN( !optarg, E_ARG, E_NUM(5), E_IGNORED );
 			err = ofb_start( cipherIndex, IV.toData<const uint8_t*>(), key.toData<const uint8_t*>(), (int)key.length(), numRounds, (symmetric_OFB *)pv->symmetric_XXX );
 			break;
 		}
@@ -248,7 +248,7 @@ DEFINE_CONSTRUCTOR() {
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			JL_ASSERT_WARN( !optarg.hasData(), E_ARG, E_NUM(5), E_IGNORED );
+			JL_ASSERT_WARN( !optarg, E_ARG, E_NUM(5), E_IGNORED );
 			err = cbc_start( cipherIndex, IV.toData<const uint8_t*>(), key.toData<const uint8_t*>(), (int)key.length(), numRounds, (symmetric_CBC *)pv->symmetric_XXX );
 			break;
 		}
@@ -257,7 +257,7 @@ DEFINE_CONSTRUCTOR() {
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			JL_ASSERT_WARN( !optarg.hasData(), E_ARG, E_NUM(5), E_IGNORED );
+			JL_ASSERT_WARN( !optarg, E_ARG, E_NUM(5), E_IGNORED );
 			err = ctr_start( cipherIndex, IV.toData<const uint8_t*>(), key.toData<const uint8_t*>(), (int)key.length(), numRounds, CTR_COUNTER_LITTLE_ENDIAN, (symmetric_CTR *)pv->symmetric_XXX );
 			break;
 		}
@@ -266,7 +266,7 @@ DEFINE_CONSTRUCTOR() {
 			JL_ASSERT_ALLOC( pv->symmetric_XXX );
 			JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 //			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			JL_ASSERT( optarg.hasData() && optarg.length() == key.length(), E_ARG, E_NUM(5), E_SEP, E_STR("tweak"), E_LENGTH, E_NUM((int)key.length()) );
+			JL_ASSERT( optarg && optarg.length() == key.length(), E_ARG, E_NUM(5), E_SEP, E_STR("tweak"), E_LENGTH, E_NUM((int)key.length()) );
 			err = lrw_start( cipherIndex, IV.toData<const uint8_t*>(), key.toData<const uint8_t*>(), (int)key.length(), optarg.toData<const uint8_t*>(), numRounds, (symmetric_LRW *)pv->symmetric_XXX );
 			break;
 		}
@@ -351,7 +351,7 @@ DEFINE_FUNCTION( encrypt ) {
 	//JL_CHK( ct );
 
 	buffer.alloc(pt.length());
-	JL_ASSERT_ALLOC( buffer.hasData() );
+	JL_ASSERT_ALLOC(buffer);
 
 	int err;
 	switch ( pv->mode ) {
@@ -427,7 +427,7 @@ DEFINE_FUNCTION( decrypt ) {
 	//pt = JL_NewBuffer(cx, ct.Length(), JL_RVAL);
 	//JL_CHK( pt );
 	buffer.alloc(ct.length());
-	JL_ASSERT_ALLOC(buffer.hasData());
+	JL_ASSERT_ALLOC(buffer);
 
 	int err;
 	switch ( pv->mode ) {
@@ -654,7 +654,7 @@ DEFINE_PROPERTY_GETTER( IV ) {
 			symmetric_OFB *tmp = (symmetric_OFB *)pv->symmetric_XXX;
 			IVLength = tmp->blocklen;
 			IV.alloc(IVLength);
-			JL_ASSERT_ALLOC( IV.hasData() );
+			JL_ASSERT_ALLOC( IV );
 			//IV = JL_NewBuffer(cx, IVLength, vp);
 			//JL_CHK( IV );
 			err = ofb_getiv( IV.data(), &IVLength, tmp );
@@ -664,7 +664,7 @@ DEFINE_PROPERTY_GETTER( IV ) {
 			symmetric_CBC *tmp = (symmetric_CBC *)pv->symmetric_XXX;
 			IVLength = tmp->blocklen;
 			IV.alloc(IVLength);
-			JL_ASSERT_ALLOC( IV.hasData() );
+			JL_ASSERT_ALLOC( IV );
 			//IV = JL_NewBuffer(cx, IVLength, vp);
 			//JL_CHK( IV );
 			err = cbc_getiv( IV.data(), &IVLength, tmp );
@@ -674,7 +674,7 @@ DEFINE_PROPERTY_GETTER( IV ) {
 			symmetric_CTR *tmp = (symmetric_CTR *)pv->symmetric_XXX;
 			IVLength = tmp->blocklen;
 			IV.alloc(IVLength);
-			JL_ASSERT_ALLOC( IV.hasData() );
+			JL_ASSERT_ALLOC( IV );
 //			IV = JL_NewBuffer(cx, IVLength, vp);
 //			JL_CHK( IV );
 			err = ctr_getiv( IV.data(), &IVLength, tmp );
@@ -684,7 +684,7 @@ DEFINE_PROPERTY_GETTER( IV ) {
 			symmetric_LRW *tmp = (symmetric_LRW *)pv->symmetric_XXX;
 			IVLength = 16;
 			IV.alloc(IVLength);
-			JL_ASSERT_ALLOC( IV.hasData() );
+			JL_ASSERT_ALLOC( IV );
 //			IV = JL_NewBuffer(cx, IVLength, vp);
 //			JL_CHK( IV );
 			err = lrw_getiv( IV.data(), &IVLength, tmp );
@@ -694,7 +694,7 @@ DEFINE_PROPERTY_GETTER( IV ) {
 			symmetric_F8 *tmp = (symmetric_F8 *)pv->symmetric_XXX;
 			IVLength = tmp->blocklen;
 			IV.alloc(IVLength);
-			JL_ASSERT_ALLOC( IV.hasData() );
+			JL_ASSERT_ALLOC( IV );
 //			IV = JL_NewBuffer(cx, IVLength, vp);
 //			JL_CHK( IV );
 			err = f8_getiv( IV.data(), &IVLength, tmp );

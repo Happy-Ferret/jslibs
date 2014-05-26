@@ -326,7 +326,7 @@ DEFINE_FUNCTION( read ) {
 	//JL_ASSERT_ALLOC( buf );
 
 	buffer.alloc(amount);
-	JL_ASSERT_ALLOC( buffer.hasData() );
+	JL_ASSERT_ALLOC( buffer );
 
 
 	//PRIntervalTime timeout;

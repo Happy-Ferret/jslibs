@@ -245,7 +245,7 @@ DEFINE_FUNCTION( join ) {
 		//JL_CHK( buf );
 
 		buffer.alloc(length);
-		JL_ASSERT_ALLOC(buffer.hasData());
+		JL_ASSERT_ALLOC(buffer);
 		
 		//buf += length;
 		uint8_t *buf;
@@ -1078,22 +1078,32 @@ DEFINE_FUNCTION( jslangTest ) {
 */
 
 	{
-		jl::BufBase b;
+		jl::BufBase b(jl::BufBase::Uninitialized);
+		b.setData(nullptr);
 	}
 
 	{
-		const char test[1] = {0};
+		jl::BufBase b;
+		ASSERT( b.empty() );
+	}
+
+	{
+		const char test[] = "test";
 		jl::BufPartial(jl::constPtr(test), 1);
 	}
 
 	{
 		jl::BufBase b;
+		ASSERT( !b );
 		b.alloc(100);
+		ASSERT( b );
+		ASSERT( b.owner() );
+		b.free();
+		ASSERT( !b );
 	}
 
 	{
 		jl::BufString a( "test" );
-
 		ASSERT( a == "test" );
 	}
 
@@ -1104,6 +1114,16 @@ DEFINE_FUNCTION( jslangTest ) {
 	}
 
 	{
+		ASSERT( jl::BufString( "test" ) == jl::BufString( "test" ) );
+		ASSERT( jl::BufString( "test" ) == jl::BufString( L("test") ) );
+		ASSERT( jl::BufString( L("test") ) == jl::BufString( "test" ) );
+		ASSERT( jl::BufString( L("test") ) == jl::BufString( L("test") ) );
+
+		ASSERT( jl::BufString( "test" ) != jl::BufString( "test1" ) );
+		ASSERT( jl::BufString( "test" ) != jl::BufString( L("test1") ) );
+		ASSERT( jl::BufString( L("test") ) != jl::BufString( "test1" ) );
+		ASSERT( jl::BufString( L("test") ) != jl::BufString( L("test1") ) );
+
 		jl::BufString str("abc");
 		ASSERT( str == "abc" );
 		ASSERT( str == L("abc") );

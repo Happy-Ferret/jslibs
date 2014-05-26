@@ -148,7 +148,7 @@ DEFINE_FUNCTION( read ) {
 	//JL_CHK( buffer );
 
 	buffer.alloc(amount);
-	JL_ASSERT_ALLOC(buffer.hasData());
+	JL_ASSERT_ALLOC(buffer);
 
 	int st = sqlite3_blob_read(pv->pBlob, buffer.data(), amount, pv->position);
 	if ( st != SQLITE_OK )
@@ -322,7 +322,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( JL_ARG_ISDEF(1) )
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &fileName) );
 	else
-		fileName.set(":memory:");
+		fileName.get(":memory:");
 
 	pv = (DatabasePrivate*)JS_malloc(cx, sizeof(DatabasePrivate));
 	JL_CHK(pv);

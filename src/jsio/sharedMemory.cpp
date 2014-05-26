@@ -59,7 +59,7 @@ bool SharedMemoryBufferGet( JSContext *cx, JS::HandleObject obj, jl::BufString *
 //	*buf = (char *)pv->mem + sizeof(MemHeader);
 //	*size = mh->currentDataLength;
 	//*str = JLData(((const char *)pv->mem) + sizeof(MemHeader), false, mh->currentDataLength);
-	str->set(((const char *)pv->mem) + sizeof(MemHeader), mh->currentDataLength, false);
+	str->get(((const char *)pv->mem) + sizeof(MemHeader), mh->currentDataLength, false);
 
 	return true;
 	JL_BAD;

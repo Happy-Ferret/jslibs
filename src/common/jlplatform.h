@@ -573,41 +573,56 @@ LL(const wchar_t *s) {
 	((void)(__VA_ARGS__))
 
 
-// see CrashInJS() in jsutil.cpp
-ALWAYS_INLINE void
-JL_Break() {
-#if defined(WIN32)
-# if defined(DEBUG)
-	_asm { int 3 }
-# endif // DEBUG
-	*((volatile int *) NULL) = 123;
-	exit(3);
-#elif defined(__APPLE__)
-	*((volatile int *) NULL) = 123;
-	raise(SIGABRT);
-#else
-	raise(SIGABRT);
-#endif
-}
 
-// from jsutil.cpp
-ALWAYS_INLINE void
-JL_AssertFailure( const char *message, const char *location ) {
-	
-	fprintf(stderr, "JL Assertion failure: %s @%s\n", message, location);
-	fflush(stderr);
-	JL_Break();
-}
+#if defined(WIN32)
+#define JL_ASSERT_FAILURE( message, location ) \
+	( \
+	fprintf(stderr, "JL Assertion failure:  %s  @%s\n", message, location), \
+	fflush(stderr), \
+	__debugbreak(), \
+	(*((volatile int*) NULL) = 123), \
+	::TerminateProcess(::GetCurrentProcess(), 3) \
+	)
+
+#elif defined(__APPLE__)
+#define JL_ASSERT_FAILURE( message, location ) \
+	( \
+	fprintf(stderr, "JL Assertion failure: %s @%s\n", message, location), \
+	fflush(stderr), \
+	__debugbreak(), \
+	(*((volatile int*) NULL) = 123), \
+	raise(SIGABRT) \
+	)
+
+#else
+#define JL_ASSERT_FAILURE( message, location ) \
+	( \
+	fprintf(stderr, "JL Assertion failure: %s @%s\n", message, location), \
+	fflush(stderr), \
+	raise(SIGABRT) \
+	)
+
+#endif
+
+
 
 #ifdef DEBUG
+
 #define ASSERT(expr) \
-    ( (expr) ? (void)0 : JL_AssertFailure(#expr, JL_CODE_LOCATION) )
+    ( (expr) ? (void)0 : JL_ASSERT_FAILURE(#expr, JL_CODE_LOCATION) )
+
 #define ASSERT_IF(cond, expr) \
-    ( (!(cond) || (expr)) ? (void)0 : JL_AssertFailure(#expr, JL_CODE_LOCATION) )
+    ( (!(cond) || (expr)) ? (void)0 : JL_ASSERT_FAILURE(#expr, JL_CODE_LOCATION) )
+
 #else // DEBUG
+
 // beware. Use __assume in an ASSERT only when the assert is not recoverable.
-#define ASSERT(expr) ((void)0) // (ASSUME(expr))
-#define ASSERT_IF(cond, expr) ((void)0)
+#define ASSERT(expr) \
+	((void)0) // (ASSUME(expr))
+
+#define ASSERT_IF(cond, expr) \
+	((void)0)
+
 #endif // DEBUG
 
 
@@ -954,10 +969,6 @@ template<class T> struct Pointer <T*> { typedef T Type; static const bool isPoin
 	mozilla::RemoveUnsigned<T>::Type
 
 //
-/*
-template<typename T> struct AddConst { typedef const T Type; };
-template<typename T> struct AddConst <const T> { typedef const T Type; };
-*/
 
 template<class T>
 const T *
@@ -966,13 +977,11 @@ constPtr( T *v ) {
 	return v;
 }
 
-
 #define IsConst(T) \
 	mozilla::IsConst<T>::value
 
 #define RemoveConst(T) \
 	mozilla::RemoveConst<T>::Type
-
 
 //
 

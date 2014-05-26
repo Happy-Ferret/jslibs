@@ -98,10 +98,11 @@ template <class T, class U, class V, class W>
 ALWAYS_INLINE jl::BufString FASTCALL
 JL_GetByteAudioObject( IN JSContext *cx, IN JS::HandleValue val, T *bits, U *channels, V *frames, W *rate ) {
 
-	JLData data;
 	//JL_ASSERT_IS_OBJECT(val, "audio");
 	JL_CHK( val.isObject() );
+	{
 	JS::RootedObject audioObj(cx, &val.toObject());
+	jl::BufString data;
 	JL_CHK( jl::getProperty(cx, audioObj, JLID(cx, data), &data) );
 	JL_CHK( jl::getProperty(cx, audioObj, JLID(cx, bits), bits) );
 	JL_CHK( jl::getProperty(cx, audioObj, JLID(cx, channels), channels) );
@@ -111,9 +112,10 @@ JL_GetByteAudioObject( IN JSContext *cx, IN JS::HandleValue val, T *bits, U *cha
 	//JL_ASSERT( *bits > 0 && (*bits % 8) == 0 && *rate > 0 && *channels > 0 && *frames >= 0, E_STR("audio"), E_FORMAT );
 	//JL_ASSERT( data.IsSet() && data.Length() == (size_t)( (*bits/8) * *channels * *frames ), E_DATASIZE, E_INVALID );
 	JL_CHK( *bits > 0 && (*bits % 8) == 0 && *rate > 0 && *channels > 0 && *frames >= 0 );
-	JL_CHK( data.IsSet() && data.Length() == (size_t)( (*bits/8) * *channels * *frames ) );
+	JL_CHK( data && data.length() == (size_t)( (*bits/8) * *channels * *frames ) );
 	return data;
+	}
 bad:
-	return JLData();
+	return jl::BufString();
 }
 

@@ -233,7 +233,7 @@ DEFINE_FUNCTION( done ) {
 	//out = JL_NewBuffer(cx, outLength, JL_RVAL);
 
 	buffer.alloc(pv->descriptor->hashsize);
-	JL_ASSERT_ALLOC(buffer.hasData());
+	JL_ASSERT_ALLOC(buffer);
 	
 	//JL_CHK( out );
 	int err;

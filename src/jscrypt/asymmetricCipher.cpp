@@ -375,7 +375,7 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 	
 	out.alloc(outLength);
 	//out = JL_DataBufferAlloc(cx, outLength);
-	JL_ASSERT_ALLOC(out.hasData());
+	JL_ASSERT_ALLOC(out);
 
 	int err;
 	err = -1; // default
@@ -473,7 +473,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 
 	//out = JL_DataBufferAlloc(cx, outLength);
 	out.alloc(outLength);
-	JL_ASSERT_ALLOC(out.hasData());
+	JL_ASSERT_ALLOC(out);
 
 	int err;
 	err = -1; // default
@@ -572,7 +572,7 @@ DEFINE_FUNCTION( sign ) { // ( data [, saltLength] )
 
 	//out = JL_DataBufferAlloc(cx, outLength);
 	out.alloc(outLength);
-	JL_ASSERT_ALLOC(out.hasData());
+	JL_ASSERT_ALLOC(out);
 
 	int err;
 	err = -1; // default
@@ -872,7 +872,7 @@ DEFINE_PROPERTY_GETTER( key ) {
 
 	//key = JL_DataBufferAlloc(cx, keyLength);
 	key.alloc(keyLength);
-	JL_ASSERT_ALLOC( key.hasData() );
+	JL_ASSERT_ALLOC(key);
 
 	int err;
 	err = -1; // default
