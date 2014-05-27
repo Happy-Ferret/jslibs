@@ -369,6 +369,7 @@
 #include <stdio.h>
 #include <cstring>
 #include <cctype>
+#include <type_traits>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -962,13 +963,13 @@ template<class T> struct Pointer <T*> { typedef T Type; static const bool isPoin
 */
 
 
-#define IsUnsigned(T) \
-	mozilla::IsUnsigned<T>::value
-
-#define RemoveUnsigned(T) \
-	mozilla::RemoveUnsigned<T>::Type
-
 //
+
+#define MakeUnsigned(T) \
+	std::make_unsigned<T>::type
+
+#define MakeSigned(T) \
+	std::make_signed<T>::type
 
 template<class T>
 const T *
@@ -993,8 +994,6 @@ template<class T> struct RemovePointer <T*> { typedef T Type; };
 
 #define RemovePointer(T) \
 	jl::RemovePointer<T>::Type
-
-
 
 
 
@@ -1064,26 +1063,32 @@ memset(void *dst, size_t len, uint8_t val) {
 
 template<class D, class S>
 ALWAYS_INLINE void
-reinterpretBuffer(void* d, void* s, size_t length) {
+reinterpretBuffer(void* d, void* s, size_t length, bool unsignedRendering = false) {
 
-	D *dst = reinterpret_cast<D*>(d);
-	S *src = reinterpret_cast<S*>(s);
+	if ( unsignedRendering ) {
 
-	DISABLE_SMALLER_TYPE_CHECK;
-	if ( sizeof(D) < sizeof(S) ) {
-
-		S* end = src + length;
-		while ( src != end )
-			*(dst++) = *(src++);
+		reinterpretBuffer<MakeUnsigned(D), MakeUnsigned(S)>(d, s, length);
 	} else {
 
-		S* end = src;
-		dst += length;
-		src += length;
-		while ( src != end )
-			*(--dst) = *(--src);
+		D *dst = reinterpret_cast<D*>(d);
+		S *src = reinterpret_cast<S*>(s);
+
+		DISABLE_SMALLER_TYPE_CHECK;
+		if ( sizeof(D) < sizeof(S) ) {
+
+			S* end = src + length;
+			while ( src != end )
+				*(dst++) = *(src++);
+		} else {
+
+			S* end = src;
+			dst += length;
+			src += length;
+			while ( src != end )
+				*(--dst) = *(--src);
+		}
+		RESTORE_SMALLER_TYPE_CHECK;
 	}
-	RESTORE_SMALLER_TYPE_CHECK;
 }
 
 
@@ -1562,34 +1567,46 @@ tstrlen(const T* s) {
 
 template <typename T, typename U>
 int32_t
-tstrcmp(const T *lhs, const U *rhs) {
+tstrcmp( const T *lhs, const U *rhs, bool unsignedCmp = false ) {
 
-	while ( true ) {
+	if ( unsignedCmp ) {
+		
+		return tstrcmp(reinterpret_cast<const MakeUnsigned(T)*>(lhs), reinterpret_cast<const MakeUnsigned(U)*>(rhs));
+	} else {
 
-		//if ( *lhs != static_cast<T>(*rhs) )
-		if ( *lhs != *rhs )
-			return static_cast<int32_t>(*lhs) - static_cast<int32_t>(*rhs);
-		if ( *lhs == 0 )
-			return 0;
-		++lhs, ++rhs;
+		while ( true ) {
+
+			//if ( *lhs != static_cast<T>(*rhs) )
+			if ( *lhs != *rhs )
+				return static_cast<int32_t>(*lhs) - static_cast<int32_t>(*rhs);
+			if ( *lhs == 0 )
+				return 0;
+			++lhs, ++rhs;
+		}
 	}
 }
 
 
 template <typename T, typename U>
 int32_t
-tstrncmp(const T *lhs, const U *rhs, size_t max) {
+tstrncmp(const T *lhs, const U *rhs, size_t max, bool unsignedCmp = false ) {
 
-	const T *limit = lhs + max;
-	while ( lhs < limit ) {
+	if ( unsignedCmp ) {
+		
+		return tstrncmp(reinterpret_cast<const MakeUnsigned(T)*>(lhs), reinterpret_cast<const MakeUnsigned(U)*>(rhs), max);
+	} else {
 
-		if ( *lhs != static_cast<T>(*rhs) )
-			return static_cast<int32_t>(*lhs) - static_cast<int32_t>(*rhs);
-		if ( *lhs == 0 )
-			return 0;
-		++lhs, ++rhs;
+		const T *limit = lhs + max;
+		while ( lhs < limit ) {
+
+			if ( *lhs != static_cast<T>(*rhs) )
+				return static_cast<int32_t>(*lhs) - static_cast<int32_t>(*rhs);
+			if ( *lhs == 0 )
+				return 0;
+			++lhs, ++rhs;
+		}
+		return 0;
 	}
-	return 0;
 }
 
 

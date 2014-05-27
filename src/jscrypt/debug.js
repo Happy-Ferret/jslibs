@@ -10,20 +10,36 @@ loadModule('jscrypt');
 
 
 
+try {
 
 	var rnd = new Prng('fortuna');
 	rnd.autoEntropy(128); // give more entropy
 	//var plainText = 'this string has 24 chars';
-	var plainText = stringRepeat('x', 94);
+	//var plainText = stringRepeat('x', 94);
+	var plainText = 'test';
 	plainText = plainText;
 	var rsa = new AsymmetricCipher('rsa', 'md5', rnd );
 	rsa.createKeys( 1024 );
 	var rsaPubKey = rsa.publicKey;
+
+	print('rsaPubKey len:', rsaPubKey.length , '\n');
+
 	var rsa1 = new AsymmetricCipher( 'rsa', 'md5', rnd );
 	rsa1.publicKey = rsaPubKey;
 	var rsaEncryptedData = rsa1.encrypt( plainText ).string;
+
+	print(rsaEncryptedData.length, '\n');
+
+
 	var res = rsa.decrypt( rsaEncryptedData ).string;
 	print ( res == plainText )
+
+} catch(ex) {
+	
+	print( ex.const, '\n' );
+	print( ex.lineNumber, '\n' );
+}
+
 throw 0;
 
 

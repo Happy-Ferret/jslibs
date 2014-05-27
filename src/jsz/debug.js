@@ -17,7 +17,7 @@ loadModule('jsz');
 
 	var result = inflate.process(str, true);
 	
-	print( deflate.process().byteLength )
+	print( deflate.process().length )
 	
 
 

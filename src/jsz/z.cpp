@@ -211,7 +211,7 @@ DEFINE_FUNCTION( process ) {
 	ASSERT( inputData.lengthOrZero() <= UINT_MAX );
 
 	pv->stream.avail_in = (uInt)inputData.lengthOrZero();
-	pv->stream.next_in = (Bytef*)inputData.toData<const Bytef*>();
+	pv->stream.next_in = (Bytef*)inputData.toDataOrNull<const Bytef*>();
 
 	// first length is a guess.
 	size_t length;

@@ -610,7 +610,6 @@ DEFINE_FUNCTION( sign ) { // ( data [, saltLength] )
 		JL_CHK( ThrowCryptError(cx, err) );
 
 	out.setUsed(outLength);
-	//JL_CHK( JL_NewBufferGetOwnership(cx, out, outLength, JL_RVAL) );
 	JL_CHK( BlobCreate(cx, out, JL_RVAL) );
 	return true;
 	JL_BAD;
@@ -812,9 +811,6 @@ DEFINE_PROPERTY_SETTER( key ) {
 	int type;
 	type = JSID_TO_INT(id);
 
-//	const char *key;
-//	size_t keyLength;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &key, &keyLength) );
 	JL_CHK( jl::getValue(cx, JL_RVAL, &key) );
 
 	int err;
@@ -899,7 +895,6 @@ DEFINE_PROPERTY_GETTER( key ) {
 		JL_CHK( ThrowCryptError(cx, err) );
 
 	key.setUsed(keyLength);
-	//JL_CHK( JL_NewBufferGetOwnership(cx, key, keyLength, vp) );
 	JL_CHK( BlobCreate(cx, key, JL_RVAL) );
 	return true;
 	JL_BAD;

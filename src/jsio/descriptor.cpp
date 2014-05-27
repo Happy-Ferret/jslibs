@@ -385,7 +385,7 @@ DEFINE_FUNCTION( read ) {
 		return true;
 	}
 
-	if ( (uint32_t) res < amount )
+	if ( (uint32_t)res < amount )
 		buffer.setUsed(res);
 
 	return BlobCreate(cx, buffer, JL_RVAL);

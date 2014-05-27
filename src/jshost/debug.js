@@ -9,10 +9,50 @@ var loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
 
 
+var data = jslangTest();
+//print( 'data: '+data.string.quote() );
+
+throw 0;
+
+
+
+loadModule('jsstd');
+loadModule('jscrypt');
+try {
+
+	var rnd = new Prng('fortuna');
+	rnd.autoEntropy(128); // give more entropy
+	//var plainText = 'this string has 24 chars';
+	var plainText = stringRepeat('x', 94);
+	plainText = plainText;
+	var rsa = new AsymmetricCipher('rsa', 'md5', rnd );
+	rsa.createKeys( 1024 );
+	var rsaPubKey = rsa.publicKey;
+	var rsa1 = new AsymmetricCipher( 'rsa', 'md5', rnd );
+	rsa1.publicKey = rsaPubKey;
+	var rsaEncryptedData = rsa1.encrypt( plainText ).string;
+
+	
+	print(rsaEncryptedData.length+' '+rsaEncryptedData.substr(0,5).quote(), '\n');
+
+	var res = rsa.decrypt( rsaEncryptedData ).string;
+	print ( res == plainText )
+
+} catch(ex) {
+	
+	print( ex.const, '\n' );
+	print( ex.lineNumber, '\n' );
+}
+
+throw 0;
+
+
+
+
 //new Array(100000).map(function() { return { a:'sdjhgskdljfghdskljghlsdkjfghldskjfgh' } });
 //[].forEach(function(){});
 
-//loadModule('jsstd');
+loadModule('jsstd');
 
 //for ( var i = 0; i < 1000000; ++i );
 
@@ -25,9 +65,6 @@ var loadModule = host.loadModule;
 
 //print(new ArrayBuffer(0), 'x', '\n');
 
-
-
-
 //var data = new Blob();
 
 //print( data.arrayBuffer.byteLength, '\n' );
@@ -36,10 +73,9 @@ var loadModule = host.loadModule;
 //print( data.arrayBuffer, '\n' );
 
 
-throw 0;
 
-var data = jslangTest();
-throw 0;
+
+
 
 
 

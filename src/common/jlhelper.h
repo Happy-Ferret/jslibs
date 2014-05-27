@@ -1027,7 +1027,7 @@ public:
 	bool
 	empty() {
 
-		return hasData() || size() == 0;
+		return !hasData() || size() == 0;
 	}
 
 	void
@@ -1036,6 +1036,7 @@ public:
 		ASSERT( _owner );
 		ASSERT( _data );
 
+		//IFDEBUG( memchr(_data, 'x', size()) );
 		//jl::zeromem(_data, _size);
 		jl_free(_data);
 		_data = nullptr;
@@ -1117,6 +1118,7 @@ public:
 		_owner = false;
 	}
 
+/*
 	size_t
 	used() const {
 
@@ -1124,7 +1126,7 @@ public:
 
 		return _size;
 	}
-
+*/
 
 	ALWAYS_INLINE bool
 	is( const BufBase &buf ) const {
@@ -1138,7 +1140,7 @@ public:
 		ASSERT( !owner() );
 
 		Type tmp = static_cast<Type>(jl_malloc(size()));
-		jl::memcpy(tmp, data(), used());
+		jl::memcpy(tmp, data(), size());
 		setData(tmp);
 		_owner = true;
 		return tmp != nullptr;
@@ -1217,9 +1219,10 @@ public:
 
 	void
 	realloc( size_t newSize ) {
-		
+
 		BufBase::realloc(newSize);
-		//setUsed(jl::min(used(), newSize));
+		if ( used() > size() )
+			setUsed(size());
 		ASSERT( used() <= size() );
 	}
 
@@ -1338,6 +1341,7 @@ public:
 
 class BufString : public BufPartial {
 	typedef jschar WideChar;
+	typedef char NarrowChar;
 
 	uint8_t _charSize;
 	uint8_t _terminatorLength;
@@ -1482,8 +1486,8 @@ public:
 			ASSERT( nt() );
 
 			len = wide() ? jl::strlen(dataAs<WideChar*>()) : jl::strlen(dataAs<char*>());
-			setSize((len + 1) * charSize());
-			setUsed(size());
+			setUsed((len + 1) * charSize());
+			setSize(used());
 		} else {
 				
 			len = used() / charSize() - _terminatorLength;
@@ -1510,10 +1514,10 @@ public:
 
 			if ( wide() ) {
 			
-				return str.wide() ? jl::tstrncmp(dataAs<WideChar*>(), str.dataAs<WideChar*>(), len) == 0 : jl::tstrncmp(dataAs<WideChar*>(), str.dataAs<char*>(), len) == 0;
+				return str.wide() ? jl::tstrncmp(dataAs<WideChar*>(), str.dataAs<WideChar*>(), len) == 0 : jl::tstrncmp(dataAs<WideChar*>(), str.dataAs<char*>(), len, true) == 0;
 			} else {
 
-				return str.wide() ? jl::tstrncmp(dataAs<char*>(), str.dataAs<WideChar*>(), len) == 0 : jl::tstrncmp(dataAs<char*>(), str.dataAs<char*>(), len) == 0;
+				return str.wide() ? jl::tstrncmp(dataAs<char*>(), str.dataAs<WideChar*>(), len) == 0 : jl::tstrncmp(dataAs<char*>(), str.dataAs<char*>(), len, true) == 0;
 			}
 		} else {
 
@@ -1531,14 +1535,14 @@ public:
 	template <class T>
 	bool
 	operator ==( const T *str ) const {
-		
+	
 		if ( nt() ) {
 			
-			return dataAs<T*>() == str || ( wide() ? jl::tstrcmp(dataAs<WideChar*>(), str) == 0 : jl::tstrcmp(dataAs<char*>(), str) == 0);
+			return dataAs<T*>() == str || ( wide() ? jl::tstrcmp(dataAs<WideChar*>(), str, true) == 0 : jl::tstrcmp(dataAs<char*>(), str, true) == 0);
 		} else {
 
 			size_t len = length();
-			return jl::strlen(str) == len && ( wide() ? jl::tstrncmp(dataAs<WideChar*>(), str, len) == 0 : jl::tstrncmp(dataAs<char*>(), str, len) == 0);
+			return jl::strlen(str) == len && ( wide() ? jl::tstrncmp(dataAs<WideChar*>(), str, len, true) == 0 : jl::tstrncmp(dataAs<char*>(), str, len, true) == 0);
 		}
 	}
 
@@ -1587,10 +1591,10 @@ public:
 			jl::memcpy(dst, data(), len * sizeof(T));
 		else
 		if ( charSize() == sizeof(char) )
-			reinterpretBuffer<T, char>(dst, data(), len);
+			reinterpretBuffer<T, char>(dst, data(), len, true);
 		else
 		if ( charSize() == sizeof(WideChar) )
-			reinterpretBuffer<T, WideChar>(dst, data(), len);
+			reinterpretBuffer<T, WideChar>(dst, data(), len, true);
 		else
 			ASSERT(false);
 		return maxLength;
@@ -1647,10 +1651,10 @@ public:
 				;// nothing
 			else
 			if ( charSize() == sizeof(char) )
-				reinterpretBuffer<MutableBase, char>(dst.data(), data(), len);
+				reinterpretBuffer<MutableBase, char>(dst.data(), data(), len, true);
 			else
 			if ( charSize() == sizeof(WideChar) )
-				reinterpretBuffer<MutableBase, WideChar>(dst.data(), data(), len);
+				reinterpretBuffer<MutableBase, WideChar>(dst.data(), data(), len, true);
 
 			if ( nullTerminated )
 				dst.dataAs<MutableBase*>()[len] = Base(0);

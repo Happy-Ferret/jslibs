@@ -17,7 +17,6 @@
 #include "../jslang/blobPub.h"
 #include "jslang.h"
 
-
 DECLARE_CLASS(Handle)
 
 
@@ -1077,6 +1076,19 @@ DEFINE_FUNCTION( jslangTest ) {
 	return BlobCreate(cx, test, JL_RVAL);
 */
 
+
+	{
+		jl::BufString test((const jschar*)"a\0b\0c\0d\0\0", 10, true);
+		test.toStringZ<const char*>();
+		ASSERT( test == "abcd" );
+	}
+
+	{
+		jl::BufString test("abcd", 10, true);
+		test.toStringZ<const char*>();
+		ASSERT( test == "abcd" );
+	}
+
 	{
 		jl::BufBase b(jl::BufBase::Uninitialized);
 		b.setData(nullptr);
@@ -1255,6 +1267,31 @@ DEFINE_FUNCTION( jslangTest ) {
 		ab.toString(cx, JL_RVAL);
 	}
 
+	{
+		jl::BufString test("abcd");
+		JL_CHK( BlobCreate(cx, test, JL_RVAL) );
+
+		JL_CHK( jl::getProperty(cx, JL_RVAL, "string", JL_RVAL) );
+		JS::RootedString str(cx, JL_RVAL.toString());
+
+		jl::BufString test2(cx, str);
+		ASSERT( test2 == "abcd" );
+	}
+
+	{
+
+
+		jl::BufString test("\xff\xfe\xfd");
+		JL_CHK( BlobCreate(cx, test, JL_RVAL) );
+		
+		JL_CHK( jl::getProperty(cx, JL_RVAL, "string", JL_RVAL) );
+		JS::RootedString str(cx, JL_RVAL.toString());
+
+		jl::BufString test2(cx, str);
+		ASSERT( test2 == jl::BufString("\xff\xfe\xfd") );
+		ASSERT( test2 == "\xff\xfe\xfd" );
+	}
+
 
 
 
@@ -1296,17 +1333,7 @@ DEFINE_FUNCTION( jslangTest ) {
 	ASSERT( jl::tstrncmp( ("abc"), L("abcd"), 3) == 0 );
 	ASSERT( jl::tstrncmp(L("abc"),  ("abcd"), 3) == 0 );
 
-
-	JS::RootedValue rval(cx);
-
-
-/*
-	double d = -0;
-	double e = 0;
-	double f = d/e;
-
-	ASSERT( jl::DoubleIsNeg(f) );
-*/
+	{
 
 	class X {
 	public:
@@ -1317,6 +1344,7 @@ DEFINE_FUNCTION( jslangTest ) {
 		}
 	};
 
+	JS::RootedValue rval(cx);
 
 	JS::RootedFunction fct(cx, JS_NewFunction(cx, X::fct, 1, 0, JS::NullPtr(), "fct"));
 	JS::RootedObject obj(cx, JS_GetFunctionObject(fct));
@@ -1620,6 +1648,7 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	}
 
+	}
 
 
 	{
@@ -1777,6 +1806,9 @@ DEFINE_FUNCTION( jslangTest ) {
 	JSClass *cl = JS_GetClass(ob);
 	//JSObject *errorObj = JS_NewObjectForConstructor(cx, &constructor);
 */
+
+
+
 
 	return true;
 	JL_BAD;

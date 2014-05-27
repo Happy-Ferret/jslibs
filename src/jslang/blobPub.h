@@ -18,6 +18,17 @@
 
 #define JL_BLOB_LENGTH 0
 
+INLINE
+bool
+BlobBufferGet( JSContext *cx, JS::HandleObject obj, jl::BufString *str ) {
+
+	size_t length;
+	JL_CHK( jl::getSlot(cx, obj, JL_BLOB_LENGTH, &length) );
+	str->get(reinterpret_cast<const uint8_t*>(JL_GetPrivate(obj)), length, false);
+	return true;
+	JL_BAD;
+}
+
 
 ALWAYS_INLINE const JSClass*
 BlobJSClass( JSContext *cx ) {
@@ -43,15 +54,18 @@ BlobCreate( JSContext *cx, void *ownData, int32_t size, OUT JS::MutableHandleVal
 	// length > 0 && private == NULL => invalid case
 	// length == undefined && data != NULL => invalid case
 
-	ASSERT_IF( !ownData, size == 0 );
+	ASSERT_IF( ownData == nullptr, size == 0 );
 
 	JS::RootedObject blobObj(cx, jl::newObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto));
 	//JS::RootedObject blobObj(cx, jl::construct(cx, classProtoCache->proto));
 
 	JL_CHK( blobObj );
+
+	JL_CHK( SetBufferGetInterface(cx, blobObj, BlobBufferGet) );
+
 	rval.setObject(*blobObj);
-	JL_SetPrivate(blobObj, ownData);
 	JL_CHK( jl::setSlot(cx, blobObj, JL_BLOB_LENGTH, size) );
+	JL_SetPrivate(blobObj, ownData); // from here, blob owns the data
 	JL_updateMallocCounter(cx, size);
 	}
 
@@ -71,12 +85,26 @@ BlobCreate( JSContext *cx, jl::BufBase &buffer, OUT JS::MutableHandleValue rval 
 	return buffer.data();
 }
 
+
+ALWAYS_INLINE jl::BufBase::Type
+BlobCreate( JSContext *cx, jl::BufPartial &buffer, OUT JS::MutableHandleValue rval ) {
+
+	if ( !buffer.owner() )
+		buffer.own();
+	if ( !BlobCreate(cx, buffer.data(), buffer.used(), rval) )
+		return NULL;
+	buffer.dropOwnership();
+	return buffer.data();
+}
+
+
 ALWAYS_INLINE jl::BufBase::Type
 BlobCreate( JSContext *cx, jl::BufString &buffer, OUT JS::MutableHandleValue rval ) {
 
 	uint8_t *data = buffer.toData<uint8_t*>();
 	if ( !BlobCreate(cx, data, buffer.length(), rval) )
 		return NULL;
+	buffer.dropOwnership();
 	return data;
 }
 
