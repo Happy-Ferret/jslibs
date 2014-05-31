@@ -72,7 +72,7 @@ struct Private : public jl::CppAllocators {
 	int32_t audioChannels;
 	int32_t audioRate;
 
-	jl::Queue1<jl::BufPartial, jl::StaticAllocMedium> bufferList;
+	jl::Queue1<jl::BufBase, jl::StaticAllocMedium> bufferList;
 };
 
 
@@ -82,13 +82,13 @@ WaveInThreadProc( LPVOID lpParam ) {
 	Private *pv = static_cast<Private*>(lpParam);
 	MMRESULT res;
 	WAVEHDR waveHeader[2];
-	jl::BufPartial arrayBuf[2];
+	jl::BufBase arrayBuf[2];
 
 	size_t bufferLength = pv->frames * pv->audioChannels * pv->audioBits/8;
 
 	for ( int i = 0; i < 2; ++i ) {
 
-		arrayBuf[i].alloc(bufferLength);
+		arrayBuf[i].alloc(bufferLength, true);
 		waveHeader[i].lpData = (LPSTR)arrayBuf[i].data();
 		waveHeader[i].dwBufferLength = bufferLength;
 		waveHeader[i].dwFlags = 0;
@@ -120,7 +120,7 @@ WaveInThreadProc( LPVOID lpParam ) {
 		LeaveCriticalSection(&pv->cs);
 		PulseEvent(pv->bufferReadyEvent);
 
-		arrayBuf[bufferIndex].alloc(bufferLength);
+		arrayBuf[bufferIndex].alloc(bufferLength, true);
 		waveHeader[bufferIndex].lpData = (LPSTR)arrayBuf[bufferIndex].data();
 		waveHeader[bufferIndex].dwFlags = 0;
 
@@ -287,7 +287,7 @@ DEFINE_FUNCTION( read ) {
 		JL_RVAL.setUndefined();
 		return true;
 	}
-	jl::BufPartial buffer(pv->bufferList.Pop());
+	jl::BufBase buffer(pv->bufferList.Pop());
 	acs.leave();
 	JL_CHK( JL_NewByteAudioObjectOwner(cx, buffer, pv->audioBits, pv->audioChannels, pv->frames, pv->audioRate, JL_RVAL) );
 	}

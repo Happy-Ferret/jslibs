@@ -174,7 +174,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
-	jl::BufPartial buffer;
+	jl::BufBase buffer;
 	
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INSTANCE();

@@ -78,19 +78,9 @@ ALWAYS_INLINE jl::BufBase::Type
 BlobCreate( JSContext *cx, jl::BufBase &buffer, OUT JS::MutableHandleValue rval ) {
 
 	if ( !buffer.owner() )
-		buffer.own();
-	if ( !BlobCreate(cx, buffer.data(), buffer.size(), rval) )
-		return NULL;
-	buffer.dropOwnership();
-	return buffer.data();
-}
-
-
-ALWAYS_INLINE jl::BufBase::Type
-BlobCreate( JSContext *cx, jl::BufPartial &buffer, OUT JS::MutableHandleValue rval ) {
-
-	if ( !buffer.owner() )
-		buffer.own();
+		buffer.own(true);
+	else
+		buffer.maybeCrop();
 	if ( !BlobCreate(cx, buffer.data(), buffer.used(), rval) )
 		return NULL;
 	buffer.dropOwnership();

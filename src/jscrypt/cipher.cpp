@@ -334,7 +334,7 @@ DEFINE_FUNCTION( encrypt ) {
 
 	JL_DEFINE_ARGS;
 
-	jl::BufPartial buffer;
+	jl::BufBase buffer;
 	jl::BufString pt;
 
 	JL_ASSERT_THIS_INSTANCE();
@@ -350,34 +350,34 @@ DEFINE_FUNCTION( encrypt ) {
 	//ct = JL_NewBuffer(cx, pt.Length(), JL_RVAL);
 	//JL_CHK( ct );
 
-	buffer.alloc(pt.length());
+	buffer.alloc(pt.length(), true);
 	JL_ASSERT_ALLOC(buffer);
 
 	int err;
 	switch ( pv->mode ) {
 		case mode_ecb:
-			JL_ASSERT( buffer.size() == (size_t)pv->descriptor->block_length, E_DATA, E_LENGTH, E_NUM(pv->descriptor->block_length) );
-			err = ecb_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.size(), (symmetric_ECB *)pv->symmetric_XXX );
+			JL_ASSERT( buffer.allocSize() == (size_t)pv->descriptor->block_length, E_DATA, E_LENGTH, E_NUM(pv->descriptor->block_length) );
+			err = ecb_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_ECB *)pv->symmetric_XXX );
 			break;
 		case mode_cfb:
-			err = cfb_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.size(), (symmetric_CFB *)pv->symmetric_XXX );
+			err = cfb_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_CFB *)pv->symmetric_XXX );
 			break;
 		case mode_ofb:
-			err = ofb_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.size(), (symmetric_OFB *)pv->symmetric_XXX );
+			err = ofb_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_OFB *)pv->symmetric_XXX );
 			break;
 		case mode_cbc:
-			JL_ASSERT( buffer.size() == (size_t)pv->descriptor->block_length, E_DATA, E_LENGTH, E_NUM(pv->descriptor->block_length) );
-			err = cbc_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.size(), (symmetric_CBC *)pv->symmetric_XXX );
+			JL_ASSERT( buffer.allocSize() == (size_t)pv->descriptor->block_length, E_DATA, E_LENGTH, E_NUM(pv->descriptor->block_length) );
+			err = cbc_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_CBC *)pv->symmetric_XXX );
 			break;
 		case mode_ctr:
-			err = ctr_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.size(), (symmetric_CTR *)pv->symmetric_XXX );
+			err = ctr_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_CTR *)pv->symmetric_XXX );
 			break;
 		case mode_lrw:
-			JL_ASSERT( buffer.size() == (size_t)pv->descriptor->block_length, E_DATA, E_LENGTH, E_NUM(pv->descriptor->block_length) );
-			err = lrw_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.size(), (symmetric_LRW *)pv->symmetric_XXX );
+			JL_ASSERT( buffer.allocSize() == (size_t)pv->descriptor->block_length, E_DATA, E_LENGTH, E_NUM(pv->descriptor->block_length) );
+			err = lrw_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_LRW *)pv->symmetric_XXX );
 			break;
 		case mode_f8:
-			err = f8_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.size(), (symmetric_F8 *)pv->symmetric_XXX );
+			err = f8_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_F8 *)pv->symmetric_XXX );
 			break;
 		default:
 			IFDEBUG( err = 0 );
@@ -426,7 +426,7 @@ DEFINE_FUNCTION( decrypt ) {
 	//uint8_t *pt;
 	//pt = JL_NewBuffer(cx, ct.Length(), JL_RVAL);
 	//JL_CHK( pt );
-	buffer.alloc(ct.length());
+	buffer.alloc(ct.length(), true);
 	JL_ASSERT_ALLOC(buffer);
 
 	int err;

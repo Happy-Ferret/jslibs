@@ -47,7 +47,7 @@ JL_NewImageObject( IN JSContext *cx, IN T width, IN T height, IN U channels, IN 
 	JL_CHK( imageObj );
 	vp.setObject(*imageObj);
 	//data = JL_NewBuffer(cx, width * height* channels, dataVal);
-	buffer.alloc(width * height * channels);
+	buffer.alloc(width * height * channels, true);
 	JL_ASSERT_ALLOC(buffer);
 	uint8_t *data = BlobCreate(cx, buffer, &dataVal);
 	JL_CHK( data );

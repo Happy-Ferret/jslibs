@@ -534,7 +534,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
-	jl::BufPartial buffer;
+	jl::BufBase buffer;
 
 	JL_DEFINE_ARGS;
 
@@ -705,7 +705,7 @@ DEFINE_PROPERTY_GETTER( globalComment ) {
 
 	if ( pv->uf ) {
 		
-		jl::BufPartial buffer;
+		jl::BufBase buffer;
 
 		unz_global_info pglobal_info;
 		UNZ_CHK( unzGetGlobalInfo(pv->uf, &pglobal_info) );
@@ -714,7 +714,7 @@ DEFINE_PROPERTY_GETTER( globalComment ) {
 		//uint8_t *comment;
 		
 		//comment = JL_NewBuffer(cx, commentLength, vp);
-		buffer.alloc(commentLength);
+		buffer.alloc(commentLength, true);
 		JL_ASSERT_ALLOC( buffer );
 
 		int rd;
@@ -994,7 +994,7 @@ DEFINE_PROPERTY_GETTER( extra ) {
 
 	if ( pv->uf ) {
 
-		jl::BufPartial buffer;
+		jl::BufBase buffer;
 
 		//if ( pv->eol ) {
 
@@ -1011,7 +1011,7 @@ DEFINE_PROPERTY_GETTER( extra ) {
 
 		//uint8_t *buffer;
 		//buffer = JL_NewBuffer(cx, extraLength, vp);
-		buffer.alloc(extraLength);
+		buffer.alloc(extraLength, true);
 		JL_ASSERT_ALLOC( buffer );
 
 		int rd;

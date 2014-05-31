@@ -103,7 +103,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
-	jl::BufPartial buffer;
+	jl::BufBase buffer;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
@@ -147,7 +147,7 @@ DEFINE_FUNCTION( read ) {
 	//buffer = JL_NewBuffer(cx, amount, JL_RVAL);
 	//JL_CHK( buffer );
 
-	buffer.alloc(amount);
+	buffer.alloc(amount, true);
 	JL_ASSERT_ALLOC(buffer);
 
 	int st = sqlite3_blob_read(pv->pBlob, buffer.data(), amount, pv->position);

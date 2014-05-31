@@ -218,7 +218,7 @@ DEFINE_FUNCTION( done ) {
 
 	JL_DEFINE_ARGS;
 
-	jl::BufPartial buffer;
+	jl::BufBase buffer;
 
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
@@ -232,7 +232,7 @@ DEFINE_FUNCTION( done ) {
 	//uint8_t *out;
 	//out = JL_NewBuffer(cx, outLength, JL_RVAL);
 
-	buffer.alloc(pv->descriptor->hashsize);
+	buffer.alloc(pv->descriptor->hashsize, true);
 	JL_ASSERT_ALLOC(buffer);
 	
 	//JL_CHK( out );
@@ -240,7 +240,7 @@ DEFINE_FUNCTION( done ) {
 	err = pv->descriptor->done(&pv->state, buffer.data()); // Terminate the hash to get the digest
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
-
+	
 	pv->isValid = false;
 
 	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );

@@ -354,7 +354,7 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 	unsigned long outLength = REQUEST_SIZE;
 
 	jl::BufString in;
-	jl::BufPartial out;
+	jl::BufBase out;
 
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -456,7 +456,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 	unsigned long outLength = REQUEST_SIZE;
 	//uint8_t *out = NULL;
 	jl::BufString in;
-	jl::BufPartial out;
+	jl::BufBase out;
 
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -551,7 +551,7 @@ DEFINE_FUNCTION( sign ) { // ( data [, saltLength] )
 	unsigned long outLength = REQUEST_SIZE;
 	//uint8_t *out = NULL;
 	jl::BufString in;
-	jl::BufPartial out;
+	jl::BufBase out;
 
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -855,7 +855,7 @@ DEFINE_PROPERTY_GETTER( key ) {
 	JL_DEFINE_PROP_ARGS;
 
 	unsigned long keyLength = REQUEST_SIZE;
-	jl::BufPartial key;
+	jl::BufBase key;
 
 	JL_ASSERT_THIS_INSTANCE();
 	AsymmetricCipherPrivate *pv;

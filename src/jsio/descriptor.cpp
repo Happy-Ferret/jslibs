@@ -275,7 +275,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( read ) {
 
-	jl::BufPartial buffer;
+	jl::BufBase buffer;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INHERITANCE();
@@ -333,7 +333,7 @@ DEFINE_FUNCTION( read ) {
 	//GetTimeoutInterval(cx, JL_OBJ, &timeout);
 	//res = PR_Recv(fd, buf, amount, 0, timeout);
 
-	res = PR_Read(fd, buffer.data(), buffer.size()); // like recv() with PR_INTERVAL_NO_TIMEOUT
+	res = PR_Read(fd, buffer.data(), buffer.allocSize()); // like recv() with PR_INTERVAL_NO_TIMEOUT
 
 	if (unlikely( res == -1 )) { // failure. The reason for the failure can be obtained by calling PR_GetError.
 
@@ -385,8 +385,7 @@ DEFINE_FUNCTION( read ) {
 		return true;
 	}
 
-	if ( (uint32_t)res < amount )
-		buffer.setUsed(res);
+	buffer.setUsed(res);
 
 	return BlobCreate(cx, buffer, JL_RVAL);
 	JL_BAD;

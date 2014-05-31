@@ -436,7 +436,7 @@ DEFINE_PROPERTY_GETTER( content ) {
 	JL_DEFINE_PROP_ARGS;
 
 	JS::RootedValue jsvalFileName(cx);
-	jl::BufPartial buf;
+	jl::BufBase buf;
 	jl::BufString fileName;
 
 	JL_ASSERT( !JL_GetPrivate(JL_OBJ), E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
@@ -494,7 +494,7 @@ DEFINE_PROPERTY_GETTER( content ) {
 	JL_ASSERT_ALLOC( buf );
 	
 	PRInt32 res;
-	res = PR_Read(fd, buf.data(), buf.size());
+	res = PR_Read(fd, buf.data(), buf.allocSize());
 	if (unlikely( res == -1 )) {
 
 		ThrowIoError(cx);

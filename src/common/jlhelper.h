@@ -945,10 +945,10 @@ public:
 
 private:
 	Type _data;
-	mutable size_t _size;
+	mutable size_t _allocSize;
+	mutable size_t _used;
 	mutable bool _owner; // true if this object is responsible of freeing the memory pointed by _data
 
-	void operator =( const BufBase & );
 	//void operator [](size_t);
 public:
 
@@ -967,20 +967,23 @@ public:
 
 	template <class T>
 	explicit BufBase( T *data, size_t size = UnknownSize )
-	: _data(reinterpret_cast<Type>(const_cast<RemoveConst(T)*>(data))), _size(size), _owner(!IsConst(T)) {
+	: _data(reinterpret_cast<Type>(const_cast<RemoveConst(T)*>(data))), _allocSize(size), _used(size), _owner(!IsConst(T)) {
 	}
 
-	explicit BufBase( const BufBase& buf, bool withOwnership = true )
-	: _data(buf._data), _size(buf._size) {
+	BufBase( const BufBase& buf, bool withOwnership = true )
+	: _data(buf._data), _allocSize(buf._allocSize), _used(buf._used) {
 
-		if ( withOwnership ) {
+		if ( hasData() ) {
 
-			bool tmp = buf.owner(); // handle when this is buf
-			buf.dropOwnership(); // only one can free the buffer
-			_owner = tmp;
-		} else {
+			if ( withOwnership ) {
 
-			_owner = false;
+				bool owner = buf.owner(); // handle when this is buf
+				buf.dropOwnership(); // only one can free the buffer
+				_owner = owner;
+			} else {
+
+				_owner = false;
+			}
 		}
 	}
 
@@ -990,9 +993,9 @@ public:
 
 		if ( hasData() && owner() )
 			free();
-		setData(data);
-		setSize(size);
-		_owner = !IsConst(T);
+		setData(data, !IsConst(T));
+		setAllocSize(size);
+		setUsed(size);
 	}
 
 	void
@@ -1001,58 +1004,53 @@ public:
 		if ( hasData() && owner() && !is(buf) )
 			free();
 
-		setData(buf.data());
-		setSize(buf.size());
-		
 		if ( withOwnership ) {
 
 			bool tmp = buf.owner(); // handle when this is buf
 			buf.dropOwnership(); // only one can free the buffer
-			_owner = tmp;
+			setData(buf.data(), tmp);
 		} else {
 
-			_owner = false;
+			setData(buf.data(), false);
 		}
+		setAllocSize(buf.allocSize());
+		setUsed(buf.used());
 	}
 
-	void
+	void operator =( const BufBase &buf ) {
+
+		get(buf);
+	}
+
+	BufBase&
 	setEmpty() {
 
 		if ( hasData() && owner() )
 			free();
-		setSize(0);
-		dropOwnership();
+		setUsed(0);
+		// setAllocSize(0);
+		// dropOwnership();
+		return *this;
 	}
 
 	bool
 	empty() {
 
-		return !hasData() || size() == 0;
-	}
-
-	void
-	free() {
-
-		ASSERT( _owner );
-		ASSERT( _data );
-
-		//IFDEBUG( memchr(_data, 'x', size()) );
-		//jl::zeromem(_data, _size);
-		jl_free(_data);
-		_data = nullptr;
+		return !hasData() || used() == 0;
 	}
 
 	template <class T>
 	void
-	setData( const T *data ) {
+	setData( const T *data, bool ownership ) {
 
 		_data = reinterpret_cast<Type>(const_cast<T*>(data));
+		_owner = ownership;
 	}
 	
 	void
-	setData( nullptr_t data ) {
+	setData( nullptr_t ) {
 
-		_data = data;
+		_data = nullptr;
 	}
 
 	bool
@@ -1093,18 +1091,32 @@ public:
 	}
 
 	size_t
-	size() const {
+	allocSize() const {
 
-		ASSERT_IF( _data == nullptr, _size == 0 );
-
-		return _size;
+		ASSERT_IF( _data == nullptr, _allocSize == 0 );
+		return _allocSize;
 	}
 
 	void
-	setSize( size_t size ) const {
+	setAllocSize( size_t allocSize ) const {
 
-		_size = size;
+		_allocSize = allocSize;
 	}
+
+	size_t
+	used() const {
+
+		ASSERT_IF( _data == nullptr, allocSize() == 0 );
+		return _used;
+	}
+
+	void
+	setUsed( size_t used ) const {
+		
+		ASSERT( used == 0 || used <= allocSize() );
+		_used = used;
+	}
+
 
 	bool
 	owner() const {
@@ -1118,184 +1130,79 @@ public:
 		_owner = false;
 	}
 
-/*
-	size_t
-	used() const {
-
-		ASSERT_IF( _data == nullptr, _size == 0 );
-
-		return _size;
-	}
-*/
-
-	ALWAYS_INLINE bool
+	bool
 	is( const BufBase &buf ) const {
 
 		return buf.data() == data();
 	}
 
-	bool
-	own() {
+	void
+	own( bool crop = false ) {
 		
 		ASSERT( !owner() );
-
-		Type tmp = static_cast<Type>(jl_malloc(size()));
-		jl::memcpy(tmp, data(), size());
-		setData(tmp);
-		_owner = true;
-		return tmp != nullptr;
+		Type tmp = static_cast<Type>(jl_malloc(crop ? used() : allocSize()));
+		jl::memcpy(tmp, data(), used());
+		setData(tmp, true);
 	}
 
 	void
-	copyTo( BufBase &buf ) {
+	alloc( size_t size, bool usedAll = false ) {
 		
-		ASSERT( size() == buf.size() );
-
-		jl::memcpy(buf.data(), data(), size());
-	}
-
-	void
-	copyFrom( BufBase &buf ) {
-		
-		ASSERT( size() == buf.size() );
-
-		jl::memcpy(data(), buf.data(), size());
-	}
-
-	void
-	alloc( size_t size ) {
-		
-		ASSERT_IF( _data != nullptr, !_owner ); // else memory leak
-
-		get(jl_malloc(size), size);
+		ASSERT_IF( hasData(), !owner() ); // else memory leak
+		setData(jl_malloc(size), true);
+		setAllocSize(size);
+		setUsed(usedAll ? size : 0);
 	}
 
 	void
 	realloc( size_t newSize ) {
 
-		if ( _owner ) {
+		if ( owner() ) {
 
-			setData(jl_realloc(data(), newSize));
+			setData(jl_realloc(data(), newSize), true);
+			setAllocSize(newSize);
 		} else {
 
 			void *newData = jl_malloc(newSize);
+			setAllocSize(newSize);
+
+			if ( used() > allocSize() )
+				setUsed(allocSize());
+
 			if ( newData )
-				jl::memcpy(newData, data(), jl::min(size(), newSize));
-			setData(newData);
-			_owner = true;
+				jl::memcpy(newData, data(), used());
+
+			setData(newData, true);
 		}
-		setSize(newSize);
-	}
-};
-
-
-////
-
-
-class BufPartial : public BufBase {
-	mutable size_t _used;
-	
-public:
-
-	size_t
-	used() const {
-
-		return _used;
 	}
 
 	void
-	setUsed( size_t used ) const {
-		
-		ASSERT( used <= size() );
-		_used = used;
-	}
+	free( bool wipe = false ) {
 
-	void
-	alloc( size_t size ) {
+		ASSERT( owner() );
+		ASSERT( data() );
+
+		if ( wipe )
+			jl::zeromem(data(), used());
+		jl_free(data());
 		
-		BufBase::alloc(size);
+		setData(nullptr);
+		setAllocSize(0);
 		setUsed(0);
 	}
 
 	void
-	realloc( size_t newSize ) {
-
-		BufBase::realloc(newSize);
-		if ( used() > size() )
-			setUsed(size());
-		ASSERT( used() <= size() );
-	}
-
-	void
-	maybeRealloc() {
+	maybeCrop() {
 		
 		ASSERT( owner() );
 
-		if ( JL_MaybeRealloc(size(), used()) ) {
+		if ( owner() && JL_MaybeRealloc(allocSize(), used()) ) {
 		
 			realloc(used());
-			ASSERT( hasData() ); // assume it always possible to reduce the size of an allocated block
+			ASSERT( !!*this ); // assume it always possible to reduce the size of an allocated block
 		}
 	}
 
-	void
-	setEmpty() {
-
-		BufBase::empty();
-		setUsed(0);
-	}
-
-	bool
-	empty() {
-
-		return !hasData() || used() == 0;
-	}
-
-
-	template <class T>
-	void
-	get( T *data, size_t size ) {
-
-		BufBase::get(data, size);
-		setUsed(size);
-	}
-
-	void
-	get( const BufBase &buf, bool withOwnership = true ) {
-	
-		BufBase::get(buf, withOwnership);
-		setUsed(buf.size());
-	}
-
-	void
-	get( const BufPartial &buf, bool withOwnership = true ) {
-	
-		BufBase::get(buf, withOwnership);
-		setUsed(buf.used());
-	}
-
-	void operator =( const BufPartial &buf ) {
-		
-		get(buf);
-	}
-
-	BufPartial() {
-	}
-
-	template <class T>
-	explicit BufPartial( T *data, size_t size )
-	: BufBase(data, size), _used(size) {
-	}
-
-	explicit BufPartial( const BufBase& buf, bool withOwnership = true )
-	: BufBase(buf, withOwnership), _used(buf.size()) {
-	}
-
-	BufPartial( const BufPartial& buf, bool withOwnership = true )
-	: BufBase(buf, withOwnership), _used(buf.used()) {
-	}
-
-//
 
 	bool
 	stealArrayBuffer( JSContext *cx, JS::HandleObject obj ) {
@@ -1339,7 +1246,7 @@ public:
 ////////
 
 
-class BufString : public BufPartial {
+class BufString : public BufBase {
 	typedef jschar WideChar;
 	typedef char NarrowChar;
 
@@ -1384,13 +1291,13 @@ public:
 	void
 	alloc( size_t size ) {
 		
-		BufPartial::alloc(size);
+		BufBase::alloc(size);
 	}
 
 	BufString&
 	setEmpty() {
 
-		BufPartial::get("", 1);
+		BufBase::get("", 1);
 		_charSize = sizeof(char);
 		_terminatorLength = 1;
 		return *this;
@@ -1399,9 +1306,8 @@ public:
 	bool
 	empty() {
 
-		return !hasData() || used() == 0 || used() / charSize() == _terminatorLength;
+		return !hasData() || used() == 0 || used() == size_t(_terminatorLength * charSize());
 	}
-
 
 	template <class T>
 	void
@@ -1411,19 +1317,19 @@ public:
 
 		_charSize = sizeof(*str);
 		_terminatorLength = nullTerminated ? 1 : 0;
-		BufPartial::get(str, len != UnknownSize ? sizeof(*str) * (len + _terminatorLength) : UnknownSize);
+		BufBase::get(str, len != UnknownSize ? sizeof(*str) * (len + _terminatorLength) : UnknownSize);
 	}
 
 	void
 	get( const BufBase & buf, bool withOwnership = true ) {
 
-		BufPartial::get(buf, withOwnership);
+		BufBase::get(buf, withOwnership);
 	}
 
 	void
 	get( const BufString & buf, bool withOwnership = true ) {
 
-		BufPartial::get(buf, withOwnership);
+		BufBase::get(buf, withOwnership);
 		setCharSize( buf.charSize() );
 		setNt( buf.nt() );
 	}
@@ -1449,21 +1355,50 @@ public:
 	BufString() {
 	}
 
+	void
+	assertIntegrity() {
+		
+		if ( IS_DEBUG ) {
+
+			ASSERT_IF( used() == UnknownSize, nt() );
+			ASSERT_IF( wide(), used() % 2 == 0 );
+
+
+			size_t len;
+			if ( used() == UnknownSize ) {
+
+				ASSERT( hasData() );
+				ASSERT( nt() );
+
+				len = wide() ? jl::strlen(dataAs<WideChar*>()) : jl::strlen(dataAs<char*>());
+			} else {
+				
+				len = used() / charSize() - _terminatorLength;
+			}
+
+			ASSERT_IF( owner() && wide() && !nt(), jl_msize(data()) >= len*2 );
+			ASSERT_IF( owner() && !wide() && !nt(), jl_msize(data()) >= len );
+			ASSERT_IF( owner() && wide() && nt(), jl_msize(data()) >= len*2+2 );
+			ASSERT_IF( owner() && !wide() && nt(), jl_msize(data()) >= len+1 );
+			ASSERT_IF( nt() && wide(), ((jschar*)data())[len] == 0 );
+			ASSERT_IF( nt() && !wide(), ((char*)data())[len] == 0 );
+		}
+	}
+
 	template <class T>
 	explicit BufString( T *str, size_t len = UnknownSize, bool nullTerminated = true )
-	: BufPartial(str, len), _charSize(sizeof(T)), _terminatorLength(nullTerminated ? 1 : 0) {
+	: BufBase(str, len + (nullTerminated ? sizeof(T) : 0)), _charSize(sizeof(T)), _terminatorLength(nullTerminated ? 1 : 0) {
+		assertIntegrity();
 	}
 
-	explicit BufString( const BufBase& buf, bool withOwnership = true )
-	: BufPartial(buf, withOwnership), _charSize(1), _terminatorLength(0) {
-	}
-
-	explicit BufString( const BufPartial& buf, bool withOwnership = true )
-	: BufPartial(buf, withOwnership), _charSize(1), _terminatorLength(0) {
+	BufString( const BufBase& buf, bool withOwnership = true )
+	: BufBase(buf, withOwnership), _charSize(1), _terminatorLength(0) {
+		assertIntegrity();
 	}
 
 	BufString( const BufString& buf, bool withOwnership = true )
-	: BufPartial(buf, withOwnership), _charSize(buf._charSize), _terminatorLength(buf._terminatorLength) {
+	: BufBase(buf, withOwnership), _charSize(buf._charSize), _terminatorLength(buf._terminatorLength) {
+		assertIntegrity();
 	}
 
 	explicit BufString( JSContext *cx, JS::HandleString str )
@@ -1472,6 +1407,7 @@ public:
 		size_t len;
 		const jschar *chars = JS_GetStringCharsAndLength(cx, str, &len);
 		get(chars, len, false);
+		assertIntegrity();
 	}
 
 //
@@ -1482,12 +1418,12 @@ public:
 		size_t len;
 		if ( used() == UnknownSize ) {
 
-			ASSERT( size() == UnknownSize );
+			ASSERT( hasData() );
 			ASSERT( nt() );
 
 			len = wide() ? jl::strlen(dataAs<WideChar*>()) : jl::strlen(dataAs<char*>());
 			setUsed((len + 1) * charSize());
-			setSize(used());
+			setAllocSize(used());
 		} else {
 				
 			len = used() / charSize() - _terminatorLength;
@@ -1508,6 +1444,12 @@ public:
 
 	bool
 	operator ==( const BufString &str ) const {
+
+		if ( !str && !*this )
+			return true;
+
+		if ( str == !*this )
+			return false;
 
 		size_t len = length();
 		if ( len == str.length() ) {
@@ -1536,8 +1478,14 @@ public:
 	bool
 	operator ==( const T *str ) const {
 	
+		if ( str == nullptr && !*this )
+			return true;
+
+		if ( (str != nullptr) == !*this )
+			return false;
+
 		if ( nt() ) {
-			
+
 			return dataAs<T*>() == str || ( wide() ? jl::tstrcmp(dataAs<WideChar*>(), str, true) == 0 : jl::tstrcmp(dataAs<char*>(), str, true) == 0);
 		} else {
 
@@ -1635,9 +1583,9 @@ public:
 			BufBase dst(*this, false);
 
 			// two reasons to allocate
-			if ( size() < requiredSize || !owner() ) {
+			if ( allocSize() < requiredSize || !owner() ) {
 
-				if ( sizeof(Base) != charSize() ) {
+				if ( sizeof(Base) != charSize() ) { // avoid useless copy made by realloc
 
 					dst.alloc(requiredSize);
 				} else {
@@ -1661,6 +1609,9 @@ public:
 
 			if ( !is(dst) )
 				get(dst, true);
+
+			setUsed(requiredSize);
+			
 
 			setCharSize(sizeof(Base));
 			setNt(nullTerminated);
@@ -2242,7 +2193,7 @@ setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::MutableHandle<T> 
 
 
 ALWAYS_INLINE bool FASTCALL
-getValue( JSContext *cx, JS::HandleValue val, OUT jl::BufPartial* str );
+getValue( JSContext *cx, JS::HandleValue val, OUT jl::BufBase* str );
 
 
 ALWAYS_INLINE bool FASTCALL

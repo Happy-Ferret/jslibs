@@ -11,7 +11,6 @@ var loadModule = host.loadModule;
 
 var data = jslangTest();
 //print( 'data: '+data.string.quote() );
-
 throw 0;
 
 
@@ -45,8 +44,6 @@ try {
 }
 
 throw 0;
-
-
 
 
 //new Array(100000).map(function() { return { a:'sdjhgskdljfghdskljghlsdkjfghldskjfgh' } });

@@ -516,7 +516,7 @@ DEFINE_FUNCTION( recvFrom ) {
 	JL_IGNORE( argc );
 
 	//uint8_t *buffer = NULL;
-	jl::BufPartial buffer;
+	jl::BufBase buffer;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
@@ -548,7 +548,7 @@ DEFINE_FUNCTION( recvFrom ) {
 
 	PRNetAddr addr;
 	PRInt32 res;
-	res = PR_RecvFrom(fd, buffer.data(), (PRInt32)buffer.size(), 0, &addr, PR_INTERVAL_NO_TIMEOUT);
+	res = PR_RecvFrom(fd, buffer.data(), (PRInt32)buffer.allocSize(), 0, &addr, PR_INTERVAL_NO_TIMEOUT);
 	JL_CHKB( res != -1, bad_ex );
 
 	char peerName[47]; // If addr is an IPv4 address, size needs to be at least 16. If addr is an IPv6 address, size needs to be at least 46.

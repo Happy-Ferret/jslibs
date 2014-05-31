@@ -115,7 +115,7 @@ DEFINE_FUNCTION( read ) {
 
 	JL_DEFINE_ARGS;
 	
-	jl::BufPartial buffer;
+	jl::BufBase buffer;
 
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(0,1);
@@ -135,7 +135,7 @@ DEFINE_FUNCTION( read ) {
 	//pr = JL_NewBuffer(cx, readCount, JL_RVAL);
 	//JL_CHK( pr );
 
-	buffer.alloc(readCount);
+	buffer.alloc(readCount, true);
 	JL_ASSERT_ALLOC( buffer );
 
 	actualRead = pv->prng.read(buffer.data(), readCount, &pv->state);
@@ -222,7 +222,7 @@ DEFINE_PROPERTY_GETTER( state ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	jl::BufPartial buffer;
+	jl::BufBase buffer;
 
 	JL_ASSERT_THIS_INSTANCE();
 
@@ -249,8 +249,7 @@ DEFINE_PROPERTY_GETTER( state ) {
 	
 	JL_CHKM( stateLength == size, E_LIB, E_INTERNAL, E_SEP, E_STR("state"), E_LENGTH, E_NUM(size) );
 
-	//stateData[size] = '\0';
-	//JL_CHK( JL_NewBlob(cx, stateData, size, vp) );
+	buffer.setUsed(stateLength);
 
 	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
 

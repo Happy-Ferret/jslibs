@@ -493,7 +493,7 @@ function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler, wsHandle
 			var buf = s.read();
 			if ( buf == undefined )
 				return closeSocket(s);
-			s.buffer.write(buf);
+			s.buffer.write(buf.arrayBuffer);
 			log(' [socket '+clientSocket.peerPort+' state: '+clientSocket.state.name );
 			clientSocket.state(clientSocket, clientSocket.buffer);
 		}
@@ -526,8 +526,12 @@ function wsHandler(send) {
 	
 	function audioListener(chunkList) {
 		
-		for ( var chunk of chunkList )
+		for ( var chunk of chunkList ) {
+
+			print(chunk.constructor.name);
+			
 			send(chunk.data, WS_BINARY_DATA);
+		}
 	}
 	
 	audioListeners.push(audioListener);

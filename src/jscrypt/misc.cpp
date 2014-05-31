@@ -59,7 +59,7 @@ DEFINE_FUNCTION( base64Encode ) {
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	JL_CHK( jl::BufString(out, outLength, true).toString(cx, JL_RVAL) ); // "unable to create the base64 string."
+	JL_CHK( jl::BufString(out, outLength).toString(cx, JL_RVAL) ); // "unable to create the base64 string."
 
 	return true;
 	JL_BAD;
@@ -74,7 +74,7 @@ DEFINE_FUNCTION( base64Decode ) {
 
 	JL_DEFINE_ARGS;
 
-	jl::BufPartial buffer;
+	jl::BufBase buffer;
 	jl::BufString in;
 
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -175,7 +175,7 @@ DEFINE_FUNCTION( hexDecode ) {
 
 	JL_DEFINE_ARGS;
 
-	jl::BufPartial buffer;
+	jl::BufBase buffer;
 	jl::BufString data;
 
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -194,7 +194,7 @@ DEFINE_FUNCTION( hexDecode ) {
 	//uint8_t *out;
 	//out = JL_NewBuffer(cx, outLength, JL_RVAL);
 	//JL_CHK( out );
-	buffer.alloc(outLength);
+	buffer.alloc(outLength, true);
 	JL_ASSERT_ALLOC(buffer);
 
 	for ( unsigned long i=0; i<outLength; ++i )

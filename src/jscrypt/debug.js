@@ -2,13 +2,18 @@ var loadModule = host.loadModule;
  //loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('jscrypt'); throw 0;
 
+loadModule('jsstd');
+loadModule('jscrypt');
+
+//base64Encode('');
+
+print( base64Encode('test') );
+throw 0;
+
 
 
 loadModule('jsstd');
 loadModule('jscrypt');
-
-
-
 
 try {
 
@@ -41,6 +46,15 @@ try {
 }
 
 throw 0;
+
+
+loadModule('jsstd');
+loadModule('jscrypt');
+var sha1 = new Hash('sha1');
+sha1.write('258EAFA5-E914-47DA-95CA-C5AB0DC85B11');
+print('sha1 ', sha1.done().string, '\n');
+throw 0;
+
 
 
 

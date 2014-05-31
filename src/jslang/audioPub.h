@@ -34,7 +34,7 @@ JL_NewByteAudioObject( JSContext *cx, T bits, U channels, V frames, W rate, OUT 
 	JL_CHK( audioObj );
 	vp.setObject(*audioObj);
 	//data = JL_NewBuffer(cx, (bits/8) * channels * frames, &dataVal);
-	buffer.alloc((bits/8) * channels * frames);
+	buffer.alloc((bits/8) * channels * frames, true);
 	JL_ASSERT_ALLOC( buffer );
 	
 	uint8_t *data = BlobCreate(cx, buffer, &dataVal);
@@ -74,7 +74,7 @@ JL_NewByteAudioObjectOwner( JSContext *cx, uint8_t* buffer, T bits, U channels, 
 
 template <class T, class U, class V, class W>
 ALWAYS_INLINE bool FASTCALL
-JL_NewByteAudioObjectOwner( JSContext *cx, jl::BufPartial &buffer, T bits, U channels, V frames, W rate, OUT JS::MutableHandleValue vp ) {
+JL_NewByteAudioObjectOwner( JSContext *cx, jl::BufBase &buffer, T bits, U channels, V frames, W rate, OUT JS::MutableHandleValue vp ) {
 
 	ASSERT( bits > 0 && (bits % 8) == 0 && channels > 0 && frames >= 0 && rate > 0 );
 

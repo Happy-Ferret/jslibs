@@ -563,7 +563,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( registryGet ) {
 
 	//uint8_t *buffer = NULL;
-	jl::BufPartial buffer;
+	jl::BufBase buffer;
 	jl::BufString pathStr, valueName;
 
 	JL_DEFINE_ARGS;
@@ -640,7 +640,7 @@ DEFINE_FUNCTION( registryGet ) {
 	}
 
 	//buffer = JL_DataBufferAlloc(cx, size);
-	buffer.alloc(size);
+	buffer.alloc(size, true);
 	JL_ASSERT_ALLOC( buffer );
 
 	st = RegQueryValueEx(hKey, valueName, NULL, NULL, buffer.data(), &size);

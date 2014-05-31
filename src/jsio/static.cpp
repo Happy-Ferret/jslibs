@@ -337,7 +337,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getRandomNoise ) {
 
-	jl::BufPartial buffer;
+	jl::BufBase buffer;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -349,7 +349,7 @@ DEFINE_FUNCTION( getRandomNoise ) {
 	//buf = JL_NewBuffer(cx, rndSize, JL_RVAL);
 	//JL_CHK( buf );
 
-	buffer.alloc(amount);
+	buffer.alloc(amount, true);
 	JL_ASSERT_ALLOC( buffer );
 
 	PRSize res;

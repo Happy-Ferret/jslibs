@@ -17,6 +17,8 @@ loadModule('jsz');
 
 	var result = inflate.process(str, true);
 	
+	print( result == source , '\n' ); // see toString
+
 	print( deflate.process().length )
 	
 

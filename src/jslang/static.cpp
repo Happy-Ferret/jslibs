@@ -243,7 +243,7 @@ DEFINE_FUNCTION( join ) {
 		//uint8_t *buf = JL_NewBuffer(cx, length, JL_RVAL);
 		//JL_CHK( buf );
 
-		buffer.alloc(length);
+		buffer.alloc(length, true);
 		JL_ASSERT_ALLOC(buffer);
 		
 		//buf += length;
@@ -1101,7 +1101,7 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	{
 		const char test[] = "test";
-		jl::BufPartial(jl::constPtr(test), 1);
+		jl::BufBase(jl::constPtr(test), 1);
 	}
 
 	{
@@ -1183,18 +1183,56 @@ DEFINE_FUNCTION( jslangTest ) {
 	}
 
 	{
+		jl::BufString str;
+		str.setEmpty();
+		ASSERT(str == "");
+		ASSERT(str.empty());
+	}
+
+	{
+		jl::BufString str;
+		ASSERT(str != "");
+		ASSERT(str.empty());
+	}
+
+	{
+		jl::BufString str( jl::BufString().setEmpty() );
+		ASSERT( str.empty() );
+
+		jl::BufString str1 = jl::BufString();
+		ASSERT( str1.empty() );
+
+		jl::BufString str3 = jl::BufBase();
+		ASSERT( str3.empty() );
+
+		jl::BufString str2( jl::BufBase().setEmpty() );
+		ASSERT( str2.empty() );
+
+		jl::BufBase str4;
+		ASSERT( str4.empty() );
+	}
+
+	{
 		jl::BufString str("test", 4);
 		jl::BufBase buf(str);
-		jl::BufPartial pbuf(str);
+		jl::BufBase pbuf(str);
 		jl::BufString str2(buf);
 	}
 
 	{
 		void *tmp1, *tmp2;
+
 		jl::BufString str("test");
+		ASSERT( str.length() == 4 );
+		
 		str.to<const jschar *, false>();
+		ASSERT( str.length() == 4 );
+		
 		str.to<const char *, true>();
+		ASSERT( str.length() == 4 );
+		
 		tmp1 = str.to<jschar *, true>();
+		ASSERT( str.length() == 4 );
 
 		str.to<const jschar *, true>();
 		str.to<const char *, true>();
@@ -1214,6 +1252,7 @@ DEFINE_FUNCTION( jslangTest ) {
 		jl::BufString str;
 		str.get("\xff abcdefg");
 		const unsigned char *tmp = str.toData<const unsigned char *>();
+		JL_IGNORE(tmp);
 	}
 
 	{
@@ -1224,14 +1263,14 @@ DEFINE_FUNCTION( jslangTest ) {
 	}
 
 	{
-		jl::BufString str("test");
+		jl::BufString str(L("test"));
 		str.toStringZ<const jschar *>();
 		str.toStringZ<const char *>();
 		jl_free( str.toStringZ<jschar *>() );
 	}
 
 	{
-		jl::BufString str(L("test"));
+		jl::BufString str("test");
 		str.toStringZ<const jschar *>();
 		str.toStringZ<const char *>();
 		jl_free( str.toStringZ<jschar *>() );
@@ -1290,6 +1329,11 @@ DEFINE_FUNCTION( jslangTest ) {
 		jl::BufString test2(cx, str);
 		ASSERT( test2 == jl::BufString("\xff\xfe\xfd") );
 		ASSERT( test2 == "\xff\xfe\xfd" );
+	}
+
+	{
+
+
 	}
 
 
@@ -1914,7 +1958,6 @@ DEFINE_INIT() {
 	return true;
 	JL_BAD;
 }
-
 
 
 /**qa
