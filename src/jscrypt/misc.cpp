@@ -38,29 +38,25 @@ DEFINE_FUNCTION( base64Encode ) {
 	JL_DEFINE_ARGS;
 
 	jl::BufString in;
+	jl::BufBase out;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
 
-//	const char *in;
-//	size_t inLength;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
 
 	unsigned long outLength;
 	outLength = 4 * ((in.length() + 2) / 3) +1;
-	char *out;
-	out = (char *)JS_malloc( cx, outLength +1 );
-	JL_CHK( out );
-	out[outLength] = '\0';
+	out.alloc(outLength);
+	JL_ASSERT_ALLOC( out );
 
 	int err;
-	err = base64_encode( in.toData<const unsigned char *>(), in.length(), (unsigned char *)out, &outLength );
+	err = base64_encode( in.toData<const unsigned char *>(), in.length(), out.dataAs<unsigned char*>(), &outLength );
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
-	JL_CHK( jl::BufString(out, outLength).toString(cx, JL_RVAL) ); // "unable to create the base64 string."
-
+	out.setUsed(outLength);
+	JL_CHK( BlobCreate(cx, out, JL_RVAL) );
 	return true;
 	JL_BAD;
 }
@@ -80,28 +76,17 @@ DEFINE_FUNCTION( base64Decode ) {
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
 
-//	const char *in;
-//	size_t inLength;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
 
 	unsigned long outLength;
 	outLength = 3 * (in.length()-2) / 4 +1; // max outLength
-	//uint8_t *out;
-	//out = JL_NewBuffer(cx, outLength, JL_RVAL);
-	//JL_CHK( out );
-
 	buffer.alloc(outLength);
-	JL_ASSERT_ALLOC(buffer);
-
+	JL_ASSERT_ALLOC( buffer );
 
 	int err;
 	err = base64_decode( in.toData<const unsigned char *>(), in.length(), buffer.data(), &outLength );
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
-
-	//out[outLength] = '\0';
-	//JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
 
 	buffer.setUsed(outLength);
 	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
@@ -123,33 +108,32 @@ DEFINE_FUNCTION( hexEncode ) {
 	JL_DEFINE_ARGS;
 
 	jl::BufString data;
+	jl::BufBase out;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
 
-	const char *in;
-	size_t inLength;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
-	in = data.toData<const char *>();
-	inLength = data.length();
-
+	
 	size_t outLength;
-	outLength = inLength * 2;
-	char *out;
-	out = (char *)JS_malloc(cx, outLength +1);
-	JL_CHK( out );
-	out[outLength] = '\0';
+	outLength = data.length() * 2;
+	out.alloc(outLength, true);
+	JL_ASSERT_ALLOC( out );
+
+	const unsigned char *inIt = data.toData<const unsigned char *>();
+	const unsigned char *inEnd = inIt + data.length();
+	unsigned char *outIt = out.data();
 
 	unsigned char c;
-	for ( size_t i=0; i<inLength; ++i ) {
-
-		c = in[i];
-		out[i*2+0] = hex[ c >> 4 ];
-		out[i*2+1] = hex[ c & 0xF ];
+	for ( ; inIt != inEnd; ++inIt, ++outIt ) {
+		
+		c = *inIt;
+		*outIt = hex[ c >> 4 ];
+		++outIt;
+		*outIt = hex[ c & 0xF ];
 	}
-
-	JL_CHK( jl::BufString(out, outLength, true).toString(cx, JL_RVAL) ); // "unable to create the hex string."
+	
+	JL_CHK( BlobCreate(cx, out, JL_RVAL) );
 
 	return true;
 	JL_BAD;
@@ -175,34 +159,33 @@ DEFINE_FUNCTION( hexDecode ) {
 
 	JL_DEFINE_ARGS;
 
-	jl::BufBase buffer;
-	jl::BufString data;
+	jl::BufString in;
+	jl::BufBase out;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
 
-	const char *in;
-	size_t inLength;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &in, &inLength) ); // warning: GC on the returned buffer !
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
-	in = data.toData<const char *>();
-	inLength = data.length();
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
 
 	size_t outLength;
-	outLength = inLength / 2;
+	outLength = in.length() / 2;
 	
-	//uint8_t *out;
-	//out = JL_NewBuffer(cx, outLength, JL_RVAL);
-	//JL_CHK( out );
-	buffer.alloc(outLength, true);
-	JL_ASSERT_ALLOC(buffer);
+	out.alloc(outLength, true);
+	JL_ASSERT_ALLOC( out );
 
-	for ( unsigned long i=0; i<outLength; ++i )
-		buffer.data()[i] = unhex[ (unsigned char)in[i*2] ] << 4 | unhex[ (unsigned char)in[i*2+1] ];
+	const unsigned char *inIt = in.toData<const unsigned char*>();
+	const unsigned char *inEnd = inIt + in.length();
+	unsigned char *outIt = out.data();
 
-	//out[outLength] = '\0';
-	//JL_CHK( JL_NewBlob( cx, out, outLength, JL_RVAL ) );
-	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
+	unsigned char c;
+	for ( ; inIt != inEnd; ++inIt, ++outIt ) {
+		
+		c = unhex[*inIt] << 4;
+		++inIt;
+		*outIt = c | unhex[*inIt];
+	}
+
+	JL_CHK( BlobCreate(cx, out, JL_RVAL) );
 
 	return true;
 	JL_BAD;

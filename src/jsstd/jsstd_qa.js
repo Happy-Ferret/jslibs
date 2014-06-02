@@ -67,7 +67,7 @@ loadModule('jsstd');
 
 /// Garbage collector []
 		
-		loadModule('jsdebug');
+//		loadModule('jsdebug');
 		
 		var str = QA.randomString(1024*1024);
 		

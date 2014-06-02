@@ -2,7 +2,7 @@ var loadModule = host.loadModule;
 
  //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
  //loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask -rep 1 jsio -stopAfterNIssues 1'); halt();
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio'); throw 0;
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio'); throw 0;
 
 
 //loadModule('jstask');
@@ -10,12 +10,16 @@ loadModule('jsstd');
 loadModule('jsio');
 
 
-	print( new File( '.\\test.tmp' ).content.length );
+	new File( '.\\test.tmp' ).content = 'xxx';
+
+	var a = 1 + (new File( '.\\test.tmp' ).content);
+	print( a );
+
+
 throw 0;
 
 
 
-	new File( '.\\test.txt' ).content = '1234';
 throw 0;
 
 

@@ -1,4 +1,5 @@
 var loadModule = host.loadModule;
+
 //_jsapiTests(); throw 0;
 
  //RunJsircbot(false); throw 0;
@@ -10,7 +11,7 @@ var loadModule = host.loadModule;
 
 
 var data = jslangTest();
-//print( 'data: '+data.string.quote() );
+
 throw 0;
 
 
@@ -97,7 +98,7 @@ for (;;) {
 	processEvents(host.endSignalEvents(function() { throw 0 }), audio.events(function() {
 	
 		var s;
-		while ( s = this.read() ) {
+		while ( (s = this.read()) ) {
 
 			var arr = new Int16Array(s.data);
 			var sum = 0;

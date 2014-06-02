@@ -251,8 +251,8 @@ loadModule('jsdebug');
 
 /// Noise generation []
 		
-		QA.ASSERT( getRandomNoise(1).byteLength, 1, 'random noise 1 byte' );
-		QA.ASSERT( getRandomNoise(3).byteLength, 3, 'random noise 3 bytes' );
+		QA.ASSERT( getRandomNoise(1).length, 1, 'random noise 1 byte' );
+		QA.ASSERT( getRandomNoise(3).length, 3, 'random noise 3 bytes' );
 
 
 /// environment variables [p]
@@ -575,7 +575,7 @@ loadModule('jsdebug');
 		mem.write('ABC', 9);
 		var mem2 = new SharedMemory( fileName, 100 );
 		QA.ASSERT_STR( mem2.read(), '123456789ABC', 'content' );
-		QA.ASSERT( mem2.content.byteLength, 12, 'used memory length' );
+		QA.ASSERT( mem2.content.length, 12, 'used memory length' );
 		QA.ASSERT_STR( mem2.content, '123456789ABC', 'content' );
 		mem2.write('Z',99);
 		QA.ASSERT_STR( mem.read(1, 99), 'Z', 'writing at the end' );
@@ -722,7 +722,7 @@ loadModule('jsdebug');
 				QA.ASSERTOP( process.stdout, 'instanceof', Descriptor, 'process stdout type' );
 				QA.ASSERTOP( process.stderr, 'instanceof', Descriptor, 'process stderr type' );
 				var data = process.stdout.read(10);
-				QA.ASSERT( data.byteLength, 10, 'reading Process stdout' );
+				QA.ASSERT( data.length, 10, 'reading Process stdout' );
 				break;
 			default:
 				QA.FAILED('(TBD) no test available for this system.');
@@ -881,7 +881,7 @@ loadModule('jsdebug');
 		QA.ASSERTOP( stringify(fd.read()), '==', 'fghij', name );
 		QA.ASSERTOP( stringify(fd.read(0)), '==', '', name );
 		var fd = fdm('');
-		QA.ASSERTOP( fd.read(0).byteLength, '==', 0, name );
+		QA.ASSERTOP( fd.read(0).length, '==', 0, name );
 	}
 
 	function testEof(fdm, name) {

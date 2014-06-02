@@ -1084,7 +1084,7 @@ DEFINE_FUNCTION( jslangTest ) {
 	}
 
 	{
-		jl::BufString test("abcd", 10, true);
+		jl::BufString test("abcd", 4, true);
 		test.toStringZ<const char*>();
 		ASSERT( test == "abcd" );
 	}
@@ -1096,6 +1096,12 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	{
 		jl::BufBase b;
+		ASSERT( b.empty() );
+	}
+
+	{
+		jl::BufBase b("123", 3);
+		b.setEmpty();
 		ASSERT( b.empty() );
 	}
 

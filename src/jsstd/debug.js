@@ -1,8 +1,20 @@
 var loadModule = host.loadModule;
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsstd'); throw 0;
+
+loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsstd'); throw 0;
 //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 
 loadModule('jsstd');
+
+
+  var obj = { a:1, b:[2,3,4], c:{} };
+  print( uneval(obj), '\n' ); // prints: ({a:1, b:[2, 3, 4], c:{}})
+
+  clearObject(obj);
+  print( uneval(obj) ); // prints: ({})
+
+
+
+throw 0;
 
 
 //var res = sandboxEval('Math+" "+Math+" "+query()', function() 123); print(res, '\n');

@@ -7,7 +7,13 @@ loadModule('jscrypt');
 
 //base64Encode('');
 
-print( base64Encode('test') );
+//print( base64Decode(base64Encode('test').arrayBuffer), '\n' );
+
+//print( (hexEncode('abcdefghijklmnop').string), '\n' );
+//print( hexDecode(hexEncode('abcdefghijklmnop').string), '\n' );
+
+print( hexDecode('1g').string, '\n' );
+
 throw 0;
 
 

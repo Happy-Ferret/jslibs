@@ -146,7 +146,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( open ) {
 
 	JS::RootedValue jsvalFileName(cx);
-	jl::BufString str;
+	jl::BufString fileName;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
@@ -190,20 +190,15 @@ DEFINE_FUNCTION( open ) {
 
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
-//	const char *fileName;
-//	JL_CHK( jl::getValue(cx, jsvalFileName, &fileName) );
-	JL_CHK( jl::getValue(cx, jsvalFileName, &str) );
+	JL_CHK( jl::getValue(cx, jsvalFileName, &fileName) );
 
 	PRFileDesc *fd;
-	fd = PR_OpenFile(str, flags, mode); // PR_OpenFile has the same prototype as PR_Open but implements the specified file mode where possible.
+	fd = PR_OpenFile(fileName, flags, mode); // PR_OpenFile has the same prototype as PR_Open but implements the specified file mode where possible.
 
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 	JL_SetPrivate(JL_OBJ, fd);
 
-//	JL_CHK( SetStreamReadInterface(cx, obj, NativeInterfaceStreamRead) );
-
-//	JL_CHK( ReserveStreamReadInterface(cx, obj) ); // this reserves the NativeInterface, then it can be switched on/off safely (see Descriptor::Close)
 	JL_CHK( SetStreamReadInterface(cx, JL_OBJ, NativeInterfaceStreamRead) );
 
 	JL_RVAL.setObject(*JL_OBJ); // allows to write f.Open(...).Read()

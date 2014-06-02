@@ -425,8 +425,9 @@ DEFINE_FUNCTION( clearObject ) {
 	for ( int i = 0; i < JS_IdArrayLength(cx, list); ++i ) {
 
 		id.set(JS_IdArrayGet(cx, list, i));
-		return JS_DeletePropertyById2(cx, argObj, id, &junk);
+		JL_CHK( JS_DeletePropertyById2(cx, argObj, id, &junk) );
 	}
+
 	JS_DestroyIdArray(cx, list);
 
 	JL_RVAL.setUndefined();

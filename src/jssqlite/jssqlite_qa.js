@@ -168,7 +168,7 @@ loadModule('jssqlite');
 		
 		result1.toto = join(['12', '\0', '34'], true);
 
-		QA.ASSERT( result1.row()[0].byteLength, 5, 'using binding' );
+		QA.ASSERT( result1.row()[0].length, 5, 'using binding' );
 		QA.ASSERT( db.changes, 0, 'changes' );
 		result1.close();
 		db.close();

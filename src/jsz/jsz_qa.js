@@ -21,7 +21,7 @@ loadModule('jsz');
 		var uncompressezText = 'jjjjjjjjjjjssssssssssssssssssslllllliiiiiiiibbsssssssssssssss';
 		var level = 9; // 0..9
 		var compressedText = new Z(Z.DEFLATE, level).process(uncompressezText, true);
-		var ratio = (100 * compressedText.byteLength / uncompressezText.length).toFixed(2)+'%';
+		var ratio = (100 * compressedText.length / uncompressezText.length).toFixed(2)+'%';
 		QA.ASSERT( ratio, '37.70%', 'Bad compression ratio' );
 
 
@@ -282,7 +282,7 @@ loadModule('jsz');
 	var result = stringify(inflate.process(tmp));
 
 	tmp = deflate.process(undefined);
-	QA.ASSERTOP( tmp.byteLength, '>', 0, 'incomplete inflate result' );
+	QA.ASSERTOP( tmp.length, '>', 0, 'incomplete inflate result' );
 
 	result += stringify(inflate.process(tmp));
 	QA.ASSERTOP( result, '==', source, 'complete inflate result' );

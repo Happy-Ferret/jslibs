@@ -949,7 +949,14 @@ private:
 	mutable size_t _used;
 	mutable bool _owner; // true if this object is responsible of freeing the memory pointed by _data
 
-	//void operator [](size_t);
+protected:
+
+	void
+	setAllocSize( size_t allocSize ) const {
+
+		_allocSize = allocSize;
+	}
+
 public:
 
 	~BufBase() {
@@ -1027,7 +1034,9 @@ public:
 
 		if ( hasData() && owner() )
 			free();
-		setUsed(0);
+		else
+			setData(nullptr);
+		//setUsed(0);
 		// setAllocSize(0);
 		// dropOwnership();
 		return *this;
@@ -1095,12 +1104,6 @@ public:
 
 		ASSERT_IF( _data == nullptr, _allocSize == 0 );
 		return _allocSize;
-	}
-
-	void
-	setAllocSize( size_t allocSize ) const {
-
-		_allocSize = allocSize;
 	}
 
 	size_t
@@ -1187,8 +1190,8 @@ public:
 		jl_free(data());
 		
 		setData(nullptr);
-		setAllocSize(0);
-		setUsed(0);
+//		setAllocSize(0);
+//		setUsed(0);
 	}
 
 	void
@@ -1355,20 +1358,17 @@ public:
 	BufString() {
 	}
 
+	ALWAYS_INLINE
 	void
-	assertIntegrity() {
+	assertIntegrity() const {
 		
 		if ( IS_DEBUG ) {
 
+			ASSERT( hasData() );
 			ASSERT_IF( used() == UnknownSize, nt() );
-			ASSERT_IF( wide(), used() % 2 == 0 );
-
 
 			size_t len;
 			if ( used() == UnknownSize ) {
-
-				ASSERT( hasData() );
-				ASSERT( nt() );
 
 				len = wide() ? jl::strlen(dataAs<WideChar*>()) : jl::strlen(dataAs<char*>());
 			} else {
@@ -1376,6 +1376,7 @@ public:
 				len = used() / charSize() - _terminatorLength;
 			}
 
+			ASSERT_IF( used() != UnknownSize && wide(), used() % 2 == 0 );
 			ASSERT_IF( owner() && wide() && !nt(), jl_msize(data()) >= len*2 );
 			ASSERT_IF( owner() && !wide() && !nt(), jl_msize(data()) >= len );
 			ASSERT_IF( owner() && wide() && nt(), jl_msize(data()) >= len*2+2 );
@@ -1387,18 +1388,16 @@ public:
 
 	template <class T>
 	explicit BufString( T *str, size_t len = UnknownSize, bool nullTerminated = true )
-	: BufBase(str, len + (nullTerminated ? sizeof(T) : 0)), _charSize(sizeof(T)), _terminatorLength(nullTerminated ? 1 : 0) {
+	: BufBase(str, len + ((nullTerminated && len != UnknownSize) ? sizeof(T) : 0)), _charSize(sizeof(T)), _terminatorLength(nullTerminated ? 1 : 0) {
 		assertIntegrity();
 	}
 
 	BufString( const BufBase& buf, bool withOwnership = true )
 	: BufBase(buf, withOwnership), _charSize(1), _terminatorLength(0) {
-		assertIntegrity();
 	}
 
 	BufString( const BufString& buf, bool withOwnership = true )
 	: BufBase(buf, withOwnership), _charSize(buf._charSize), _terminatorLength(buf._terminatorLength) {
-		assertIntegrity();
 	}
 
 	explicit BufString( JSContext *cx, JS::HandleString str )
@@ -1418,9 +1417,6 @@ public:
 		size_t len;
 		if ( used() == UnknownSize ) {
 
-			ASSERT( hasData() );
-			ASSERT( nt() );
-
 			len = wide() ? jl::strlen(dataAs<WideChar*>()) : jl::strlen(dataAs<char*>());
 			setUsed((len + 1) * charSize());
 			setAllocSize(used());
@@ -1429,7 +1425,8 @@ public:
 			len = used() / charSize() - _terminatorLength;
 		}
 
-		ASSERT_IF( wide(), used() % 2 == 0 );
+		assertIntegrity();
+
 		return len;
 	}
 
@@ -3832,7 +3829,7 @@ JL_ReportExceptionToString( JSContext *cx, JSObject *obj, JLData  ) {
 ALWAYS_INLINE bool FASTCALL
 JL_MaybeRealloc( size_t requested, size_t received ) {
 
-	return requested != 0 && (128 * received / requested < 96) && (requested - received > 128); // less than 75% AND at least 128 bytes more 
+	return requested != 0 && (128 * received / requested < 96) && (requested - received > 128); // less than 75% AND mode than 128 bytes
 }
 
 
