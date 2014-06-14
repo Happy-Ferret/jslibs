@@ -115,6 +115,6 @@ ThrowSdlError( JSContext *cx ) {
 //	if ( errorMessage == NULL || *errorMessage == '\0' )
 //		errorMessage = "Undefined error";
 	JL_CHK( JL_SetReservedSlot(  errorObj, 0, errorMessage != NULL && *errorMessage != '\0' ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID ) );
-	JL_SAFE( jl::setScriptLocation(cx, errorObj) );
+	JL_SAFE( jl::addScriptLocation(cx, errorObj) );
 	JL_BAD;
 }

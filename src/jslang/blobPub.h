@@ -22,9 +22,18 @@ INLINE
 bool
 BlobBufferGet( JSContext *cx, JS::HandleObject obj, jl::BufString *str ) {
 
-	size_t length;
-	JL_CHK( jl::getSlot(cx, obj, JL_BLOB_LENGTH, &length) );
-	str->get(reinterpret_cast<const uint8_t*>(JL_GetPrivate(obj)), length, false);
+	JS::RootedValue val(cx);
+	JL_CHK( jl::getSlot(cx, obj, JL_BLOB_LENGTH, &val) );
+	if ( !val.isUndefined() ) {
+		
+		ASSERT( val.isInt32() );
+		int32_t size = val.toInt32();
+		str->get(reinterpret_cast<const uint8_t*>(JL_GetPrivate(obj)), size, false);
+	} else {
+
+		JL_WARN( E_OBJ, E_STATE, E_INVALID );
+		str->setEmpty();
+	}
 	return true;
 	JL_BAD;
 }
@@ -40,6 +49,7 @@ BlobJSClass( JSContext *cx ) {
 	return clasp;
 }
 
+
 INLINE bool
 BlobCreate( JSContext *cx, void *ownData, int32_t size, OUT JS::MutableHandleValue rval ) {
 
@@ -47,7 +57,7 @@ BlobCreate( JSContext *cx, void *ownData, int32_t size, OUT JS::MutableHandleVal
 	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME("Blob"), E_NOTFOUND );
 
 	{
-
+	// rules:
 	// length > 0 && private != NULL => blob
 	// length == 0 => empty blob
 	// length == undefined => invalidated blob
@@ -61,7 +71,7 @@ BlobCreate( JSContext *cx, void *ownData, int32_t size, OUT JS::MutableHandleVal
 
 	JL_CHK( blobObj );
 
-	JL_CHK( SetBufferGetInterface(cx, blobObj, BlobBufferGet) );
+	JL_CHK( setBufferGetInterface(cx, blobObj, BlobBufferGet) );
 
 	rval.setObject(*blobObj);
 	JL_CHK( jl::setSlot(cx, blobObj, JL_BLOB_LENGTH, size) );
@@ -104,6 +114,7 @@ BlobCreateEmpty( JSContext *cx, OUT JS::MutableHandleValue rval ) {
 
 	return BlobCreate(cx, NULL, 0, rval);
 }
+
 
 ALWAYS_INLINE bool
 BlobCreateCopy( JSContext *cx, const void *data, int32_t size, OUT JS::MutableHandleValue rval ) {

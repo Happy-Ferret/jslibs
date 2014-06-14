@@ -92,7 +92,7 @@ bool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
 		JL_CHK( jl::getProperty(cx, funObj, JLID(cx, name), &funNameVal) );
 		ASSERT( funNameVal.isString() );
 		JS::RootedString funNameStr(cx, funNameVal.toString());
-		JS::RootedId funNameId(cx, JL_StringToJsid(cx, funNameStr));
+		JS::RootedId funNameId(cx, jl::stringToJsid(cx, funNameStr));
 		ASSERT( JSID_IS_STRING(funNameId) );
 		bool succeeded;
 		JL_CHK( JS_DeletePropertyById2(cx, JL_OBJ, funNameId, &succeeded) ); // beware: permanant properties cannot be removed.
@@ -388,7 +388,7 @@ DEFINE_ITERATOR_OBJECT() {
 	if ( V_VT(&result) == VT_DISPATCH )
 		punk = V_ISBYREF(&result) ? *V_DISPATCHREF(&result) : V_DISPATCH(&result);
 	
-	JL_ASSERT( punk != NULL, E_THISOBJ, E_STATE ); // JL_ASSERT( punk != NULL, "Invalid enum." );
+	JL_ASSERT( punk != NULL, E_THISOBJ, E_STATE, E_INVALID ); // JL_ASSERT( punk != NULL, "Invalid enum." );
 
 	hr = punk->QueryInterface(IID_IEnumVARIANT, (void**)&pEnum);
 
@@ -426,7 +426,7 @@ DEFINE_EQUALITY_OP() {
 /*
 DEFINE_HAS_INSTANCE() {
 
-	//*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
+	//*bp = !JSVAL_IS_PRIMITIVE(*v) && jl::inheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	*bp = JL_ValueIsClass(cx, vp, JL_THIS_CLASS);
 	return true;
 }

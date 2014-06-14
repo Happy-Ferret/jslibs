@@ -14,6 +14,8 @@
 
 #include "stdafx.h"
 
+#include <js/OldDebugAPI.h> // JS_DefineDebuggerObject
+
 #include "js/GCAPI.h"
 
 #include <jsprf.h> // JS_smprintf in ErrorReporter
@@ -889,7 +891,7 @@ DEFINE_FUNCTION( stdin ) {
 	} else {
 
 		JL_WARN( E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdin"), E_READ );
-		JL_RVAL.setString(JL_GetEmptyString(cx));
+		JL_RVAL.set(JL_GetEmptyStringValue(cx));
 	}
 	return true;
 	JL_BAD;
@@ -1255,6 +1257,7 @@ Host::Host( HostRuntime &hr, StdIO &hostStdIO, bool unsafeMode )
 
 	::_unsafeMode = unsafeMode;
 	Host::setHostAllocators(_hostRuntime.allocators());
+
 	IFDEBUG( jl_free(js_malloc(256)) );
 	IFDEBUG( js_free(jl_malloc(256)) );
 
@@ -1341,7 +1344,6 @@ Host::free(bool skipCleanup) {
 		jslangModuleFree(skipCleanup, NULL);
 	}
 }
-
 
 bool
 Host::report( bool isWarning, ... ) const {
@@ -1434,11 +1436,18 @@ Host::report( bool isWarning, ... ) const {
 
 	JSErrorFormatString format = { message, 0, (int16_t)exn };
 	return JS_ReportErrorFlagsAndNumber( _hostRuntime.context(), isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, errorCallback, (void*)&format, 0);
-
-//bad:
-//	va_end(vl);
-//	return false;
 }
+
+
+//bool
+//Host::report( bool isWarning, ... ) const {
+//
+//  va_list va;
+//  va_start(va, isWarning);
+//  bool st = vsreport(isWarning,va);
+//  va_end(va);
+//  return st;
+//}
 
 
 bool
@@ -1486,7 +1495,14 @@ Host::hostObject() {
 
 
 
-
-
+//bool
+//report( JSContext *cx, bool isWarning, ... ) {
+//
+//  va_list va;
+//  va_start(va, isWarning);
+//  bool st = jl::Host::getHost(cx).report(isWarning, va);
+//  va_end(va);
+//  return st;
+//}
 
 JL_END_NAMESPACE

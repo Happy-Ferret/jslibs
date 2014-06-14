@@ -435,11 +435,11 @@ DEFINE_FUNCTION( events ) {
 
 	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset
 	if ( upe->cancelEvent == NULL )
-		JL_CHK( JL_ThrowOSError(cx) );
+		JL_CHK( jl::throwOSError(cx) );
 	
 	BOOL st = DuplicateHandle(GetCurrentProcess(), pv->bufferReadyEvent, GetCurrentProcess(), &upe->audioEvent, 0, FALSE, DUPLICATE_SAME_ACCESS);
 	if ( !st )
-		JL_CHK( JL_ThrowOSError(cx) );
+		JL_CHK( jl::throwOSError(cx) );
 
 	return true;
 	JL_BAD;
@@ -590,7 +590,7 @@ ThrowWinAudioError( JSContext *cx, UINT errorCode ) {
 
 	JL_CHK( jl::setException(cx, error) );
 	JL_CHK( jl::setSlot(cx, error, 0, errorCode) );
-	JL_SAFE( jl::setScriptLocation(cx, &error) );
+	JL_SAFE( jl::addScriptLocation(cx, &error) );
 	return false;
 	JL_BAD;
 }

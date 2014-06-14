@@ -24,20 +24,10 @@ invalidateBlob(JSContext *cx, JS::HandleObject obj) {
 	return jl::setSlot(cx, obj, JL_BLOB_LENGTH, JL_UNDEFINED());
 }
 
-/*
-DEFINE_CONSTRUCTOR() {
-
-	JL_DEFINE_ARGS;
-	JL_DEFINE_CONSTRUCTOR_OBJ;
-	///
-	return true;
-	JL_BAD;
-}
-*/
 
 DEFINE_FINALIZE() { // see HandleClose()
 
-	void *pv = static_cast<void*>(js::GetObjectPrivate(obj));
+	void *pv = js::GetObjectPrivate(obj);
 	if ( pv && !jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
 		jl_free(pv);
 }
@@ -47,6 +37,12 @@ DEFINE_PROPERTY_GETTER( length ) {
 	JL_DEFINE_PROP_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_CHK( jl::getSlot(cx, JL_OBJ, JL_BLOB_LENGTH, JL_RVAL) );
+
+	if ( JL_RVAL.isUndefined() ) {
+
+		JL_WARN( E_OBJ, E_STATE, E_INVALID );
+	}
+
 	return true;
 	JL_BAD;
 }
@@ -62,10 +58,15 @@ DEFINE_PROPERTY_GETTER( arrayBuffer ) {
 		ASSERT( JL_RVAL.isInt32() );
 		jl::BufBase(JL_GetPrivate(JL_OBJ), JL_RVAL.toInt32()).toArrayBuffer(cx, JL_RVAL);
 		JL_CHK( invalidateBlob(cx, JL_OBJ) );
+		JL_CHK( JS_DefinePropertyById(cx, JL_OBJ, id, JL_RVAL, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	} else {
+
+		JL_WARN( E_OBJ, E_STATE, E_INVALID );
 	}
 	return true;
 	JL_BAD;
 }
+
 
 DEFINE_PROPERTY_GETTER( string ) {
 
@@ -84,10 +85,15 @@ DEFINE_PROPERTY_GETTER( string ) {
 			JL_RVAL.set(JL_GetEmptyStringValue(cx));
 		}
 		JL_CHK( invalidateBlob(cx, JL_OBJ) );
+		JL_CHK( JS_DefinePropertyById(cx, JL_OBJ, id, JL_RVAL, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	} else {
+
+		JL_WARN( E_OBJ, E_STATE, E_INVALID );
 	}
 	return true;
 	JL_BAD;
 }
+
 
 DEFINE_PROPERTY_GETTER( ucString ) {
 
@@ -107,46 +113,42 @@ DEFINE_PROPERTY_GETTER( ucString ) {
 			JL_RVAL.set(JL_GetEmptyStringValue(cx));
 		}
 		JL_CHK( invalidateBlob(cx, JL_OBJ) );
+		JL_CHK( JS_DefinePropertyById(cx, JL_OBJ, id, JL_RVAL, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+	} else {
+
+		JL_WARN( E_OBJ, E_STATE, E_INVALID );
 	}
 	return true;
 	JL_BAD;
 }
+
 
 DEFINE_FUNCTION( toString ) {
 
 	JL_DEFINE_ARGS;
-	JL_ASSERT_THIS_INSTANCE();
-	JL_CHK( jl::getSlot(cx, JL_OBJ, JL_BLOB_LENGTH, JL_RVAL) );
-	if ( !JL_RVAL.isUndefined() ) {
-		
-		ASSERT( JL_RVAL.isInt32() );
-		int32_t size = JL_RVAL.toInt32();
-		if ( size > 0 ) {
-
-			jl::BufString(static_cast<char*>(JL_GetPrivate(JL_OBJ)), size, false).toString(cx, JL_RVAL);
-		} else {
-
-			JL_RVAL.set(JL_GetEmptyStringValue(cx));
-		}
-		JL_CHK( invalidateBlob(cx, JL_OBJ) );
-	}
+	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, string), JL_RVAL) );
 	return true;
 	JL_BAD;
 }
+
 
 DEFINE_FUNCTION( free ) {
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
-	void *pv = static_cast<void*>(JL_GetPrivate(JL_OBJ));
+	void *pv = JL_GetPrivate(JL_OBJ);
 	if ( pv != NULL ) {
 
 		jl_free(pv);
 		JL_CHK( invalidateBlob(cx, JL_OBJ) );
+	} else {
+
+		JL_WARN( E_OBJ, E_STATE, E_INVALID );
 	}
 	return true;
 	JL_BAD;
 }
+
 
 CONFIGURE_CLASS
 
@@ -169,4 +171,3 @@ CONFIGURE_CLASS
 	END_FUNCTION_SPEC
 
 END_CLASS
-

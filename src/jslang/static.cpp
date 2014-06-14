@@ -115,7 +115,7 @@ DEFINE_FUNCTION( stringify ) {
 
 		JS::RootedObject sobj(cx, &JL_ARG(1).toObject() );
 
-		NIStreamRead read = StreamReadInterface(cx, sobj);
+		jl::NIStreamRead read = jl::streamReadInterface(cx, sobj);
 		if ( read ) {
 
 			jl::ChunkedBuffer<char> buf;
@@ -415,7 +415,7 @@ DEFINE_FUNCTION( processEvents ) {
 		
 		ProcessEvent2 *pe;
 		JL_CHK( GetHandlePrivate(cx, handleObj, pe) );
-		JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_STATE ); //JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_ANINVALID, E_NAME("pev Handle") );
+		JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_STATE, E_INVALID ); //JL_ASSERT( pe != NULL, E_ARG, E_NUM(i+1), E_ANINVALID, E_NAME("pev Handle") );
 
 		JL_CHK( pe->prepareWait(cx, handleObj) );
 
@@ -438,7 +438,7 @@ DEFINE_FUNCTION( processEvents ) {
 			ti->thread = JLThreadStart(ProcessEventThread, ti);
 
 			if ( !JLThreadOk(ti->thread) )
-				return JL_ThrowOSError(cx);
+				return jl::throwOSError(cx);
 
 			ASSERT( JLThreadOk(ti->thread) );
 			JLThreadPriority(ti->thread, JL_THREAD_PRIORITY_HIGHEST);
@@ -1339,9 +1339,12 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	{
 
+		jl::BufString test("my string");
+		JL_CHK( BlobCreate(cx, test, JL_RVAL) );
 
 	}
 
+return true;
 
 
 

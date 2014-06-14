@@ -204,7 +204,7 @@ WinThrowError( JSContext *cx, DWORD errorCode ) {
 	JL_CHK( jl::setException(cx, error) );
 	JL_CHK( jl::setSlot(cx, error, SLOT_WIN_ERROR_CODE_HI, HIWORD(errorCode)) );
 	JL_CHK( jl::setSlot(cx, error, SLOT_WIN_ERROR_CODE_LO, LOWORD(errorCode)) );
-	JL_SAFE( jl::setScriptLocation(cx, &error) );
+	JL_SAFE( jl::addScriptLocation(cx, &error) );
 	return false;
 	JL_BAD;
 }

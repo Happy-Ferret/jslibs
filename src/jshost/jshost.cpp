@@ -55,7 +55,6 @@ static const unsigned char embeddedBootstrapScript[] =
 
 
 struct CmdLineArguments {
-
 	int help;
 	uint32_t maxMem;
 	uint32_t maxAlloc;
@@ -537,7 +536,7 @@ int main(int argc, char* argv[]) {
 			char bootstrapFilename[PATH_MAX];
 			strcpy(bootstrapFilename, hostFullPath);
 			strcat(bootstrapFilename, ".js");
-			JL_CHK( ExecuteScriptFileName(cx, globalObject, bootstrapFilename, args.compileOnly, &rval) );
+			JL_CHK( jl::executeScriptFileName(cx, globalObject, bootstrapFilename, args.compileOnly, &rval) );
 		}
 
 		ASSERT( !JL_IsExceptionPending(cx) );
@@ -549,14 +548,14 @@ int main(int argc, char* argv[]) {
 
 		if ( args.inlineScript != NULL ) {
 
-			executeStatus = ExecuteScriptText(cx, globalObject, args.inlineScript, args.compileOnly, &rval);
+			executeStatus = jl::executeScriptText(cx, globalObject, args.inlineScript, args.compileOnly, &rval);
 		}
 
 		// file script
 
 		if ( args.jsArgc == 1 && executeStatus == true ) {
 
-			executeStatus = ExecuteScriptFileName(cx, globalObject, args.jsArgv[0], args.compileOnly, &rval);
+			executeStatus = jl::executeScriptFileName(cx, globalObject, args.jsArgv[0], args.compileOnly, &rval);
 		}
 
 		if ( executeStatus == true ) {
@@ -631,7 +630,7 @@ int main(int argc, char* argv[]) {
 }
 
 
-int xxxmain(int argc, char* argv[]) {
+int basic_test_main(int argc, char* argv[]) {
 
 
 

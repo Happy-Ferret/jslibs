@@ -33,7 +33,7 @@ void FinalizeJoint(JSObject *obj) {
 
 bool ReconstructJoint( JSContext *cx, ode::dJointID jointId, JSObject **obj ) { // (TBD) JSObject** = Conservative Stack Scanning issue ?
 
-	JL_ASSERT( jointId != NULL && ode::dJointGetData(jointId) == NULL, E_MODULE, E_INTERNAL, E_SEP, E_STR(JL_CLASS_NAME(Joint)), E_STATE );
+	JL_ASSERT( jointId != NULL && ode::dJointGetData(jointId) == NULL, E_MODULE, E_INTERNAL, E_SEP, E_STR(JL_CLASS_NAME(Joint)), E_STATE, E_INVALID );
 
 	switch( ode::dJointGetType(jointId) ) {
 		case ode::dJointTypeBall:

@@ -198,7 +198,7 @@ DEFINE_CONSTRUCTOR() {
 	}
 
 	JL_CHKB( PR_PostSemaphore( accessSem ) == PR_SUCCESS, bad_ioerror );
-	JL_CHK( SetBufferGetInterface(cx, JL_OBJ, SharedMemoryBufferGet) );
+	JL_CHK( jl::setBufferGetInterface(cx, JL_OBJ, SharedMemoryBufferGet) );
 
 	JL_SetPrivate(JL_OBJ, pv);
 	return true;

@@ -149,7 +149,7 @@ public:
 		*length = _pos - _start;
 
 		// maybe realloc the buffer
-		if ( JL_MaybeRealloc(_length, _pos - _start) )
+		if ( maybeRealloc(_length, _pos - _start) )
 			_start = (uint8_t*)jl_realloc(_start, _pos - _start + 1);
 		*data = _start;
 
@@ -312,7 +312,7 @@ public:
 				JL_CHK( Write(cx, JLSTNull) );
 			} else {
 
-				JL_ERR( E_STR("serializer"), E_STATE );
+				JL_ERR( E_STR("serializer"), E_STATE, E_INVALID );
 			}
 			return true;
 		}
@@ -796,7 +796,7 @@ public:
 
 				JS::RootedValue funVal(cx);
 				JL_CHK( Read(cx, funVal) );
-				JL_ASSERT( jl::isCallable(cx, funVal), E_STR("unserializer"), E_STATE ); // JLSMSG_INVALID_OBJECT_STATE, "Unserializer"
+				JL_ASSERT( jl::isCallable(cx, funVal), E_STR("unserializer"), E_STATE, E_INVALID ); // JLSMSG_INVALID_OBJECT_STATE, "Unserializer"
 
 				JS::RootedValue arg_1(cx);
 				JS::RootedObject unserializerWrapper(cx);
@@ -951,7 +951,7 @@ public:
 				break;
 			}
 			default:
-				JL_ERR( E_STR("unserializer"), E_STATE );
+				JL_ERR( E_STR("unserializer"), E_STATE, E_INVALID );
 		}
 
 		return true;

@@ -177,7 +177,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int ) {
 	strcpy(dotPos+1, "js");
 
 	bool executeStatus;
-	executeStatus = ExecuteScriptFileName(cx, globalObject, tmp, false, &rval);
+	executeStatus = jl::executeScriptFileName(cx, globalObject, tmp, false, &rval);
 
 	if ( !executeStatus )
 		if ( JL_IsExceptionPending(cx) )

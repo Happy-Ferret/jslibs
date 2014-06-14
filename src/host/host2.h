@@ -90,6 +90,7 @@ enum {
 	JLID_SPEC( data ),
 	JLID_SPEC( type ),
 	JLID_SPEC( doc ),
+	JLID_SPEC( string ),
 	LAST_JSID // see HostPrivate::ids[]
 };
 #undef JLID_SPEC
@@ -699,7 +700,7 @@ class DLLAPI Host : public jl::CppAllocators {
 
 		JS::RootedString jsstr(cx, JS_InternUCStringN(cx, name, jl::strlen(name)));
 		ASSERT( jsstr );
-		id.set(JL_StringToJsid(cx, jsstr));
+		id.set(stringToJsid(cx, jsstr));
 	}
 
 
@@ -740,6 +741,9 @@ public:
 
 		return _hostStdIO;
 	}
+
+	bool
+	vsreport( bool isWarning, va_list vl ) const;
 
 	bool
 	report( bool isWarning, ... ) const;
@@ -885,7 +889,7 @@ JL_END_NAMESPACE
 	
 	
 ///////////////////////////////////////////////////////////////////////////////
-// IDs cache
+// IDs cache (see JLID_SPEC)
 
 // examples:
 //   JLID(cx, _unserialize) -> jsid
@@ -899,7 +903,7 @@ JL_END_NAMESPACE
 #endif // DEBUG
 
 //#define JLID(cx, name) JL_GetPrivateJsid(cx, JLID_##name, (jschar*)L(#name))
-#define JLID(cx, name) jl::Host::getHost(cx).getId(JLID_##name, L(#name))
+#define JLID(cx, name) (jl::Host::getHost(cx).getId(JLID_##name, L(#name)))
 
 // eg:
 //   jsid cfg = JLID(cx, fileName); const char *name = JLID_NAME(fileName);

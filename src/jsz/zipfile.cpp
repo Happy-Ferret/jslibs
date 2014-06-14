@@ -1220,7 +1220,7 @@ ThrowZipFileError( JSContext *cx, int errorCode ) {
 	JS::RootedObject error(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(ZipFileError), JL_CLASS_PROTOTYPE(cx, ZipFileError)));
 	JL_CHK( jl::setException(cx, error) );
 	JL_CHK( jl::setSlot(cx, error, 0, errorCode) );
-	JL_SAFE( jl::setScriptLocation(cx, &error) );
+	JL_SAFE( jl::addScriptLocation(cx, &error) );
 	return false;
 	JL_BAD;
 }

@@ -73,7 +73,7 @@ void FinalizeGeom(JSObject *obj) {
 
 bool ReconstructGeom(JSContext *cx, ode::dGeomID geomId, JSObject **obj) { // (TBD) JSObject** = Conservative Stack Scanning issue ?
 
-	JL_ASSERT( geomId != NULL && ode::dGeomGetData(geomId) == NULL, E_MODULE, E_INTERNAL, E_SEP, E_STR(JL_CLASS_NAME(Geom)), E_STATE );
+	JL_ASSERT( geomId != NULL && ode::dGeomGetData(geomId) == NULL, E_MODULE, E_INTERNAL, E_SEP, E_STR(JL_CLASS_NAME(Geom)), E_STATE, E_INVALID );
 
 	switch( ode::dGeomGetClass(geomId) ) {
 		case ode::dSphereClass:

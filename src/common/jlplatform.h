@@ -835,6 +835,62 @@ ALWAYS_INLINE bool isTypeFloat32(float) { return true; }
 //S_ASSERT( MAX_INT_TO_DOUBLE+(double)1 == MAX_INT_TO_DOUBLE+(double)2 );
 
 
+template<typename Source>
+struct SignificandStringValue {
+	
+	static const char * min() {
+	
+		static char buffer[(::std::numeric_limits<Source>::is_signed ? ::std::numeric_limits<Source>::digits10 + 1 : 0) + 2];
+		static char* str = jl::itoa10( ::std::numeric_limits<Source>::min(), buffer);
+		return str;
+	}
+
+	static const char * max() {
+	
+		static char buffer[::std::numeric_limits<Source>::digits10 + 2];
+		static char* str = jl::itoa10( ::std::numeric_limits<Source>::max(), buffer);
+		return str;
+	}
+};
+
+template<>
+struct SignificandStringValue<int32_t> {
+	static const char * min() { return "-2^31"; }
+	static const char * max() { return "2^31-1"; }
+};
+
+template<>
+struct SignificandStringValue<uint32_t> {
+	static const char * min() { return "0"; }
+	static const char * max() { return "2^32"; }
+};
+
+template<>
+struct SignificandStringValue<int64_t> {
+	static const char * min() { return "2^63"; }
+	static const char * max() { return "2^63-1"; }
+};
+
+template<>
+struct SignificandStringValue<uint64_t> {
+	static const char * min() { return "0"; }
+	static const char * max() { return "2^64"; }
+};
+
+template<>
+struct SignificandStringValue<float> {
+	static const char * min() { return "-2^24"; }
+	static const char * max() { return "2^24"; }
+};
+
+template<>
+struct SignificandStringValue<double> {
+	static const char * min() { return "-2^53"; }
+	static const char * max() { return "2^53"; }
+};
+
+////
+
 template<typename T>
 int significandSizeOf() {
 

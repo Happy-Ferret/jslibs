@@ -299,7 +299,7 @@ DEFINE_FUNCTION( process ) {
 		return true;
 	}
 
-	if ( JL_MaybeRealloc(outLen, length) ) {
+	if ( jl::maybeRealloc(outLen, length) ) {
 
 		outBuf = (char*)JS_realloc(cx, outBuf, length +2);
 		JL_CHK( outBuf );

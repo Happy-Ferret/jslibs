@@ -350,7 +350,7 @@ DEFINE_FUNCTION( read ) {
 			JL_RVAL.setUndefined();
 		} else {
 
-			if ( JL_MaybeRealloc(amount, totalSize) )
+			if ( jl::maybeRealloc(amount, totalSize) )
 				buf = (uint8_t*)jl_realloc(buf, totalSize);
 			JL_CHK( JL_NewByteAudioObjectOwner(cx, buf, pv->bits, pv->sfInfo.channels, totalSize / (pv->sfInfo.channels * pv->bits / 8), pv->sfInfo.samplerate, *JL_RVAL) );
 		}

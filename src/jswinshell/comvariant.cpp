@@ -101,7 +101,7 @@ public:
 
 		JSContext *cx = NULL;
 		JS_ContextIterator(_rt, &cx);
-		JS_ASSERT( cx != NULL );
+		ASSERT( cx != NULL );
 
 		JS::RootedValue rval(_rt);
 		JS::AutoValueVector avv(cx);
@@ -666,7 +666,7 @@ DEFINE_FUNCTION( toTypeName ) {
 /*
 DEFINE_HAS_INSTANCE() {
 
-	//*bp = !JSVAL_IS_PRIMITIVE(*v) && JL_InheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
+	//*bp = !JSVAL_IS_PRIMITIVE(*v) && jl::inheritFrom(cx, JSVAL_TO_OBJECT(*v), JL_THIS_CLASS);
 	*bp = JL_ValueIsClass(cx, vp, JL_THIS_CLASS);
 	return true;
 }

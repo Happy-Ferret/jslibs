@@ -118,7 +118,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, filename) );
 
-	JL_CHK( ReserveStreamReadInterface(cx, JL_OBJ) );
+	JL_CHK( jl::reserveStreamReadInterface(cx, JL_OBJ) );
 
 	ASSERT( JL_GetPrivate(JL_OBJ) == NULL ); // JL_SetPrivate( obj, NULL); // (TBD) optional ?
 	}
@@ -199,7 +199,7 @@ DEFINE_FUNCTION( open ) {
 		return ThrowIoError(cx);
 	JL_SetPrivate(JL_OBJ, fd);
 
-	JL_CHK( SetStreamReadInterface(cx, JL_OBJ, NativeInterfaceStreamRead) );
+	JL_CHK( jl::setStreamReadInterface(cx, JL_OBJ, NativeInterfaceStreamRead) );
 
 	JL_RVAL.setObject(*JL_OBJ); // allows to write f.Open(...).Read()
 	return true;
@@ -750,7 +750,7 @@ DEFINE_PROPERTY_GETTER( id ) {
 	FILE_OBJECTID_BUFFER buf;
 	DWORD cbOut;
 	if ( !DeviceIoControl(fileHandle, FSCTL_CREATE_OR_GET_OBJECT_ID, NULL, 0, &buf, sizeof(buf), &cbOut, NULL) ) // WinBase.h
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 	return jl::setValue(cx, JL_RVAL, jl::strSpec((const char *)&buf.ObjectId, sizeof(buf.ObjectId)));
 
 #elif defined(UNIX)
@@ -761,7 +761,7 @@ DEFINE_PROPERTY_GETTER( id ) {
 	struct stat fileStat;
 
 	if ( fstat(fileHandle, &fileStat) == -1 )
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 
 	return jl::setValue(cx, JL_RVAL, jl::strSpec( (const char *)&fileStat.st_ino, sizeof(fileStat.st_ino) ));
 

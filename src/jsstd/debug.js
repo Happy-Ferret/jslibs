@@ -1,9 +1,25 @@
 var loadModule = host.loadModule;
-
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsstd'); throw 0;
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsstd'); throw 0;
 //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 
 loadModule('jsstd');
+
+
+try {
+
+	//var res = sandboxEval('throw ({x:123})', undefined, 1000);
+	var res = sandboxEval('for ( var i = 0; i < 1000000; ++i );', undefined, 100);
+
+} catch(ex if ex instanceof OperationLimit) {
+
+	print(ex);
+}
+
+throw ({})
+
+
+throw 0;
+
 
 
   var obj = { a:1, b:[2,3,4], c:{} };
@@ -26,22 +42,9 @@ throw 0;
 
 //var res = sandboxEval('for ( var i = 0; i < 100000; ++i );');
 
-
-
-
-try {
-//var res = sandboxEval('throw ({x:123})', undefined, 1000);
-var res = sandboxEval('for ( var i = 0; i < 1000000; ++i );', undefined, 100);
-
-} catch(ex if ex instanceof OperationLimit) {
-
-	print(ex);
-}
-
-throw ({})
-
-
 throw 0;
+
+
 
 
 stringRepeat('-', -1 )

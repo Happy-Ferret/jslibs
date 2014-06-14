@@ -235,7 +235,7 @@ SqliteThrowErrorStatus( JSContext *cx, int status ) {
 	tmp.setString(JS_NewStringCopyZ(cx, "???"));
 	JL_CHK(JL_SetReservedSlot(errorObj, SLOT_SQLITE_ERROR_TEXT, tmp));
 	
-	JL_SAFE( jl::setScriptLocation(cx, &errorObj) );
+	JL_SAFE( jl::addScriptLocation(cx, &errorObj) );
 	return false;
 	JL_BAD;
 }
@@ -248,7 +248,7 @@ SqliteThrowError( JSContext *cx, sqlite3 *db ) {
 	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
 	JL_CHK( JL_SetReservedSlot(  error, SLOT_SQLITE_ERROR_CODE, INT_TO_JSVAL(sqlite3_extended_errcode(db)) ) );
 	JL_CHK( JL_SetReservedSlot(  error, SLOT_SQLITE_ERROR_TEXT, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, sqlite3_errmsg(db))) ) );
-	JL_SAFE( jl::setScriptLocation(cx, error) );
+	JL_SAFE( jl::addScriptLocation(cx, error) );
 */
 	JS::RootedObject errorObj(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(SqliteError), JL_CLASS_PROTOTYPE(cx, SqliteError) )); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
 	JS::RootedValue errorVal(cx, JS::ObjectValue(*errorObj)); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
@@ -260,7 +260,7 @@ SqliteThrowError( JSContext *cx, sqlite3 *db ) {
 	tmp.setString(JS_NewStringCopyZ(cx, sqlite3_errmsg(db)));
 	JL_CHK(JL_SetReservedSlot(errorObj, SLOT_SQLITE_ERROR_TEXT, tmp));
 	
-	JL_SAFE( jl::setScriptLocation(cx, &errorObj) );
+	JL_SAFE( jl::addScriptLocation(cx, &errorObj) );
 
 
 	return false;

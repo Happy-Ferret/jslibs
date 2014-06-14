@@ -160,7 +160,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JL_CHK( SetStreamSource(cx, JL_OBJ, JL_ARG(1)) );
 	JL_CHK( SetPosition(cx, JL_OBJ, 0) );
-	JL_CHK( SetStreamReadInterface(cx, JL_OBJ, StreamRead) );
+	JL_CHK( jl::setStreamReadInterface(cx, JL_OBJ, StreamRead) );
 
 	return true;
 	JL_BAD;

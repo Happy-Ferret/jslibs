@@ -288,6 +288,6 @@ ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) {
 	JL_CHK( JL_SetReservedSlot( error, 0, tmp ) );
 	tmp.setInt32(osError);
 	JL_CHK( JL_SetReservedSlot( error, 1, tmp ) );
-	JL_SAFE( jl::setScriptLocation(cx, &error) );
+	JL_SAFE( jl::addScriptLocation(cx, &error) );
 	JL_BAD;
 }

@@ -51,7 +51,7 @@ DEFINE_FUNCTION( extractIcon ) {
 		JL_CHK( jl::getValue(cx, JL_ARG(2), &iconIndex) );
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	if ( hInst == NULL )
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &fileName) );
 	HICON hIcon = ExtractIcon( hInst, fileName, iconIndex ); // see SHGetFileInfo(
 	if ( hIcon == NULL ) {
@@ -144,7 +144,7 @@ DEFINE_FUNCTION( messageBox ) {
 
 	int res = MessageBox(NULL, text, caption, type);
 	if ( res == 0 )
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 	JL_RVAL.setInt32(res);
 	return true;
 	JL_BAD;
@@ -274,7 +274,7 @@ DEFINE_FUNCTION( expandEnvironmentStrings ) {
 	TCHAR dst[PATH_MAX];
 	DWORD res = ExpandEnvironmentStrings( src, dst, sizeof(dst) );
 	if ( res == 0 )
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 	JL_RVAL.setString( JS_NewStringCopyN(cx, dst, res) );
 	return true;
 	JL_BAD;
@@ -790,7 +790,7 @@ DEFINE_FUNCTION( directoryChangesLookup ) {
 
 	DirectoryChanges *dc;
 	JL_CHK( GetHandlePrivate(cx, JL_ARG(1), dc) );
-	JL_ASSERT( dc, E_ARG, E_NUM(1), E_STATE );
+	JL_ASSERT( dc, E_ARG, E_NUM(1), E_STATE, E_INVALID );
 
 	bool wait;
 	if ( JL_ARG_ISDEF(2) )
@@ -882,10 +882,6 @@ struct DirectoryUserProcessEvent : public ProcessEvent2 {
 	DirectoryChanges *dc;
 	HANDLE cancelEvent;
 
-	JSObject *callbackFunctionThis;
-	jsval callbackFunction;
-
-
 	bool prepareWait(JSContext *cx, JS::HandleObject obj) {
 
 		return true;
@@ -942,7 +938,7 @@ DEFINE_FUNCTION( directoryChangesEvents ) {
 
 	DirectoryChanges *dc;
 	JL_CHK( GetHandlePrivate(cx, JL_ARG(1), dc) );
-	JL_ASSERT( dc, E_ARG, E_NUM(1), E_STATE );
+	JL_ASSERT( dc, E_ARG, E_NUM(1), E_STATE, E_INVALID );
 
 	DirectoryUserProcessEvent *upe = new DirectoryUserProcessEvent();
 	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
@@ -959,7 +955,7 @@ DEFINE_FUNCTION( directoryChangesEvents ) {
 	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset
 
 //	if ( upe->cancelEvent == NULL )
-//		JL_ThrowOSError(cx);
+//		jl::throwOSError(cx);
 
 	return true;
 	JL_BAD;
@@ -1015,7 +1011,7 @@ DEFINE_PROPERTY_GETTER( clipboard ) {
 
 	BOOL res = OpenClipboard(NULL);
 	if ( res == 0 )
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 
 	if ( IsClipboardFormatAvailable(CF_TEXT) == 0 ) {
 
@@ -1024,11 +1020,11 @@ DEFINE_PROPERTY_GETTER( clipboard ) {
 
 		HANDLE hglb = GetClipboardData(CF_TEXT);
 		if ( !hglb )
-			return JL_ThrowOSError(cx);
+			return jl::throwOSError(cx);
 
 		LPTSTR lptstr = (LPTSTR)GlobalLock(hglb);
 		if ( lptstr == NULL )
-			return JL_ThrowOSError(cx);
+			return jl::throwOSError(cx);
 		JSString *str = JS_NewStringCopyZ(cx, lptstr);
 		JL_ASSERT_ALLOC( str );
 		vp.setString(str);
@@ -1045,13 +1041,13 @@ DEFINE_PROPERTY_SETTER( clipboard ) {
 
 	BOOL res = OpenClipboard(NULL);
 	if ( res == 0 )
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 	res = EmptyClipboard(); // doc: If the application specifies a NULL window handle when opening the clipboard, EmptyClipboard succeeds but sets the clipboard owner to NULL. Note that this causes SetClipboardData to fail.
 	if ( res == 0 )
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 	res = CloseClipboard();
 	if ( res == 0 )
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 
 
 	if ( !vp.isNullOrUndefined() ) {
@@ -1060,19 +1056,19 @@ DEFINE_PROPERTY_SETTER( clipboard ) {
 
 		res = OpenClipboard(NULL);
 		if ( res == 0 )
-			return JL_ThrowOSError(cx);
+			return jl::throwOSError(cx);
 		JL_CHK( jl::getValue(cx, vp, &str) );
 		HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, str.length() + 1);
 		JL_ASSERT_ALLOC( hglbCopy );
 		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
 		if ( lptstrCopy == NULL )
-			return JL_ThrowOSError(cx);
+			return jl::throwOSError(cx);
 		jl::memcpy(lptstrCopy, str.toData<const char*>(), str.length() + 1);
 		lptstrCopy[str.length()] = 0;
 		GlobalUnlock(hglbCopy);
 		HANDLE h = SetClipboardData(CF_TEXT, hglbCopy);
 		if ( h == NULL )
-			return JL_ThrowOSError(cx);
+			return jl::throwOSError(cx);
 		CloseClipboard();
 	}
 	return true;

@@ -637,12 +637,12 @@ DEFINE_FUNCTION( availableSpace ) {
 	ULARGE_INTEGER freeBytesAvailable;
 	BOOL res = ::GetDiskFreeSpaceEx(path, &freeBytesAvailable, NULL, NULL);
 	if ( res == 0 )
-		JL_ThrowOSError(cx);
+		jl::throwOSError(cx);
 	available = (double)freeBytesAvailable.QuadPart;
 #else // now for UNIX and  MAC ?
 	struct statvfs fsd;
 	if ( statvfs(path, &fsd) < 0 )
-		JL_ThrowOSError(cx);
+		jl::throwOSError(cx);
 	available = (double)fsd.f_bsize * (double)fsd.f_bavail;
 #endif
 
@@ -711,11 +711,11 @@ DEFINE_FUNCTION( configureSerialPort ) {
 
 	status = GetCommState(fh, &dcb);
 	if ( status == 0 )
-		JL_ThrowOSError(cx);
+		jl::throwOSError(cx);
 
 	status = GetCommTimeouts(fh, &commTimeouts);
 	if ( status == 0 )
-		JL_ThrowOSError(cx);
+		jl::throwOSError(cx);
 	// (TBD) manage commTimeouts
 
 
@@ -759,7 +759,7 @@ DEFINE_FUNCTION( configureSerialPort ) {
 
 	status = SetCommState(fh, &dcb);
 	if ( status == 0 )
-		JL_ThrowOSError(cx);
+		jl::throwOSError(cx);
 #endif // WIN
 
 #ifdef UNIX

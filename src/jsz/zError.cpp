@@ -157,7 +157,7 @@ ThrowZError( JSContext *cx, int errorCode, const char *errorMessage ) {
 	jl::setException(cx, error);
 	JL_CHK( jl::setSlot(cx, error, 0, errorCode) );
 	JL_CHK( jl::setSlot(cx, error, 1, errorMessage != NULL ? errorMessage : ZConstString(errorCode)) );
-	JL_SAFE( jl::setScriptLocation(cx, &error) );
+	JL_SAFE( jl::addScriptLocation(cx, &error) );
 	return false;
 	JL_BAD;
 }

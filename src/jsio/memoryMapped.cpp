@@ -117,7 +117,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( pv->addr == NULL )
 		return ThrowIoError(cx);
 
-	JL_CHK( SetBufferGetInterface(cx, JL_OBJ, MemoryMappedBufferGet) );
+	JL_CHK( jl::setBufferGetInterface(cx, JL_OBJ, MemoryMappedBufferGet) );
 
 	JL_SetPrivate(JL_OBJ, pv);
 

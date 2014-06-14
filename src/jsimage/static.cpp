@@ -286,7 +286,7 @@ METHODDEF(void) jpegDestTerm( j_compress_ptr cinfo ) {
 
 	dest->dataLength = dest->pub.next_output_byte - dest->buffer;
 
-	if ( JL_MaybeRealloc(dest->bufferLength, dest->dataLength) )
+	if ( jl::maybeRealloc(dest->bufferLength, dest->dataLength) )
 		dest->buffer = (JOCTET*)jl_realloc(dest->buffer, dest->dataLength);
 }
 

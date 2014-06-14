@@ -155,7 +155,7 @@ DEFINE_FUNCTION( close ) {
 			return ThrowIoError(cx);
 	}
 	JL_SetPrivate(JL_OBJ, NULL);
-	JL_CHK( SetStreamReadInterface(cx, JL_OBJ, NULL) );
+	JL_CHK( jl::setStreamReadInterface(cx, JL_OBJ, NULL) );
 
 	return true;
 	JL_BAD;

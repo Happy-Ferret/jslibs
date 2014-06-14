@@ -209,6 +209,6 @@ ThrowOglError( JSContext *cx, GLenum err ) {
 	JS::RootedValue errVal(cx);
 	JL_CHK( JL_NativeToJsval(cx, err, errVal) );
 	JL_CHK( JL_SetReservedSlot(  error, 0, errVal ) );
-	JL_SAFE( jl::setScriptLocation(cx, error) );
+	JL_SAFE( jl::addScriptLocation(cx, error) );
 	JL_BAD;
 }

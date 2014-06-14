@@ -39,7 +39,7 @@ class ColorTess : public OGLFT::ColorTess {
 
 	GLfloat* color( GLdouble* p ) {
 
-		JSContext *cx = JL_GetFirstContext(_rt);
+		JSContext *cx = jl::getFirstContext(_rt);
 		jsval arg[2] = { JSVAL_NULL, JSVAL_NULL }; // memset(arg, 0, sizeof(arg));
 		JL_CHK( jl::setVector(cx, arg[1], p, 3, false) );
 		JL_CHK( JS_CallFunctionValue(cx, _obj, _function, COUNTOF(arg)-1, arg+1, arg) );

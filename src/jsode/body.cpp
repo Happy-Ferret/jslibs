@@ -60,7 +60,7 @@ bool ReconstructBody(JSContext *cx, ode::dBodyID bodyId, JSObject **obj) { // (T
 	} else {
 
 		//JL_ASSERT( ode::dBodyGetData(bodyId) == NULL, "Invalid case (object not finalized)." );
-		JL_ASSERT( ode::dBodyGetData(bodyId) == NULL, E_MODULE, E_INTERNAL, E_SEP, E_STR(JL_CLASS_NAME(Body)), E_STATE );
+		JL_ASSERT( ode::dBodyGetData(bodyId) == NULL, E_MODULE, E_INTERNAL, E_SEP, E_STR(JL_CLASS_NAME(Body)), E_STATE, E_INVALID );
 
 		*obj = jl::newObjectWithGivenProto(cx, JL_CLASS(Body), JL_CLASS_PROTOTYPE(cx, Body), NULL);
 		JL_CHK( *obj );

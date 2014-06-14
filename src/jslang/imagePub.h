@@ -30,7 +30,7 @@ enum ImageDataType {
     TYPE_INT32   = js::ArrayBufferView::TYPE_INT32,
     TYPE_UINT32  = js::ArrayBufferView::TYPE_UINT32,
     TYPE_FLOAT32 = js::ArrayBufferView::TYPE_FLOAT32,
-    TYPE_FLOAT64 = js::ArrayBufferView::TYPE_FLOAT64,
+    TYPE_FLOAT64 = js::ArrayBufferView::TYPE_FLOAT64
 };
 
 template <class T, class U>

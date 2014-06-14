@@ -768,13 +768,13 @@ DEFINE_FUNCTION( events ) {
 
 	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset
 	if ( upe->cancelEvent == NULL )
-		JL_CHK( JL_ThrowOSError(cx) );
+		JL_CHK( jl::throwOSError(cx) );
 
 	// need to dup. the handle because the original one may be closed in Systray::close()
 	HANDLE currentProcess = GetCurrentProcess();
 	BOOL st = DuplicateHandle(currentProcess, pv->systrayEvent, currentProcess, &upe->systrayEvent, 0, FALSE, DUPLICATE_SAME_ACCESS);
 	if ( !st )
-		JL_CHK( JL_ThrowOSError(cx) );
+		JL_CHK( jl::throwOSError(cx) );
 
 	return true;
 	JL_BAD;
@@ -1001,7 +1001,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 
 			res = SetMenuItemBitmaps(*hMenu, i, MF_BYPOSITION, hBMP, hBMP); // doc: When the menu is destroyed, these bitmaps are not destroyed; it is up to the application to destroy them.
 			if ( res == 0 )
-				return JL_ThrowOSError(cx);
+				return jl::throwOSError(cx);
 		}
 	}
 
@@ -1219,7 +1219,7 @@ DEFINE_FUNCTION( position ) {
 	RECT r;
 	BOOL res = FindOutPositionOfIconDirectly( pv->nid.hWnd, pv->nid.uID, &r );
 	if ( res != TRUE )
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 
 	LONG v[] = { r.left, r.top };
 	JL_CHK( jl::setVector(cx, JL_RVAL, v, COUNTOF(v), JL_ARGC >= 1 && JL_ARG(1).isObject()) );
@@ -1241,11 +1241,11 @@ DEFINE_FUNCTION( rect ) {
 	JL_DEFINE_ARGS;
 	HWND hWndTrayWnd = GetTrayNotifyWnd();
 	if ( !hWndTrayWnd )
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 	RECT rect;
 	BOOL st = GetWindowRect(hWndTrayWnd, &rect);
 	if ( !st )
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 
 	LONG v[] = { rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top };
 	JL_CHK( jl::setVector(cx, JL_RVAL, v, COUNTOF(v), JL_ARGC >= 1 && JL_ARG(1).isObject()) );
@@ -1384,7 +1384,7 @@ DEFINE_TRACER() {
 			Tmp( JSTracer *trc ) : _trc(trc) {
 			}
 
-			bool operator()( jsval &value ) {
+			bool operator()( JS::Value &value ) {
 
 				JS_CallValueTracer(_trc, &value, "jswinshell/Systray/popupMenuRoots");
 				return false;

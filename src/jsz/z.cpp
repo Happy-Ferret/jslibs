@@ -253,7 +253,7 @@ DEFINE_FUNCTION( process ) {
 		status = pv->method == DEFLATE ? deflateEnd(&pv->stream) : inflateEnd(&pv->stream); // free(stream) is done the Finalize
 		if ( status != Z_OK )
 			JL_CHK( ThrowZError(cx, status, pv->stream.msg) );
-		JL_ASSERT( pv->stream.state == Z_NULL, E_THISOBJ, E_STATE );
+		JL_ASSERT( pv->stream.state == Z_NULL, E_THISOBJ, E_STATE, E_INVALID );
 	}
 	return true;
 

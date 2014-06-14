@@ -831,7 +831,7 @@ DEFINE_FUNCTION( exec ) {
 
 	{
 
-	JS::RootedScript script(cx, JL_LoadScript(cx, JL_OBJ, fileName, jl::ENC_UNKNOWN, useAndSaveCompiledScripts, useAndSaveCompiledScripts));
+	JS::RootedScript script(cx, jl::loadScript(cx, JL_OBJ, fileName, jl::ENC_UNKNOWN, useAndSaveCompiledScripts, useAndSaveCompiledScripts));
 	JL_CHK( script );
 
 	// doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
@@ -1115,7 +1115,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 	JLThreadHandler sandboxWatchDogThread;
 	sandboxWatchDogThread = JLThreadStart(SandboxWatchDogThreadProc, cx);
 	if ( !JLThreadOk(sandboxWatchDogThread) )
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 
 	void *prevCxPrivate;
 	prevCxPrivate = JS_GetContextPrivate(cx);
@@ -1131,7 +1131,9 @@ DEFINE_FUNCTION( sandboxEval ) {
 	{
 	JSAutoCompartment ac(cx, globalObj);
 
-	//JS_SetNativeStackQuota(JL_GetRuntime(cx), 8192 * sizeof(size_t)); 
+	//JS_SetNativeStackQuota(JL_GetRuntime(cx), 8192 * sizeof(size_t));
+
+	uintptr_t limit = js::GetNativeStackLimit(cx);
 
 	if ( !pv.queryFunctionValue.get().isUndefined() ) {
 
@@ -1240,7 +1242,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 	JLThreadHandler sandboxWatchDogThread;
 	sandboxWatchDogThread = JLThreadStart(SandboxWatchDogThreadProc, scx);
 	if ( !JLThreadOk(sandboxWatchDogThread) )
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 
 //	JSCrossCompartmentCall *call = JS_EnterCrossCompartmentCall(cx, globalObject);
 
@@ -1462,7 +1464,7 @@ DEFINE_PROPERTY_GETTER( currentMemoryUsage ) {
 	PROCESS_MEMORY_COUNTERS_EX pmc;
 	BOOL status = ::GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
 	if ( !status )
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 	bytes = pmc.WorkingSetSize; // same value as "windows task manager" "mem usage"
 
 #elif defined(UNIX)
@@ -1512,7 +1514,7 @@ DEFINE_PROPERTY_GETTER( peakMemoryUsage ) {
 	PROCESS_MEMORY_COUNTERS_EX pmc;
 	BOOL status = ::GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
 	if ( !status )
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 
 	JL_CHK( jl::setValue(cx, vp, pmc.PeakWorkingSetSize) ); // same value as "windows task manager" "peak mem usage"
 	return true;
@@ -1559,7 +1561,7 @@ DEFINE_PROPERTY_GETTER( privateMemoryUsage ) {
 	PROCESS_MEMORY_COUNTERS_EX pmc;
 	BOOL status = ::GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
 	if ( !status )
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 	// doc:
 	//   pmc.PrivateUsage
 	//     The current amount of memory that cannot be shared with other processes, in bytes. Private bytes include memory that is committed and marked MEM_PRIVATE,
@@ -1718,7 +1720,7 @@ DEFINE_PROPERTY_GETTER( processTime ) {
 	FILETIME creationTime, exitTime, kernelTime, userTime;
 	BOOL status = ::GetProcessTimes(GetCurrentProcess(), &creationTime, &exitTime, &kernelTime, &userTime);
 	if ( !status )
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 
 	ULARGE_INTEGER user;
     ULARGE_INTEGER kernel;
@@ -1767,23 +1769,23 @@ DEFINE_PROPERTY_GETTER( cpuLoad ) {
 
 		status = PdhOpenQuery(NULL, NULL, &query);
 		if ( status != ERROR_SUCCESS )
-			return JL_ThrowOSErrorCode(cx, status, "pdh.dll");
+			return jl::throwOSErrorCode(cx, status, "pdh.dll");
 		status = PdhAddCounter(query, TEXT("\\Processor(_Total)\\% Processor Time"), NULL, &counter); // A total of ALL CPU's in the system
 		if ( status != ERROR_SUCCESS )
-			return JL_ThrowOSErrorCode(cx, status, "pdh.dll");
+			return jl::throwOSErrorCode(cx, status, "pdh.dll");
 		status = PdhCollectQueryData(query); // No error checking here
 		if ( status != ERROR_SUCCESS )
-			return JL_ThrowOSErrorCode(cx, status, "pdh.dll");
+			return jl::throwOSErrorCode(cx, status, "pdh.dll");
 		notInit = false;
 	}
 
 	status = PdhCollectQueryData(query);
 	if ( status != ERROR_SUCCESS )
-		return JL_ThrowOSErrorCode(cx, status, "pdh.dll");
+		return jl::throwOSErrorCode(cx, status, "pdh.dll");
 
 	status = PdhGetFormattedCounterValue(counter, PDH_FMT_DOUBLE, &ret, &value);
 	if ( status != ERROR_SUCCESS && status != PDH_CALC_NEGATIVE_DENOMINATOR )
-		return JL_ThrowOSErrorCode(cx, status, "pdh.dll");
+		return jl::throwOSErrorCode(cx, status, "pdh.dll");
 
 	return jl::setValue(cx, vp, value.doubleValue);
 

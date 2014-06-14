@@ -68,7 +68,7 @@ DEFINE_CONSTRUCTOR() {
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 
-	JL_CHK( ReserveStreamReadInterface(cx, JL_OBJ) );
+	JL_CHK( jl::reserveStreamReadInterface(cx, JL_OBJ) );
 
 	JL_SetPrivate(JL_OBJ, fd);
 
@@ -118,7 +118,7 @@ DEFINE_FUNCTION( shutdown ) { // arg[0] =  false: SHUTDOWN_RCV | true: SHUTDOWN_
 		how = PR_SHUTDOWN_BOTH; // default
 
 	if ( how == PR_SHUTDOWN_RCV )
-		JL_CHK( SetStreamReadInterface(cx, JL_OBJ, NULL) );
+		JL_CHK( jl::setStreamReadInterface(cx, JL_OBJ, NULL) );
 
 	if (PR_Shutdown( fd, how ) != PR_SUCCESS) // is this compatible with linger ?? need to check PR_WOULD_BLOCK_ERROR ???
 		return ThrowIoError(cx);
@@ -289,7 +289,7 @@ DEFINE_FUNCTION( accept ) {
 //	JL_CHK( JL_SetReservedSlot( descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_FALSE) );
 
 	// JL_CHK( ReserveStreamReadInterface(cx, object) );
-	JL_CHK( SetStreamReadInterface(cx, object, NativeInterfaceStreamRead) );
+	JL_CHK( jl::setStreamReadInterface(cx, object, NativeInterfaceStreamRead) );
 
 	JL_RVAL.setObject(*object);
 	}
@@ -378,7 +378,7 @@ DEFINE_FUNCTION( connect ) {
 	}
 	// see 	PR_GetConnectStatus or PR_ConnectContinue INSTEAD ???
 
-	JL_CHK( SetStreamReadInterface(cx, JL_OBJ, NativeInterfaceStreamRead) );
+	JL_CHK( jl::setStreamReadInterface(cx, JL_OBJ, NativeInterfaceStreamRead) );
 	JL_RVAL.setBoolean(true);
 	return true;
 	JL_BAD;
@@ -721,7 +721,7 @@ DEFINE_PROPERTY_GETTER( connectContinue ) {
 	if ( result == -1 )
 		return ThrowIoError(cx);
 
-	JL_ASSERT( result != 0, E_THISOBJ, E_STATE );
+	JL_ASSERT( result != 0, E_THISOBJ, E_STATE, E_INVALID );
 
 	// this can help ? : http://lxr.mozilla.org/seamonkey/search?string=PR_ConnectContinue
 	// source: http://lxr.mozilla.org/seamonkey/source/nsprpub/pr/src/io/prsocket.c#287

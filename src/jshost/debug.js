@@ -10,7 +10,28 @@ var loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
 
 
+//var data = jslangTest();
+
+loadModule('jsstd');
+var data = stringRepeat('x', 94);
+
+
+host.stdout( '*** data ', data, '\n' );
+host.stdout( '*** ', data.constructor , '\n' );
+host.stdout( '*** ', data.string, '\n' );
+host.stdout( '*** ', data.string, '\n' );
+
 var data = jslangTest();
+host.stdout( '*** ', data.string, '\n' );
+host.stdout( '*** ', data.string, '\n' );
+host.stdout( '*** ', data.arrayBuffer, '\n' );
+
+var data = jslangTest();
+host.stdout( '*** ', data.toString(), '\n' );
+host.stdout( '*** ', data.toString(), '\n' );
+host.stdout( '*** ', data.string, '\n' );
+host.stdout( '*** ', data.arrayBuffer, '\n' );
+
 
 throw 0;
 

@@ -634,7 +634,7 @@ DEFINE_PROPERTY_GETTER( title ) {
 	char buffer[2048];
 	DWORD res = GetConsoleTitle(buffer, sizeof(buffer));
 	if ( res == 0 )
-		return JL_ThrowOSError(cx);
+		return jl::throwOSError(cx);
 	vp.setString(JS_NewStringCopyN(cx, buffer, res));
 	return true;
 	JL_BAD;

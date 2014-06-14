@@ -191,7 +191,7 @@ ThrowCryptError( JSContext *cx, int errorCode ) {
 	JS::RootedValue errorVal(cx);
 	errorVal.setObject(*error);
 	JL_CHK( jl::setSlot(cx, error, 0, errorCode) );
-	JL_SAFE( jl::setScriptLocation(cx, &error) );
+	JL_SAFE( jl::addScriptLocation(cx, &error) );
 
 	JS_SetPendingException(cx, errorVal);
 

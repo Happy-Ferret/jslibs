@@ -215,6 +215,6 @@ ThrowOalError( JSContext *cx, ALenum err ) {
 	JS::RootedValue errVal(cx);
 	JL_CHK( jl::setValue(cx, errVal, err) );
 	JL_CHK( JL_SetReservedSlot(  error, 0, errVal ) );
-	JL_SAFE( jl::setScriptLocation(cx, error) );
+	JL_SAFE( jl::addScriptLocation(cx, error) );
 	JL_BAD;
 }
