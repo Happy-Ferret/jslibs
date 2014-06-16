@@ -1,0 +1,818 @@
+# HG changeset patch
+# User Steve Fink <sfink@mozilla.com>
+# Date 1393366516 28800
+#      Tue Feb 25 14:15:16 2014 -0800
+# Node ID 62a19754f6efe8bc8cb263fb92da5c262687a500
+# Parent 443361e2724ae5dc79a6126a089dd518aa2f3832
+Bug 975011 - allow js/src/configure to invoke the in-tree NSPR configure
+
+diff --git a/aclocal.m4 b/aclocal.m4
+--- a/aclocal.m4
++++ b/aclocal.m4
+@@ -6,16 +6,17 @@ dnl
+ builtin(include, build/autoconf/hotfixes.m4)dnl
+ builtin(include, build/autoconf/acwinpaths.m4)dnl
+ builtin(include, build/autoconf/hooks.m4)dnl
+ builtin(include, build/autoconf/config.status.m4)dnl
+ builtin(include, build/autoconf/toolchain.m4)dnl
+ builtin(include, build/autoconf/ccache.m4)dnl
+ builtin(include, build/autoconf/wrapper.m4)dnl
+ builtin(include, build/autoconf/nspr.m4)dnl
++builtin(include, build/autoconf/nspr-build.m4)dnl
+ builtin(include, build/autoconf/nss.m4)dnl
+ builtin(include, build/autoconf/pkg.m4)dnl
+ builtin(include, build/autoconf/codeset.m4)dnl
+ builtin(include, build/autoconf/altoptions.m4)dnl
+ builtin(include, build/autoconf/mozprog.m4)dnl
+ builtin(include, build/autoconf/mozheader.m4)dnl
+ builtin(include, build/autoconf/mozcommonheader.m4)dnl
+ builtin(include, build/autoconf/lto.m4)dnl
+diff --git a/build/autoconf/nspr-build.m4 b/build/autoconf/nspr-build.m4
+new file mode 100644
+--- /dev/null
++++ b/build/autoconf/nspr-build.m4
+@@ -0,0 +1,269 @@
++dnl This Source Code Form is subject to the terms of the Mozilla Public
++dnl License, v. 2.0. If a copy of the MPL was not distributed with this
++dnl file, You can obtain one at http://mozilla.org/MPL/2.0/.
++
++AC_DEFUN([MOZ_CONFIG_NSPR], [
++
++ifelse([$1],,define(CONFIGURING_JS,yes))
++
++dnl Possible ways this can be called:
++dnl   from toplevel configure:
++dnl     JS_STANDALONE=  BUILDING_JS=
++dnl   from js/src/configure invoked by toplevel configure:
++dnl     JS_STANDALONE=  BUILDING_JS=1
++dnl   from standalone js/src/configure:
++dnl     JS_STANDALONE=1 BUILDING_JS=1
++
++dnl ========================================================
++dnl = Find the right NSPR to use.
++dnl ========================================================
++MOZ_ARG_WITH_STRING(nspr-cflags,
++[  --with-nspr-cflags=FLAGS
++                          Pass FLAGS to CC when building code that uses NSPR.
++                          Use this when there's no accurate nspr-config
++                          script available.  This is the case when building
++                          SpiderMonkey as part of the Mozilla tree: the
++                          top-level configure script computes NSPR flags
++                          that accomodate the quirks of that environment.],
++    NSPR_CFLAGS=$withval)
++MOZ_ARG_WITH_STRING(nspr-libs,
++[  --with-nspr-libs=LIBS   Pass LIBS to LD when linking code that uses NSPR.
++                          See --with-nspr-cflags for more details.],
++    NSPR_LIBS=$withval)
++
++ifdef([CONFIGURING_JS],[
++    MOZ_ARG_ENABLE_BOOL(nspr-build,
++[  --enable-nspr-build     Configure and build NSPR from source tree],
++        MOZ_BUILD_NSPR=1,
++        MOZ_BUILD_NSPR=)
++])
++
++if test -z "$BUILDING_JS" || test -n "$JS_STANDALONE"; then
++  _IS_OUTER_CONFIGURE=1
++fi
++
++MOZ_ARG_WITH_BOOL(system-nspr,
++[  --with-system-nspr      Use an NSPR that is already built and installed.
++                          Use the 'nspr-config' script in the current path,
++                          or look for the script in the directories given with
++                          --with-nspr-exec-prefix or --with-nspr-prefix.
++                          (Those flags are only checked if you specify
++                          --with-system-nspr.)],
++    _USE_SYSTEM_NSPR=1 )
++
++if test -z "$BUILDING_JS"; then
++    JS_THREADSAFE=1
++fi
++
++JS_POSIX_NSPR=unset
++ifdef([CONFIGURING_JS],[
++    if test -n "$JS_STANDALONE"; then
++      case "$target" in
++        *linux*|*darwin*|*dragonfly*|*freebsd*|*netbsd*|*openbsd*)
++          if test -z "$_HAS_NSPR" && test "$JS_THREADSAFE"; then
++            JS_POSIX_NSPR_DEFAULT=1
++          fi
++          ;;
++      esac
++    fi
++
++    MOZ_ARG_ENABLE_BOOL(posix-nspr-emulation,
++[  --enable-posix-nspr-emulation
++                          Enable emulation of NSPR for POSIX systems],
++    JS_POSIX_NSPR=1,
++    JS_POSIX_NSPR=)
++])
++
++dnl Pass at most one of
++dnl   --with-system-nspr
++dnl   --with-nspr-cflags/libs
++dnl   --enable-nspr-build
++dnl   --enable-posix-nspr-emulation
++
++AC_MSG_CHECKING([NSPR selection])
++nspr_opts=
++which_nspr=default
++if test -n "$_USE_SYSTEM_NSPR"; then
++    nspr_opts="x$nspr_opts"
++    which_nspr="system"
++fi
++if test -n "$NSPR_CFLAGS" -o -n "$NSPR_LIBS"; then
++    nspr_opts="x$nspr_opts"
++    which_nspr="command-line"
++fi
++if test -n "$MOZ_BUILD_NSPR"; then
++    nspr_opts="x$nspr_opts"
++    which_nspr="source-tree"
++fi
++if test "$JS_POSIX_NSPR" = unset; then
++    JS_POSIX_NSPR=
++else
++    nspr_opts="x$nspr_opts"
++    which_nspr="posix-wrapper"
++fi
++
++if test -z "$nspr_opts"; then
++    if test -z "$BUILDING_JS"; then
++      dnl Toplevel configure defaults to using nsprpub from the source tree
++      MOZ_BUILD_NSPR=1
++      which_nspr="source-tree"
++    else
++      dnl JS configure defaults to emulated NSPR if available, falling back
++      dnl to nsprpub.
++      if test -n "$JS_THREADSAFE"; then
++          JS_POSIX_NSPR="$JS_POSIX_NSPR_DEFAULT"
++          if test -z "$JS_POSIX_NSPR"; then
++             MOZ_BUILD_NSPR=1
++             which_nspr="source-tree"
++          else
++             which_nspr="posix-wrapper"
++          fi
++      else
++          which_nspr="none"
++      fi
++   fi
++fi
++
++if test -z "$nspr_opts" || test "$nspr_opts" = x; then
++    AC_MSG_RESULT($which_nspr)
++else
++    AC_MSG_ERROR([only one way of using NSPR may be selected. See 'configure --help'.])
++fi
++
++AC_SUBST(MOZ_BUILD_NSPR)
++
++if test -n "$BUILDING_JS"; then
++  if test "$JS_POSIX_NSPR" = 1; then
++    AC_DEFINE(JS_POSIX_NSPR)
++  fi
++  AC_SUBST(JS_POSIX_NSPR)
++fi
++
++# A (sub)configure invoked by the toplevel configure will always receive
++# --with-nspr-libs on the command line. It will never need to figure out
++# anything itself.
++if test -n "$_IS_OUTER_CONFIGURE"; then
++
++if test -n "$_USE_SYSTEM_NSPR"; then
++    AM_PATH_NSPR($NSPR_MINVER, [MOZ_NATIVE_NSPR=1], [AC_MSG_ERROR([you do not have NSPR installed or your version is older than $NSPR_MINVER.])])
++fi
++
++if test -n "$MOZ_NATIVE_NSPR" -o -n "$NSPR_CFLAGS" -o -n "$NSPR_LIBS"; then
++    _SAVE_CFLAGS=$CFLAGS
++    CFLAGS="$CFLAGS $NSPR_CFLAGS"
++    AC_TRY_COMPILE([#include "prtypes.h"],
++                [#ifndef PR_STATIC_ASSERT
++                 #error PR_STATIC_ASSERT not defined or requires including prtypes.h
++                 #endif],
++                ,
++                AC_MSG_ERROR([system NSPR does not support PR_STATIC_ASSERT or including prtypes.h does not provide it]))
++    AC_TRY_COMPILE([#include "prtypes.h"],
++                [#ifndef PR_UINT64
++                 #error PR_UINT64 not defined or requires including prtypes.h
++                 #endif],
++                ,
++                AC_MSG_ERROR([system NSPR does not support PR_UINT64 or including prtypes.h does not provide it]))
++    CFLAGS=$_SAVE_CFLAGS
++elif test -z "$JS_POSIX_NSPR" -a -n "$JS_THREADSAFE"; then
++    if test -z "$LIBXUL_SDK"; then
++        NSPR_CFLAGS="-I${LIBXUL_DIST}/include/nspr"
++        if test -n "$GNU_CC"; then
++            NSPR_LIBS="-L${LIBXUL_DIST}/lib -lnspr${NSPR_VERSION} -lplc${NSPR_VERSION} -lplds${NSPR_VERSION}"
++        else
++            NSPR_LIBS="${LIBXUL_DIST}/lib/nspr${NSPR_VERSION}.lib ${LIBXUL_DIST}/lib/plc${NSPR_VERSION}.lib ${LIBXUL_DIST}/lib/plds${NSPR_VERSION}.lib "
++        fi
++    else
++        NSPR_CFLAGS=`"${LIBXUL_DIST}"/sdk/bin/nspr-config --prefix="${LIBXUL_DIST}" --includedir="${LIBXUL_DIST}/include/nspr" --cflags`
++        NSPR_LIBS=`"${LIBXUL_DIST}"/sdk/bin/nspr-config --prefix="${LIBXUL_DIST}" --libdir="${LIBXUL_DIST}"/lib --libs`
++    fi
++fi
++
++AC_SUBST(NSPR_CFLAGS)
++AC_SUBST(NSPR_LIBS)
++
++NSPR_PKGCONF_CHECK="nspr"
++if test -n "$MOZ_NATIVE_NSPR"; then
++    # piggy back on $MOZ_NATIVE_NSPR to set a variable for the nspr check for js.pc
++    NSPR_PKGCONF_CHECK="nspr >= $NSPR_MINVER"
++
++    _SAVE_CFLAGS=$CFLAGS
++    CFLAGS="$CFLAGS $NSPR_CFLAGS"
++    AC_TRY_COMPILE([#include "prlog.h"],
++                [#ifndef PR_STATIC_ASSERT
++                 #error PR_STATIC_ASSERT not defined
++                 #endif],
++                ,
++                AC_MSG_ERROR([system NSPR does not support PR_STATIC_ASSERT]))
++    CFLAGS=$_SAVE_CFLAGS
++fi
++AC_SUBST(NSPR_PKGCONF_CHECK)
++
++fi # _IS_OUTER_CONFIGURE
++
++])
++
++AC_DEFUN([MOZ_SUBCONFIGURE_NSPR], [
++
++if test -z "$MOZ_NATIVE_NSPR"; then
++    ac_configure_args="$_SUBDIR_CONFIG_ARGS --with-dist-prefix=$MOZ_BUILD_ROOT/dist --with-mozilla"
++    if test -z "$MOZ_DEBUG"; then
++        ac_configure_args="$ac_configure_args --disable-debug"
++    else
++        ac_configure_args="$ac_configure_args --enable-debug"
++    fi
++    if test "$MOZ_OPTIMIZE" = "1"; then
++        ac_configure_args="$ac_configure_args --enable-optimize"
++    elif test -z "$MOZ_OPTIMIZE"; then
++        ac_configure_args="$ac_configure_args --disable-optimize"
++    fi
++    if test -n "$HAVE_64BIT_OS"; then
++        ac_configure_args="$ac_configure_args --enable-64bit"
++    fi
++    if test -n "$USE_ARM_KUSER"; then
++        ac_configure_args="$ac_configure_args --with-arm-kuser"
++    fi
++    # A configure script generated by autoconf 2.68 does not allow the cached
++    # values of "precious" variables such as CFLAGS and LDFLAGS to differ from
++    # the values passed to the configure script. Since we modify CFLAGS and
++    # LDFLAGS before passing them to NSPR's configure script, we cannot share
++    # config.cache with NSPR. As a result, we cannot pass AS, CC, CXX, etc. to
++    # NSPR via a shared config.cache file and must pass them to NSPR on the
++    # configure command line.
++    for var in AS CC CXX CPP LD AR RANLIB STRIP; do
++        ac_configure_args="$ac_configure_args $var='`eval echo \\${${var}}`'"
++    done
++    # A configure script generated by autoconf 2.68 warns if --host is
++    # specified but --build isn't. So we always pass --build to NSPR's
++    # configure script.
++    ac_configure_args="$ac_configure_args --build=$build"
++    ac_configure_args="$ac_configure_args $NSPR_CONFIGURE_ARGS"
++
++    # Save these, so we can mess with them for the subconfigure ..
++    _SAVE_CFLAGS="$CFLAGS"
++    _SAVE_CPPFLAGS="$CPPFLAGS"
++    _SAVE_LDFLAGS="$LDFLAGS"
++
++    if test -n "$MOZ_LINKER" -a "$ac_cv_func_dladdr" = no ; then
++      # dladdr is supported by the new linker, even when the system linker doesn't
++      # support it. Trick nspr into using dladdr when it's not supported.
++      export CPPFLAGS="-include $_topsrcdir/mozglue/linker/dladdr.h $CPPFLAGS"
++    fi
++    export LDFLAGS="$LDFLAGS $NSPR_LDFLAGS"
++    export CFLAGS="$CFLAGS $MOZ_FRAMEPTR_FLAGS"
++
++    # Use a separate cache file for NSPR since it uses autoconf 2.68.
++    _save_cache_file="$cache_file"
++    cache_file=$_objdir/nsprpub/config.cache
++
++    AC_OUTPUT_SUBDIRS(nsprpub)
++
++    # .. and restore them
++    cache_file="$_save_cache_file"
++    CFLAGS="$_SAVE_CFLAGS"
++    CPPFLAGS="$_SAVE_CPPFLAGS"
++    LDFLAGS="$_SAVE_LDFLAGS"
++
++    ac_configure_args="$_SUBDIR_CONFIG_ARGS"
++fi
++
++])
+diff --git a/configure.in b/configure.in
+--- a/configure.in
++++ b/configure.in
+@@ -48,16 +48,17 @@ dnl ====================================
+ _SUBDIR_HOST_LDFLAGS="$HOST_LDFLAGS"
+ _SUBDIR_CONFIG_ARGS="$ac_configure_args"
+ 
+ dnl Set the version number of the libs included with mozilla
+ dnl ========================================================
+ MOZJPEG=62
+ MOZPNG=10610
+ NSPR_VERSION=4
++NSPR_MINVER=4.10.3
+ NSS_VERSION=3
+ 
+ dnl Set the minimum version of toolkit libs used by mozilla
+ dnl ========================================================
+ GLIB_VERSION=1.2.0
+ PERL_VERSION=5.006
+ CAIRO_VERSION=1.10
+ PANGO_VERSION=1.22.0
+@@ -126,17 +127,17 @@ if test "$_conflict_files"; then
+   *   To clean up the source tree:
+   *     1. cd $_topsrcdir
+   *     2. gmake distclean
+   ***
+ EOF
+   exit 1
+   break
+ fi
+-MOZ_BUILD_ROOT=`pwd`
++MOZ_BUILD_ROOT=`pwd -W 2>/dev/null || pwd`
+ 
+ MOZ_PYTHON
+ 
+ MOZ_DEFAULT_COMPILER
+ 
+ COMPILE_ENVIRONMENT=1
+ MOZ_ARG_DISABLE_BOOL(compile-environment,
+ [  --disable-compile-environment
+@@ -2195,17 +2196,16 @@ ia64*-hpux*)
+     TARGET_NSPR_MDCPUCFG='\"md/_win95.cfg\"'
+ 
+     dnl set NO_X11 defines here as the general check is skipped on win32
+     no_x=yes
+     AC_DEFINE(NO_X11)
+ 
+     case "$host" in
+     *-mingw*)
+-        MOZ_BUILD_ROOT=`cd $MOZ_BUILD_ROOT && pwd -W`
+         if test -n "$L10NBASEDIR"; then
+             L10NBASEDIR=`cd $L10NBASEDIR && pwd -W`
+         fi
+         ;;
+     esac
+ 
+     case "$host" in
+     *-mingw*)
+@@ -3438,57 +3438,17 @@ fi
+ AC_SUBST(LIBXUL_DIST)
+ 
+ SYSTEM_LIBXUL=
+ 
+ MOZ_ARG_WITH_BOOL(system-libxul,
+ [  --with-system-libxul    Use system installed libxul SDK],
+     SYSTEM_LIBXUL=1)
+ 
+-dnl ========================================================
+-dnl = If NSPR was not detected in the system,
+-dnl = use the one in the source tree (mozilla/nsprpub)
+-dnl ========================================================
+-MOZ_ARG_WITH_BOOL(system-nspr,
+-[  --with-system-nspr      Use system installed NSPR],
+-    _USE_SYSTEM_NSPR=1 )
+-
+-if test -n "$_USE_SYSTEM_NSPR"; then
+-    AM_PATH_NSPR(4.10.6, [MOZ_NATIVE_NSPR=1], [AC_MSG_ERROR([your don't have NSPR installed or your version is too old])])
+-fi
+-
+-if test -n "$MOZ_NATIVE_NSPR"; then
+-    _SAVE_CFLAGS=$CFLAGS
+-    CFLAGS="$CFLAGS $NSPR_CFLAGS"
+-    AC_TRY_COMPILE([#include "prtypes.h"],
+-                [#ifndef PR_STATIC_ASSERT
+-                 #error PR_STATIC_ASSERT not defined or requires including prtypes.h
+-                 #endif],
+-                [MOZ_NATIVE_NSPR=1],
+-                AC_MSG_ERROR([system NSPR does not support PR_STATIC_ASSERT or including prtypes.h does not provide it]))
+-    AC_TRY_COMPILE([#include "prtypes.h"],
+-                [#ifndef PR_UINT64
+-                 #error PR_UINT64 not defined or requires including prtypes.h
+-                 #endif],
+-                [MOZ_NATIVE_NSPR=1],
+-                AC_MSG_ERROR([system NSPR does not support PR_UINT64 or including prtypes.h does not provide it]))
+-    CFLAGS=$_SAVE_CFLAGS
+-else
+-    if test -z "$LIBXUL_SDK"; then
+-        NSPR_CFLAGS="-I${LIBXUL_DIST}/include/nspr"
+-        if test -n "$GNU_CC"; then
+-            NSPR_LIBS="-L${LIBXUL_DIST}/lib -lnspr${NSPR_VERSION} -lplc${NSPR_VERSION} -lplds${NSPR_VERSION}"
+-        else
+-            NSPR_LIBS="${LIBXUL_DIST}/lib/nspr${NSPR_VERSION}.lib ${LIBXUL_DIST}/lib/plc${NSPR_VERSION}.lib ${LIBXUL_DIST}/lib/plds${NSPR_VERSION}.lib "
+-        fi
+-    else
+-        NSPR_CFLAGS=`"${LIBXUL_DIST}"/sdk/bin/nspr-config --prefix="${LIBXUL_DIST}" --includedir="${LIBXUL_DIST}/include/nspr" --cflags`
+-        NSPR_LIBS=`"${LIBXUL_DIST}"/sdk/bin/nspr-config --prefix="${LIBXUL_DIST}" --libdir="${LIBXUL_DIST}"/lib --libs`
+-    fi
+-fi
++MOZ_CONFIG_NSPR()
+ 
+ dnl set GRE_MILESTONE
+ dnl ========================================================
+ if test -n "$LIBXUL_SDK"; then
+     GRE_MILESTONE=`$PYTHON "$_topsrcdir"/config/printconfigsetting.py "$LIBXUL_DIST"/bin/platform.ini Build Milestone`
+ else
+     GRE_MILESTONE=`tail -n 1 "$_topsrcdir"/config/milestone.txt 2>/dev/null || tail -1 "$_topsrcdir"/config/milestone.txt`
+ fi
+@@ -9171,80 +9131,20 @@ if test "$COMPILE_ENVIRONMENT" -a -z "$L
+ 
+ export WRAP_LDFLAGS
+ 
+ if test -n "$_WRAP_MALLOC"; then
+     # Avoid doubling wrap malloc arguments
+     _SUBDIR_CONFIG_ARGS="`echo $_SUBDIR_CONFIG_ARGS | sed -e 's/--enable-wrap-malloc *//'`"
+ fi
+ 
+-if test -z "$MOZ_NATIVE_NSPR"; then
+-    ac_configure_args="$_SUBDIR_CONFIG_ARGS --with-dist-prefix=$MOZ_BUILD_ROOT/dist --with-mozilla"
+-    if test -z "$MOZ_DEBUG"; then
+-        ac_configure_args="$ac_configure_args --disable-debug"
+-    else
+-        ac_configure_args="$ac_configure_args --enable-debug"
++MOZ_SUBCONFIGURE_NSPR()
+         if test -n "$MOZ_NO_DEBUG_RTL"; then
+             ac_configure_args="$ac_configure_args --disable-debug-rtl"
+         fi
+-    fi
+-    if test "$MOZ_OPTIMIZE" = "1"; then
+-        ac_configure_args="$ac_configure_args --enable-optimize"
+-    elif test -z "$MOZ_OPTIMIZE"; then
+-        ac_configure_args="$ac_configure_args --disable-optimize"
+-    fi
+-    if test -n "$HAVE_64BIT_OS"; then
+-        ac_configure_args="$ac_configure_args --enable-64bit"
+-    fi
+-    if test -n "$USE_ARM_KUSER"; then
+-        ac_configure_args="$ac_configure_args --with-arm-kuser"
+-    fi
+-    # A configure script generated by autoconf 2.68 does not allow the cached
+-    # values of "precious" variables such as CFLAGS and LDFLAGS to differ from
+-    # the values passed to the configure script. Since we modify CFLAGS and
+-    # LDFLAGS before passing them to NSPR's configure script, we cannot share
+-    # config.cache with NSPR. As a result, we cannot pass AS, CC, CXX, etc. to
+-    # NSPR via a shared config.cache file and must pass them to NSPR on the
+-    # configure command line.
+-    for var in AS CC CXX CPP LD AR RANLIB STRIP; do
+-        ac_configure_args="$ac_configure_args $var='`eval echo \\${${var}}`'"
+-    done
+-    # A configure script generated by autoconf 2.68 warns if --host is
+-    # specified but --build isn't. So we always pass --build to NSPR's
+-    # configure script.
+-    ac_configure_args="$ac_configure_args --build=$build"
+-    ac_configure_args="$ac_configure_args $NSPR_CONFIGURE_ARGS"
+-
+-    # Save these, so we can mess with them for the subconfigure ..
+-    _SAVE_CFLAGS="$CFLAGS"
+-    _SAVE_CPPFLAGS="$CPPFLAGS"
+-    _SAVE_LDFLAGS="$LDFLAGS"
+-
+-    if test -n "$MOZ_LINKER" -a "$ac_cv_func_dladdr" = no ; then
+-      # dladdr is supported by the new linker, even when the system linker doesn't
+-      # support it. Trick nspr into using dladdr when it's not supported.
+-      export CPPFLAGS="-include $_topsrcdir/mozglue/linker/dladdr.h $CPPFLAGS"
+-    fi
+-    export LDFLAGS="$LDFLAGS $NSPR_LDFLAGS"
+-    export CFLAGS="$CFLAGS $MOZ_FRAMEPTR_FLAGS"
+-
+-    # Use a separate cache file for NSPR since it uses autoconf 2.68.
+-    _save_cache_file="$cache_file"
+-    cache_file=$_objdir/nsprpub/config.cache
+-
+-    AC_OUTPUT_SUBDIRS(nsprpub)
+-
+-    # .. and restore them
+-    cache_file="$_save_cache_file"
+-    CFLAGS="$_SAVE_CFLAGS"
+-    CPPFLAGS="$_SAVE_CPPFLAGS"
+-    LDFLAGS="$_SAVE_LDFLAGS"
+-
+-    ac_configure_args="$_SUBDIR_CONFIG_ARGS"
+-fi
+ 
+ dnl ========================================================
+ dnl = Setup a nice relatively clean build environment for
+ dnl = sub-configures.
+ dnl ========================================================
+ CC="$_SUBDIR_CC"
+ CXX="$_SUBDIR_CXX"
+ CFLAGS="$_SUBDIR_CFLAGS"
+@@ -9257,20 +9157,24 @@ HOST_CXXFLAGS="$_SUBDIR_HOST_CXXFLAGS"
+ HOST_LDFLAGS="$_SUBDIR_HOST_LDFLAGS"
+ RC=
+ 
+ if test -n "$ENABLE_CLANG_PLUGIN"; then
+     ac_configure_args="$_SUBDIR_CONFIG_ARGS"
+     AC_OUTPUT_SUBDIRS(build/clang-plugin)
+ fi
+ 
+-
+ # Run the SpiderMonkey 'configure' script.
+ dist=$MOZ_BUILD_ROOT/dist
+ ac_configure_args="$_SUBDIR_CONFIG_ARGS"
++
++# --with-system-nspr will have been converted into the relevant $NSPR_CFLAGS
++# and $NSPR_LIBS.
++ac_configure_args="`echo $ac_configure_args | sed -e 's/--with-system-nspr\S* *//'`"
++
+ ac_configure_args="$ac_configure_args --enable-threadsafe"
+ 
+ if test "$_INTL_API" = no; then
+     ac_configure_args="$ac_configure_args --without-intl-api"
+ fi
+ 
+ if test "$BUILD_CTYPES"; then
+     # Build js-ctypes on the platforms we can.
+@@ -9283,17 +9187,17 @@ if test -z "$JS_SHARED_LIBRARY" ; then
+     fi
+ fi
+ if test -z "$JSGC_USE_EXACT_ROOTING" ; then
+     ac_configure_args="$ac_configure_args --disable-exact-rooting"
+ fi
+ if test -z "$JSGC_GENERATIONAL" ; then
+     ac_configure_args="$ac_configure_args --disable-gcgenerational"
+ fi
+-if test -z "$MOZ_NATIVE_NSPR"; then
++if test -n "$NSPR_CFLAGS" -o -n "$NSPR_LIBS"; then
+     ac_configure_args="$ac_configure_args --with-nspr-cflags='$NSPR_CFLAGS'"
+     ac_configure_args="$ac_configure_args --with-nspr-libs='$NSPR_LIBS'"
+ fi
+ ac_configure_args="$ac_configure_args --prefix=$dist"
+ if test "$MOZ_MEMORY"; then
+    ac_configure_args="$ac_configure_args --enable-jemalloc"
+ fi
+ if test -n "$MOZ_GLUE_LDFLAGS"; then
+diff --git a/js/src/aclocal.m4 b/js/src/aclocal.m4
+--- a/js/src/aclocal.m4
++++ b/js/src/aclocal.m4
+@@ -7,16 +7,17 @@ builtin(include, ../../build/autoconf/ho
+ builtin(include, ../../build/autoconf/acwinpaths.m4)dnl
+ builtin(include, ../../build/autoconf/hooks.m4)dnl
+ builtin(include, ../../build/autoconf/config.status.m4)dnl
+ builtin(include, ../../build/autoconf/toolchain.m4)dnl
+ builtin(include, ../../build/autoconf/ccache.m4)dnl
+ builtin(include, ../../build/autoconf/wrapper.m4)dnl
+ builtin(include, ../../build/autoconf/pkg.m4)dnl
+ builtin(include, ../../build/autoconf/nspr.m4)dnl
++builtin(include, ../../build/autoconf/nspr-build.m4)dnl
+ builtin(include, ../../build/autoconf/codeset.m4)dnl
+ builtin(include, ../../build/autoconf/altoptions.m4)dnl
+ builtin(include, ../../build/autoconf/mozprog.m4)dnl
+ builtin(include, ../../build/autoconf/mozheader.m4)dnl
+ builtin(include, ../../build/autoconf/mozcommonheader.m4)dnl
+ builtin(include, ../../build/autoconf/lto.m4)dnl
+ builtin(include, ../../build/autoconf/gcc-pr49911.m4)dnl
+ builtin(include, ../../build/autoconf/gcc-pr39608.m4)dnl
+diff --git a/js/src/configure.in b/js/src/configure.in
+--- a/js/src/configure.in
++++ b/js/src/configure.in
+@@ -107,17 +107,17 @@ if test "$_conflict_files"; then
+ 	*   To clean up the source tree:
+ 	*     1. cd $_topsrcdir
+ 	*     2. gmake distclean
+ 	***
+ 	EOF
+   exit 1
+   break
+ fi
+-MOZ_BUILD_ROOT=`pwd`
++MOZ_BUILD_ROOT=`pwd -W 2>/dev/null || pwd`
+ 
+ dnl Choose where to put the 'dist' directory.
+ dnl ==============================================================
+ 
+ MOZ_ARG_WITH_STRING(dist-dir,
+ [  --with-dist-dir=DIR     Use DIR as 'dist' staging area.  DIR may be
+                           relative to the top of SpiderMonkey build tree,
+                           or absolute.],
+@@ -166,16 +166,17 @@ else
+ fi
+ AC_SUBST(JS_SHARED_LIBRARY)
+ 
+ if test "$JS_STANDALONE" = no; then
+   autoconfmk=autoconf-js.mk
+   JS_STANDALONE=
+ else
+   JS_STANDALONE=1
++  LIBXUL_DIST="$MOZ_BUILD_ROOT/dist"
+   AC_DEFINE(JS_STANDALONE)
+ fi
+ AC_SUBST(JS_STANDALONE)
+ BUILDING_JS=1
+ AC_SUBST(autoconfmk)
+ 
+ MOZ_ARG_WITH_STRING(gonk,
+ [  --with-gonk=DIR
+@@ -1718,22 +1719,16 @@ ia64*-hpux*)
+     TARGET_NSPR_MDCPUCFG='\"md/_win95.cfg\"'
+ 
+     dnl set NO_X11 defines here as the general check is skipped on win32
+     no_x=yes
+     AC_DEFINE(NO_X11)
+ 
+     case "$host" in
+     *-mingw*)
+-        MOZ_BUILD_ROOT=`cd $MOZ_BUILD_ROOT && pwd -W`
+-        ;;
+-    esac
+-
+-    case "$host" in
+-    *-mingw*)
+         if test -z "$MOZ_TOOLS"; then
+             AC_MSG_ERROR([MOZ_TOOLS is not set])
+         fi
+         MOZ_TOOLS_DIR=`cd $MOZ_TOOLS && pwd -W`
+         if test "$?" != "0" -o -z "$MOZ_TOOLS_DIR"; then
+             AC_MSG_ERROR([cd \$MOZ_TOOLS failed. MOZ_TOOLS ==? $MOZ_TOOLS])
+         fi
+         MOZ_TOOLS_BIN_DIR="$(cd "$MOZ_TOOLS_DIR/bin" && pwd)"
+@@ -2753,113 +2748,28 @@ AC_SUBST(MOZ_DISABLE_UNIFIED_COMPILATION
+ 
+ dnl ========================================================
+ dnl =
+ dnl = Check for external package dependencies
+ dnl =
+ dnl ========================================================
+ MOZ_ARG_HEADER(External Packages)
+ 
+-dnl ========================================================
+-dnl = Find the right NSPR to use.
+-dnl ========================================================
+-MOZ_ARG_WITH_BOOL(system-nspr,
+-[  --with-system-nspr      Use an NSPR that is already built and installed.
+-                          Use the 'nspr-config' script in the current path,
+-                          or look for the script in the directories given with
+-                          --with-nspr-exec-prefix or --with-nspr-prefix.
+-                          (Those flags are only checked if you specify
+-                          --with-system-nspr.)],
+-    _USE_SYSTEM_NSPR=1 )
+-
+-MOZ_ARG_WITH_STRING(nspr-cflags,
+-[  --with-nspr-cflags=FLAGS
+-                          Pass FLAGS to CC when building code that uses NSPR.
+-                          Use this when there's no accurate nspr-config
+-                          script available.  This is the case when building
+-                          SpiderMonkey as part of the Mozilla tree: the
+-                          top-level configure script computes NSPR flags
+-                          that accomodate the quirks of that environment.],
+-    NSPR_CFLAGS=$withval)
+-MOZ_ARG_WITH_STRING(nspr-libs,
+-[  --with-nspr-libs=LIBS   Pass LIBS to LD when linking code that uses NSPR.
+-                          See --with-nspr-cflags for more details.],
+-    NSPR_LIBS=$withval)
+-AC_SUBST(NSPR_CFLAGS)
+-AC_SUBST(NSPR_LIBS)
+-
+ JS_THREADSAFE=1
+ MOZ_ARG_DISABLE_BOOL(threadsafe,
+ [  --disable-threadsafe    Disable support for multiple threads.],
+     JS_THREADSAFE= ,
+     JS_THREADSAFE=1 )
+ if test -n "$JS_THREADSAFE"; then
+     AC_DEFINE(JS_THREADSAFE)
+ fi
+ JS_THREADSAFE_CONFIGURED=$JS_THREADSAFE
+ AC_SUBST(JS_THREADSAFE_CONFIGURED)
+ 
+-if test "$_USE_SYSTEM_NSPR" || (test "$NSPR_CFLAGS" -o "$NSPR_LIBS"); then
+-  _HAS_NSPR=1
+-fi
+-
+-case "$target" in
+-  *linux*|*darwin*|*dragonfly*|*freebsd*|*netbsd*|*openbsd*)
+-    if test -z "$_HAS_NSPR" && test "$JS_THREADSAFE"; then
+-      JS_POSIX_NSPR_DEFAULT=1
+-    fi
+-    ;;
+-esac
+-
+-MOZ_ARG_ENABLE_BOOL(posix-nspr-emulation,
+-[  --enable-posix-nspr-emulation
+-                          Enable emulation of NSPR for POSIX systems],
+-    JS_POSIX_NSPR=1,
+-    JS_POSIX_NSPR=,
+-    JS_POSIX_NSPR="$JS_POSIX_NSPR_DEFAULT" )
+-if test -n "$JS_POSIX_NSPR"; then
+-    AC_DEFINE(JS_POSIX_NSPR)
+-fi
+-
+-AC_SUBST(JS_POSIX_NSPR)
+-
+-dnl Pass either --with-system-nspr or (--with-nspr-cflags and
+-dnl --with-nspr-libs), but not both.
+-if test "$_USE_SYSTEM_NSPR" && (test "$NSPR_CFLAGS" -o "$NSPR_LIBS"); then
+-    AC_MSG_ERROR([--with-system-nspr and --with-nspr-libs/cflags are mutually exclusive.
+-See 'configure --help'.])
+-fi
+-
+-dnl Can't use --enable-posix-nspr-emulation if compiling with NSPR.
+-if test "$_HAS_NSPR" && test "$JS_POSIX_NSPR"; then
+-    AC_MSG_ERROR([--enable-posix-nspr-emulation is mututally exclusive with --with-system-nspr
+-and --with-nspr-libs/cflags. See 'configure --help'.])
+-fi
+-
+-if test -n "$_USE_SYSTEM_NSPR"; then
+-    MOZ_NATIVE_NSPR=
+-    AM_PATH_NSPR($NSPR_MINVER, [MOZ_NATIVE_NSPR=1], [AC_MSG_ERROR([your don't have NSPR installed or your version is too old])])
+-fi
+-
+-NSPR_PKGCONF_CHECK="nspr"
+-if test -n "$MOZ_NATIVE_NSPR"; then
+-    # piggy back on $MOZ_NATIVE_NSPR to set a variable for the nspr check for js.pc
+-    NSPR_PKGCONF_CHECK="nspr >= $NSPR_MINVER"
+-
+-    _SAVE_CFLAGS=$CFLAGS
+-    CFLAGS="$CFLAGS $NSPR_CFLAGS"
+-    AC_TRY_COMPILE([#include "prlog.h"],
+-                [#ifndef PR_STATIC_ASSERT
+-                 #error PR_STATIC_ASSERT not defined
+-                 #endif],
+-                [MOZ_NATIVE_NSPR=1],
+-                AC_MSG_ERROR([system NSPR does not support PR_STATIC_ASSERT]))
+-    CFLAGS=$_SAVE_CFLAGS
+-fi
+-AC_SUBST(NSPR_PKGCONF_CHECK)
++MOZ_CONFIG_NSPR(js)
+ 
+ dnl ========================================================
+ dnl system zlib Support
+ dnl ========================================================
+ dnl Standalone js defaults to system zlib
+ ZLIB_DIR=yes
+ 
+ MOZ_ZLIB_CHECK([1.2.3])
+@@ -4050,17 +3960,16 @@ AC_HAVE_FUNCS(setlocale)
+ AC_HAVE_FUNCS(localeconv)
+ 
+ AC_SUBST(MOZILLA_VERSION)
+ 
+ AC_SUBST(ac_configure_args)
+ 
+ AC_SUBST(TOOLCHAIN_PREFIX)
+ 
+-
+ if test -n "$JS_STANDALONE"; then
+ MOZ_APP_NAME="mozjs"
+ MOZ_APP_VERSION="$MOZILLA_SYMBOLVERSION"
+ JS_LIBRARY_NAME="mozjs-$MOZILLA_SYMBOLVERSION"
+ else
+ JS_LIBRARY_NAME="mozjs"
+ fi
+ JS_CONFIG_LIBS="$NSPR_LIBS $LIBS"
+@@ -4068,16 +3977,19 @@ if test -n "$GNU_CC"; then
+ JS_CONFIG_MOZ_JS_LIBS='-L${libdir} -l${JS_LIBRARY_NAME}'
+ else
+ JS_CONFIG_MOZ_JS_LIBS='${libdir}/${JS_LIBRARY_NAME}.lib'
+ fi
+ AC_SUBST(JS_LIBRARY_NAME)
+ AC_SUBST(JS_CONFIG_MOZ_JS_LIBS)
+ AC_SUBST(JS_CONFIG_LIBS)
+ 
++if test -n "$MOZ_BUILD_NSPR"; then
++    MOZ_SUBCONFIGURE_NSPR()
++fi
+ MOZ_SUBCONFIGURE_FFI()
+ 
+ dnl Spit out some output
+ dnl ========================================================
+ MOZ_CREATE_CONFIG_STATUS()
+ 
+ if test "$JS_STANDALONE"; then
+   MOZ_RUN_CONFIG_STATUS()
+diff --git a/moz.build b/moz.build
+--- a/moz.build
++++ b/moz.build
+@@ -34,26 +34,25 @@ if not CONFIG['LIBXUL_SDK']:
+         if not CONFIG['MOZ_NATIVE_ZLIB']:
+             add_tier_dir('base', ['modules/zlib'])
+ 
+         add_tier_dir('base', ['mozglue', 'memory/mozalloc'])
+ 
+ if not CONFIG['JS_STANDALONE']:
+     add_tier_dir('precompile', 'xpcom/xpidl')
+ 
+-    if CONFIG['COMPILE_ENVIRONMENT'] and not CONFIG['LIBXUL_SDK']:
+-        if not CONFIG['MOZ_NATIVE_NSPR']:
+-            add_tier_dir('nspr', 'config/nspr')
++if CONFIG['COMPILE_ENVIRONMENT'] and not CONFIG['LIBXUL_SDK']:
++    if CONFIG['MOZ_BUILD_NSPR']:
++        add_tier_dir('nspr', 'config/nspr')
+ 
++    if not CONFIG['JS_STANDALONE']:
+         add_tier_dir('external', 'config/external')
+-
+         if not CONFIG['MOZ_NATIVE_NSS']:
+              add_tier_dir('nss', 'security/build')
+ 
+-if CONFIG['COMPILE_ENVIRONMENT'] and not CONFIG['LIBXUL_SDK']:
+     if CONFIG['BUILD_CTYPES'] and not CONFIG['MOZ_NATIVE_FFI']:
+         add_tier_dir('js', ['js/src/ctypes/libffi'], static=True)
+     add_tier_dir('js', ['intl/icu'], static=True)
+     CONFIGURE_SUBST_FILES += ['intl/icu/Makefile']
+     add_tier_dir('js', ['js/src'])
+ 
+ if not CONFIG['JS_STANDALONE']:
+     # Bring in the configuration for the configured application.
