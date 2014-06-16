@@ -244,6 +244,7 @@ public:
 	ALWAYS_INLINE Stack& operator++() { // ++stack
 
 		Item *newItem = ::new(allocator.Alloc()) Item;
+		ASSERT(newItem);
 		newItem->prev = _top;
 		_top = newItem;
 		return *this;

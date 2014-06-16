@@ -379,5 +379,8 @@
     <ClInclude Include="src\tommath_superclass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="tommath.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

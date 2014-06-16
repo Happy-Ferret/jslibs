@@ -39,7 +39,7 @@ bool InitPollDesc( JSContext *cx, JS::HandleValue descVal, PRPollDesc *pollDesc 
 	pollDesc->in_flags = 0;
 	pollDesc->out_flags = 0;
 
-	if ( JSVAL_IS_PRIMITIVE( descVal ) ) {
+	if ( descVal.isPrimitive() ) {
 
 		pollDesc->fd = NULL; // indicate to PR_Poll that this PRFileDesc object should be ignored.
 		return true;

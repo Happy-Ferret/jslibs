@@ -64,7 +64,7 @@ JL_GetRuntime( JSContext *cx ) {
 }
 
 ALWAYS_INLINE void* FASTCALL
-JL_GetRuntimePrivate( const JSRuntime *rt ) {
+JL_GetRuntimePrivate( JSRuntime *rt ) {
 
 #ifdef JSRUNTIME_HAS_JLDATA
 	return js::PerThreadDataFriendFields::getMainThread(rt)->jldata;

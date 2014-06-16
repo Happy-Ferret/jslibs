@@ -524,7 +524,7 @@ int main(int argc, char* argv[]) {
 			JS::AutoSaveContextOptions asco(cx);
 			JS::ContextOptionsRef(cx).setDontReportUncaught(false);
 
-			JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL, NULL) ); // -1 because sizeof("") == 1
+			JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL) ); // -1 because sizeof("") == 1
 			JL_CHK( script );
 			JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
 		}
@@ -571,7 +571,7 @@ int main(int argc, char* argv[]) {
 				JS::RootedValue ex(cx);
 				JS_GetPendingException(cx, &ex);
 				JL_CHK( jl::getPrimitive(cx, ex, &ex) );
-				if ( JSVAL_IS_INT(ex) ) {
+				if ( ex.isInt32() ) {
 
 					exitValue = ex.toInt32();
 				} else {
@@ -641,7 +641,7 @@ int basic_test_main(int argc, char* argv[]) {
 
 	JS_Init();
 
-	JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
+	JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
 	JSContext *cx = JS_NewContext(rt, 8192);
 	JS_BeginRequest(cx);
 

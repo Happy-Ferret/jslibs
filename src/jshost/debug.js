@@ -49,7 +49,7 @@ try {
 	var rsa = new AsymmetricCipher('rsa', 'md5', rnd );
 	rsa.createKeys( 1024 );
 	var rsaPubKey = rsa.publicKey;
-	var rsa1 = new AsymmetricCipher( 'rsa', 'md5', rnd );
+	var rsa1 = new AsymmetricCipher('rsa', 'md5', rnd); 
 	rsa1.publicKey = rsaPubKey;
 	var rsaEncryptedData = rsa1.encrypt( plainText ).string;
 

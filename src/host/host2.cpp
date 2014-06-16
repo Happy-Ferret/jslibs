@@ -494,7 +494,7 @@ HostRuntime::HostRuntime(Allocators allocators, uint32_t maybeGCIntervalMs)
 bool
 HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota, bool lazyStandardClasses ) {
 
-	rt = JS_NewRuntime(maxAlloc, JS_USE_HELPER_THREADS); // JSGC_MAX_MALLOC_BYTES
+	rt = JS_NewRuntime(maxAlloc); // JSGC_MAX_MALLOC_BYTES
 	JL_CHK( rt );
 
 	// Number of JS_malloc bytes before last ditch GC.
@@ -1288,7 +1288,7 @@ Host::create() {
 	_objectClasp = JL_GetClass(_objectProto);
 	
 	// global functions & properties
-	JL_CHKM( JS_DefinePropertyById(cx, obj, JLID(cx, global), OBJECT_TO_JSVAL(obj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
+	JL_CHKM( JS_DefinePropertyById(cx, obj, JLID(cx, global), obj, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
 
 	ASSERT(cx && obj);
 	INIT_CLASS( host );

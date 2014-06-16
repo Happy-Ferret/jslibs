@@ -277,9 +277,9 @@ public:
 		//jsval serializeFctVal;
 		JS::RootedValue serializeFctVal(cx);
 
-		if ( JSVAL_IS_PRIMITIVE(val) ) {
+		if ( val.isPrimitive() ) {
 
-			if ( JSVAL_IS_INT(val) ) {
+			if ( val.isInt32() ) {
 
 				JL_CHK( Write(cx, JLSTInt) );
 				JL_CHK( Write(cx, val.toInt32()) );
@@ -730,10 +730,10 @@ public:
 			case JLSTObjectValue: {
 
 				const char *className;
-				JS::RootedValue value(cx);
+				JS::AutoValueArray<1> ava(cx);
 				JS::RootedValue prop(cx);
 				JL_CHK( Read(cx, className) );
-				JL_CHK( Read(cx, value) );
+				JL_CHK(Read(cx, ava[0]));
 				
 				
 				JS::RootedObject scope(cx, JL_GetGlobal(cx)); //JS_GetScopeChain(cx);
@@ -741,8 +741,7 @@ public:
 				JL_CHK( prop.isObject() );
 
 				JS::RootedObject propObj(cx, &prop.toObject());
-
-				JS::RootedObject newObj(cx, JS_New(cx, propObj, value));
+				JS::RootedObject newObj(cx, JS_New(cx, propObj, ava));
 				JL_CHK( newObj );
 				val.setObject(*newObj);
 				break;
@@ -943,7 +942,7 @@ public:
 				SerializerConstBufferInfo encodedFunction;
 				JL_CHK( Read(cx, encodedFunction) );
 				
-				JS::RootedObject fctObj(cx, JS_DecodeInterpretedFunction(cx, encodedFunction.Data(), encodedFunction.Length(), NULL, NULL));
+				JS::RootedObject fctObj(cx, JS_DecodeInterpretedFunction(cx, encodedFunction.Data(), encodedFunction.Length(), NULL));
 				JS::RootedObject parentObject(cx, JS_GetParent(fctObj));
 				fctObj = JS_CloneFunctionObject(cx, fctObj, parentObject); // (TBD) remove this wen bz#741597 wil be fixed.
 				

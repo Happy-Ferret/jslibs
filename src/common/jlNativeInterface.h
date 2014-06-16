@@ -26,7 +26,7 @@ ReserveNativeInterface( JSContext *cx, JS::HandleObject obj, JS::HandleId id ) {
 
 	JSID_IS_STRING(id) && !JSID_IS_ZERO(id);
 
-	return JS_DefinePropertyById(cx, obj, id, JSVAL_VOID, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT);
+	return JS_DefinePropertyById(cx, obj, id, JL_UNDEFINED(), JSPROP_READONLY | JSPROP_PERMANENT);
 }
 
 
@@ -38,7 +38,7 @@ SetNativeInterface( JSContext *cx, JS::HandleObject obj, JS::HandleId id, const 
 
 	if ( nativeFct != NULL ) {
 
-		JL_CHK( JS_DefinePropertyById(cx, obj, id, JSVAL_TRUE, NULL, (JSStrictPropertyOp)nativeFct, JSPROP_READONLY | JSPROP_PERMANENT) ); // hacking the setter of a read-only property seems safe.
+		JL_CHK(JS_DefinePropertyById(cx, obj, id, JL_TRUE(), JSPROP_READONLY | JSPROP_PERMANENT, NULL, (JSStrictPropertyOp)nativeFct)); // hacking the setter of a read-only property seems safe.
 	} else {
 
 		JL_CHK( ReserveNativeInterface(cx, obj, id) );
@@ -55,7 +55,7 @@ GetNativeInterface( JSContext *cx, JS::HandleObject obj, JS::HandleId id ) {
 	ASSERT( JSID_IS_STRING(id) && !JSID_IS_ZERO(id) );
 	
 	JS::Rooted<JSPropertyDescriptor> desc(cx);
-	if ( JS_GetPropertyDescriptorById(cx, obj, id, 0, &desc) ) {
+	if ( JS_GetPropertyDescriptorById(cx, obj, id, &desc) ) {
 
 		return desc.object() == obj && desc.setter() != JS_StrictPropertyStub ? (const T)desc.setter() : NULL; // is JS_PropertyStub when eg. Stringify({_NI_BufferGet:function() {} })
 	} else {

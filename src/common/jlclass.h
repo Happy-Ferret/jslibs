@@ -52,7 +52,7 @@ ALWAYS_INLINE bool FASTCALL
 StoreProperty( JSContext *cx, JS::HandleObject obj, IN JS::HandleId id, IN JS::HandleValue vp, bool removeGetterAndSetter ) {
 
 	JS::Rooted<JSPropertyDescriptor> desc(cx);
-	JL_CHK( JS_GetPropertyDescriptorById(cx, obj, id, 0, &desc) );
+	JL_CHK( JS_GetPropertyDescriptorById(cx, obj, id, &desc) );
 	bool found = desc.object() != NULL;
 	unsigned int attrs = desc.attributes();
 	JSPropertyOp getter = desc.getter();
@@ -71,7 +71,7 @@ StoreProperty( JSContext *cx, JS::HandleObject obj, IN JS::HandleId id, IN JS::H
 		getter = NULL;
 		setter = NULL;
 	}
-	return JS_DefinePropertyById(cx, obj, id, vp, getter, setter, attrs);
+	return JS_DefinePropertyById(cx, obj, id, vp, attrs, getter, setter);
 	JL_BAD;
 }
 
@@ -129,8 +129,8 @@ InitStatic( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 	JL_CHK( JS_IsExtensible(cx, obj, &isExtensible) );
 	if ( isExtensible ) {
 	
-		JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _sourceId), INT_TO_JSVAL(cs->sourceId), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-		JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _buildDate), DOUBLE_TO_JSVAL(cs->buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+		JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _sourceId), cs->sourceId, JSPROP_READONLY | JSPROP_PERMANENT) );
+		JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _buildDate), cs->buildDate, JSPROP_READONLY | JSPROP_PERMANENT) );
 	}
 
 	ASSERT( !cs->stdIterator ); // not suitable for static classes
@@ -204,8 +204,8 @@ InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 	JL_CHK( JS_IsExtensible(cx, ctor, &isExtensible) );
 	if ( isExtensible ) {
 		
-		JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _sourceId), INT_TO_JSVAL(cs->sourceId), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-		JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _buildDate), DOUBLE_TO_JSVAL(cs->buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+		JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _sourceId), cs->sourceId, JSPROP_READONLY | JSPROP_PERMANENT) );
+		JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _buildDate), cs->buildDate, JSPROP_READONLY | JSPROP_PERMANENT) );
 	}
 
 	if ( cs->init )

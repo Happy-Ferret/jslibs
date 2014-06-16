@@ -952,5 +952,8 @@
     <ClInclude Include="src\src\headers\tomcrypt_prng.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="tomcrypt_custom.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

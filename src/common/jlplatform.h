@@ -347,8 +347,8 @@
 
 #else
 
-#define DISABLE_SMALLER_TYPE_CHECK ((void)0)
-#define RESTORE_SMALLER_TYPE_CHECK ((void)0)
+#define DISABLE_SMALLER_TYPE_CHECK ((void)0); __pragma(warning(push)) __pragma(warning(disable:4244))
+#define RESTORE_SMALLER_TYPE_CHECK ((void)0);  __pragma(warning(pop))
 
 #endif
 

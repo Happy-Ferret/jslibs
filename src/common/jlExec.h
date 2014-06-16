@@ -32,7 +32,7 @@ JL_BEGIN_NAMESPACE
 //
 //	/be
 INLINE NEVER_INLINE JSScript* FASTCALL
-loadScript(JSContext * RESTRICT cx, IN JS::HandleObject obj, const char * RESTRICT fileName, jl::EncodingType encoding, bool useCompFile, bool saveCompFile) {
+loadScript(JSContext *cx, IN JS::HandleObject obj, const char *fileName, jl::EncodingType encoding, bool useCompFile, bool saveCompFile) {
 
 	char *scriptBuffer = NULL;
 	size_t scriptFileSize;
@@ -75,7 +75,7 @@ loadScript(JSContext * RESTRICT cx, IN JS::HandleObject obj, const char * RESTRI
 //		void *debugErrorHookData = cx->debugHooks->debugErrorHookData;
 //		JS_SetDebugErrorHook(JL_GetRuntime(cx), NULL, NULL);
 
-		script = JS_DecodeScript(cx, data, readCount, NULL, NULL);
+		script = JS_DecodeScript(cx, data, readCount, NULL);
 
 //		JS_SetDebugErrorHook(JL_GetRuntime(cx), debugErrorHook, debugErrorHookData);
 //		if (cx->lastMessage)

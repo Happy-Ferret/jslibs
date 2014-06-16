@@ -1,6 +1,8 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual C++ Express 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Express 2013 for Windows Desktop
+VisualStudioVersion = 12.0.30501.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jscrypt", "jscrypt.vcxproj", "{A3794FD9-62E8-4B2C-8C9F-AF1A1DD97CB7}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtomcrypt_msvc", "..\..\libs\libtomcrypt\libtomcrypt_msvc.vcxproj", "{04DE6DD0-21E3-4117-8B21-1973BD96CBB3}"

@@ -185,7 +185,7 @@ enum E_TXTID {
 	JL_ASSERT( NOIL(jl::isArray)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_ARRAY )
 
 #define JL_ASSERT_IS_OBJECT(val, context) \
-	JL_ASSERT( !JSVAL_IS_PRIMITIVE(val), E_VALUE, E_STR(context), E_TYPE, E_TY_OBJECT )
+	JL_ASSERT( !val.isPrimitive(), E_VALUE, E_STR(context), E_TYPE, E_TY_OBJECT )
 
 #define JL_ASSERT_IS_STRING(val, context) \
 	JL_ASSERT( NOIL(JL_ValueIsData)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_STRINGDATA )
@@ -223,10 +223,10 @@ enum E_TXTID {
 	JL_ASSERT( NOIL(jl::isNumber)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("number") )
 
 #define JL_ASSERT_ARG_IS_OBJECT(argNum) \
-	JL_ASSERT( !JSVAL_IS_PRIMITIVE(JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("object") )
+	JL_ASSERT( JL_ARG(argNum).isObject(), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("object") )
 
 #define JL_ASSERT_ARG_IS_OBJECT_OR_NULL(argNum) \
-	JL_ASSERT( JSVAL_IS_OBJECT(JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("object"), E_OR, E_NAME("null") )
+	JL_ASSERT( JL_ARG(argNum).isObjectOrNull(), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("object"), E_OR, E_NAME("null") )
 
 #define JL_ASSERT_ARG_IS_STRING(argNum) \
 	JL_ASSERT( NOIL(jl::isData)(cx, JL_ARG(argNum)), E_ARG, E_NUM(argNum), E_TYPE, E_NAME("string || data") )

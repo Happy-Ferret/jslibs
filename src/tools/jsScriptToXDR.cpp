@@ -161,7 +161,7 @@ int main(int argc, char* argv[]) {
 		 JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, nullptr, nullptr, nullptr, nullptr, JS_GlobalObjectTraceHook
 	};
 
-	JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
+	JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
 
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, 0xffffffff);
 //	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);

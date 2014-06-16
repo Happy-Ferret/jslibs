@@ -58,7 +58,7 @@ DEFINE_PROPERTY_GETTER( arrayBuffer ) {
 		ASSERT( JL_RVAL.isInt32() );
 		jl::BufBase(JL_GetPrivate(JL_OBJ), JL_RVAL.toInt32()).toArrayBuffer(cx, JL_RVAL);
 		JL_CHK( invalidateBlob(cx, JL_OBJ) );
-		JL_CHK( JS_DefinePropertyById(cx, JL_OBJ, id, JL_RVAL, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+		JL_CHK( JS_DefinePropertyById(cx, JL_OBJ, id, JL_RVAL, JSPROP_READONLY | JSPROP_PERMANENT) );
 	} else {
 
 		JL_WARN( E_OBJ, E_STATE, E_INVALID );
@@ -85,7 +85,7 @@ DEFINE_PROPERTY_GETTER( string ) {
 			JL_RVAL.set(JL_GetEmptyStringValue(cx));
 		}
 		JL_CHK( invalidateBlob(cx, JL_OBJ) );
-		JL_CHK( JS_DefinePropertyById(cx, JL_OBJ, id, JL_RVAL, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+		JL_CHK( JS_DefinePropertyById(cx, JL_OBJ, id, JL_RVAL, JSPROP_READONLY | JSPROP_PERMANENT) );
 	} else {
 
 		JL_WARN( E_OBJ, E_STATE, E_INVALID );
@@ -113,7 +113,7 @@ DEFINE_PROPERTY_GETTER( ucString ) {
 			JL_RVAL.set(JL_GetEmptyStringValue(cx));
 		}
 		JL_CHK( invalidateBlob(cx, JL_OBJ) );
-		JL_CHK( JS_DefinePropertyById(cx, JL_OBJ, id, JL_RVAL, NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+		JL_CHK( JS_DefinePropertyById(cx, JL_OBJ, id, JL_RVAL, JSPROP_READONLY | JSPROP_PERMANENT) );
 	} else {
 
 		JL_WARN( E_OBJ, E_STATE, E_INVALID );

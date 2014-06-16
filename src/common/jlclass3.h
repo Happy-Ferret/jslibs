@@ -362,8 +362,8 @@ struct Class {
 		JL_CHK( JS_IsExtensible(cx, ctor, &isExtensible) );
 		if ( isExtensible ) {
 		
-			JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _sourceId), JS::NumberValue(sourceId), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
-			JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _buildDate), JS::NumberValue(buildDate), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) );
+			JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _sourceId), sourceId, JSPROP_READONLY | JSPROP_PERMANENT) );
+			JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _buildDate), buildDate, JSPROP_READONLY | JSPROP_PERMANENT) );
 		}
 
 		if ( init ) {
