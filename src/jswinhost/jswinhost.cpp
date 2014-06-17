@@ -111,7 +111,7 @@ volatile bool NedAllocators::_skipCleanup = false;
 
 using namespace jl;
 
-int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int ) {
+int CALLBACK wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
 
 	JL_enableLowFragmentationHeap();
 
@@ -164,7 +164,7 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE, LPSTR, int ) {
 		JS::AutoSaveContextOptions asco(cx);
 		JS::ContextOptionsRef(cx).setDontReportUncaught(false);
 
-		JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL, NULL) ); // -1 because sizeof("") == 1
+		JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL) ); // -1 because sizeof("") == 1
 		JL_CHK( script );
 		JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
 	}

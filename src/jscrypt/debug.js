@@ -5,17 +5,6 @@ var loadModule = host.loadModule;
 loadModule('jsstd');
 loadModule('jscrypt');
 
-//base64Encode('');
-
-//print( base64Decode(base64Encode('test').arrayBuffer), '\n' );
-
-//print( (hexEncode('abcdefghijklmnop').string), '\n' );
-//print( hexDecode(hexEncode('abcdefghijklmnop').string), '\n' );
-
-print( hexDecode('1g').string, '\n' );
-
-throw 0;
-
 
 
 loadModule('jsstd');
@@ -30,7 +19,7 @@ try {
 	var plainText = 'test';
 	plainText = plainText;
 	var rsa = new AsymmetricCipher('rsa', 'md5', rnd );
-	rsa.createKeys( 1024 );
+	rsa.createKeys( 2048 );
 	var rsaPubKey = rsa.publicKey;
 
 	print('rsaPubKey len:', rsaPubKey.length , '\n');
@@ -52,6 +41,20 @@ try {
 }
 
 throw 0;
+
+
+//base64Encode('');
+
+//print( base64Decode(base64Encode('test').arrayBuffer), '\n' );
+
+//print( (hexEncode('abcdefghijklmnop').string), '\n' );
+//print( hexDecode(hexEncode('abcdefghijklmnop').string), '\n' );
+
+print( hexDecode('1g').string, '\n' );
+
+throw 0;
+
+
 
 
 loadModule('jsstd');

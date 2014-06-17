@@ -44,7 +44,6 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
       <WholeProgramOptimization>true</WholeProgramOptimization>
     </ClCompile>
     <Link>
@@ -57,7 +56,6 @@
       <IgnoreSpecificDefaultLibraries>libc.lib; libcmt.lib; libcd.lib; libcmtd.lib; msvcrtd.lib; %(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalDependencies>$(jslibsRootDir)libs\js\$(jslibsIntDir)dist\lib\mozjs-33a1.lib;kernel32.lib;$(StopEvaluating)</AdditionalDependencies>
       <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
-      <AdditionalOptions>/LTCG %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <Lib>

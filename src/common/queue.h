@@ -302,6 +302,7 @@ public:
 	ALWAYS_INLINE void AddEnd() {
 
 		Item *newItem = ::new(allocator.Alloc()) Item;
+		ASSERT(newItem);
 		if ( _end != NULL ) {
 
 			newItem->prev = _end;

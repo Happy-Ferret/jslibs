@@ -251,6 +251,8 @@ DEFINE_CONSTRUCTOR() {
 	InitializeCriticalSection(&pv->cs);
 	pv->audioEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	pv->bufferReadyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	JL_ASSERT(pv->audioEvent, E_OS, E_OBJ, E_CREATE, E_COMMENT("event"));
+	JL_ASSERT(pv->audioEvent, E_OS, E_OBJ, E_CREATE, E_COMMENT("event"));
 
 	pv->thread = NULL;
 
@@ -260,6 +262,8 @@ DEFINE_CONSTRUCTOR() {
 		return ThrowWinAudioError(cx, res);
 
 	pv->thread = CreateThread(NULL, 0, WaveInThreadProc, pv, CREATE_SUSPENDED, NULL);
+	JL_ASSERT(pv->thread, E_OS, E_OBJ, E_CREATE, E_COMMENT("audio thread"));
+
 	SetThreadPriority(pv->thread, THREAD_PRIORITY_HIGHEST);
 	ResumeThread(pv->thread);
 
@@ -424,6 +428,7 @@ DEFINE_FUNCTION( events ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	AudioEvent *upe = new AudioEvent(pv);
+	JL_ASSERT_ALLOC(upe);
 	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
 
 	upe->slot(0) = JL_OBJVAL; // Audio object

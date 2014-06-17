@@ -40,7 +40,7 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const char *fileName, jl::Enc
 	size_t scriptTextLength;
 
 	JS::RootedScript script(cx);
-	JS::CompileOptions compileOptions(cx);
+	JS::CompileOptions compileOptions(cx, JSVERSION_LATEST);
 
 	//JS::CompartmentOptionsRef(cx).cloneSingletonsOverride().set(true);
 
@@ -300,7 +300,7 @@ executeScriptText( JSContext *cx, IN JS::HandleObject obj, const char *scriptTex
 	//principals->destroy = HostPrincipalsDestroy;
 
 	JS::RootedScript script(cx);
-	JS::CompileOptions compileOptions(cx);
+	JS::CompileOptions compileOptions(cx, JSVERSION_LATEST);
 	compileOptions.setFileAndLine("inline", 1);
 	compileOptions.setCompileAndGo(true);
 	//compileOptions.setSourcePolicy(JS::CompileOptions::NO_SOURCE);

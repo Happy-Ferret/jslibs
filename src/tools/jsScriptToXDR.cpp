@@ -230,14 +230,21 @@ int main(int argc, char* argv[]) {
 
 	//JSScript *script = JS_CompileFileHandle(cx, globalObject, argc >= 4 ? argv[4] : NULL, srcFile);
 	char *srcCode = (char*)malloc(fileSize);
+
+	if (!srcCode) {
+
+		printf("OOM\n");
+		return EXIT_FAILURE;
+	}
+
 	fread(srcCode, 1, fileSize, srcFile);
 
-    JS::CompileOptions options(cx);
-    options
-//		.setUTF8(true)
+	JS::CompileOptions options(cx, JSVERSION_LATEST);
+	options
+		//		.setUTF8(true)
 		.setFileAndLine("bootstrap", 1)
 		.setCompileAndGo(true)
-		.setVersion(JSVERSION_LATEST);
+	;
 
 	JS::RootedScript script(cx, JS::Compile(cx, globalObject, options, srcCode, fileSize));
 

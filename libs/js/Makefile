@@ -1,4 +1,3 @@
-
 include ../subdirs.mk
 
 #BUILD := $(shell echo $(BUILD) | tr A-Z a-z)
@@ -21,18 +20,18 @@ TARGET_FILES=$(INT_DIR)dist/bin/*.{so,dll}
 TIP_NAME=mozilla-central-????????????
 
 
-# .INTERMEDIATE: tip.zip
+.INTERMEDIATE: tip.zip
+.PRECIOUS: tip.zip
 
 tip.zip:
 	wget http://hg.mozilla.org/mozilla-central/archive/tip.zip
-	touch -c $@
+	touch -c --reference=$< $@
 	
 src.zip: tip.zip
 	7z x $< $(TIP_NAME)/{toolkit/*,nsprpub/*,mfbt/*,python/*,testing/*,build/*,config/*,intl/*,js/public/*,js/src/*,dom/bindings/mozwebidlcodegen/*,media/webrtc/trunk/tools/gyp/*,moz.build,Makefile.in,mozilla-config.h.in,aclocal.m4,configure.in} -x\!$(TIP_NAME)/{js/src/jit-test/*,js/src/tests/*,js/src/v8/*} > /dev/null
-#	echo -n $(TIP_NAME) > tip.txt
+	echo -n $(TIP_NAME) > ./$(TIP_NAME)/tip.txt
 	mv $(TIP_NAME) src
 	touch -c --reference=$< src
-#	mv tip.txt src
 	7z -mx9 a $@ src > /dev/null
 	touch -c --reference=$< $@
 

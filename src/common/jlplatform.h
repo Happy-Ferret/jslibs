@@ -334,21 +334,24 @@
 
 #define NOTHROW throw()
 
+#if defined(MSC)
 
-#if defined(MSC) && defined(DEBUG)
+#if defined(DEBUG)
 
-#include <rtcapi.h>
+		#include <rtcapi.h>
 
-#define DISABLE_SMALLER_TYPE_CHECK \
-	int _prev_rtc_cvrt_loss_info = _RTC_SetErrorType(_RTC_CVRT_LOSS_INFO, _RTC_ERRTYPE_IGNORE); __pragma(warning(push)) __pragma(warning(disable:4244))
+		#define DISABLE_SMALLER_TYPE_CHECK \
+			int _prev_rtc_cvrt_loss_info = _RTC_SetErrorType(_RTC_CVRT_LOSS_INFO, _RTC_ERRTYPE_IGNORE); __pragma(warning(push)) __pragma(warning(disable:4244))
 
-#define RESTORE_SMALLER_TYPE_CHECK \
-	_RTC_SetErrorType(_RTC_CVRT_LOSS_INFO, _prev_rtc_cvrt_loss_info); __pragma(warning(pop))
+		#define RESTORE_SMALLER_TYPE_CHECK \
+			_RTC_SetErrorType(_RTC_CVRT_LOSS_INFO, _prev_rtc_cvrt_loss_info); __pragma(warning(pop))
 
-#else
+	#else
 
-#define DISABLE_SMALLER_TYPE_CHECK ((void)0); __pragma(warning(push)) __pragma(warning(disable:4244))
-#define RESTORE_SMALLER_TYPE_CHECK ((void)0);  __pragma(warning(pop))
+		#define DISABLE_SMALLER_TYPE_CHECK ((void)0); __pragma(warning(push)) __pragma(warning(disable:4244))
+		#define RESTORE_SMALLER_TYPE_CHECK ((void)0);  __pragma(warning(pop))
+
+	#endif
 
 #endif
 
@@ -533,11 +536,15 @@
 #endif
 
 #ifdef MSC
+
 #define UNLIKELY_SPLIT_BEGIN(...) { struct { INLINE NEVER_INLINE bool FASTCALL operator()( ##__VA_ARGS__ ) {
 #define UNLIKELY_SPLIT_END(...) } } inner; if ( inner( ##__VA_ARGS__ ) ) return true; else goto bad; JL_BAD; }
+
 #else
+
 #define UNLIKELY_SPLIT_BEGIN(...)
 #define UNLIKELY_SPLIT_END(...)
+
 #endif
 
 

@@ -173,15 +173,15 @@ DEFINE_GET_PROPERTY() {
 			JL_CHK( WinThrowError(cx, hr) );
 		JS_free(cx, result);
 
-		JSFunction *fun = JS_NewFunction(cx, FunctionInvoke, 8, 0, JS::NullPtr(), NULL);
-		JSObject *funObj = JS_GetFunctionObject(fun);
+		JS::RootedFunction fun(cx, JS_NewFunction(cx, FunctionInvoke, 8, 0, JS::NullPtr(), NULL));
+		JS::RootedObject funObj(cx, JS_GetFunctionObject(fun));
 		JL_CHK( funObj );
 		vp.setObject(*funObj);
-		JL_CHK( JS_DefinePropertyById(cx, funObj, JLID(cx, id), INT_TO_JSVAL(dispid), NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY) ); // (TBD) use JS_SetProperty instead ?
+		JL_CHK( JS_DefinePropertyById(cx, funObj, JLID(cx, id), uint32_t(dispid), JSPROP_PERMANENT|JSPROP_READONLY) ); // (TBD) use JS_SetProperty instead ?
 		JS::RootedValue tmp(cx);
 		JL_CHK( JS_IdToValue(cx, id, &tmp) );
-		JL_CHK( JS_DefinePropertyById(cx, funObj, JLID(cx, name), tmp, NULL, NULL, JSPROP_PERMANENT|JSPROP_READONLY) ); // (TBD) use JS_SetProperty instead ?
-		JL_CHK( JS_DefinePropertyById(cx, obj, id, vp, NULL, NULL, /*JSPROP_PERMANENT|*/JSPROP_READONLY) ); // not JSPROP_PERMANENT else prop is undeletable, see DISP_E_MEMBERNOTFOUND case in FunctionInvoke()  // (TBD) use JS_SetProperty instead ?
+		JL_CHK( JS_DefinePropertyById(cx, funObj, JLID(cx, name), tmp, JSPROP_PERMANENT|JSPROP_READONLY) ); // (TBD) use JS_SetProperty instead ?
+		JL_CHK( JS_DefinePropertyById(cx, obj, id, vp, /*JSPROP_PERMANENT|*/JSPROP_READONLY) ); // not JSPROP_PERMANENT else prop is undeletable, see DISP_E_MEMBERNOTFOUND case in FunctionInvoke()  // (TBD) use JS_SetProperty instead ?
 		return true;
 	}
 

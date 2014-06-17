@@ -1076,6 +1076,8 @@ DEFINE_FUNCTION( jslangTest ) {
 	return BlobCreate(cx, test, JL_RVAL);
 */
 
+	
+
 
 	{
 		jl::BufString test((const jschar*)"a\0b\0c\0d\0\0", 10, true);

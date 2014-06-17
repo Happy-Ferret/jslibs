@@ -1,10 +1,3 @@
-export USERPROFILE=$PREV_USERPROFILE
-tmp=$PWD
-cd "$VCINSTALLDIR"
-cd vcpackages
-export PATH=$PATH:$PWD
-cd $tmp
-
 [ "$BUILD" == "" ] && BUILD=opt
 [ "$BUILD_METHOD" == "" ] && BUILD_METHOD=build
 
@@ -14,7 +7,7 @@ BUILD_METHOD=$(echo $BUILD_METHOD | tr "[:upper:]" "[:lower:]")
 TOP=$PWD
 
 if [ "$BUILD_METHOD" == "rebuild" ]; then
-	VCBUILD_OPT=//rebuild
+	VCBUILD_OPT=//t:Rebuild
 else
 	VCBUILD_OPT=
 fi
@@ -31,6 +24,7 @@ echo -n opts:
 echo
 
 
+
 startTime=$((`date +%s`))
 
 date > $LOGFILE
@@ -45,13 +39,6 @@ if [ "$NOLIBS" == "" ]; then
 	cd $TOP/libs/js && mozmake all copy >> $LOGFILE 2>&1
 	[[ $? != 0 ]] && echo ... failed. && exit
 
-
-	echo building NSPR ...
-	if [ "$BUILD_METHOD" == "rebuild" ]; then
-		cd $TOP/libs/nspr && mozmake clean >> $LOGFILE 2>&1
-	fi
-	cd $TOP/libs/nspr && mozmake all copy >> $LOGFILE 2>&1
-	[[ $? != 0 ]] && echo ... failed. && exit
 fi
 
 if [ "$1" == "" ]; then
@@ -62,42 +49,42 @@ if [ "$1" == "" ]; then
 		dirName=$(dirname $slnFile)
 		fileName=${slnFile%.*}
 
-
 		if [[ "$EXCLUDE" == *$baseName* ]]; then
 		
 			echo "    skip $baseName"
 		else
 		
-			if [ "$NOLIBS" == "" ]; then
+			# if [ "$NOLIBS" == "" ]; then
 				fileToBuild=$baseName
-			else
-				fileToBuild=$fileName.vcproj
-			fi
+			# else
+			# 	fileToBuild=$fileName.vcproj
+			# fi
 
 		
 			echo "building $fileToBuild ..."
 			
 			(echo;echo;echo) >> $LOGFILE
 			cd $dirName
-			vcbuild.exe //M$NUMBER_OF_PROCESSORS //nohtmllog //nologo //useenv $VCBUILD_OPT $fileToBuild "$BUILD|WIN32" >> $LOGFILE 2>&1
+			# vcbuild.exe //M$NUMBER_OF_PROCESSORS //nohtmllog //nologo //useenv $VCBUILD_OPT $fileToBuild "$BUILD|WIN32" >> $LOGFILE 2>&1
+			msbuild.exe //nologo //m:$NUMBER_OF_PROCESSORS $fileToBuild //p:Configuration=$BUILD >> $LOGFILE 2>&1
 			[ $? != 0 ] && echo ... failed.
 		fi
 	done
+	
 else
 
-	slnFile=$TOP/src/$1/$1.sln
-	echo building $slnFile ...	
+	fileToBuild=$TOP/src/$1/$1.sln
+	echo building $fileToBuild ...	
 	(echo;echo;echo) >> $LOGFILE
-	cd $(dirname $slnFile)
-	vcbuild.exe //M$NUMBER_OF_PROCESSORS //nohtmllog //nologo //useenv $VCBUILD_OPT $(basename $slnFile) "$BUILD|WIN32" >> $LOGFILE 2>&1
+	cd $(dirname $fileToBuild)
+	# vcbuild.exe //M$NUMBER_OF_PROCESSORS //nohtmllog //nologo //useenv $VCBUILD_OPT $(basename $fileToBuild) "$BUILD|WIN32" >> $LOGFILE 2>&1
+	msbuild.exe //nologo //m:$NUMBER_OF_PROCESSORS $fileToBuild //p:Configuration=$BUILD >> $LOGFILE 2>&1
 	[ $? != 0 ] && echo ... failed.
 
 fi
 
 endTime=$((`date +%s`))
 
-editbin.exe //REBASE $DEST_DIR/*.dll >> $LOGFILE
-
-editbin.exe //REBASE $DEST_DIR/*.dll >> $LOGFILE
+# editbin.exe //REBASE $DEST_DIR/*.dll >> $LOGFILE
 
 echo Build done in $(($endTime-$startTime))s.

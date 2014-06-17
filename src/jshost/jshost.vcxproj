@@ -64,6 +64,14 @@
     </Link>
     <ClCompile />
     <ClCompile />
+    <ClCompile />
+    <ClCompile />
+    <ClCompile />
+    <ClCompile />
+    <ClCompile />
+    <ClCompile>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="jshost.cpp" />

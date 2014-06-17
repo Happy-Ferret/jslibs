@@ -448,7 +448,9 @@ DEFINE_CONSTRUCTOR() {
 
 	pv->mouseIn = false;
 	pv->systrayEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	JL_ASSERT(pv->systrayEvent, E_OS, E_OBJ, E_CREATE, E_COMMENT("systray event") );
 	pv->thread = CreateThread(NULL, 0, SystrayThread, pv, 0, NULL);
+	JL_ASSERT(pv->thread, E_OS, E_OBJ, E_CREATE, E_COMMENT("thread"));
 	SetThreadPriority(pv->thread, THREAD_PRIORITY_ABOVE_NORMAL);
 	WaitForSingleObject(pv->systrayEvent, INFINITE); // first pulse
 
@@ -762,6 +764,7 @@ DEFINE_FUNCTION( events ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	SystrayEvent *upe = new SystrayEvent();
+	JL_ASSERT_ALLOC(upe);
 	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
 
 	upe->hslot(0).set(JL_OBJVAL);
@@ -983,7 +986,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 		} else
 		if ( uFlags & MF_POPUP ) {
 
-			uIDNewItem = (UINT_PTR)popupMenu;
+			uIDNewItem = (UINT_PTR)popupMenu; // ignore warning C4703
 		} else {
 
 			if ( cmdid == JSVAL_VOID )

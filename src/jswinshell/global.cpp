@@ -498,7 +498,7 @@ DEFINE_FUNCTION( registrySet ) {
 
 			st = RegSetValueEx(hKey, valueNameStr, 0, REG_NONE, NULL, 0);
 		} else
-		if ( JSVAL_IS_INT(value) ) {
+		if ( value.isInt32() ) {
 
 			DWORD num;
 			JL_CHK( jl::getValue(cx, value, &num) );
@@ -751,6 +751,7 @@ DEFINE_FUNCTION( directoryChangesInit ) {
 		watchSubtree = false;
 
 	DirectoryChanges *dc = new DirectoryChanges();
+	JL_ASSERT_ALLOC(dc);
 	JL_CHK( HandleCreate(cx, dc, JL_RVAL) );
 
 	dc->watchSubtree = watchSubtree;
@@ -941,6 +942,7 @@ DEFINE_FUNCTION( directoryChangesEvents ) {
 	JL_ASSERT( dc, E_ARG, E_NUM(1), E_STATE, E_INVALID );
 
 	DirectoryUserProcessEvent *upe = new DirectoryUserProcessEvent();
+	JL_ASSERT_ALLOC(upe);
 	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
 
 	if ( JL_ARG_ISDEF(2) ) {

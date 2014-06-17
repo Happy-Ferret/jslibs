@@ -595,9 +595,11 @@ DEFINE_FUNCTION( events ) {
 		JL_ASSERT_ARGC(0);
 
 	ConsoleProcessEvent *upe = new ConsoleProcessEvent();
+	JL_ASSERT_ALLOC(upe);
 	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
 
 	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset
+	JL_ASSERT(upe->cancelEvent, E_OS, E_OBJ, E_CREATE, E_COMMENT("cancel event"));
 	upe->consoleEvent = GetStdHandle(STD_INPUT_HANDLE);
 
 	return true;

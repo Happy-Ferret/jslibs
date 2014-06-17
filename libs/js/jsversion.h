@@ -19,6 +19,7 @@
 #define JS_HAS_DESTRUCTURING    2       /* has [a,b] = ... or {p:a,q:b} = ... */
 #define JS_HAS_GENERATOR_EXPRS  1       /* has (expr for (lhs in iterable)) */
 #define JS_HAS_EXPR_CLOSURES    1       /* has function (formals) listexpr */
+#define JS_HAS_TEMPLATE_STRINGS 1       /* has template string support */
 
 /* Support for JS_NewGlobalObject. */
 #define JS_HAS_NEW_GLOBAL_OBJECT        1
@@ -34,15 +35,5 @@
  * support likely to be made opt-in at some future time.
  */
 #define JS_OLD_GETTER_SETTER_METHODS    1
-
-/* A kill-switch for bug 586842.  Embedders shouldn't touch this! */
-#define JS_USE_NEW_OBJECT_REPRESENTATION 0
-
-#if JS_USE_NEW_OBJECT_REPRESENTATION
-# define JS_NEW_OBJECT_REPRESENTATION_ONLY() ((void)0)
-#else
-# define JS_NEW_OBJECT_REPRESENTATION_ONLY() \
-     MOZ_ASSUME_UNREACHABLE("don't call this!  to be used in the new object representation")
-#endif
 
 #endif /* jsversion_h */

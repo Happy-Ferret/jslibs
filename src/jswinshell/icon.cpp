@@ -49,7 +49,7 @@ DEFINE_CONSTRUCTOR() {
 
 	HICON hIcon = NULL;
 
-	if ( JSVAL_IS_INT(iconVal) ) {
+	if ( iconVal.isInt32() ) {
 
 		switch ( iconVal.toInt32() ) {
 			case 0:
@@ -69,7 +69,7 @@ DEFINE_CONSTRUCTOR() {
 				break;
 		}
 	} else
-	if ( !JSVAL_IS_PRIMITIVE(iconVal) ) {
+	if ( iconVal.isObject() ) {
 
 		HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 		JL_IGNORE(hInst);

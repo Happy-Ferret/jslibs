@@ -967,7 +967,7 @@ int main_run(JSContext *cx) {
 	JSAutoCompartment ac(cx, globalObject);
 
 	char *scriptText = "(function() { return 123 })";
-	JS::CompileOptions compileOptions(cx);
+	JS::CompileOptions compileOptions(cx, JSVERSION_LATEST);
 	JS::RootedScript script(cx, JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), compileOptions));
 
 	//test(&rval);
