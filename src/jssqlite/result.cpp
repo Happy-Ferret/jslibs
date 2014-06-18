@@ -279,7 +279,7 @@ DEFINE_FUNCTION( close ) {
 		JL_CHK( SqliteThrowError(cx, dbpv->db) );
 
 	jl::StackRemove(&dbpv->stmtList, pStmt);
-	JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_RESULT_DATABASE, JL_UNDEFINED()) );
+	JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_RESULT_DATABASE, JL_UNDEFINED) );
 	JL_SetPrivate(JL_OBJ, NULL);
 
 	JL_RVAL.setUndefined();
@@ -384,7 +384,7 @@ bool DoStep(JSContext *cx, JS::HandleObject obj, JS::MutableHandleValue rval) {
 
 
 		JL_CHK( SqliteSetupBindings(cx, pStmt, queryArgument.isObject() ? queryArgument : JS::NullHandleValue, obj) ); // ":" use result object. "@" is the object passed to Query()
-		JL_CHK( JL_SetReservedSlot(obj, SLOT_RESULT_BINDING_UP_TO_DATE, JL_TRUE()) );
+		JL_CHK( JL_SetReservedSlot(obj, SLOT_RESULT_BINDING_UP_TO_DATE, JL_TRUE) );
 		// doc: The sqlite3_bind_*() routines must be called AFTER sqlite3_prepare() or sqlite3_reset() and BEFORE sqlite3_step().
 		//      Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
 	}
@@ -583,7 +583,7 @@ DEFINE_FUNCTION( reset ) {
 	if ( sqlite3_reset(pStmt) != SQLITE_OK )
 		return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 	JL_RVAL.setUndefined();
-	return JL_SetReservedSlot(JL_OBJ, SLOT_RESULT_BINDING_UP_TO_DATE, JL_FALSE()); // invalidate current bindings
+	return JL_SetReservedSlot(JL_OBJ, SLOT_RESULT_BINDING_UP_TO_DATE, JL_FALSE); // invalidate current bindings
 	JL_BAD;
 }
 
@@ -731,14 +731,14 @@ DEFINE_DEL_PROPERTY() {
 	JL_IGNORE( id, cx );
 	
 	*succeeded = true;
-	return JL_SetReservedSlot(obj, SLOT_RESULT_BINDING_UP_TO_DATE, JL_FALSE()); // invalidate current bindings
+	return JL_SetReservedSlot(obj, SLOT_RESULT_BINDING_UP_TO_DATE, JL_FALSE); // invalidate current bindings
 }
 
 DEFINE_SET_PROPERTY() {
 
 	JL_IGNORE( id, vp, strict, cx );
 
-	return JL_SetReservedSlot(obj, SLOT_RESULT_BINDING_UP_TO_DATE, JL_FALSE()); // invalidate current bindings
+	return JL_SetReservedSlot(obj, SLOT_RESULT_BINDING_UP_TO_DATE, JL_FALSE); // invalidate current bindings
 }
 
 

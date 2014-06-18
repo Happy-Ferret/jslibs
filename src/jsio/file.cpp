@@ -806,7 +806,7 @@ DEFINE_PROPERTY_GETTER( standard ) {
 		if ( fd == NULL )
 			return ThrowIoError(cx);
 		JL_SetPrivate(  obj, fd );
-		JL_CHK( JL_SetReservedSlot(obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, JL_TRUE()) ); // avoid PR_Close
+		JL_CHK( JL_SetReservedSlot(obj, SLOT_JSIO_DESCRIPTOR_IMPORTED, JL_TRUE) ); // avoid PR_Close
 	}
 	return true;
 	JL_BAD;

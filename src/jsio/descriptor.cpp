@@ -690,7 +690,7 @@ DEFINE_FUNCTION( import ) {
 	JL_CHK( descriptorObject );
 	JL_SetPrivate( descriptorObject, (void*)fd);
 
-	JL_CHK( JL_SetReservedSlot(descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JL_TRUE()) );
+	JL_CHK( JL_SetReservedSlot(descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JL_TRUE) );
 
 	JL_RVAL.setObject(*descriptorObject);
 	}

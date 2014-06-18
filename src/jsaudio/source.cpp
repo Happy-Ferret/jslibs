@@ -126,7 +126,7 @@ DEFINE_FINALIZE() {
 		alDeleteSources(1, &pv->sid);
 	}
 
-	if ( jl::Host::getHost(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost( fop->runtime() ).hostRuntime().skipCleanup() )
 		return;
 
 	while ( !QueueIsEmpty(pv->queue) ) {

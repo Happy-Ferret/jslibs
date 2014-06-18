@@ -95,7 +95,6 @@ getNumberValue( JSContext *cx, const JS::HandleValue &val, T *num ) {
 		goto bad_range;
 	}
 
-
 	return getNumberValue_slow(cx, val, valIsDouble, num);
 bad_range:
 	JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_STR(SignificandStringValue<T>::min(), SignificandStringValue<T>::max()) );
@@ -415,6 +414,18 @@ setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::MutableHandle<T> 
 }
 
 
+// since neither implicit constructors nor conversion operators are applied during template deduction, we have to force the MutableHandle to JS::Handle conversion here.
+template <typename T>
+ALWAYS_INLINE bool FASTCALL
+setValue( JSContext *cx, JS::MutableHandleValue rval, JS::Rooted<T>*pv ) {
+
+	return setValue( cx, rval, JS::Handle<T>( pv ) );
+}
+// eg. JS::RootedValue rtVal(cx);
+//     jl::setValue(cx, obj, "foo", &rtVal) );
+
+
+
 ////////
 
 
@@ -621,7 +632,6 @@ getElement( JSContext *cx, const JS::HandleObject &objArg, uint32_t index, JS::M
 
 	return getElement(cx, objArg, index, &v);
 }
-
 
 //
 

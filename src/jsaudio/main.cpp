@@ -43,9 +43,11 @@ $MODULE_FOOTER
 **/
 
 bool
-ModuleInit(JSContext *cx, JS::HandleObject obj, uint32_t id) {
+ModuleInit( JSContext *cx, JS::HandleObject obj ) {
 
-	JL_CHK( InitJslibsModule(cx, id)  );
+	JLDisableThreadNotifications();
+
+	JL_ASSERT( jl::Host::getHost( cx ).checkCompatId( JL_HOST_VERSIONID ), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 
 /* * *
 	soubok  02/09/2008 00:12:41           

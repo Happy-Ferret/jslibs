@@ -255,7 +255,7 @@ class SemProcessEvent : public ProcessEvent2 {
 		if ( !*hasEvent )
 			return true;
 
-		if ( slot(0) != JL_ZInitValue() ) {
+		if ( slot( 0 ) != JL_VALUEZ ) {
 		
 			JS::RootedObject callThisObj(cx);
 			callThisObj.set(&slot(1).toObject());

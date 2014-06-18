@@ -141,18 +141,30 @@
 #endif
 
 
+/*
+#if defined(MSC)
+
 #ifndef IN
-	#define IN
+	#define IN _In_
 #endif
 
 #ifndef OUT
-	#define OUT
+	#define OUT _Out_
+#endif
+
+#ifndef INOUT
+	#define INOUT _Inout_
 #endif
 
 #ifndef OPTIONAL
 	#define OPTIONAL
 #endif
 
+else
+
+#endif
+
+*/
 
 #ifdef DEBUG
 	#define IFDEBUG(expr) expr
@@ -1126,35 +1138,34 @@ memset(void *dst, size_t len, uint8_t val) {
 
 template<class D, class S>
 ALWAYS_INLINE void
-reinterpretBuffer(void* d, void* s, size_t length, bool unsignedRendering = false) {
+reinterpretBuffer(void* d, void* s, size_t length) {
 
-	if ( unsignedRendering ) {
+	D *dst = reinterpret_cast<D*>(d);
+	S *src = reinterpret_cast<S*>(s);
 
-		reinterpretBuffer<MakeUnsigned(D), MakeUnsigned(S)>(d, s, length);
+	DISABLE_SMALLER_TYPE_CHECK;
+	if ( sizeof(D) < sizeof(S) ) {
+
+		S* end = src + length;
+		while ( src != end )
+			*(dst++) = *(src++);
 	} else {
 
-		D *dst = reinterpret_cast<D*>(d);
-		S *src = reinterpret_cast<S*>(s);
-
-		DISABLE_SMALLER_TYPE_CHECK;
-		if ( sizeof(D) < sizeof(S) ) {
-
-			S* end = src + length;
-			while ( src != end )
-				*(dst++) = *(src++);
-		} else {
-
-			S* end = src;
-			dst += length;
-			src += length;
-			while ( src != end )
-				*(--dst) = *(--src);
-		}
-		RESTORE_SMALLER_TYPE_CHECK;
+		S* end = src;
+		dst += length;
+		src += length;
+		while ( src != end )
+			*(--dst) = *(--src);
 	}
+	RESTORE_SMALLER_TYPE_CHECK;
 }
 
+template<class D, class S>
+ALWAYS_INLINE void
+reinterpretBufferUnsigned( void* d, void* s, size_t length ) {
 
+	reinterpretBuffer<MakeUnsigned( D ), MakeUnsigned( S )>( d, s, length );
+}
 
 INLINE unsigned long FASTCALL
 IntSqrt(unsigned long x) {
@@ -1630,47 +1641,50 @@ tstrlen(const T* s) {
 
 template <typename T, typename U>
 int32_t
-tstrcmp( const T *lhs, const U *rhs, bool unsignedCmp = false ) {
+tstrcmp( const T *lhs, const U *rhs ) {
 
-	if ( unsignedCmp ) {
-		
-		return tstrcmp(reinterpret_cast<const MakeUnsigned(T)*>(lhs), reinterpret_cast<const MakeUnsigned(U)*>(rhs));
-	} else {
+	while ( true ) {
 
-		while ( true ) {
-
-			//if ( *lhs != static_cast<T>(*rhs) )
-			if ( *lhs != *rhs )
-				return static_cast<int32_t>(*lhs) - static_cast<int32_t>(*rhs);
-			if ( *lhs == 0 )
-				return 0;
-			++lhs, ++rhs;
-		}
+		//if ( *lhs != static_cast<T>(*rhs) )
+		if ( *lhs != *rhs )
+			return static_cast<int32_t>(*lhs) - static_cast<int32_t>(*rhs);
+		if ( *lhs == 0 )
+			return 0;
+		++lhs, ++rhs;
 	}
+}
+
+template <typename T, typename U>
+int32_t
+tstrcmpUnsigned( const T *lhs, const U *rhs ) {
+
+	return tstrcmp( reinterpret_cast<const MakeUnsigned( T )*>(lhs), reinterpret_cast<const MakeUnsigned( U )*>(rhs) );
 }
 
 
 template <typename T, typename U>
 int32_t
-tstrncmp(const T *lhs, const U *rhs, size_t max, bool unsignedCmp = false ) {
+tstrncmp(const T *lhs, const U *rhs, size_t max ) {
 
-	if ( unsignedCmp ) {
-		
-		return tstrncmp(reinterpret_cast<const MakeUnsigned(T)*>(lhs), reinterpret_cast<const MakeUnsigned(U)*>(rhs), max);
-	} else {
+	const T *limit = lhs + max;
+	while ( lhs < limit ) {
 
-		const T *limit = lhs + max;
-		while ( lhs < limit ) {
-
-			if ( *lhs != static_cast<T>(*rhs) )
-				return static_cast<int32_t>(*lhs) - static_cast<int32_t>(*rhs);
-			if ( *lhs == 0 )
-				return 0;
-			++lhs, ++rhs;
-		}
-		return 0;
+		if ( *lhs != static_cast<T>(*rhs) )
+			return static_cast<int32_t>(*lhs) - static_cast<int32_t>(*rhs);
+		if ( *lhs == 0 )
+			return 0;
+		++lhs, ++rhs;
 	}
+	return 0;
 }
+
+template <typename T, typename U>
+int32_t
+tstrncmpUnsigned( const T *lhs, const U *rhs, size_t max ) {
+
+	return tstrncmp( reinterpret_cast<const MakeUnsigned( T )*>(lhs), reinterpret_cast<const MakeUnsigned( U )*>(rhs), max );
+}
+
 
 
 

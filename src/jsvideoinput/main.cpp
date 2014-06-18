@@ -18,20 +18,23 @@
 #include <videoinput.h>
 
 
-videoInput *vi = NULL;
 
 DECLARE_CLASS( VideoInput )
 
-bool 
-ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+bool
+ModuleInit( JSContext *cx, JS::HandleObject obj ) {
 
-	JL_CHK( InitJslibsModule(cx, id)  );
+	JLDisableThreadNotifications();
 
-	JL_ASSERT( vi == NULL, E_LIB, E_STR("videoinput"), E_INIT ); // "Invalid case: videoInput already initialized'"
+	JL_ASSERT( jl::Host::getHost( cx ).checkCompatId( JL_HOST_VERSIONID ), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
+
+//	JL_ASSERT( vi == NULL, E_LIB, E_STR("videoinput"), E_INIT ); // "Invalid case: videoInput already initialized'"
+
 
 	videoInput::setVerbose(false);
-	vi = new videoInput();
+	videoInput *vi = new videoInput();
 	JL_ASSERT_ALLOC( vi );
+	jl::Host::getHost( cx ).moduleManager().modulePrivateT<videoInput*>( moduleId() ) = vi;
 
 	INIT_CLASS( VideoInput );
 
@@ -41,7 +44,11 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 
 void
-ModuleFree() {
+ModuleFree( bool skipCleanup, void* pv ) {
 
-	delete vi;
+	if ( skipCleanup )
+		return;
+
+	if ( pv != NULL )
+		delete static_cast<videoInput*>(pv);
 }

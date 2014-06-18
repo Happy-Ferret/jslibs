@@ -53,7 +53,7 @@ StoreProperty( JSContext *cx, JS::HandleObject obj, IN JS::HandleId id, IN JS::H
 
 	JS::Rooted<JSPropertyDescriptor> desc(cx);
 	JL_CHK( JS_GetPropertyDescriptorById(cx, obj, id, &desc) );
-	bool found = desc.object() != NULL;
+	// bool found = desc.object() != NULL;
 	unsigned int attrs = desc.attributes();
 	JSPropertyOp getter = desc.getter();
 	JSStrictPropertyOp setter = desc.setter();
@@ -61,7 +61,7 @@ StoreProperty( JSContext *cx, JS::HandleObject obj, IN JS::HandleId id, IN JS::H
 
 	//JL_CHK( JS_GetPropertyAttrsGetterAndSetterById(cx, obj, id, &attrs, &found, &getter, &setter) );
 
-	ASSERT( found );
+	//ASSERT( found );
 	// doc: JSPROP_SHARED: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
 	if ( (attrs & JSPROP_SHARED) == 0 ) // Has already been stored somewhere. The slot will be updated after JSPropertyOp returns.
 		return true;
@@ -82,7 +82,7 @@ ALWAYS_INLINE bool FASTCALL
 DefineClassProperties(JSContext *cx, IN JS::HandleObject obj, IN JSPropertySpec *ps) {
 
 	for ( ; ps->name; ++ps )
-		JL_CHK( JS_DefineProperty(cx, obj, ps->name, JL_UNDEFINED(), ps->flags, ps->getter.propertyOp.op, ps->setter.propertyOp.op) );
+		JL_CHK( JS_DefineProperty(cx, obj, ps->name, JL_UNDEFINED, ps->flags, ps->getter.propertyOp.op, ps->setter.propertyOp.op) );
 	return true;
 	JL_BAD;
 }

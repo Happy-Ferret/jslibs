@@ -16,7 +16,7 @@
 #include <buffer.h>
 //#include <jsvalserializer.h>
 
-#include "../host/host.h"
+#include "../host/host2.h"
 #include "../jslang/handlePub.h"
 
 #include <jsvalserializer.h>
@@ -51,7 +51,7 @@ ALWAYS_INLINE void SerializerFree( SerializedData **ser ) {
 
 ALWAYS_INLINE bool SerializeJsval( JSContext *cx, SerializedData *ser, jsval *val ) {
 
-	jl::Serializer serializer;
+	jl::Serializer serializer(cx);
 	JL_CHK( serializer.Write(cx, *val) );
 	JL_CHK( serializer.GetBufferOwnership(&ser->data, &ser->length) );
 	return true;
@@ -60,7 +60,7 @@ ALWAYS_INLINE bool SerializeJsval( JSContext *cx, SerializedData *ser, jsval *va
 
 ALWAYS_INLINE bool UnserializeJsval( JSContext *cx, SerializedData *ser, jsval *rval ) {
 
-	jl::Unserializer unserializer(ser->data, ser->length);
+	jl::Unserializer unserializer(cx, ser->data, ser->length);
 	ser->data = NULL;
 	JL_CHK( unserializer.Read(cx, *rval) );
 	return true;

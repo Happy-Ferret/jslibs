@@ -40,7 +40,7 @@ JL_NewImageObject( IN JSContext *cx, IN T width, IN T height, IN U channels, IN 
 	ASSERT( width >= 0 && height >= 0 && channels > 0 );
 
 	//uint8_t *data;
-	jl::AutoBuffer buffer;
+	jl::BufBase buffer;
 	JS::RootedValue dataVal(cx);
 	JS::RootedObject imageObj(cx, JL_NewObj(cx));
 
@@ -51,11 +51,13 @@ JL_NewImageObject( IN JSContext *cx, IN T width, IN T height, IN U channels, IN 
 	JL_ASSERT_ALLOC(buffer);
 	uint8_t *data = BlobCreate(cx, buffer, &dataVal);
 	JL_CHK( data );
-	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, data), &dataVal) );
-	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, width), width) );
-	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, height), height) );
-	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, channels), channels) );
-	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, type), dataType) );
+
+	JL_CHK( jl::setProperty( cx, imageObj, JLID( cx, data ), dataVal ) );
+	JL_CHK( jl::setProperty( cx, imageObj, JLID( cx, width ), width ) );
+	JL_CHK( jl::setProperty( cx, imageObj, JLID( cx, height ), height ) );
+	JL_CHK( jl::setProperty( cx, imageObj, JLID( cx, channels ), channels ) );
+	JL_CHK( jl::setProperty( cx, imageObj, JLID( cx, type ), dataType ) );
+
 	return data;
 bad:
 	return NULL;
@@ -76,11 +78,13 @@ JL_NewImageObjectOwner( IN JSContext *cx, IN uint8_t* buffer, IN T width, IN T h
 	vp.setObject(*imageObj);
 	//JL_CHK( JL_NewBufferGetOwnership(cx, buffer, width * height * channels, &dataVal) );
 	JL_CHK( BlobCreate(cx, buffer, width * height * channels, &dataVal) );
-	JL_CHK( JS_SetPropertyById(cx, imageObj, JLID(cx, data), &dataVal) );
-	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, width), width) );
-	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, height), height) );
-	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, channels), channels) );
-	JL_CHK( jl::setProperty(cx, imageObj, JLID(cx, type), dataType) );
+
+	JL_CHK( jl::setProperty( cx, imageObj, JLID( cx, data ), dataVal ) );
+	JL_CHK( jl::setProperty( cx, imageObj, JLID( cx, width ), width ) );
+	JL_CHK( jl::setProperty( cx, imageObj, JLID( cx, height ), height ) );
+	JL_CHK( jl::setProperty( cx, imageObj, JLID( cx, channels ), channels ) );
+	JL_CHK( jl::setProperty( cx, imageObj, JLID( cx, type ), dataType ) );
+
 	return true;
 	JL_BAD;
 }

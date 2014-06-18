@@ -463,6 +463,14 @@ public:
 		return moduleSlot(moduleId).privateData;
 	}
 
+	template <class T>
+	ALWAYS_INLINE T & FASTCALL
+	modulePrivateT( const moduleId_t moduleId ) {
+
+		ASSERT( moduleId );
+		return (T&)moduleSlot( moduleId ).privateData;
+	}
+
 };
 
 

@@ -911,7 +911,7 @@ struct DirectoryUserProcessEvent : public ProcessEvent2 {
 		if ( !*hasEvent )
 			return true;
 
-		if ( slot(0) != JL_ZInitValue() ) {
+		if ( slot( 0 ) != JL_VALUEZ ) {
 
 			JS::RootedValue rval(cx);
 			JS::RootedObject callThisObj(cx);

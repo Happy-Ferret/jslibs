@@ -262,10 +262,57 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 }
 
 
+JL_BEGIN_NAMESPACE
+
 // Handle "constants"
 
+/*
+const HandleValue NullHandleValue = HandleValue::fromMarkedLocation(&JSVAL_NULL);
+const HandleValue UndefinedHandleValue = HandleValue::fromMarkedLocation(&JSVAL_VOID);
+const HandleValue TrueHandleValue = HandleValue::fromMarkedLocation(&JSVAL_TRUE);
+const HandleValue FalseHandleValue = HandleValue::fromMarkedLocation(&JSVAL_FALSE);
+*/
+
+ALWAYS_INLINE JS::HandleValue FASTCALL
+handleValueTrue() {
+
+    static const JS::Value v = JS::TrueValue();
+	return JS::HandleValue::fromMarkedLocation(&v);
+}
+
+ALWAYS_INLINE JS::HandleValue FASTCALL
+handleValueFalse() {
+
+	static const JS::Value v = JS::FalseValue();
+	return JS::HandleValue::fromMarkedLocation(&v);
+}
+
+ALWAYS_INLINE JS::HandleValue FASTCALL
+handleValueUndefined() {
+
+	static const JS::Value v = JS::UndefinedValue();
+	return JS::HandleValue::fromMarkedLocation(&v);
+}
+
+ALWAYS_INLINE JS::HandleObject FASTCALL
+handleObjectNull() {
+
+	return JS::HandleObject::fromMarkedLocation(NULL);
+}
+
+// useful for structure with jsid initialized to 0.
+ALWAYS_INLINE JS::HandleId FASTCALL
+handleIdZero() {
+
+	static const jsid tmp = { 0 };
+	ASSERT( JSID_BITS(tmp) == 0 );
+	ASSERT( JSID_IS_ZERO(INT_TO_JSID(0)) );
+	return JS::HandleId::fromMarkedLocation(&tmp);
+}
+
+
 ALWAYS_INLINE JS::Value FASTCALL
-JL_ZInitValue() {
+handleValueZero() {
 
 	ASSERT(JS::Value().asRawBits() == 0);
 	ASSERT(!JS::Value().isMarkable());
@@ -274,56 +321,16 @@ JL_ZInitValue() {
 	return JS::Value();
 }
 
-ALWAYS_INLINE JS::HandleValue FASTCALL
-JL_TRUE() {
-
-    static JS::Value v = JS::TrueValue();
-	return JS::HandleValue::fromMarkedLocation(&v);
-}
-
-ALWAYS_INLINE JS::HandleValue FASTCALL
-JL_FALSE() {
-
-    static JS::Value v = JS::FalseValue();
-	return JS::HandleValue::fromMarkedLocation(&v);
-}
-
-ALWAYS_INLINE JS::HandleValue FASTCALL
-JL_UNDEFINED() {
-
-    static JS::Value v = JS::UndefinedValue();
-	return JS::HandleValue::fromMarkedLocation(&v);
-}
-
-ALWAYS_INLINE JS::HandleObject FASTCALL
-JL_NULL() {
-
-	return JS::HandleObject::fromMarkedLocation(NULL);
-}
-
-// useful for structure with jsid initialized to 0.
-ALWAYS_INLINE JS::HandleId FASTCALL
-JL_IDZ() {
-
-	jsid tmp;
-	JSID_BITS(tmp) = 0;
-	ASSERT( JSID_IS_ZERO(INT_TO_JSID(0)) );
-	return JS::HandleId::fromMarkedLocation(&tmp);
-	// return JS::HandleId::fromMarkedLocation(&INT_TO_JSID(0));
-}
-
-ALWAYS_INLINE JS::HandleId FASTCALL
-JL_JSID_INT32(int32_t i) {
-
-	jsid id = INT_TO_JSID(i);
-	return JS::HandleId::fromMarkedLocation(&id);
-}
+#define JL_TRUE (jl::handleValueTrue())
+#define JL_FALSE (jl::handleValueFalse())
+#define JL_UNDEFINED (jl::handleValueUndefined())
+#define JL_NULL (jl::handleObjectNull())
+#define JL_IDZ (jl::handleIdZero()) // useful for structure with jsid initialized to 0.
+#define JL_VALUEZ (jl::handleValueZero())
 
 
 ////
 
-
-JL_BEGIN_NAMESPACE
 
 
 class BufString;
@@ -551,7 +558,7 @@ getScriptLocation( JSContext *cx, OUT const char **filename, OUT unsigned *linen
 
 
 INLINE NEVER_INLINE bool FASTCALL
-addScriptLocation( JSContext * RESTRICT cx, IN OUT JS::MutableHandleObject obj ) {
+addScriptLocation( JSContext * RESTRICT cx, IN JS::MutableHandleObject obj ) {
 
 	JS::RootedValue tmp(cx);
 	JS::AutoFilename autoFilename;

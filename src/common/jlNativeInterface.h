@@ -26,7 +26,7 @@ ReserveNativeInterface( JSContext *cx, JS::HandleObject obj, JS::HandleId id ) {
 
 	JSID_IS_STRING(id) && !JSID_IS_ZERO(id);
 
-	return JS_DefinePropertyById(cx, obj, id, JL_UNDEFINED(), JSPROP_READONLY | JSPROP_PERMANENT);
+	return JS_DefinePropertyById(cx, obj, id, JL_UNDEFINED, JSPROP_READONLY | JSPROP_PERMANENT);
 }
 
 
@@ -38,7 +38,7 @@ SetNativeInterface( JSContext *cx, JS::HandleObject obj, JS::HandleId id, const 
 
 	if ( nativeFct != NULL ) {
 
-		JL_CHK(JS_DefinePropertyById(cx, obj, id, JL_TRUE(), JSPROP_READONLY | JSPROP_PERMANENT, NULL, (JSStrictPropertyOp)nativeFct)); // hacking the setter of a read-only property seems safe.
+		JL_CHK(JS_DefinePropertyById(cx, obj, id, JL_TRUE, JSPROP_READONLY | JSPROP_PERMANENT, NULL, (JSStrictPropertyOp)nativeFct)); // hacking the setter of a read-only property seems safe.
 	} else {
 
 		JL_CHK( ReserveNativeInterface(cx, obj, id) );

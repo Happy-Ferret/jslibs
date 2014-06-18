@@ -87,7 +87,7 @@ DEFINE_FUNCTION( close ) {
 
 	jl::StackRemove(&dbpv->blobList, pv->pBlob);
 
-	JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_RESULT_DATABASE, JL_UNDEFINED()) );
+	JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_RESULT_DATABASE, JL_UNDEFINED) );
 
 	jl_free(pv);
 

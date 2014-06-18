@@ -34,7 +34,7 @@ DEFINE_FINALIZE() {
 	if ( alcGetCurrentContext() )
 		alDeleteEffects(1, &pv->effect);
 
-	if ( jl::Host::getHost(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getHost( fop->runtime() ).hostRuntime().skipCleanup() )
 		return;
 
 	JS_freeop(fop, pv);

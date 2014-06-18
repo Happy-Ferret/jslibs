@@ -184,7 +184,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 		JL_CHK( JL_SetReservedSlot( JL_OBJ, ASYMMETRIC_CIPHER_PRNG_SLOT, JL_ARG(3)) );
 	} else {
 
-		JL_CHK( JL_SetReservedSlot(JL_OBJ, ASYMMETRIC_CIPHER_PRNG_SLOT, JL_UNDEFINED()) );
+		JL_CHK( JL_SetReservedSlot(JL_OBJ, ASYMMETRIC_CIPHER_PRNG_SLOT, JL_UNDEFINED) );
 	}
 
 	if ( asymmetricCipher == rsa ) {

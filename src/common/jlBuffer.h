@@ -534,10 +534,10 @@ public:
 
 			if ( wide() ) {
 			
-				return str.wide() ? jl::tstrncmp(dataAs<WideChar*>(), str.dataAs<WideChar*>(), len) == 0 : jl::tstrncmp(dataAs<WideChar*>(), str.dataAs<char*>(), len, true) == 0;
+				return str.wide() ? jl::tstrncmp(dataAs<WideChar*>(), str.dataAs<WideChar*>(), len) == 0 : jl::tstrncmpUnsigned(dataAs<WideChar*>(), str.dataAs<char*>(), len) == 0;
 			} else {
 
-				return str.wide() ? jl::tstrncmp(dataAs<char*>(), str.dataAs<WideChar*>(), len) == 0 : jl::tstrncmp(dataAs<char*>(), str.dataAs<char*>(), len, true) == 0;
+				return str.wide() ? jl::tstrncmp( dataAs<char*>(), str.dataAs<WideChar*>(), len ) == 0 : jl::tstrncmpUnsigned( dataAs<char*>(), str.dataAs<char*>(), len) == 0;
 			}
 		} else {
 
@@ -564,11 +564,11 @@ public:
 
 		if ( nt() ) {
 
-			return dataAs<T*>() == str || ( wide() ? jl::tstrcmp(dataAs<WideChar*>(), str, true) == 0 : jl::tstrcmp(dataAs<char*>(), str, true) == 0);
+			return dataAs<T*>() == str || (wide() ? jl::tstrcmpUnsigned( dataAs<WideChar*>(), str ) == 0 : jl::tstrcmpUnsigned( dataAs<char*>(), str ) == 0);
 		} else {
 
 			size_t len = length();
-			return jl::strlen(str) == len && ( wide() ? jl::tstrncmp(dataAs<WideChar*>(), str, len, true) == 0 : jl::tstrncmp(dataAs<char*>(), str, len, true) == 0);
+			return jl::strlen( str ) == len && (wide() ? jl::tstrncmpUnsigned( dataAs<WideChar*>(), str, len ) == 0 : jl::tstrncmpUnsigned( dataAs<char*>(), str, len ) == 0);
 		}
 	}
 
@@ -617,10 +617,10 @@ public:
 			jl::memcpy(dst, data(), len * sizeof(T));
 		else
 		if ( charSize() == sizeof(char) )
-			reinterpretBuffer<T, char>(dst, data(), len, true);
+			reinterpretBufferUnsigned<T, char>(dst, data(), len);
 		else
 		if ( charSize() == sizeof(WideChar) )
-			reinterpretBuffer<T, WideChar>(dst, data(), len, true);
+			reinterpretBufferUnsigned<T, WideChar>( dst, data(), len);
 		else
 			ASSERT(false);
 		return maxLength;
@@ -677,10 +677,10 @@ public:
 				;// nothing
 			else
 			if ( charSize() == sizeof(char) )
-				reinterpretBuffer<MutableBase, char>(dst.data(), data(), len, true);
+				reinterpretBufferUnsigned<MutableBase, char>( dst.data(), data(), len);
 			else
 			if ( charSize() == sizeof(WideChar) )
-				reinterpretBuffer<MutableBase, WideChar>(dst.data(), data(), len, true);
+				reinterpretBufferUnsigned<MutableBase, WideChar>( dst.data(), data(), len);
 
 			if ( nullTerminated )
 				dst.dataAs<MutableBase*>()[len] = Base(0);

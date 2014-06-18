@@ -157,7 +157,7 @@ struct PropLink {
 				
 				if ( nameIt->tinyid == NameLink::noTinyId ) {
 
-					JL_CHK( JS_DefineProperty(cx, obj, nameIt->name, JL_UNDEFINED(), attrs, it->getter, it->setter) );
+					JL_CHK( JS_DefineProperty(cx, obj, nameIt->name, JL_UNDEFINED, attrs, it->getter, it->setter) );
 				} else {
 
 					ASSERT(false); //JL_CHK( JS_DefinePropertyWithTinyId(cx, obj, nameIt->name, nameIt->tinyid, JSVAL_VOID, it->getter, it->setter, attrs) );

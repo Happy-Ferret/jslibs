@@ -599,7 +599,7 @@ public:
 		JLEventReset(cancel);
 		canceled = false;
 
-		if ( slot(0) != JL_ZInitValue() ) {
+		if ( slot( 0 ) != JL_VALUEZ ) {
 		
 			JS::RootedObject callThisObj(cx);
 			callThisObj.set(&slot(1).toObject());

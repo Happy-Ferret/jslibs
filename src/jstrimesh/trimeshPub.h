@@ -31,22 +31,23 @@ struct Surface {
 };
 
 
-ALWAYS_INLINE JSClass* JL_TrimeshJSClass( JSContext *cx ) {
+ALWAYS_INLINE const JSClass*
+JL_TrimeshJSClass( JSContext *cx ) {
 
-	static JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
+	static const JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
 	if (unlikely( clasp == NULL ))
 		clasp = jl::Host::getHost(cx).getCachedClasp("Trimesh");
 	return clasp;
 }
 
 
-bool JL_JsvalIsTrimesh( JSContext *cx, jsval val ) {
+bool JL_JsvalIsTrimesh( JSContext *cx, JS::HandleValue val ) {
 
-	return JL_ValueIsClass(val, JL_TrimeshJSClass(cx));
+	return jl::isClass(cx, val, JL_TrimeshJSClass(cx));
 }
 
 
-Surface *GetTrimeshSurface( JSContext *, JSObject *obj ) {
+Surface *GetTrimeshSurface( JSContext *, JS::HandleObject obj ) {
 
 	return (Surface*)JL_GetPrivate(obj);
 }

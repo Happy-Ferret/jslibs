@@ -12,7 +12,7 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include "jslibsModule.h"
+#include <jslibsModule.h>
 #include "jlhelper.h" // see InitJslibsModule()
 #include "jlalloc.h"
 

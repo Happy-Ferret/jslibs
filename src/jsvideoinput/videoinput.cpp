@@ -14,10 +14,11 @@
 
 #include "stdafx.h"
 #include <videoinput.h>
-
+#include "../jslang/imagePub.h"
 #include "../jslang/handlePub.h"
+#include <jslibsModule.h>
 
-extern videoInput *vi;
+//extern videoInput *vi;
 
 /**doc
 $CLASS_HEADER
@@ -25,7 +26,10 @@ $SVN_REVISION $Revision: 3533 $
 **/
 BEGIN_CLASS( VideoInput ) // Start the definition of the class. It defines some symbols: _name, _class, _prototype
 
-struct Private {
+struct Private : jl::CppAllocators {
+	Private( videoInput *&vi ) : vi(vi) {}
+
+	videoInput *&vi;
 	int deviceID;
 	bool flipImageY;
 	bool flipImageRedBlue;
@@ -38,11 +42,11 @@ DEFINE_FINALIZE() {
 		return;
 
 	Private *pv;
-	pv = (Private*)JL_GetPrivate(obj);
+	pv = (Private*)js::GetObjectPrivate(obj);
 	if ( pv != NULL ) {
 
-		vi->stopDevice(pv->deviceID);
-		jl_free(pv);
+		pv->vi->stopDevice( pv->deviceID );
+		delete pv;
 	}
 bad:
 	return;
@@ -58,12 +62,12 @@ DEFINE_CONSTRUCTOR() {
 
 	Private *pv = NULL;
 
+	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_ASSERT_ARGC_RANGE(1,5);
-	JL_ASSERT_CONSTRUCTING();
 
-	pv = (Private*)jl_malloc(sizeof(Private));
-	JL_ASSERT_ALLOC(pv);
+	pv = new Private( jl::Host::getHost( cx ).moduleManager().modulePrivateT<videoInput*>( moduleId() ) );
+	JL_ASSERT_ALLOC( pv );
 	pv->deviceID = -1; // invalid device
 
 	int numDevices = videoInput::listDevices(true);
@@ -74,7 +78,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_ASSERT_ARG_VAL_RANGE( pv->deviceID, 0, numDevices-1, 1 );
 	} else {
 	
-		JLData requiredDeviceName;
+		jl::BufString requiredDeviceName;
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &requiredDeviceName) );
 		for ( int i = 0; i < numDevices; i++ ) {
 
@@ -91,7 +95,7 @@ DEFINE_CONSTRUCTOR() {
 
 		int fps;
 		JL_CHK( jl::getValue(cx, JL_ARG(4), &fps) );
-		vi->setIdealFramerate(pv->deviceID, fps); // vi->VDList[deviceId]->requestedFrameTime;
+		pv->vi->setIdealFramerate( pv->deviceID, fps ); // vi->VDList[deviceId]->requestedFrameTime;
 	}
 	
 	if ( JL_ARG_ISDEF(2) && JL_ARG_ISDEF(3) ) {
@@ -99,10 +103,10 @@ DEFINE_CONSTRUCTOR() {
 		int width, height;
 		JL_CHK( jl::getValue(cx, JL_ARG(2), &width) );
 		JL_CHK( jl::getValue(cx, JL_ARG(3), &height) );
-		vi->setupDevice(pv->deviceID, width, height);
+		pv->vi->setupDevice( pv->deviceID, width, height );
 	} else {
 	
-		vi->setupDevice(pv->deviceID); // use default size
+		pv->vi->setupDevice( pv->deviceID ); // use default size
 	}
 
 	if ( JL_ARG_ISDEF(5) )
@@ -115,6 +119,7 @@ DEFINE_CONSTRUCTOR() {
 	else
 		pv->flipImageRedBlue = true;
 
+
 	//	vi->setVideoSettingCameraPct(deviceId, vi->propBrightness, 100);
 	// vi->setFormat(deviceId, VI_NTSC_M);
 
@@ -123,10 +128,12 @@ DEFINE_CONSTRUCTOR() {
 
 bad:
 	if ( pv ) {
+		
+		ASSERT( pv->vi );
 
 		if ( pv->deviceID != -1 )
-			vi->stopDevice(pv->deviceID);
-		jl_free(pv);
+			pv->vi->stopDevice( pv->deviceID );
+		delete pv;
 	}
 	return false;
 }
@@ -140,13 +147,13 @@ DEFINE_FUNCTION( close ) {
 
 	JL_DEFINE_ARGS;
 
-		JL_ASSERT_ARGC(0);
+	JL_ASSERT_ARGC(0);
 
 	Private *pv;
-	pv = (Private*)JL_GetPrivate(obj);
-	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	
-	vi->stopDevice(pv->deviceID);
+	pv = (Private*)JL_GetPrivate(JL_OBJ);
+	JL_ASSERT_THIS_OBJECT_STATE( pv && pv->vi );
+		
+	pv->vi->stopDevice( pv->deviceID );
 	
 	JL_RVAL.setUndefined();
 	return true;
@@ -162,93 +169,80 @@ $TOC_MEMBER $INAME
   Passively waits for a new image through the processEvents function.
 **/
 
-struct VIEvent {
-	ProcessEvent pe;
+struct VIEvent : public ProcessEvent2 {
+
+	Private *pv;
 	HANDLE imageEvent;
 	HANDLE cancelEvent;
-	JSObject *obj;
-};
 
-S_ASSERT( offsetof(VIEvent, pe) == 0 );
+	bool prepareWait( JSContext *cx, JS::HandleObject obj ) {
 
-static bool VIPrepareWait( volatile ProcessEvent *pe, JSContext *, JSObject *) {
-	
-	VIEvent *upe = (VIEvent*)pe;
-
-	ResetEvent(upe->imageEvent); // (TBD) handle errors ?
-
-	return true;
-}
-
-static void VIStartWait( volatile ProcessEvent *pe ) {
-
-	VIEvent *upe = (VIEvent*)pe;
-
-	HANDLE events[] = { upe->imageEvent, upe->cancelEvent };
-	DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
-	ASSERT( status != WAIT_FAILED );
-}
-
-static bool VICancelWait( volatile ProcessEvent *pe ) {
-
-	VIEvent *upe = (VIEvent*)pe;
-
-	SetEvent(upe->cancelEvent);
-	return true;
-}
-
-static bool VIEndWait( volatile ProcessEvent *pe, bool *hasEvent, JSContext *cx, JSObject * ) {
-
-	VIEvent *upe = (VIEvent*)pe;
-
-	*hasEvent = (WaitForSingleObject(upe->imageEvent, 0) == WAIT_OBJECT_0);
-
-	if ( *hasEvent ) {
-	
-		jsval fct, rval;
-		JL_CHK( JS_GetProperty(cx, upe->obj, "onImage", &fct) );
-		if ( JL_ValueIsCallable(cx, fct) ) {
-		
-			JL_CHK( JL_CallFunctionVA(cx, upe->obj, fct, &rval, OBJECT_TO_JSVAL(upe->obj)) );
-		}
+		ResetEvent( imageEvent ); // (TBD) handle errors ?
+		return true;
 	}
 
-	return true;
-	JL_BAD;
-}
+	void startWait() {
 
-static void VIWaitFinalize( void* data ) {
-	
-	VIEvent *upe = (VIEvent*)data;
+		HANDLE events[] = { imageEvent, cancelEvent };
+		DWORD status = WaitForMultipleObjects( COUNTOF( events ), events, FALSE, INFINITE );
+		ASSERT( status != WAIT_FAILED );
+	}
 
-	CloseHandle(upe->cancelEvent);
-}
+	bool cancelWait() {
+
+		SetEvent( cancelEvent );
+		return true;
+	}
+
+	bool endWait( bool *hasEvent, JSContext *cx, JS::HandleObject ) {
+
+		*hasEvent = (WaitForSingleObject( imageEvent, 0 ) == WAIT_OBJECT_0);
+
+		if ( *hasEvent ) {
+
+			imageEvent = pv->vi->ImageEvent( pv->deviceID );
+			cancelEvent = CreateEvent( NULL, FALSE, FALSE, NULL ); // auto-reset
+
+			JS::RootedValue rval( cx );
+			JS::RootedValue fct( cx );
+			JS::RootedObject thisObj( cx, &hslot( 0 ).toObject() );
+
+			JL_CHK( jl::getProperty( cx, thisObj, "onFocus", &fct ) );
+			if ( jl::isCallable( cx, fct ) ) {
+
+				JL_CHK( jl::call( cx, thisObj, fct, &rval ) );
+			}
+		}
+
+		return true;
+		JL_BAD;
+	}
+
+	~VIEvent() {
+		
+		CloseHandle( cancelEvent );
+	}
+};
 
 
 DEFINE_FUNCTION( events ) {
 	
 	JL_DEFINE_ARGS;
 
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(JL_OBJ);
-	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE( pv && pv->vi );
 
-	VIEvent *upe;
-	JL_CHK( HandleCreate(cx, JLHID(pev), &upe, VIWaitFinalize, JL_RVAL) );
-	upe->pe.prepareWait = VIPrepareWait;
-	upe->pe.startWait = VIStartWait;
-	upe->pe.cancelWait = VICancelWait;
-	upe->pe.endWait = VIEndWait;
+	VIEvent *upe = new VIEvent();
+	JL_CHK( HandleCreate( cx, upe, JL_RVAL ) );
+	upe->pv = pv;
 
-	upe->imageEvent = vi->ImageEvent(pv->deviceID);
-
-	upe->obj = JL_OBJ;
-	JL_CHK( SetHandleSlot(cx, *JL_RVAL, 0, OBJECT_TO_JSVAL(upe->obj)) ); // GC protection
-
-	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset
+	upe->imageEvent = pv->vi->ImageEvent( pv->deviceID );
+	upe->cancelEvent = CreateEvent( NULL, FALSE, FALSE, NULL ); // auto-reset
+	upe->hslot( 0 ).set( JL_OBJVAL );
 
 	return true;
 	JL_BAD;
@@ -268,20 +262,20 @@ DEFINE_FUNCTION( next ) {
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(JL_OBJ);
-	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE( pv && pv->vi );
 
-	int width = vi->getWidth(pv->deviceID);
-	int height = vi->getHeight(pv->deviceID);
-	int dataSize = vi->getSize(pv->deviceID);
+	int width = pv->vi->getWidth( pv->deviceID );
+	int height = pv->vi->getHeight( pv->deviceID );
+	int dataSize = pv->vi->getSize( pv->deviceID );
 
 	if ( dataSize == 0 )
 		return JS_ThrowStopIteration(cx);
 
 	uint8_t *data;
-	data = JL_NewImageObject(cx, width, height, dataSize / (width * height), TYPE_UINT8, *JL_RVAL);
+	data = JL_NewImageObject( cx, width, height, dataSize / (width * height), TYPE_UINT8, JL_RVAL );
 	JL_CHK( data );
 
-	bool status = vi->getPixels(pv->deviceID, data, pv->flipImageRedBlue, pv->flipImageY); // blocking function
+	bool status = pv->vi->getPixels( pv->deviceID, data, pv->flipImageRedBlue, pv->flipImageY ); // blocking function
 	if ( !status )
 		return JS_ThrowStopIteration(cx);
 
@@ -296,13 +290,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( hasNewFrame ) {
 
-	JL_IGNORE(id);
-
+	JL_DEFINE_PROP_ARGS;
+	
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(JL_OBJ);
-	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE( pv && pv->vi );
 
-	JL_CHK(jl::setValue(cx, vp, vi->isFrameNew(pv->deviceID)) );
+	JL_CHK( jl::setValue( cx, vp, pv->vi->isFrameNew( pv->deviceID ) ) );
 
 	return true;
 	JL_BAD;
@@ -314,13 +308,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( width ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(JL_OBJ);
-	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE( pv && pv->vi );
 
-	JL_CHK( jl::setValue(cx, vp, vi->getWidth(pv->deviceID)) );
+	JL_CHK( jl::setValue( cx, vp, pv->vi->getWidth( pv->deviceID ) ) );
 
 	return true;
 	JL_BAD;
@@ -332,13 +326,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( height ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(JL_OBJ);
-	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE( pv && pv->vi );
 
-	JL_CHK( jl::setValue(cx, vp, vi->getHeight(pv->deviceID)) );
+	JL_CHK( jl::setValue( cx, vp, pv->vi->getHeight( pv->deviceID ) ) );
 
 	return true;
 	JL_BAD;
@@ -350,15 +344,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( channels ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(JL_OBJ);
-	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE( pv && pv->vi );
 
-	int width = vi->getWidth(pv->deviceID);
-	int height = vi->getHeight(pv->deviceID);
-	int dataSize = vi->getSize(pv->deviceID);
+	int width = pv->vi->getWidth( pv->deviceID );
+	int height = pv->vi->getHeight( pv->deviceID );
+	int dataSize = pv->vi->getSize( pv->deviceID );
 
 	JL_CHK( jl::setValue(cx, vp, dataSize / (width * height)) ); 
 
@@ -372,11 +366,11 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( name ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 
 	Private *pv;
 	pv = (Private*)JL_GetPrivate(JL_OBJ);
-	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	JL_ASSERT_THIS_OBJECT_STATE( pv && pv->vi );
 
 	JL_CHK( jl::setValue(cx, vp, videoInput::getDeviceName(pv->deviceID)) );
 
@@ -391,7 +385,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( hasDevice ) {
 
-	JL_IGNORE(id, obj);
+	JL_DEFINE_PROP_ARGS;
 
 	int numDevices = videoInput::listDevices(true);
 	JL_CHK(jl::setValue(cx, vp, numDevices > 0) ); 
@@ -407,19 +401,14 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( list ) {
 
-	JL_IGNORE(id, obj);
+	JL_DEFINE_PROP_ARGS;
 
 	int numDevices = videoInput::listDevices(true);
-	JSObject *list = JS_NewArrayObject(cx, numDevices);
+	JS::RootedObject list( cx, JS_NewArrayObject( cx, numDevices ) );
+	for ( int i = 0; i < numDevices; i++ ) {
 
-	jsval value;
-	int i;
-	for ( i = 0; i < numDevices; i++ ) {
-
-		JL_CHK( jl::setValue(cx, value, videoInput::getDeviceName(i)) );
-		JL_CHK( JL_SetElement(cx, list, i, value ) );
+		jl::setElement( cx, list, i, videoInput::getDeviceName( i ) );
 	}
-
 	vp.setObject(*list);
 	return true;
 bad:

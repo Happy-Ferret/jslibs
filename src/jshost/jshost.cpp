@@ -304,7 +304,7 @@ struct EndSignalProcessEvent : public ProcessEvent2 {
 		if ( !*hasEvent )
 			return true;
 
-		if ( slot(0) != JL_ZInitValue() ) {
+		if ( slot( 0 ) != JL_VALUEZ ) {
 		
 			JS::RootedObject callThisObj(cx);
 			callThisObj.set(&slot(1).toObject());
@@ -318,7 +318,7 @@ struct EndSignalProcessEvent : public ProcessEvent2 {
 
 
 bool
-EndSignalEvents(JSContext *cx, unsigned argc, jsval *vp) {
+EndSignalEvents( JSContext *cx, unsigned argc, jsval *vp ) {
 
 	JL_DEFINE_ARGS;
 
@@ -485,7 +485,7 @@ int main(int argc, char* argv[]) {
 
 		JL_CHKM( initInterrupt(), E_HOST, E_INTERNAL );
 		// https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
-		JL_CHK( JS_DefineProperty(cx, host.hostObject(), "endSignal", JL_UNDEFINED(), JSPROP_SHARED, EndSignalGetter, EndSignalSetter) );
+		JL_CHK( JS_DefineProperty(cx, host.hostObject(), "endSignal", JL_UNDEFINED, JSPROP_SHARED, EndSignalGetter, EndSignalSetter) );
 		JL_CHK( JS_DefineFunction(cx, host.hostObject(), "endSignalEvents", EndSignalEvents, 1, 0) );
 
 

@@ -407,7 +407,7 @@ struct AudioEvent : public ProcessEvent2 {
 		*hasEvent = !!_pv->bufferList;
 		LeaveCriticalSection(&_pv->cs);
 
-		if ( *hasEvent && slot(1) != JL_ZInitValue() ) {
+		if ( *hasEvent && slot( 1 ) != JL_VALUEZ ) {
 		
 			JS::Value rval; // rval is unused then there is no need to root it
 			JL_CHK( jl::call(cx, hslot(0), hslot(1), JS::MutableHandleValue::fromMarkedLocation(&rval)) );

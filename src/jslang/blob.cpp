@@ -21,7 +21,7 @@ ALWAYS_INLINE bool
 invalidateBlob(JSContext *cx, JS::HandleObject obj) {
 	
 	JL_SetPrivate(obj, NULL);
-	return jl::setSlot(cx, obj, JL_BLOB_LENGTH, JL_UNDEFINED());
+	return jl::setSlot(cx, obj, JL_BLOB_LENGTH, JL_UNDEFINED);
 }
 
 

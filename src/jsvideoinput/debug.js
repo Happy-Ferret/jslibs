@@ -1,11 +1,18 @@
 var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
+loadModule('jsvideoinput');
+
+host.stdout( VideoInput.list.join('\n') );
+
+var vi = new VideoInput(VideoInput.list[0]);
+
+throw 0;
+
 loadModule('jsstd');
 loadModule('jsio');
 loadModule('jsimage');
 
-loadModule('jsvideoinput');
 exec('..\\common\\tools.js');
 
 var vi = new VideoInput('QuickCam'); // try to get the smallest size and the lowest fps
