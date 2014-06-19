@@ -655,7 +655,7 @@ int basic_test_main(int argc, char* argv[]) {
 	JS_GC(rt);
 */
 
-	JS::CompileOptions compileOptions(cx, JSVERSION_LATEST);
+	JS::CompileOptions compileOptions(cx);
 	compileOptions
 		.setFileAndLine(__FILE__, __LINE__)
 		.setNoScriptRval(true)
@@ -687,7 +687,7 @@ int main_test2(int argc, char* argv[]) {
 	JSContext *cx = JS_NewContext(rt, 8192);
 	JS_BeginRequest(cx);
 	{
-	JS::CompileOptions compileOptions(cx, JSVERSION_LATEST);
+	JS::CompileOptions compileOptions(cx);
 
 	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &global_class, nullptr, JS::FireOnNewGlobalHook));
 	JSAutoCompartment ac(cx, globalObject);

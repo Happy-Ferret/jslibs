@@ -239,7 +239,7 @@ int main(int argc, char* argv[]) {
 
 	fread(srcCode, 1, fileSize, srcFile);
 
-	JS::CompileOptions options(cx, JSVERSION_LATEST);
+	JS::CompileOptions options(cx);
 	options
 		//		.setUTF8(true)
 		.setFileAndLine("bootstrap", 1)

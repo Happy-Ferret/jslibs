@@ -111,7 +111,7 @@ volatile bool NedAllocators::_skipCleanup = false;
 
 using namespace jl;
 
-int CALLBACK wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int) {
+int CALLBACK WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd ) {
 
 	JL_enableLowFragmentationHeap();
 

@@ -1,9 +1,30 @@
 var loadModule = host.loadModule;
 
-//host.stdout('TEST OK\n');
+throw 0;
 
-loadModule('jsio');
-var s = new Semaphore(host.name+'qwfgvqwjfgv');
+
+loadModule('jswinshell');
+var s = new Systray();
+s.icon = new Icon( 0 );
+
+s.onmouseup = function(button) {
+
+	this.popupMenu(['Quit']);
+}
+
+s.oncommand = function(name) {
+
+	if ( name == 'Quit' )
+		throw 0;
+}
+
+
+var ev = s.events();
+for (;;) {
+
+	processEvents(ev);
+}
+
 
 
 throw 0;

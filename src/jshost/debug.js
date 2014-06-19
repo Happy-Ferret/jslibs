@@ -11,10 +11,6 @@ var loadModule = host.loadModule;
 
 host.stdout('Hello World !\n');
 
-host.stdout(`te
-st`);
-
-
 //var data = jslangTest();
 
 loadModule('jsstd');
@@ -36,7 +32,6 @@ host.stdout( '*** ', data.toString(), '\n' );
 host.stdout( '*** ', data.toString(), '\n' );
 host.stdout( '*** ', data.string, '\n' );
 host.stdout( '*** ', data.arrayBuffer, '\n' );
-
 
 throw 0;
 

@@ -39,22 +39,23 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const char *fileName, jl::Enc
 	jschar *scriptText = NULL;
 	size_t scriptTextLength;
 
-	JS::RootedScript script(cx);
-	JS::CompileOptions compileOptions(cx, JSVERSION_LATEST);
+	JS::RootedScript script( cx );
+	JS::CompileOptions compileOptions( cx );
 
 	//JS::CompartmentOptionsRef(cx).cloneSingletonsOverride().set(true);
 
 	void *data = NULL;
-
 	char compiledFileName[PATH_MAX];
-	strcpy( compiledFileName, fileName );
-	strcat( compiledFileName, "xdr" );
+	strcpy_s<PATH_MAX>( compiledFileName, fileName );
+	strcat_s<PATH_MAX>( compiledFileName, "xdr" );
 
 	struct stat srcFileStat, compFileStat;
-	bool hasSrcFile = stat(fileName, &srcFileStat) != -1; // errno == ENOENT
-	bool hasCompFile = useCompFile && stat(compiledFileName, &compFileStat) != -1; // if not using compiled file, this is useless to compile it
+	//OutputDebugString( fileName );
+	bool hasSrcFile = stat( fileName, &srcFileStat ) != -1; // errno == ENOENT
+	bool hasCompFile = useCompFile && stat( compiledFileName, &compFileStat ) != -1; // if not using compiled file, this is useless to compile it
 	bool compFileUpToDate = ( hasCompFile && !hasSrcFile ) || ( hasCompFile && hasSrcFile && (compFileStat.st_mtime > srcFileStat.st_mtime) ); // true if comp file is up to date or alone
-	JL_CHKM( hasSrcFile || hasCompFile, E_SCRIPT, E_NAME(fileName), E_OR, E_STR(compiledFileName), E_NOTFOUND );
+
+	JL_CHKM( hasSrcFile || hasCompFile, E_SCRIPT, E_NAME( fileName ), E_OR, E_NAME( compiledFileName ), E_NOTFOUND );
 
 	if ( useCompFile && compFileUpToDate ) {
 
@@ -151,7 +152,8 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const char *fileName, jl::Enc
 
 
 	int scriptFile;
-	scriptFile = open(fileName, O_RDONLY | O_BINARY | O_SEQUENTIAL);
+	scriptFile = open( fileName, O_RDONLY | O_BINARY | O_SEQUENTIAL );
+
 	JL_CHKM( scriptFile >= 0, E_FILE, E_NAME(fileName), E_ACCESS ); // "Unable to open file \"%s\" for reading.", fileName
 
 	scriptFileSize = lseek(scriptFile, 0, SEEK_END);
@@ -300,7 +302,7 @@ executeScriptText( JSContext *cx, IN JS::HandleObject obj, const char *scriptTex
 	//principals->destroy = HostPrincipalsDestroy;
 
 	JS::RootedScript script(cx);
-	JS::CompileOptions compileOptions(cx, JSVERSION_LATEST);
+	JS::CompileOptions compileOptions(cx);
 	compileOptions.setFileAndLine("inline", 1);
 	compileOptions.setCompileAndGo(true);
 	//compileOptions.setSourcePolicy(JS::CompileOptions::NO_SOURCE);

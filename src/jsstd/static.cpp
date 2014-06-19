@@ -1133,7 +1133,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 
 	//JS_SetNativeStackQuota(JL_GetRuntime(cx), 8192 * sizeof(size_t));
 
-	uintptr_t limit = js::GetNativeStackLimit(cx);
+	//uintptr_t limit = js::GetNativeStackLimit(cx);
 
 	if ( !pv.queryFunctionValue.get().isUndefined() ) {
 
