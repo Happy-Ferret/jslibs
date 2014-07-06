@@ -13,11 +13,10 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include <jslibsModule.cpp>
+
+#include <jslibsModule.h>
 
 #include "error.h"
-
-#include "sdl.h"
 
 DECLARE_STATIC()
 DECLARE_CLASS( SdlError )
@@ -483,13 +482,14 @@ void EndVideo() {
 #endif // JL_NOTHREAD
 
 
-
 bool
-ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
-	JL_CHKM( SDL_WasInit(0) == 0, E_MODULE, E_NAME("jssdl"), E_INIT );
+	JLDisableThreadNotifications();
 
-	JL_CHK( InitJslibsModule(cx, id) );
+	JL_ASSERT(jl::Host::getHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST);
+
+	JL_CHKM(SDL_WasInit(0) == 0, E_MODULE, E_NAME("jssdl"), E_INIT);
 
 	int status = SDL_Init(SDL_INIT_NOPARACHUTE);
 
@@ -520,8 +520,7 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	JL_BAD;
 }
 
-void
-ModuleFree() {
+void ModuleFree(bool skipCleanup, void* pv) {
 
 	EndVideo();
 

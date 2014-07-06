@@ -37,7 +37,8 @@ ALWAYS_INLINE float RAD_TO_DEG( const float rad ) {
 jl::Pool matrixPool; // (TBD) manage thread safety / use modulePrivate
 
 
-int GetMatrix(JSContext *cx, JS::HandleObject obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
+bool
+GetMatrix(JSContext *cx, JS::HandleObject obj, float **m) { // Doc: __declspec(noinline) tells the compiler to never inline a particular function.
 
 	JL_IGNORE( cx );
 
@@ -57,28 +58,33 @@ BEGIN_CLASS( Transformation )
 
 DEFINE_FINALIZE() {
 
-	if ( jl::Host::getHost(fop->runtime())->canSkipCleanup ) // do not cleanup in unsafe mode.
+	if (jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup())
 		return;
+	
 
-	if ( obj == JL_GetCachedProto(jl::Host::getHost(fop->runtime()), className) ) {
+	//if ( obj == JL_GetCachedProto(jl::Host::getHost(fop->runtime()), className) ) {
+	if (obj == jl::Host::getHost(fop->runtime()).getCachedProto(JL_THIS_CLASS_NAME)) {
 
 		while ( !PoolIsEmpty(&matrixPool) )
 			Matrix44Free((Matrix44*)jl::PoolPop(&matrixPool));
 		jl::PoolFinalize(&matrixPool);
 
-		ASSERT( jl::Host::getHost(fop->runtime())->isEnding ); // (TBD) to be tested !
-		JL_RemoveCachedClassProto(jl::Host::getHost(fop->runtime()), JL_THIS_CLASS_NAME);
+		ASSERT(jl::Host::getHost(fop->runtime()).hostRuntime().isEnding()); // (TBD) to be tested !
+
+		//JL_RemoveCachedClassProto(jl::Host::getHost(fop->runtime()), JL_THIS_CLASS_NAME);
+		jl::Host::getHost(fop->runtime()).removeCachedClassProto(JL_THIS_CLASS_NAME);
 
 		return;
 	}
 
 	//	printf("Fin:%d\n", matrixPoolLength);
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)js::GetObjectPrivate(obj);
 	if ( pv == NULL )
 		return;
 
 	//beware: prototype may be finalized before the object
-	if ( JL_GetCachedProto(jl::Host::getHost(fop->runtime()), className) != NULL ) { // add to the pool if the pool is still alive !
+	//if (JL_GetCachedProto(jl::Host::getHost(fop->runtime()), JL_THIS_CLASS_NAME) != NULL) { // add to the pool if the pool is still alive !
+	if (jl::Host::getHost(fop->runtime()).hasCachedClassProto(JL_THIS_CLASS_NAME)) { // add to the pool if the pool is still alive !
 
 		if ( /*JL_IsHostEnding(cx) ||*/ !jl::PoolPush(&matrixPool, pv->mat) ) // if the runtime is shutting down, there is no more need to fill the pool.
 			Matrix44Free(pv->mat);
@@ -148,7 +154,7 @@ DEFINE_CONSTRUCTOR() {
 	}
 	// else uninitialized matrix
 
-	JL_CHK( SetMatrix44GetInterface(cx, obj, GetMatrix) );
+	JL_CHK( jl::setMatrix44GetInterface(cx, JL_OBJ, GetMatrix) );
 
 	JL_SetPrivate(JL_OBJ, pv);
 	return true;
@@ -176,9 +182,9 @@ DEFINE_FUNCTION( load ) {
 
 	JL_DEFINE_ARGS;
 
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_ASSERT_ARGC_MAX(16);
 
@@ -211,7 +217,7 @@ DEFINE_FUNCTION( load ) {
 		JL_ERR( E_ARGC, E_EQUALS, E_NUM(16) );
 	}
 	
-	*JL_RVAL = OBJECT_TO_JSVAL(obj);
+	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
 }
@@ -224,18 +230,15 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( clear ) {
 	
-	JL_IGNORE(argc);
-
 	JL_DEFINE_ARGS;
 
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	Matrix44Identity(pv->mat);
 	pv->isIdentity = true;
-	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-
+	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
 }
@@ -248,17 +251,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( clearRotation ) {
 
-	JL_IGNORE(argc);
-
 	JL_DEFINE_ARGS;
+	JL_ASSERT_THIS_INSTANCE();
 
-		JL_ASSERT_THIS_INSTANCE();
-
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	Matrix44ClearRotation(pv->mat);
-	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-
+	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
 }
@@ -272,14 +271,12 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( clearTranslation ) {
 
 	JL_DEFINE_ARGS;
+	JL_ASSERT_THIS_INSTANCE();
 
-		JL_ASSERT_THIS_INSTANCE();
-
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	Matrix44ClearTranslation(pv->mat);
-	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-
+	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
 }
@@ -297,11 +294,10 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( loadRotation ) {
 
 	JL_DEFINE_ARGS;
-
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	Matrix44 tmp, *m = &tmp;
@@ -321,8 +317,7 @@ DEFINE_FUNCTION( loadRotation ) {
 
 	pv->isIdentity = false; // (TBD) detect identity
 
-	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-
+	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
 }
@@ -340,10 +335,10 @@ DEFINE_FUNCTION( loadTranslation ) {
 
 	JL_DEFINE_ARGS;
 
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	Matrix44 tmp, *m = &tmp;
@@ -355,8 +350,7 @@ DEFINE_FUNCTION( loadTranslation ) {
 
 	pv->isIdentity = false; // (TBD) detect identity
 
-	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-
+	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
 }
@@ -375,10 +369,10 @@ DEFINE_FUNCTION( translate ) {
 
 	JL_DEFINE_ARGS;
 
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(3);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float x, y, z;
@@ -398,8 +392,7 @@ DEFINE_FUNCTION( translate ) {
 		Matrix44Mult(pv->mat, pv->mat, &t);
 	}
 
-	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-
+	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
 }
@@ -418,10 +411,10 @@ DEFINE_FUNCTION( scale ) {
 
 	JL_DEFINE_ARGS;
 
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float x, y, z;
@@ -449,8 +442,7 @@ DEFINE_FUNCTION( scale ) {
 		Matrix44Mult(pv->mat, pv->mat, &t);
 	}
 
-	*JL_RVAL = OBJECT_TO_JSVAL(obj);
-
+	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
 }
@@ -471,10 +463,10 @@ DEFINE_FUNCTION( rotationFromQuaternion ) {
 
 	JL_DEFINE_ARGS;
 
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(4);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float w, x, y, z;
@@ -508,7 +500,7 @@ DEFINE_FUNCTION( rotationFromQuaternion ) {
 
 	pv->isIdentity = false;
 
-	*JL_RVAL = OBJECT_TO_JSVAL(obj);
+	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
 }
@@ -564,9 +556,9 @@ DEFINE_FUNCTION( rotate ) {
 		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(4);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	*JL_RVAL = OBJECT_TO_JSVAL(obj);
+	JL_RVAL.setObject(*JL_OBJ);
 
 	float angle;
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &angle) );
@@ -611,9 +603,9 @@ DEFINE_FUNCTION( rotateX ) {
 		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	*JL_RVAL = OBJECT_TO_JSVAL(obj);
+	JL_RVAL.setObject(*JL_OBJ);
 
 	float angle;
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &angle) );
@@ -651,9 +643,9 @@ DEFINE_FUNCTION( rotateY ) {
 		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	*JL_RVAL = OBJECT_TO_JSVAL(obj);
+	JL_RVAL.setObject(*JL_OBJ);
 
 	float angle;
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &angle) );
@@ -691,9 +683,9 @@ DEFINE_FUNCTION( rotateZ ) {
 		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	*JL_RVAL = OBJECT_TO_JSVAL(obj);
+	JL_RVAL.setObject(*JL_OBJ);
 
 	float angle;
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &angle) );
@@ -744,10 +736,10 @@ DEFINE_FUNCTION( lookAt ) {
 	
 	JL_DEFINE_ARGS;
 
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(6, 9);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float eyex, eyey, eyez, centerx, centery, centerz, upx, upy, upz;
@@ -787,7 +779,7 @@ DEFINE_FUNCTION( lookAt ) {
 
 	pv->isIdentity = false;
 
-	*JL_RVAL = OBJECT_TO_JSVAL(obj);
+	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
 }
@@ -805,7 +797,7 @@ DEFINE_FUNCTION( rotateToVector ) {
 		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(3);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	float x, y, z;
@@ -832,7 +824,7 @@ DEFINE_FUNCTION( rotateToVector ) {
 		Matrix44Mult(pv->mat, pv->mat, &r);
 	}
 
-	*JL_RVAL = OBJECT_TO_JSVAL(obj);
+	JL_RVAL.setObject(*JL_OBJ);
 
 	return true;
 	JL_BAD;
@@ -850,13 +842,13 @@ DEFINE_FUNCTION( invert ) {
 		JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	if ( !pv->isIdentity )
 		Matrix44Invert(pv->mat);
 
-	*JL_RVAL = OBJECT_TO_JSVAL(obj);
+	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
 }
@@ -873,10 +865,10 @@ DEFINE_FUNCTION( product ) {
 	
 	JL_DEFINE_ARGS;
 
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	Matrix44 tmp, *m = &tmp;
@@ -898,7 +890,7 @@ DEFINE_FUNCTION( product ) {
 
 	pv->isIdentity = false;
 
-	*JL_RVAL = OBJECT_TO_JSVAL(obj);
+	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
 }
@@ -915,60 +907,64 @@ DEFINE_FUNCTION( transformVector ) {
 	
 	JL_DEFINE_ARGS;
 
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_ARRAY(1);
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JS::RootedObject vectorObj(cx, &JL_ARG(1).toObject());
+	{
+		JS::RootedObject vectorObj(cx, &JL_ARG(1).toObject());
 
-	uint32_t length;
-//	J_JSVAL_TO_ARRAY_LENGTH( JL_ARG(1), length );
-	JL_CHK( JS_GetArrayLength(cx, vectorObj, &length) );
+		uint32_t length;
+		//	J_JSVAL_TO_ARRAY_LENGTH( JL_ARG(1), length );
+		JL_CHK(JS_GetArrayLength(cx, vectorObj, &length));
 
-	JS::RootedValue tmpValue(cx);
-	if ( length >= 3 ) {
+		JS::RootedValue tmpValue(cx);
+		if (length >= 3) {
 
-		Vector3 src, dst;
-		JL_CHK( jl::getVector(cx, JL_ARG(1), src.raw, 3, &length ) );
+			Vector3 src, dst;
+			JL_CHK(jl::getVector(cx, JL_ARG(1), src.raw, 3, &length));
 
-		Matrix44MultVector3(pv->mat, &dst, &src);
+			Matrix44MultVector3(pv->mat, &dst, &src);
 
-		JL_CHK( JL_NativeToJsval(cx, dst.x, tmpValue) );
-		JL_CHK( JL_SetElement(cx, vectorObj, 0, tmpValue) );
+			JL_CHK(jl::setValue(cx, &tmpValue, dst.x));
+			JL_CHK(JL_SetElement(cx, vectorObj, 0, tmpValue));
 
-		JL_CHK( JL_NativeToJsval(cx, dst.y, tmpValue) );
-		JL_CHK( JL_SetElement(cx, vectorObj, 1, tmpValue) );
+			JL_CHK(jl::setValue(cx, &tmpValue, dst.y));
+			JL_CHK(JL_SetElement(cx, vectorObj, 1, tmpValue));
 
-		JL_CHK( JL_NativeToJsval(cx, dst.z, tmpValue) );
-		JL_CHK( JL_SetElement(cx, vectorObj, 2, tmpValue) );
-	} else
-	if ( length == 4 ) {
+			JL_CHK(jl::setValue(cx, &tmpValue, dst.z));
+			JL_CHK(JL_SetElement(cx, vectorObj, 2, tmpValue));
+		}
+		else
+			if (length == 4) {
 
-		Vector4 src, dst;
-		JL_CHK( jl::getVector(cx, JL_ARG(1), src.raw, 4, &length ) );
+			Vector4 src, dst;
+			JL_CHK(jl::getVector(cx, JL_ARG(1), src.raw, 4, &length));
 
-		Matrix44MultVector4(pv->mat, &dst, &src);
+			Matrix44MultVector4(pv->mat, &dst, &src);
 
-		JL_CHK( JL_NativeToJsval(cx, dst.x, tmpValue) );
-		JL_CHK( JL_SetElement(cx, vectorObj, 0, tmpValue) );
+			JL_CHK(jl::setValue(cx, &tmpValue, dst.x));
+			JL_CHK(JL_SetElement(cx, vectorObj, 0, tmpValue));
 
-		JL_CHK( JL_NativeToJsval(cx, dst.y, tmpValue) );
-		JL_CHK( JL_SetElement(cx, vectorObj, 1, tmpValue) );
+			JL_CHK(jl::setValue(cx, &tmpValue, dst.y));
+			JL_CHK(JL_SetElement(cx, vectorObj, 1, tmpValue));
 
-		JL_CHK( JL_NativeToJsval(cx, dst.z, tmpValue) );
-		JL_CHK( JL_SetElement(cx, vectorObj, 2, tmpValue) );
+			JL_CHK(jl::setValue(cx, &tmpValue, dst.z));
+			JL_CHK(JL_SetElement(cx, vectorObj, 2, tmpValue));
 
-		JL_CHK( JL_NativeToJsval(cx, dst.w, tmpValue) );
-		JL_CHK( JL_SetElement(cx, vectorObj, 3, tmpValue) );
-	} else {
+			JL_CHK(jl::setValue(cx, &tmpValue, dst.w));
+			JL_CHK(JL_SetElement(cx, vectorObj, 3, tmpValue));
+			}
+			else {
 
-		JL_ERR( E_ARG, E_NUM(1), E_LENGTH, E_INTERVAL_NUM(3, 4) ); // "Invalid vector length"
+				JL_ERR(E_ARG, E_NUM(1), E_LENGTH, E_INTERVAL_NUM(3, 4)); // "Invalid vector length"
+			}
+
+			JL_RVAL.set(JL_ARG(1));
 	}
-
-	*JL_RVAL = JL_ARG(1);
 	return true;
 	JL_BAD;
 }
@@ -984,7 +980,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_SETTER( translation ) {
 
-	JL_IGNORE(id, strict);
+	JL_DEFINE_PROP_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_IS_ARRAY( vp, "" );
 
@@ -1002,7 +998,7 @@ DEFINE_PROPERTY_SETTER( translation ) {
 
 DEFINE_PROPERTY_GETTER( translation ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
@@ -1046,16 +1042,17 @@ $TOC_MEMBER $INAME
   }}}
 **/
 DEFINE_GET_PROPERTY() {
-
+	
+	JL_DEFINE_PROP_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
 
 	if ( !JSID_IS_INT(id) )
 		return true;
 	int slot = JSID_IS_INT( id );
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_ASSERT_RANGE( slot, 0, 15, "[index]" );
-	JL_CHK( JL_NativeToJsval(cx, pv->mat->raw[slot], vp) );
+	JL_CHK( jl::setValue(cx, JL_RVAL, pv->mat->raw[slot]) );
 	return true;
 	JL_BAD;
 }
@@ -1063,14 +1060,14 @@ DEFINE_GET_PROPERTY() {
 
 DEFINE_SET_PROPERTY() {
 
-	JL_IGNORE(strict);
+	JL_DEFINE_PROP_ARGS;
 
 	JL_ASSERT_THIS_INSTANCE();
 
 	if ( !JSID_IS_INT(id) )
 		return true;
 	int slot = JSID_IS_INT( id );
-	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	JL_ASSERT_IS_NUMBER(vp, "");
 	JL_ASSERT_RANGE( slot, 0, 15, "[index]" );
@@ -1092,7 +1089,7 @@ DEFINE_SET_PROPERTY() {
 
 DEFINE_INIT() {
 
-	JL_IGNORE(obj, proto, sc, cx);
+	JL_IGNORE(obj, proto, cs, cx);
 	jl::PoolInitialize( &matrixPool, 8192 );
 	return true;
 }

@@ -46,6 +46,11 @@ struct Args {
 		return _jsargs.hasDefined(i);
 	}
 
+	JS::MutableHandleValue operator[](unsigned i) const {
+
+		return _jsargs.operator[](i);
+	}
+
 	JS::MutableHandleValue handleAt(unsigned i) const {
 
 		return _jsargs[i];
@@ -68,7 +73,7 @@ struct Args {
 
 	void constructThis(JSClass *clasp, JS::HandleObject proto) {
 
-		ASSERT( isConstructing() );
+		//ASSERT( isConstructing() );
 		_thisObj.set( jl::newObjectWithGivenProto(_cx, clasp, proto) ); // JS_NewObjectForConstructor() use the callee to determine parentage and [[Prototype]].
 		rval().setObject(*_thisObj);
 		_jsargs.setThis(rval());
@@ -135,6 +140,11 @@ struct PropArgs {
 		return true;
 	}
 
+	JS::MutableHandleValue operator[](unsigned i) const {
+
+		return _vp;
+	}
+
 	JS::MutableHandleValue &handleAt(unsigned) {
 
 		return _vp;
@@ -165,6 +175,9 @@ JL_END_NAMESPACE
 
 
 #define JL_ARGC (args.length())
+
+// returns the ARGument Vector
+#define JL_ARGV (args)
 
 // returns the ARGument n
 #define JL_ARG( n ) (ASSERT((n) > 0 && (unsigned)(n) <= JL_ARGC), args.handleAt((n)-1))

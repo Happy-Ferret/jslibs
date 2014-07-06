@@ -268,8 +268,15 @@ public:
 	
 	bool Write( JSContext *cx, JS::MutableHandleValue mval ) {
 
-		JS::HandleValue val(mval);
-		return Write(cx, val);
+		//JS::HandleValue val( mval );
+		//return Write( cx, val );
+
+		return Write( cx, static_cast<JS::HandleValue>(mval) );
+	}
+
+	bool Write( JSContext *cx, JS::RootedValue &rtval ) {
+
+		return Write( cx, static_cast<JS::HandleValue>(rtval) );
 	}
 
 	bool Write( JSContext *cx, JS::HandleValue val ) {
@@ -890,7 +897,10 @@ public:
 				//jsval constructor, constructorArgs[3], stack;
 				JS::RootedValue constructor(cx);
 				JS::RootedValue stack(cx);
-				JS::AutoValueVector constructorArgs(cx);
+				
+				//JS::AutoValueVector constructorArgs(cx);
+				JS::AutoValueArray<3> constructorArgs( cx );
+
 
 				JL_CHK( Read(cx, constructorName) );
 

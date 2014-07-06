@@ -315,7 +315,7 @@ public:
 		} else {
 
 			if ( !owner() )
-				owner();
+				own();
 			rval.setObject(*JS_NewArrayBufferWithContents(cx, used(), data()));
 			dropOwnership();
 		}
@@ -650,7 +650,7 @@ public:
 		ASSERT_IF( len != UnknownSize && nt() && !wide(), ((char*)data())[len] == 0 );
 		ASSERT_IF( wide(), used() % 2 == 0 );
 
-		if ( len == 0 )
+		if ( data() == nullptr )
 			return nullptr;
 
 		// something to do ?

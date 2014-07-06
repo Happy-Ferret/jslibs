@@ -28,7 +28,13 @@ BlobBufferGet( JSContext *cx, JS::HandleObject obj, jl::BufString *str ) {
 		
 		ASSERT( val.isInt32() );
 		int32_t size = val.toInt32();
-		str->get(reinterpret_cast<const uint8_t*>(JL_GetPrivate(obj)), size, false);
+		if ( size > 0 ) {
+			
+			str->get( reinterpret_cast<const uint8_t*>(JL_GetPrivate( obj )), size, false );
+		} else {
+			
+			str->setEmpty();
+		}
 	} else {
 
 		JL_WARN( E_OBJ, E_STATE, E_INVALID );
@@ -54,29 +60,33 @@ INLINE bool
 BlobCreate( JSContext *cx, void *ownData, int32_t size, OUT JS::MutableHandleValue rval ) {
 
 	const jl::ProtoCache::Item *classProtoCache = jl::Host::getHost(cx).getCachedClassProto("Blob");
-	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME("Blob"), E_NOTFOUND );
+	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME( "Blob" ), E_NOTFOUND );
 
 	{
-	// rules:
-	// length > 0 && private != NULL => blob
-	// length == 0 => empty blob
-	// length == undefined => invalidated blob
-	// length > 0 && private == NULL => invalid case
-	// length == undefined && data != NULL => invalid case
+		// rules:
+		// length > 0 && private != NULL => blob
+		// length == 0 => empty blob
+		// length == 0 && data == NULL => empty blob
+		// length == undefined => invalidated blob
+		// length > 0 && private == NULL => invalid case
+		// length == undefined && data != NULL => invalid case
 
-	ASSERT_IF( ownData == nullptr, size == 0 );
+		ASSERT_IF( ownData == nullptr, size == 0 );
 
-	JS::RootedObject blobObj(cx, jl::newObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto));
-	//JS::RootedObject blobObj(cx, jl::construct(cx, classProtoCache->proto));
+		JS::RootedObject blobObj( cx, jl::newObjectWithGivenProto( cx, classProtoCache->clasp, classProtoCache->proto ) );
+		//JS::RootedObject blobObj(cx, jl::construct(cx, classProtoCache->proto));
 
-	JL_CHK( blobObj );
+		JL_CHK( blobObj );
 
-	JL_CHK( setBufferGetInterface(cx, blobObj, BlobBufferGet) );
+		JL_CHK( setBufferGetInterface( cx, blobObj, BlobBufferGet ) );
 
-	rval.setObject(*blobObj);
-	JL_CHK( jl::setSlot(cx, blobObj, JL_BLOB_LENGTH, size) );
-	JL_SetPrivate(blobObj, ownData); // from here, blob owns the data
-	JL_updateMallocCounter(cx, size);
+		rval.setObject( *blobObj );
+		JL_CHK( jl::setSlot( cx, blobObj, JL_BLOB_LENGTH, size ) );
+		JL_SetPrivate( blobObj, ownData ); // from here, blob owns the data
+		
+		if ( size )
+			JL_updateMallocCounter( cx, size );
+
 	}
 
 	return true;

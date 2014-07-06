@@ -1,8 +1,5 @@
 var loadModule = host.loadModule;
 
-throw 0;
-
-
 loadModule('jswinshell');
 var s = new Systray();
 s.icon = new Icon( 0 );

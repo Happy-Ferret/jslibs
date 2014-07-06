@@ -7,6 +7,12 @@ loadModule('jscrypt');
 
 
 
+	var cr = new Cipher("CFB", "cast5", "my  key of  16B ", IV);
+	var IV;
+
+throw 0;
+
+
 loadModule('jsstd');
 loadModule('jscrypt');
 

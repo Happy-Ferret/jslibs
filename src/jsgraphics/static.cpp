@@ -51,7 +51,7 @@ DEFINE_FUNCTION( vec3 ) {
 //		JL_ERR( clone, E_ARG, E_NUM(1), E_INVALID, E_TY_VECTOR );
 
 
-		if ( /*JL_ValueIsArray(cx, JL_ARG(1))*/ JSVAL_IS_PRIMITIVE(JL_ARG(1)) ) {
+		if ( JL_ARG(1).isPrimitive() ) {
 
 			JL_CHK( jl::getValue(cx, JL_ARG(1), &v.x) );
 			v.z = v.y = v.x;
@@ -120,7 +120,7 @@ DEFINE_FUNCTION( vec3Length ) {
 //	else
 //		JL_ERR( E_INVALID, E_STR("vector3") );
 
-	return JL_NativeToJsval(cx, Vector3Length(&v), *JL_RVAL);
+	return jl::setValue(cx, JL_RVAL, Vector3Length(&v));
 	JL_BAD;
 }
 
@@ -158,7 +158,7 @@ DEFINE_FUNCTION( vec3Normalize ) {
 	Vector3Normalize(&v, &v);
 
 	bool hasDest = JL_ARG_ISDEF(2);
-	*JL_RVAL = JL_ARG(hasDest ? 2 : 1);
+	JL_RVAL.set(JL_ARG(hasDest ? 2 : 1));
 	return jl::setVector(cx, JL_RVAL, v.raw, 3, true);
 	JL_BAD;
 }
@@ -188,7 +188,7 @@ DEFINE_FUNCTION( vec3Add ) {
 	Vector3AddVector3(&v, &v, &v2);
 
 	bool hasDest = JL_ARG_ISDEF(3);
-	*JL_RVAL = JL_ARG(hasDest ? 3 : 1);
+	JL_RVAL.set(JL_ARG(hasDest ? 3 : 1));
 	return jl::setVector(cx, JL_RVAL, v.raw, 3, true);
 	JL_BAD;
 }
@@ -218,7 +218,7 @@ DEFINE_FUNCTION( vec3Sub ) {
 	Vector3SubVector3(&v, &v, &v2);
 
 	bool hasDest = JL_ARG_ISDEF(3);
-	*JL_RVAL = JL_ARG(hasDest ? 3 : 1);
+	JL_RVAL.set(JL_ARG(hasDest ? 3 : 1));
 	return jl::setVector(cx, JL_RVAL, v.raw, 3, true);
 	JL_BAD;
 }
@@ -248,7 +248,7 @@ DEFINE_FUNCTION( vec3Cross ) {
 	Vector3Cross(&v, &v, &v2);
 
 	bool hasDest = JL_ARG_ISDEF(3);
-	*JL_RVAL = JL_ARG(hasDest ? 3 : 1);
+	JL_RVAL.set(JL_ARG(hasDest ? 3 : 1));
 	return jl::setVector(cx, JL_RVAL, v.raw, 3, true);
 	JL_BAD;
 }
@@ -273,7 +273,7 @@ DEFINE_FUNCTION( vec3Dot ) {
 	JL_ASSERT( len >= 3, E_ARG, E_NUM(1), E_TYPE, E_TY_NVECTOR(3) );
 	JL_ASSERT( len2 >= 3, E_ARG, E_NUM(2), E_TYPE, E_TY_NVECTOR(3) );
 
-	return JL_NativeToJsval(cx, Vector3Dot(&v, &v2), *JL_RVAL);
+	return jl::setValue(cx, JL_RVAL, Vector3Dot(&v, &v2));
 	JL_BAD;
 }
 
@@ -339,12 +339,9 @@ DEFINE_FUNCTION( frustumSphere ) {
 
 	bool hasDest = JL_ARG_ISDEF(2);
 	if ( hasDest )
-		*JL_RVAL = JL_ARG(2);
+		JL_RVAL.set(JL_ARG(2));
 	JL_CHK( jl::setVector(cx, JL_RVAL, p1.raw, 3, hasDest) );
-
-	jsval tmpVal;
-	JL_CHK( JL_NativeToJsval(cx, radius, tmpVal) );
-	JL_CHK( JL_SetElement(cx, &JL_RVAL.toObject(), 3, tmpVal) );
+	JL_CHK(jl::setElement(cx, JL_RVAL, 3, radius));
 
 	return true;
 	JL_BAD;
@@ -378,11 +375,9 @@ DEFINE_FUNCTION( boxToCircumscribedSphere ) {
 	float radius = Vector3Length(&center);
 	Vector3AddVector3(&center, &center, &v2);
 	
-	*JL_RVAL = JL_ARG(1);
+	JL_RVAL.set(JL_ARG(1));
 	JL_CHK( jl::setVector(cx, JL_RVAL, center.raw, 3, true) );
-	jsval tmpVal;
-	JL_CHK( JL_NativeToJsval(cx, radius, tmpVal) );
-	JL_CHK( JL_SetElement(cx, &JL_RVAL.toObject(), 3, tmpVal) );
+	JL_CHK(jl::setElement(cx, JL_RVAL, 3, radius));
 
 	return true;
 	JL_BAD;
@@ -451,7 +446,7 @@ DEFINE_FUNCTION( quaternionToEuler ) {
 	euler.x = atan2f(-(2*(q2q3-q0q1)),(q0q0-q1q1-q2q2+q3q3));
 	euler.z = atan2f(-(2*(q1q2-q0q3)),(q0q0+q1q1-q2q2-q3q3));
 
-	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
+	JL_RVAL.set(JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1));
 	JL_CHK( jl::setVector(cx, JL_RVAL, euler.raw, 3, true) );
 	return true;
 	JL_BAD;
@@ -509,7 +504,7 @@ DEFINE_FUNCTION( eulerToQuaternion ) {
 	quat.w /= distance;
 */
 
-	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
+	JL_RVAL.set(JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1));
 	JL_CHK( jl::setVector(cx, JL_RVAL, quat.raw, 4, true) );
 	return true;
 	JL_BAD;
@@ -546,7 +541,7 @@ DEFINE_FUNCTION( quaternionToAxisAngle ) {
 		Vector4Set(&quat, 0,0,0,0);
 	}
 
-	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
+	JL_RVAL.set(JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1));
 	JL_CHK( jl::setVector(cx, JL_RVAL, quat.raw, 4, true) );
 	return true;
 	JL_BAD;
@@ -577,7 +572,7 @@ DEFINE_FUNCTION( axisAngleToQuaternion ) {
 	Vector4Mult(&axisAngle, &axisAngle, sn);
 	axisAngle.w = cs;
 
-	*JL_RVAL = JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1);
+	JL_RVAL.set(JL_ARG(JL_ARG_ISDEF(2) ? 2 : 1));
 	JL_CHK( jl::setVector(cx, JL_RVAL, axisAngle.raw, 4, true) );
 	return true;
 	JL_BAD;
@@ -598,12 +593,14 @@ DEFINE_FUNCTION( getMatrix ) {
 	float tmp[16], *m = tmp;
 
 	JL_ASSERT_ARG_IS_OBJECT(1);
+	{
 	JS::RootedObject matrixObj(cx, &JL_ARG(1).toObject() );
-	NIMatrix44Get fct = Matrix44GetInterface(cx, matrixObj);
+	jl::NIMatrix44Get fct = jl::matrix44GetInterface(cx, matrixObj);
 	JL_CHKM( fct, E_ARG, E_NUM(1), E_SEP, E_INTERFACE, E_STR("Matrix44Get"), E_NOTSUPPORTED );
 
 	JL_CHK( fct(cx, matrixObj, &m) );
 	JL_CHK( jl::setVector(cx, JL_RVAL, m, 16, false) );
+	}
 	return true;
 	JL_BAD;
 }
@@ -705,7 +702,7 @@ DEFINE_FUNCTION( shadowMatrix ) {
 	if ( JL_ARGC == 3 ) {
 
 		JL_ASSERT_ARG_IS_ARRAY(3);
-		*JL_RVAL = JL_ARG(3);
+		JL_RVAL.set(JL_ARG(3));
 		return jl::setVector(cx, JL_RVAL, (double*)shadowMat, 16, true);
 	} else {
 

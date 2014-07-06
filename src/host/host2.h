@@ -359,8 +359,14 @@ public:
 
 	ALWAYS_INLINE bool
 	skipCleanup() const {
-		
+
 		return _skipCleanup;
+	}
+
+	ALWAYS_INLINE bool
+	isEnding() const {
+
+		return _isEnding;
 	}
 
 	bool
@@ -844,6 +850,17 @@ public:
 		return getCachedClassProto(className)->clasp;
 	}
 
+	ALWAYS_INLINE bool
+	hasCachedClassProto(IN const char *className) {
+
+		return _classProtoCache.get(className) != NULL;
+	}
+
+	ALWAYS_INLINE void
+	removeCachedClassProto(IN const char *className) {
+		
+		_classProtoCache.remove(className);
+	}
 
 	// ids
 	ALWAYS_INLINE JS::HandleId

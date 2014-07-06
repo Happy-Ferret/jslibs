@@ -14,6 +14,7 @@
 
 #include "stdafx.h"
 #include "sdl.h"
+#include "../jslang/imagePub.h"
 
 #include "error.h"
 
@@ -27,7 +28,7 @@ DEFINE_FINALIZE() {
 
 	JL_IGNORE(fop);
 
-	SDL_Cursor *cursor = (SDL_Cursor*)JL_GetPrivate(obj);
+	SDL_Cursor *cursor = (SDL_Cursor*)js::GetObjectPrivate(obj);
 	if ( cursor != NULL ) {
 
 		SDL_FreeCursor(cursor); // default cursor is restored
@@ -49,8 +50,9 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	SDL_Cursor *cursor = NULL;
-	JLData data;
+	jl::BufString data;
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	JL_ASSERT_CONSTRUCTING();
@@ -59,9 +61,9 @@ DEFINE_CONSTRUCTOR() {
 	int sWidth, sHeight, sChannels;
 	ImageDataType dataType;
 	data = JL_GetImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels, &dataType);
-	JL_ASSERT( data.IsSet(), E_ARG, E_NUM(1), E_INVALID );
+	JL_ASSERT( data.hasData(), E_ARG, E_NUM(1), E_INVALID );
 	JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
-	const uint8_t *sBuffer = (const unsigned char*)data.GetConstStr();
+	const uint8_t *sBuffer = data.toData<const uint8_t *>();
 
 	JL_ASSERT( sWidth % 8 == 0, E_ARG, E_NUM(1), E_FORMAT ); // "The cursor width must be a multiple of 8."
 	JL_ASSERT( sChannels == 3 || sChannels == 4, E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(3, 4) );
@@ -114,7 +116,7 @@ DEFINE_CONSTRUCTOR() {
 
 	jl_free(cursorImage);
 
-	JL_SetPrivate(obj, cursor);
+	JL_SetPrivate(JL_OBJ, cursor);
 	return true;
 
 bad:

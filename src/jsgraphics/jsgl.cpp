@@ -32,6 +32,7 @@ Manage GL extensions:
 #include "../jsprotex/textureBuffer.h"
 #include "../jstrimesh/trimeshPub.h"
 #include "../jslang/handlePub.h"
+#include "../jslang/imagePub.h"
 
 #include <gl/glu.h> // gluPerspective, gluUnProject, GLUquadric, ...
 //#include "wglew.h" // needed ?
@@ -325,7 +326,7 @@ DEFINE_FUNCTION( isEnabled ) {
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
-	*JL_RVAL = BOOLEAN_TO_JSVAL(  glIsEnabled(JL_ARG(1).toInt32()) );  OGL_ERR_CHK;
+	JL_RVAL.setBoolean( glIsEnabled(JL_ARG(1).toInt32()) );  OGL_ERR_CHK;
 	return true;
 	JL_BAD;
 }
@@ -448,7 +449,7 @@ DEFINE_FUNCTION( get ) {
 		{
 			GLboolean params[1];
 			glGetBooleanv(pname, params);  OGL_ERR_CHK;
-			*JL_RVAL = BOOLEAN_TO_JSVAL( *params );
+			JL_RVAL.setBoolean( *params );
 			return true;
 		}
 
@@ -456,14 +457,18 @@ DEFINE_FUNCTION( get ) {
 		{
 			GLboolean params[4];
 			glGetBooleanv(pname, params);  OGL_ERR_CHK;
+			/*
 			jsval ret[] = {
 					BOOLEAN_TO_JSVAL( params[0] ),
 					BOOLEAN_TO_JSVAL( params[1] ),
 					BOOLEAN_TO_JSVAL( params[2] ),
 					BOOLEAN_TO_JSVAL( params[3] )
 			};
-			*JL_RVAL = OBJECT_TO_JSVAL(JS_NewArrayObject(cx, COUNTOF(ret), ret));
-			JL_CHK( JL_RVAL );
+			JL_RVAL.setObject(JS_NewArrayObject(cx, COUNTOF(ret), ret));
+			*/
+			JS::RootedObject arrayObj(cx, jl::newArray(cx, bool(params[0]), bool(params[1]), bool(params[2]), bool(params[3])));
+			JL_CHK(arrayObj);
+			JL_RVAL.setObject(*arrayObj);
 			return true;
 		}
 
@@ -653,7 +658,7 @@ DEFINE_FUNCTION( get ) {
 		{
 			GLint params[1];
 			glGetIntegerv(pname, params);  OGL_ERR_CHK;
-			*JL_RVAL = INT_TO_JSVAL(*params);
+			JL_RVAL.setInt32(*params);
 			return true;
 		}
 
@@ -663,12 +668,17 @@ DEFINE_FUNCTION( get ) {
 		{
 			GLint params[2];
 			glGetIntegerv(pname, params);  OGL_ERR_CHK;
+			/*
 			jsval jsparams[] = {
 				INT_TO_JSVAL(params[0]),
 				INT_TO_JSVAL(params[1])
 			};
-			*JL_RVAL = OBJECT_TO_JSVAL( JS_NewArrayObject(cx, COUNTOF(jsparams), jsparams) );
+			JL_RVAL.setObject( JS_NewArrayObject(cx, COUNTOF(jsparams), jsparams) );
 			JL_CHK( JL_RVAL );
+			*/
+			JS::RootedObject arrayObj(cx, jl::newArray(cx, params[0], params[1]));
+			JL_CHK(arrayObj);
+			JL_RVAL.setObject(*arrayObj);
 			return true;
 		}
 
@@ -677,14 +687,21 @@ DEFINE_FUNCTION( get ) {
 		{
 			GLint params[4];
 			glGetIntegerv(pname, params);  OGL_ERR_CHK;
+			/*
 			jsval jsparams[] = {
 				INT_TO_JSVAL(params[0]),
 				INT_TO_JSVAL(params[1]),
 				INT_TO_JSVAL(params[2]),
 				INT_TO_JSVAL(params[3])
 			};
-			*JL_RVAL = OBJECT_TO_JSVAL( JS_NewArrayObject(cx, COUNTOF(jsparams), jsparams) );
+			JL_RVAL.setObject(JS_NewArrayObject(cx, COUNTOF(jsparams), jsparams));
 			JL_CHK( JL_RVAL );
+			*/
+
+			JS::RootedObject arrayObj(cx, jl::newArray(cx, params[0], params[1], params[2], params[3]));
+			JL_CHK(arrayObj);
+			JL_RVAL.setObject(*arrayObj);
+
 			return true;
 		}
 
@@ -739,7 +756,7 @@ DEFINE_FUNCTION( get ) {
 		{
 			GLdouble params[1];
 			glGetDoublev(pname, params);  OGL_ERR_CHK;
-			return JL_NativeToJsval(cx, *params, *JL_RVAL);
+			return jl::setValue(cx, JL_RVAL, *params);
 		}
 
 		case GL_ALIASED_POINT_SIZE_RANGE:
@@ -751,6 +768,7 @@ DEFINE_FUNCTION( get ) {
 			GLdouble params[2];
 			glGetDoublev(pname, params);  OGL_ERR_CHK;
 			return jl::setVector(cx, JL_RVAL, params, COUNTOF(params));
+
 		}
 
 		case GL_CURRENT_NORMAL:
@@ -831,7 +849,7 @@ DEFINE_FUNCTION( getBoolean ) {
 
 	GLboolean params;
 	glGetBooleanv(JL_ARG(1).toInt32(), &params);  OGL_ERR_CHK;
-	*JL_RVAL = BOOLEAN_TO_JSVAL(params);
+	JL_RVAL.setBoolean(bool(params));
 	return true;
 	JL_BAD;
 }
@@ -870,10 +888,10 @@ DEFINE_FUNCTION( getInteger ) {
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		unsigned count;
+		uint32_t count;
 		JS::RootedObject arrayObj(cx);
 
-		if ( JSVAL_IS_INT(JL_ARG(2)) ) {
+		if ( JL_ARG(2).isInt32() ) {
 
 			count = JL_ARG(2).toInt32();
 			arrayObj = JS_NewArrayObject(cx, count);
@@ -887,24 +905,22 @@ DEFINE_FUNCTION( getInteger ) {
 
 		if ( JL_IS_SAFE ) {
 
-			unsigned argset = sizeof(params);
+			uint32_t argset = sizeof(params);
 			while ( --argset >= 0 && ((unsigned char*)params)[argset] == 0xAA );
 			argset = argset / sizeof(*params) + 1;
 			JL_ASSERT_WARN( argset == count, E_ARG, E_NUM(2), E_EQUALS, E_NUM(argset) );
 		}
 
-		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
-		jsval tmpValue;
+		JL_RVAL.setObject(*arrayObj);
 		count = jl::min(count, COUNTOF(params));
 		while (count--) {
 
-			tmpValue = INT_TO_JSVAL( params[count] );
-			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
+			jl::setElement(cx, arrayObj, count, params[count]);
 		}
 
 	} else {
 
-		*JL_RVAL = INT_TO_JSVAL( params[0] );
+		JL_RVAL.setInt32( params[0] );
 	}
 
 	return true;
@@ -945,10 +961,10 @@ DEFINE_FUNCTION( getDouble ) {
 
 	if ( JL_ARG_ISDEF(2) ) {
 
-		unsigned count;
+		uint32_t count;
 		JS::RootedObject arrayObj(cx);
 
-		if ( JSVAL_IS_INT(JL_ARG(2)) ) {
+		if ( JL_ARG(2).isInt32() ) {
 
 			count = JL_ARG(2).toInt32();
 			arrayObj = JS_NewArrayObject(cx, count);
@@ -962,23 +978,21 @@ DEFINE_FUNCTION( getDouble ) {
 
 		if ( JL_IS_SAFE ) {
 
-			unsigned argset = sizeof(params);
+			uint32_t argset = sizeof(params);
 			while ( --argset >= 0 && ((unsigned char*)params)[argset] == 0xAA );
 			argset = argset / sizeof(*params) + 1;
 			JL_ASSERT_WARN( argset == count, E_ARGVALUE, E_NUM(2), E_EQUALS, E_NUM(argset) );
 		}
 
-		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
-		jsval tmpValue;
+		JL_RVAL.setObject(*arrayObj);
 		count = jl::min(count, COUNTOF(params));
 		while (count--) {
 
-			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
-			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
+			JL_CHK(jl::setElement(cx, arrayObj, count, params[count]));
 		}
 	} else {
 
-		JL_CHK( JL_NativeToJsval(cx, params[0], *JL_RVAL) );
+		JL_CHK(jl::setValue(cx, JL_RVAL, params[0]));
 	}
 
 	return true;
@@ -1005,7 +1019,7 @@ DEFINE_FUNCTION( getString ) {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
-	return JL_NativeToJsval(cx, (char*)glGetString(JL_ARG(1).toInt32()), *JL_RVAL);  OGL_ERR_CHK;
+	return jl::setValue(cx, JL_RVAL, (char*)glGetString(JL_ARG(1).toInt32()));  OGL_ERR_CHK;
 	JL_BAD;
 }
 
@@ -1278,7 +1292,7 @@ DEFINE_FUNCTION( fog ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	JL_RVAL.setUndefined();
-	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
+	if ( JL_ARG(2).isInt32() ) {
 
 		glFogi(JL_ARG(1).toInt32(), JL_ARG(2).toInt32());  OGL_ERR_CHK;
 
@@ -1293,7 +1307,7 @@ DEFINE_FUNCTION( fog ) {
 
 		return true;
 	}
-	if ( JL_ValueIsArrayLike(cx, JL_ARG(2)) ) {
+	if ( jl::isArrayLike(cx, JL_ARG(2)) ) {
 
 		GLfloat params[MAX_PARAMS];
 		uint32_t length;
@@ -1596,7 +1610,7 @@ DEFINE_FUNCTION( texParameter ) {
 	JL_ASSERT_ARG_IS_NUMBER(3);
 
 	JL_RVAL.setUndefined();
-	if ( JSVAL_IS_INT(JL_ARG(3)) ) {
+	if (JL_ARG(3).isInt32() ) {
 
 		glTexParameteri( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), JL_ARG(3).toInt32() );  OGL_ERR_CHK;
 
@@ -1611,7 +1625,7 @@ DEFINE_FUNCTION( texParameter ) {
 
 		return true;
 	}
-	if ( JL_ValueIsArrayLike(cx, JL_ARG(3)) ) {
+	if ( jl::isArrayLike(cx, JL_ARG(3)) ) {
 
 		GLfloat params[MAX_PARAMS];
 		uint32_t length;
@@ -1650,7 +1664,7 @@ DEFINE_FUNCTION( texEnv ) {
 	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	JL_RVAL.setUndefined();
-	if ( argc == 3 && JSVAL_IS_INT(JL_ARG(3)) ) {
+	if (argc == 3 && JL_ARG(3).isInt32() ) {
 
 		glTexEnvi( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), JL_ARG(3).toInt32() );  OGL_ERR_CHK;
 
@@ -1667,7 +1681,7 @@ DEFINE_FUNCTION( texEnv ) {
 	}
 
 	GLfloat params[MAX_PARAMS];
-	if ( argc == 3 && JL_ValueIsArrayLike(cx, JL_ARG(3)) ) {
+	if ( argc == 3 && jl::isArrayLike(cx, JL_ARG(3)) ) {
 
 		uint32_t length;
 		JL_CHK( jl::getVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
@@ -1712,7 +1726,7 @@ DEFINE_FUNCTION( texGen ) {
 	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	JL_RVAL.setUndefined();
-	if ( argc == 3 && JSVAL_IS_INT(JL_ARG(3)) ) {
+	if (argc == 3 && JL_ARG(3).isInt32()) {
 
 		glTexGeni( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), JL_ARG(3).toInt32() );  OGL_ERR_CHK;
 
@@ -1729,7 +1743,7 @@ DEFINE_FUNCTION( texGen ) {
 	}
 
 	GLdouble params[MAX_PARAMS];
-	if ( argc == 3 && JL_ValueIsArrayLike(cx, JL_ARG(3)) ) {
+	if ( argc == 3 && jl::isArrayLike(cx, JL_ARG(3)) ) {
 
 		uint32_t length;
 		JL_CHK( jl::getVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
@@ -1773,7 +1787,7 @@ DEFINE_FUNCTION( texImage2D ) {
 		
 	JL_DEFINE_ARGS;
 
-	JLData data;
+	jl::BufString data;
 
 	OGL_CX_CHK;
 
@@ -1790,7 +1804,7 @@ DEFINE_FUNCTION( texImage2D ) {
 	if ( JL_ARG_ISDEF(9) && !JL_ARG(9).isNull() ) // same as !JSVAL_IS_PRIMITIVE
 		JL_CHK( jl::getValue(cx, JL_ARG(9), &data) );
 
-	glTexImage2D( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), JL_ARG(3).toInt32(), JL_ARG(4).toInt32(), JL_ARG(5).toInt32(), JL_ARG(6).toInt32(), JL_ARG(7).toInt32(), JL_ARG(8).toInt32(), (GLvoid*)data.GetConstStr() );  OGL_ERR_CHK;
+	glTexImage2D( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), JL_ARG(3).toInt32(), JL_ARG(4).toInt32(), JL_ARG(5).toInt32(), JL_ARG(6).toInt32(), JL_ARG(7).toInt32(), JL_ARG(8).toInt32(), (GLvoid*)data.toData<const uint8_t*>() );  OGL_ERR_CHK;
 
 	JL_RVAL.setUndefined();
 	return true;
@@ -1859,7 +1873,7 @@ DEFINE_FUNCTION( texSubImage2D ) {
 		
 	JL_DEFINE_ARGS;
 
-	JLData data;
+	jl::BufString data;
 
 	OGL_CX_CHK;
 
@@ -1874,15 +1888,14 @@ DEFINE_FUNCTION( texSubImage2D ) {
 	JL_ASSERT_ARG_IS_INTEGER(8);
 
 	GLvoid *pixels;
-	jsval arg;
-	arg = JL_ARG(9);
-	if ( JSVAL_IS_INT(arg) ) {
+
+	if (JL_ARG(9).isInt32()) {
 			
-		pixels = (GLvoid*)arg.toInt32();
+		pixels = (GLvoid*)JL_ARG(9).toInt32();
 	} else {
 
-		JL_CHK( jl::getValue(cx, arg, &data) );
-		pixels = (GLvoid*)data.GetConstStr();
+		JL_CHK(jl::getValue(cx, JL_ARG(9), &data));
+		pixels = (GLvoid*)data.toData<const uint8_t*>();
 	}
 
 	glTexSubImage2D(JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), JL_ARG(3).toInt32(), JL_ARG(4).toInt32(), JL_ARG(5).toInt32(), JL_ARG(6).toInt32(), JL_ARG(7).toInt32(), JL_ARG(8).toInt32(), pixels);
@@ -1912,7 +1925,7 @@ DEFINE_FUNCTION( lightModel ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	JL_RVAL.setUndefined();
-	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
+	if (JL_ARG(2).isInt32() ) {
 
 		glLightModeli( JL_ARG(1).toInt32(), JL_ARG(2).toInt32() );  OGL_ERR_CHK;
 		return true;
@@ -1926,7 +1939,7 @@ DEFINE_FUNCTION( lightModel ) {
 		return true;
 	}
 
-	if ( JL_ValueIsArrayLike(cx, JL_ARG(2)) ) {
+	if ( jl::isArrayLike(cx, JL_ARG(2)) ) {
 
 		GLfloat params[MAX_PARAMS];
 		uint32_t length;
@@ -1962,7 +1975,7 @@ DEFINE_FUNCTION( light ) {
 	JL_ASSERT_ARG_IS_INTEGER(2);
 
 	JL_RVAL.setUndefined();
-	if ( argc == 3 && JSVAL_IS_INT(JL_ARG(3)) ) {
+	if (argc == 3 && JL_ARG(3).isInt32()) {
 
 		glLighti( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), JL_ARG(3).toInt32() );  OGL_ERR_CHK;
 		return true;
@@ -1977,7 +1990,7 @@ DEFINE_FUNCTION( light ) {
 	}
 
 	GLfloat params[MAX_PARAMS];
-	if ( argc == 3 && JL_ValueIsArrayLike(cx, JL_ARG(3)) ) {
+	if (argc == 3 && jl::isArrayLike(cx, JL_ARG(3))) {
 
 		uint32_t length;
 		JL_CHK( jl::getVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
@@ -2054,19 +2067,22 @@ DEFINE_FUNCTION( getLight ) {
 	}
 
 	if ( count > 1 ) {
-
+		/*
 		JS::RootedObject arrayObj(cx, JS_NewArrayObject(cx, count));
 		JL_CHK( arrayObj );
-		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
+		JL_RVAL.setObject(*arrayObj);
+
 		JS::RootedValue tmpValue(cx);
 		while ( count-- ) {
 
-			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
+			JL_CHK(jl::setValue(cx, tmpValue, params[count]));
 			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
 		}
+		*/
+		JL_CHK(jl::setVector(cx, JL_RVAL, params, count));
 	} else {
 
-		JL_CHK(JL_NativeToJsval(cx, params[0], *JL_RVAL) );
+		JL_CHK(jl::setValue(cx, JL_RVAL, params[0]));
 	}
 
 	return true;
@@ -2130,7 +2146,7 @@ DEFINE_FUNCTION( material ) {
 	// GL_COLOR_INDEXES: 3 int -OR- 3 float
 
 	JL_RVAL.setUndefined();
-	if ( argc == 3 && JSVAL_IS_INT(JL_ARG(3)) ) {
+	if (argc == 3 && JL_ARG(3).isInt32()) {
 
 		glMateriali( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), JL_ARG(3).toInt32() );  OGL_ERR_CHK;
 		;
@@ -2146,7 +2162,7 @@ DEFINE_FUNCTION( material ) {
 	}
 
 	GLfloat params[MAX_PARAMS]; // alloca ?
-	if ( argc == 3 && JL_ValueIsArrayLike(cx, JL_ARG(3)) ) {
+	if (argc == 3 && jl::isArrayLike(cx, JL_ARG(3))) {
 
 		uint32_t length;
 		JL_CHK( jl::getVector(cx, JL_ARG(3), params, COUNTOF(params), &length ) );
@@ -3209,7 +3225,7 @@ DEFINE_FUNCTION( newList ) {
 	list = glGenLists(1);  OGL_ERR_CHK;
 	glNewList(list, compileOnly ? GL_COMPILE : GL_COMPILE_AND_EXECUTE);  OGL_ERR_CHK;
 
-	*JL_RVAL = INT_TO_JSVAL(list);
+	JL_RVAL.setInt32(list);
 	return true;
 	JL_BAD;
 }
@@ -3282,26 +3298,28 @@ DEFINE_FUNCTION( callList ) {
 
 	JL_RVAL.setUndefined();
 
-	if ( JSVAL_IS_INT( JL_ARG(1) ) ) {
+	if (JL_ARG(1).isInt32()) {
 
 		glCallList(JL_ARG(1).toInt32());  OGL_ERR_CHK;
 		return true;
 	}
 
-	if ( JL_ValueIsArray(cx, JL_ARG(1)) ) { // no array-like. convert a string into an array of calllist does not make sense here.
+	if ( jl::isArray(cx, JL_ARG(1)) ) { // no array-like. convert a string into an array of calllist does not make sense here.
 
 		JS::RootedObject jsArray(cx, &JL_ARG(1).toObject());
-		unsigned length;
+		uint32_t length;
 		JL_CHK( JS_GetArrayLength(cx, jsArray, &length) );
 
 		GLuint *lists = (GLuint*)alloca(length * sizeof(GLuint));
+		/*
 		jsval value;
 		for ( unsigned i = 0; i < length; ++i ) {
 
 			JL_CHK( JL_GetElement(cx, jsArray, i, value) );
 			lists[i] = value.toInt32();
 		}
-
+		*/
+		JL_CHK(jl::getVector(cx, JL_ARG(1), lists, length));
 		glCallLists(length, GL_UNSIGNED_INT, lists);  OGL_ERR_CHK; // http://www.opengl.org/documentation/specs/man_pages/hardcopy/GL/html/gl/calllists.html
 
 //		jl_free(lists); // alloca
@@ -3465,7 +3483,7 @@ DEFINE_FUNCTION( genTexture ) {
 	GLuint texture;
 	glGenTextures(1, &texture);  OGL_ERR_CHK;
 
-	*JL_RVAL = INT_TO_JSVAL(texture);
+	JL_RVAL.setInt32(texture);
 	return true;
 	JL_BAD;
 }
@@ -3597,7 +3615,7 @@ DEFINE_FUNCTION( pixelTransfer ) {
 
 	GLenum pname = JL_ARG(1).toInt32();
 
-	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
+	if (JL_ARG(2).isInt32()) {
 
 		glPixelTransferi(pname, JL_ARG(2).toInt32());  OGL_ERR_CHK;
 	} else {
@@ -3630,7 +3648,7 @@ DEFINE_FUNCTION( pixelStore ) {
 
 	GLenum pname = JL_ARG(1).toInt32();
 
-	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
+	if (JL_ARG(2).isInt32()) {
 
 		glPixelStorei(pname, JL_ARG(2).toInt32());  OGL_ERR_CHK;
 	} else {
@@ -3724,7 +3742,7 @@ $TOC_MEMBER $INAME
   $H OpenGL API
    glPixelMapfv
 **/
-DEFINE_FUNCTION( pixelMap ) {
+DEFINE_FUNCTION(pixelMap) {
 
 	JL_DEFINE_ARGS;
 
@@ -3733,13 +3751,16 @@ DEFINE_FUNCTION( pixelMap ) {
 	JL_ASSERT_ARGC(2);
 	JL_ASSERT_ARG_IS_ARRAY(2);
 
-	unsigned mapsize;
-	JL_CHK( JS_GetArrayLength(cx, &JL_ARG(2).toObject(), &mapsize) );
-	GLfloat *values = (GLfloat*)alloca(mapsize * sizeof(*values));
-	JL_CHK( jl::getVector(cx, JL_ARG(2), values, mapsize, &mapsize ) );
-	glPixelMapfv(JL_ARG(1).toInt32(), mapsize, values);  OGL_ERR_CHK;
+	{
+		uint32_t mapsize;
+		JS::RootedObject arrayObj(cx, &JL_ARG(2).toObject());
+		JL_CHK(JS_GetArrayLength(cx, arrayObj, &mapsize));
+		GLfloat *values = (GLfloat*)alloca(mapsize * sizeof(*values));
+		JL_CHK(jl::getVector(cx, JL_ARG(2), values, mapsize, &mapsize));
+		glPixelMapfv(JL_ARG(1).toInt32(), mapsize, values);  OGL_ERR_CHK;
 
-	JL_RVAL.setUndefined();
+		JL_RVAL.setUndefined();
+	}
  	return true;
 	JL_BAD;
 }
@@ -3760,7 +3781,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( hasExtensionProc ) {
 
-	JLData procName;
+	jl::BufString procName;
 	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
@@ -3774,12 +3795,12 @@ DEFINE_FUNCTION( hasExtensionProc ) {
 		procAddr = glGetProcAddress(procName);
 		if ( procAddr == NULL ) {
 
-			*JL_RVAL = JSVAL_FALSE;
+			JL_RVAL.setBoolean(false);
 			return true;
 		}
 	}
 
-	*JL_RVAL = JSVAL_TRUE;
+	JL_RVAL.setBoolean(true);
 	return true;
 	JL_BAD;
 }
@@ -3806,20 +3827,21 @@ DEFINE_FUNCTION( hasExtensionName ) {
 
 	for ( unsigned i = 0; i < JL_ARGC; ++i ) {
 
-		JLData name;
+		jl::BufString name;
 //		const char *name;
 //		unsigned int nameLength;
 //		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARGV[i], &name, &nameLength) );
 		JL_CHK( jl::getValue(cx, JL_ARG(i+1), &name) );
 
 		const char *pos = strstr(extensions, name);
-		if ( pos == NULL || ( pos[name.Length()] != ' ' && pos[name.Length()] != '\0' ) ) {
+		size_t nameLen = name.length();
+		if (pos == NULL || (pos[nameLen] != ' ' && pos[nameLen] != '\0')) {
 
-			*JL_RVAL = JSVAL_FALSE;
+			JL_RVAL.setBoolean(false);
 			return true;
 		}
 	}
-	*JL_RVAL = JSVAL_TRUE;
+	JL_RVAL.setBoolean(true);
 	return true;
 	JL_BAD;
 }
@@ -4002,7 +4024,7 @@ DEFINE_FUNCTION( genRenderbuffer ) {
 
 	glGenRenderbuffersEXT(1, &buffer);  OGL_ERR_CHK;
 
-	*JL_RVAL = INT_TO_JSVAL(buffer);
+	JL_RVAL.setInt32(buffer);
 
 	return true;
 	JL_BAD;
@@ -4098,11 +4120,11 @@ DEFINE_FUNCTION( getRenderbufferParameter ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(3);
 		int count;
-		count = jl::min(JL_ARG(3).toInt32()), (int)COUNTOF(params));
+		count = jl::min(JL_ARG(3).toInt32(), (int32_t)COUNTOF(params));
 		JL_CHK( jl::setVector(cx, JL_RVAL, params, count) );
 	} else {
 
-		*JL_RVAL = INT_TO_JSVAL( params[0] );
+		JL_RVAL.setInt32( params[0] );
 	}
 
 	return true;
@@ -4155,7 +4177,7 @@ DEFINE_FUNCTION( genFramebuffer ) {
 	JL_ASSERT_ARGC(0);
 	GLuint buffer;
 	glGenFramebuffersEXT(1, &buffer);  OGL_ERR_CHK;
-	*JL_RVAL = INT_TO_JSVAL(buffer);
+	JL_RVAL.setInt32(buffer);
 
 	return true;
 	JL_BAD;
@@ -4209,7 +4231,7 @@ DEFINE_FUNCTION( checkFramebufferStatus ) {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
-	*JL_RVAL = INT_TO_JSVAL( glCheckFramebufferStatusEXT(JL_ARG(1).toInt32()) );  OGL_ERR_CHK;
+	JL_RVAL.setInt32( glCheckFramebufferStatusEXT(JL_ARG(1).toInt32()) );  OGL_ERR_CHK;
 
 	return true;
 	JL_BAD;
@@ -4395,7 +4417,7 @@ DEFINE_FUNCTION( getFramebufferAttachmentParameter ) {
 		JL_CHK( jl::setVector(cx, JL_RVAL, params, count) );
 	} else {
 
-		*JL_RVAL = INT_TO_JSVAL( params[0] );
+		JL_RVAL.setInt32( params[0] );
 	}
 
 	return true;
@@ -4425,7 +4447,7 @@ DEFINE_FUNCTION( createShaderObject ) {
 	GLenum shaderType;
 	shaderType = JL_ARG(1).toInt32();
 	GLhandleARB handle = glCreateShaderObjectARB(shaderType);  OGL_ERR_CHK;
-	*JL_RVAL = INT_TO_JSVAL(handle);
+	JL_RVAL.setInt32(handle);
 
 	return true;
 	JL_BAD;
@@ -4481,8 +4503,7 @@ DEFINE_FUNCTION( getInfoLog ) {
 	GLcharARB *buffer = (GLcharARB*)alloca(length+1);
 	buffer[length] = '\0'; // needed ?
 	glGetInfoLogARB(shaderHandle, length, &length, buffer);  OGL_ERR_CHK;
-//	JL_CHK( JL_StringAndLengthToJsval(cx, JL_RVAL, buffer, length+1) );
-	JL_CHK( JL_NativeToJsval(cx, buffer, length+1, *JL_RVAL) );
+	JL_CHK(jl::setValue(cx, JL_RVAL, jl::CStrSpec(buffer, length)));
 
 	return true;
 	JL_BAD;
@@ -4505,7 +4526,7 @@ DEFINE_FUNCTION( createProgramObject ) {
 	JL_INIT_OPENGL_EXTENSION( glCreateProgramObjectARB, PFNGLCREATEPROGRAMOBJECTARBPROC );
 
 	GLhandleARB programHandle = glCreateProgramObjectARB();  OGL_ERR_CHK;
-	*JL_RVAL = INT_TO_JSVAL(programHandle);
+	JL_RVAL.setInt32(programHandle);
 	return true;
 	JL_BAD;
 }
@@ -4519,7 +4540,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( shaderSource ) {
 
-	JLData source;
+	jl::BufString source;
 	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
@@ -4534,8 +4555,8 @@ DEFINE_FUNCTION( shaderSource ) {
 
 	const GLcharARB *buffer;
 	GLint length;
-	length = source.Length();
-	buffer = source.GetConstStr();
+	length = source.length();
+	buffer = source.toData<const char*>();
 
 	glShaderSourceARB(shaderHandle, 1, &buffer, &length);  OGL_ERR_CHK;
 
@@ -4686,22 +4707,23 @@ DEFINE_FUNCTION( getUniformInfo ) {
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &program) );
 	glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &activeUniform);  OGL_ERR_CHK;
 
-	JS::RootedObject info(cx, JL_NewObj(cx));
-	JL_CHK( info );
-	*JL_RVAL = OBJECT_TO_JSVAL(info);
-
-	jsval tmp;
-	GLcharARB name[256];
-	GLsizei length;
-	GLint size;
-	GLenum type;
-	GLint location;
-
 	{
-		jsid indexId = JL_StringToJsid(cx, L("index"));
-		jsid locationId = JL_StringToJsid(cx, L("location"));
-		jsid sizeId = JL_StringToJsid(cx, L("size"));
-		jsid typeId = JL_StringToJsid(cx, L("type"));
+		JS::RootedObject info(cx, JL_NewObj(cx));
+		JL_CHK( info );
+		JL_RVAL.setObject(*info);
+
+		GLcharARB name[256];
+		GLsizei length;
+		GLint size;
+		GLenum type;
+		GLint location;
+
+		
+		JS::RootedValue tmp(cx);
+		JS::RootedId indexId(cx, jl::stringToJsid(cx, L("index")));
+		JS::RootedId locationId(cx, jl::stringToJsid(cx, L("location")));
+		JS::RootedId sizeId(cx, jl::stringToJsid(cx, L("size")));
+		JS::RootedId typeId(cx, jl::stringToJsid(cx, L("type")));
 
 		for ( int i = 0; i < activeUniform; ++i ) {
 
@@ -4715,17 +4737,17 @@ DEFINE_FUNCTION( getUniformInfo ) {
 			JS::RootedObject obj(cx, JL_NewObj(cx));
 			JL_CHK( obj );
 
-			tmp = OBJECT_TO_JSVAL(obj);
-			JL_CHK( JS_SetProperty(cx, info, name, &tmp) );
+			tmp.setObject(*obj);
+			JL_CHK( JS_SetProperty(cx, info, name, tmp) );
 
-			tmp = INT_TO_JSVAL(i);
-			JL_CHK( JS_SetPropertyById(cx, obj, indexId, &tmp) );
-			tmp = INT_TO_JSVAL(location);
-			JL_CHK( JS_SetPropertyById(cx, obj, locationId, &tmp) );
-			tmp = INT_TO_JSVAL(size);
-			JL_CHK( JS_SetPropertyById(cx, obj, sizeId, &tmp) );
-			tmp = INT_TO_JSVAL(type);
-			JL_CHK( JS_SetPropertyById(cx, obj, typeId, &tmp) );
+			tmp.setInt32(i);
+			JL_CHK( JS_SetPropertyById(cx, obj, indexId, tmp) );
+			tmp.setInt32(location);
+			JL_CHK( JS_SetPropertyById(cx, obj, locationId, tmp) );
+			tmp.setInt32(size);
+			JL_CHK( JS_SetPropertyById(cx, obj, sizeId, tmp) );
+			tmp.setInt32(type);
+			JL_CHK( JS_SetPropertyById(cx, obj, typeId, tmp) );
 		}
 	}
 
@@ -4744,7 +4766,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getUniformLocation ) {
 
-	JLData name;
+	jl::BufString name;
 
 	JL_DEFINE_ARGS;
 
@@ -4763,7 +4785,7 @@ DEFINE_FUNCTION( getUniformLocation ) {
 
 	uniformLocation = glGetUniformLocationARB(programHandle, name);  OGL_ERR_CHK;
 
-	*JL_RVAL = INT_TO_JSVAL(uniformLocation);
+	JL_RVAL.setInt32(uniformLocation);
 
 	return true;
 	JL_BAD;
@@ -4830,23 +4852,23 @@ DEFINE_FUNCTION( uniform ) {
 
 
 
-/*
-	// OpenGL 2.0 only ?, see glGetActiveUniformARB and glGetActiveUniform
+	/*
+		// OpenGL 2.0 only ?, see glGetActiveUniformARB and glGetActiveUniform
 
-	GLint program;
-	glGetIntegerv(GL_CURRENT_PROGRAM, &program);  OGL_ERR_CHK;
-	GLsizei length;
-	GLint size;
-	GLenum type;
-#ifdef DEBUG
-	GLcharARB name[128];
-	glGetActiveUniformARB(program, uniformLocation <-- incorrect! , sizeof(name), &length, &size, &type, name);  OGL_ERR_CHK;
-#else
-	glGetActiveUniformARB(program, uniformLocation <-- incorrect! , 0, &length, &size, &type, NULL);  OGL_ERR_CHK;
-#endif // DEBUG
+		GLint program;
+		glGetIntegerv(GL_CURRENT_PROGRAM, &program);  OGL_ERR_CHK;
+		GLsizei length;
+		GLint size;
+		GLenum type;
+		#ifdef DEBUG
+		GLcharARB name[128];
+		glGetActiveUniformARB(program, uniformLocation <-- incorrect! , sizeof(name), &length, &size, &type, name);  OGL_ERR_CHK;
+		#else
+		glGetActiveUniformARB(program, uniformLocation <-- incorrect! , 0, &length, &size, &type, NULL);  OGL_ERR_CHK;
+		#endif // DEBUG
 
-	bool isFloat;
-	switch (type) {
+		bool isFloat;
+		switch (type) {
 		case GL_FLOAT:
 		case GL_FLOAT_VEC2:
 		case GL_FLOAT_VEC3:
@@ -4860,101 +4882,108 @@ DEFINE_FUNCTION( uniform ) {
 		case GL_FLOAT_MAT3x4:
 		case GL_FLOAT_MAT4x2:
 		case GL_FLOAT_MAT4x3:
-			isFloat = true;
-			break;
+		isFloat = true;
+		break;
 		default:
-			isFloat = false;
-	}
-
-	// type:
-	//   GL_FLOAT, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_INT, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4,
-	//   GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_FLOAT_MAT2, GL_FLOAT_MAT3, GL_FLOAT_MAT4, GL_FLOAT_MAT2x3,
-	//   GL_FLOAT_MAT2x4, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_SAMPLER_1D, GL_SAMPLER_2D, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_1D_SHADOW, or GL_SAMPLER_2D_SHADOW
-	//   GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4x2, and GL_FLOAT_MAT4x3 (OpenGL 2.1)
-*/
-
-
-
-	jsval staticArgs[4];
-	jsval *aargs;
-	int count;
-	if ( JL_ARGC == 2 && JL_ValueIsArrayLike(cx, JL_ARG(2)) ) { // (TBD) check if array-like make sense here.
-
-		JS::RootedObject arr(cx, &JL_ARG(2).toObject());
-		unsigned tmp;
-		JL_CHK( JS_GetArrayLength(cx, arr, &tmp) );
-		count = tmp;
-		while ( tmp-- ) {
-
-			JL_CHK( JL_GetElement(cx, arr, tmp, staticArgs[tmp]) );
+		isFloat = false;
 		}
-		aargs = staticArgs;
-	} else {
 
-		count = JL_ARGC-1;
-		aargs = JL_ARGV;
-	}
+		// type:
+		//   GL_FLOAT, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_INT, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4,
+		//   GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_FLOAT_MAT2, GL_FLOAT_MAT3, GL_FLOAT_MAT4, GL_FLOAT_MAT2x3,
+		//   GL_FLOAT_MAT2x4, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_SAMPLER_1D, GL_SAMPLER_2D, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_1D_SHADOW, or GL_SAMPLER_2D_SHADOW
+		//   GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4x2, and GL_FLOAT_MAT4x3 (OpenGL 2.1)
+		*/
 
-	JL_CHKM( count >= 1 && count <= 4, E_ARGC, E_RANGE, E_INTERVAL_NUM(1, 4) );
 
-	if ( aargs[0].isDouble() ) {
+	//jsval staticArgs[4];
+	//jsval *aargs;
 
-		float v1, v2, v3, v4;
-		JL_CHK( jl::getValue(cx, aargs[0], &v1) );
-		if ( count > 1 ) {
+	{
+		JS::AutoValueArray<4> aargs(cx);
 
-			JL_CHK( jl::getValue(cx, aargs[1], &v2) );
-			if ( count > 2 ) {
+		uint32_t count;
+		uint32_t i;
+		if (JL_ARGC == 2 && jl::isArrayLike(cx, JL_ARG(2))) { // (TBD) check if array-like make sense here.
 
-				JL_CHK( jl::getValue(cx, aargs[2], &v3) );
-				if ( count > 3 ) {
+			JS::RootedObject arr(cx, &JL_ARG(2).toObject());
+			JL_CHK(JS_GetArrayLength(cx, arr, &count));
 
-					JL_CHK( jl::getValue(cx, aargs[3], &v4) );
-					glUniform4fARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
+			i = count;
+			while (i--)
+				JL_CHK(jl::getElement(cx, arr, i, aargs[i]));
+		}
+		else {
+
+			count = JL_ARGC - 1;
+
+			i = count;
+			while (i--)
+				aargs[i].set(JL_ARGV[i + 1]);
+		}
+
+		JL_CHKM(count >= 1 && count <= 4, E_ARGC, E_RANGE, E_INTERVAL_NUM(1, 4));
+
+		if (aargs[0].isDouble()) {
+
+			float v1, v2, v3, v4;
+			JL_CHK(jl::getValue(cx, aargs[0], &v1));
+			if (count > 1) {
+
+				JL_CHK(jl::getValue(cx, aargs[1], &v2));
+				if (count > 2) {
+
+					JL_CHK(jl::getValue(cx, aargs[2], &v3));
+					if (count > 3) {
+
+						JL_CHK(jl::getValue(cx, aargs[3], &v4));
+						glUniform4fARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
+						return true;
+					}
+					glUniform3fARB(uniformLocation, v1, v2, v3);  OGL_ERR_CHK;
 					return true;
 				}
-				glUniform3fARB(uniformLocation, v1, v2, v3);  OGL_ERR_CHK;
+				glUniform2fARB(uniformLocation, v1, v2);  OGL_ERR_CHK;
 				return true;
 			}
-			glUniform2fARB(uniformLocation, v1, v2);  OGL_ERR_CHK;
+			glUniform1fARB(uniformLocation, v1);  OGL_ERR_CHK;
 			return true;
 		}
-		glUniform1fARB(uniformLocation, v1);  OGL_ERR_CHK;
-		return true;
-	} else {
+		else {
 
-		int v1, v2, v3, v4;
-		JL_CHK( jl::getValue(cx, aargs[0], &v1) );
-		if ( count > 1 ) {
+			int v1, v2, v3, v4;
+			JL_CHK(jl::getValue(cx, aargs[0], &v1));
+			if (count > 1) {
 
-			JL_CHK( jl::getValue(cx, aargs[1], &v2) );
-			if ( count > 2 ) {
+				JL_CHK(jl::getValue(cx, aargs[1], &v2));
+				if (count > 2) {
 
-				JL_CHK( jl::getValue(cx, aargs[2], &v3) );
-				if ( count > 3 ) {
+					JL_CHK(jl::getValue(cx, aargs[2], &v3));
+					if (count > 3) {
 
-					JL_CHK( jl::getValue(cx, aargs[3], &v4) );
-					glUniform4iARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
-					if ( glGetError() == GL_INVALID_OPERATION )
-						glUniform4fARB(uniformLocation, (float)v1, (float)v2, (float)v3, (float)v4);  OGL_ERR_CHK;
+						JL_CHK(jl::getValue(cx, aargs[3], &v4));
+						glUniform4iARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
+						if (glGetError() == GL_INVALID_OPERATION)
+							glUniform4fARB(uniformLocation, (float)v1, (float)v2, (float)v3, (float)v4);  OGL_ERR_CHK;
+						return true;
+					}
+					glUniform3iARB(uniformLocation, v1, v2, v3);  OGL_ERR_CHK;
+					if (glGetError() == GL_INVALID_OPERATION)
+						glUniform3fARB(uniformLocation, (float)v1, (float)v2, (float)v3);  OGL_ERR_CHK;
 					return true;
 				}
-				glUniform3iARB(uniformLocation, v1, v2, v3);  OGL_ERR_CHK;
-				if ( glGetError() == GL_INVALID_OPERATION )
-					glUniform3fARB(uniformLocation, (float)v1, (float)v2, (float)v3);  OGL_ERR_CHK;
+				glUniform2iARB(uniformLocation, v1, v2);  OGL_ERR_CHK;
+				if (glGetError() == GL_INVALID_OPERATION)
+					glUniform2fARB(uniformLocation, (float)v1, (float)v2);  OGL_ERR_CHK;
 				return true;
 			}
-			glUniform2iARB(uniformLocation, v1, v2);  OGL_ERR_CHK;
-			if ( glGetError() == GL_INVALID_OPERATION )
-				glUniform2fARB(uniformLocation, (float)v1, (float)v2);  OGL_ERR_CHK;
+			glUniform1iARB(uniformLocation, v1);  OGL_ERR_CHK;
+			if (glGetError() == GL_INVALID_OPERATION)
+				glUniform1fARB(uniformLocation, (float)v1);  OGL_ERR_CHK;
 			return true;
 		}
-		glUniform1iARB(uniformLocation, v1);  OGL_ERR_CHK;
-		if ( glGetError() == GL_INVALID_OPERATION )
-			glUniform1fARB(uniformLocation, (float)v1);  OGL_ERR_CHK;
-		return true;
-	}
 
+	}
 
 /*
 	jsval arg2;
@@ -5103,7 +5132,6 @@ DEFINE_FUNCTION( uniformFloatVector ) {
 	ASSERT( JL_ARGC > 2 );
 
 	unsigned firstLen = 0;
-	jsval *tmpVal = JL_ARGV + 1;
 	int count = JL_ARGC - 1;
 	value = (GLfloat*)jl_malloca(sizeof(GLfloat) * 4 * count); // allocate the max
 	GLfloat *tmpVec = value;
@@ -5112,9 +5140,9 @@ DEFINE_FUNCTION( uniformFloatVector ) {
 
 	IFDEBUG( len = 0 ); // avoid "potentially uninitialized local variable" warning
 
-	for ( int i = 0; i < count; --i ) {
+	for ( int i = 0; i < count; ++i ) {
 
-		JL_CHK( jl::getVector(cx, *tmpVal, tmpVec, 4, &len) );
+		JL_CHK(jl::getVector(cx, JL_ARGV[i + 1], tmpVec, 4, &len));
 		if ( firstLen == 0 )
 			firstLen = len;
 		ASSERT( len >= 0 && len <= 4 );
@@ -5123,7 +5151,6 @@ DEFINE_FUNCTION( uniformFloatVector ) {
 		//JL_ASSERT( len == firstLen, "Invalid variable vector length." );
 
 		tmpVec += len;
-		tmpVal += 1;
 	}
 
 	ASSERT( len );
@@ -5161,38 +5188,39 @@ DEFINE_FUNCTION( uniformFloat ) {
 	JL_ASSERT_ARGC_RANGE(2, 5);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
-	GLint uniformLocation;
-	uniformLocation = JL_ARG(1).toInt32();
-	JL_RVAL.setUndefined();
-	jsval arg2;
-	arg2 = JL_ARG(2);
-	float v1, v2, v3, v4;
-	if ( arg2.isNumber() ) {
+	{
+		GLint uniformLocation;
+		uniformLocation = JL_ARG(1).toInt32();
+		JL_RVAL.setUndefined();
+		float v1, v2, v3, v4;
 
-		JL_CHK( jl::getValue(cx, arg2, &v1) );
-		if ( JL_ARGC >= 3 ) {
+		if (JL_ARG(2).isNumber()) {
 
-			JL_CHK( jl::getValue(cx, JL_ARG(3), &v2) );
-			if ( JL_ARGC >= 4 ) {
+			JL_CHK(jl::getValue(cx, JL_ARG(2), &v1));
+			if (JL_ARGC >= 3) {
 
-				JL_CHK( jl::getValue(cx, JL_ARG(4), &v3) );
-				if ( JL_ARGC >= 5 ) {
+				JL_CHK(jl::getValue(cx, JL_ARG(3), &v2));
+				if (JL_ARGC >= 4) {
 
-					JL_CHK( jl::getValue(cx, JL_ARG(5), &v4) );
-					glUniform4fARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
+					JL_CHK(jl::getValue(cx, JL_ARG(4), &v3));
+					if (JL_ARGC >= 5) {
+
+						JL_CHK(jl::getValue(cx, JL_ARG(5), &v4));
+						glUniform4fARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
+						return true;
+					}
+					glUniform3fARB(uniformLocation, v1, v2, v3);  OGL_ERR_CHK;
 					return true;
 				}
-				glUniform3fARB(uniformLocation, v1, v2, v3);  OGL_ERR_CHK;
+				glUniform2fARB(uniformLocation, v1, v2);  OGL_ERR_CHK;
 				return true;
 			}
-			glUniform2fARB(uniformLocation, v1, v2);  OGL_ERR_CHK;
+			glUniform1fARB(uniformLocation, v1);  OGL_ERR_CHK;
 			return true;
 		}
-		glUniform1fARB(uniformLocation, v1);  OGL_ERR_CHK;
-		return true;
-	}
 
-	JL_ERR( E_ARG, E_INTERVAL_NUM(2, 5), E_TYPE, E_TY_NUMBER );
+		JL_ERR(E_ARG, E_INTERVAL_NUM(2, 5), E_TYPE, E_TY_NUMBER);
+	}
 	return true;
 	JL_BAD;
 }
@@ -5219,39 +5247,39 @@ DEFINE_FUNCTION( uniformInteger ) {
 	JL_ASSERT_ARGC_RANGE(2, 5);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
-	GLint uniformLocation;
-	uniformLocation = JL_ARG(1).toInt32();
-	JL_RVAL.setUndefined();
-	jsval arg2;
-	arg2 = JL_ARG(2);
-	int v1, v2, v3, v4;
+	{
+		GLint uniformLocation;
+		uniformLocation = JL_ARG(1).toInt32();
+		JL_RVAL.setUndefined();
+		int v1, v2, v3, v4;
 
-	if ( arg2.isNumber() ) {
+		if (JL_ARG(2).isNumber()) {
 
-		JL_CHK( jl::getValue(cx, arg2, &v1) );
-		if ( JL_ARGC >= 3 ) {
+			JL_CHK(jl::getValue(cx, JL_ARG(2), &v1));
+			if (JL_ARGC >= 3) {
 
-			JL_CHK( jl::getValue(cx, JL_ARG(3), &v2) );
-			if ( JL_ARGC >= 4 ) {
+				JL_CHK(jl::getValue(cx, JL_ARG(3), &v2));
+				if (JL_ARGC >= 4) {
 
-				JL_CHK( jl::getValue(cx, JL_ARG(4), &v3) );
-				if ( JL_ARGC >= 5 ) {
+					JL_CHK(jl::getValue(cx, JL_ARG(4), &v3));
+					if (JL_ARGC >= 5) {
 
-					JL_CHK( jl::getValue(cx, JL_ARG(5), &v4) );
-					glUniform4iARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
+						JL_CHK(jl::getValue(cx, JL_ARG(5), &v4));
+						glUniform4iARB(uniformLocation, v1, v2, v3, v4);  OGL_ERR_CHK;
+						return true;
+					}
+					glUniform3iARB(uniformLocation, v1, v2, v3);  OGL_ERR_CHK;
 					return true;
 				}
-				glUniform3iARB(uniformLocation, v1, v2, v3);  OGL_ERR_CHK;
+				glUniform2iARB(uniformLocation, v1, v2);  OGL_ERR_CHK;
 				return true;
 			}
-			glUniform2iARB(uniformLocation, v1, v2);  OGL_ERR_CHK;
+			glUniform1iARB(uniformLocation, v1);  OGL_ERR_CHK;
 			return true;
 		}
-		glUniform1iARB(uniformLocation, v1);  OGL_ERR_CHK;
-		return true;
-	}
 
-	JL_ERR( E_ARG, E_INTERVAL_NUM(2, 5), E_TYPE, E_TY_NUMBER );
+		JL_ERR(E_ARG, E_INTERVAL_NUM(2, 5), E_TYPE, E_TY_NUMBER);
+	}
 	return true;
 	JL_BAD;
 }
@@ -5285,21 +5313,17 @@ DEFINE_FUNCTION( getObjectParameter ) {
 
 		JL_ASSERT_ARG_IS_INTEGER(3);
 		int count = JL_ARG(3).toInt32();
-		jsval tmpValue;
 		count = jl::min(count, (int)COUNTOF(params));
 
 		JS::RootedObject arrayObj(cx, JS_NewArrayObject(cx, count));
 		JL_CHK( arrayObj );
-		*JL_RVAL = OBJECT_TO_JSVAL(arrayObj);
+		JL_RVAL.setObject(*arrayObj);
 
-		while (count--) {
-
-			JL_CHK( JL_NativeToJsval(cx, params[count], tmpValue) );
-			JL_CHK( JL_SetElement(cx, arrayObj, count, tmpValue) );
-		}
+		while (count--)
+			jl::setElement(cx, arrayObj, count, params[count]);
 	} else {
 
-		JL_CHK( JL_NativeToJsval(cx, params[0], *JL_RVAL) );
+		JL_CHK(jl::setValue(cx, JL_RVAL, params[0]));
 	}
 
 	return true;
@@ -5316,7 +5340,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( bindAttribLocation ) {
 
-	JLData name;
+	jl::BufString name;
 	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
@@ -5344,7 +5368,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getAttribLocation ) {
 
-	JLData name;
+	jl::BufString name;
 	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
@@ -5356,7 +5380,7 @@ DEFINE_FUNCTION( getAttribLocation ) {
 	JL_CHK( jl::getValue(cx, JL_ARG(2), &name) );
 	int location;
 	location = glGetAttribLocationARB(JL_ARG(1).toInt32(), name);  OGL_ERR_CHK;
-	*JL_RVAL = INT_TO_JSVAL(location);
+	JL_RVAL.setInt32(location);
 
 	return true;
 	JL_BAD;
@@ -5392,20 +5416,17 @@ DEFINE_FUNCTION( vertexAttrib ) {
 
 	JL_RVAL.setUndefined();
 
-	jsval arg2;
-	arg2 = JL_ARG(2);
-
 	GLdouble v1, v2, v3, v4;
 
-	if ( JL_ARGC == 2 && JSVAL_IS_INT(arg2) ) {
+	if (JL_ARGC == 2 && JL_ARG(2).isInt32()) {
 
-		glVertexAttrib1sARB(index, (GLshort)arg2.toInt32());  OGL_ERR_CHK;
+		glVertexAttrib1sARB(index, (GLshort)JL_ARG(2).toInt32());  OGL_ERR_CHK;
 		return true;
 	}
 
-	if ( arg2.isNumber() ) {
+	if (JL_ARG(2).isNumber()) {
 
-		JL_CHK( jl::getValue(cx, arg2, &v1) );
+		JL_CHK(jl::getValue(cx, JL_ARG(2), &v1));
 		if ( JL_ARGC >= 3 ) {
 
 			JL_CHK( jl::getValue(cx, JL_ARG(3), &v2) );
@@ -5453,7 +5474,7 @@ DEFINE_FUNCTION( genBuffer ) {
 
 	glGenBuffers(1, &buffer);  OGL_ERR_CHK;
 
-	*JL_RVAL = INT_TO_JSVAL(buffer);
+	JL_RVAL.setInt32(buffer);
 
 	return true;
 	JL_BAD;
@@ -5548,7 +5569,7 @@ DEFINE_FUNCTION( pointParameter ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
 	JL_RVAL.setUndefined();
-	if ( JSVAL_IS_INT(JL_ARG(2)) ) {
+	if (JL_ARG(2).isInt32()) {
 
 		glPointParameteri(JL_ARG(1).toInt32(), JL_ARG(2).toInt32());  OGL_ERR_CHK;
 		;
@@ -5564,7 +5585,7 @@ DEFINE_FUNCTION( pointParameter ) {
 		;
 		return true;
 	}
-	if ( JL_ValueIsArray(cx, JL_ARG(2)) ) {  // (TBD) check if array-like make sense here.
+	if ( jl::isArray(cx, JL_ARG(2)) ) {  // (TBD) check if array-like make sense here.
 
 		GLfloat params[MAX_PARAMS];
 		uint32_t length;
@@ -5738,7 +5759,7 @@ DEFINE_FUNCTION( genQueries ) {
 
 	glGenQueriesARB(1, &query);  OGL_ERR_CHK;
 
-	*JL_RVAL = INT_TO_JSVAL(query);
+	JL_RVAL.setInt32(query);
 	return true;
 	JL_BAD;
 }
@@ -5898,12 +5919,12 @@ DEFINE_FUNCTION( getQueryObject ) {
 
 		GLint param;
 		glGetQueryObjectivARB(JL_ARG(1).toInt32(), pname, &param);  OGL_ERR_CHK;
-		*JL_RVAL = INT_TO_JSVAL(param);
+		JL_RVAL.setInt32(param);
 	} else { // GL_QUERY_RESULT_ARB
 
 		GLuint param;
 		glGetQueryObjectuivARB(JL_ARG(1).toInt32(), pname, &param);  OGL_ERR_CHK;
-		JL_CHK( JL_NativeToJsval(cx, param, *JL_RVAL) );
+		JL_CHK(jl::setValue(cx, JL_RVAL, param));
 	}
 
 	return true;
@@ -5971,29 +5992,32 @@ DEFINE_FUNCTION( drawImage ) {
 	JL_ASSERT_ARGC_RANGE(1,2);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	GLsizei width, height;
-	GLenum format, type;
-	int channels;
-	const GLvoid *data;
+	{
 
-	JS::RootedObject tObj(cx, &JL_ARG(1).toObject() );
+		GLsizei width, height;
+		GLenum format, type;
+		int channels;
+		const GLvoid *data;
 
-	if ( JL_GetClass(tObj) == JL_TextureJSClass(cx) ) {
+		JS::RootedObject tObj(cx, &JL_ARG(1).toObject());
 
-		TextureStruct *tex = (TextureStruct*)JL_GetPrivate(tObj);
-		JL_ASSERT_OBJECT_STATE(tex, JL_GetClassName(tObj));
+		if (JL_GetClass(tObj) == JL_TextureJSClass(cx)) {
 
-		data = tex->cbuffer;
-		width = tex->width;
-		height = tex->height;
-		channels = tex->channels;
-		type = GL_FLOAT;
-	} else {
+			TextureStruct *tex = (TextureStruct*)JL_GetPrivate(tObj);
+			JL_ASSERT_OBJECT_STATE(tex, JL_GetClassName(tObj));
 
-		ImageDataType dataType;
-		JLData image( JL_GetImageObject(cx, JL_ARG(1), &width, &height, &channels, &dataType) );
-		JL_ASSERT( image.IsSet(), E_ARG, E_NUM(1), E_INVALID );
-		switch ( dataType ) {
+			data = tex->cbuffer;
+			width = tex->width;
+			height = tex->height;
+			channels = tex->channels;
+			type = GL_FLOAT;
+		}
+		else {
+
+			ImageDataType dataType;
+			jl::BufString image(JL_GetImageObject(cx, JL_ARG(1), &width, &height, &channels, &dataType));
+			JL_ASSERT(image.hasData(), E_ARG, E_NUM(1), E_INVALID);
+			switch (dataType) {
 			case TYPE_INT8:
 				type = GL_BYTE;
 				break;
@@ -6019,20 +6043,21 @@ DEFINE_FUNCTION( drawImage ) {
 				type = GL_DOUBLE;
 				break;
 			default:
-				JL_ERR( E_ARG, E_NUM(1), E_FORMAT );
+				JL_ERR(E_ARG, E_NUM(1), E_FORMAT);
+			}
+			data = image.toData<const uint8_t*>();
 		}
-		data = image.GetConstStr();
-	}
 
-	if ( JL_ARG_ISDEF(2) ) {
+		if (JL_ARG_ISDEF(2)) {
 
-		JL_ASSERT_ARG_IS_INTEGER(2);
-		format = JL_ARG(2).toInt32();
-	} else { // guess
+			JL_ASSERT_ARG_IS_INTEGER(2);
+			format = JL_ARG(2).toInt32();
+		}
+		else { // guess
 
-		//ASSERT( format == GL_LUMINANCE || format == GL_LUMINANCE_ALPHA || format == GL_RGB || format == GL_RGBA );
+			//ASSERT( format == GL_LUMINANCE || format == GL_LUMINANCE_ALPHA || format == GL_RGB || format == GL_RGBA );
 
-		switch ( channels ) {
+			switch (channels) {
 			case 1:
 				format = GL_LUMINANCE;
 				break;
@@ -6046,14 +6071,15 @@ DEFINE_FUNCTION( drawImage ) {
 				format = GL_RGBA;
 				break;
 			default:
-				JL_ERR( E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(1, 4) );
+				JL_ERR(E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(1, 4));
+			}
 		}
+
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);  OGL_ERR_CHK;
+		glDrawPixels(width, height, format, type, data);  OGL_ERR_CHK;
+
+		JL_RVAL.setUndefined();
 	}
-
-	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );  OGL_ERR_CHK;
-	glDrawPixels(width, height, format, type, data);  OGL_ERR_CHK;
-
-	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -6189,31 +6215,35 @@ DEFINE_FUNCTION( readImage ) {
 
 #define TRIMESH_ID_NAME JLHID(GlTr)
 
-struct OpenGlTrimeshInfo {
+struct OpenGlTrimeshInfo : public HandlePrivate {
 
 	GLuint indexBuffer, vertexBuffer, normalBuffer, texCoordBuffer, colorBuffer;
 	size_t vertexCount, indexCount;
+
+	JL_HANDLE_TYPE typeId() const {
+		
+		return TRIMESH_ID_NAME;
+	}
+
+	~OpenGlTrimeshInfo() {
+
+		/* (TBD)!
+
+		static PFNGLDELETEBUFFERSARBPROC glDeleteBuffersARB = (PFNGLDELETEBUFFERSARBPROC) GL_GET_PROC_ADDRESS( "PFNGLDELETEBUFFERSARBPROC" );
+
+		OpenGlTrimeshInfo *info = (OpenGlTrimeshInfo*)pv;
+		glDeleteBuffersARB( 1, &info->indexBuffer );  OGL_ERR_CHK;
+		glDeleteBuffersARB( 1, &info->vertexBuffer );  OGL_ERR_CHK;
+		if ( info->indexBuffer )
+		glDeleteBuffersARB( 1, &info->indexBuffer );  OGL_ERR_CHK;
+		if ( info->texCoordBuffer )
+		glDeleteBuffersARB( 1, &info->texCoordBuffer );  OGL_ERR_CHK;
+		if ( info->colorBuffer )
+		glDeleteBuffersARB( 1, &info->colorBuffer );  OGL_ERR_CHK;
+		*/
+	}
 };
 
-void FinalizeTrimesh(void *pv) {
-
-	JL_IGNORE(pv);
-
-/* (TBD)!
-
-	static PFNGLDELETEBUFFERSARBPROC glDeleteBuffersARB = (PFNGLDELETEBUFFERSARBPROC) GL_GET_PROC_ADDRESS( "PFNGLDELETEBUFFERSARBPROC" );
-
-	OpenGlTrimeshInfo *info = (OpenGlTrimeshInfo*)pv;
-	glDeleteBuffersARB( 1, &info->indexBuffer );  OGL_ERR_CHK;
-	glDeleteBuffersARB( 1, &info->vertexBuffer );  OGL_ERR_CHK;
-	if ( info->indexBuffer )
-		glDeleteBuffersARB( 1, &info->indexBuffer );  OGL_ERR_CHK;
-	if ( info->texCoordBuffer )
-		glDeleteBuffersARB( 1, &info->texCoordBuffer );  OGL_ERR_CHK;
-	if ( info->colorBuffer )
-		glDeleteBuffersARB( 1, &info->colorBuffer );  OGL_ERR_CHK;
-*/
-}
 
 /**doc
 $TOC_MEMBER $INAME
@@ -6232,61 +6262,67 @@ DEFINE_FUNCTION( loadTrimesh ) {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
-	JS::RootedObject trimeshObj(cx, &JL_ARG(1).toObject());
+	{
+		JS::RootedObject trimeshObj(cx, &JL_ARG(1).toObject());
 
-	JL_ASSERT( JL_JsvalIsTrimesh(cx, JL_ARG(1)), E_ARG, E_NUM(1), E_TYPE, E_STR("Trimesh") );
+		JL_ASSERT(JL_JsvalIsTrimesh(cx, JL_ARG(1)), E_ARG, E_NUM(1), E_TYPE, E_STR("Trimesh"));
 
-	Surface *srf = GetTrimeshSurface(cx, trimeshObj);
-	JL_ASSERT_OBJECT_STATE(srf, JL_GetClassName(trimeshObj));
+		Surface *srf = GetTrimeshSurface(cx, trimeshObj);
+		JL_ASSERT_OBJECT_STATE(srf, JL_GetClassName(trimeshObj));
 
-	OpenGlTrimeshInfo *info;
-	JL_CHK( HandleCreate(cx, TRIMESH_ID_NAME, &info, FinalizeTrimesh, JL_RVAL) );
+		OpenGlTrimeshInfo *info = new OpenGlTrimeshInfo;
+		//JL_CHK(HandleCreate(cx, TRIMESH_ID_NAME, &info, FinalizeTrimesh, JL_RVAL));
+		JL_CHK( HandleCreate(cx, info, JL_RVAL) );
 
-	if ( srf->vertex ) {
+		if (srf->vertex) {
 
-		info->vertexCount = srf->vertexCount;
-		glGenBuffers(1, &info->vertexBuffer);  OGL_ERR_CHK;
-		glBindBuffer(GL_ARRAY_BUFFER, info->vertexBuffer);  OGL_ERR_CHK;
-		glBufferData(GL_ARRAY_BUFFER, srf->vertexCount * 3 * sizeof(SURFACE_REAL_TYPE), srf->vertex, GL_STATIC_DRAW);  OGL_ERR_CHK;
-	} else
-		info->vertexBuffer = 0;
+			info->vertexCount = srf->vertexCount;
+			glGenBuffers(1, &info->vertexBuffer);  OGL_ERR_CHK;
+			glBindBuffer(GL_ARRAY_BUFFER, info->vertexBuffer);  OGL_ERR_CHK;
+			glBufferData(GL_ARRAY_BUFFER, srf->vertexCount * 3 * sizeof(SURFACE_REAL_TYPE), srf->vertex, GL_STATIC_DRAW);  OGL_ERR_CHK;
+		}
+		else
+			info->vertexBuffer = 0;
 
-	if ( srf->index ) {
+		if (srf->index) {
 
-		info->indexCount = srf->indexCount;
-		glGenBuffers(1, &info->indexBuffer);  OGL_ERR_CHK;
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, info->indexBuffer);  OGL_ERR_CHK;
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, srf->indexCount * sizeof(SURFACE_INDEX_TYPE), srf->index, GL_STATIC_DRAW);  OGL_ERR_CHK;
-	} else
-		info->indexBuffer = 0;
+			info->indexCount = srf->indexCount;
+			glGenBuffers(1, &info->indexBuffer);  OGL_ERR_CHK;
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, info->indexBuffer);  OGL_ERR_CHK;
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, srf->indexCount * sizeof(SURFACE_INDEX_TYPE), srf->index, GL_STATIC_DRAW);  OGL_ERR_CHK;
+		}
+		else
+			info->indexBuffer = 0;
 
-	if ( srf->normal ) {
+		if (srf->normal) {
 
-		glGenBuffers(1, &info->normalBuffer);  OGL_ERR_CHK;
-		glBindBuffer(GL_ARRAY_BUFFER, info->normalBuffer);  OGL_ERR_CHK;
-		glBufferData(GL_ARRAY_BUFFER, srf->vertexCount * 3 * sizeof(SURFACE_REAL_TYPE), srf->normal, GL_STATIC_DRAW);  OGL_ERR_CHK;
-	} else
-		info->normalBuffer = 0;
+			glGenBuffers(1, &info->normalBuffer);  OGL_ERR_CHK;
+			glBindBuffer(GL_ARRAY_BUFFER, info->normalBuffer);  OGL_ERR_CHK;
+			glBufferData(GL_ARRAY_BUFFER, srf->vertexCount * 3 * sizeof(SURFACE_REAL_TYPE), srf->normal, GL_STATIC_DRAW);  OGL_ERR_CHK;
+		}
+		else
+			info->normalBuffer = 0;
 
-	if ( srf->textureCoordinate ) {
+		if (srf->textureCoordinate) {
 
-		glGenBuffers(1, &info->texCoordBuffer);  OGL_ERR_CHK;
-		glBindBuffer(GL_ARRAY_BUFFER, info->texCoordBuffer);  OGL_ERR_CHK;
-		glBufferData(GL_ARRAY_BUFFER, srf->vertexCount * 3 * sizeof(SURFACE_REAL_TYPE), srf->textureCoordinate, GL_STATIC_DRAW);  OGL_ERR_CHK;
-	} else
-		info->texCoordBuffer = 0;
+			glGenBuffers(1, &info->texCoordBuffer);  OGL_ERR_CHK;
+			glBindBuffer(GL_ARRAY_BUFFER, info->texCoordBuffer);  OGL_ERR_CHK;
+			glBufferData(GL_ARRAY_BUFFER, srf->vertexCount * 3 * sizeof(SURFACE_REAL_TYPE), srf->textureCoordinate, GL_STATIC_DRAW);  OGL_ERR_CHK;
+		}
+		else
+			info->texCoordBuffer = 0;
 
-	if ( srf->color ) {
+		if (srf->color) {
 
-		glGenBuffers(1, &info->colorBuffer);  OGL_ERR_CHK;
-		glBindBuffer(GL_ARRAY_BUFFER, info->colorBuffer);  OGL_ERR_CHK;
-		glBufferData(GL_ARRAY_BUFFER, srf->vertexCount * 4 * sizeof(SURFACE_REAL_TYPE), srf->color, GL_STATIC_DRAW);  OGL_ERR_CHK;
-	} else
-		info->colorBuffer = 0;
+			glGenBuffers(1, &info->colorBuffer);  OGL_ERR_CHK;
+			glBindBuffer(GL_ARRAY_BUFFER, info->colorBuffer);  OGL_ERR_CHK;
+			glBufferData(GL_ARRAY_BUFFER, srf->vertexCount * 4 * sizeof(SURFACE_REAL_TYPE), srf->color, GL_STATIC_DRAW);  OGL_ERR_CHK;
+		}
+		else
+			info->colorBuffer = 0;
 
-	JL_CHK( CheckThrowCurrentOglError(cx) );
-
-	;
+		JL_CHK(CheckThrowCurrentOglError(cx));
+	}
 	return true;
 	JL_BAD;
 }
@@ -6312,7 +6348,10 @@ DEFINE_FUNCTION( drawTrimesh ) {
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	JL_ASSERT( IsHandleType(cx, JL_ARG(1), TRIMESH_ID_NAME), E_ARG, E_NUM(1), E_TYPE, E_STR("GlTr Handle") );
 
-	OpenGlTrimeshInfo *info = (OpenGlTrimeshInfo*)GetHandlePrivate(cx, JL_ARG(1));
+	//OpenGlTrimeshInfo *info = (OpenGlTrimeshInfo*)GetHandlePrivate(cx, JL_ARG(1));
+
+	OpenGlTrimeshInfo *info;
+	JL_CHK( GetHandlePrivate(cx, JL_ARG(1), info) );
 
 	GLenum dataType = sizeof(SURFACE_REAL_TYPE) == sizeof(float) ? GL_FLOAT : GL_DOUBLE;
 
@@ -6435,11 +6474,44 @@ bool TextureBufferFree(TextureBuffer *tb) {
 	return true;
 }
 
+/*
 void TextureBufferFinalize(void* data) {
 
 	TextureBuffer *tb = (TextureBuffer*)data;
 	TextureBufferFree(tb);
 }
+*/
+
+struct TextureBufferHandle : public HandlePrivate {
+
+	TextureBuffer textureBuffer;
+	GLuint pbo;
+
+	JL_HANDLE_TYPE typeId() const {
+	
+		return JLHID(TBUF);
+	}
+
+
+	TextureBufferHandle() {
+
+		glGenBuffers(1, &pbo); // OGL_ERR_CHK;
+		ASSERT(glGetError() == GL_NO_ERROR);
+		// TextureBufferAlloc ?
+	}
+
+	~TextureBufferHandle() {
+
+		if (!glUnmapBuffer)
+			return;
+
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+		ASSERT(glGetError() == GL_NO_ERROR);
+
+		glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+		ASSERT(glGetError() == GL_NO_ERROR);
+	}
+};
 
 // OpenGL Pixel Buffer Object: http://www.songho.ca/opengl/gl_pbo.html
 
@@ -6455,11 +6527,10 @@ DEFINE_FUNCTION( createTextureBuffer ) {
 	JL_INIT_OPENGL_EXTENSION( glGenBuffers, PFNGLGENBUFFERSPROC );
 //	JL_INIT_OPENGL_EXTENSION( glBindBuffer, PFNGLBINDBUFFERPROC );
 
-	TextureBuffer *tb;
-	JL_CHK( HandleCreate(cx, JLHID(TBUF), &tb, TextureBufferFinalize, JL_RVAL) );
-	GLuint pbo;
-	glGenBuffers(1, &pbo);  OGL_ERR_CHK;
-	tb->pv = (void*)pbo;
+	TextureBufferHandle *tb = new TextureBufferHandle;
+
+	//JL_CHK( HandleCreate(cx, JLHID(TBUF), &tb, TextureBufferFinalize, JL_RVAL) );
+	JL_CHK(HandleCreate(cx, tb, JL_RVAL));
 
 	return true;
 	JL_BAD;
@@ -6483,7 +6554,7 @@ $TOC_MEMBER $INAME
 // (TBD) manage compression: http://www.opengl.org/registry/specs/ARB/texture_compression.txt
 DEFINE_FUNCTION( defineTextureImage ) {
 
-	JLData dataStr;
+	jl::BufString dataStr;
 	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
@@ -6497,70 +6568,74 @@ DEFINE_FUNCTION( defineTextureImage ) {
 	int channels;
 	const GLvoid *data;
 
-	JS::RootedObject tObj(cx, &JL_ARG(3).toObject());
+	{
 
-	if ( JL_GetClass(tObj) == JL_TextureJSClass(cx) ) {
+		JS::RootedObject tObj(cx, &JL_ARG(3).toObject());
 
-		TextureStruct *tex = (TextureStruct*)JL_GetPrivate(tObj);
-		JL_ASSERT_OBJECT_STATE(tex, JL_GetClassName(tObj));
+		if (JL_GetClass(tObj) == JL_TextureJSClass(cx)) {
 
-		data = tex->cbuffer;
-		width = tex->width;
-		height = tex->height;
-		channels = tex->channels;
-		type = GL_FLOAT;
-	} else if ( JS_IsTypedArrayObject(tObj, cx) ) {
+			TextureStruct *tex = (TextureStruct*)JL_GetPrivate(tObj);
+			JL_ASSERT_OBJECT_STATE(tex, JL_GetClassName(tObj));
 
-		JL_ASSERT_ARGC(6);
+			data = tex->cbuffer;
+			width = tex->width;
+			height = tex->height;
+			channels = tex->channels;
+			type = GL_FLOAT;
+		}
+		else if (JS_IsTypedArrayObject(tObj)) {
 
-		switch ( JS_GetTypedArrayType(tObj, cx) ) {
+			JL_ASSERT_ARGC(6);
+
+			switch (JS_GetArrayBufferViewType(tObj)) {
 			case js::ArrayBufferView::TYPE_INT8:
 				type = GL_BYTE;
-				data = JS_GetInt8ArrayData(tObj, cx);
+				data = JS_GetInt8ArrayData(tObj);
 				break;
 			case js::ArrayBufferView::TYPE_UINT8:
 				type = GL_UNSIGNED_BYTE;
-				data = JS_GetUint8ArrayData(tObj, cx);
+				data = JS_GetUint8ArrayData(tObj);
 				break;
 			case js::ArrayBufferView::TYPE_INT16:
 				type = GL_SHORT;
-				data = JS_GetInt16ArrayData(tObj, cx);
+				data = JS_GetInt16ArrayData(tObj);
 				break;
 			case js::ArrayBufferView::TYPE_UINT16:
 				type = GL_UNSIGNED_SHORT;
-				data = JS_GetUint16ArrayData(tObj, cx);
+				data = JS_GetUint16ArrayData(tObj);
 				break;
 			case js::ArrayBufferView::TYPE_INT32:
 				type = GL_INT;
-				data = JS_GetInt32ArrayData(tObj, cx);
+				data = JS_GetInt32ArrayData(tObj);
 				break;
 			case js::ArrayBufferView::TYPE_UINT32:
 				type = GL_UNSIGNED_INT;
-				data = JS_GetUint32ArrayData(tObj, cx);
+				data = JS_GetUint32ArrayData(tObj);
 				break;
 			case js::ArrayBufferView::TYPE_FLOAT32:
 				type = GL_FLOAT;
-				data = JS_GetFloat32ArrayData(tObj, cx);
+				data = JS_GetFloat32ArrayData(tObj);
 				break;
 			case js::ArrayBufferView::TYPE_FLOAT64:
 				type = GL_DOUBLE;
-				data = JS_GetFloat64ArrayData(tObj, cx);
+				data = JS_GetFloat64ArrayData(tObj);
 				break;
 			default:
-				JL_ERR( E_ARG, E_NUM(3), E_NOTSUPPORTED, E_COMMENT("ArrayBufferView.type") );
+				JL_ERR(E_ARG, E_NUM(3), E_NOTSUPPORTED, E_COMMENT("ArrayBufferView.type"));
+			}
+
+			JL_CHK(jl::getValue(cx, JL_ARG(4), &width));
+			JL_CHK(jl::getValue(cx, JL_ARG(5), &height));
+			JL_CHK(jl::getValue(cx, JL_ARG(6), &channels));
+
+			JL_ASSERT(width * height * channels == (int)JS_GetTypedArrayByteLength(tObj), E_DATASIZE, E_INVALID);
 		}
+		else {
 
-		JL_CHK( jl::getValue(cx, JL_ARG(4), &width) );
-		JL_CHK( jl::getValue(cx, JL_ARG(5), &height) );
-		JL_CHK( jl::getValue(cx, JL_ARG(6), &channels) );
-
-		JL_ASSERT( width * height * channels == (int)JS_GetTypedArrayByteLength(tObj, cx), E_DATASIZE, E_INVALID );
-	} else {
-
-		ImageDataType dataType;
-		JLData jlImage = JL_GetImageObject(cx, JL_ARG(3), &width, &height, &channels, &dataType);
-		JL_ASSERT( jlImage.IsSet(), E_ARG, E_NUM(3), E_INVALID );
-		switch ( dataType ) {
+			ImageDataType dataType;
+			jl::BufString jlImage = JL_GetImageObject(cx, JL_ARG(3), &width, &height, &channels, &dataType);
+			JL_ASSERT(jlImage.hasData(), E_ARG, E_NUM(3), E_INVALID);
+			switch (dataType) {
 			case TYPE_INT8:
 				type = GL_BYTE;
 				break;
@@ -6586,19 +6661,20 @@ DEFINE_FUNCTION( defineTextureImage ) {
 				type = GL_DOUBLE;
 				break;
 			default:
-				JL_ERR( E_ARG, E_NUM(3), E_FORMAT );
+				JL_ERR(E_ARG, E_NUM(3), E_FORMAT);
+			}
+			data = jlImage.toData<const uint8_t*>();
 		}
-		data = jlImage.GetConstStr();
-	}
 
 
-	if ( JL_ARG_ISDEF(2) ) {
+		if (JL_ARG_ISDEF(2)) {
 
-		JL_ASSERT_ARG_IS_INTEGER(2);
-		format = JL_ARG(2).toInt32();
-	} else { // guess
+			JL_ASSERT_ARG_IS_INTEGER(2);
+			format = JL_ARG(2).toInt32();
+		}
+		else { // guess
 
-		switch ( channels ) {
+			switch (channels) {
 			case 1:
 				format = GL_LUMINANCE;
 				break;
@@ -6612,16 +6688,19 @@ DEFINE_FUNCTION( defineTextureImage ) {
 				format = GL_RGBA;
 				break;
 			default:
-				JL_ERR( E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(1, 4) );
+				JL_ERR(E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(1, 4));
 				// JL_REPORT_ERROR("Invalid texture format."); // miss GL_COLOR_INDEX, GL_STENCIL_INDEX, GL_DEPTH_COMPONENT, GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA
+			}
 		}
+
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);  OGL_ERR_CHK;
+
+		glTexImage2D(JL_ARG(1).toInt32(), 0, format, width, height, 0, format, type, data);  OGL_ERR_CHK;
+
+		JL_RVAL.setUndefined();
+
 	}
 
-	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );  OGL_ERR_CHK;
-
-	glTexImage2D( JL_ARG(1).toInt32(), 0, format, width, height, 0, format, type, data );  OGL_ERR_CHK;
-
-	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
 }
@@ -6654,7 +6733,7 @@ DEFINE_FUNCTION( pixelWidthFactor ) {
 //	float h;
 //	h = viewport[3] * m[5];
 
-	return JL_NativeToJsval(cx, w, JL_RVAL); // sqrt(w*w+h*h)
+	return jl::setValue(cx, JL_RVAL, w); // sqrt(w*w+h*h)
 	JL_BAD;
 }
 
@@ -7163,15 +7242,13 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( error ) {
 
-	JL_DEFINE_ARGS;
+	JL_DEFINE_PROP_ARGS;
 
 	OGL_CX_CHK;
 
-	JL_IGNORE(id, obj, cx);
-
 	// When an error occurs, the error flag is set to the appropriate error code value. No other errors are recorded
 	// until glGetError is called, the error code is returned, and the flag is reset to GL_NO_ERROR.
-	*vp = INT_TO_JSVAL(glGetError());
+	JL_RVAL.setInt32(glGetError());
 	return true;
 	JL_BAD;
 }
@@ -7212,18 +7289,18 @@ void *windowsGLGetProcAddress(const char *procName) {
 
 DEFINE_INIT() {
 
-	JL_IGNORE(proto, sc);
+	JL_IGNORE(proto, cs);
 
 #ifdef DEBUG
 
 	// check GL const duplicates
-	jl::ConstValueSpec *it2, *it1 = sc->static_const;
+	jl::ConstValueSpec *it2, *it1 = cs->static_const;
 
 	int count;
-	for ( it1 = sc->static_const; it1->name != NULL; ++it1 ) {
+	for ( it1 = cs->static_const; it1->name != NULL; ++it1 ) {
 
 		count = 0;
-		for ( it2 = sc->static_const; it2->name != NULL; ++it2 ) {
+		for ( it2 = cs->static_const; it2->name != NULL; ++it2 ) {
 
 //			if ( strcmp(it1->name, it2->name) == 0 && it1->ival != it2->ival ) // detect duplicate name with different value !
 			if ( it1->val == it2->val && strcmp(it1->name, it2->name) == 0 ) // detect duplicate name with same value.
@@ -7235,7 +7312,7 @@ DEFINE_INIT() {
 
 #endif // DEBUG
 
-	JL_CHK( SetMatrix44GetInterface(cx, obj, MatrixGet) );
+	JL_CHK( jl::setMatrix44GetInterface(cx, obj, MatrixGet) );
 
 	ASSERT( glGetProcAddress == NULL );
 
@@ -7269,7 +7346,7 @@ DEFINE_INIT() {
 #ifdef DEBUG
 DEFINE_FUNCTION( test ) {
 	
-	JL_IGNORE(argc, cx);
+	JL_DEFINE_ARGS;
 
 /*
 	jsval id = JL_ARG(1);

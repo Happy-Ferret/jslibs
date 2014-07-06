@@ -1,3 +1,4 @@
+var loadModule = host.loadModule;
 try { 
 
 LoadModule('jsstd');

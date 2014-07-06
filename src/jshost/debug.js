@@ -1,21 +1,28 @@
 var loadModule = host.loadModule;
 
-//_jsapiTests(); throw 0;
-
  //RunJsircbot(false); throw 0;
  //loadModule('jsstd'); loadModule('jsio'); var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/exec(currentDirectory)[0] + '_qa.js');  halt();
  //loadModule('jsstd'); exec('../common/tools.js');  runLocalQAFile(); throw 0;
  //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
-//loadModule('jsstd'); exec('../common/tools.js'); runQATests(''); throw 0; // -inlineOnly
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('serial'); throw 0; // -inlineOnly
+
+	var s = new Serializer();
+	s.write(new URIError());
+	var u = new Unserializer(s.done());
+	host.stdout(u.read());
+
+
+throw 0;
+
 
 host.stdout('Hello World !\n');
+var data = jslangTest();
+throw 0;
 
-//var data = jslangTest();
 
 loadModule('jsstd');
 var data = stringRepeat('x', 94);
-
 
 host.stdout( '*** data ', data, '\n' );
 host.stdout( '*** ', data.constructor , '\n' );

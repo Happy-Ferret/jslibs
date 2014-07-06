@@ -669,13 +669,13 @@ function perfTest(itemList, cfg) {
 	var perfTestFunction = function(qaapi, testList) {
 	
 		loadModule("jsstd");
-		loadModule("jsdebug");
+//		loadModule("jsdebug");
 		var prev_stdout = host.stdout;
 		var prev_stderr = host.stderr;
 		delete host.stdout;
 		delete host.stderr;
 			
-		setPerfTestMode();
+//		setPerfTestMode();
 		collectGarbage();
 		// disableGarbageCollection = true;
 

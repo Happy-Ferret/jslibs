@@ -1,11 +1,11 @@
 include ../subdirs.mk
 
-#BUILD := $(shell echo $(BUILD) | tr A-Z a-z)
-
 ifeq ($(BUILD),dbg)
 	_CONFIGURE_OPTIONS = --enable-debug --disable-optimize --enable-gczeal
 else
 	_CONFIGURE_OPTIONS = --enable-optimize=-Ox --enable-strip
+	_CFLAGS += -GL
+	_LDFLAGS += -LTCG
 endif
 
 ifeq ($(BITS),64)
@@ -14,13 +14,10 @@ else
 	_CFLAGS += -m32
 endif
 
-# CFLAGS=-GL
-# LDFLAGS=-LTCG
 
 TARGET_FILES=$(INT_DIR)dist/bin/*.{so,dll}
 
 TIP_NAME=mozilla-central-????????????
-
 
 .INTERMEDIATE: tip.zip
 .PRECIOUS: tip.zip
@@ -63,7 +60,7 @@ src: src.zip
 
 $(INT_DIR)Makefile: ./src/js/src/configure
 	mkdir -p $(INT_DIR)
-	cd $(INT_DIR) && CXXFLAGS="$(_CFLAGS)" ../src/js/src/configure $(_CONFIGURE_OPTIONS) --with-windows-version=601 --enable-threadsafe --disable-gcgenerational --enable-exact-rooting --without-intl-api --enable-ctypes --disable-tests
+	cd $(INT_DIR) && CXXFLAGS="$(_CFLAGS)" LDFLAGS="$(_LDFLAGS)" ../src/js/src/configure $(_CONFIGURE_OPTIONS) --with-windows-version=601 --enable-threadsafe --disable-gcgenerational --enable-exact-rooting --without-intl-api --enable-ctypes --disable-tests
 	# prev: --enable-threadsafe --disable-gcgenerational --enable-exact-rooting --without-intl-api --enable-ctypes  --with-windows-version=601 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements --disable-tests
 	#	--enable-intl-api (require to remove --disable-intl-api and to add jslibs/libs/js/src/intl directory)
 

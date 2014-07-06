@@ -3,7 +3,7 @@ var loadModule = host.loadModule;
 
 loadModule('jsvideoinput');
 
-host.stdout( VideoInput.list.join('\n') );
+host.stdout( 'list: '+VideoInput.list.join('\n') );
 
 var vi = new VideoInput(VideoInput.list[0]);
 

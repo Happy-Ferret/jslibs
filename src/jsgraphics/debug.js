@@ -11,29 +11,6 @@ loadModule('jssdl');
 loadModule('jsgraphics');
 
 
-
-loadModule('jsvideoinput');
-exec('..\\common\\tools.js');
-var vi = new VideoInput('QuickCam'); // try to get the smallest size and the lowest fps
-displayImage( vi.next() );
-throw 0;
-
-try {
-
-//loadModule('jsstd'); exec('../../tests/arabesques.js'); throw 0;
-//loadModule('jsstd'); exec('../../tests/explodebox.js'); throw 0;
-//loadModule('jsstd'); exec('../../tests/fragmentShaderTest.js'); throw 0;
-loadModule('jsstd'); exec('../../tests/podtest.js'); throw 0;
-
-} catch(ex) {
-
-	print( uneval(ex) );
-}
-
-throw 0;
-
-
-
 // OpenGl doc: http://www.opengl.org/sdk/docs/man/
 
 glSetAttribute( GL_SWAP_CONTROL, 1 ); // vsync
@@ -48,9 +25,30 @@ setVideoMode( 64, 64, 32, OPENGL );
 
 print( 'LINE_WIDTH_RANGE: ', Ogl.getDouble(Ogl.LINE_WIDTH_RANGE, 2).toString(), '\n' );
 
+throw 0;
 
 
-halt(); //////////////////////////////////////////////////////////////////////////
+try {
+
+//loadModule('jsstd'); exec('../../tests/arabesques.js'); throw 0;
+//loadModule('jsstd'); exec('../../tests/explodebox.js'); throw 0;
+//loadModule('jsstd'); exec('../../tests/fragmentShaderTest.js'); throw 0;
+//loadModule('jsstd'); exec('../../tests/podtest.js'); throw 0;
+
+} catch(ex) {
+
+	print( uneval(ex) );
+}
+
+throw 0;
+
+loadModule('jsvideoinput');
+exec('..\\common\\tools.js');
+var vi = new VideoInput('QuickCam'); // try to get the smallest size and the lowest fps
+displayImage( vi.next() );
+throw 0;
+
+
 
 
 

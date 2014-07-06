@@ -10,16 +10,6 @@ loadModule('jsstd');
 loadModule('jsio');
 
 
-	new File( '.\\test.tmp' ).content = 'xxx';
-
-	var a = 1 + (new File( '.\\test.tmp' ).content);
-	print( a );
-
-
-throw 0;
-
-
-
 throw 0;
 
 

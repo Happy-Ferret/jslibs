@@ -150,6 +150,13 @@
 	var cr = new Cipher("CFB", "cast5", "my  key of  16B ", IV);
 	var IV;
 
+
+/// crash 2
+
+	var cr = new Cipher("CFB", "cast5", "my  key of  16B ", IV);
+	var IV;
+
+
 /// hash validity check
 
 	var md5 = new Hash('md5');

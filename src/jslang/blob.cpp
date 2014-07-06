@@ -56,7 +56,17 @@ DEFINE_PROPERTY_GETTER( arrayBuffer ) {
 	if ( !JL_RVAL.isUndefined() ) {
 
 		ASSERT( JL_RVAL.isInt32() );
-		jl::BufBase(JL_GetPrivate(JL_OBJ), JL_RVAL.toInt32()).toArrayBuffer(cx, JL_RVAL);
+		int32_t size = JL_RVAL.toInt32();
+
+		if ( size > 0 ) {
+
+			jl::BufBase( JL_GetPrivate( JL_OBJ ), size ).toArrayBuffer( cx, JL_RVAL );
+		} else {
+
+			JL_RVAL.setObjectOrNull( JS_NewArrayBuffer( cx, 0 ) );
+			JL_ASSERT_ALLOC( JL_RVAL.isNull() );
+		}
+
 		JL_CHK( invalidateBlob(cx, JL_OBJ) );
 		JL_CHK( JS_DefinePropertyById(cx, JL_OBJ, id, JL_RVAL, JSPROP_READONLY | JSPROP_PERMANENT) );
 	} else {

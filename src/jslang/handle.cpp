@@ -55,7 +55,7 @@ DEFINE_FUNCTION( toString ) {
 		str[7] = ']';
 	}
 
-	handleStr = JS_NewStringCopyN(cx, str, sizeof(str)-1);
+	handleStr = JS_NewStringCopyZ(cx, str); // , sizeof(str)-1
 	JL_CHK( handleStr );
 	JL_RVAL.setString(handleStr);
 

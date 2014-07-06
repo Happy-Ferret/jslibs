@@ -2,6 +2,10 @@ loadModule('jsstd');
 
 /// crash
 
+	var b = stringify('abc', true);
+
+/// crash
+
 	processEvents( timeoutEvents(1) );
 
 
@@ -219,7 +223,7 @@ loadModule('jsstd');
 
 	QA.ASSERT(Handle instanceof Object, true, 'instance test');
 	QA.ASSERTOP(h, 'instanceof', Handle, 'handle object type');
-	QA.ASSERT_STR(h, '[Handle  pev]', 'handle type string');
+	QA.ASSERT_STR(h, '[Handle pev]', 'handle type string');
 //	QA.ASSERT(h.constructor, Math.constructor, 'constructor test');
 	QA.ASSERT(h.prototype, Math.prototype, 'prototype test');
 
@@ -414,7 +418,6 @@ loadModule('jsstd');
 		new Date(),
 		new Number(123),
 		new String(123),
-		<A>B</A>,
 		-2147483647-1,
 		0xffffffff,
 		'a', 

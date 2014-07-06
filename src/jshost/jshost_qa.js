@@ -58,5 +58,5 @@
 
 	var h = host.endSignalEvents();
 	QA.ASSERTOP(h, 'instanceof', Handle, 'handle object type');
-	QA.ASSERTOP(h, '==', '[Handle  pev]', 'handle type string');
+	QA.ASSERT_STR(h, '[Handle pev]', 'handle type string');
 	QA.ASSERTOP(h.toString, 'instanceof', Function, 'handle toString is a function');

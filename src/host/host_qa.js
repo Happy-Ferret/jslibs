@@ -1,7 +1,7 @@
 loadModule('jsstd');
 loadModule('jsio');
 
-/// call all possible functions reachable in the scope
+/// call all possible functions reachable in the scope [d]
 
 	if ( QA.IS_UNSAFE ) // Cannot run this test in unsafe mode (else crash)
 		return;
@@ -11,7 +11,7 @@ loadModule('jsio');
 	loadModule('jswinshell'); excludeList.push('fileOpenDialog', 'Console.close');
 	loadModule('jssdl'); excludeList.push('setVideoMode', 'iconify');
 	loadModule('jsstd'); excludeList.push('halt');
-	loadModule('jsdebug'); excludeList.push('debugBreak');
+//	loadModule('jsdebug'); excludeList.push('debugBreak');
 
 	loadModule('jscrypt');
 	loadModule('jsfont');
@@ -293,7 +293,7 @@ loadModule('jsio');
 	host.stderr = prev;
 
 
-/// NativeInterface hacking
+/// NativeInterface hacking [d]
 
 	var b = stringify('abc', true);
 

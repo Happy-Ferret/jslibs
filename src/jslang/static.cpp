@@ -539,7 +539,7 @@ $TOC_MEMBER $INAME
 **/
 /**qa
 	QA.ASSERTOP( timeoutEvents(0), 'instanceof', Handle );
-	QA.ASSERTOP( timeoutEvents(0), '==', '[Handle  pev]' );
+	QA.ASSERTOP( timeoutEvents(0), '==', '[Handle pev]' );
 	QA.ASSERTOP( processEvents(timeoutEvents(0)), '===', 1 );
 	QA.ASSERTOP( function() timeoutEvents(undefined), 'ex', RangeError );
 	QA.ASSERTOP( function() timeoutEvents(-1), 'ex', RangeError );

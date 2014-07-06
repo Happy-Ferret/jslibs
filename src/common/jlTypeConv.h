@@ -1001,6 +1001,15 @@ getVector( JSContext *cx, IN JS::HandleValue val, OUT T * vector, IN uint32_t ma
 	JL_BAD;
 }
 
+template <class T>
+ALWAYS_INLINE bool FASTCALL
+getVector(JSContext *cx, IN JS::HandleValue val, OUT T * vector, IN uint32_t length) {
+
+	uint32_t actualLength;
+	return getVector(cx, val, vector, length, &actualLength);
+}
+
+
 
 ////
 

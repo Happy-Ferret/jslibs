@@ -102,30 +102,27 @@ DEFINE_PROPERTY_GETTER( text ) {
 			errStr = "unknown";
 			break;
 	}
-	return JL_NativeToJsval(cx, errStr, vp);
+	return jl::setValue(cx, vp, errStr);
 	JL_BAD;
 }
 
 
 DEFINE_PROPERTY_GETTER( const ) {
 
-	JL_IGNORE(id);
-	JL_CHK( JL_GetReservedSlot(  obj, 0, vp ) );
+	JL_DEFINE_PROP_ARGS;
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, 0, JL_RVAL ) );
 	int errorCode;
-	JL_CHK( jl::getValue(cx, vp, &errorCode) );
-	return JL_NativeToJsval(cx, OpenGLErrorToConst(errorCode), vp);
+	JL_CHK(jl::getValue(cx, JL_RVAL, &errorCode));
+	return jl::setValue(cx, JL_RVAL, OpenGLErrorToConst(errorCode));
 	JL_BAD;
 }
 
 
 DEFINE_FUNCTION( toString ) {
 
-	JL_IGNORE(argc);
-
 	JL_DEFINE_ARGS;
 
-	
-	JS::RootedObject rtobj(cx, obj);
+	JS::RootedObject rtobj(cx, JL_OBJ);
 	JS::RootedId rtid(cx, JSID_EMPTY);
 	JS::RootedValue hval(cx);
 
@@ -144,11 +141,11 @@ DEFINE_FUNCTION( _serialize ) {
 	ser = jl::JsvalToSerializer(cx, JL_ARG(1));
 
 	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, fileName), JL_RVAL) );
-	JL_CHK( ser->Write(cx, *JL_RVAL) );
+	JL_CHK( ser->Write(cx, JL_RVAL) );
 	JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, lineNumber), JL_RVAL) );
-	JL_CHK( ser->Write(cx, *JL_RVAL) );
-	JL_CHK( JL_GetReservedSlot( JL_OBJ, 0, *JL_RVAL) );
-	JL_CHK( ser->Write(cx, *JL_RVAL) );
+	JL_CHK( ser->Write(cx, JL_RVAL) );
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, 0, JL_RVAL) );
+	JL_CHK( ser->Write(cx, JL_RVAL) );
 
 	return true;
 	JL_BAD;
@@ -159,18 +156,18 @@ DEFINE_FUNCTION( _unserialize ) {
 
 	JL_DEFINE_ARGS;
 
-		JL_ASSERT_ARGC(1);
+	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_TYPE( jl::JsvalIsUnserializer(cx, JL_ARG(1)), 1, "Unserializer" );
 
 	jl::Unserializer *unser;
 	unser = jl::JsvalToUnserializer(cx, JL_ARG(1));
 
-	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, fileName), JL_RVAL) );
-	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JS_SetPropertyById(cx, obj, JLID(cx, lineNumber), JL_RVAL) );
-	JL_CHK( unser->Read(cx, *JL_RVAL) );
-	JL_CHK( JL_SetReservedSlot( JL_OBJ, 0, *JL_RVAL) );
+	JL_CHK( unser->Read(cx, JL_RVAL) );
+	JL_CHK( JS_SetPropertyById(cx, JL_OBJ, JLID(cx, fileName), JL_RVAL) );
+	JL_CHK( unser->Read(cx, JL_RVAL) );
+	JL_CHK(JS_SetPropertyById(cx, JL_OBJ, JLID(cx, lineNumber), JL_RVAL));
+	JL_CHK( unser->Read(cx, JL_RVAL) );
+	JL_CHK( JL_SetReservedSlot( JL_OBJ, 0, JL_RVAL) );
 
 	return true;
 	JL_BAD;
@@ -205,10 +202,8 @@ NEVER_INLINE bool FASTCALL
 ThrowOglError( JSContext *cx, GLenum err ) {
 
 	JS::RootedObject error(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(OglError), JL_CLASS_PROTOTYPE(cx, OglError)));
-	JS_SetPendingException( cx, OBJECT_TO_JSVAL( error ) );
-	JS::RootedValue errVal(cx);
-	JL_CHK( JL_NativeToJsval(cx, err, errVal) );
-	JL_CHK( JL_SetReservedSlot(  error, 0, errVal ) );
-	JL_SAFE( jl::addScriptLocation(cx, error) );
+	jl::setException(cx, error);
+	JL_CHK(jl::setSlot(cx, error, 0, err));
+	JL_SAFE( jl::addScriptLocation(cx, &error) );
 	JL_BAD;
 }
