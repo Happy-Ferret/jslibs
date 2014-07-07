@@ -206,16 +206,27 @@ class NOVTABLE CppNoAlloc {
 
 class NOVTABLE CppAllocators {
 public:
-	ALWAYS_INLINE void* operator new(size_t size) NOTHROW {
+	ALWAYS_INLINE void* 
+	operator new(size_t size) NOTHROW {
+
 		return jl_malloc(size);
 	}
-	ALWAYS_INLINE void* operator new[](size_t size) NOTHROW {
+
+	ALWAYS_INLINE void*
+	operator new[](size_t size) NOTHROW {
+
 		return jl_malloc(size);
 	}
-	ALWAYS_INLINE void operator delete(void *ptr, size_t) {
+
+	ALWAYS_INLINE void
+	operator delete(void *ptr, size_t) {
+
 		jl_free(ptr);
 	}
-	ALWAYS_INLINE void operator delete[](void *ptr, size_t) {
+
+	ALWAYS_INLINE void
+	operator delete[](void *ptr, size_t) {
+
 		jl_free(ptr);
 	}
 };
@@ -224,10 +235,15 @@ public:
 template <class T>
 class NOVTABLE DefaultAlloc {
 public:
-	ALWAYS_INLINE void Free(void *ptr) {
+	ALWAYS_INLINE void
+	Free(void *ptr) {
+
 		jl_free(ptr);
 	}
-	ALWAYS_INLINE void* Alloc() {
+
+	ALWAYS_INLINE void*
+	Alloc() {
+
 		return jl_malloc(sizeof(T));
 	}
 };

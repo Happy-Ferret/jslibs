@@ -342,10 +342,7 @@ DEFINE_FUNCTION( getString ) {
 		JL_RVAL.setUndefined();
 		return true;
 	}
-	JSString *jsstr = JS_NewStringCopyZ(cx, str);
-	JL_CHK( jsstr );
-	*JL_RVAL = STRING_TO_JSVAL( jsstr );
-
+	JL_CHK( jl::setValue( cx, JL_RVAL, jl::CStrSpec( str ) ) );
 	return true;
 	JL_BAD;
 }

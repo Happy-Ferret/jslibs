@@ -355,15 +355,7 @@ DEFINE_FUNCTION( move ) {
 
 	if ( PR_Rename(fileName, destFileName) != PR_SUCCESS )
 		return ThrowIoError(cx);
-
-
-	JSString *jsstr;
-	jsstr = JS_NewStringCopyZ(cx, destFileName);
-	JL_CHK( jsstr );
-	jsvalFileName.setString(jsstr);
-
-	JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, jsvalFileName) );
-
+	JL_CHK( jl::setSlot( cx, JL_OBJ, SLOT_JSIO_FILE_NAME, destFileName ) );
 	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;

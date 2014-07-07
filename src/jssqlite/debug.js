@@ -1,9 +1,54 @@
 var loadModule = host.loadModule;
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssqlite'); throw 0;
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssqlite'); throw 0;
 
 
 loadModule('jsstd');
 loadModule('jssqlite');
+
+
+
+try {
+
+
+	var db = new Database('test.db', Database.READWRITE | Database.CREATE | Database.SHAREDCACHE);
+	db.mcallback = function(val) {
+
+		print(val.quote());
+		return 'test';
+	}
+	db.exec('create table IF NOT EXISTS t1 (value)');
+	db.exec('create temp trigger callbacktrigger after insert on t1 for each row begin select mcallback(new.value); end;');
+	db.exec('insert into t1 (value) values ("\u0100")');
+
+
+//	var db2 = new Database('test.db', Database.READWRITE | Database.CREATE | Database.SHAREDCACHE);
+
+	var db2 = new Database();
+	db2.exec('attach "test.db" as test');
+	db2.exec('insert into test.t1 (value) values ("2")');
+
+
+	} catch(e) {
+
+		print(e);
+	}
+throw 0;
+
+
+	var db = new Database();
+	db.exec('create table IF NOT EXISTS t1 (value)');
+	db.exec('insert into t1 (value) values ("\u0100")');
+throw 0;
+
+
+	var db = new Database();
+	db.mcallback = function(val) {
+
+		print(val, '\n');
+	}
+	db.exec('select mcallback(123)');
+throw 0;
+
 
 
 	var e;

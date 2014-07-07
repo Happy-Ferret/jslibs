@@ -984,9 +984,7 @@ DEFINE_PROPERTY_GETTER( currentDirectory ) {
 #else
 	getcwd(buf, sizeof(buf)); // need  #include <direct.h>
 #endif // WIN
-	JSString *str = JS_NewStringCopyZ(cx, buf);
-	JL_CHK( str );
-	vp.setString(str);
+	JL_CHK( jl::setValue( cx, vp, buf ) );
 	return true;
 	JL_BAD;
 }

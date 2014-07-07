@@ -422,8 +422,12 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( version ) {
 
-	vp.setString(JS_NewStringCopyZ(cx, JL_TOSTRING(VI_VERSION)));
-	return jl::StoreProperty(cx, obj, id, vp, true);
+	//vp.setString(JS_NewStringCopyZ(cx, JL_TOSTRING(VI_VERSION)));
+
+	JL_CHK( jl::setValue( cx, vp, JL_TOSTRING( VI_VERSION ) ) );
+	JL_CHK( jl::StoreProperty( cx, obj, id, vp, true ) );
+	return true;
+	JL_BAD;
 }
 
 

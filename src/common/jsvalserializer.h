@@ -575,7 +575,8 @@ public:
 		SerializerConstBufferInfo buf;
 		JL_CHK( Read(cx, buf) );
 		jsstr.set( JS_NewUCStringCopyN(cx, (const jschar *)buf.Data(), buf.Length()/2) );
-		JL_CHK(jsstr);
+		JL_CHK( jsstr );
+		//JL_CHK( jl::setValue( cx, jsstr, jl::WCStrSpec( (const jschar *)buf.Data(), buf.Length() / 2 ) ) );
 		return true;
 		JL_BAD;
 	}

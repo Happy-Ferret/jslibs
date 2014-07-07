@@ -1130,9 +1130,7 @@ DEFINE_FUNCTION( getKeyName ) {
 	int key;
 	key = JL_ARG(1).toInt32();
 	JL_ASSERT( key > SDLK_FIRST && key < SDLK_LAST, E_ARG, E_NUM(1), E_INVALID );
-	char *keyName = SDL_GetKeyName((SDLKey)key);
-
-	JL_RVAL.setString(JS_NewStringCopyZ(cx, keyName));
+	JL_CHK( jl::setValue( cx, JL_RVAL, SDL_GetKeyName( (SDLKey)key ) ) );
 	return true;
 	JL_BAD;
 }

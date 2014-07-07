@@ -123,9 +123,9 @@ DEFINE_PROPERTY_GETTER( const ) {
 	if ( vp.isUndefined() )
 		return true;
 	int errorCode = vp.toInt32();
-	JSString *str = JS_NewStringCopyZ( cx, SqliteConstString(errorCode) );
-	vp.setString( str );
+	JL_CHK( jl::setValue( cx, vp, SqliteConstString( errorCode ) ) );
 	return true;
+	JL_BAD;
 }
 
 /**doc
@@ -229,12 +229,8 @@ SqliteThrowErrorStatus( JSContext *cx, int status ) {
 	JS::RootedValue errorVal(cx, JS::ObjectValue(*errorObj)); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
 	
 	JS_SetPendingException(cx, errorVal);
-
-	JS::RootedValue tmp(cx, JS::NumberValue(status));
-	JL_CHK(JL_SetReservedSlot(errorObj, SLOT_SQLITE_ERROR_CODE, tmp));
-	tmp.setString(JS_NewStringCopyZ(cx, "???"));
-	JL_CHK(JL_SetReservedSlot(errorObj, SLOT_SQLITE_ERROR_TEXT, tmp));
-	
+	JL_CHK( jl::setSlot( cx, errorObj, SLOT_SQLITE_ERROR_CODE, status ) );
+	JL_CHK( jl::setSlot( cx, errorObj, SLOT_SQLITE_ERROR_TEXT, "???" ) );
 	JL_SAFE( jl::addScriptLocation(cx, &errorObj) );
 	return false;
 	JL_BAD;
@@ -254,16 +250,9 @@ SqliteThrowError( JSContext *cx, sqlite3 *db ) {
 	JS::RootedValue errorVal(cx, JS::ObjectValue(*errorObj)); // (TBD) understand why classSqliteError must have a constructor to be throwed in an exception
 	
 	JS_SetPendingException(cx, errorVal);
-
-	JS::RootedValue tmp(cx, JS::NumberValue(sqlite3_extended_errcode(db)));
-	JL_CHK(JL_SetReservedSlot(errorObj, SLOT_SQLITE_ERROR_CODE, tmp));
-	tmp.setString(JS_NewStringCopyZ(cx, sqlite3_errmsg(db)));
-	JL_CHK(JL_SetReservedSlot(errorObj, SLOT_SQLITE_ERROR_TEXT, tmp));
-	
+	JL_CHK( jl::setSlot( cx, errorObj, SLOT_SQLITE_ERROR_CODE, sqlite3_extended_errcode( db ) ) );
+	JL_CHK( jl::setSlot( cx, errorObj, SLOT_SQLITE_ERROR_TEXT, sqlite3_errmsg( db ) ) );
 	JL_SAFE( jl::addScriptLocation(cx, &errorObj) );
-
-
-	return false;
 	JL_BAD;
 }
 

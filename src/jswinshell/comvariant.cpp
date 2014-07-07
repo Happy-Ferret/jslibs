@@ -376,8 +376,9 @@ bool VariantToJsval( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rva
 			break;
 		case VT_BSTR: {
 			BSTR bstr = isRef ? *V_BSTRREF(variant) : V_BSTR(variant);
-			JSString *str = JS_NewUCStringCopyN(cx, (const jschar*)bstr, SysStringLen(bstr));
-			rval.setString(str);
+			//JSString *str = JS_NewUCStringCopyN(cx, (const jschar*)bstr, SysStringLen(bstr));
+			//rval.setString(str);
+			JL_CHK( jl::setValue( cx, rval, jl::WCStrSpec( (const jschar*)bstr, SysStringLen( bstr ) ) ) );
 			}
 			break;
 		//case VT_BSTR_BLOB: // For system use only.
@@ -581,9 +582,7 @@ DEFINE_FUNCTION( toString ) {
 		JL_CHK( WinThrowError(cx, hr) );
 
 	BSTR bstr = V_ISBYREF(&tmpVariant) ? *V_BSTRREF(&tmpVariant) : V_BSTR(&tmpVariant);
-	JSString *str = JS_NewUCStringCopyN(cx, (const jschar*)bstr, SysStringLen(bstr));
-	JL_CHK(str);
-	JL_RVAL.setString(str);
+	JL_CHK( jl::setValue( cx, JL_RVAL, jl::WCStrSpec( (const jschar*)bstr, SysStringLen( bstr ) ) ) );
 
 	hr = VariantClear(&tmpVariant);
 	if ( FAILED(hr) )

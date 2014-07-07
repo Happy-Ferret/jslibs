@@ -79,7 +79,8 @@ public:
 		memset(_dynSlots, 0, sizeof(JS::Value) * count);
 
 		_dynSlotsCount = count;
-		ASSERT_IF( _dynSlotsCount, _dynSlots[0] == JL_VALUEZ );
+		ASSERT_IF( _dynSlotsCount >= 1, _dynSlots[0] == JL_VALUEZ );
+		ASSERT_IF( _dynSlotsCount >= 1, !_slots[0].isMarkable() );
 		return _dynSlots != 0;
 	}
 

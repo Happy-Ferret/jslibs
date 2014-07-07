@@ -63,12 +63,11 @@ DEFINE_PROPERTY_GETTER( const ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	JL_CHK( JL_GetReservedSlot(JL_OBJ, 0, vp) );
-	if ( vp.isUndefined() )
+	JL_CHK( JL_GetReservedSlot( JL_OBJ, 0, JL_RVAL ) );
+	if ( JL_RVAL.isUndefined() )
 		return true;
-	int errorCode = vp.toInt32();
-	JSString *str = JS_NewStringCopyZ( cx, ZConstString(errorCode) );
-	JL_RVAL.setString(str);
+	int errorCode = JL_RVAL.toInt32();
+	JL_CHK( jl::setValue( cx, JL_RVAL, ZConstString( errorCode ) ) );
 	return true;
 	JL_BAD;
 }

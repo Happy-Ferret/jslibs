@@ -74,9 +74,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 		return true;
 	int errorCode;
 	errorCode = vp.toInt32();
-	JSString *str;
-	str = JS_NewStringCopyZ( cx, ConstString(errorCode) );
-	JL_RVAL.setString(str);
+	JL_CHK( jl::setValue( cx, JL_RVAL, jl::CStrSpec( ConstString( errorCode ) ) ) );
 	return true;
 	JL_BAD;
 }
@@ -91,9 +89,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 		return true;
 	int errorCode;
 	errorCode = JL_RVAL.toInt32();
-	JSString *str;
-	str = JS_NewStringCopyZ(cx, error_to_string(errorCode));
-	JL_RVAL.setString(str);
+	JL_CHK( jl::setValue( cx, JL_RVAL, jl::CStrSpec( error_to_string( errorCode ) ) ) );
 	return true;
 	JL_BAD;
 }
@@ -108,9 +104,7 @@ DEFINE_FUNCTION( toString ) {
 		return true;
 	int errorCode;
 	errorCode = JL_RVAL.toInt32();
-	JSString *str;
-	str = JS_NewStringCopyZ(cx, error_to_string(errorCode));
-	JL_RVAL.setString(str);
+	JL_CHK( jl::setValue( cx, JL_RVAL, jl::CStrSpec( error_to_string( errorCode ) ) ) );
 	return true;
 	JL_BAD;
 }

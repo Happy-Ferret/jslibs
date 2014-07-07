@@ -773,7 +773,7 @@ public:
 	: _str(str), _len(StrSpec::undefined) {
 	}
 
-	StrSpec(T str, size_t len)
+	StrSpec( T str, size_t len )
 	: _str(str), _len(len) {
 
 		ASSERT( len != StrSpec::undefined );

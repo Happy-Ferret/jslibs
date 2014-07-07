@@ -295,8 +295,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-
-	JL_RVAL.setString(JS_NewStringCopyZ(cx,pv->prng.name));
+	JL_CHK( jl::setValue( cx, JL_RVAL, pv->prng.name ) );
 	return true;
 	JL_BAD;
 }

@@ -143,10 +143,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 		return true;
 	int errorCode;
 	errorCode = vp.toInt32();
-	JSString *str;
-	str = JS_NewStringCopyZ( cx, ConstString(errorCode) );
-	JL_CHK( str );
-	vp.setString( str );
+	JL_CHK( jl::setValue( cx, vp, ConstString( errorCode ) ) );
 	return true;
 	JL_BAD;
 }
@@ -170,13 +167,8 @@ bool GetErrorText(JSContext *cx, IN JS::HandleObject obj, OUT JS::MutableHandleV
 	if ( rval.isUndefined() )
 		return true;
 	PRErrorCode errorCode;
-	
-	{
 	errorCode = rval.toInt32();
-	JS::RootedString str(cx, JS_NewStringCopyZ(cx, PR_ErrorToString(errorCode, PR_LANGUAGE_EN)) );
-	rval.setString(str);
-	}
-
+	JL_CHK( jl::setValue( cx, rval, PR_ErrorToString( errorCode, PR_LANGUAGE_EN ) ) );
 	return true;
 	JL_BAD;
 }

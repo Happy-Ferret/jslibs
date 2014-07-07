@@ -1002,7 +1002,7 @@ DEFINE_PROPERTY_GETTER( peerName ) {
 	char buf[MAX_IP_STRING_LENGTH + 1];
 	if ( PR_NetAddrToString(&peerAddr, buf, sizeof(buf)) != PR_SUCCESS )
 		return ThrowIoError(cx);
-	vp.setString( JS_NewStringCopyZ( cx, buf ) );
+	JL_CHK( jl::setValue( cx, vp, buf ) );
 	return true;
 	JL_BAD;
 }
@@ -1052,7 +1052,7 @@ DEFINE_PROPERTY_GETTER( sockName ) {
 	char buf[MAX_IP_STRING_LENGTH + 1];
 	if ( PR_NetAddrToString( &sockAddr, buf, sizeof(buf) ) != PR_SUCCESS )
 		return ThrowIoError(cx);
-	vp.setString( JS_NewStringCopyZ( cx, buf ) );
+	JL_CHK( jl::setValue( cx, vp, buf ) );
 	return true;
 	JL_BAD;
 }

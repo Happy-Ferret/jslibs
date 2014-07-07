@@ -296,10 +296,7 @@ DEFINE_PROPERTY_GETTER( name ) {
 	HashPrivate *pv;
 	pv = (HashPrivate *)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	JSString *jsstr;
-	jsstr = JS_NewStringCopyZ(cx, pv->descriptor->name );
-	JL_CHK( jsstr );
-	JL_RVAL.setString(jsstr);
+	JL_CHK( jl::setValue( cx, JL_RVAL, jl::CStrSpec( pv->descriptor->name ) ) );
 	return true;
 	JL_BAD;
 }

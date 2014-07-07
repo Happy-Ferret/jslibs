@@ -59,7 +59,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_LO, &lo );
 	JL_ASSERT_THIS_OBJECT_STATE(hi.isInt32() && lo.isInt32());
 
-	vp.setString( JS_NewStringCopyZ(cx, ErrorToConstName( (DWORD)MAKELONG(lo.toInt32(), hi.toInt32()) )) );
+	JL_CHK( jl::setValue( cx, vp, ErrorToConstName( (DWORD)MAKELONG( lo.toInt32(), hi.toInt32() ) ) ) );
 	return true;
 	JL_BAD;
 }
@@ -87,7 +87,9 @@ DEFINE_PROPERTY_GETTER( text ) {
 		((char*)lpvMessageBuffer)[res] = '\0';
 	}
 
-	vp.setString(JS_NewStringCopyN( cx, (char*)lpvMessageBuffer, res+1 )); // doc: If the function succeeds, the return value is the number of TCHARs stored in the output buffer, excluding the terminating null character.
+	// doc: If the function succeeds, the return value is the number of TCHARs stored in the output buffer, excluding the terminating null character.
+	JL_CHK( jl::setValue( cx, vp, jl::CStrSpec( (char*)lpvMessageBuffer, res + 1 ) ) );
+
 	LocalFree(lpvMessageBuffer);
 	return true;
 	JL_BAD;

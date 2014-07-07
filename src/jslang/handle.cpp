@@ -44,7 +44,6 @@ DEFINE_FUNCTION( toString ) {
 
 	ASSERT( !pv == (JL_OBJ == JL_THIS_CLASS_PROTOTYPE) );
 
-	JSString *handleStr;
 	char str[] = "[Handle \0\0\0\0\0";
 	if ( pv != NULL ) {
 
@@ -54,11 +53,7 @@ DEFINE_FUNCTION( toString ) {
 		// this handle host.stdout( Handle.prototype ) 
 		str[7] = ']';
 	}
-
-	handleStr = JS_NewStringCopyZ(cx, str); // , sizeof(str)-1
-	JL_CHK( handleStr );
-	JL_RVAL.setString(handleStr);
-
+	JL_CHK( jl::setValue( cx, JL_RVAL, jl::CStrSpec( str ) ) );
 	return true;
 	JL_BAD;
 }

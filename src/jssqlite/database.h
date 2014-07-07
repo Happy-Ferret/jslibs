@@ -28,11 +28,8 @@ struct DatabasePrivate {
 	JSContext *tmpcx;
 };
 
-class FunctionPrivate {
-public:
-	FunctionPrivate(JSContext *cx) : fval(cx), obj(cx) {}
-
+struct FunctionPrivate : public jl::CppAllocators {
 	DatabasePrivate *dbpv;
-	JS::PersistentRootedValue fval;
-	JS::PersistentRootedObject obj;
+	JS::Heap<JSObject*> obj;
+	JS::Heap<JS::Value> fval;
 };

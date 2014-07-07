@@ -169,7 +169,7 @@ DEFINE_FUNCTION( read ) {
 			return ThrowIoError(cx);
 	}
 
-	JL_RVAL.setString(JS_NewStringCopyZ(cx, dirEntry->name));
+	JL_CHK( jl::setValue( cx, JL_RVAL, dirEntry->name ) );
 	return true;
 	JL_BAD;
 }

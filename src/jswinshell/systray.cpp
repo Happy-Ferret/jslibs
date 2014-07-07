@@ -1371,7 +1371,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	if ( pv->nid.uFlags & NIF_TIP )
-		vp.setString( JS_NewStringCopyZ(cx, pv->nid.szTip) );
+		JL_CHK( jl::setValue( cx, vp, pv->nid.szTip ) );
 	return true;
 	JL_BAD;
 }

@@ -252,7 +252,7 @@ DEFINE_FUNCTION( fileOpenDialog ) {
 		JL_ERR( E_OS, E_OPERATION, E_ERRNO(err) );
 	}
 
-	JL_RVAL.setString( JS_NewStringCopyZ(cx, fileName) );
+	JL_CHK( jl::setValue( cx, JL_RVAL, fileName ) );
 	return true;
 	JL_BAD;
 }
@@ -275,7 +275,7 @@ DEFINE_FUNCTION( expandEnvironmentStrings ) {
 	DWORD res = ExpandEnvironmentStrings( src, dst, sizeof(dst) );
 	if ( res == 0 )
 		return jl::throwOSError(cx);
-	JL_RVAL.setString( JS_NewStringCopyN(cx, dst, res) );
+	JL_CHK( jl::setValue( cx, JL_RVAL, jl::CStrSpec( dst, res ) ) );
 	return true;
 	JL_BAD;
 }
@@ -764,6 +764,7 @@ DEFINE_FUNCTION( directoryChangesInit ) {
 	dc->currentBuffer = 0;
 	dc->overlapped.hEvent = NULL;
 
+	// http://msdn.microsoft.com/en-us/library/windows/desktop/aa365465(v=vs.85).aspx
 	if ( !ReadDirectoryChangesW(dc->hDirectory, &dc->buffer[dc->currentBuffer], sizeof(*dc->buffer), dc->watchSubtree, dc->notifyFilter, NULL, &dc->overlapped, NULL) )
 		return WinThrowError(cx, GetLastError());
 
@@ -828,27 +829,25 @@ DEFINE_FUNCTION( directoryChangesLookup ) {
 
 	{
 
-	JS::RootedObject arrObj(cx, JS_NewArrayObject(cx, 0));
-	JL_CHK( arrObj );
-	JL_RVAL.setObject(*arrObj);
+		JS::RootedObject arrObj(cx, JS_NewArrayObject(cx, 0));
+		JL_CHK( arrObj );
+		JL_RVAL.setObject(*arrObj);
 
-	int index = 0;
-	// see http://www.google.fr/codesearch/p?hl=fr&sa=N&cd=17&ct=rc#8WOCRDPt-u8/trunk/src/FileWatch.cc&q=ReadDirectoryChangesW
-	while ( pFileNotify ) {
+		int index = 0;
+		// see http://www.google.fr/codesearch/p?hl=fr&sa=N&cd=17&ct=rc#8WOCRDPt-u8/trunk/src/FileWatch.cc&q=ReadDirectoryChangesW
+		while ( pFileNotify ) {
 
-		JS::RootedValue eltVal(cx);
-		JS::RootedString str(cx, JS_NewUCStringCopyN(cx, (jschar*)pFileNotify->FileName, pFileNotify->FileNameLength / sizeof(WCHAR)));
-		JL_CHK( str );
-		eltVal.setObject(*jl::newArray(cx, (JS::HandleString)str, pFileNotify->Action));
+			JS::RootedValue eltVal(cx);
+			eltVal.setObjectOrNull( jl::newArray( cx, jl::WCStrSpec( (jschar*)pFileNotify->FileName, pFileNotify->FileNameLength / sizeof( WCHAR ) ), pFileNotify->Action ) );
+			JL_CHK( !eltVal.isNull() );
+			JL_CHK( JL_SetElement(cx, arrObj, index, eltVal) );
+			index++;
 
-		JL_CHK( JL_SetElement(cx, arrObj, index, eltVal) );
-		index++;
-
-		if ( pFileNotify->NextEntryOffset )
-			pFileNotify = (FILE_NOTIFY_INFORMATION*) ((PBYTE)pFileNotify + pFileNotify->NextEntryOffset) ;
-		else
-			pFileNotify = NULL;
-	}
+			if ( pFileNotify->NextEntryOffset )
+				pFileNotify = (FILE_NOTIFY_INFORMATION*) ((PBYTE)pFileNotify + pFileNotify->NextEntryOffset) ;
+			else
+				pFileNotify = NULL;
+		}
 
 	}
 
@@ -914,9 +913,7 @@ struct DirectoryUserProcessEvent : public ProcessEvent2 {
 		if ( slot( 0 ) != JL_VALUEZ ) {
 
 			JS::RootedValue rval(cx);
-			JS::RootedObject callThisObj(cx);
-			callThisObj.set(&slot(0).toObject());
-			JL_CHK( jl::call(cx, callThisObj, hslot(0), &rval, hslot(1)) );
+			JL_CHK( jl::call( cx, hslot( 0 ), hslot( 2 ), &rval, hslot( 1 ) ) );
 		}
 		return true;
 		JL_BAD;
@@ -950,7 +947,7 @@ DEFINE_FUNCTION( directoryChangesEvents ) {
 		JL_ASSERT_ARG_IS_CALLABLE(2);
 		upe->hslot(0).set(JL_OBJVAL); // store "this" object.
 		upe->hslot(1).set(JL_ARG(1)); // dmon handle (argument 1 of the callback function)
-		upe->hslot(2).set(JL_ARG(2)); // optional onChange function
+		upe->hslot(2).set(JL_ARG(2)); // onChange function
 	}
 
 	upe->dc = dc;

@@ -207,7 +207,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT( !pv->inZipOpened );
 
 	//JL_CHK( ReserveStreamReadInterface(cx, obj) );
-	JL_CHK( SetStreamReadInterface(cx, JL_OBJ, NativeInterfaceStreamRead) );
+	JL_CHK( jl::setStreamReadInterface(cx, JL_OBJ, NativeInterfaceStreamRead) );
 
 	JL_SetPrivate(JL_OBJ, pv);
 	return true;
@@ -1169,12 +1169,10 @@ DEFINE_PROPERTY_GETTER( const ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	JL_GetReservedSlot( obj, 0, vp);
-	if ( vp.isUndefined() )
+	JL_GetReservedSlot( obj, 0, JL_RVAL );
+	if ( JL_RVAL.isUndefined() )
 		return true;
-	JSString *str = JS_NewStringCopyZ( cx, ZipFileErrorConstString(vp.toInt32()) );
-	JL_ASSERT_ALLOC( str );
-	JL_RVAL.setString(str);
+	JL_CHK( jl::setValue( cx, JL_RVAL, ZipFileErrorConstString( JL_RVAL.toInt32() ) ) );
 	return true;
 	JL_BAD;
 }

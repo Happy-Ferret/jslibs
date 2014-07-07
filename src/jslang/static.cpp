@@ -135,9 +135,8 @@ DEFINE_FUNCTION( stringify ) {
 				JL_CHK( BlobCreate(cx, buf.GetDataOwnership(), buf.Length(), JL_RVAL) );
 			} else {
 
-				JSString *jsstr = JS_NewStringCopyN(cx, buf.GetData(), buf.Length());
-				JL_CHK( jsstr );
-				JL_RVAL.setString(jsstr);
+				//JSString *jsstr = JS_NewStringCopyN(cx, buf.GetData(), buf.Length());
+				JL_CHK( jl::setValue( cx, JL_RVAL, jl::CStrSpec( buf.GetData(), buf.Length() ) ) );
 			}
 
 			return true;

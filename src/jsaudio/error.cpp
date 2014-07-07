@@ -72,8 +72,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 			errStr = "Unknown error.";
 			break;
 	}
-	JSString *str = JS_NewStringCopyZ( cx, errStr );
-	vp.setString( str );
+	JL_CHK( jl::setValue( cx, vp, jl::CStrSpec( errStr ) ) );
 	return true;
 	JL_BAD;
 }
@@ -115,8 +114,7 @@ DEFINE_PROPERTY_GETTER( const ) {
 			errStr = "???";
 			break;
 	}
-	JSString *str = JS_NewStringCopyZ( cx, errStr );
-	vp.setString( str );
+	JL_CHK( jl::setValue( cx, vp, jl::CStrSpec( errStr ) ) );
 	return true;
 	JL_BAD;
 }

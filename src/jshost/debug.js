@@ -7,11 +7,48 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('serial'); throw 0; // -inlineOnly
 
+	loadModule('jsstd');
+	loadModule('jswinshell');
+
+	var dch = directoryChangesInit('C:\\', 0x10, true); // 0x10: FILE_NOTIFY_CHANGE_LAST_WRITE
+
+	function changesNotificationFct() {
+
+		print( directoryChangesLookup(dch).join('\n'), '\n');
+	}
+
+	var ev = directoryChangesEvents(dch, changesNotificationFct);
+
+	print(host.endSignalEvents)
+
+	while ( !host.endSignal )
+		processEvents( ev, host.endSignalEvents() );
+
+throw 0;
+
+
+	loadModule('jsio');
+	host.stdout((new File).name);
+
+	host.stdout( timeoutEvents(1000) );
+	host.stdout( Handle.prototype );
+
+
+	var ev1 = timeoutEvents(1000, function() { host.stdout('timeout') });
+	var ev2 = host.endSignalEvents(function() { host.stdout('end signal') });
+
+	collectGarbage();
+
+	processEvents(ev1, ev2);
+	processEvents(ev1, ev2);
+
+throw 0;
+
+
 	var s = new Serializer();
 	s.write(new URIError());
 	var u = new Unserializer(s.done());
 	host.stdout(u.read());
-
 
 throw 0;
 
@@ -251,23 +288,7 @@ var a = new Socket();
 throw 0;
 */
 
-//loadModule('jsio');
-//host.stdout((new File).name);
 
-//host.stdout( timeoutEvents(1000) );
-//host.stdout( Handle.prototype );
-
-
-var ev1 = timeoutEvents(1000, function() { host.stdout('timeout') });
-var ev2 = host.endSignalEvents(function() { host.stdout('end signal') });
-
-collectGarbage();
-
-processEvents(ev1, ev2);
-processEvents(ev1, ev2);
-
-
-throw 0;
 
 
 

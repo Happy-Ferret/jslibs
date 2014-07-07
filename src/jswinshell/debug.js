@@ -1,11 +1,32 @@
 var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
+
+loadModule('jsstd');
+loadModule('jswinshell');
+
+//var dch = directoryChangesInit('C:\\tmp', 0x10, true); // 0x10: FILE_NOTIFY_CHANGE_LAST_WRITE
+var dch = directoryChangesInit('C:\\tmp', 0xff, true); // 0x10: FILE_NOTIFY_CHANGE_LAST_WRITE
+
+function changesNotificationFct() {
+
+	print( directoryChangesLookup(dch).join('\n'), '\n');
+}
+
+var ev = directoryChangesEvents(dch, changesNotificationFct);
+
+while ( !host.endSignal )
+	processEvents( ev, host.endSignalEvents() );
+	
+	
+
+throw 0; //////////////////////////////////////////////////////////////////////
+
+
 loadModule('jsio');
 loadModule('jsstd');
 loadModule('jswinshell');
 //loadModule('jssvg');
-
 
 //exec('..\\..\\..\\audioToPhone\\webbroadcast.js', false);
 
@@ -731,21 +752,6 @@ while ( !host.endSignal )
 throw 0; //////////////////////////////////////////////////////////////////////
 
 
-var dch = directoryChangesInit('C:\\', 0x10, true); // 0x10: FILE_NOTIFY_CHANGE_LAST_WRITE
-
-function changesNotificationFct() {
-
-	print( directoryChangesLookup(dch).join('\n'), '\n');
-}
-
-var ev = directoryChangesEvents(dch, changesNotificationFct);
-
-while ( !host.endSignal )
-	processEvents( ev, host.endSignalEvents() );
-	
-	
-
-throw 0; //////////////////////////////////////////////////////////////////////
 
 
 try {

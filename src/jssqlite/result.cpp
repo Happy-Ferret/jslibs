@@ -20,7 +20,7 @@
 
 
 bool SqliteToJsval( JSContext *cx, sqlite3_value *value, OUT JS::MutableHandleValue rval ) {
-
+	
 	switch( sqlite3_value_type(value) ) {
 
 		case SQLITE_INTEGER:
@@ -37,8 +37,10 @@ bool SqliteToJsval( JSContext *cx, sqlite3_value *value, OUT JS::MutableHandleVa
 			rval.setNull();
 			break;
 		case SQLITE_TEXT:
-			rval.setString(JS_NewStringCopyN(cx, (const char *)sqlite3_value_text(value), sqlite3_value_bytes(value)));
+			//rval.setString(JS_NewStringCopyN(cx, (const char*)sqlite3_value_text(value), sqlite3_value_bytes(value)));
 			//*rval = STRING_TO_JSVAL(JS_NewUCStringCopyZ(cx, (const jschar*)sqlite3_value_text16(value)));
+			//JL_CHK( jl::setValue( cx, rval, jl::CStrSpec( (const char*)sqlite3_value_text( value ), sqlite3_value_bytes( value ) ) ) );
+			JL_CHK( jl::setValue( cx, rval, jl::WCStrSpec( (const jschar*)sqlite3_value_text16( value ), sqlite3_value_bytes16( value ) / sizeof( jschar ) ) ) );
 			break;
 		default:
 			JL_ERR( E_DATATYPE, E_NOTSUPPORTED );
@@ -133,7 +135,7 @@ bool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JS::HandleValue ar
 					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
 				break;
 			case JSTYPE_NUMBER:
-				if ( JSVAL_IS_INT(val) ) {
+				if ( val.isInt32() ) {
 
 					ret = sqlite3_bind_int(pStmt, param, val.toInt32());
 				} else {
@@ -640,21 +642,20 @@ DEFINE_PROPERTY_GETTER( columnNames ) {
 	
 	{
 
-	JS::RootedObject columnNames(cx, JS_NewArrayObject(cx, 0));
-	vp.setObject( *columnNames );
-	int columnCount;
-	columnCount = sqlite3_column_count( pStmt ); // sqlite3_column_count AND NOT sqlite3_data_count because this function can be called before sqlite3_step
+		JS::RootedObject columnNames(cx, JS_NewArrayObject(cx, 0));
+		vp.setObject( *columnNames );
+		int columnCount;
+		columnCount = sqlite3_column_count( pStmt ); // sqlite3_column_count AND NOT sqlite3_data_count because this function can be called before sqlite3_step
 	
-	JS::RootedValue colJsValue(cx);
-	for ( int col = 0; col < columnCount; ++col ) {
+		JS::RootedValue colJsValue(cx);
+		for ( int col = 0; col < columnCount; ++col ) {
 
-		//see. sqlite3_column_origin_name(pStmt, col);
-		colJsValue.setString( JS_NewStringCopyZ(cx,(const char *)sqlite3_column_name( pStmt, col )) ); // sqlite3_column_name can be called BEFORE sqlite3_step
-		//JL_CHK( JS_DefineElement(cx, columnNames, col, colJsValue, NULL, NULL, JSPROP_ENUMERATE | JSPROP_PERMANENT) );
-		JL_CHK( JL_SetElement(cx, columnNames, col, colJsValue) );
-	}
+			//see. sqlite3_column_origin_name(pStmt, col);
+			// sqlite3_column_name can be called BEFORE sqlite3_step
+			JL_CHK( jl::setElement( cx, columnNames, col, (const char*)sqlite3_column_name( pStmt, col ) ) );
+		}
 	
-	return jl::StoreProperty(cx, obj, id, vp, false);
+		return jl::StoreProperty(cx, obj, id, vp, false);
 
 	}
 
@@ -803,8 +804,12 @@ DEFINE_FUNCTION( stdIteratorNext ) {
 
 	ASSERT( row.isUndefined() == done );
 
-	JL_CHK( JS_DefinePropertyById(cx, item, JLID(cx, done), JS::BooleanValue(done), NULL, NULL, 0) );
-	JL_CHK( JS_DefinePropertyById(cx, item, JLID(cx, value), row, NULL, NULL, 0) );
+	//JL_CHK( JS_DefinePropertyById(cx, item, JLID(cx, done), JS::BooleanValue(done), NULL, NULL, 0) );
+	//JL_CHK( JS_DefinePropertyById(cx, item, JLID(cx, value), row, NULL, NULL, 0) );
+
+	JL_CHK( jl::setProperty( cx, item, JLID( cx, done ), done ) );
+	JL_CHK( jl::setProperty( cx, item, JLID( cx, value ), row ) );
+
 	JL_RVAL.setObject(*item);
 
 	}

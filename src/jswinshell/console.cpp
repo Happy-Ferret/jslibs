@@ -135,7 +135,7 @@ DEFINE_FUNCTION( read ) {
 	if ( st == 0 )
 		return WinThrowError(cx, GetLastError());
 
-	JL_RVAL.setString(JS_NewStringCopyN(cx, buffer, read));
+	JL_CHK( jl::setValue( cx, JL_RVAL, jl::CStrSpec( buffer, read ) ) );
 	return true;
 	JL_BAD;
 }

@@ -885,9 +885,7 @@ DEFINE_FUNCTION( stdin ) {
 	int status = host.stdIO().input(buffer, COUNTOF(buffer));
 	if ( status > 0 ) {
 		
-		JS::RootedString jsstr(cx, JS_NewStringCopyN(cx, buffer, status));
-		JL_CHK( jsstr );
-		JL_RVAL.setString(jsstr);
+		JL_CHK( jl::setValue( cx, JL_RVAL, jl::CStrSpec( buffer, status ) ) );
 	} else {
 
 		JL_WARN( E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdin"), E_READ );
