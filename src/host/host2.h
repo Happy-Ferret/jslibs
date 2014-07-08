@@ -107,6 +107,7 @@ public:
 		return 0;
 	}
 	virtual int	output( const char *buffer, size_t length ) {
+
 		JL_IGNORE(buffer, length);
 		return 0;
 	}

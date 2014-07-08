@@ -7,6 +7,118 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('serial'); throw 0; // -inlineOnly
 
+
+
+	function genReferenceError() {
+		
+		try {
+			dgsdfgfvf6z5ef4sdfg();
+		} catch(ex) {
+			return ex;
+		}
+		return undefined;
+	}
+	
+	var typedArray = new Uint32Array(10);
+	for ( var i = 0; i < 10 + 5; ++i )
+		typedArray[i] = i*100;
+
+	var emptyTypedArray = new Uint32Array(10);
+
+	var myobj = [
+		emptyTypedArray,
+		typedArray,
+		genReferenceError(),
+		new Error('error test'), 
+		function() [,1,{__proto__:null}],
+		'',
+		'string', 
+		{__proto__:null, a:2}, 
+		[], 
+		[,,,,,], 
+		[,undefined,'arrayelt'], 
+		true, 
+		false,
+		(void 0), 
+		null, 
+		0, 
+		0.0, 
+		-0.0, 
+		1,234, 
+		NaN, 
+		-Infinity, 
+		+Infinity, 
+		{a:1, b:2, c:{d:3}}, 
+		{},
+		,
+		new Date(),
+		new Number(123),
+		new String(123),
+		-2147483647-1,
+		0xffffffff,
+		'a', 
+		String(),
+		new Error(),
+		new SyntaxError(),
+		new URIError(),
+		function(x,y) { return x+y+1; }
+	];
+	
+	var s = new Serializer();
+	s.write(myobj);
+	var s = new Unserializer(s.done());
+
+	var str = uneval(myobj);
+	var str1 = uneval(s.read());
+	
+	host.stdout( str == str1 );
+
+
+throw 0;
+
+
+	var s = new Serializer();
+	s.write(function(a) { return a + 1 } );
+	var u = new Unserializer(s.done());
+	host.stdout(u.read());
+	host.stdout('\n');
+
+	var s = new Serializer();
+	s.write({a:{a:2}});
+	var u = new Unserializer(s.done());
+	host.stdout(uneval(u.read()));
+	host.stdout('\n');
+
+	var s = new Serializer();
+	s.write(new Error());
+	var u = new Unserializer(s.done());
+	host.stdout(uneval(u.read()));
+	host.stdout('\n');
+
+	var s = new Serializer();
+	s.write([1,,3]);
+	var u = new Unserializer(s.done());
+	host.stdout(uneval(u.read()));
+	host.stdout('\n');
+	
+throw 0;
+
+	loadModule('jsstd');
+	loadModule('jswinshell');
+
+	while ( !host.endSignal ) {
+		
+		sleep(10);
+		new Array(100000).join('x');
+	}
+
+throw 0;
+
+
+	host.stdout(host.stdin());
+
+throw 0;
+
 	loadModule('jsstd');
 	loadModule('jswinshell');
 

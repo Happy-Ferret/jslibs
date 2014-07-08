@@ -344,7 +344,7 @@ class ChunkedBuffer {
 	size_t _chunkListSize;
 
 	Chunk _staticChunkList[8];
-	T _staticBuffer[8192];
+	T _staticBuffer[4096];
 
 public:
 	~ChunkedBuffer() {

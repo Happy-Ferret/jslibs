@@ -149,7 +149,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARG_IS_STRING(1);
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-	unser = new jl::Unserializer(cx, str.toData<char *>(), str.length(), OBJECT_TO_JSVAL(JL_OBJ));
+	unser = new jl::Unserializer(cx, str.toData<char*>(), str.length(), JL_OBJVAL);
 	JL_ASSERT_ALLOC(unser);
 	jl::SourceId_t srcId;
 	JL_CHK( unser->Read(cx, srcId) );

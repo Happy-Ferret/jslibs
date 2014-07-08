@@ -490,7 +490,9 @@ newObjectWithGivenProto( JSContext *cx, const JSClass *clasp, IN JS::HandleObjec
 ALWAYS_INLINE JSObject* FASTCALL
 newObjectWithoutProto( JSContext *cx ) {
 
-	JS::RootedObject obj(cx, newObjectWithGivenProto(cx, NULL, JS::NullPtr())); // JL_GetGlobal(cx) ??
+	//JS::RootedObject obj(cx, newObjectWithGivenProto(cx, NULL, JS::NullPtr())); // JL_GetGlobal(cx) ??
+	JS::RootedObject parent(cx, JL_GetGlobal(cx));
+	JS::RootedObject obj(cx, newObjectWithGivenProto(cx, nullptr, JS::NullPtr(), parent));
 	ASSERT( JL_GetParent(cx, obj) != NULL );
 	ASSERT( JL_GetPrototype(cx, obj) == NULL );
 	return obj;

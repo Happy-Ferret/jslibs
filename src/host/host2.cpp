@@ -29,12 +29,12 @@
 // mixing safe and unsafe is not allowed.
 DLLAPI bool _unsafeMode = true;
 
-DLLAPI jl_malloc_t jl_malloc = NULL;
-DLLAPI jl_calloc_t jl_calloc = NULL;
-DLLAPI jl_memalign_t jl_memalign = NULL;
-DLLAPI jl_realloc_t jl_realloc = NULL;
-DLLAPI jl_msize_t jl_msize = NULL;
-DLLAPI jl_free_t jl_free = NULL;
+DLLAPI jl_malloc_t jl_malloc = nullptr;
+DLLAPI jl_calloc_t jl_calloc = nullptr;
+DLLAPI jl_memalign_t jl_memalign = nullptr;
+DLLAPI jl_realloc_t jl_realloc = nullptr;
+DLLAPI jl_msize_t jl_msize = nullptr;
+DLLAPI jl_free_t jl_free = nullptr;
 
 
 
@@ -43,7 +43,7 @@ JL_BEGIN_NAMESPACE
 //////////////////////////////////////////////////////////////////////////////
 // Threaded memory deallocator
 
-ThreadedAllocator *ThreadedAllocator::_owner = NULL;
+ThreadedAllocator *ThreadedAllocator::_owner = nullptr;
 
 Allocators ThreadedAllocator::_base;
 
@@ -72,7 +72,7 @@ ThreadedAllocator::freeHead() {
 
 	void *next = _head;
 	void *it = *(void**)next;
-	*(void**)next = NULL;
+	*(void**)next = nullptr;
 
 	while ( it ) {
 
@@ -156,7 +156,7 @@ ThreadedAllocator::_msize( void *ptr ) {
 void
 ThreadedAllocator::_free( void *ptr ) {
 	
-	if (unlikely( ptr == NULL ))
+	if (unlikely( ptr == nullptr ))
 		return;
 
 	ASSERT( ptr > (void*)0x1000 );
@@ -197,13 +197,13 @@ ThreadedAllocator::~ThreadedAllocator() {
 	}
 
 	_current = _base;
-	_owner = NULL;
+	_owner = nullptr;
 }
 
 ThreadedAllocator::ThreadedAllocator(Allocators &allocators)
 : _current(allocators) {
 		
-	ASSERT( _owner == NULL );
+	ASSERT( _owner == nullptr );
 	_owner = this;
 
 	_base = allocators;
@@ -212,19 +212,19 @@ ThreadedAllocator::ThreadedAllocator(Allocators &allocators)
 	_skipCleanup = false;
 	_load = 0;
 	_headLength = 0;
-	_head = NULL;
+	_head = nullptr;
 	_memoryFreeThreadSem = JLSemaphoreCreate(0);
 	_memoryFreeThread = JLThreadStart(memoryFreeThreadProc);
 	_canTriggerFreeThread = false;
 
-	_free(_malloc(0)); // make head non-NULL (TBD) why?
+	_free(_malloc(0)); // make head non-nullptr (TBD) why?
 }
 
 
 //////////////////////////////////////////////////////////////////////////////
 // CountedAlloc
 
-CountedAlloc *CountedAlloc::_owner = NULL;
+CountedAlloc *CountedAlloc::_owner = nullptr;
 
 volatile int32_t CountedAlloc::_allocCount;
 volatile int32_t CountedAlloc::_allocAmount;
@@ -267,7 +267,7 @@ void*
 CountedAlloc::_realloc( void *ptr, size_t size ) {
 
 	size_t prev;
-	if ( ptr == NULL ) {
+	if ( ptr == nullptr ) {
 
 		prev = 0;
 		JLAtomicIncrement(&CountedAlloc::_allocCount);
@@ -310,7 +310,7 @@ CountedAlloc::_free( void *ptr ) {
 CountedAlloc::CountedAlloc(Allocators &current)
 : _current(current) {
 	
-	ASSERT( _owner == NULL );
+	ASSERT( _owner == nullptr );
 	_owner = this;
 
 	_allocCount = 0;
@@ -327,7 +327,7 @@ CountedAlloc::~CountedAlloc() {
 	fprintf(stderr, "\n{alloc:%d (%dB), leaks:%d (%dB)}\n", _allocCount, _allocAmount, _allocCount - _freeCount, _allocAmount - _freeAmount);
 		
 	_current = _base;
-	_owner = NULL;
+	_owner = nullptr;
 }
 
 
@@ -339,19 +339,28 @@ WatchDog::interruptCallback(JSContext *cx) {
 
 	JSRuntime *rt = JL_GetRuntime(cx);
 
-//	JSInterruptCallback tmp = JS_SetInterruptCallback(rt, NULL);
+//	JSInterruptCallback tmp = JS_SetInterruptCallback(rt, nullptr);
 
 	//For a collection to be carried out incrementally the following conditions must be met:
 	// - The collection must be run by calling JS::IncrementalGC() rather than JS_GC().
 	// - The GC mode must have been set to JSGC_MODE_INCREMENTAL with JS_SetGCParameter().
 	// - All native objects that have their own trace hook must indicate that they implement read and write barriers with the JSCLASS_IMPLEMENTS_BARRIERS flag.
- 
-	JS::IncrementalGC(rt, JS::gcreason::NO_REASON);
-	bool fin = !JS::IsIncrementalGCInProgress(rt);
 
-	ASSERT( fin );
 
-	//JS_MaybeGC(cx);
+
+	if ( !JS::IsIncrementalGCInProgress( rt ) ) {
+
+		JS::IncrementalGC( rt, JS::gcreason::API, 5 );
+	} else {
+
+		JS::FinishIncrementalGC( rt, JS::gcreason::API );
+	}
+
+
+	//ASSERT( JS::IsIncrementalGCInProgress( rt ) );
+
+	//JS_MaybeGC(cx); 
+
 	//JS_GC(rt);
 	//JS::IncrementalGC(rt, JS::gcreason::MAYBEGC);
 
@@ -391,7 +400,7 @@ WatchDog::start() {
 
 		JSContext *cx = _hostRuntime.context();
 		JSInterruptCallback prevOperationCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), interruptCallback);
-		ASSERT( prevOperationCallback == NULL );
+		ASSERT( prevOperationCallback == nullptr );
 		_watchDogSemEnd = JLSemaphoreCreate(0);
 		_watchDogThread = JLThreadStart(watchDogThreadProc, this);
 		JL_ASSERT( JLSemaphoreOk(_watchDogSemEnd) && JLThreadOk(_watchDogThread), E_HOST, E_CREATE ); // "Unable to create the GC thread."
@@ -407,7 +416,7 @@ WatchDog::stop() {
 
 	if ( _maybeGCInterval ) {
 
-		JSInterruptCallback prev_interruptCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), NULL);
+		JSInterruptCallback prev_interruptCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), nullptr);
 		ASSERT( prev_interruptCallback == interruptCallback );
 		JLSemaphoreRelease(_watchDogSemEnd);
 		JLThreadWait(_watchDogThread);
@@ -487,7 +496,7 @@ HostRuntime::errorReporterBasic(JSContext *cx, const char *message, JSErrorRepor
 
 
 HostRuntime::HostRuntime(Allocators allocators, uint32_t maybeGCIntervalMs)
-: _allocators(allocators), rt(NULL), cx(NULL), _isEnding(false), _skipCleanup(false), _watchDog(*MOZ_THIS_IN_INITIALIZER_LIST(), maybeGCIntervalMs) {
+: _allocators(allocators), rt(nullptr), cx(nullptr), _isEnding(false), _skipCleanup(false), _watchDog(*MOZ_THIS_IN_INITIALIZER_LIST(), maybeGCIntervalMs) {
 }
 
  
@@ -501,6 +510,7 @@ HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota
 	// ASSERT( JS_GetGCParameter(rt, JSGC_MAX_MALLOC_BYTES) == maxAlloc ); // JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc);
 
 	// doc: maxMem specifies the number of allocated bytes after which garbage collection is run. Maximum nominal heap before last ditch GC.
+
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem); 
 	//JS_SetNativeStackQuota(rt, 128 * sizeof(size_t) * 1024); // doc. To disable stack size checking pass 0.
 	JS_SetNativeStackQuota(rt, 0);
@@ -533,7 +543,8 @@ HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota
 	;
 
 	//JS_SetNativeStackQuota(cx, DEFAULT_MAX_STACK_SIZE); // see https://developer.mozilla.org/En/SpiderMonkey/JSAPI_User_Guide
-	JS_SetGCParameter(rt, JSGC_MODE, JSGC_MODE_INCREMENTAL); // != JSGC_MODE_GLOBAL
+	JS_SetGCParameter( rt, JSGC_MODE, JSGC_MODE_INCREMENTAL );
+	JS_SetGCParameterForThread( cx, JSGC_MAX_CODE_CACHE_BYTES, 32 * 1024 * 1024 );
 
 
 	// JSOPTION_ANONFUNFIX: https://bugzilla.mozilla.org/show_bug.cgi?id=376052 
@@ -543,27 +554,27 @@ HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota
 
 	{
 
-	JS::CompartmentOptions options;
-	options
-		.setVersion(JSVERSION_LATEST)
-		.setInvisibleToDebugger(false)
-		.setMergeable(false)
-	;
+		JS::CompartmentOptions options;
+		options
+			.setVersion(JSVERSION_LATEST)
+			.setInvisibleToDebugger(false)
+			.setMergeable(false)
+		;
 
-	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, lazyStandardClasses ? &_globalClass_lazy : &_globalClass, NULL, JS::DontFireOnNewGlobalHook, options));
-	JL_CHK( globalObject ); // "unable to create the global object." );
+		JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, lazyStandardClasses ? &_globalClass_lazy : &_globalClass, nullptr, JS::DontFireOnNewGlobalHook, options));
+		JL_CHK( globalObject ); // "unable to create the global object." );
 
-	// set globalObject as current global object.
-	JL_CHK( JS_EnterCompartment(cx, globalObject) == nullptr );
+		// set globalObject as current global object.
+		JL_CHK( JS_EnterCompartment(cx, globalObject) == nullptr );
 
-	JL_CHK( JS_InitStandardClasses(cx, globalObject) );
-	JL_CHK( JS_DefineDebuggerObject(cx, globalObject) ); // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
-	JL_CHK( JS_InitReflect(cx, globalObject) );
-	#ifdef JS_HAS_CTYPES
-	JL_CHK( JS_InitCTypesClass(cx, globalObject) );
-	#endif
+		JL_CHK( JS_InitStandardClasses(cx, globalObject) );
+		JL_CHK( JS_DefineDebuggerObject(cx, globalObject) ); // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
+		JL_CHK( JS_InitReflect(cx, globalObject) );
+		#ifdef JS_HAS_CTYPES
+		JL_CHK( JS_InitCTypesClass(cx, globalObject) );
+		#endif
 
-	JS_FireOnNewGlobalObject(cx, globalObject);
+		JS_FireOnNewGlobalObject(cx, globalObject);
 
 	}
 
@@ -599,17 +610,17 @@ HostRuntime::destroy(bool skipCleanup) {
 	//    The last JS_DestroyContext* API call will run a GC, no matter which API of that form you call on the last context in the runtime. /be
 		
 	// see create()
-	JS_LeaveCompartment(cx, NULL);
+	JS_LeaveCompartment(cx, nullptr);
 	JS_EndRequest(cx);
 	JS_DestroyContext(cx);
-	cx = NULL;
+	cx = nullptr;
 
 	#ifdef DEBUG
-	JS_DumpHeap(rt, fopen("dump.txt", "w"), NULL, JSTRACE_OBJECT, NULL, 1, NULL);
+//	JS_DumpHeap(rt, fopen("dump.txt", "w"), nullptr, JSTRACE_OBJECT, nullptr, 1, nullptr);
 	#endif
 
 	JS_DestroyRuntime(rt);
-	rt = NULL;
+	rt = nullptr;
 
 	return true;
 
@@ -617,7 +628,7 @@ bad:
 	// on error, do the minimum.
 	if ( cx ) {
 
-		JS_LeaveCompartment(cx, NULL);
+		JS_LeaveCompartment(cx, nullptr);
 		JS_DestroyContext(cx);
 		JS_DestroyRuntime(rt);
 	}
@@ -640,7 +651,7 @@ ModuleManager::loadModule(const char *libFileName, JS::HandleObject obj, JS::Mut
 	JSContext *cx = _hostRuntime.context();
 
 	JLLibraryHandler moduleHandle = JLDynamicLibraryNullHandler;
-	JL_ASSERT( libFileName != NULL && *libFileName != '\0', E_ARG, E_NUM(1), E_DEFINED );
+	JL_ASSERT( libFileName != nullptr && *libFileName != '\0', E_ARG, E_NUM(1), E_DEFINED );
 	JL_ASSERT( _moduleCount < MAX_MODULES, E_MODULE, E_COUNT, E_MAX, E_NUM(MAX_MODULES) );
 
 	moduleHandle = JLDynamicLibraryOpen(libFileName);
@@ -710,7 +721,6 @@ bad:
 	if ( JLDynamicLibraryOk(moduleHandle) )
 		JLDynamicLibraryClose(&moduleHandle);
 	return false;
-
 }
 
 bool
@@ -724,7 +734,7 @@ ModuleManager::releaseModules() {
 		if ( module.moduleId ) {
 
 			ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)JLDynamicLibrarySymbol(module.moduleHandle, NAME_MODULE_RELEASE);
-			if ( moduleRelease != NULL ) {
+			if ( moduleRelease != nullptr ) {
 
 				if ( !moduleRelease(cx) ) {
 
@@ -751,7 +761,7 @@ ModuleManager::freeModules(bool skipCleanup) {
 		if ( module.moduleId ) {
 
 			ModuleFreeFunction moduleFree = (ModuleFreeFunction)JLDynamicLibrarySymbol(module.moduleHandle, NAME_MODULE_FREE);
-			if ( moduleFree != NULL ) {
+			if ( moduleFree != nullptr ) {
 		
 				moduleFree(skipCleanup, module.privateData);
 			}
@@ -804,10 +814,10 @@ DEFINE_PROPERTY_GETTER( jsVersion ) {
 }
 
 
-/**doc
+/* *doc
 $TOC_MEMBER $INAME
  $BOOL $INAME $READONLY
-**/
+** /
 DEFINE_PROPERTY_GETTER( incrementalGarbageCollector ) {
 
 	JL_IGNORE( id, obj );
@@ -828,7 +838,7 @@ DEFINE_PROPERTY_SETTER( incrementalGarbageCollector ) {
 	return true;
 	JL_BAD;
 }
-
+*/
 
 /**doc
 $TOC_MEMBER $INAME
@@ -839,11 +849,11 @@ DEFINE_FUNCTION( stdout ) {
 	JL_DEFINE_ARGS;
 	JL_RVAL.setUndefined();
 	jl::BufString str;
-	Host &host(Host::getHost(cx));
+	Host &host = Host::getHost( cx );
 	for ( unsigned i = 0; i < argc; ++i ) {
 
-		JL_CHK( jl::getValue(cx, JL_ARG(i+1), &str) );
-		int status = host.stdIO().output(str.toData<const char *>(), str.length());
+		JL_CHK( jl::getValue(cx, JL_ARGV[i], &str) );
+		int status = host.stdIO().output(str.toData<const char*>(), str.length());
 		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdout"), E_WRITE );
 	}
 	return true;
@@ -860,10 +870,10 @@ DEFINE_FUNCTION( stderr ) {
 	JL_DEFINE_ARGS;
 	JL_RVAL.setUndefined();
 	jl::BufString str;
-	Host &host(Host::getHost(cx));
+	Host &host = Host::getHost( cx );
 	for ( unsigned i = 0; i < argc; ++i ) {
 
-		JL_CHK( jl::getValue(cx, JL_ARG(i+1), &str) );
+		JL_CHK( jl::getValue( cx, JL_ARGV[i], &str ) );
 		int status = host.stdIO().error(str.toData<const char *>(), str.length());
 		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stderr"), E_WRITE );
 	}
@@ -878,19 +888,36 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( stdin ) {
 
 	JL_DEFINE_ARGS;
+	Host &host = Host::getHost( cx );
 
-	Host &host(Host::getHost(cx));
-
+/*
 	char buffer[8192];
-	int status = host.stdIO().input(buffer, COUNTOF(buffer));
+	int status = host.stdIO().input( buffer, COUNTOF( buffer ) );
 	if ( status > 0 ) {
-		
+
 		JL_CHK( jl::setValue( cx, JL_RVAL, jl::CStrSpec( buffer, status ) ) );
 	} else {
 
-		JL_WARN( E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdin"), E_READ );
-		JL_RVAL.set(JL_GetEmptyStringValue(cx));
+		JL_WARN( E_HOST, E_INTERNAL, E_SEP, E_COMMENT( "stdin" ), E_READ );
+		JL_RVAL.set( JL_GetEmptyStringValue( cx ) );
 	}
+*/
+
+	jl::ChunkedBuffer<char> buf;
+	int status;
+	do {
+
+		buf.Reserve( 4096 );
+		status = host.stdIO().input( buf.Ptr(), 4096 );
+		if ( status < 0 ) // error
+			break;
+		buf.Advance( status );
+	} while ( status > 0 );
+
+	if ( status < 0 )
+		JL_WARN( E_HOST, E_INTERNAL, E_SEP, E_COMMENT( "stdin" ), E_READ );
+
+	JL_CHK( BlobCreate( cx, buf.GetDataOwnership(), buf.Length(), JL_RVAL ) );
 	return true;
 	JL_BAD;
 }
@@ -902,7 +929,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( loadModule ) {
 
-	// JLLibraryHandler module = JLDynamicLibraryNullHandler;
 	jl::BufString str;
 
 	JL_DEFINE_ARGS;
@@ -915,95 +941,9 @@ DEFINE_FUNCTION( loadModule ) {
 	str.copyTo(libFileName);
 	libFileName[str.length()] = '\0';
 	strcat( libFileName, DLL_EXT );
-// MAC OSX: 	'@executable_path' ??
-
-/*
-	while (0) { // namespace management. Avoid using val ns = {}, loadModule.call(ns, '...');
-
-		if ( JL_ARG_ISDEF(2) ) {
-
-			if ( JSVAL_IS_OBJECT(JL_ARG(2)) ) {
-				obj = JSVAL_TO_OBJECT(JL_ARG(2));
-			} else {
-				const char *ns;
-				JL_CHK( jl::getValue(cx, &JL_ARG(2), &ns) );
-
-				jsval existingNsVal;
-				JL_CHK( JS_GetProperty(cx, obj, ns, &existingNsVal) );
-				JSObject *nsObj;
-				if ( existingNsVal == JSVAL_VOID ) {
-
-					nsObj = JS_NewObject(cx, NULL, NULL, NULL);
-					JL_CHK( JS_DefineProperty(cx, obj, ns, OBJECT_TO_JSVAL(nsObj), NULL, NULL, JSPROP_READONLY | JSPROP_PERMANENT) ); // doc. On success, JS_DefineProperty returns true. If the property already exists or cannot be created, JS_DefineProperty returns false.
-				} else {
-
-					JL_ASSERT_OBJECT( existingNsVal );
-					nsObj = JSVAL_TO_OBJECT( existingNsVal );
-				}
-				obj = nsObj;
-			}
-		}
-	}
-*/
+	// MAC OSX: 	'@executable_path' ??
 
 	JL_CHK( Host::getHost(cx).moduleManager().loadModule(libFileName, JL_OBJ, JL_RVAL) );
-
-
-//	JL_ASSERT( hpv, E_HOST, E_STATE, E_COMMENT("context private") );
-
-
-/*
-	JL_ASSERT( libFileName != NULL && *libFileName != '\0', E_ARG, E_NUM(1), E_DEFINED );
-
-	module = JLDynamicLibraryOpen(libFileName);
-	if ( !JLDynamicLibraryOk(module) ) {
-
-		JL_SAFE_BEGIN
-		char errorBuffer[256];
-		JLDynamicLibraryLastErrorMessage( errorBuffer, sizeof(errorBuffer) );
-		JL_WARN( E_OS, E_OPERATION, E_DETAILS, E_STR(errorBuffer), E_COMMENT(libFileName) );
-		JL_SAFE_END
-
-		JL_RVAL.setBoolean(false);
-		return true;
-	}
-
-	Host &host = Host::getHost(cx);
-
-	if ( host.moduleManager().hasModule(module) ) {
-
-		JLDynamicLibraryClose(&module);
-		JL_RVAL.setNull(); // already loaded
-		return true;
-	}
-
-	uint32_t uid;
-	uid = JLDynamicLibraryId(module); // module unique ID
-	ModuleInitFunction moduleInit;
-	moduleInit = (ModuleInitFunction)JLDynamicLibrarySymbol(module, NAME_MODULE_INIT);
-	JL_ASSERT( moduleInit, E_MODULE, E_NAME(libFileName), E_INIT ); // "Invalid module."
-	
-	if ( !moduleInit(cx, JL_OBJ) ) {
-
-		JL_CHK( !JL_IsExceptionPending(cx) );
-		char filename[PATH_MAX];
-		JLDynamicLibraryName((void*)moduleInit, filename, sizeof(filename));
-		JL_ERR( E_MODULE, E_NAME(filename), E_INIT );
-	}
-
-	host.moduleManager().storeModule(module);
-	
-	//JL_CHK( JL_NewNumberValue(cx, uid, JL_RVAL) ); // really needed ? yes, UnloadModule will need this ID, ... but UnloadModule is too complicated to implement and will never exist.
-	JL_RVAL.setObject(*JL_OBJ);
-
-	return true;
-
-bad:
-	if ( JLDynamicLibraryOk(module) )
-		JLDynamicLibraryClose(&module);
-	return false;
-*/
-
 	return true;
 	JL_BAD;
 }
@@ -1043,7 +983,7 @@ CONFIGURE_CLASS
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_GETTER( unsafeMode )
 		PROPERTY_GETTER( jsVersion )
-		PROPERTY( incrementalGarbageCollector )
+//		PROPERTY( incrementalGarbageCollector )
 	END_STATIC_PROPERTY_SPEC
 
 END_CLASS
@@ -1231,7 +1171,7 @@ Host::hostStderrWrite(const char *message, size_t length) {
 	AutoExceptionState autoEx(cx);
 
 	// avoid reentrancy if stderr function rise an error.
-	AutoErrorReporter autoErrorReporter(cx, JL_IS_SAFE ? errorReporterBasic : NULL);
+	AutoErrorReporter autoErrorReporter(cx, JL_IS_SAFE ? errorReporterBasic : nullptr);
 		
 	JS::RootedValue rval(cx);
 	JS::RootedValue fct(cx);
@@ -1280,7 +1220,7 @@ Host::create() {
 	JS_SetErrorReporter(cx, errorReporter);
 
 	JS::RootedObject obj(cx, JL_GetGlobal(cx));
-	ASSERT( obj != NULL ); // "Global object not found."
+	ASSERT( obj != nullptr ); // "Global object not found."
 
 	_objectProto.set(JS_GetObjectPrototype(cx, obj));
 	_objectClasp = JL_GetClass(_objectProto);
@@ -1297,9 +1237,12 @@ Host::create() {
 	ASSERT( moduleManager().isSlotFree(module) ); // free slot
 	module.moduleHandle = JLDynamicLibraryNullHandler;
 	module.moduleId = jslangModuleId;
-	ASSERT( jslangModuleInit != (ModuleInitFunction)NULL);
+	ASSERT( jslangModuleInit != (ModuleInitFunction)nullptr);
 	if ( !jslangModuleInit(cx, obj) )
 		JL_ERR( E_MODULE, E_NAME("jslang"), E_INIT );
+
+	ASSERT( JS::IsIncrementalGCEnabled( _hostRuntime.runtime() ) );
+	ASSERT( JS::IsGenerationalGCEnabled( _hostRuntime.runtime() ) );
 
 	return true;
 	JL_BAD;
@@ -1313,15 +1256,15 @@ Host::destroy(bool skipCleanup) {
 		
 	JL_CHK( _moduleManager.releaseModules() );
 
-	ASSERT( jslangModuleRelease != (ModuleReleaseFunction)NULL );
+	ASSERT( jslangModuleRelease != (ModuleReleaseFunction)nullptr );
 	if ( !jslangModuleRelease(cx) ) {
 		
 		JL_WARN( E_MODULE, E_NAME("jslang"), E_FIN ); // "Fail to release static module jslang."
 	}
 
 	_classProtoCache.removeAll();
-	_hostObject.set(NULL);
-	_objectProto.set(NULL);
+	_hostObject.set(nullptr);
+	_objectProto.set(nullptr);
 
 	if ( !skipCleanup ) {
 	
@@ -1338,8 +1281,8 @@ Host::free(bool skipCleanup) {
 	if ( !skipCleanup ) {
 
 		_moduleManager.freeModules(skipCleanup);
-		ASSERT( jslangModuleFree != (ModuleFreeFunction)NULL);
-		jslangModuleFree(skipCleanup, NULL);
+		ASSERT( jslangModuleFree != (ModuleFreeFunction)nullptr);
+		jslangModuleFree(skipCleanup, nullptr);
 	}
 }
 

@@ -360,10 +360,14 @@ isGenerator( JSContext *cx, JS::HandleValue val ) {
 ALWAYS_INLINE bool FASTCALL
 isStopIteration( JSContext *cx, JS::HandleObject obj ) {
 
-	// JS_IsStopIteration
+	JS::RootedValue val(cx);
+	val.setObject(*obj);
+	return JS_IsStopIteration(val);
+/*
 	JS::RootedObject proto(cx);
 	return JL_GetClassPrototype(cx, JSProto_StopIteration, &proto)
 		&& JL_GetClass(obj) == JL_GetClass(proto);
+*/
 }
 
 ALWAYS_INLINE bool FASTCALL

@@ -14,8 +14,6 @@
 
 #include "stdafx.h"
 
-
-
 #define HOST_STACK_SIZE 4194304 // = 4 * 1024 * 1024
 
 // set stack to 4MB:
@@ -150,15 +148,16 @@ class HostStdIO : public jl::StdIO {
 	int stderr_fileno;
 public:
 
-	HostStdIO() : stdin_fileno(-1), stdout_fileno(-1), stderr_fileno(-1) {
+	HostStdIO()
+	: stdin_fileno(-1), stdout_fileno(-1), stderr_fileno(-1) {
 	}
 
 	int
 	input( char *buffer, size_t bufferLength ) {
-	
+
 		if (unlikely( stdin_fileno == -1 ))
 			stdin_fileno = fileno(stdin);
-		return read(stdin_fileno, (void*)buffer, bufferLength);
+		return read( stdin_fileno, (void*)buffer, bufferLength );
 	}
 
 	int
@@ -482,7 +481,6 @@ int main(int argc, char* argv[]) {
 		jl::Host host(hostRuntime, hostIO);
 		JL_CHK( host.create() );
 
-
 		JL_CHKM( initInterrupt(), E_HOST, E_INTERNAL );
 		// https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
 		JL_CHK( JS_DefineProperty(cx, host.hostObject(), "endSignal", JL_UNDEFINED, JSPROP_SHARED, EndSignalGetter, EndSignalSetter) );
@@ -510,80 +508,80 @@ int main(int argc, char* argv[]) {
 
 		JL_CHK( host.setHostArguments(args.jsArgv, args.jsArgc) );
 
-		JL_ASSERT_WARN( !(!args.inlineScript && args.jsArgc == 0 && !args.useFileBootstrapScript && sizeof(embeddedBootstrapScript)-1 == 0), E_SCRIPT, E_NOTFOUND );
+		JL_ASSERT_WARN( !(!args.inlineScript && args.jsArgc == 0 && !args.useFileBootstrapScript && sizeof( embeddedBootstrapScript ) - 1 == 0), E_SCRIPT, E_NOTSPECIFIED );
 
 		{
 
-		JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
-		JS::RootedValue rval(cx);
+			JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
+			JS::RootedValue rval(cx);
 
-		// embedded bootstrap script
+			// embedded bootstrap script
 
-		if ( sizeof(embeddedBootstrapScript)-1 > 0 ) {
+			if ( sizeof(embeddedBootstrapScript)-1 > 0 ) {
 
-			JS::AutoSaveContextOptions asco(cx);
-			JS::ContextOptionsRef(cx).setDontReportUncaught(false);
+				JS::AutoSaveContextOptions asco(cx);
+				JS::ContextOptionsRef(cx).setDontReportUncaught(false);
 
-			JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL) ); // -1 because sizeof("") == 1
-			JL_CHK( script );
-			JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
-		}
+				JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL) ); // -1 because sizeof("") == 1
+				JL_CHK( script );
+				JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
+			}
 
-		// file bootstrap script
+			// file bootstrap script
 
-		if ( args.useFileBootstrapScript ) {
+			if ( args.useFileBootstrapScript ) {
 
-			char bootstrapFilename[PATH_MAX];
-			strcpy(bootstrapFilename, hostFullPath);
-			strcat(bootstrapFilename, ".js");
-			JL_CHK( jl::executeScriptFileName(cx, globalObject, bootstrapFilename, args.compileOnly, &rval) );
-		}
+				char bootstrapFilename[PATH_MAX];
+				strcpy(bootstrapFilename, hostFullPath);
+				strcat(bootstrapFilename, ".js");
+				JL_CHK( jl::executeScriptFileName(cx, globalObject, bootstrapFilename, args.compileOnly, &rval) );
+			}
 
-		ASSERT( !JL_IsExceptionPending(cx) );
+			ASSERT( !JL_IsExceptionPending(cx) );
 
-		bool executeStatus;
-		executeStatus = true;
+			bool executeStatus;
+			executeStatus = true;
 
-		// inline (command-line) script
+			// inline (command-line) script
 
-		if ( args.inlineScript != NULL ) {
+			if ( args.inlineScript != NULL ) {
 
-			executeStatus = jl::executeScriptText(cx, globalObject, args.inlineScript, args.compileOnly, &rval);
-		}
+				executeStatus = jl::executeScriptText(cx, globalObject, args.inlineScript, args.compileOnly, &rval);
+			}
 
-		// file script
+			// file script
 
-		if ( args.jsArgc == 1 && executeStatus == true ) {
+			if ( args.jsArgc == 1 && executeStatus == true ) {
 
-			executeStatus = jl::executeScriptFileName(cx, globalObject, args.jsArgv[0], args.compileOnly, &rval);
-		}
+				executeStatus = jl::executeScriptFileName(cx, globalObject, args.jsArgv[0], args.compileOnly, &rval);
+			}
 
-		if ( executeStatus == true ) {
+			if ( executeStatus == true ) {
 
-			if ( rval.isInt32() && rval.toInt32() >= 0 ) // (TBD) enhance this, use jl::getValue() ?
-				exitValue = rval.toInt32();
-			else
-				exitValue = EXIT_SUCCESS;
-		} else {
-
-			if ( JL_IsExceptionPending(cx) ) { // see JSOPTION_DONT_REPORT_UNCAUGHT option.
-
-				JS::RootedValue ex(cx);
-				JS_GetPendingException(cx, &ex);
-				JL_CHK( jl::getPrimitive(cx, ex, &ex) );
-				if ( ex.isInt32() ) {
-
-					exitValue = ex.toInt32();
-				} else {
-
-					JS_ReportPendingException(cx);
-					exitValue = EXIT_FAILURE;
-				}
+				if ( rval.isInt32() && rval.toInt32() >= 0 ) // (TBD) enhance this, use jl::getValue() ?
+					exitValue = rval.toInt32();
+				else
+					exitValue = EXIT_SUCCESS;
 			} else {
 
-				exitValue = EXIT_FAILURE;
+				if ( JL_IsExceptionPending(cx) ) { // see JSOPTION_DONT_REPORT_UNCAUGHT option.
+
+					JS::RootedValue ex(cx);
+					JS_GetPendingException(cx, &ex);
+					JL_CHK( jl::getPrimitive(cx, ex, &ex) );
+					if ( ex.isInt32() ) {
+
+						exitValue = ex.toInt32();
+					} else {
+
+						JS_ReportPendingException(cx);
+						exitValue = EXIT_FAILURE;
+					}
+				} else {
+
+					exitValue = EXIT_FAILURE;
+				}
 			}
-		}
 
 		}
 
@@ -631,8 +629,6 @@ int main(int argc, char* argv[]) {
 
 
 int basic_test_main(int argc, char* argv[]) {
-
-
 
 
 	const JSClass global_class = {

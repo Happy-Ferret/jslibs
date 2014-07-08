@@ -28,6 +28,7 @@ static unsigned char embeddedBootstrapScript[] =
 
 
 #ifdef DEBUG
+
 	class hostIO : public jl::StdIO {
 public:
 		int
@@ -54,19 +55,20 @@ public:
 		}
 	} hostIO;
 #else
+
 	jl::StdIO hostIO;
+
 #endif
 
 
 // to be used in the main() function only
-#define HOST_MAIN_ASSERT( condition, errorMessage ) \
-	JL_MACRO_BEGIN \
-		if ( !(condition) ) { \
+#define HOST_MAIN_ASSERT( condition, errorMessage )				  \
+	JL_MACRO_BEGIN												  \
+		if ( !(condition) ) {									  \
 			hostIO.error(errorMessage, jl::strlen(errorMessage)); \
-			goto bad; \
-		} \
-	JL_MACRO_END
-
+			goto bad;											  \
+		}														  \
+	JL_MACRO_END												  \
 
 
 #ifdef USE_NEDMALLOC
