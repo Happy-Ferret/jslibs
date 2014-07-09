@@ -349,9 +349,9 @@ DEFINE_FUNCTION( move ) {
 	JL_ASSERT( destDirName.length() + strlen(fileNameOnly) + 1 < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
 
 	char destFileName[PATH_MAX];
-	strcpy(destFileName, destDirName);
-	strcat(destFileName, "/");
-	strcat(destFileName, fileNameOnly);
+	jl::strcpy( destFileName, destDirName );
+	jl::strcat( destFileName, "/" );
+	jl::strcat( destFileName, fileNameOnly );
 
 	if ( PR_Rename(fileName, destFileName) != PR_SUCCESS )
 		return ThrowIoError(cx);

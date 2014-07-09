@@ -14,6 +14,8 @@
 
 #include "stdafx.h"
 
+#include "Shellapi.h"
+
 #define HOST_STACK_SIZE 4194304 // = 4 * 1024 * 1024
 
 // set stack to 4MB:
@@ -22,7 +24,7 @@
 #define USE_NEDMALLOC
 
 
-static unsigned char embeddedBootstrapScript[] =
+static uint8_t embeddedBootstrapScript[] =
 	#include "embeddedBootstrapScript.js.xdr.cres"
 ;
 
@@ -34,10 +36,10 @@ public:
 		int
 		output( const char *buffer, size_t length ) {
 			
-			char *tmp = (char*)jl_malloca(length+1);
+			char *tmp = (char*)jl_malloca( length + 1 );
 			jl::memcpy(tmp, buffer, length);
 			tmp[length] = '\0';
-			OutputDebugString(tmp);
+			OutputDebugStringA(tmp);
 			jl_freea(tmp);
 			return length;
 		}
@@ -45,15 +47,16 @@ public:
 		int
 		error( const char *buffer, size_t length ) {
 		
-			char *tmp = (char*)jl_malloca(8+length+1);
-			strcpy(tmp, "STDERR: ");
-			jl::memcpy(tmp+8, buffer, length);
+			char *tmp = (char*)jl_malloca( 8 + length + 1 );
+			jl::strcpy( tmp, "STDERR: " );
+			jl::memcpy( tmp + 8, buffer, length);
 			tmp[length+8] = '\0';
-			OutputDebugString(tmp);
+			OutputDebugStringA(tmp);
 			jl_freea(tmp);
 			return length;
 		}
 	} hostIO;
+
 #else
 
 	jl::StdIO hostIO;
@@ -62,13 +65,13 @@ public:
 
 
 // to be used in the main() function only
-#define HOST_MAIN_ASSERT( condition, errorMessage )				  \
-	JL_MACRO_BEGIN												  \
-		if ( !(condition) ) {									  \
-			hostIO.error(errorMessage, jl::strlen(errorMessage)); \
-			goto bad;											  \
-		}														  \
-	JL_MACRO_END												  \
+#define HOST_MAIN_ASSERT( condition, errorMessage )					\
+	JL_MACRO_BEGIN													\
+		if ( !(condition) ) {										\
+			hostIO.error(errorMessage, jl::strlen(errorMessage));   \
+			goto bad;												\
+		}															\
+	JL_MACRO_END													\
 
 
 #ifdef USE_NEDMALLOC
@@ -138,22 +141,28 @@ int CALLBACK WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 	jl::Host host(hostRuntime, hostIO);
 	JL_CHK( host.create() );
 
-	CHAR moduleName[PATH_MAX];
-	CHAR tmp[PATH_MAX];
-	DWORD moduleNameLen = GetModuleFileName(hInstance, moduleName, sizeof(moduleName));
+	TCHAR moduleName[PATH_MAX];
+	TCHAR tmp[PATH_MAX];
+	DWORD moduleNameLen = ::GetModuleFileName(hInstance, moduleName, COUNTOF(moduleName));
 
 	HOST_MAIN_ASSERT( moduleNameLen > 0 && moduleNameLen < PATH_MAX && moduleName[moduleNameLen] == '\0', "Invalid module filename." );
 
 	// construct host.path and host.name properties
-	jl::memcpy(tmp, moduleName, moduleNameLen+1);
-	char *name = strrchr(tmp, PATH_SEPARATOR);
+	jl::memcpy( tmp, moduleName, TSIZE(moduleNameLen + 1) );
+	TCHAR *name = _tcsrchr( tmp, PATH_SEPARATOR );
 	JL_CHK( name );
 	name += 1;
 	JL_CHK( host.setHostName(name) );
-	*name = '\0';
+	*name = TEXT( '\0' );
 	JL_CHK( host.setHostPath(tmp) );
 
-	host.setHostArguments(__argv, __argc);
+
+
+	LPWSTR *szArglist;
+	int nArgs;
+	szArglist = ::CommandLineToArgvW(::GetCommandLineW(), &nArgs);
+	host.setHostArguments(szArglist, nArgs);
+	::LocalFree(szArglist);
 
 	{
 
@@ -173,10 +182,10 @@ int CALLBACK WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
 
 	// construct script name
-	jl::memcpy(tmp, moduleName, moduleNameLen+1);
-	char *dotPos = strrchr(tmp, '.');
+	jl::memcpy( tmp, moduleName, TSIZE(moduleNameLen + 1) );
+	TCHAR *dotPos = _tcsrchr( tmp, TEXT('.') );
 	JL_CHK( dotPos );
-	strcpy(dotPos+1, "js");
+	_tcscpy( dotPos + 1, TEXT( "js" ) );
 
 	bool executeStatus;
 	executeStatus = jl::executeScriptFileName(cx, globalObject, tmp, false, &rval);

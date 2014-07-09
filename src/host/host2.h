@@ -420,7 +420,7 @@ public:
 	ModuleManager(HostRuntime &hostRuntime);
 
 	bool
-	loadModule(const char *libFileName, JS::HandleObject obj, JS::MutableHandleValue rval);
+	loadModule(const TCHAR *libFileName, JS::HandleObject obj, JS::MutableHandleValue rval);
 
 	bool
 	releaseModules();
@@ -699,16 +699,16 @@ class DLLAPI Host : public jl::CppAllocators {
 //
 
 	static const JSErrorFormatString *
-	errorCallback(void *userRef, const char *, const unsigned);
+	errorCallback( void *userRef, const char *, const unsigned );
 
 	static void
-	errorReporterBasic(JSContext *cx, const char *message, JSErrorReport *report);
+	errorReporterBasic( JSContext *cx, const char *message, JSErrorReport *report );
 
 	static void
-	errorReporter(JSContext *cx, const char *message, JSErrorReport *report);
+	errorReporter( JSContext *cx, const char *message, JSErrorReport *report );
 
 	bool
-	hostStderrWrite(const char *message, size_t length);
+	hostStderrWrite( const TCHAR *message, size_t length );
 
 	static INLINE NEVER_INLINE void FASTCALL
 	getPrivateJsidSlow( JSContext *cx, JS::PersistentRootedId &id, const jschar *name ) {
@@ -764,13 +764,13 @@ public:
 	report( bool isWarning, ... ) const;
 
 	bool
-	setHostArguments( char **hostArgv, size_t hostArgc );
+	setHostArguments( TCHAR **hostArgv, size_t hostArgc );
 
 	bool
-	setHostPath( const char *hostPath );
+	setHostPath( const TCHAR *hostPath );
 
 	bool
-	setHostName( const char *hostName );
+	setHostName( const TCHAR *hostName );
 
 	void
 	setHostObject(JS::HandleObject hostObj);

@@ -351,7 +351,7 @@ DEFINE_FUNCTION( connect ) {
 		PRHostEnt hostEntry;
 		PRIntn hostIndex;
 
-		if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS )
+		if (PR_GetHostByName(host, netdbBuf, COUNTOF(netdbBuf), &hostEntry) != PR_SUCCESS)
 			return ThrowIoError(cx);
 
 		hostIndex = 0;
@@ -430,7 +430,7 @@ DEFINE_FUNCTION( sendTo ) {
 		PRHostEnt hostEntry;
 		PRIntn hostIndex;
 
-		if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS )
+		if (PR_GetHostByName(host, netdbBuf, COUNTOF(netdbBuf), &hostEntry) != PR_SUCCESS)
 			return ThrowIoError(cx);
 
 		hostIndex = 0;
@@ -559,7 +559,7 @@ DEFINE_FUNCTION( recvFrom ) {
 	JL_CHK( arrayObject );
 	JL_RVAL.setObject( *arrayObject );
 
-	JL_CHKB( PR_NetAddrToString(&addr, peerName, sizeof(peerName)) == PR_SUCCESS, bad_ex ); // Converts a character string to a network address.
+	JL_CHKB(PR_NetAddrToString(&addr, peerName, COUNTOF(peerName)) == PR_SUCCESS, bad_ex); // Converts a character string to a network address.
 
 	JL_CHK( jl::setValue(cx, &tmp, peerName) );
 	JL_CHK( JL_SetElement(cx, arrayObject, 1, tmp) );
@@ -1000,7 +1000,7 @@ DEFINE_PROPERTY_GETTER( peerName ) {
 		return ThrowIoError(cx);
 	}
 	char buf[MAX_IP_STRING_LENGTH + 1];
-	if ( PR_NetAddrToString(&peerAddr, buf, sizeof(buf)) != PR_SUCCESS )
+	if (PR_NetAddrToString(&peerAddr, buf, COUNTOF(buf)) != PR_SUCCESS)
 		return ThrowIoError(cx);
 	JL_CHK( jl::setValue( cx, vp, buf ) );
 	return true;
@@ -1050,7 +1050,7 @@ DEFINE_PROPERTY_GETTER( sockName ) {
 	if ( PR_GetSockName( fd, &sockAddr ) != PR_SUCCESS )
 		return ThrowIoError(cx);
 	char buf[MAX_IP_STRING_LENGTH + 1];
-	if ( PR_NetAddrToString( &sockAddr, buf, sizeof(buf) ) != PR_SUCCESS )
+	if (PR_NetAddrToString(&sockAddr, buf, COUNTOF(buf)) != PR_SUCCESS)
 		return ThrowIoError(cx);
 	JL_CHK( jl::setValue( cx, vp, buf ) );
 	return true;
@@ -1110,7 +1110,7 @@ DEFINE_FUNCTION( getHostsByName ) {
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &host) );
 
-	if ( PR_GetHostByName( host, netdbBuf, sizeof(netdbBuf), &hostEntry ) != PR_SUCCESS ) {
+	if (PR_GetHostByName(host, netdbBuf, COUNTOF(netdbBuf), &hostEntry) != PR_SUCCESS) {
 
 		if ( PR_GetError() == PR_DIRECTORY_LOOKUP_ERROR )
 			return true;
@@ -1129,7 +1129,7 @@ DEFINE_FUNCTION( getHostsByName ) {
 		if ( hostIndex == 0 )
 			break;
 		JL_CHKB( hostIndex != -1, bad_throw );
-		JL_CHKB( PR_NetAddrToString(&addr, addrStr, sizeof(addrStr)) == PR_SUCCESS, bad_throw ); // memory leak
+		JL_CHKB(PR_NetAddrToString(&addr, addrStr, COUNTOF(addrStr)) == PR_SUCCESS, bad_throw); // memory leak
 
 		JL_CHK( jl::setValue(cx, &tmp, addrStr) );
 		//JL_CHK( JS_DefineElement(cx, addrJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
@@ -1183,7 +1183,7 @@ DEFINE_FUNCTION( getHostsByAddr ) {
 	char buffer[PR_NETDB_BUF_SIZE * 2];
 
 	PRHostEnt hostent;
-	if ( PR_GetHostByAddr(&netaddr, buffer, sizeof(buffer), &hostent) != PR_SUCCESS )
+	if (PR_GetHostByAddr(&netaddr, buffer, COUNTOF(buffer), &hostent) != PR_SUCCESS)
 		return ThrowIoError(cx);
 
 	{

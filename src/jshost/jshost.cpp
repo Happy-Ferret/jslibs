@@ -46,7 +46,7 @@
 	JL_MACRO_END
 
 
-static const unsigned char embeddedBootstrapScript[] =
+static const uint8_t embeddedBootstrapScript[] =
 	#include "embeddedBootstrapScript.js.xdr.cres"
 ;
 
@@ -61,16 +61,16 @@ struct CmdLineArguments {
 	bool compileOnly;
 	float maybeGCInterval;
 	bool useFileBootstrapScript;
-	const char *inlineScript;
+	const TCHAR *inlineScript;
 	#ifdef DEBUG
 	bool debug;
 	#endif DEBUG
 
 	int jsArgc;
-	char** jsArgv;
+	TCHAR** jsArgv;
 
 	bool
-	parse(int argc, char* argv[]) {
+	parse(int argc, TCHAR* argv[]) {
 
 		maxMem = (uint32_t)-1; // by default, there are no limit
 		maxAlloc = (uint32_t)-1; // by default, there are no limit
@@ -86,18 +86,18 @@ struct CmdLineArguments {
 		debug = false;
 		#endif DEBUG
 
-		char** argumentVector = argv;
+		TCHAR** argumentVector = argv;
 		for ( argumentVector++; argumentVector[0] && argumentVector[0][0] == '-'; argumentVector++ )
 			switch ( argumentVector[0][1] ) {
 				case 'm': // maxbytes (GC)
 					argumentVector++;
 					HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
-					maxMem = atol( *argumentVector ) * 1024L * 1024L;
+					maxMem = jl::atoi( *argumentVector, 10 ) * 1024L * 1024L;
 					break;
 				case 'n': // maxAlloc (GC)
 					argumentVector++;
 					HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
-					maxAlloc = atol( *argumentVector ) * 1024L * 1024L;
+					maxAlloc = jl::atoi( *argumentVector, 10 ) * 1024L * 1024L;
 					break;
 				case 'u': // avoid any runtime checks
 					unsafeMode = true;
@@ -108,7 +108,7 @@ struct CmdLineArguments {
 				case 'g': // operationLimitGC
 					argumentVector++;
 					HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
-					maybeGCInterval = (float)atof(*argumentVector);
+					maybeGCInterval = float(jl::atof(*argumentVector));
 					break;
 				case 'c': // compileOnly
 					compileOnly = true;
@@ -163,16 +163,21 @@ public:
 	int
 	output( const char *buffer, size_t length ) {
 		
-		if (unlikely( stdout_fileno == -1 ))
+		if (unlikely(stdout_fileno == -1)) {
 			stdout_fileno = fileno(stdout);
+//			_setmode(stdout_fileno, _O_U16TEXT);
+		}
 		return write(stdout_fileno, buffer, length);
 	}
 
 	int
 	error( const char *buffer, size_t length ) {
 		
-		if (unlikely( stderr_fileno == -1 ))
+		if (unlikely(stderr_fileno == -1)) {
+
 			stderr_fileno = fileno(stderr);
+//			_setmode(stderr_fileno, _O_U16TEXT);
+		}
 		return write(stderr_fileno, buffer, length);
 	}
 };
@@ -425,11 +430,12 @@ volatile bool NedAllocators::_skipCleanup = false;
 
 #endif // USE_NEDMALLOC
 
-	
-// see |int wmain(int argc, wchar_t* argv[])| for wide char
-int main(int argc, char* argv[]) {
 
-	using namespace jl;
+using namespace jl;
+
+// see |int wmain(int argc, wchar_t* argv[])| for wide char
+//int main(int argc, char* argv[]) {
+int _tmain( int argc, TCHAR* argv[] ) {
 
 	int exitValue;
 	CmdLineArguments args;
@@ -487,19 +493,19 @@ int main(int argc, char* argv[]) {
 		JL_CHK( JS_DefineFunction(cx, host.hostObject(), "endSignalEvents", EndSignalEvents, 1, 0) );
 
 
-		char hostFullPath[PATH_MAX];
+		TCHAR hostFullPath[PATH_MAX];
 		JL_CHK( jl::GetModuleFileName(hostFullPath) );
 
-		char *hostName;
-		hostName = strrchr(hostFullPath, PATH_SEPARATOR);
+		TCHAR *hostName;
+		hostName = jl::strrchr(hostFullPath, TEXT(PATH_SEPARATOR));
 		JL_CHK( hostName );
 		hostName += 1;
 		int hostPathLength;
-		hostPathLength = hostName-hostFullPath;
+		hostPathLength = hostName - hostFullPath;
 
-		char hostPath[PATH_MAX];
+		TCHAR hostPath[PATH_MAX];
 		jl::strncpy(hostPath, hostFullPath, hostPathLength);
-		hostPath[hostPathLength] = '\0';
+		hostPath[hostPathLength] = TEXT('\0');
 
 		JL_CHK( host.setHostPath(hostPath) );
 		JL_CHK( host.setHostName(hostName) );
@@ -508,7 +514,7 @@ int main(int argc, char* argv[]) {
 
 		JL_CHK( host.setHostArguments(args.jsArgv, args.jsArgc) );
 
-		JL_ASSERT_WARN( !(!args.inlineScript && args.jsArgc == 0 && !args.useFileBootstrapScript && sizeof( embeddedBootstrapScript ) - 1 == 0), E_SCRIPT, E_NOTSPECIFIED );
+		JL_ASSERT_WARN(!(!args.inlineScript && args.jsArgc == 0 && !args.useFileBootstrapScript && COUNTOF(embeddedBootstrapScript) - 1 == 0), E_SCRIPT, E_NOTSPECIFIED);
 
 		{
 
@@ -517,12 +523,12 @@ int main(int argc, char* argv[]) {
 
 			// embedded bootstrap script
 
-			if ( sizeof(embeddedBootstrapScript)-1 > 0 ) {
+			if (COUNTOF(embeddedBootstrapScript) - 1 > 0) {
 
 				JS::AutoSaveContextOptions asco(cx);
 				JS::ContextOptionsRef(cx).setDontReportUncaught(false);
 
-				JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL) ); // -1 because sizeof("") == 1
+				JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, COUNTOF(embeddedBootstrapScript) - 1, NULL)); // -1 because sizeof("") == 1
 				JL_CHK( script );
 				JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
 			}
@@ -531,9 +537,9 @@ int main(int argc, char* argv[]) {
 
 			if ( args.useFileBootstrapScript ) {
 
-				char bootstrapFilename[PATH_MAX];
-				strcpy(bootstrapFilename, hostFullPath);
-				strcat(bootstrapFilename, ".js");
+				TCHAR bootstrapFilename[PATH_MAX];
+				jl::strcpy( bootstrapFilename, hostFullPath );
+				jl::strcat( bootstrapFilename, TEXT(".js") );
 				JL_CHK( jl::executeScriptFileName(cx, globalObject, bootstrapFilename, args.compileOnly, &rval) );
 			}
 
@@ -643,22 +649,22 @@ int basic_test_main(int argc, char* argv[]) {
 
 	{
 
-	JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &global_class, nullptr, JS::FireOnNewGlobalHook));
-	JSAutoCompartment ac(cx, globalObject);
-	JS_InitStandardClasses(cx, globalObject);
-/*
-	JS::PersistentRootedObject pr(cx);
-	JS_GC(rt);
-*/
+		JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &global_class, nullptr, JS::FireOnNewGlobalHook));
+		JSAutoCompartment ac(cx, globalObject);
+		JS_InitStandardClasses(cx, globalObject);
+	/*
+		JS::PersistentRootedObject pr(cx);
+		JS_GC(rt);
+	*/
 
-	JS::CompileOptions compileOptions(cx);
-	compileOptions
-		.setFileAndLine(__FILE__, __LINE__)
-		.setNoScriptRval(true)
-	;
+		JS::CompileOptions compileOptions(cx);
+		compileOptions
+			.setFileAndLine(__FILE__, __LINE__)
+			.setNoScriptRval(true)
+		;
 
-	char scriptText[] = "";
-	JS::RootedScript script(cx, JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), compileOptions));
+		char scriptText[] = "";
+		JS::RootedScript script(cx, JS_CompileScript(cx, globalObject, scriptText, jl::strlen(scriptText), compileOptions));
 
 
 	}

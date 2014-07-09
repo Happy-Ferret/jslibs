@@ -38,10 +38,11 @@ DEFINE_FUNCTION( open ) {
 
 	JL_IGNORE(vp, argc);
 
-	BOOL status = AllocConsole();
+	BOOL status = ::AllocConsole();
 	if ( status == FALSE )
 		return WinThrowError(cx, GetLastError());
-	SetConsoleTitle("");
+	::SetConsoleTitle(TEXT(""));
+	//::SetConsoleCP(65001)  // 65001 = UTF-8
 	return true;
 	JL_BAD;
 }
@@ -91,7 +92,7 @@ DEFINE_FUNCTION( write ) {
 		return WinThrowError(cx, GetLastError());
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 	DWORD written;
-	BOOL status = ::WriteConsole(hStdout, str.toData<const char*>(), str.length(), &written, NULL);
+	BOOL status = ::WriteConsole(hStdout, str.toData<LPCTSTR>(), str.length(), &written, NULL);
 	if ( status == FALSE )
 		return WinThrowError(cx, GetLastError());
 
@@ -113,7 +114,7 @@ DEFINE_FUNCTION( read ) {
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(0,1);
 
-	char buffer[8192];
+	TCHAR buffer[8192];
 
 	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
 	if ( hStdin == NULL )
@@ -135,7 +136,7 @@ DEFINE_FUNCTION( read ) {
 	if ( st == 0 )
 		return WinThrowError(cx, GetLastError());
 
-	JL_CHK( jl::setValue( cx, JL_RVAL, jl::CStrSpec( buffer, read ) ) );
+	JL_CHK( jl::setValue( cx, JL_RVAL, jl::strSpec( buffer, read ) ) );
 	return true;
 	JL_BAD;
 }
@@ -337,7 +338,7 @@ DEFINE_FUNCTION( scrollY ) {
 
 	CHAR_INFO chiFill;
 	chiFill.Attributes = 0;
-	chiFill.Char.AsciiChar = (char)' ';
+	chiFill.Char.AsciiChar = ' ';
 
 	res = ScrollConsoleScreenBuffer(hStdout, &srctScrollRect, &srctClipRect, coordDest, &chiFill);
 	if ( res == 0 )
@@ -633,11 +634,12 @@ DEFINE_PROPERTY_GETTER( title ) {
 
 	JL_IGNORE(id, obj);
 
-	char buffer[2048];
-	DWORD res = GetConsoleTitle(buffer, sizeof(buffer));
+	TCHAR buffer[2048];
+	DWORD res = ::GetConsoleTitle(buffer, COUNTOF(buffer));
 	if ( res == 0 )
 		return jl::throwOSError(cx);
-	vp.setString(JS_NewStringCopyN(cx, buffer, res));
+
+	JL_CHK( jl::setValue( cx, vp, jl::strSpec( buffer, res ) ) );
 	return true;
 	JL_BAD;
 }

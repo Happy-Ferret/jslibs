@@ -5,6 +5,16 @@ var loadModule = host.loadModule;
 loadModule('jsstd');
 loadModule('jswinshell');
 
+
+createProcess(expandEnvironmentStrings('%SystemRoot%\\System32\\calc.exe'));
+
+throw 0; //////////////////////////////////////////////////////////////////////
+
+
+
+loadModule('jsstd');
+loadModule('jswinshell');
+
 //var dch = directoryChangesInit('C:\\tmp', 0x10, true); // 0x10: FILE_NOTIFY_CHANGE_LAST_WRITE
 var dch = directoryChangesInit('C:\\tmp', 0xff, true); // 0x10: FILE_NOTIFY_CHANGE_LAST_WRITE
 

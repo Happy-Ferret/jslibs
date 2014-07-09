@@ -804,8 +804,8 @@ DEFINE_PROPERTY_GETTER( filename ) {
 
 		unz_file_info pfile_info;
 
-		UNZ_CHK( unzGetCurrentFileInfo(pv->uf, &pfile_info, buffer, sizeof(buffer), NULL, 0, NULL, 0) );
-		if ( pfile_info.size_filename <= sizeof(buffer) ) {
+		UNZ_CHK(unzGetCurrentFileInfo(pv->uf, &pfile_info, buffer, COUNTOF(buffer), NULL, 0, NULL, 0));
+		if (pfile_info.size_filename <= COUNTOF(buffer)) {
 
 			filename = buffer;
 		} else {

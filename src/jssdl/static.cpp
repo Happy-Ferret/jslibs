@@ -907,7 +907,7 @@ DEFINE_PROPERTY_GETTER( videoDriverName ) {
 	JL_DEFINE_PROP_ARGS;
 
 	char name[1024];
-	char *status = SDL_VideoDriverName(name, sizeof(name));
+	char *status = SDL_VideoDriverName(name, COUNTOF(name));
 	if (status != NULL)
 		JL_CHK(jl::setValue(cx, JL_RVAL, name));
 	else

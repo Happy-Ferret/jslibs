@@ -71,26 +71,26 @@ DEFINE_PROPERTY_GETTER( text ) {
 
 	JS::RootedValue hi(cx);
 	JS::RootedValue lo(cx);
-	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_HI, &hi );
-	JL_GetReservedSlot(  obj, SLOT_WIN_ERROR_CODE_LO, &lo );
+	JL_GetReservedSlot( obj, SLOT_WIN_ERROR_CODE_HI, &hi );
+	JL_GetReservedSlot( obj, SLOT_WIN_ERROR_CODE_LO, &lo );
 	JL_ASSERT_THIS_OBJECT_STATE(hi.isInt32() && lo.isInt32());
 	DWORD err = (DWORD)MAKELONG(lo.toInt32(), hi.toInt32());
 
 	LPVOID lpvMessageBuffer;
-	DWORD res = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&lpvMessageBuffer, 0, NULL);
+	DWORD res = ::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpvMessageBuffer, 0, NULL);
 	if ( res == 0 )
 		return false;
 
-	if ( ((char*)lpvMessageBuffer)[res-2] == '\r' ) { // remove the trailing CRLF
+	if ( ((LPTSTR)lpvMessageBuffer)[res - 2] == TEXT( '\r' ) ) { // remove the trailing CRLF
 
 		res -= 2;
-		((char*)lpvMessageBuffer)[res] = '\0';
+		((LPTSTR)lpvMessageBuffer)[res] = TEXT( '\0' );
 	}
 
 	// doc: If the function succeeds, the return value is the number of TCHARs stored in the output buffer, excluding the terminating null character.
-	JL_CHK( jl::setValue( cx, vp, jl::CStrSpec( (char*)lpvMessageBuffer, res + 1 ) ) );
+	JL_CHK( jl::setValue( cx, vp, jl::strSpec( (LPTSTR)lpvMessageBuffer, res + 1 ) ) );
 
-	LocalFree(lpvMessageBuffer);
+	::LocalFree(lpvMessageBuffer);
 	return true;
 	JL_BAD;
 }

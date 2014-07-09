@@ -390,8 +390,8 @@ DEFINE_FUNCTION( list ) {
 			goto bad_throw; // or when an error occurs.
 		}
 
-		entryNameLength = strlen(dirEntry->name);
-		strcpy(entryName, dirEntry->name);
+		entryNameLength = jl::strlen( dirEntry->name );
+		jl::strcpy(entryName, dirEntry->name);
 
 		if ( showDirectoryChar || flags & (_SKIP_FILE | _SKIP_DIRECTORY | _SKIP_OTHER) ) {
 
@@ -407,7 +407,7 @@ DEFINE_FUNCTION( list ) {
 				*tmp = dirSepChar;
 				++tmp;
 			}
-			strcpy(tmp, entryName);
+			jl::strcpy( tmp, entryName );
 
 
 			PRFileInfo fileInfo;

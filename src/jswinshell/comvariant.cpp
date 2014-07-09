@@ -608,6 +608,7 @@ DEFINE_FUNCTION( toTypeName ) {
 	strcat(str, " ");
 	if ( V_ISBYREF(variant) )
 		strcat(str, "*");
+
 	switch ( V_VT(variant) ) {
 		case VT_EMPTY: strcat(str, "EMPTY"); break;
 		case VT_NULL: strcat(str, "NULL"); break;

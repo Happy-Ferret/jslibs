@@ -342,7 +342,7 @@ public:
 	uint8_t
 	charSize() const {
 
-		ASSERT( _charSize == sizeof(char) || _charSize == sizeof(WideChar) );
+		ASSERT(_charSize == sizeof(NarrowChar) || _charSize == sizeof(WideChar));
 		return _charSize;
 	}
 
@@ -382,7 +382,7 @@ public:
 	setEmpty() {
 
 		BufBase::get("", 1);
-		_charSize = sizeof(char);
+		_charSize = sizeof(NarrowChar);
 		_terminatorLength = 1;
 		return *this;
 	}
@@ -466,7 +466,7 @@ public:
 			ASSERT_IF( nt() && !wide(), ((char*)data())[len] == 0 );
 		}
 	}
-
+	
 	template <class T>
 	explicit BufString( T *str, size_t len = UnknownSize, bool nullTerminated = true )
 	: BufBase(str, len + ((nullTerminated && len != UnknownSize) ? sizeof(T) : 0)), _charSize(sizeof(T)), _terminatorLength(nullTerminated ? 1 : 0) {
@@ -592,11 +592,11 @@ public:
 		if ( sizeof(T) == charSize() )
 			retChar = dataAs<T*>()[index];
 		else
-		if ( sizeof(T) == sizeof(char) )
-			retChar = wide() ? dataAs<WideChar*>()[index] : dataAs<char*>()[index];
+		if (sizeof(T) == sizeof(NarrowChar))
+			retChar = wide() ? dataAs<WideChar*>()[index] : dataAs<NarrowChar*>()[index];
 		else
 		if ( sizeof(T) == sizeof(WideChar) )
-			retChar = wide() ? dataAs<WideChar*>()[index] : dataAs<char*>()[index];
+			retChar = wide() ? dataAs<WideChar*>()[index] : dataAs<NarrowChar*>()[index];
 		else
 			ASSERT(false);
 		
@@ -616,8 +616,8 @@ public:
 		if ( charSize() == sizeof(T) )
 			jl::memcpy(dst, data(), len * sizeof(T));
 		else
-		if ( charSize() == sizeof(char) )
-			reinterpretBufferUnsigned<T, char>(dst, data(), len);
+		if (charSize() == sizeof(NarrowChar))
+			reinterpretBufferUnsigned<T, NarrowChar>(dst, data(), len);
 		else
 		if ( charSize() == sizeof(WideChar) )
 			reinterpretBufferUnsigned<T, WideChar>( dst, data(), len);
@@ -676,8 +676,8 @@ public:
 			if ( charSize() == sizeof(Base) )
 				;// nothing
 			else
-			if ( charSize() == sizeof(char) )
-				reinterpretBufferUnsigned<MutableBase, char>( dst.data(), data(), len);
+			if (charSize() == sizeof(NarrowChar))
+				reinterpretBufferUnsigned<MutableBase, NarrowChar>(dst.data(), data(), len);
 			else
 			if ( charSize() == sizeof(WideChar) )
 				reinterpretBufferUnsigned<MutableBase, WideChar>( dst.data(), data(), len);
@@ -810,8 +810,6 @@ typedef pv::StrSpec<const char *> CStrSpec;
 typedef pv::StrSpec<const jschar *> WCStrSpec;
 
 typedef pv::StrSpec<jschar *> OwnerlessWCStrSpec;
-
-
 
 ALWAYS_INLINE CStrSpec FASTCALL
 strSpec( const char *str, size_t len ) {

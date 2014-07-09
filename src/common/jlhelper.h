@@ -261,6 +261,27 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 	return JS_NewUCString(cx, chars, length); // doc. https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_NewString
 }
 
+/*
+JL_BEGIN_NAMESPACE
+
+ALWAYS_INLINE
+JSScript * 
+compileScript( JSContext *cx, JS::HandleObject obj, const char *ascii, size_t length, const JS::CompileOptions &options ) {
+
+	return JS_CompileScript( cx, obj, ascii, length, options );
+}
+
+ALWAYS_INLINE
+JSScript * 
+compileScript( JSContext *cx, JS::HandleObject obj, const jschar *chars, size_t length, const JS::CompileOptions &options ) {
+	
+	return JS_CompileUCScript( cx, obj, chars, length, options );
+}
+
+JL_END_NAMESPACE
+*/
+
+
 
 JL_BEGIN_NAMESPACE
 
@@ -591,10 +612,10 @@ debugPrintScriptLocation( JSContext *cx ) {
 
 
 INLINE NEVER_INLINE bool FASTCALL
-throwOSErrorCode( JSContext *cx, JLSystemErrorCode errorCode, const char *moduleName ) {
+throwOSErrorCode( JSContext *cx, JLSystemErrorCode errorCode, const TCHAR *moduleName ) {
 
-	char errMsg[1024];
-	JLSysetmErrorMessage(errMsg, sizeof(errMsg), errorCode, moduleName);
+	TCHAR errMsg[1024];
+	JLSysetmErrorMessage(errMsg, COUNTOF(errMsg), errorCode, moduleName);
 	JL_ERR( E_OS, E_DETAILS, E_STR(errMsg) );
 	JL_BAD;
 }
@@ -603,8 +624,8 @@ throwOSErrorCode( JSContext *cx, JLSystemErrorCode errorCode, const char *module
 INLINE NEVER_INLINE bool FASTCALL
 throwOSError( JSContext *cx ) {
 
-	char errMsg[1024];
-	JLLastSysetmErrorMessage(errMsg, sizeof(errMsg));
+	TCHAR errMsg[1024];
+	JLLastSysetmErrorMessage(errMsg, COUNTOF(errMsg));
 	JL_ERR( E_OS, E_DETAILS, E_STR(errMsg) );
 	JL_BAD;
 }

@@ -1285,7 +1285,7 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	{
 		char *mystr = (char *)jl_malloc(5);
-		strcpy(mystr, "test");
+		jl::strcpy(mystr, "test");
 		jl::BufString str(mystr);
 		str.toStringZ<const jschar *>();
 		str.toStringZ<const char *>();

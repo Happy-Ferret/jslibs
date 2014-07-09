@@ -485,7 +485,7 @@ HostRuntime::setJSEngineAllocators(Allocators allocators) {
 
 
 void
-HostRuntime::errorReporterBasic(JSContext *cx, const char *message, JSErrorReport *report) {
+HostRuntime::errorReporterBasic( JSContext *cx, const char *message, JSErrorReport *report ) {
 
 	JL_IGNORE( cx );
 	if ( !report )
@@ -495,7 +495,7 @@ HostRuntime::errorReporterBasic(JSContext *cx, const char *message, JSErrorRepor
 }
 
 
-HostRuntime::HostRuntime(Allocators allocators, uint32_t maybeGCIntervalMs)
+HostRuntime::HostRuntime( Allocators allocators, uint32_t maybeGCIntervalMs )
 : _allocators(allocators), rt(nullptr), cx(nullptr), _isEnding(false), _skipCleanup(false), _watchDog(*MOZ_THIS_IN_INITIALIZER_LIST(), maybeGCIntervalMs) {
 }
 
@@ -646,7 +646,7 @@ ModuleManager::ModuleManager(HostRuntime &hostRuntime)
 
 
 bool
-ModuleManager::loadModule(const char *libFileName, JS::HandleObject obj, JS::MutableHandleValue rval) {
+ModuleManager::loadModule(const TCHAR *libFileName, JS::HandleObject obj, JS::MutableHandleValue rval) {
 
 	JSContext *cx = _hostRuntime.context();
 
@@ -658,8 +658,8 @@ ModuleManager::loadModule(const char *libFileName, JS::HandleObject obj, JS::Mut
 	if ( !JLDynamicLibraryOk(moduleHandle) ) {
 
 		JL_SAFE_BEGIN
-		char errorBuffer[256];
-		JLDynamicLibraryLastErrorMessage( errorBuffer, sizeof(errorBuffer) );
+		TCHAR errorBuffer[256];
+		JLDynamicLibraryLastErrorMessage(errorBuffer, COUNTOF(errorBuffer));
 		JL_WARN( E_OS, E_OPERATION, E_DETAILS, E_STR(errorBuffer), E_COMMENT(libFileName) );
 		JL_SAFE_END
 
@@ -706,8 +706,8 @@ ModuleManager::loadModule(const char *libFileName, JS::HandleObject obj, JS::Mut
 		module = Module();
 
 		JL_CHK( !JL_IsExceptionPending(cx) );
-		char filename[PATH_MAX];
-		JLDynamicLibraryName((void*)moduleInit, filename, sizeof(filename));
+		TCHAR filename[PATH_MAX];
+		JLDynamicLibraryName((void*)moduleInit, filename, COUNTOF(filename));
 		JL_ERR( E_MODULE, E_NAME(filename), E_INIT );
 	}
 	
@@ -738,8 +738,8 @@ ModuleManager::releaseModules() {
 
 				if ( !moduleRelease(cx) ) {
 
-					char filename[PATH_MAX];
-					JLDynamicLibraryName((void*)moduleRelease, filename, sizeof(filename));
+					TCHAR filename[PATH_MAX];
+					JLDynamicLibraryName((void*)moduleRelease, filename, COUNTOF(filename));
 					JL_WARN( E_MODULE, E_NAME(filename), E_FIN ); // "Fail to release module \"%s\".", filename
 				}
 			}
@@ -853,7 +853,7 @@ DEFINE_FUNCTION( stdout ) {
 	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( jl::getValue(cx, JL_ARGV[i], &str) );
-		int status = host.stdIO().output(str.toData<const char*>(), str.length());
+		int status = host.stdIO().output( str.toData<const char*>(), str.length() );
 		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdout"), E_WRITE );
 	}
 	return true;
@@ -874,7 +874,7 @@ DEFINE_FUNCTION( stderr ) {
 	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( jl::getValue( cx, JL_ARGV[i], &str ) );
-		int status = host.stdIO().error(str.toData<const char *>(), str.length());
+		int status = host.stdIO().error( str.toData<const char *>(), str.length() );
 		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stderr"), E_WRITE );
 	}
 	return true;
@@ -936,11 +936,11 @@ DEFINE_FUNCTION( loadModule ) {
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 
-	char libFileName[PATH_MAX];
+	TCHAR libFileName[PATH_MAX];
 	//jl::strncpy( libFileName, str.toData<const char *>(), str.length() ); // (TBD) use copyTo()
 	str.copyTo(libFileName);
-	libFileName[str.length()] = '\0';
-	strcat( libFileName, DLL_EXT );
+	libFileName[str.length()] = TEXT('\0');
+	jl::strcat( libFileName, TEXT(DLL_EXT) );
 	// MAC OSX: 	'@executable_path' ??
 
 	JL_CHK( Host::getHost(cx).moduleManager().loadModule(libFileName, JL_OBJ, JL_RVAL) );
@@ -1044,7 +1044,7 @@ Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
 	#define fprintf(FILE, FORMAT, ...) \
 	JL_MACRO_BEGIN \
-		size_t remaining = sizeof(buffer)-(buf-buffer); \
+		size_t remaining = COUNTOF(buffer)-(buf-buffer); \
 		if ( remaining == 0 ) break; \
 		int count = snprintf(buf, remaining, FORMAT, ##__VA_ARGS__); \
 		buf += count < 0 ? remaining : count; \
@@ -1052,7 +1052,7 @@ Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
 	#define fputs(STR, FILE) \
 	JL_MACRO_BEGIN \
-		size_t remaining = sizeof(buffer)-(buf-buffer); \
+		size_t remaining = COUNTOF(buffer)-(buf-buffer); \
 		if ( remaining == 0 ) break; \
 		size_t len = jl::min(strlen(STR), remaining); \
 		jl::memcpy(buf, STR, len); \
@@ -1061,7 +1061,7 @@ Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
 	#define fwrite(STR, SIZE, COUNT, FILE) \
 	JL_MACRO_BEGIN \
-		size_t remaining = sizeof(buffer)-(buf-buffer); \
+		size_t remaining = COUNTOF(buffer)-(buf-buffer); \
 		if ( remaining == 0 ) break; \
 		size_t len = jl::min(size_t((SIZE)*(COUNT)), remaining); \
 		jl::memcpy(buf, (STR), len); \
@@ -1070,7 +1070,7 @@ Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
 	#define fputc(CHR, FILE) \
 	JL_MACRO_BEGIN \
-		size_t remaining = sizeof(buffer)-(buf-buffer); \
+		size_t remaining = COUNTOF(buffer)-(buf-buffer); \
 		if ( remaining == 0 ) break; \
 		buf[0] = (CHR); \
 		buf += 1; \
@@ -1156,13 +1156,14 @@ Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 	#undef fwrite
 	#undef fputc
 	#undef fflush
-	
-	Host::getHost(cx).hostStderrWrite(buffer, buf-buffer);
+
+	jl::BufString tmpErrTxt(jl::constPtr(buffer), buf - buffer, false);
+	Host::getHost( cx ).hostStderrWrite( tmpErrTxt, tmpErrTxt.length() );
 }
 
 
 bool
-Host::hostStderrWrite(const char *message, size_t length) {
+Host::hostStderrWrite(const TCHAR *message, size_t length) {
 
 	JSContext *cx = _hostRuntime.context();
 
@@ -1392,7 +1393,7 @@ Host::report( bool isWarning, ... ) const {
 
 
 bool
-Host::setHostArguments( char **hostArgv, size_t hostArgc ) {
+Host::setHostArguments( TCHAR **hostArgv, size_t hostArgc ) {
 
 	JSContext *cx = _hostRuntime.context();
 	JS::RootedValue argumentsVal(_hostRuntime.runtime());
@@ -1404,7 +1405,7 @@ Host::setHostArguments( char **hostArgv, size_t hostArgc ) {
 }
 
 bool
-Host::setHostPath( const char *hostPath) {
+Host::setHostPath( const TCHAR *hostPath) {
 
 	JSContext *cx = _hostRuntime.context();
 	JL_CHK( jl::setProperty(cx, _hostObject, JLID(cx, path), hostPath) );
@@ -1413,7 +1414,7 @@ Host::setHostPath( const char *hostPath) {
 }
 
 bool
-Host::setHostName( const char *hostName ) {
+Host::setHostName( const TCHAR *hostName ) {
 
 	JSContext *cx = _hostRuntime.context();
 	JL_CHK( jl::setProperty(cx, _hostObject, JLID(cx, name), hostName) );

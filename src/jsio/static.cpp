@@ -795,7 +795,7 @@ DEFINE_PROPERTY_GETTER( hostName ) {
 	//   Suppose the name of the host is configured as "foo.bar.com".
 	//   If PR_SI_HOSTNAME is specified, "foo" is returned. If PR_SI_HOSTNAME_UNTRUNCATED is specified, "foo.bar.com" is returned.
 	//   On the other hand, if the name of the host is configured as just "foo",	both PR_SI_HOSTNAME and PR_SI_HOSTNAME_UNTRUNCATED return "foo".
-	PRStatus status = PR_GetSystemInfo( PR_SI_HOSTNAME_UNTRUNCATED, tmp, sizeof(tmp) );
+	PRStatus status = PR_GetSystemInfo(PR_SI_HOSTNAME_UNTRUNCATED, tmp, COUNTOF(tmp));
 	if ( status != PR_SUCCESS )
 		return ThrowIoError(cx);
 	JL_CHK( jl::setValue(cx, JL_RVAL, tmp) );
@@ -814,7 +814,7 @@ DEFINE_PROPERTY_GETTER( architecture ) {
 	JL_DEFINE_PROP_ARGS;
 
 	char tmp[SYS_INFO_BUFFER_LENGTH];
-	if ( PR_GetSystemInfo( PR_SI_ARCHITECTURE, tmp, sizeof(tmp) ) != PR_SUCCESS )
+	if (PR_GetSystemInfo(PR_SI_ARCHITECTURE, tmp, COUNTOF(tmp)) != PR_SUCCESS)
 		return ThrowIoError(cx);
 	JL_CHK( jl::setValue(cx, JL_RVAL, tmp) );
 	return true;
@@ -831,7 +831,7 @@ DEFINE_PROPERTY_GETTER( systemName ) {
 	JL_DEFINE_PROP_ARGS;
 
 	char tmp[SYS_INFO_BUFFER_LENGTH];
-	if ( PR_GetSystemInfo( PR_SI_SYSNAME, tmp, sizeof(tmp) ) != PR_SUCCESS )
+	if (PR_GetSystemInfo(PR_SI_SYSNAME, tmp, COUNTOF(tmp)) != PR_SUCCESS)
 		return ThrowIoError(cx);
 	JL_CHK( jl::setValue(cx, JL_RVAL, tmp) );
 	return true;
@@ -848,7 +848,7 @@ DEFINE_PROPERTY_GETTER( systemRelease ) {
 	JL_DEFINE_PROP_ARGS;
 
 	char tmp[SYS_INFO_BUFFER_LENGTH];
-	if ( PR_GetSystemInfo( PR_SI_RELEASE, tmp, sizeof(tmp) ) != PR_SUCCESS )
+	if (PR_GetSystemInfo(PR_SI_RELEASE, tmp, COUNTOF(tmp)) != PR_SUCCESS)
 		return ThrowIoError(cx);
 	JL_CHK( jl::setValue(cx, JL_RVAL, tmp) );
 	return true;
@@ -979,10 +979,10 @@ DEFINE_PROPERTY_GETTER( currentDirectory ) {
 
 	char buf[PATH_MAX];
 #ifdef WIN
-//	_getcwd(buf, sizeof(buf));
+//	_getcwd(buf, COUNTOF(buf));
 	::GetCurrentDirectory(COUNTOF(buf), buf);
 #else
-	getcwd(buf, sizeof(buf)); // need  #include <direct.h>
+	getcwd(buf, COUNTOF(buf)); // need  #include <direct.h>
 #endif // WIN
 	JL_CHK( jl::setValue( cx, vp, buf ) );
 	return true;

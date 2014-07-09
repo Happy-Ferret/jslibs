@@ -367,6 +367,33 @@ else
 
 #endif
 
+// convert a number of TCHARs into a size in bytes
+#define TSIZE(length) ((length)*sizeof(TCHAR))
+
+template <size_t MAXLEN>
+ALWAYS_INLINE const char *
+tstrToStr( const wchar_t *src, char *dst ) {
+
+	const char *max = dst + MAXLEN;
+	char *it = dst;
+	while (it != max) {
+
+		*it = *src & 0xff;
+		if (*src == 0)
+			break;
+		++src;
+		++it;
+	}
+	return dst;
+}
+
+template <size_t MAXLEN>
+ALWAYS_INLINE const char *
+tstrToStr( const char *src, char * ) {
+
+	return src;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -385,6 +412,7 @@ else
 #include <cstring>
 #include <cctype>
 #include <type_traits>
+#include <tchar.h>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -597,7 +625,7 @@ LL(const wchar_t *s) {
 #if defined(WIN32)
 #define JL_ASSERT_FAILURE( message, location ) \
 	( \
-	fprintf(stderr, "JL Assertion failure:  %s  @%s\n", message, location), \
+	_ftprintf(stderr, TEXT("JL Assertion failure:  %s  @%s\n"), message, location), \
 	fflush(stderr), \
 	__debugbreak(), \
 	(*((volatile int*) NULL) = 123), \
@@ -733,7 +761,7 @@ struct Wrap {
 
 template<class T>
 struct DummyAlignStruct {
-  unsigned char first;
+  uint8_t first;
   T second;
 };
 
@@ -753,7 +781,7 @@ enum {
 };
 
 static const union {
-	unsigned char bytes[4];
+	uint8_t bytes[4];
 	uint32_t value;
 } JLHostEndianType = { { 0, 1, 2, 3 } };
 
@@ -874,55 +902,79 @@ ALWAYS_INLINE bool isTypeFloat32(float) { return true; }
 template<typename Source>
 struct SignificandStringValue {
 	
-	static const char * min() {
+	static const TCHAR * min() {
 	
-		static char buffer[(::std::numeric_limits<Source>::is_signed ? ::std::numeric_limits<Source>::digits10 + 1 : 0) + 2];
-		static char* str = jl::itoa10( ::std::numeric_limits<Source>::min(), buffer);
+		static TCHAR buffer[(::std::numeric_limits<Source>::is_signed ? ::std::numeric_limits<Source>::digits10 + 1 : 0) + 2];
+		static TCHAR* str = jl::itoa10( ::std::numeric_limits<Source>::min(), buffer );
 		return str;
 	}
 
-	static const char * max() {
+	static const TCHAR * max() {
 	
-		static char buffer[::std::numeric_limits<Source>::digits10 + 2];
-		static char* str = jl::itoa10( ::std::numeric_limits<Source>::max(), buffer);
+		static TCHAR buffer[::std::numeric_limits<Source>::digits10 + 2];
+		static TCHAR* str = jl::itoa10( ::std::numeric_limits<Source>::max(), buffer );
 		return str;
 	}
 };
 
 template<>
 struct SignificandStringValue<int32_t> {
-	static const char * min() { return "-2^31"; }
-	static const char * max() { return "2^31-1"; }
+	static const TCHAR * min() {
+		return TEXT( "-2^31" );
+	}
+	static const TCHAR * max() {
+		return TEXT( "2^31-1" );
+	}
 };
 
 template<>
 struct SignificandStringValue<uint32_t> {
-	static const char * min() { return "0"; }
-	static const char * max() { return "2^32"; }
+	static const TCHAR * min() {
+		return TEXT( "0" );
+	}
+	static const TCHAR * max() {
+		return TEXT( "2^32" );
+	}
 };
 
 template<>
 struct SignificandStringValue<int64_t> {
-	static const char * min() { return "2^63"; }
-	static const char * max() { return "2^63-1"; }
+	static const TCHAR * min() {
+		return TEXT( "2^63" );
+	}
+	static const TCHAR * max() {
+		return TEXT( "2^63-1" );
+	}
 };
 
 template<>
 struct SignificandStringValue<uint64_t> {
-	static const char * min() { return "0"; }
-	static const char * max() { return "2^64"; }
+	static const TCHAR * min() {
+		return TEXT( "0" );
+	}
+	static const TCHAR * max() {
+		return TEXT( "2^64" );
+	}
 };
 
 template<>
 struct SignificandStringValue<float> {
-	static const char * min() { return "-2^24"; }
-	static const char * max() { return "2^24"; }
+	static const TCHAR * min() {
+		return TEXT( "-2^24" );
+	}
+	static const TCHAR * max() {
+		return TEXT( "2^24" );
+	}
 };
 
 template<>
 struct SignificandStringValue<double> {
-	static const char * min() { return "-2^53"; }
-	static const char * max() { return "2^53"; }
+	static const TCHAR * min() {
+		return TEXT( "-2^53" );
+	}
+	static const TCHAR * max() {
+		return TEXT( "2^53" );
+	}
 };
 
 ////
@@ -1123,8 +1175,8 @@ CastUint32ToCStr( uint32_t val, char *cstr ) {
 ALWAYS_INLINE void *
 memcpy(void *dst_, const void *src_, size_t len) {
     
-	char *dst = (char *) dst_;
-    const char *src = (const char *) src_;
+	uint8_t *dst = (uint8_t*)dst_;
+	const uint8_t *src = (const uint8_t*)src_;
     ASSERT_IF(dst >= src, (size_t) (dst - src) >= len);
     ASSERT_IF(src >= dst, (size_t) (src - dst) >= len);
 	return ::memcpy(dst, src, len);
@@ -1380,11 +1432,11 @@ fpipe( FILE **read, FILE **write ) {
 
 #ifdef UNIX
 
-INLINE void GetAbsoluteModulePath( char* moduleFileName, size_t size, char *modulePath ) {
+INLINE void GetAbsoluteModulePath( TCHAR* moduleFileName, size_t size, TCHAR* modulePath ) {
 
 	if ( modulePath[0] == PATH_SEPARATOR ) { //  /jshost
 
-		strcpy(moduleFileName, modulePath);
+		jl::strcpy(moduleFileName, modulePath);
 		return;
 	}
 
@@ -1422,7 +1474,7 @@ INLINE void GetAbsoluteModulePath( char* moduleFileName, size_t size, char *modu
 
 			if ( pos == NULL ) {
 
-				strcpy(moduleFileName, envPath);
+				jl::strcpy(moduleFileName, envPath);
 			} else {
 
 				strncpy(moduleFileName, envPath, pos-envPath);
@@ -1448,19 +1500,27 @@ INLINE void GetAbsoluteModulePath( char* moduleFileName, size_t size, char *modu
 
 
 ALWAYS_INLINE bool
-GetModuleFileName(char *hostFullPath) {
+GetModuleFileName(TCHAR *hostFullPath) {
+
 #if defined(WIN)
+
 // get hostpath and hostname
 	return GetModuleFileName((HINSTANCE)GetModuleHandle(NULL), hostFullPath, PATH_MAX) != 0;
+
 #elif defined(UNIX)
+
 //	jl::GetAbsoluteModulePath(hostFullPath, PATH_MAX, argv0);
 	int len = readlink("/proc/self/exe", moduleFileName, sizeof(moduleFileName)); // doc: readlink does not append a NUL character to buf.
 	moduleFileName[len] = '\0';
 //	strcpy(hostFullPath, argv[0]);
 	return true;
+
 #else
+
 	#error NOT IMPLEMENTED YET	// (TBD)
+
 #endif
+
 }
 
 
@@ -1470,12 +1530,12 @@ GetModuleFileName(char *hostFullPath) {
 // cf. _swab() -or- _rotl();
 // 16 bits: #define SWAP_BYTES(X) ((X & 0xff) << 8) | (X >> 8)
 // 32 bits swap: #define SWAP_BYTE(x) ((x<<24) | (x>>24) | ((x&0xFF00)<<8) | ((x&0xFF0000)>>8))
-//#define BytesSwap(ptr,a,b) { register char tmp = ((int8_t*)ptr)[a]; ((int8_t*)ptr)[a] = ((int8_t*)ptr)[b]; ((int8_t*)ptr)[b] = tmp; }
+//#define BytesSwap(ptr,a,b) { register int8_t tmp = ((int8_t*)ptr)[a]; ((int8_t*)ptr)[a] = ((int8_t*)ptr)[b]; ((int8_t*)ptr)[b] = tmp; }
 
 ALWAYS_INLINE NOALIAS void
 BytesSwap(void *ptr, size_t a, size_t b) {
 
-	register char tmp = ((int8_t*)ptr)[a];
+	register int8_t tmp = ((int8_t*)ptr)[a];
 	((int8_t*)ptr)[a] = ((int8_t*)ptr)[b];
 	((int8_t*)ptr)[b] = tmp;
 }
@@ -1560,6 +1620,9 @@ Network64ToHost64( void *pval ) {
 	}
 }
 
+////
+
+// http://www.i18nguy.com/unicode/c-unicode.html
 
 ////
 
@@ -1578,13 +1641,13 @@ strncpy(wchar_t *dst, const wchar_t *src, size_t nelem) {
 ////
 
 ALWAYS_INLINE const char* FASTCALL
-strchr(const char *s, char c) {
+strchr( const char *s, char c ) {
 
 	return ::strchr(s, c);
 }
 
 ALWAYS_INLINE char* FASTCALL
-strchr(char *s, char c) {
+strchr( char *s, char c ) {
 
 	return ::strchr(s, c);
 }
@@ -1602,6 +1665,37 @@ strchr(wchar_t *s, wchar_t c) {
 
 	return ::wcschr(s, c);
 }
+
+////
+
+
+
+ALWAYS_INLINE const char* FASTCALL
+strrchr( const char *s, char c ) {
+
+	return ::strrchr( s, c );
+}
+
+ALWAYS_INLINE char* FASTCALL
+strrchr( char *s, char c ) {
+
+	return ::strrchr( s, c );
+}
+
+//
+
+ALWAYS_INLINE const wchar_t* FASTCALL
+strrchr( const wchar_t *s, wchar_t c ) {
+
+	return ::wcsrchr( s, c );
+}
+
+ALWAYS_INLINE wchar_t* FASTCALL
+strrchr( wchar_t *s, wchar_t c ) {
+
+	return ::wcsrchr( s, c );
+}
+
 
 ////
 
@@ -1630,20 +1724,54 @@ strchr_limit(const wchar_t *s, wchar_t c, const wchar_t *limit) {
 
 ////
 
+ALWAYS_INLINE size_t FASTCALL
+strlen( const char *str ) { return ::strlen(str); }
 
 ALWAYS_INLINE size_t FASTCALL
-strlen(const char *str) {
+strlen( const wchar_t *str ) { return ::wcslen(str); }
 
-	return ::strlen(str);
+////
+
+ALWAYS_INLINE char * FASTCALL
+strcat( char *dst, const char *str ) { return ::strcat( dst, str ); }
+
+ALWAYS_INLINE wchar_t * FASTCALL
+strcat( wchar_t *dst, const wchar_t *str ) { return ::wcscat( dst, str ); }
+
+////
+
+ALWAYS_INLINE char * FASTCALL
+strcpy( char *dst, const char *str ) { return ::strcpy( dst, str ); }
+
+ALWAYS_INLINE wchar_t * FASTCALL
+strcpy( wchar_t *dst, const wchar_t *str ) { return ::wcscpy( dst, str ); }
+
+////
+
+ALWAYS_INLINE int FASTCALL
+strcmp( const char *str1, const char *str2 ) {
+	return ::strcmp( str1, str2 );
 }
 
-ALWAYS_INLINE size_t FASTCALL
-strlen(const wchar_t *str) {
-
-	return ::wcslen(str);
+ALWAYS_INLINE int FASTCALL
+strcmp( const wchar_t *str1, const wchar_t *str2 ) {
+	return ::wcscmp( str1, str2 );
 }
 
 ////
+
+ALWAYS_INLINE int FASTCALL
+strncmp( const char *str1, const char *str2, size_t maxCount ) {
+	return ::strncmp( str1, str2, maxCount );
+}
+
+ALWAYS_INLINE int FASTCALL
+strncmp( const wchar_t *str1, const wchar_t *str2, size_t maxCount ) {
+	return ::wcsncmp( str1, str2, maxCount );
+}
+
+////
+
 
 template <typename T>
 ALWAYS_INLINE size_t FASTCALL
@@ -1703,16 +1831,36 @@ tstrncmpUnsigned( const T *lhs, const U *rhs, size_t max ) {
 }
 
 
-
-
 ////
 
 
 INLINE NEVER_INLINE long FASTCALL
 atoi(const char *buf, int base) {
 
-	return strtol(buf, NULL, base);
+	return ::strtol(buf, NULL, base);
 }
+
+INLINE NEVER_INLINE long FASTCALL
+atoi( const wchar_t *buf, int base ) {
+
+	return ::wcstol( buf, NULL, base );
+}
+
+////
+
+INLINE NEVER_INLINE double FASTCALL
+atof( const char *buf ) {
+
+	return ::strtod( buf, NULL );
+}
+
+INLINE NEVER_INLINE double FASTCALL
+atof( const wchar_t *buf ) {
+
+	return ::wcstod( buf, NULL );
+}
+
+////
 
 
 // \0 not included !
@@ -1722,12 +1870,11 @@ atoi(const char *buf, int base) {
 
 template <typename T>
 INLINE NEVER_INLINE char* FASTCALL
-itoa(T val, char *buf, char base) {
+itoa( T val, char *buf, uint8_t base ) {
 
 	char *p = buf;
 	T prev;
 	do {
-
 		prev = val;
 		val /= base;
 		*p++ = ("zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz"+35)[prev - val * base];
@@ -1745,6 +1892,33 @@ itoa(T val, char *buf, char base) {
 	}
 	return buf;
 }
+
+template <typename T>
+INLINE NEVER_INLINE wchar_t* FASTCALL
+itoa( T val, wchar_t *buf, uint8_t base ) {
+
+	wchar_t *p = buf;
+	T prev;
+	do {
+		prev = val;
+		val /= base;
+		*p++ = (L"zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz" + 35)[prev - val * base];
+	} while ( val );
+	if ( ::std::numeric_limits<T>::is_signed && prev < 0 )
+		*p++ = '-';
+	*p-- = '\0';
+	wchar_t *p1 = buf;
+	wchar_t chr;
+	while ( p1 < p ) {
+
+		chr = *p;
+		*p-- = *p1;
+		*p1++ = chr;
+	}
+	return buf;
+}
+
+
 
 
 template <typename T>
@@ -1769,6 +1943,31 @@ itoa10(T val, char *buf) {
 	}
 	return tmp;
 }
+
+template <typename T>
+INLINE NEVER_INLINE wchar_t* FASTCALL
+itoa10( T val, wchar_t *buf ) {
+
+	wchar_t *tmp = buf + (::std::numeric_limits<T>::is_signed ? 1 : 0) + 1 + ::std::numeric_limits<T>::digits10 + 1;
+	*--tmp = L'\0';
+	if ( ::std::numeric_limits<T>::is_signed && val < 0 ) {
+
+		do {
+			*--tmp = L'0' + val % 10;
+			val /= 10;
+		} while ( val );
+	} else {
+
+		do {
+			*--tmp = L'0' - val % 10;
+			val /= 10;
+		} while ( val );
+		*--tmp = '-';
+	}
+	return tmp;
+}
+
+
 
 
 // ReaD Time Stamp Counter (rdtsc)
@@ -2020,6 +2219,7 @@ CPUInfo( CpuInfo_t info ) {
 
 
 #if defined(WIN)
+
 ALWAYS_INLINE HMODULE
 GetCurrentModule() {
 
@@ -2027,7 +2227,7 @@ GetCurrentModule() {
 	//   http://blogs.msdn.com/b/oldnewthing/archive/2004/10/25/247180.aspx
 	//   http://www.codeguru.com/Cpp/W-P/dll/tips/article.php/c3635/
 	HMODULE handle;
-	GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, "", &handle); // requires XP or 2003
+	GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, TEXT(""), &handle); // requires XP or 2003
 	return handle;
 	// or:
 	// static int dummy;
@@ -2139,7 +2339,8 @@ enum EncodingType {
 	ENC_UTF16be,
 	ENC_UTF16le,
 	ENC_UTF8,
-	ENC_ASCII
+	ENC_ASCII,
+	ENC_LATIN1
 };
 
 
@@ -2209,14 +2410,15 @@ DetectEncoding(uint8_t **buf, size_t *size) {
 		return ENC_UTF8;
 
 /* no BOM, then guess // (TBD) find a better heuristic
+
 	if ( (*buf)[0] > 0 && (*buf)[1] > 0 )
-		return ASCII;
+		return ENC_ASCII;
 
 	if ( (*buf)[0] != 0 && (*buf)[1] == 0 )
-		return UTF16le;
+		return ENC_UTF16le;
 
 	if ( (*buf)[0] == 0 && (*buf)[1] != 0 )
-		return UTF16be;
+		return ENC_UTF16be;
 */
 
 	return ENC_UNKNOWN;
@@ -2233,18 +2435,18 @@ DetectEncoding(uint8_t **buf, size_t *size) {
 // source: libxml2 - encoding.c - MIT License
 // changes: outlen and inlen from integer to size_t, and the last redurned value
 INLINE int NOALIAS FASTCALL
-UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
-              const unsigned char* in, size_t *inlen)
+UTF8ToUTF16LE(uint8_t* outb, size_t *outlen,
+              const uint8_t* in, size_t *inlen)
 {
     unsigned short* out = (unsigned short*) outb;
-    const unsigned char* processed = in;
-    const unsigned char *const instart = in;
+    const uint8_t* processed = in;
+    const uint8_t *const instart = in;
     unsigned short* outstart= out;
     unsigned short* outend;
-    const unsigned char* inend;
+    const uint8_t* inend;
     unsigned int c, d;
     int trailing;
-    unsigned char *tmp;
+    uint8_t *tmp;
     unsigned short tmp1, tmp2;
 
     /* UTF16LE encoding has no BOM */
@@ -2292,7 +2494,7 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 	    if (xmlLittleEndian) {
 		*out++ = c;
 	    } else {
-		tmp = (unsigned char *) out;
+		tmp = (uint8_t *) out;
 		*tmp = c ;
 		*(tmp + 1) = c >> 8 ;
 		out++;
@@ -2307,14 +2509,14 @@ UTF8ToUTF16LE(unsigned char* outb, size_t *outlen,
 		*out++ = 0xDC00 | (c & 0x03FF);
 	    } else {
 		tmp1 = 0xD800 | (c >> 10);
-		tmp = (unsigned char *) out;
-		*tmp = (unsigned char) tmp1;
+		tmp = (uint8_t *) out;
+		*tmp = (uint8_t) tmp1;
 		*(tmp + 1) = tmp1 >> 8;
 		out++;
 
 		tmp2 = 0xDC00 | (c & 0x03FF);
-		tmp = (unsigned char *) out;
-		*tmp  = (unsigned char) tmp2;
+		tmp = (uint8_t *) out;
+		*tmp  = (uint8_t) tmp2;
 		*(tmp + 1) = tmp2 >> 8;
 		out++;
 	    }
@@ -2528,7 +2730,7 @@ JL_setMonoCPU() {
 
 
 INLINE NEVER_INLINE void NOALIAS FASTCALL
-JLSysetmErrorMessage( char *message, size_t maxLength, JLSystemErrorCode errorCode, const char *moduleName ) {
+JLSysetmErrorMessage( TCHAR *message, size_t maxLength, JLSystemErrorCode errorCode, const TCHAR *moduleName ) {
 
  #if defined(WIN)
 	
@@ -2553,7 +2755,7 @@ JLSysetmErrorMessage( char *message, size_t maxLength, JLSystemErrorCode errorCo
 
  #elif defined(UNIX)
 	
-	const char *msgBuf = strerror(errorCode); // wcserror
+	const TCHAR *msgBuf = strerror(errorCode); // wcserror
 	if ( msgBuf != NULL ) {
 
 		strncpy(message, msgBuf, maxLength-1);
@@ -2572,7 +2774,7 @@ JLSysetmErrorMessage( char *message, size_t maxLength, JLSystemErrorCode errorCo
 
 
 INLINE NEVER_INLINE void NOALIAS FASTCALL
-JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
+JLLastSysetmErrorMessage( TCHAR *message, size_t maxLength ) {
 
  #if defined(WIN)
 	
@@ -2595,12 +2797,12 @@ JLLastSysetmErrorMessage( char *message, size_t maxLength ) {
 // Temporary Filename
 
 ALWAYS_INLINE bool FASTCALL
-JLTemporaryFilename(char *path) {
+JLTemporaryFilename(TCHAR *path) {
 
-	char *tmp = tempnam(NULL, "jltmp");
+	TCHAR *tmp = _ttempnam( NULL, TEXT("jltmp") );
 	if ( tmp == NULL )
 		return false;
-	strcpy(path, tmp);
+	jl::strcpy( path, tmp );
 	return true;
 
 /*
@@ -3562,17 +3764,17 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 		return (uint32_t)( ((uintptr_t)libraryHandler >> ALIGNOF(void*)) & 0xffffffff ); // shift useless and keep 32bits.
 	}
 
-	ALWAYS_INLINE JLLibraryHandler JLDynamicLibraryOpen( const char *filename ) {
+	ALWAYS_INLINE JLLibraryHandler JLDynamicLibraryOpen( const TCHAR *filename ) {
 
 	#if defined(WIN)
 		// GetErrorMode() only exists on Vista and higher,
 		// call SetErrorMode() twice to achieve the same effect.
 		// see also SetThreadErrorMode()
-		UINT oldErrorMode = SetErrorMode(SEM_FAILCRITICALERRORS);
-		SetErrorMode( oldErrorMode | SEM_FAILCRITICALERRORS ); // avoid error popups
-		HMODULE hModule = LoadLibrary(filename); // If the function fails, the return value is NULL. 
+		UINT oldErrorMode = ::SetErrorMode(SEM_FAILCRITICALERRORS);
+		::SetErrorMode( oldErrorMode | SEM_FAILCRITICALERRORS ); // avoid error popups
+		HMODULE hModule = ::LoadLibrary(filename); // If the function fails, the return value is NULL. 
 		// Restore previous error mode.
-		SetErrorMode(oldErrorMode);
+		::SetErrorMode(oldErrorMode);
 		return hModule;
 	#elif defined(UNIX)
 		dlerror(); // Resets the error indicator.
@@ -3599,7 +3801,7 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 	}
 
 	INLINE NEVER_INLINE void FASTCALL
-	JLDynamicLibraryLastErrorMessage( char *message, size_t maxLength ) {
+	JLDynamicLibraryLastErrorMessage( TCHAR *message, size_t maxLength ) {
 
 	#if defined(WIN)
 		DWORD errorCode = ::GetLastError();
@@ -3609,7 +3811,7 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 			NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL );
 		if ( result != 0 ) {
 
-			strncpy(message, (char*)lpMsgBuf, maxLength-1);
+			jl::strncpy( message, (LPTSTR)lpMsgBuf, maxLength - 1 );
 			message[maxLength-1] = '\0';
 		} else
 			*message = '\0';
@@ -3626,10 +3828,10 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 	#endif
 	}
 
-	ALWAYS_INLINE void *JLDynamicLibrarySymbol( JLLibraryHandler libraryHandler, const char *symbolName ) {
+	ALWAYS_INLINE void *JLDynamicLibrarySymbol( JLLibraryHandler libraryHandler, const char *symbolName ) { // symbolName cannot be wchar_t
 
 	#if defined(WIN)
-		return (void*)GetProcAddress(libraryHandler, symbolName);
+		return (void*)::GetProcAddress(libraryHandler, symbolName);
 	#elif defined(UNIX)
 		dlerror(); // Resets the error indicator.
 		return dlsym(libraryHandler, symbolName);
@@ -3638,13 +3840,13 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 	#endif
 	}
 
-	ALWAYS_INLINE void JLDynamicLibraryName( void *addr, char *fileName, size_t maxFileNameLength ) {
+	ALWAYS_INLINE void JLDynamicLibraryName( void *addr, TCHAR *fileName, size_t maxFileNameLength ) {
 
 		// DWORD st = GetModuleFileName(libraryHandler, (LPCH)fileName, (DWORD)fileNameSize); ASSERT( st != ERROR_INSUFFICIENT_BUFFER );
 		ASSERT( maxFileNameLength > 0 );
 	#if defined(WIN)
 		HMODULE libraryHandler;
-		if ( !GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)addr, &libraryHandler) ) { // requires XP or 2003
+		if ( !::GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (const TCHAR *)addr, &libraryHandler) ) { // requires XP or 2003
 			
 			fileName[0] = '\0';
 			return;
@@ -3657,7 +3859,7 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 		//		return;
 		//	}
 		//	HMODULE libraryHandler = (HMODULE)mem.AllocationBase;
-		GetModuleFileName(libraryHandler, (LPCH)fileName, maxFileNameLength);
+		::GetModuleFileName(libraryHandler, (TCHAR*)fileName, maxFileNameLength);
 	#elif defined(UNIX)
 		Dl_info info;
 		if ( !dladdr(addr, &info) || !info.dli_fbase || !info.dli_fname ) {

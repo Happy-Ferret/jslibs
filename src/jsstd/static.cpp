@@ -1397,10 +1397,10 @@ bool GetProcInfo( pid_t pid, LinuxProcInfo *pinfo ) {
 
 	char path[128];
 	char data[512];
-	snprintf(path, sizeof(path), "/proc/%d/stat", pid);
+	snprintf(path, COUNTOF(path), "/proc/%d/stat", pid);
 	int fd = open(path, O_RDONLY);
 	//lseek(fd,0,SEEK_SET);
-	int rd = read(fd, data, sizeof(data));
+	int rd = read(fd, data, COUNTOF(data));
 	close(fd);
 	data[rd] = '\0';
 
@@ -1769,23 +1769,23 @@ DEFINE_PROPERTY_GETTER( cpuLoad ) {
 
 		status = PdhOpenQuery(NULL, NULL, &query);
 		if ( status != ERROR_SUCCESS )
-			return jl::throwOSErrorCode(cx, status, "pdh.dll");
+			return jl::throwOSErrorCode( cx, status, TEXT( "pdh.dll" ) );
 		status = PdhAddCounter(query, TEXT("\\Processor(_Total)\\% Processor Time"), NULL, &counter); // A total of ALL CPU's in the system
 		if ( status != ERROR_SUCCESS )
-			return jl::throwOSErrorCode(cx, status, "pdh.dll");
+			return jl::throwOSErrorCode( cx, status, TEXT( "pdh.dll" ) );
 		status = PdhCollectQueryData(query); // No error checking here
 		if ( status != ERROR_SUCCESS )
-			return jl::throwOSErrorCode(cx, status, "pdh.dll");
+			return jl::throwOSErrorCode( cx, status, TEXT( "pdh.dll" ) );
 		notInit = false;
 	}
 
 	status = PdhCollectQueryData(query);
 	if ( status != ERROR_SUCCESS )
-		return jl::throwOSErrorCode(cx, status, "pdh.dll");
+		return jl::throwOSErrorCode( cx, status, TEXT( "pdh.dll" ) );
 
 	status = PdhGetFormattedCounterValue(counter, PDH_FMT_DOUBLE, &ret, &value);
 	if ( status != ERROR_SUCCESS && status != PDH_CALC_NEGATIVE_DENOMINATOR )
-		return jl::throwOSErrorCode(cx, status, "pdh.dll");
+		return jl::throwOSErrorCode( cx, status, TEXT( "pdh.dll" ) );
 
 	return jl::setValue(cx, vp, value.doubleValue);
 

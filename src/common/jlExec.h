@@ -16,6 +16,7 @@
 
 #include <sys/stat.h> // stat() used by JL_LoadScript()
 
+
 JL_BEGIN_NAMESPACE
 
 
@@ -32,7 +33,7 @@ JL_BEGIN_NAMESPACE
 //
 //	/be
 INLINE NEVER_INLINE JSScript* FASTCALL
-loadScript(JSContext *cx, IN JS::HandleObject obj, const char *fileName, jl::EncodingType encoding, bool useCompFile, bool saveCompFile) {
+loadScript(JSContext *cx, IN JS::HandleObject obj, const TCHAR *fileName, jl::EncodingType encoding, bool useCompFile, bool saveCompFile) {
 
 	char *scriptBuffer = NULL;
 	size_t scriptFileSize;
@@ -45,21 +46,21 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const char *fileName, jl::Enc
 	//JS::CompartmentOptionsRef(cx).cloneSingletonsOverride().set(true);
 
 	void *data = NULL;
-	char compiledFileName[PATH_MAX];
-	strcpy_s<PATH_MAX>( compiledFileName, fileName );
-	strcat_s<PATH_MAX>( compiledFileName, "xdr" );
+	TCHAR compiledFileName[PATH_MAX];
+	_tcscpy_s<PATH_MAX>( compiledFileName, fileName );
+	_tcscpy_s<PATH_MAX>( compiledFileName, TEXT("xdr") );
 
-	struct stat srcFileStat, compFileStat;
+	struct _stat srcFileStat, compFileStat;
 	//OutputDebugString( fileName );
-	bool hasSrcFile = stat( fileName, &srcFileStat ) != -1; // errno == ENOENT
-	bool hasCompFile = useCompFile && stat( compiledFileName, &compFileStat ) != -1; // if not using compiled file, this is useless to compile it
+	bool hasSrcFile = _tstat( fileName, &srcFileStat ) != -1; // errno == ENOENT
+	bool hasCompFile = useCompFile && _tstat( compiledFileName, &compFileStat ) != -1; // if not using compiled file, this is useless to compile it
 	bool compFileUpToDate = ( hasCompFile && !hasSrcFile ) || ( hasCompFile && hasSrcFile && (compFileStat.st_mtime > srcFileStat.st_mtime) ); // true if comp file is up to date or alone
 
 	JL_CHKM( hasSrcFile || hasCompFile, E_SCRIPT, E_NAME( fileName ), E_OR, E_NAME( compiledFileName ), E_NOTFOUND );
 
 	if ( useCompFile && compFileUpToDate ) {
 
-		int file = open(compiledFileName, O_RDONLY | O_BINARY | O_SEQUENTIAL);
+		int file = _topen(compiledFileName, O_RDONLY | O_BINARY | O_SEQUENTIAL);
 		JL_CHKM( file != -1, E_FILE, E_NAME(compiledFileName), E_ACCESS ); // "Unable to open file \"%s\" for reading.", compiledFileName
 		size_t compFileSize;
 		compFileSize = compFileStat.st_size; // filelength(file); ?
@@ -152,7 +153,7 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const char *fileName, jl::Enc
 
 
 	int scriptFile;
-	scriptFile = open( fileName, O_RDONLY | O_BINARY | O_SEQUENTIAL );
+	scriptFile = _topen( fileName, O_RDONLY | O_BINARY | O_SEQUENTIAL );
 
 	JL_CHKM( scriptFile >= 0, E_FILE, E_NAME(fileName), E_ACCESS ); // "Unable to open file \"%s\" for reading.", fileName
 
@@ -175,6 +176,8 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const char *fileName, jl::Enc
 	if ( encoding == jl::ENC_UNKNOWN )
 		encoding = jl::DetectEncoding((uint8_t**)&scriptBuffer, &scriptFileSize);
 
+	char fileNameChars[PATH_MAX];
+
 	switch ( encoding ) {
 		default:
 			JL_WARN( E_SCRIPT, E_ENCODING, E_INVALID, E_NAME(fileName) );
@@ -188,13 +191,15 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const char *fileName, jl::Enc
 				scriptText[0] = '/';
 				scriptText[1] = '/';
 			}
-			compileOptions.setFileAndLine(fileName, 1);
+			
+			compileOptions.setFileAndLine( tstrToStr<COUNTOF( fileNameChars )>( fileName, fileNameChars ), 1 );
 			compileOptions.setCompileAndGo(true);
 			//compileOptions.setSourcePolicy(JS::CompileOptions::NO_SOURCE);
 
 			//printf("DEBUG %p", obj.address());
 
-			script = JS_CompileScript(cx, obj, scriptText, scriptTextLength, compileOptions);
+			//script = JS_CompileScript(cx, obj, scriptText, scriptTextLength, compileOptions);
+			script = JS::Compile( cx, obj, compileOptions, scriptText, scriptTextLength );
 			break;
 		}
 		case jl::ENC_UTF16le: { // (TBD) support big-endian
@@ -206,7 +211,7 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const char *fileName, jl::Enc
 				scriptText[0] = L('/');
 				scriptText[1] = L('/');
 			}
-			compileOptions.setFileAndLine(fileName, 1);
+			compileOptions.setFileAndLine( tstrToStr<COUNTOF( fileNameChars )>( fileName, fileNameChars ), 1 );
 			compileOptions.setCompileAndGo(true);
 			//compileOptions.setSourcePolicy(JS::CompileOptions::NO_SOURCE);
 
@@ -225,11 +230,12 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const char *fileName, jl::Enc
 				scriptText[0] = L('/');
 				scriptText[1] = L('/');
 			}
-			compileOptions.setFileAndLine(fileName, 1);
+			compileOptions.setFileAndLine( tstrToStr<COUNTOF( fileNameChars )>( fileName, fileNameChars ), 1 );
 			compileOptions.setCompileAndGo(true);
 			//compileOptions.setSourcePolicy(JS::CompileOptions::NO_SOURCE);
 
-			script = JS_CompileUCScript(cx, obj, scriptText, scriptTextLength, compileOptions);
+			//script = JS_CompileUCScript(cx, obj, scriptText, scriptTextLength, compileOptions);
+			script = JS::Compile( cx, obj, compileOptions, scriptText, scriptTextLength );
 			break;
 		}
 	}
@@ -243,7 +249,7 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const char *fileName, jl::Enc
 		goto good;
 
 	int file;
-	file = open(compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_SEQUENTIAL, srcFileStat.st_mode);
+	file = _topen(compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_SEQUENTIAL, srcFileStat.st_mode);
 	if ( file == -1 ) // if the file cannot be write, this is not an error ( eg. read-only drive )
 		goto good;
 
@@ -280,7 +286,7 @@ bad:
 
 
 ALWAYS_INLINE bool FASTCALL
-executeScriptText( JSContext *cx, IN JS::HandleObject obj, const char *scriptText, bool compileOnly, OUT JS::MutableHandleValue rval ) {
+executeScriptText( JSContext *cx, IN JS::HandleObject obj, const TCHAR *scriptText, bool compileOnly, OUT JS::MutableHandleValue rval ) {
 
 //	uint32_t prevOpt = JS_SetOptions(cx, JS_GetOptions(cx) /*| JSOPTION_COMPILE_N_GO*/); //  | JSOPTION_DONT_REPORT_UNCAUGHT
 	// JSOPTION_COMPILE_N_GO:
@@ -307,7 +313,8 @@ executeScriptText( JSContext *cx, IN JS::HandleObject obj, const char *scriptTex
 	compileOptions.setCompileAndGo(true);
 	//compileOptions.setSourcePolicy(JS::CompileOptions::NO_SOURCE);
 
-	script = JS_CompileScript(cx, obj, scriptText, strlen(scriptText), compileOptions);
+	//script = JS_CompileScript(cx, obj, scriptText, jl::strlen(scriptText), compileOptions);
+	script = JS::Compile( cx, obj, compileOptions, scriptText, jl::strlen( scriptText ) );
 	JL_CHK( script );
 
 	// mendatory else the exception is converted into an error before JL_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
@@ -325,7 +332,7 @@ executeScriptText( JSContext *cx, IN JS::HandleObject obj, const char *scriptTex
 
 
 ALWAYS_INLINE bool FASTCALL
-executeScriptFileName( JSContext *cx, IN JS::HandleObject obj, const char *scriptFileName, bool compileOnly, OUT JS::MutableHandleValue rval ) {
+executeScriptFileName( JSContext *cx, IN JS::HandleObject obj, const TCHAR *scriptFileName, bool compileOnly, OUT JS::MutableHandleValue rval ) {
 
 	JS::AutoSaveContextOptions autoCxOpts(cx);
 

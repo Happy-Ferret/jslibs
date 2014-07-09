@@ -283,7 +283,7 @@ bool GCCallTrace(JSContext *cx, JSGCStatus status) {
 	tim = localtime(&t);
 
 	char timeTmp[256];
-	strftime( timeTmp, sizeof(timeTmp), "%m/%d %H:%M:%S", tim);
+	strftime(timeTmp, COUNTOF(timeTmp), "%m/%d %H:%M:%S", tim);
 
 	FILE *dumpFile;
 

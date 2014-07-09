@@ -188,10 +188,17 @@ DEFINE_FUNCTION( createProcess ) {
 	ZeroMemory(&si, sizeof(STARTUPINFO));
 	si.cb = sizeof(STARTUPINFO);
 
-
+	
 	// doc. commandLine parameter: The Unicode version of CreateProcess function, CreateProcessW, can modify the contents of this string !
+
 	PROCESS_INFORMATION pi;
-	BOOL st = CreateProcess( applicationName, (LPSTR)commandLine.toStringZ<const char*>(), NULL, NULL, FALSE, 0, (LPVOID)environment.toStringZOrNull<const char*>(), currentDirectory, &si, &pi ); // doc: http://msdn2.microsoft.com/en-us/library/ms682425.aspx
+
+	TCHAR *tmpCommandLine = commandLine.toStringZOrNull<TCHAR*>(); // The Unicode version, CreateProcessW, can modify the contents of this string.
+	
+	// doc: http://msdn2.microsoft.com/en-us/library/ms682425.aspx
+	BOOL st = ::CreateProcess( applicationName, tmpCommandLine, NULL, NULL, FALSE, (sizeof( TCHAR ) == 2 ? CREATE_UNICODE_ENVIRONMENT : 0), (LPVOID)environment.toStringZOrNull<const TCHAR*>(), currentDirectory, &si, &pi );
+	jl_free( tmpCommandLine );
+
 	if ( st == FALSE )
 		return WinThrowError(cx, GetLastError());
 
@@ -218,17 +225,17 @@ DEFINE_FUNCTION( fileOpenDialog ) {
 	JL_DEFINE_ARGS;
 
 	OPENFILENAME ofn = { sizeof(OPENFILENAME) };
-	char fileName[PATH_MAX];
-	char filter[255];
+	TCHAR fileName[PATH_MAX];
+	TCHAR filter[255];
 
 	if ( argc >= 1 && !JL_ARG(1).isUndefined() ) {
 
 		jl::BufString str;
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-		strcpy( filter, str );
-		for ( char *tmp = filter; (tmp = strchr(tmp, '|')) != 0; tmp++ )
-			*tmp = '\0'; // doc: Pointer to a buffer containing pairs of null-terminated filter strings.
-		filter[str.length() + 1] = '\0'; // The last string in the buffer must be terminated by two NULL characters.
+		jl::strcpy( filter, str );
+		for ( TCHAR *tmp = filter; (tmp = jl::strchr(tmp, '|')) != 0; tmp++ )
+			*tmp = TEXT('\0'); // doc: Pointer to a buffer containing pairs of null-terminated filter strings.
+		filter[str.length() + 1] = TEXT( '\0' ); // The last string in the buffer must be terminated by two NULL characters.
 		ofn.lpstrFilter = filter;
 	}
 
@@ -236,13 +243,13 @@ DEFINE_FUNCTION( fileOpenDialog ) {
 
 		jl::BufString tmp;
 		JL_CHK( jl::getValue(cx, JL_ARG(2), &tmp) );
-		strcpy( fileName, tmp );
+		jl::strcpy( fileName, tmp );
 	} else {
 		*fileName = '\0';
 	}
 
 	ofn.lpstrFile = fileName;
-	ofn.nMaxFile = sizeof(fileName);
+	ofn.nMaxFile = COUNTOF(fileName);
 	ofn.Flags = OFN_NOCHANGEDIR | OFN_LONGNAMES | OFN_HIDEREADONLY;
 	BOOL res = GetOpenFileName(&ofn); // doc: http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/userinput/commondialogboxlibrary/commondialogboxreference/commondialogboxstructures/openfilename.asp
 
@@ -272,10 +279,10 @@ DEFINE_FUNCTION( expandEnvironmentStrings ) {
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &src) );
 	TCHAR dst[PATH_MAX];
-	DWORD res = ExpandEnvironmentStrings( src, dst, sizeof(dst) );
+	DWORD res = ExpandEnvironmentStrings( src, dst, COUNTOF(dst) );
 	if ( res == 0 )
 		return jl::throwOSError(cx);
-	JL_CHK( jl::setValue( cx, JL_RVAL, jl::CStrSpec( dst, res ) ) );
+	JL_CHK( jl::setValue( cx, JL_RVAL, jl::strSpec( dst, res ) ) );
 	return true;
 	JL_BAD;
 }
@@ -387,61 +394,61 @@ bad:
 
 
 HKEY
-ParseRootKey(IN const char *path, OUT size_t *length) {
+ParseRootKey(IN const TCHAR *path, OUT size_t *length) {
 
-	if ( !strncmp(path, "HKEY_CURRENT_USER", 17) ) {
+	if ( !jl::strncmp(path, TEXT("HKEY_CURRENT_USER"), 17) ) {
 		*length = 17;
 		return HKEY_CURRENT_USER;
 	} else
-	if ( !strncmp(path, "HKCU", 4) ) {
+		if ( !jl::strncmp( path, TEXT( "HKCU"), 4 ) ) {
 		*length = 4;
 		return HKEY_CURRENT_USER;
 	} else
-	if ( !strncmp(path, "HKEY_LOCAL_MACHINE", 18) ) {
+		if ( !jl::strncmp( path, TEXT( "HKEY_LOCAL_MACHINE"), 18 ) ) {
 		*length = 18;
 		return HKEY_LOCAL_MACHINE;
 	} else
-	if ( !strncmp(path, "HKLM", 4) ) {
+		if ( !jl::strncmp( path, TEXT( "HKLM"), 4 ) ) {
 		*length = 4;
 		return HKEY_LOCAL_MACHINE;
 	} else
-	if ( !strncmp(path, "HKEY_CLASSES_ROOT", 17) ) {
+		if ( !jl::strncmp( path, TEXT( "HKEY_CLASSES_ROOT"), 17 ) ) {
 		*length = 17;
 		return HKEY_CLASSES_ROOT;
 	} else
-	if ( !strncmp(path, "HKCR", 4) ) {
+		if ( !jl::strncmp( path, TEXT( "HKCR"), 4 ) ) {
 		*length = 4;
 		return HKEY_CLASSES_ROOT;
 	} else
-	if ( !strncmp(path, "HKEY_CURRENT_CONFIG", 19) ) {
+		if ( !jl::strncmp( path, TEXT( "HKEY_CURRENT_CONFIG"), 19 ) ) {
 		*length = 19;
 		return HKEY_CURRENT_CONFIG;
 	} else
-	if ( !strncmp(path, "HKCC", 4) ) {
+		if ( !jl::strncmp( path, TEXT( "HKCC"), 4 ) ) {
 		*length = 4;
 		return HKEY_CURRENT_CONFIG;
 	} else
-	if ( !strncmp(path, "HKEY_USERS", 10) ) {
+		if ( !jl::strncmp( path, TEXT( "HKEY_USERS"), 10 ) ) {
 		*length = 10;
 		return HKEY_USERS;
 	} else
-	if ( !strncmp(path, "HKU", 3) ) {
+		if ( !jl::strncmp( path, TEXT( "HKU"), 3 ) ) {
 		*length = 3;
 		return HKEY_USERS;
 	} else
-	if ( !strncmp(path, "HKEY_PERFORMANCE_DATA", 21) ) {
+		if ( !jl::strncmp( path, TEXT( "HKEY_PERFORMANCE_DATA"), 21 ) ) {
 		*length = 21;
 		return HKEY_PERFORMANCE_DATA;
 	} else
-	if ( !strncmp(path, "HKPD", 4) ) {
+		if ( !jl::strncmp( path, TEXT( "HKPD"), 4 ) ) {
 		*length = 4;
 		return HKEY_PERFORMANCE_DATA;
 	} else
-	if ( !strncmp(path, "HKEY_DYN_DATA", 13) ) {
+		if ( !jl::strncmp( path, TEXT( "HKEY_DYN_DATA"), 13 ) ) {
 		*length = 13;
 		return HKEY_DYN_DATA;
 	} else
-	if ( !strncmp(path, "HKDD", 4) ) {
+		if ( !jl::strncmp( path, TEXT( "HKDD"), 4 ) ) {
 		*length = 4;
 		return HKEY_DYN_DATA;
 	} else {
@@ -454,13 +461,13 @@ DEFINE_FUNCTION( registrySet ) {
 
 	JS::RootedValue value(cx);
 	jl::BufString subKeyStr, valueNameStr;
-	const char *subKey;
+	const TCHAR *subKey;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(3);
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &subKeyStr) );
-	subKey = subKeyStr.toStringZ<const char*>();
+	subKey = subKeyStr.toStringZ<const TCHAR*>();
 
 	size_t length;
 	HKEY rootHKey = ParseRootKey(subKey, &length);
@@ -477,7 +484,7 @@ DEFINE_FUNCTION( registrySet ) {
 
 		if ( value.isUndefined() ) {
 
-			st = RegDeleteKey(rootHKey, subKey);
+			st = ::RegDeleteKey(rootHKey, subKey);
 			if ( st != ERROR_SUCCESS )
 				return WinThrowError(cx, st);
 		}
@@ -569,9 +576,9 @@ DEFINE_FUNCTION( registryGet ) {
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(1,2);
 
-	const char *path;
+	const TCHAR *path;
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &pathStr) );
-	path = pathStr.toStringZ<const char *>();
+	path = pathStr.toStringZ<const TCHAR *>();
 
 	size_t length;
 	HKEY rootHKey = ParseRootKey(path, &length);
@@ -584,7 +591,7 @@ DEFINE_FUNCTION( registryGet ) {
 	HKEY hKey;
 	LONG st;
 
-	st = RegOpenKeyEx(rootHKey, path, 0, KEY_READ, &hKey); // http://msdn.microsoft.com/en-us/library/ms724897%28VS.85%29.aspx
+	st = ::RegOpenKeyEx(rootHKey, path, 0, KEY_READ, &hKey); // http://msdn.microsoft.com/en-us/library/ms724897%28VS.85%29.aspx
 	if ( st != ERROR_SUCCESS )
 		return WinThrowError(cx, st);
 
@@ -594,12 +601,12 @@ DEFINE_FUNCTION( registryGet ) {
 		JL_CHK( arrObj );
 		JL_RVAL.setObject(*arrObj);
 
-		char name[16384]; // http://msdn.microsoft.com/en-us/library/ms724872%28VS.85%29.aspx
+		TCHAR name[16384]; // http://msdn.microsoft.com/en-us/library/ms724872%28VS.85%29.aspx
 		DWORD nameLength, index;
 		index = 0;
 		for (;;) {
 
-			nameLength = sizeof(name);
+			nameLength = COUNTOF(name);
 			if ( argc == 1 ) // enum keys
 				st = RegEnumKeyEx(hKey, index, name, &nameLength, NULL, NULL, NULL, NULL);
 			else
@@ -838,7 +845,8 @@ DEFINE_FUNCTION( directoryChangesLookup ) {
 		while ( pFileNotify ) {
 
 			JS::RootedValue eltVal(cx);
-			eltVal.setObjectOrNull( jl::newArray( cx, jl::WCStrSpec( (jschar*)pFileNotify->FileName, pFileNotify->FileNameLength / sizeof( WCHAR ) ), pFileNotify->Action ) );
+			// pFileNotify->FileNameLength is the size of the file name portion of the record, in bytes. Note that this value does not include the terminating null character.
+			eltVal.setObjectOrNull( jl::newArray( cx, jl::strSpec( pFileNotify->FileName, pFileNotify->FileNameLength / sizeof( *pFileNotify->FileName ) ), pFileNotify->Action ) );
 			JL_CHK( !eltVal.isNull() );
 			JL_CHK( JL_SetElement(cx, arrObj, index, eltVal) );
 			index++;
@@ -1024,9 +1032,7 @@ DEFINE_PROPERTY_GETTER( clipboard ) {
 		LPTSTR lptstr = (LPTSTR)GlobalLock(hglb);
 		if ( lptstr == NULL )
 			return jl::throwOSError(cx);
-		JSString *str = JS_NewStringCopyZ(cx, lptstr);
-		JL_ASSERT_ALLOC( str );
-		vp.setString(str);
+		JL_CHK( jl::setValue( cx, vp, lptstr ) );
 		GlobalUnlock(hglb);
 		CloseClipboard();
 	}
@@ -1380,7 +1386,7 @@ DEFINE_FUNCTION( jswinshelltest ) {
 		WAVEINCAPS wic;
 		mmResult = waveInGetDevCaps(uDeviceID, &wic, sizeof(wic));
 
-		if ( strcmp(wic.szPname, "Rec. Playback (IDT High Definit") == 0 )
+		if ( jl::strcmp(wic.szPname, TEXT("Rec. Playback (IDT High Definit")) == 0 )
 			break;
 		ASSERT( mmResult == MMSYSERR_NOERROR );
 	}

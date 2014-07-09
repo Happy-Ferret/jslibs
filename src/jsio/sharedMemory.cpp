@@ -89,8 +89,8 @@ bool CloseSharedMemory( JSObject *obj ) {
 
 		JL_CHK( PR_DeleteSharedMemory(pv->name) == PR_SUCCESS );
 		char semName[PATH_MAX];
-		strcpy(semName, pv->name);
-		strcat(semName, SEMAPHORE_EXTENSION);
+		jl::strcpy( semName, pv->name );
+		jl::strcat( semName, SEMAPHORE_EXTENSION );
 		JL_CHK( PR_DeleteSemaphore(semName) == PR_SUCCESS );
 	}
 
@@ -153,8 +153,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
 
 	char semName[PATH_MAX];
-	strcpy(semName, name);
-	strcat(semName, SEMAPHORE_EXTENSION);
+	jl::strcpy( semName, name );
+	jl::strcat( semName, SEMAPHORE_EXTENSION );
 
 	bool isCreation;
 	isCreation = true;
@@ -179,7 +179,7 @@ DEFINE_CONSTRUCTOR() {
 	pv = (ClassPrivate*)jl_malloc(sizeof(ClassPrivate));
 	JL_CHK( pv );
 
-	strcpy(pv->name, name);
+	jl::strcpy( pv->name, name );
 	pv->shm = shm;
 	pv->mem = mem;
 	pv->size = size + sizeof(MemHeader);

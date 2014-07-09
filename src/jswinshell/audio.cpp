@@ -545,7 +545,7 @@ DEFINE_PROPERTY_GETTER( text ) {
 
 	UINT errorCode;
 	JL_CHK( jl::getSlot(cx, JL_OBJ, 0, &errorCode) );
-	CHAR errorText[MAXERRORLENGTH];
+	TCHAR errorText[MAXERRORLENGTH];
 	waveInGetErrorText(errorCode, errorText, COUNTOF(errorText));
 	JL_CHK( jl::setValue(cx, vp, errorText) );
 
@@ -560,7 +560,7 @@ DEFINE_FUNCTION( toString ) {
 	
 	UINT errorCode;
 	JL_CHK( jl::getSlot(cx, JL_OBJ, 0, &errorCode) );
-	CHAR errorText[MAXERRORLENGTH];
+	TCHAR errorText[MAXERRORLENGTH];
 	waveInGetErrorText(errorCode, errorText, COUNTOF(errorText));
 	JL_CHK( jl::setValue(cx, JL_RVAL, errorText) );
 

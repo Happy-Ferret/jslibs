@@ -29,7 +29,7 @@ DECLARE_CLASS( Icon )
 
 
 BOOL FASTCALL
-Shell_NotifyIconA_retry(DWORD dwMessage, PNOTIFYICONDATAA lpData) {
+Shell_NotifyIconA_retry(DWORD dwMessage, PNOTIFYICONDATA lpData) {
 
 	BOOL status;
 	IFDEBUG( status = FALSE );
@@ -84,8 +84,8 @@ void FreePopupMenuRoots(Private *pv) {
 BOOL CALLBACK FindTrayWnd(HWND hwnd, LPARAM lParam) {
 
 	TCHAR szClassName[256];
-	GetClassName(hwnd, szClassName, 255);
-	if (strcmp(szClassName, "TrayNotifyWnd") == 0) {
+	::GetClassName( hwnd, szClassName, COUNTOF( szClassName )-1);
+	if ( jl::strcmp( szClassName, TEXT( "TrayNotifyWnd" ) ) == 0 ) {
 
 		*(HWND*)lParam = hwnd;
 		return FALSE;
@@ -97,8 +97,8 @@ BOOL CALLBACK FindTrayWnd(HWND hwnd, LPARAM lParam) {
 BOOL CALLBACK FindToolBarInTrayWnd(HWND hwnd, LPARAM lParam) {
 
 	TCHAR szClassName[256];
-	GetClassName(hwnd, szClassName, 255);    // Did we find the Main System Tray? If so, then get its size and quit
-	if (strcmp(szClassName, "ToolbarWindow32") == 0) {
+	GetClassName( hwnd, szClassName, COUNTOF( szClassName ) - 1 );    // Did we find the Main System Tray? If so, then get its size and quit
+	if ( jl::strcmp( szClassName, TEXT( "ToolbarWindow32" ) ) == 0 ) {
 
 		*(HWND*)lParam = hwnd;
 		return FALSE;
@@ -110,7 +110,7 @@ BOOL CALLBACK FindToolBarInTrayWnd(HWND hwnd, LPARAM lParam) {
 HWND GetTrayNotifyWnd() {
 
 	HWND hWndTrayNotifyWnd = NULL;
-	HWND hWndShellTrayWnd = FindWindow("Shell_TrayWnd", NULL);
+	HWND hWndShellTrayWnd = ::FindWindow(TEXT("Shell_TrayWnd"), NULL);
 	if (hWndShellTrayWnd) {
 
 		EnumChildWindows(hWndShellTrayWnd, FindTrayWnd, (LPARAM)&hWndTrayNotifyWnd);
@@ -372,7 +372,7 @@ SystrayThread( LPVOID lpParam ) {
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	ASSERT( hInst != NULL ); // JL_ASSERT( hInst != NULL, "Unable to GetModuleHandle." );
 
-	WNDCLASS wc = { 0, SystrayWndProc, 0, 0, hInst, NULL, NULL, NULL, NULL, SYSTRAY_WINDOW_CLASS_NAME };
+	WNDCLASS wc = { 0, SystrayWndProc, 0, 0, hInst, NULL, NULL, NULL, NULL, TEXT(SYSTRAY_WINDOW_CLASS_NAME) };
 	ATOM rc = RegisterClass(&wc);	// (TBD) do UnregisterClass at the end ?
 	ASSERT( rc != 0 || GetLastError() == ERROR_CLASS_ALREADY_EXISTS ); // JL_ASSERT( rc != 0 || GetLastError() == ERROR_CLASS_ALREADY_EXISTS, "Unable to RegisterClass." );
 
@@ -383,7 +383,7 @@ SystrayThread( LPVOID lpParam ) {
 	pv->nid.uCallbackMessage = MSG_TRAY_CALLBACK; // doc: All Message Numbers below 0x0400 are RESERVED.
 
 	// doc: The message loop and window procedure for the window must be in the thread that created the window.
-	pv->nid.hWnd = CreateWindow(SYSTRAY_WINDOW_CLASS_NAME, NULL, WS_OVERLAPPED, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, HWND_MESSAGE, CreatePopupMenu(), hInst, NULL); // (TBD) use HWND_MESSAGE ?
+	pv->nid.hWnd = CreateWindow( TEXT( SYSTRAY_WINDOW_CLASS_NAME), NULL, WS_OVERLAPPED, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, HWND_MESSAGE, CreatePopupMenu(), hInst, NULL ); // (TBD) use HWND_MESSAGE ?
 	SetWindowLongPtr(pv->nid.hWnd, GWL_USERDATA, (LONG)pv); // make pv available for SystrayWndProc
 
 	BOOL status = Shell_NotifyIconA_retry(NIM_ADD, &pv->nid);
@@ -407,7 +407,7 @@ SystrayThread( LPVOID lpParam ) {
 	pv->nid.hWnd = NULL; // see finalizer
 
 	// doc: Before calling UnregisterClass, an application must destroy all windows created with the specified class.
-	st = UnregisterClass(SYSTRAY_WINDOW_CLASS_NAME, hInst);
+	st = UnregisterClass( TEXT( SYSTRAY_WINDOW_CLASS_NAME ), hInst );
 	ASSERT( st || GetLastError() == ERROR_CLASS_HAS_WINDOWS );
 
 	return msg.wParam;
@@ -864,19 +864,19 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 		
 				JL_CHK( jl::getValue(cx, key, &keyStr) );
 
-				if ( strcmp(keyStr, "id") == 0 ) {
+				if ( jl::strcmp(keyStr, "id") == 0 ) {
 
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					cmdid = value;
 					continue;
 				}
-				if ( strcmp(keyStr, "label") == 0 ) {
+				if ( jl::strcmp( keyStr, "label" ) == 0 ) {
 
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					label = value;
 					continue;
 				}
-				if ( strcmp(keyStr, "break") == 0 ) {
+				if ( jl::strcmp( keyStr, "break" ) == 0 ) {
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					bool b;
@@ -885,7 +885,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 						uFlags |= MF_MENUBARBREAK;
 					continue;
 				}
-				if ( strcmp(keyStr, "checked") == 0 ) {
+				if ( jl::strcmp( keyStr, "checked" ) == 0 ) {
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					bool b;
@@ -894,7 +894,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 						uFlags |= MF_CHECKED;
 					continue;
 				}
-				if ( strcmp(keyStr, "grayed") == 0 ) {
+				if ( jl::strcmp( keyStr, "grayed" ) == 0 ) {
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					bool b;
@@ -903,7 +903,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 						uFlags |= MF_GRAYED;
 					continue;
 				}
-				if ( strcmp(keyStr, "disabled") == 0 ) {
+				if ( jl::strcmp( keyStr, "disabled" ) == 0 ) {
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					bool b;
@@ -912,13 +912,13 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 						uFlags |= MF_DISABLED;
 					continue;
 				}
-				if ( strcmp(keyStr, "default") == 0 ) {
+				if ( jl::strcmp( keyStr, "default" ) == 0 ) {
 					
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					JL_CHK( jl::getValue(cx, value, &isDefault) );
 					continue;
 				}
-				if ( strcmp(keyStr, "icon") == 0 ) {
+				if ( jl::strcmp( keyStr, "icon" ) == 0 ) {
 
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					JL_ASSERT_IS_OBJECT(value, keyStr);
@@ -931,7 +931,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 					JL_ASSERT( hBMP != NULL, E_STR("icon"), E_CREATE );
 					continue;
 				}
-				if ( strcmp(keyStr, "popup") == 0 ) {
+				if ( jl::strcmp( keyStr, "popup" ) == 0 ) {
 
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
 					JL_ASSERT_IS_OBJECT(value, keyStr);
@@ -970,7 +970,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 
 				JL_CHK( jl::getValue(cx, label, &newItemStr) );
 				
-				lpNewItem = newItemStr.toStringZ<const char*>();
+				lpNewItem = newItemStr.toStringZ<PCTSTR>();
 				uFlags |= MF_STRING;
 			} else {
 
@@ -1144,13 +1144,13 @@ DEFINE_FUNCTION( popupBalloon ) {
 			jl::BufString iconNameStr;
 			JL_CHK( jl::getValue(cx, JL_RVAL, &iconNameStr) );
 			
-			if ( strcmp(iconNameStr, "info") == 0 )
+			if ( strcmp(iconNameStr, TEXT("info") ) == 0 )
 				pv->nid.dwInfoFlags |= NIIF_INFO;
 			else
-			if ( strcmp(iconNameStr, "warning") == 0 )
+			if ( strcmp( iconNameStr, TEXT( "warning") ) == 0 )
 				pv->nid.dwInfoFlags |= NIIF_WARNING;
 			else
-			if ( strcmp(iconNameStr, "error") == 0 )
+			if ( strcmp( iconNameStr, TEXT( "error") ) == 0 )
 				pv->nid.dwInfoFlags |= NIIF_ERROR;
 		}
 

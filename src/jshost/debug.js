@@ -7,6 +7,10 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('serial'); throw 0; // -inlineOnly
 
+loadModule('jsstd');
+exec('utf16_script.js');
+
+throw 0;
 
 
 	function genReferenceError() {
@@ -115,9 +119,6 @@ throw 0;
 throw 0;
 
 
-	host.stdout(host.stdin());
-
-throw 0;
 
 	loadModule('jsstd');
 	loadModule('jswinshell');
