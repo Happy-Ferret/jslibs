@@ -21,7 +21,7 @@
 	#pragma comment (linker, JL_TOSTRING(/STACK:HOST_STACK_SIZE))
 #elif defined(GCC)
 	#pragma stacksize HOST_STACK_SIZE
-	//char stack[HOST_STACK_SIZE] __attribute__ ((section ("STACK"))) = { 0 };
+	//uint8_t stack[HOST_STACK_SIZE] __attribute__ ((section ("STACK"))) = { 0 };
 	//init_sp(stack + sizeof (stack));
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
@@ -492,7 +492,6 @@ int _tmain( int argc, TCHAR* argv[] ) {
 		JL_CHK( JS_DefineProperty(cx, host.hostObject(), "endSignal", JL_UNDEFINED, JSPROP_SHARED, EndSignalGetter, EndSignalSetter) );
 		JL_CHK( JS_DefineFunction(cx, host.hostObject(), "endSignalEvents", EndSignalEvents, 1, 0) );
 
-
 		TCHAR hostFullPath[PATH_MAX];
 		JL_CHK( jl::GetModuleFileName(hostFullPath) );
 
@@ -500,7 +499,7 @@ int _tmain( int argc, TCHAR* argv[] ) {
 		hostName = jl::strrchr(hostFullPath, TEXT(PATH_SEPARATOR));
 		JL_CHK( hostName );
 		hostName += 1;
-		int hostPathLength;
+		size_t hostPathLength;
 		hostPathLength = hostName - hostFullPath;
 
 		TCHAR hostPath[PATH_MAX];

@@ -168,7 +168,7 @@ DEFINE_FUNCTION( addEntropy ) {
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &entropy) );
 
 	int err;
-	err = pv->prng.add_entropy( entropy.toData<const unsigned char *>(), entropy.length(), &pv->state );
+	err = pv->prng.add_entropy( entropy.toData<const uint8_t *>(), entropy.length(), &pv->state );
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	err = pv->prng.ready(&pv->state);
@@ -273,7 +273,7 @@ DEFINE_PROPERTY_SETTER( state ) {
 	JL_CHKM( state.length() == (size_t)pv->prng.export_size, E_VALUE, E_LENGTH, E_NUM(pv->prng.export_size) );
 
 	int err;
-	err = pv->prng.pimport(state.toData<const unsigned char *>(), state.length(), &pv->state);
+	err = pv->prng.pimport( state.toData<const uint8_t *>(), state.length(), &pv->state );
 	if ( err != CRYPT_OK )
 		return ThrowCryptError(cx, err);
 	return true;

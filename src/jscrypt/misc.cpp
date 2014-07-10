@@ -51,7 +51,7 @@ DEFINE_FUNCTION( base64Encode ) {
 	JL_ASSERT_ALLOC( out );
 
 	int err;
-	err = base64_encode( in.toData<const unsigned char *>(), in.length(), out.dataAs<unsigned char*>(), &outLength );
+	err = base64_encode( in.toData<const uint8_t *>(), in.length(), out.dataAs<uint8_t*>(), &outLength );
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
@@ -84,7 +84,7 @@ DEFINE_FUNCTION( base64Decode ) {
 	JL_ASSERT_ALLOC( buffer );
 
 	int err;
-	err = base64_decode( in.toData<const unsigned char *>(), in.length(), buffer.data(), &outLength );
+	err = base64_decode( in.toData<const uint8_t *>(), in.length(), buffer.data(), &outLength );
 	if (err != CRYPT_OK)
 		return ThrowCryptError(cx, err);
 
@@ -120,11 +120,11 @@ DEFINE_FUNCTION( hexEncode ) {
 	out.alloc(outLength, true);
 	JL_ASSERT_ALLOC( out );
 
-	const unsigned char *inIt = data.toData<const unsigned char *>();
-	const unsigned char *inEnd = inIt + data.length();
-	unsigned char *outIt = out.data();
+	const uint8_t *inIt = data.toData<const uint8_t *>();
+	const uint8_t *inEnd = inIt + data.length();
+	uint8_t *outIt = out.data();
 
-	unsigned char c;
+	uint8_t c;
 	for ( ; inIt != inEnd; ++inIt, ++outIt ) {
 		
 		c = *inIt;
@@ -147,7 +147,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( hexDecode ) {
 
-	static const unsigned char unhex[] = {
+	static const uint8_t unhex[] = {
 		 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
 		 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
 		 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -173,11 +173,11 @@ DEFINE_FUNCTION( hexDecode ) {
 	out.alloc(outLength, true);
 	JL_ASSERT_ALLOC( out );
 
-	const unsigned char *inIt = in.toData<const unsigned char*>();
-	const unsigned char *inEnd = inIt + in.length();
-	unsigned char *outIt = out.data();
+	const uint8_t *inIt = in.toData<const uint8_t*>();
+	const uint8_t *inEnd = inIt + in.length();
+	uint8_t *outIt = out.data();
 
-	unsigned char c;
+	uint8_t c;
 	for ( ; inIt != inEnd; ++inIt, ++outIt ) {
 		
 		c = unhex[*inIt] << 4;

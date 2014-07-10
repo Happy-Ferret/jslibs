@@ -22,4 +22,4 @@ DECLARE_CLASS( Result )
 #define SLOT_RESULT_QUERY_ARGUMENT_OBJECT 2
 
 bool SqliteToJsval( JSContext *cx, sqlite3_value *value, OUT JS::MutableHandleValue rval );
-bool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JS::HandleValue argVal, JS::HandleObject curObj );
+bool SqliteSetupBindings(JSContext *cx, sqlite3_stmt *pStmt, JS::HandleObject argVal, JS::HandleObject curObj);

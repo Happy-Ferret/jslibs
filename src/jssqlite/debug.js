@@ -7,6 +7,15 @@ loadModule('jssqlite');
 
 
 
+	var db = new Database();
+	print( db.exec('select ?+?', [1,2]), '\n' );
+	print( db.exec('select @a+@b', {a:1, b:2}), '\n' );
+	print( db.exec('select @a+@b', []), '\n' );
+
+throw 0;
+
+
+
 try {
 
 

@@ -114,18 +114,18 @@ DEFINE_FUNCTION( trim ) {
 	if ( argc >= 2 )
 		JS::ToBoolean(cx, JL_ARG(2), &reuseBuffer);
 
-	char *data;
-	data = (char*)JL_GetPrivate(obj);
+	uint8_t *data;
+	data = (uint8_t*)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( data );
 
-	char *tmpDataPtr;
+	uint8_t *tmpDataPtr;
 	tmpDataPtr = data;
 
-	char *newData;
+	uint8_t *newData;
 	if (reuseBuffer)
 		newData = data;
 	else {
-		newData = (char*)jl_malloc( channels * (x1-x) * (y1-y) );
+		newData = (uint8_t*)jl_malloc( channels * (x1 - x) * (y1 - y) );
 		JL_ASSERT_ALLOC( newData );
 		JL_SetPrivate( obj, newData);
 	}

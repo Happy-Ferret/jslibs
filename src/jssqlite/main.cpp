@@ -41,7 +41,7 @@ int xInit(void*) {
 void xShutdown(void*) {
 }
 
-static sqlite3_mem_methods mem = { xMalloc, xFree, xRealloc, xSize, xRoundup, xInit, xShutdown, NULL };
+static const sqlite3_mem_methods mem = { xMalloc, xFree, xRealloc, xSize, xRoundup, xInit, xShutdown, NULL };
 
 /**doc t:header
 $MODULE_HEADER

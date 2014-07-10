@@ -187,7 +187,7 @@ DEFINE_FUNCTION( write ) {
 		unsigned long length = in.length();
 
 		int err;
-		err = pv->descriptor->process(&pv->state, in.toData<const unsigned char *>(), length); // Process a block of memory though the hash
+		err = pv->descriptor->process(&pv->state, in.toData<const uint8_t *>(), length); // Process a block of memory though the hash
 		if ( err != CRYPT_OK )
 			return ThrowCryptError(cx, err);
 

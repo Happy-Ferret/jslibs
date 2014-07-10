@@ -149,7 +149,7 @@ int CALLBACK WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
 	// construct host.path and host.name properties
 	jl::memcpy( tmp, moduleName, TSIZE(moduleNameLen + 1) );
-	TCHAR *name = _tcsrchr( tmp, PATH_SEPARATOR );
+	TCHAR *name = jl::strrchr( tmp, PATH_SEPARATOR );
 	JL_CHK( name );
 	name += 1;
 	JL_CHK( host.setHostName(name) );
@@ -183,9 +183,9 @@ int CALLBACK WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
 	// construct script name
 	jl::memcpy( tmp, moduleName, TSIZE(moduleNameLen + 1) );
-	TCHAR *dotPos = _tcsrchr( tmp, TEXT('.') );
+	TCHAR *dotPos = jl::strrchr( tmp, TEXT( '.' ) );
 	JL_CHK( dotPos );
-	_tcscpy( dotPos + 1, TEXT( "js" ) );
+	jl::strcpy( dotPos + 1, TEXT( "js" ) );
 
 	bool executeStatus;
 	executeStatus = jl::executeScriptFileName(cx, globalObject, tmp, false, &rval);

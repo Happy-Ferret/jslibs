@@ -62,7 +62,7 @@ PRIntn FileOpenFlagsFromString( jl::BufString &str ) {
 
 PRIntn FileOpenModeFromString( jl::BufString &str ) {
 	
-	PRIntn mode = jl::atoi(str, 8);
+	PRIntn mode = jl::atoi((const char *)str, 8);
 	ASSERT( mode < (PR_IRWXU | PR_IRWXG | PR_IRWXO) );
 	return mode;
 }
@@ -79,18 +79,6 @@ DEFINE_FINALIZE() {
 	FinalizeDescriptor(fop, obj); // defined in descriptor.cpp
 }
 
-/*
-class Auto {
-	int a;
-	Auto(int a) : a(a) {}
-	~Auto() {
-
-	}
-
-
-};
-*/
-
 
 /**doc
 $TOC_MEMBER $INAME
@@ -104,23 +92,23 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARGC_RANGE(0,1);
 
 	{
-	JS::RootedValue filename(cx);
-	if ( !JL_ARG_ISDEF(1) ) {
+		JS::RootedValue filenameVal(cx);
+		if ( !JL_ARG_ISDEF(1) ) {
 		
-		char tempFileName[PATH_MAX];
-		bool st = JLTemporaryFilename(tempFileName);
-		JL_ASSERT( st, E_OS, E_INTERNAL );
-		JL_CHK( jl::setValue(cx, &filename, tempFileName) );
-	} else {
+			char tmp[PATH_MAX];
+			char *filename = jl::tempFilename( tmp );
+			JL_ASSERT( filename != NULL, E_OS, E_INTERNAL );
+			JL_CHK( jl::setValue( cx, &filenameVal, filename ) );
+		} else {
 		
-		filename.set(JL_ARG(1));
-	}
+			filenameVal.set( JL_ARG( 1 ) );
+		}
 
-	JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, filename) );
+		JL_CHK( JL_SetReservedSlot( JL_OBJ, SLOT_JSIO_FILE_NAME, filenameVal ) );
 
-	JL_CHK( jl::reserveStreamReadInterface(cx, JL_OBJ) );
+		JL_CHK( jl::reserveStreamReadInterface(cx, JL_OBJ) );
 
-	ASSERT( JL_GetPrivate(JL_OBJ) == NULL ); // JL_SetPrivate( obj, NULL); // (TBD) optional ?
+		ASSERT( JL_GetPrivate(JL_OBJ) == NULL ); // JL_SetPrivate( obj, NULL); // (TBD) optional ?
 	}
 
 	return true;
@@ -263,8 +251,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( delete ) {
 
-	JL_IGNORE( argc );
-
 	JS::RootedValue jsvalFileName(cx);
 	jl::BufString str;
 
@@ -296,7 +282,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( lock ) {
 
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	PRFileDesc *fd;

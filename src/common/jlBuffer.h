@@ -474,7 +474,7 @@ public:
 	}
 
 	BufString( const BufBase& buf, bool withOwnership = true )
-	: BufBase(buf, withOwnership), _charSize(1), _terminatorLength(0) {
+		: BufBase( buf, withOwnership ), _charSize( 1 ), _terminatorLength( 0 ) {
 	}
 
 	BufString( const BufString& buf, bool withOwnership = true )
@@ -821,6 +821,26 @@ ALWAYS_INLINE WCStrSpec FASTCALL
 strSpec( const jschar *str, size_t len ) {
 
 	return WCStrSpec(str, len);
+}
+
+
+ALWAYS_INLINE
+jl::BufBase
+UTF16LEToUTF8( jl::BufString src ) {
+
+	ASSERT( src.wide() );
+
+	size_t srcSize = src.length() * 2;
+	const wchar_t *wsrc = src.toData<const wchar_t *>();
+
+	jl::BufBase dst;
+	dst.alloc( srcSize * 3 / 2 );
+	size_t dstLen = dst.allocSize();
+	UTF16LEToUTF8( dst.dataAs<unsigned char *>(), &dstLen, reinterpret_cast<const unsigned char *>(wsrc), &srcSize );
+	dst.setUsed( dstLen );
+	dst.maybeCrop();
+	return dst;
+	//return jl::BufString( dst.dataAs<char *>(), dstLen, false );
 }
 
 

@@ -14,9 +14,6 @@
 
 #pragma once
 
-#include <sys/stat.h> // stat() used by JL_LoadScript()
-
-
 JL_BEGIN_NAMESPACE
 
 
@@ -52,15 +49,15 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const TCHAR *fileName, jl::En
 
 	struct _stat srcFileStat, compFileStat;
 	//OutputDebugString( fileName );
-	bool hasSrcFile = _tstat( fileName, &srcFileStat ) != -1; // errno == ENOENT
-	bool hasCompFile = useCompFile && _tstat( compiledFileName, &compFileStat ) != -1; // if not using compiled file, this is useless to compile it
+	bool hasSrcFile = jl::stat( fileName, &srcFileStat ) != -1; // errno == ENOENT
+	bool hasCompFile = useCompFile && jl::stat( compiledFileName, &compFileStat ) != -1; // if not using compiled file, this is useless to compile it
 	bool compFileUpToDate = ( hasCompFile && !hasSrcFile ) || ( hasCompFile && hasSrcFile && (compFileStat.st_mtime > srcFileStat.st_mtime) ); // true if comp file is up to date or alone
 
 	JL_CHKM( hasSrcFile || hasCompFile, E_SCRIPT, E_NAME( fileName ), E_OR, E_NAME( compiledFileName ), E_NOTFOUND );
 
 	if ( useCompFile && compFileUpToDate ) {
 
-		int file = _topen(compiledFileName, O_RDONLY | O_BINARY | O_SEQUENTIAL);
+		int file = jl::open(compiledFileName, O_RDONLY | O_BINARY | O_SEQUENTIAL);
 		JL_CHKM( file != -1, E_FILE, E_NAME(compiledFileName), E_ACCESS ); // "Unable to open file \"%s\" for reading.", compiledFileName
 		size_t compFileSize;
 		compFileSize = compFileStat.st_size; // filelength(file); ?
@@ -153,7 +150,7 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const TCHAR *fileName, jl::En
 
 
 	int scriptFile;
-	scriptFile = _topen( fileName, O_RDONLY | O_BINARY | O_SEQUENTIAL );
+	scriptFile = jl::open( fileName, O_RDONLY | O_BINARY | O_SEQUENTIAL );
 
 	JL_CHKM( scriptFile >= 0, E_FILE, E_NAME(fileName), E_ACCESS ); // "Unable to open file \"%s\" for reading.", fileName
 
@@ -223,7 +220,7 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const TCHAR *fileName, jl::En
 
 			scriptText = (jschar*)jl_malloca(scriptFileSize * 2);
 			scriptTextLength = scriptFileSize * 2;
-			JL_CHKM( jl::UTF8ToUTF16LE((unsigned char*)scriptText, &scriptTextLength, (unsigned char*)scriptBuffer, &scriptFileSize) >= 0, E_SCRIPT, E_ENCODING, E_INVALID, E_COMMENT("UTF8") ); // "Unable do decode UTF8 data."
+			JL_CHKM( jl::UTF8ToUTF16LE( (uint8_t*)scriptText, &scriptTextLength, (uint8_t*)scriptBuffer, &scriptFileSize ) >= 0, E_SCRIPT, E_ENCODING, E_INVALID, E_COMMENT( "UTF8" ) ); // "Unable do decode UTF8 data."
 
 			if ( scriptTextLength >= 2 && scriptText[0] == L('#') && scriptText[1] == L('!') ) { // shebang support
 
@@ -249,7 +246,7 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const TCHAR *fileName, jl::En
 		goto good;
 
 	int file;
-	file = _topen(compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_SEQUENTIAL, srcFileStat.st_mode);
+	file = jl::open(compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_SEQUENTIAL, srcFileStat.st_mode);
 	if ( file == -1 ) // if the file cannot be write, this is not an error ( eg. read-only drive )
 		goto good;
 
@@ -296,8 +293,6 @@ executeScriptText( JSContext *cx, IN JS::HandleObject obj, const TCHAR *scriptTe
 	//  we can use JS_ReportPendingException to report it manually
 
 	JS::AutoSaveContextOptions autoCxOpts(cx);
-
-// compile & executes the script
 
 	//JSPrincipals *principals = (JSPrincipals*)jl_malloc(sizeof(JSPrincipals));
 	//JSPrincipals tmp = {0};

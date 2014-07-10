@@ -6,6 +6,10 @@ loadModule('jsstd');
 loadModule('jscrypt');
 
 
+	base64Encode('test');
+	
+throw 0;
+
 
 	var cr = new Cipher("CFB", "cast5", "my  key of  16B ", IV);
 	var IV;

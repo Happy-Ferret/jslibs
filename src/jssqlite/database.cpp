@@ -68,17 +68,17 @@ DEFINE_FUNCTION( close ) {
 
 	{
 
-	JS::RootedValue v(cx);
-	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_DATABASE, &v) );
-	JL_ASSERT( v.isObject() );
+		JS::RootedValue v(cx);
+		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_DATABASE, &v) );
+		JL_ASSERT( v.isObject() );
 	
-	{
+		{
 	
-	JS::RootedObject tmp(cx, &v.toObject());
-	dbpv = (DatabasePrivate*)JL_GetPrivate(tmp);
-	JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(tmp) );
+			JS::RootedObject tmp(cx, &v.toObject());
+			dbpv = (DatabasePrivate*)JL_GetPrivate(tmp);
+			JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(tmp) );
 
-	}
+		}
 
 	}
 
@@ -170,7 +170,7 @@ DEFINE_FUNCTION( write ) {
 	jl::BufString data;
 
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
@@ -619,7 +619,7 @@ DEFINE_FUNCTION( query ) {
 	sqlLen = sql.length();
 
 	//if ( sqlite3_prepare16_v2(pv->db, sqlStr, sqlLen, &pStmt, &szTail) != SQLITE_OK )
-	if ( sqlite3_prepare16_v2( pv->db, (const void*)sqlStr, sqlLen * sizeof( jschar ), &pStmt, (const void**)&szTail ) != SQLITE_OK )
+	if (sqlite3_prepare16_v2(pv->db, (const void*)sqlStr, sqlLen * sizeof(*sqlStr), &pStmt, (const void**)&szTail) != SQLITE_OK)
 		JL_CHK( SqliteThrowError(cx, pv->db) );
 	ASSERT( pStmt != NULL );
 	JL_ASSERT_WARN( szTail == sqlStr + sqlLen, E_STR("too many SQL statements") ); // (TBD) for the moment, do not support multiple statements
@@ -701,17 +701,26 @@ DEFINE_FUNCTION( exec ) {
 	size_t sqlLen;
 	sqlLen = sql.length();
 
-	if ( sqlite3_prepare16_v2( pv->db, (const void *)sqlStr, sqlLen * sizeof( jschar ), &pStmt, (const void **)&szTail ) != SQLITE_OK )
+	if (sqlite3_prepare16_v2(pv->db, (const void *)sqlStr, sqlLen * sizeof(*sqlStr), &pStmt, (const void **)&szTail) != SQLITE_OK)
 		JL_CHK( SqliteThrowError(cx, pv->db) );
 	ASSERT( pStmt != NULL );
-	JL_ASSERT_WARN( szTail == sqlStr + sqlLen, E_STR("too many SQL statements") ); // for the moment, do not support multiple statements
+	JL_ASSERT_WARN(szTail == sqlStr + sqlLen, E_STR("too many SQL statements")); // for the moment, do not support multiple statements
 
-//	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
-//		JL_REPORT_ERROR( "Invalid SQL string." );
+	//	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
+	//		JL_REPORT_ERROR( "Invalid SQL string." );
 
 	// (TBD) support multiple statements
 
-	JL_CHK( SqliteSetupBindings(cx, pStmt, (JL_ARGC >= 2 && JL_ARG(2).isObject()) ? JL_ARG(2) : JS::NullHandleValue, JL_OBJ) ); // "@" : the the argument passed to exec(), ":" nothing
+	{
+		JS::RootedObject argObj(cx);
+		if (JL_ARGC >= 2) {
+
+			JL_ASSERT_ARG_IS_OBJECT(2);
+			argObj.set(&JL_ARG(2).toObject());
+		}
+
+		JL_CHK(SqliteSetupBindings(cx, pStmt, argObj, JL_OBJ)); // "@" : the the argument passed to exec(), ":" nothing
+	}
 
 	pv->tmpcx = cx;
 	int status;

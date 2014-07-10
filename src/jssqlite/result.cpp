@@ -40,7 +40,9 @@ bool SqliteToJsval( JSContext *cx, sqlite3_value *value, OUT JS::MutableHandleVa
 			//rval.setString(JS_NewStringCopyN(cx, (const char*)sqlite3_value_text(value), sqlite3_value_bytes(value)));
 			//*rval = STRING_TO_JSVAL(JS_NewUCStringCopyZ(cx, (const jschar*)sqlite3_value_text16(value)));
 			//JL_CHK( jl::setValue( cx, rval, jl::CStrSpec( (const char*)sqlite3_value_text( value ), sqlite3_value_bytes( value ) ) ) );
-			JL_CHK( jl::setValue( cx, rval, jl::WCStrSpec( (const jschar*)sqlite3_value_text16( value ), sqlite3_value_bytes16( value ) / sizeof( jschar ) ) ) );
+
+			// doc: sqlite3_value_text16 extracts a UTF-16 string in the native byte-order of the host machine. see sqlite3_value_text16le()
+			JL_CHK( jl::setValue( cx, rval, jl::strSpec( (const jschar*)sqlite3_value_text16( value ), sqlite3_value_bytes16( value ) / sizeof( jschar ) ) ) );
 			break;
 		default:
 			JL_ERR( E_DATATYPE, E_NOTSUPPORTED );
@@ -53,10 +55,9 @@ bool SqliteToJsval( JSContext *cx, sqlite3_value *value, OUT JS::MutableHandleVa
 
 // doc: The sqlite3_bind_*() routines must be called after sqlite3_prepare() or sqlite3_reset() and before sqlite3_step().
 //      Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.
-bool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JS::HandleValue argVal, JS::HandleObject curObj ) {
+bool SqliteSetupBindings(JSContext *cx, sqlite3_stmt *pStmt, JS::HandleObject argObj, JS::HandleObject curObj) {
 
 	JS::RootedValue val(cx);
-	JS::RootedObject argObj(cx, argVal.toObjectOrNull());
 	int anonParamIndex = 0;
 	const char *name;
 
@@ -66,60 +67,29 @@ bool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JS::HandleValue ar
 		// doc: Parameters of the form "?" have no name. ... If the value n is out of range or if the n-th parameter is nameless, then NULL is returned.
 		name = sqlite3_bind_parameter_name(pStmt, param);
 
-		if ( name == NULL || name[0] == '?' ) {
+		// doc: name is UTF-8 encoding
 
-			if ( argObj != NULL ) {
+		if ( name == NULL ) {
 
-				JL_CHK( JL_GetElement(cx, argObj, anonParamIndex, &val) ); // works with {0:2,1:2,2:2,length:3} and [2,2,2]
-				anonParamIndex++;
-				goto next;
-			}
-
-			val = JSVAL_VOID;
-			JL_ERR( E_PARAM, E_NUM(anonParamIndex), E_DEFINED );
-			//JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "invalid anonymous SQL parameter"); //JL_REPORT_ERROR("Unavailable %d-th anonymous SQL parameter.", anonParamIndex);
-			goto next;
-		}
-
-		if ( name[0] == '$' ) {
-
-//			JL_CHK( JL_GetVariableValue(cx, name+1, &val) );
-//			goto next;
-			//JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "Unsupported SQL parameter prefix $"); //JL_REPORT_ERROR("Unsupported SQL parameter prefix (%s).", name);
-			JL_ERR( E_PARAM, E_STR("$"), E_NOTSUPPORTED );
-		}
-
+			JL_CHKM(argObj, E_PARAM, E_NUM(anonParamIndex), E_DEFINED);
+			JL_CHK( JL_GetElement(cx, argObj, anonParamIndex, &val) ); // works with {0:2,1:2,2:2,length:3} and [2,2,2]
+			anonParamIndex++;
+		} else
 		if ( name[0] == '@' ) {
 
-			if ( argObj != NULL )  {
-
-				JL_CHK( JS_GetProperty(cx, argObj, name+1, &val) );
-			} else {
-			
-				val = JSVAL_VOID;
-				//JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "Undefined SQL parameter"); //JL_REPORT_ERROR("Undefined %s SQL parameter.", name);
-				JL_ERR( E_PARAM, E_NAME(name), E_DEFINED );
-			}
-			goto next;
-		}
+			JL_CHKM(argObj, E_PARAM, E_NAME(name), E_DEFINED);
+			JL_CHK( JS_GetProperty(cx, argObj, name+1, &val) );
+		} else
 		if ( name[0] == ':' ) {
-
-			if ( curObj != NULL ) {
-
-				JL_CHK( JS_GetProperty(cx, curObj, name+1, &val) );
-			} else {
 			
-				val = JSVAL_VOID;
-				//JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "Undefined SQL parameter"); //JL_REPORT_ERROR("Undefined %s SQL parameter.", name);
-				JL_ERR( E_PARAM, E_NAME(name), E_DEFINED );
-			}
-			goto next;
+			JL_CHKM(curObj, E_PARAM, E_NAME(name), E_DEFINED);
+			JL_CHK( JS_GetProperty(cx, curObj, name+1, &val) );
+		} else {
+
+			JL_ERR(E_PARAM, E_NOTSUPPORTED);
 		}
 
-		//JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "SQL Parameter not supported"); // JL_REPORT_ERROR("Unsupported SQL Parameter");
-		JL_ERR( E_PARAM, E_NOTSUPPORTED );
 
-	next:
 		int ret;
 		// sqlite3_bind_value( pStmt, param,
 		// (TBD) how to use this
@@ -172,8 +142,14 @@ bool SqliteSetupBindings( JSContext *cx, sqlite3_stmt *pStmt, JS::HandleValue ar
 				jl::BufString str;
 				JL_CHK( jl::getValue(cx, val, &str) );
 
-				if ( sqlite3_bind_text(pStmt, param, str.toData<const char*>(), str.length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+				// beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
+
+				//if (sqlite3_bind_text(pStmt, param, str.toData<const char*>(), str.length(), SQLITE_STATIC) != SQLITE_OK)
+				if (sqlite3_bind_text16(pStmt, param, str.toData<const jschar*>(), str.length(), SQLITE_STATIC) != SQLITE_OK) {
+
 					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
+				}
+
 				}
 				break;
 			default:
@@ -261,20 +237,21 @@ DEFINE_FUNCTION( close ) {
 
 	JL_DEFINE_ARGS;
 
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pStmt );
 
 	DatabasePrivate *dbpv;
+
 	{
-	JS::RootedValue v(cx);
-	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_RESULT_DATABASE, &v) );
-	JL_ASSERT( v.isObject() );
+		JS::RootedValue v(cx);
+		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_RESULT_DATABASE, &v) );
+		JL_ASSERT( v.isObject() );
 	
-	JS::RootedObject vobj(cx, &v.toObject());
-	dbpv = (DatabasePrivate*)JL_GetPrivate(vobj);
-	JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(vobj) );
+		JS::RootedObject vobj(cx, &v.toObject());
+		dbpv = (DatabasePrivate*)JL_GetPrivate(vobj);
+		JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(vobj) );
 	}
 
 	if ( sqlite3_finalize(pStmt) != SQLITE_OK )
@@ -380,12 +357,12 @@ bool DoStep(JSContext *cx, JS::HandleObject obj, JS::MutableHandleValue rval) {
 	if ( bindingUpToDate != JSVAL_TRUE ) {
 
 		JS::RootedValue queryArgument(cx);
-		JL_CHK( JL_GetReservedSlot(obj, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, &queryArgument) );
-
 		JS::RootedObject queryArgumentObj(cx);
+		JL_CHK(jl::getSlot(cx, obj, SLOT_RESULT_QUERY_ARGUMENT_OBJECT, &queryArgumentObj));
 
 
-		JL_CHK( SqliteSetupBindings(cx, pStmt, queryArgument.isObject() ? queryArgument : JS::NullHandleValue, obj) ); // ":" use result object. "@" is the object passed to Query()
+
+		JL_CHK(SqliteSetupBindings(cx, pStmt, queryArgumentObj, obj)); // ":" use result object. "@" is the object passed to Query()
 		JL_CHK( JL_SetReservedSlot(obj, SLOT_RESULT_BINDING_UP_TO_DATE, JL_TRUE) );
 		// doc: The sqlite3_bind_*() routines must be called AFTER sqlite3_prepare() or sqlite3_reset() and BEFORE sqlite3_step().
 		//      Bindings are not cleared by the sqlite3_reset() routine. Unbound parameters are interpreted as NULL.

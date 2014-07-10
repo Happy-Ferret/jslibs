@@ -422,6 +422,8 @@ tstrToStr( const char *src, char * ) {
 #include <io.h> // _open_osfhandle()
 #endif
 
+#include <sys/stat.h>
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1624,8 +1626,6 @@ Network64ToHost64( void *pval ) {
 
 // http://www.i18nguy.com/unicode/c-unicode.html
 
-////
-
 ALWAYS_INLINE void FASTCALL
 strncpy(char *dst, const char *src, size_t nelem) {
 
@@ -1768,6 +1768,63 @@ strncmp( const char *str1, const char *str2, size_t maxCount ) {
 ALWAYS_INLINE int FASTCALL
 strncmp( const wchar_t *str1, const wchar_t *str2, size_t maxCount ) {
 	return ::wcsncmp( str1, str2, maxCount );
+}
+
+////
+
+
+
+ALWAYS_INLINE int FASTCALL
+open( const char * filename, int openFlag, int permissionMode = 0 ) {
+
+	return _open( filename, openFlag, permissionMode );
+}
+
+ALWAYS_INLINE int FASTCALL
+open( const wchar_t * filename, int openFlag, int permissionMode = 0 ) {
+
+	return _wopen( filename, openFlag, permissionMode );
+}
+
+////
+
+
+ALWAYS_INLINE int FASTCALL
+stat( const char * filename, struct _stat * st ) {
+
+	return _stat( filename, st );
+}
+
+ALWAYS_INLINE int FASTCALL
+stat( const wchar_t * filename, struct _stat * st ) {
+
+	return _wstat( filename, st );
+}
+
+////
+
+// on win32, see ::GetTempPath() and ::GetTempFileName();
+
+ALWAYS_INLINE char * FASTCALL
+tempFilename( char *buffer ) { // PATH_MAX
+
+	char *tmp = tempnam( NULL, "jltmp" );
+	if ( tmp == NULL )
+		return NULL;
+	jl::strcpy( buffer, tmp );
+	return buffer;
+	free( tmp );
+}
+
+ALWAYS_INLINE wchar_t * FASTCALL
+tempFilename( wchar_t *buffer ) { // PATH_MAX
+
+	wchar_t *tmp = _wtempnam( NULL, L( "jltmp" ) );
+	if ( tmp == NULL )
+		return NULL;
+	jl::strcpy( buffer, tmp );
+	return buffer;
+	free( tmp );
 }
 
 ////
@@ -2432,106 +2489,184 @@ DetectEncoding(uint8_t **buf, size_t *size) {
 
 #define xmlLittleEndian (JLHostEndian == JLLittleEndian)
 
-// source: libxml2 - encoding.c - MIT License
+
+// source: libxml2 - encoding.c - MIT License - dl: https://git.gnome.org/browse/libxml2/
 // changes: outlen and inlen from integer to size_t, and the last redurned value
 INLINE int NOALIAS FASTCALL
-UTF8ToUTF16LE(uint8_t* outb, size_t *outlen,
-              const uint8_t* in, size_t *inlen)
-{
-    unsigned short* out = (unsigned short*) outb;
-    const uint8_t* processed = in;
-    const uint8_t *const instart = in;
-    unsigned short* outstart= out;
-    unsigned short* outend;
-    const uint8_t* inend;
-    unsigned int c, d;
-    int trailing;
-    uint8_t *tmp;
-    unsigned short tmp1, tmp2;
+UTF8ToUTF16LE( unsigned char* outb, size_t *outlen, const unsigned char* in, size_t *inlen ) {
 
-    /* UTF16LE encoding has no BOM */
-    if ((out == NULL) || (outlen == NULL) || (inlen == NULL)) return(-1);
-    if (in == NULL) {
-	*outlen = 0;
-	*inlen = 0;
-	return(0);
-    }
-    inend= in + *inlen;
-    outend = out + (*outlen / 2);
-    while (in < inend) {
-      d= *in++;
-      if      (d < 0x80)  { c= d; trailing= 0; }
-      else if (d < 0xC0) {
-          /* trailing byte in leading position */
-	  *outlen = (out - outstart) * 2;
-	  *inlen = processed - instart;
-	  return(-2);
-      } else if (d < 0xE0)  { c= d & 0x1F; trailing= 1; }
-      else if (d < 0xF0)  { c= d & 0x0F; trailing= 2; }
-      else if (d < 0xF8)  { c= d & 0x07; trailing= 3; }
-      else {
-	/* no chance for this in UTF-16 */
+	unsigned short* out = (unsigned short*)outb;
+	const unsigned char* processed = in;
+	const unsigned char *const instart = in;
+	unsigned short* outstart = out;
+	unsigned short* outend;
+	const unsigned char* inend;
+	unsigned int c, d;
+	int trailing;
+	unsigned char *tmp;
+	unsigned short tmp1, tmp2;
+
+	/* UTF16LE encoding has no BOM */
+	if ( (out == NULL) || (outlen == NULL) || (inlen == NULL) ) return(-1);
+	if ( in == NULL ) {
+		*outlen = 0;
+		*inlen = 0;
+		return(0);
+	}
+	inend = in + *inlen;
+	outend = out + (*outlen / 2);
+	while ( in < inend ) {
+		d = *in++;
+		if ( d < 0x80 ) {
+			c = d; trailing = 0;
+		} else if ( d < 0xC0 ) {
+			/* trailing byte in leading position */
+			*outlen = (out - outstart) * 2;
+			*inlen = processed - instart;
+			return(-2);
+		} else if ( d < 0xE0 ) {
+			c = d & 0x1F; trailing = 1;
+		} else if ( d < 0xF0 ) {
+			c = d & 0x0F; trailing = 2;
+		} else if ( d < 0xF8 ) {
+			c = d & 0x07; trailing = 3;
+		} else {
+			/* no chance for this in UTF-16 */
+			*outlen = (out - outstart) * 2;
+			*inlen = processed - instart;
+			return(-2);
+		}
+
+		if ( inend - in < trailing ) {
+			break;
+		}
+
+		for ( ; trailing; trailing-- ) {
+			if ( (in >= inend) || (((d = *in++) & 0xC0) != 0x80) )
+				break;
+			c <<= 6;
+			c |= d & 0x3F;
+		}
+
+		/* assertion: c is a single UTF-4 value */
+		if ( c < 0x10000 ) {
+			if ( out >= outend )
+				break;
+			if ( xmlLittleEndian ) {
+				*out++ = c;
+			} else {
+				tmp = (unsigned char *)out;
+				*tmp = c;
+				*(tmp + 1) = c >> 8;
+				out++;
+			}
+		} else if ( c < 0x110000 ) {
+			if ( out + 1 >= outend )
+				break;
+			c -= 0x10000;
+			if ( xmlLittleEndian ) {
+				*out++ = 0xD800 | (c >> 10);
+				*out++ = 0xDC00 | (c & 0x03FF);
+			} else {
+				tmp1 = 0xD800 | (c >> 10);
+				tmp = (unsigned char *)out;
+				*tmp = (unsigned char)tmp1;
+				*(tmp + 1) = tmp1 >> 8;
+				out++;
+
+				tmp2 = 0xDC00 | (c & 0x03FF);
+				tmp = (unsigned char *)out;
+				*tmp = (unsigned char)tmp2;
+				*(tmp + 1) = tmp2 >> 8;
+				out++;
+			}
+		} else
+			break;
+		processed = in;
+	}
 	*outlen = (out - outstart) * 2;
 	*inlen = processed - instart;
-	return(-2);
-      }
-
-      if (inend - in < trailing) {
-          break;
-      }
-
-      for ( ; trailing; trailing--) {
-          if ((in >= inend) || (((d= *in++) & 0xC0) != 0x80))
-	      break;
-          c <<= 6;
-          c |= d & 0x3F;
-      }
-
-      /* assertion: c is a single UTF-4 value */
-        if (c < 0x10000) {
-            if (out >= outend)
-	        break;
-	    if (xmlLittleEndian) {
-		*out++ = c;
-	    } else {
-		tmp = (uint8_t *) out;
-		*tmp = c ;
-		*(tmp + 1) = c >> 8 ;
-		out++;
-	    }
-        }
-        else if (c < 0x110000) {
-            if (out+1 >= outend)
-	        break;
-            c -= 0x10000;
-	    if (xmlLittleEndian) {
-		*out++ = 0xD800 | (c >> 10);
-		*out++ = 0xDC00 | (c & 0x03FF);
-	    } else {
-		tmp1 = 0xD800 | (c >> 10);
-		tmp = (uint8_t *) out;
-		*tmp = (uint8_t) tmp1;
-		*(tmp + 1) = tmp1 >> 8;
-		out++;
-
-		tmp2 = 0xDC00 | (c & 0x03FF);
-		tmp = (uint8_t *) out;
-		*tmp  = (uint8_t) tmp2;
-		*(tmp + 1) = tmp2 >> 8;
-		out++;
-	    }
-        }
-        else
-	    break;
-	processed = in;
-    }
-    *outlen = (out - outstart) * 2;
-    *inlen = processed - instart;
-//    return(*outlen);
 	return(1);
 }
 
+INLINE int NOALIAS FASTCALL
+UTF16LEToUTF8( unsigned char* out, size_t *outlen, const unsigned char* inb, size_t *inlenb ) {
+
+	unsigned char* outstart = out;
+	const unsigned char* processed = inb;
+	unsigned char* outend = out + *outlen;
+	unsigned short* in = (unsigned short*)inb;
+	unsigned short* inend;
+	unsigned int c, d, inlen;
+	unsigned char *tmp;
+	int bits;
+
+	if ( (*inlenb % 2) == 1 )
+		(*inlenb)--;
+	inlen = *inlenb / 2;
+	inend = in + inlen;
+	while ( (in < inend) && (out - outstart + 5 < (ptrdiff_t)*outlen) ) {
+		if ( xmlLittleEndian ) {
+			c = *in++;
+		} else {
+			tmp = (unsigned char *)in;
+			c = *tmp++;
+			c = c | (((unsigned int)*tmp) << 8);
+			in++;
+		}
+		if ( (c & 0xFC00) == 0xD800 ) {    /* surrogates */
+			if ( in >= inend ) {           /* (in > inend) shouldn't happens */
+				break;
+			}
+			if ( xmlLittleEndian ) {
+				d = *in++;
+			} else {
+				tmp = (unsigned char *)in;
+				d = *tmp++;
+				d = d | (((unsigned int)*tmp) << 8);
+				in++;
+			}
+			if ( (d & 0xFC00) == 0xDC00 ) {
+				c &= 0x03FF;
+				c <<= 10;
+				c |= d & 0x03FF;
+				c += 0x10000;
+			} else {
+				*outlen = out - outstart;
+				*inlenb = processed - inb;
+				return(-2);
+			}
+		}
+
+		/* assertion: c is a single UTF-4 value */
+		if ( out >= outend )
+			break;
+		if ( c < 0x80 ) {
+			*out++ = c;                bits = -6;
+		} else if ( c < 0x800 ) {
+			*out++ = ((c >> 6) & 0x1F) | 0xC0;  bits = 0;
+		} else if ( c < 0x10000 ) {
+			*out++ = ((c >> 12) & 0x0F) | 0xE0;  bits = 6;
+		} else {
+			*out++ = ((c >> 18) & 0x07) | 0xF0;  bits = 12;
+		}
+
+		for ( ; bits >= 0; bits -= 6 ) {
+			if ( out >= outend )
+				break;
+			*out++ = ((c >> bits) & 0x3F) | 0x80;
+		}
+		processed = (const unsigned char*)in;
+	}
+	*outlen = out - outstart;
+	*inlenb = processed - inb;
+	return(1);
+}
+
+
 #undef xmlLittleEndian
+
+
 
 #ifdef MSC
 	#pragma warning( pop )
@@ -2792,45 +2927,6 @@ JLLastSysetmErrorMessage( TCHAR *message, size_t maxLength ) {
 	
 }
 
-
-///////////////////////////////////////////////////////////////////////////////
-// Temporary Filename
-
-ALWAYS_INLINE bool FASTCALL
-JLTemporaryFilename(TCHAR *path) {
-
-	TCHAR *tmp = _ttempnam( NULL, TEXT("jltmp") );
-	if ( tmp == NULL )
-		return false;
-	jl::strcpy( path, tmp );
-	return true;
-
-/*
-#if defined(WIN)
-
-	TCHAR lpTempPathBuffer[PATH_MAX];
-	DWORD dwRetVal;
-	UINT uRetVal;
-
-	dwRetVal = ::GetTempPath(PATH_MAX, lpTempPathBuffer);
-	if ( dwRetVal > MAX_PATH || dwRetVal == 0 )
-		return false;
-
-	uRetVal = ::GetTempFileName(lpTempPathBuffer, TEXT("jl"), 0, path);
-	if ( uRetVal == 0 )
-		return false;
-	return true;
-
-
-#elif defined(UNIX)
-
-
-#else
-	#error NOT IMPLEMENTED YET	// (TBD)
-#endif
-*/
-
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -1378,6 +1378,7 @@ Host::report( bool isWarning, ... ) const {
 
 	JSErrorFormatString format = { message, 0, (int16_t)exn };
 	return JS_ReportErrorFlagsAndNumber( _hostRuntime.context(), isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, errorCallback, (void*)&format, 0);
+	//JS_ReportErrorFlagsAndNumberUC
 }
 
 

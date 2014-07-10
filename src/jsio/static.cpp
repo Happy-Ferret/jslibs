@@ -977,7 +977,7 @@ DEFINE_PROPERTY_GETTER( currentDirectory ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	char buf[PATH_MAX];
+	TCHAR buf[PATH_MAX];
 #ifdef WIN
 //	_getcwd(buf, COUNTOF(buf));
 	::GetCurrentDirectory(COUNTOF(buf), buf);
