@@ -8,7 +8,9 @@ var loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('serial'); throw 0; // -inlineOnly
 
 loadModule('jsstd');
-exec('utf16_script.js');
+loadModule('jsz');
+
+//exec('utf16_script.js');
 
 throw 0;
 

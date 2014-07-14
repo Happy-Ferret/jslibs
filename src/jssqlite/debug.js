@@ -8,9 +8,38 @@ loadModule('jssqlite');
 
 
 	var db = new Database();
+	db.myTest = function(val) {
+
+		return val;
+	}
+
+	db.myErr = function() {
+
+		testsa5df46sa5df4c6as5d4f();
+	}
+
+	try {
+		print( db.exec('select myErr()'), '\n' );
+	} catch(ex) {}
+
+	print( db.exec('select myTest(1.5)'), '\n' );
+	//print( db.exec('select myTest()'), '\n' );
+
 	print( db.exec('select ?+?', [1,2]), '\n' );
 	print( db.exec('select @a+@b', {a:1, b:2}), '\n' );
 	print( db.exec('select @a+@b', []), '\n' );
+	
+
+	db.a = 1;
+	db.b = 2;
+	print( db.exec('select :a+:b'), '\n' );
+
+	var res = db.query('select :a+:b');
+	res.close();
+
+	db.close();
+	
+
 
 throw 0;
 

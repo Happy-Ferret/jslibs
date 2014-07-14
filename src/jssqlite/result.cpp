@@ -19,38 +19,6 @@
 #include "database.h"
 
 
-bool SqliteToJsval( JSContext *cx, sqlite3_value *value, OUT JS::MutableHandleValue rval ) {
-	
-	switch( sqlite3_value_type(value) ) {
-
-		case SQLITE_INTEGER:
-			JL_CHK( jl::setValue(cx, rval, sqlite3_value_int(value)) );
-			break;
-		case SQLITE_FLOAT:
-			JL_CHK( jl::setValue(cx, rval, sqlite3_value_double(value)) );
-			break;
-		case SQLITE_BLOB:
-			//JL_CHK( JL_NewBufferCopyN(cx, sqlite3_value_blob(value), sqlite3_value_bytes(value), rval) );
-			JL_CHK( BlobCreateCopy(cx, sqlite3_value_blob(value), sqlite3_value_bytes(value), rval) );
-			break;
-		case SQLITE_NULL:
-			rval.setNull();
-			break;
-		case SQLITE_TEXT:
-			//rval.setString(JS_NewStringCopyN(cx, (const char*)sqlite3_value_text(value), sqlite3_value_bytes(value)));
-			//*rval = STRING_TO_JSVAL(JS_NewUCStringCopyZ(cx, (const jschar*)sqlite3_value_text16(value)));
-			//JL_CHK( jl::setValue( cx, rval, jl::CStrSpec( (const char*)sqlite3_value_text( value ), sqlite3_value_bytes( value ) ) ) );
-
-			// doc: sqlite3_value_text16 extracts a UTF-16 string in the native byte-order of the host machine. see sqlite3_value_text16le()
-			JL_CHK( jl::setValue( cx, rval, jl::strSpec( (const jschar*)sqlite3_value_text16( value ), sqlite3_value_bytes16( value ) / sizeof( jschar ) ) ) );
-			break;
-		default:
-			JL_ERR( E_DATATYPE, E_NOTSUPPORTED );
-	}
-	return true;
-	JL_BAD;
-}
-
 
 
 // doc: The sqlite3_bind_*() routines must be called after sqlite3_prepare() or sqlite3_reset() and before sqlite3_step().
@@ -88,74 +56,8 @@ bool SqliteSetupBindings(JSContext *cx, sqlite3_stmt *pStmt, JS::HandleObject ar
 
 			JL_ERR(E_PARAM, E_NOTSUPPORTED);
 		}
-
-
-		int ret;
-		// sqlite3_bind_value( pStmt, param,
-		// (TBD) how to use this
-		switch ( JS_TypeOfValue(cx, val) ) {
-
-			case JSTYPE_VOID:
-			case JSTYPE_NULL: // http://www.sqlite.org/nulls.html
-				if ( sqlite3_bind_null(pStmt, param) != SQLITE_OK )
-					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
-				break;
-			case JSTYPE_BOOLEAN:
-				if ( sqlite3_bind_int(pStmt, param, val.toBoolean() ? 1 : 0 ) != SQLITE_OK )
-					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
-				break;
-			case JSTYPE_NUMBER:
-				if ( val.isInt32() ) {
-
-					ret = sqlite3_bind_int(pStmt, param, val.toInt32());
-				} else {
-
-					double jd;
-					JL_CHK( jl::getValue(cx, val, &jd) );
-					if ( jd >= INT_MIN && jd <= INT_MAX && jd == (int)jd )
-						ret = sqlite3_bind_int( pStmt, param, (int)jd );
-					else
-						ret = sqlite3_bind_double(pStmt, param, jd);
-				}
-				if ( ret != SQLITE_OK )
-					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
-				break;
-			case JSTYPE_OBJECT: // beware: no break; because we use the JSTYPE_STRING's case JS::ToString conversion
-				if ( val.isNull() ) {
-
-					if ( sqlite3_bind_null(pStmt, param) != SQLITE_OK )
-						return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
-					break;
-				}
-				if ( jl::isData(cx, val) ) {
-
-					jl::BufString data;
-					JL_CHK( jl::getValue(cx, val, &data) );
-					if ( sqlite3_bind_blob(pStmt, param, data.toData<const uint8_t*>(), data.length(), SQLITE_STATIC) != SQLITE_OK ) // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
-						return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
-					break;
-				}
-			// case JSTYPE_XML:  has gone
-			case JSTYPE_FUNCTION: // (TBD) call the function and pass its result to SQLite ?
-			case JSTYPE_STRING: {
-
-				jl::BufString str;
-				JL_CHK( jl::getValue(cx, val, &str) );
-
-				// beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
-
-				//if (sqlite3_bind_text(pStmt, param, str.toData<const char*>(), str.length(), SQLITE_STATIC) != SQLITE_OK)
-				if (sqlite3_bind_text16(pStmt, param, str.toData<const jschar*>(), str.length(), SQLITE_STATIC) != SQLITE_OK) {
-
-					return SqliteThrowError(cx, sqlite3_db_handle(pStmt));
-				}
-
-				}
-				break;
-			default:
-				//JL_REPORT_ERROR_NUM( JLSMSG_TYPE_ERROR, "unsupported SQL parameter data type"); // (TBD) better error message
-				JL_ERR( E_PARAMTYPE, E_NOTSUPPORTED );
-		}
+		
+		JL_CHK( jsvalToSqlite( cx, SqliteTargetBind( pStmt, param ), val ) );
 	}
 	return true;
 	JL_BAD;
@@ -245,11 +147,9 @@ DEFINE_FUNCTION( close ) {
 	DatabasePrivate *dbpv;
 
 	{
-		JS::RootedValue v(cx);
-		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_RESULT_DATABASE, &v) );
-		JL_ASSERT( v.isObject() );
-	
-		JS::RootedObject vobj(cx, &v.toObject());
+		JS::RootedObject vobj(cx);
+		jl::getSlot(cx, JL_OBJ, SLOT_RESULT_DATABASE, &vobj);
+
 		dbpv = (DatabasePrivate*)JL_GetPrivate(vobj);
 		JL_ASSERT_OBJECT_STATE(dbpv, JL_GetClassName(vobj) );
 	}

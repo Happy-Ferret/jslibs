@@ -253,7 +253,6 @@ setValue(JSContext *cx, JS::MutableHandleValue rval, const unsigned long num) {
 	return true;
 }
 
-
 ALWAYS_INLINE bool FASTCALL
 setValue(JSContext *cx, JS::MutableHandleValue rval, const float num) {
 

@@ -837,151 +837,34 @@ DEFINE_PROPERTY_GETTER( memoryUsed ) {
 	//	int val, tmp;
 //	sqlite3_status(SQLITE_STATUS_MEMORY_USED, &val, &tmp, false);
 //	if ( val ) {
-	return jl::setValue(cx, vp, (size_t)sqlite3_memory_used());
+
+	sqlite3_int64 mem = sqlite3_memory_used();
+	if ( jl::isInBounds<int32_t, sqlite3_int64>(mem) )
+		return jl::setValue( cx, vp, (int32_t)mem );
+	else
+		return jl::setValue( cx, vp, mem );
 }
 
-void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArgv ) {
 
-	//S_ASSERT( JSVAL_NULL == 0 );
-	//ASSERT( DOUBLE_TO_JSVAL(0).asRawBits() == 0 );
+void sqlite_function_call( sqlite3_context *sCx, int sArgc, sqlite3_value **sArgv ) {
 
 	FunctionPrivate *fpv = (FunctionPrivate*)sqlite3_user_data( sCx );
 	JSContext *cx = fpv->dbpv->tmpcx;
 	ASSERT( cx != NULL );
 
-	//JS::AutoValueArray<1 + MAX_FUNCTION_ARG> argv(cx);
+	JS::RootedObject fThis( cx, fpv->obj );
+	JS::RootedValue fctVal( cx, fpv->fval );
 	JS::RootedValue rval( cx );
 	JS::AutoValueVector argv( cx );
 	argv.resize( sArgc );
 
-	//jsval argv[1 + MAX_FUNCTION_ARG]; // = {0}; // argv[0] is rval
-	//memset(argv, 0, sizeof(argv));
-	//ASSERT( JSVAL_IS_PRIMITIVE(argv[0]) && JSVAL_IS_PRIMITIVE(argv[1 + MAX_FUNCTION_ARG -1]) );
-
 	for ( int r = 0; r < sArgc; r++ ) {
 
-		if ( !SqliteToJsval( cx, sArgv[r], argv[r] ) ) {
-
-			//sqlite3_result_error(sCx, "Invalid argument type", -1 ); // (TBD) enhance error report
-			sqlite3_result_error_code( sCx, SQLITE_MISMATCH ); // (TBD) check this
-			JL_CHK( false );
-		}
+		JL_CHK( SqliteToJsval( cx, sArgv[r], argv[r] ) );
 	}
 
-	{
-		jl::BufString buf;
-		JS::RootedObject fThis( cx, fpv->obj );
-		JS::RootedValue fctVal( cx, fpv->fval );
-
-		if ( !jl::call( cx, fThis, fctVal, argv, &rval ) ) {
-
-			sqlite3_result_error( sCx, "Function call error", -1 ); // (TBD) better error message
-			JL_CHK( false );
-		}
-
-		// (TBD) how to use sqlite3_result_value
-
-		if ( rval.isNullOrUndefined() ) {
-
-			// http://www.sqlite.org/nulls.html
-			sqlite3_result_null( sCx );
-		} else if ( rval.isBoolean() ) {
-
-			sqlite3_result_int( sCx, rval.toBoolean() ? 1 : 0 );
-		} else if ( rval.isInt32() ) {
-			
-			sqlite3_result_int( sCx, rval.toInt32() );
-		} else if ( rval.isDouble() ) {
-
-			sqlite3_result_double( sCx, rval.toDouble() );
-		} else if ( rval.isString() ) {
-
-			JL_CHK( jl::getValue( cx, rval, &buf ) );
-			// beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
-			// cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
-
-			if ( buf.wide() )
-				sqlite3_result_text16( sCx, buf.toData<const jschar*>(), buf.length(), SQLITE_STATIC );
-			else
-				sqlite3_result_text( sCx, buf.toData<const char*>(), buf.length(), SQLITE_STATIC );
-		}  else if ( jl::isData( cx, rval ) ) {
-
-			JL_CHK( jl::getValue( cx, rval, &buf ) );
-			// beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
-			size_t len = buf.length();
-			if ( len == 0 )
-				sqlite3_result_zeroblob( sCx, 0 );
-			else
-				sqlite3_result_blob( sCx, buf.toData<const uint8_t*>(), len, SQLITE_STATIC );
-		} else {
-
-			sqlite3_result_error_code( sCx, SQLITE_MISMATCH ); // (TBD) check this
-		}
-		
-
-		/*
-		switch ( JS_TypeOfValue(cx, rval) ) {
-	
-			case JSTYPE_VOID:
-			case JSTYPE_NULL:
-				sqlite3_result_null(sCx); // http://www.sqlite.org/nulls.html
-				break;
-			case JSTYPE_BOOLEAN:
-				sqlite3_result_int(sCx, rval.toBoolean() ? 1 : 0 );
-				break;
-			case JSTYPE_NUMBER:
-				if ( rval.isInt32() ) {
-
-					sqlite3_result_int(sCx, rval.toInt32());
-				} else {
-
-					double jd;
-					JL_CHK( jl::getValue(cx, rval, &jd) );
-					if ( jd >= INT_MIN && jd <= INT_MAX && jd == (int)jd )
-						sqlite3_result_int(sCx, (int)jd);
-					else
-						sqlite3_result_double(sCx, jd);
-				}
-				break;
-
-			case JSTYPE_OBJECT: // beware: no break; because we use the JSTYPE_STRING's case JS::ToString conversion
-				if ( rval.isNull() ) {
-
-					sqlite3_result_null(sCx);
-					break;
-				}
-
-	//			if ( JL_GetClass(JSVAL_TO_OBJECT(rval)) == JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Blob")->clasp ) { // beware: with SQLite, blob != text
-	//			if ( JL_JsvalIsBlob(cx, rval) ) {
-				if ( jl::isData(cx, rval) ) {
-
-					//const char *data;
-					//size_t length;
-					//JL_CHKB( JL_JsvalToStringAndLength(cx, &rval, &data, &length), bad_unroot );
-					jl::BufString data;
-					JL_CHK( jl::getValue(cx, rval, &data) );
-					sqlite3_result_blob(sCx, data.toData<const uint8_t*>(), data.length(), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
-					break;
-				}
-				// else:
-			case JSTYPE_FUNCTION: // (TBD) call the function and pass its result to SQLite ?
-			case JSTYPE_STRING: {
-
-	//			const char *str;
-	//			size_t len;
-	//			JL_CHKB( JL_JsvalToStringAndLength(cx, &rval, &str, &len), bad_unroot );
-
-				jl::BufString str;
-				JL_CHK( jl::getValue(cx, rval, &str) );
-				sqlite3_result_text(sCx, str.toData<const char*>(), str.length(), SQLITE_STATIC); // beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT // cf.  int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
-				break;
-			}
-			default:
-				//sqlite3_result_error(sCx, "Unsupported data type", -1); // (TBD) better error message
-				sqlite3_result_error_code(sCx, SQLITE_MISMATCH); // (TBD) check this
-		}
-		*/
-	}
+	JL_CHK( jl::call( cx, fThis, fctVal, argv, &rval ) );
+	JL_CHK( jsvalToSqlite( cx, SqliteTargetResult( sCx ), rval ) );
 
 bad:
 	return;
@@ -1003,7 +886,7 @@ DEFINE_SET_PROPERTY() {
 
 	JL_DEFINE_PROP_ARGS;
 
-	if ( jl::isCallable( cx, JL_RVAL ) && JSID_IS_STRING( id ) ) {
+	if ( JSID_IS_STRING( id ) && jl::isCallable( cx, JL_RVAL ) ) {
 		
 		JL_ASSERT_THIS_INSTANCE();
 

@@ -420,7 +420,7 @@ public:
 	ModuleManager(HostRuntime &hostRuntime);
 
 	bool
-	loadModule(const TCHAR *libFileName, JS::HandleObject obj, JS::MutableHandleValue rval);
+	loadModule(const char *libFileName, JS::HandleObject obj, JS::MutableHandleValue rval);
 
 	bool
 	releaseModules();

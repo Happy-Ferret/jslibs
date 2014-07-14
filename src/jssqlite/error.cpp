@@ -251,7 +251,7 @@ SqliteThrowError( JSContext *cx, sqlite3 *db ) {
 	
 	JS_SetPendingException(cx, errorVal);
 	JL_CHK( jl::setSlot( cx, errorObj, SLOT_SQLITE_ERROR_CODE, sqlite3_extended_errcode( db ) ) );
-	JL_CHK( jl::setSlot( cx, errorObj, SLOT_SQLITE_ERROR_TEXT, sqlite3_errmsg( db ) ) );
+	JL_CHK( jl::setSlot( cx, errorObj, SLOT_SQLITE_ERROR_TEXT, sqlite3_errmsg( db ) ) ); // utf8
 	JL_SAFE( jl::addScriptLocation(cx, &errorObj) );
 	JL_BAD;
 }

@@ -646,7 +646,7 @@ ModuleManager::ModuleManager(HostRuntime &hostRuntime)
 
 
 bool
-ModuleManager::loadModule(const TCHAR *libFileName, JS::HandleObject obj, JS::MutableHandleValue rval) {
+ModuleManager::loadModule(const char *libFileName, JS::HandleObject obj, JS::MutableHandleValue rval) {
 
 	JSContext *cx = _hostRuntime.context();
 
@@ -658,7 +658,7 @@ ModuleManager::loadModule(const TCHAR *libFileName, JS::HandleObject obj, JS::Mu
 	if ( !JLDynamicLibraryOk(moduleHandle) ) {
 
 		JL_SAFE_BEGIN
-		TCHAR errorBuffer[256];
+		char errorBuffer[256];
 		JLDynamicLibraryLastErrorMessage(errorBuffer, COUNTOF(errorBuffer));
 		JL_WARN( E_OS, E_OPERATION, E_DETAILS, E_STR(errorBuffer), E_COMMENT(libFileName) );
 		JL_SAFE_END
@@ -936,11 +936,11 @@ DEFINE_FUNCTION( loadModule ) {
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 
-	TCHAR libFileName[PATH_MAX];
+	char libFileName[PATH_MAX];
 	//jl::strncpy( libFileName, str.toData<const char *>(), str.length() ); // (TBD) use copyTo()
 	str.copyTo(libFileName);
-	libFileName[str.length()] = TEXT('\0');
-	jl::strcat( libFileName, TEXT(DLL_EXT) );
+	libFileName[str.length()] = '\0';
+	jl::strcat( libFileName, DLL_EXT );
 	// MAC OSX: 	'@executable_path' ??
 
 	JL_CHK( Host::getHost(cx).moduleManager().loadModule(libFileName, JL_OBJ, JL_RVAL) );
@@ -1377,8 +1377,8 @@ Host::report( bool isWarning, ... ) const {
 	va_end(vl);
 
 	JSErrorFormatString format = { message, 0, (int16_t)exn };
-	return JS_ReportErrorFlagsAndNumber( _hostRuntime.context(), isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, errorCallback, (void*)&format, 0);
-	//JS_ReportErrorFlagsAndNumberUC
+	//return JS_ReportErrorFlagsAndNumber( _hostRuntime.context(), isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, errorCallback, (void*)&format, 0);
+	return JS_ReportErrorFlagsAndNumberUC(_hostRuntime.context(), isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, errorCallback, (void*)&format, 0);
 }
 
 

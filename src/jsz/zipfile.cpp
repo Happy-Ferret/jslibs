@@ -28,6 +28,7 @@ EXTERN_C void *zipfile_malloc( size_t size ) {
 
 #include <zip.h>
 #include <unzip.h>
+#include <iowin32.h>
 
 //#include <jsdate.h>
 
@@ -195,7 +196,8 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARGC(1);
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	
-	JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_FILENAME, JL_ARG(1)) );
+	//JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_FILENAME, JL_ARG(1)) );
+	JL_CHK( jl::setSlot(cx, JL_OBJ, SLOT_FILENAME, JL_ARG(1)) );
 
 	pv = (Private*)jl_calloc(sizeof(Private), 1);
 	JL_ASSERT_ALLOC(pv);
@@ -256,15 +258,27 @@ DEFINE_FUNCTION( open ) {
 
 	if ( mode < 0 ) {
 
+#ifdef UNICODE
+		zlib_filefunc64_def ffunc;
+		fill_win32_filefunc64W(&ffunc);
+		pv->uf = unzOpen2_64(filename.toStringZ<const wchar_t*>(), &ffunc);
+#else
 		pv->uf = unzOpen(filename);
+#endif
 		if ( !pv->uf ) {
 
 			JL_ERR( E_FILE, E_ACCESS, E_SEP, E_NAME(filename), E_READ );
 		}
 	} else {
 
-		pv->zf = zipOpen(filename, mode);
-		if ( !pv->zf ) {
+#ifdef UNICODE
+		zlib_filefunc64_def ffunc;
+		fill_win32_filefunc64W(&ffunc);
+		pv->uf = zipOpen2_64(filename.toStringZ<const wchar_t*>(), mode, NULL, &ffunc);
+#else
+		//pv->zf = zipOpen(filename, mode);
+#endif
+		if (!pv->zf) {
 
 			JL_ERR( E_FILE, E_ACCESS, E_SEP, E_NAME(filename), E_WRITE );
 		}

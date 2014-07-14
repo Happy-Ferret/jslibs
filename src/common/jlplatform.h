@@ -439,19 +439,22 @@ tstrToStr( const char *src, char * ) {
 	#endif // _DEBUG
 #endif // REPORT_MEMORY_LEAKS
 
+
+	// http://msdn.microsoft.com/en-us/library/windows/desktop/aa383745%28v=vs.85%29.aspx#setting_winver_or__win32_winnt
+
 	// doc: _WIN32_WINNT_WS03 = 0x0502 = Windows Server 2003 with SP1, Windows XP with SP2.
 	// note: SpiderMionkey compilation option: --with-windows-version=502
 
 	#ifndef WINVER         // Allow use of features specific to Windows 95 and Windows NT 4 or later.
-	#define WINVER _WIN32_WINNT_WS03  // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
+	#define WINVER _WIN32_WINNT_WIN7  // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
 	#endif
 
 	#ifndef _WIN32_WINNT         // Allow use of features specific to Windows NT 4 or later.
-	#define _WIN32_WINNT _WIN32_WINNT_WS03  // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
+	#define _WIN32_WINNT _WIN32_WINNT_WIN7  // Change this to the appropriate value to target Windows 98 and Windows 2000 or later.
 	#endif
 
 	#ifndef _WIN32_WINDOWS        // Allow use of features specific to Windows 98 or later.
-	#define _WIN32_WINDOWS _WIN32_WINNT_WS03 // Change this to the appropriate value to target Windows Me or later. 0x501 = XP SP1.
+	#define _WIN32_WINDOWS _WIN32_WINNT_WIN7 // Change this to the appropriate value to target Windows Me or later. 0x501 = XP SP1.
 	#endif
 
 	#undef WIN32_LEAN_AND_MEAN
@@ -3860,7 +3863,7 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 		return (uint32_t)( ((uintptr_t)libraryHandler >> ALIGNOF(void*)) & 0xffffffff ); // shift useless and keep 32bits.
 	}
 
-	ALWAYS_INLINE JLLibraryHandler JLDynamicLibraryOpen( const TCHAR *filename ) {
+	ALWAYS_INLINE JLLibraryHandler JLDynamicLibraryOpen( const char *filename ) {
 
 	#if defined(WIN)
 		// GetErrorMode() only exists on Vista and higher,
@@ -3868,7 +3871,7 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 		// see also SetThreadErrorMode()
 		UINT oldErrorMode = ::SetErrorMode(SEM_FAILCRITICALERRORS);
 		::SetErrorMode( oldErrorMode | SEM_FAILCRITICALERRORS ); // avoid error popups
-		HMODULE hModule = ::LoadLibrary(filename); // If the function fails, the return value is NULL. 
+		HMODULE hModule = ::LoadLibraryA(filename); // If the function fails, the return value is NULL. 
 		// Restore previous error mode.
 		::SetErrorMode(oldErrorMode);
 		return hModule;
@@ -3897,17 +3900,17 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 	}
 
 	INLINE NEVER_INLINE void FASTCALL
-	JLDynamicLibraryLastErrorMessage( TCHAR *message, size_t maxLength ) {
+	JLDynamicLibraryLastErrorMessage( char *message, size_t maxLength ) {
 
 	#if defined(WIN)
 		DWORD errorCode = ::GetLastError();
 		LPVOID lpMsgBuf;
-		DWORD result = ::FormatMessage(
+		DWORD result = ::FormatMessageA(
 			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK,
-			NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL );
+			NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&lpMsgBuf, 0, NULL );
 		if ( result != 0 ) {
 
-			jl::strncpy( message, (LPTSTR)lpMsgBuf, maxLength - 1 );
+			jl::strncpy( message, (LPSTR)lpMsgBuf, maxLength - 1 );
 			message[maxLength-1] = '\0';
 		} else
 			*message = '\0';

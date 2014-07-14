@@ -1,11 +1,32 @@
 var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
- loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsz'); throw 0;
-
-
+// loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsz'); throw 0;
 
 loadModule('jsstd');
 loadModule('jsz');
+
+
+	var g = new ZipFile('test.zip');
+	g.open(ZipFile.READ);
+//	g.password = 'aze';
+
+	g.goFirst();
+	g.select('xxx');
+	print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.read(), '\n' );
+	
+
+	/*
+	for ( g.goFirst(); !g.eol; g.goNext() ) {
+
+		print( '"'+g.filename+'"', '\n' );
+	}
+	*/
+
+	g.close();
+
+
+throw 0;
+
 
 
 	var deflate = new Z(Z.DEFLATE);
@@ -48,20 +69,6 @@ loadModule('jsz');
 
 
 
-var g = new ZipFile('test.zip');
-g.open(ZipFile.READ);
-g.password = 'aze';
-
-g.select('toto/UpgradeLog.XML');
-print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.read(), '\n' );
-
-g.select('toto/xxx.txt');
-print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.read(), '\n' );
-
-g.close();
-
-
-throw 0;
 
 
 var f = new ZipFile('test.zip');
