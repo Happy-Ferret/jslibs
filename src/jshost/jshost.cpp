@@ -48,7 +48,7 @@
 
 static const uint8_t embeddedBootstrapScript[] =
 	#include "embeddedBootstrapScript.js.xdr.cres"
-;
+	"";
 
 
 
@@ -62,9 +62,8 @@ struct CmdLineArguments {
 	float maybeGCInterval;
 	bool useFileBootstrapScript;
 	const TCHAR *inlineScript;
-	#ifdef DEBUG
-	bool debug;
-	#endif DEBUG
+	jl::EncodingType encoding;
+	IFDEBUG( bool debug; )
 
 	int jsArgc;
 	TCHAR** jsArgv;
@@ -81,10 +80,8 @@ struct CmdLineArguments {
 		useFileBootstrapScript = false;
 		inlineScript = NULL;
 		help = false;
-
-		#ifdef DEBUG
-		debug = false;
-		#endif DEBUG
+		encoding = jl::EncodingType::ENC_UNKNOWN;
+		IFDEBUG( debug = false; )
 
 		TCHAR** argumentVector = argv;
 		for ( argumentVector++; argumentVector[0] && argumentVector[0][0] == '-'; argumentVector++ )
@@ -120,6 +117,11 @@ struct CmdLineArguments {
 					argumentVector++; // keep the script as argument[0]
 					HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
 					inlineScript = *(argumentVector);
+					break;
+				case 'e': // encoding
+					argumentVector++; // keep the script as argument[0]
+					HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
+					encoding = jl::parseEncodingName(*argumentVector);
 					break;
 				case '?': // help
 				case 'h': //
@@ -163,9 +165,13 @@ public:
 	int
 	output( const char *buffer, size_t length ) {
 		
-		if (unlikely(stdout_fileno == -1)) {
+		if (unlikely( stdout_fileno == -1 )) {
 			stdout_fileno = fileno(stdout);
-//			_setmode(stdout_fileno, _O_U16TEXT);
+
+//			SetConsoleOutputCP( CP_UTF8 );
+//			CP_UTF8
+//			_setmode( stdout_fileno, _O_U8TEXT );
+//			_setmode( stdout_fileno, _O_U16TEXT );
 		}
 		return write(stdout_fileno, buffer, length);
 	}
@@ -268,6 +274,7 @@ Interrupt( int CtrlType ) {
 #else
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
+
 
 struct EndSignalProcessEvent : public ProcessEvent2 {
 	
@@ -539,7 +546,7 @@ int _tmain( int argc, TCHAR* argv[] ) {
 				TCHAR bootstrapFilename[PATH_MAX];
 				jl::strcpy( bootstrapFilename, hostFullPath );
 				jl::strcat( bootstrapFilename, TEXT(".js") );
-				JL_CHK( jl::executeScriptFileName(cx, globalObject, bootstrapFilename, args.compileOnly, &rval) );
+				JL_CHK( jl::executeScriptFileName(cx, globalObject, bootstrapFilename, args.encoding, args.compileOnly, &rval) );
 			}
 
 			ASSERT( !JL_IsExceptionPending(cx) );
@@ -551,14 +558,14 @@ int _tmain( int argc, TCHAR* argv[] ) {
 
 			if ( args.inlineScript != NULL ) {
 
-				executeStatus = jl::executeScriptText(cx, globalObject, args.inlineScript, args.compileOnly, &rval);
+				executeStatus = jl::executeScriptText( cx, globalObject, args.inlineScript, jl::strlen( args.inlineScript ) * sizeof( TCHAR ), sizeof( TCHAR ) == 2 ? jl::EncodingType::ENC_UTF16le : jl::EncodingType::ENC_LATIN1, args.compileOnly, &rval );
 			}
 
 			// file script
 
 			if ( args.jsArgc == 1 && executeStatus == true ) {
 
-				executeStatus = jl::executeScriptFileName(cx, globalObject, args.jsArgv[0], args.compileOnly, &rval);
+				executeStatus = jl::executeScriptFileName( cx, globalObject, args.jsArgv[0], args.encoding, args.compileOnly, &rval );
 			}
 
 			if ( executeStatus == true ) {

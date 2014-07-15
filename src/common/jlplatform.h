@@ -370,6 +370,7 @@ else
 // convert a number of TCHARs into a size in bytes
 #define TSIZE(length) ((length)*sizeof(TCHAR))
 
+/*
 template <size_t MAXLEN>
 ALWAYS_INLINE const char *
 tstrToStr( const wchar_t *src, char *dst ) {
@@ -378,7 +379,10 @@ tstrToStr( const wchar_t *src, char *dst ) {
 	char *it = dst;
 	while (it != max) {
 
-		*it = *src & 0xff;
+		if ( *src & 0xff00 )
+			*it = '~';
+		else
+			*it = *src & 0xff;
 		if (*src == 0)
 			break;
 		++src;
@@ -387,12 +391,14 @@ tstrToStr( const wchar_t *src, char *dst ) {
 	return dst;
 }
 
+
 template <size_t MAXLEN>
 ALWAYS_INLINE const char *
 tstrToStr( const char *src, char * ) {
 
 	return src;
 }
+*/
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1643,6 +1649,22 @@ strncpy(wchar_t *dst, const wchar_t *src, size_t nelem) {
 
 ////
 
+template <size_t MAX>
+ALWAYS_INLINE errno_t FASTCALL
+strcpy_s( char *dst, const char *src ) {
+
+	return ::strcpy_s( dst, MAX, src );
+}
+
+template <size_t MAX>
+ALWAYS_INLINE errno_t FASTCALL
+strcpy_s( wchar_t *dst, const wchar_t *src ) {
+
+	return ::wcscpy_s( dst, MAX, src );
+}
+
+////
+
 ALWAYS_INLINE const char* FASTCALL
 strchr( const char *s, char c ) {
 
@@ -1725,6 +1747,7 @@ strchr_limit(const wchar_t *s, wchar_t c, const wchar_t *limit) {
     return NULL;
 }
 
+
 ////
 
 ALWAYS_INLINE size_t FASTCALL
@@ -1760,6 +1783,20 @@ ALWAYS_INLINE int FASTCALL
 strcmp( const wchar_t *str1, const wchar_t *str2 ) {
 	return ::wcscmp( str1, str2 );
 }
+
+////
+
+
+ALWAYS_INLINE int FASTCALL
+stricmp( const char *str1, const char *str2 ) {
+	return ::_stricmp( str1, str2 );
+}
+
+ALWAYS_INLINE int FASTCALL
+stricmp( const wchar_t *str1, const wchar_t *str2 ) {
+	return ::_wcsicmp( str1, str2 );
+}
+
 
 ////
 
@@ -2394,22 +2431,61 @@ ThreadStackSize() {
 // see http://unicode.org/faq/utf_bom.html#BOM
 enum EncodingType {
 	ENC_UNKNOWN,
-	ENC_UTF32be,
-	ENC_UTF32le,
-	ENC_UTF16be,
-	ENC_UTF16le,
+	ENC_LATIN1, // (ISO-8859-1)
 	ENC_UTF8,
-	ENC_ASCII,
-	ENC_LATIN1
+	ENC_UTF16le,
+	ENC_UTF16be,
+	ENC_UTF32le,
+	ENC_UTF32be
 };
 
+ALWAYS_INLINE EncodingType
+parseEncodingName( const TCHAR *str ) {
 
+	static const struct {
+		const TCHAR *encName;
+		EncodingType enc;
+	} encMap[] = {
+			{ L( "LATIN-1" ), ENC_LATIN1 },
+			{ L( "UTF-8" ), ENC_UTF8 },
+			{ L( "UTF-16be" ), ENC_UTF16be },
+			{ L( "UTF-16le" ), ENC_UTF16le },
+			{ L( "UTF-32be" ), ENC_UTF32be },
+			{ L( "UTF-32le" ), ENC_UTF32le }
+	};
+
+	for ( size_t i = 0; i < COUNTOF( encMap ); ++i ) {
+
+		if ( jl::stricmp( str, encMap[i].encName ) == 0 ) {
+
+			return encMap[i].enc;
+		}
+	}
+	
+	return ENC_UNKNOWN;
+}
+
+/*
 INLINE bool
 IsASCII(const uint8_t *buf, size_t len) {
 
-	for ( const uint8_t *end = buf + len; buf != end; ++buf )
-		if ( (*buf & 0x80) || !(*buf & 0xF8) )
+	for ( const uint8_t *end = buf + len; buf != end; ++buf ) {
+
+		if ( (*buf & 0x80) || !(*buf & 0xF8) ) // > 127 || ! < 8
 			return false;
+	}
+	return true;
+}
+*/
+
+INLINE bool
+IsLatin1Text( const uint8_t *buf, size_t len ) {
+
+	for ( const uint8_t *end = buf + len; buf != end; ++buf ) {
+
+		if ( !(*buf & 0xF8) ) // ! < 8
+			return false;
+	}
 	return true;
 }
 
@@ -2438,48 +2514,56 @@ IsUTF8(const uint8_t *str, size_t len) {
 
 
 INLINE EncodingType NOALIAS FASTCALL
-DetectEncoding(uint8_t **buf, size_t *size) {
+DetectEncoding( uint8_t *buf, size_t size, OUT size_t *hdrSize ) {
 
-	if ( *size >= 3 && (*buf)[0] == 0xEF && (*buf)[1] == 0xBB && (*buf)[2] == 0xBF ) {
+	if ( size >= 3 && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF ) {
 
-		*buf += 3;
-		*size -= 3;
+		*hdrSize = 3;
 		return ENC_UTF8;
 	}
 
-	if ( *size > 2 && (*buf)[0] == 0xFF && (*buf)[1] == 0xFE ) {
+	if ( size >= 2 && buf[0] == 0xFF && buf[1] == 0xFE ) {
 
-		*buf += 2;
-		*size -= 2;
+		*hdrSize = 2;
 		return ENC_UTF16le;
 	}
 
-	if ( *size > 2 && (*buf)[0] == 0xFE && (*buf)[1] == 0xFF ) {
+	if ( size >= 2 && buf[0] == 0xFE && buf[1] == 0xFF ) {
 
-		*buf += 2;
-		*size -= 2;
+		*hdrSize = 2;
 		return ENC_UTF16be;
 	}
 
-	size_t scanLen = jl::min(*size, 1024);
+	if ( size >= 4 && buf[0] == 0xFF && buf[1] == 0xFE && buf[2] == 0x00 && buf[3] == 0x00 ) {
+
+		*hdrSize = 4;
+		return ENC_UTF32le;
+	}
+
+	if ( size >= 4 && buf[0] == 0x00 && buf[1] == 0x00 && buf[2] == 0xFE && buf[3] == 0xFF ) {
+
+		*hdrSize = 4;
+		return ENC_UTF32be;
+	}
+
+	*hdrSize = 0;
+
+	size_t scanLen = jl::min(size, 1024);
 	
-	if ( IsASCII(*buf, scanLen) )
-		return ENC_ASCII;
+	if ( IsLatin1Text(buf, scanLen) )
+		return ENC_LATIN1;
 
-	if ( IsUTF8(*buf, scanLen) )
+	if ( IsUTF8(buf, scanLen) )
 		return ENC_UTF8;
 
-/* no BOM, then guess // (TBD) find a better heuristic
 
-	if ( (*buf)[0] > 0 && (*buf)[1] > 0 )
-		return ENC_ASCII;
+	// no BOM, then guess // (TBD) find a better heuristic
 
-	if ( (*buf)[0] != 0 && (*buf)[1] == 0 )
+	if ( size >= 2 && buf[0] != 0 && buf[1] == 0 )
 		return ENC_UTF16le;
 
-	if ( (*buf)[0] == 0 && (*buf)[1] != 0 )
+	if ( size >= 2 && buf[0] == 0 && buf[1] != 0 )
 		return ENC_UTF16be;
-*/
 
 	return ENC_UNKNOWN;
 }
@@ -2488,13 +2572,13 @@ DetectEncoding(uint8_t **buf, size_t *size) {
 #ifdef MSC
 	#pragma warning( push )
 	#pragma warning( disable : 4244 ) // warning C4244: '=' : conversion from 'unsigned int' to 'unsigned short', possible loss of data
-#endif
+#endif // MSC
 
 #define xmlLittleEndian (JLHostEndian == JLLittleEndian)
 
 
 // source: libxml2 - encoding.c - MIT License - dl: https://git.gnome.org/browse/libxml2/
-// changes: outlen and inlen from integer to size_t, and the last redurned value
+// changes: outlen and inlen from integer to size_t
 INLINE int NOALIAS FASTCALL
 UTF8ToUTF16LE( unsigned char* outb, size_t *outlen, const unsigned char* in, size_t *inlen ) {
 
@@ -2589,7 +2673,7 @@ UTF8ToUTF16LE( unsigned char* outb, size_t *outlen, const unsigned char* in, siz
 	}
 	*outlen = (out - outstart) * 2;
 	*inlen = processed - instart;
-	return(1);
+	return(*outlen);
 }
 
 INLINE int NOALIAS FASTCALL
@@ -2663,17 +2747,16 @@ UTF16LEToUTF8( unsigned char* out, size_t *outlen, const unsigned char* inb, siz
 	}
 	*outlen = out - outstart;
 	*inlenb = processed - inb;
-	return(1);
+	return(*outlen);
 }
 
 
 #undef xmlLittleEndian
 
 
-
 #ifdef MSC
 	#pragma warning( pop )
-#endif // _MSC_VER
+#endif // MSC
 
 
 template <typename T>

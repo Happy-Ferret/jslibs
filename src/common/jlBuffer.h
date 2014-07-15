@@ -825,24 +825,32 @@ strSpec( const jschar *str, size_t len ) {
 
 
 ALWAYS_INLINE
-jl::BufBase
-UTF16LEToUTF8( jl::BufString src ) {
+jl::BufString
+UTF16LEToUTF8(jl::BufString srcBuf) {
 
-	ASSERT( src.wide() );
+	ASSERT(srcBuf.wide());
 
-	size_t srcSize = src.length() * 2;
-	const wchar_t *wsrc = src.toData<const wchar_t *>();
+	const uint8_t *src = reinterpret_cast<const uint8_t *>(srcBuf.toData<const wchar_t *>());
+	const uint8_t *srcEnd = src + srcBuf.length() * 2;
 
-	jl::BufBase dst;
-	dst.alloc( srcSize * 3 / 2 );
-	size_t dstLen = dst.allocSize();
-	UTF16LEToUTF8( dst.dataAs<unsigned char *>(), &dstLen, reinterpret_cast<const unsigned char *>(wsrc), &srcSize );
-	dst.setUsed( dstLen );
-	dst.maybeCrop();
-	return dst;
-	//return jl::BufString( dst.dataAs<char *>(), dstLen, false );
+	jl::BufBase dstBuf;
+	dstBuf.alloc((srcBuf.length() * 2) * (3/2));
+
+	for (;;) {
+
+		size_t srcSize = srcEnd - src;
+		size_t dstSize = dstBuf.allocSize() - dstBuf.used();
+		uint8_t *dst = dstBuf.dataAs<uint8_t *>() + dstBuf.used();
+		int res = UTF16LEToUTF8(dst, &dstSize, src, &srcSize);
+		src += srcSize;
+		dstBuf.setUsed(dstBuf.used() + res);
+		if (src >= srcEnd)
+			break;
+		dstBuf.realloc(dstBuf.allocSize() * 2);
+	}
+
+	dstBuf.maybeCrop();
+	return dstBuf;
 }
-
-
 
 JL_END_NAMESPACE
