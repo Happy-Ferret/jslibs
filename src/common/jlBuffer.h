@@ -469,7 +469,7 @@ public:
 	
 	template <class T>
 	explicit BufString( T *str, size_t len = UnknownSize, bool nullTerminated = true )
-	: BufBase(str, len + ((nullTerminated && len != UnknownSize) ? sizeof(T) : 0)), _charSize(sizeof(T)), _terminatorLength(nullTerminated ? 1 : 0) {
+	: BufBase( str, len != UnknownSize ? (len + (nullTerminated ? 1 : 0)) * sizeof( T ) : UnknownSize ), _charSize( sizeof( T ) ), _terminatorLength( nullTerminated ? 1 : 0 ) {
 		assertIntegrity();
 	}
 
@@ -689,8 +689,6 @@ public:
 				get(dst, true);
 
 			setUsed(requiredSize);
-			
-
 			setCharSize(sizeof(Base));
 			setNt(nullTerminated);
 		}
@@ -825,15 +823,15 @@ strSpec( const jschar *str, size_t len ) {
 
 
 ALWAYS_INLINE
-jl::BufString
-UTF16LEToUTF8(jl::BufString srcBuf) {
+bool
+UTF16LEToUTF8( jl::BufString &dstBuf, jl::BufString &srcBuf ) {
 
 	ASSERT(srcBuf.wide());
 
 	const uint8_t *src = reinterpret_cast<const uint8_t *>(srcBuf.toData<const wchar_t *>());
 	const uint8_t *srcEnd = src + srcBuf.length() * 2;
 
-	jl::BufBase dstBuf;
+	//jl::BufBase dstBuf;
 	dstBuf.alloc((srcBuf.length() * 2) * (3/2));
 
 	for (;;) {
@@ -842,15 +840,138 @@ UTF16LEToUTF8(jl::BufString srcBuf) {
 		size_t dstSize = dstBuf.allocSize() - dstBuf.used();
 		uint8_t *dst = dstBuf.dataAs<uint8_t *>() + dstBuf.used();
 		int res = UTF16LEToUTF8(dst, &dstSize, src, &srcSize);
+		if ( res < 0 )
+			return false;
 		src += srcSize;
 		dstBuf.setUsed(dstBuf.used() + res);
 		if (src >= srcEnd)
 			break;
 		dstBuf.realloc(dstBuf.allocSize() * 2);
 	}
-
 	dstBuf.maybeCrop();
-	return dstBuf;
+	dstBuf.setCharSize( 1 );
+	dstBuf.setNt( 0 );
+	return true;
 }
+
+
+
+template <class T, size_t LENGTH>
+class SimpleBufferBuffer {
+	T _buf[LENGTH];
+	T *_ptr; // > _end on error
+	T *_end;
+
+public:
+	SimpleBufferBuffer()
+	: _ptr( _buf ), _end( _buf + LENGTH ) {
+		ASSERT( LENGTH >= 1 );
+	}
+
+	size_t
+	avail() const {
+
+		return _end - _ptr;
+	}
+
+	size_t
+	length() const {
+
+		return _ptr - _buf;
+	}
+
+	bool
+	isEmpty() const {
+
+		return length() == 0;
+	}
+
+	bool
+	hasError() const {
+
+		return _ptr > _end;
+	}
+
+	void
+	reset() {
+
+		_ptr = _buf;
+	}
+
+	const T *
+	toString() {
+
+		if ( hasError() ) {
+
+			*(_end - 1) = 0;
+		} else {
+
+			if ( avail() < 1 )
+				return nullptr;
+			*_ptr = 0;
+		}
+		return _buf;
+	}
+
+	operator const T *() {
+
+		return toString();
+	}
+	
+	void
+	move( ptrdiff_t mv ) {
+		
+		if ( _ptr + mv >= _buf && _ptr + mv < _end )
+			_ptr += mv;
+		else
+			_ptr = _end + 1;
+	}
+
+	template <class U>
+	bool
+	rchr( const U chr ) {
+
+		if ( hasError() )
+			return false;
+
+		T *tmp = _ptr;
+		while ( _ptr > _buf )
+			if ( *(--_ptr) == static_cast<T>(chr) )
+				return true;
+		_ptr = tmp;
+		return false;
+	}
+
+	template <class U>
+	void
+	cat( const U * str ) {
+
+		while ( _ptr < _end && *str != 0 )
+			*(_ptr++) = static_cast<T>( *(str++) );
+		
+		if ( _ptr == _end && *str != 0 )
+			_ptr++;
+	}
+
+	template <class U>
+	void
+	cat( const U * str, const U * strEnd ) {
+
+		while ( _ptr < _end && str != strEnd  )
+			*(_ptr++) = static_cast<T>( *(str++) );
+
+		if ( _ptr == _end && str != strEnd )
+			_ptr++;
+	}
+
+	void
+	cat( long num, uint8_t base = 10 ) {
+
+		ASSERT( avail() > 32 ); // see IToA10MaxDigits
+		jl::itoa( num, _ptr, base );
+		_ptr += jl::strlen( _ptr );
+	}
+};
+
 
 JL_END_NAMESPACE

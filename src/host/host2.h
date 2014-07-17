@@ -101,19 +101,16 @@ JL_BEGIN_NAMESPACE
 
 class StdIO {
 public:
-	virtual int	input( char *buffer, size_t bufferLength ) {
+	virtual int	input( jl::BufString & ) {
 
-		JL_IGNORE(buffer, bufferLength);
 		return 0;
 	}
-	virtual int	output( const char *buffer, size_t length ) {
+	virtual int	output( jl::BufString & ) {
 
-		JL_IGNORE(buffer, length);
 		return 0;
 	}
-	virtual int	error( const char *buffer, size_t length ) {
+	virtual int	error( jl::BufString & ) {
 		
-		JL_IGNORE(buffer, length);
 		return 0;
 	}
 };
@@ -701,8 +698,8 @@ class DLLAPI Host : public jl::CppAllocators {
 	static const JSErrorFormatString *
 	errorCallback( void *userRef, const char *, const unsigned );
 
-	static void
-	errorReporterBasic( JSContext *cx, const char *message, JSErrorReport *report );
+//	static void
+//	errorReporterBasic( JSContext *cx, const char *message, JSErrorReport *report );
 
 	static void
 	errorReporter( JSContext *cx, const char *message, JSErrorReport *report );

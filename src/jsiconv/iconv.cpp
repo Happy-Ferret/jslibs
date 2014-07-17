@@ -216,8 +216,9 @@ DEFINE_FUNCTION( process ) {
 
 			if ( status != (size_t)(-1) )
 				break;
-
+			
 			// E2BIG will never happens
+			ASSERT( status != E2BIG );
 
 			// (TBD) manage EILSEQ like this ??? :
 			if ( errno == EILSEQ ) { // An invalid multibyte sequence has been encountered in the input.
@@ -402,12 +403,13 @@ int do_one( unsigned int namescount, const char * const * names, void* data ) {
 	JS::RootedValue value(ipv->cx);
 	while (namescount--) {
 
-		// (TBD) check errors
-		jl::setValue(ipv->cx, &value, names[namescount]); // iconv_canonicalize
-		JL_SetElement(ipv->cx, ipv->list, ipv->listLen, value);
+		// iconv_canonicalize
+		JL_CHK( jl::setElement( ipv->cx, ipv->list, ipv->listLen, names[namescount] ) );
 		ipv->listLen++;
 	}
 	return 0;
+bad:
+	return -1;
 }
 
 #ifndef JL_NOT_HAS_ICONVLIST
@@ -417,11 +419,11 @@ DEFINE_PROPERTY_GETTER( list ) {
 	JL_CHK( list );
 	vp.setObject(*list);
 	{
-	IteratorPrivate ipv(cx);
-	ipv.cx = cx;
-	ipv.list = list;
-	ipv.listLen = 0;
-	iconvlist(do_one, &ipv);
+		IteratorPrivate ipv(cx);
+		ipv.cx = cx;
+		ipv.list = list;
+		ipv.listLen = 0;
+		iconvlist(do_one, &ipv);
 	}
 	return jl::StoreProperty(cx, obj, id, vp, true); // create the list and store it once for all.
 	JL_BAD;

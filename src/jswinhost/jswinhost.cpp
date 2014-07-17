@@ -26,7 +26,7 @@
 
 static uint8_t embeddedBootstrapScript[] =
 	#include "embeddedBootstrapScript.js.xdr.cres"
-;
+	"";
 
 
 #ifdef DEBUG
@@ -34,44 +34,37 @@ static uint8_t embeddedBootstrapScript[] =
 	class hostIO : public jl::StdIO {
 public:
 		int
-		output( const char *buffer, size_t length ) {
+		output( jl::BufString &buf ) {
 			
-			char *tmp = (char*)jl_malloca( length + 1 );
-			jl::memcpy(tmp, buffer, length);
-			tmp[length] = '\0';
-			OutputDebugStringA(tmp);
-			jl_freea(tmp);
-			return length;
+			OutputDebugString( buf );
+			return buf.length();
 		}
 
 		int
-		error( const char *buffer, size_t length ) {
-		
-			char *tmp = (char*)jl_malloca( 8 + length + 1 );
-			jl::strcpy( tmp, "STDERR: " );
-			jl::memcpy( tmp + 8, buffer, length);
-			tmp[length+8] = '\0';
-			OutputDebugStringA(tmp);
-			jl_freea(tmp);
-			return length;
+		error( jl::BufString &buf ) {
+
+			OutputDebugString( TEXT( "STDERR: " ) );
+			OutputDebugString( buf );
+			return 8 + buf.length();
 		}
 	} hostIO;
 
 #else
 
-	jl::StdIO hostIO;
+jl::StdIO hostIO;
 
 #endif
 
 
 // to be used in the main() function only
-#define HOST_MAIN_ASSERT( condition, errorMessage )					\
-	JL_MACRO_BEGIN													\
-		if ( !(condition) ) {										\
-			hostIO.error(errorMessage, jl::strlen(errorMessage));   \
-			goto bad;												\
-		}															\
-	JL_MACRO_END													\
+#define HOST_MAIN_ASSERT( condition, errorMessage )	\
+	JL_MACRO_BEGIN									\
+		if ( !(condition) ) {						\
+			jl::BufString buf(errorMessage);		\
+			hostIO.error(buf);						\
+			goto bad;								\
+		}											\
+	JL_MACRO_END									\
 
 
 #ifdef USE_NEDMALLOC
@@ -138,68 +131,65 @@ int CALLBACK WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
 	{
 
-	jl::Host host(hostRuntime, hostIO);
-	JL_CHK( host.create() );
+		jl::Host host(hostRuntime, hostIO);
+		JL_CHK( host.create() );
 
-	TCHAR moduleName[PATH_MAX];
-	TCHAR tmp[PATH_MAX];
-	DWORD moduleNameLen = ::GetModuleFileName(hInstance, moduleName, COUNTOF(moduleName));
+		TCHAR moduleName[PATH_MAX];
+		TCHAR tmp[PATH_MAX];
 
-	HOST_MAIN_ASSERT( moduleNameLen > 0 && moduleNameLen < PATH_MAX && moduleName[moduleNameLen] == '\0', "Invalid module filename." );
+		DWORD moduleNameLen = ::GetModuleFileName(hInstance, moduleName, COUNTOF(moduleName));
 
-	// construct host.path and host.name properties
-	jl::memcpy( tmp, moduleName, TSIZE(moduleNameLen + 1) );
-	TCHAR *name = jl::strrchr( tmp, PATH_SEPARATOR );
-	JL_CHK( name );
-	name += 1;
-	JL_CHK( host.setHostName(name) );
-	*name = TEXT( '\0' );
-	JL_CHK( host.setHostPath(tmp) );
+		HOST_MAIN_ASSERT( moduleNameLen > 0 && moduleNameLen < PATH_MAX && moduleName[moduleNameLen] == '\0', "Invalid module filename." );
 
+		// construct host.path and host.name properties
+		jl::memcpy( tmp, moduleName, TSIZE(moduleNameLen + 1) );
+		TCHAR *name = jl::strrchr( tmp, TEXT( PATH_SEPARATOR ) );
+		JL_CHK( name );
+		name += 1;
+		JL_CHK( host.setHostName(name) );
+		*name = TEXT( '\0' );
+		JL_CHK( host.setHostPath(tmp) );
 
+		LPTSTR *szArglist;
+		int nArgs;
+		szArglist = jl::CommandLineToArgvW(::GetCommandLineW(), &nArgs);
+		host.setHostArguments(szArglist, nArgs);
+		::free(szArglist);
 
-	LPWSTR *szArglist;
-	int nArgs;
-	szArglist = ::CommandLineToArgvW(::GetCommandLineW(), &nArgs);
-	host.setHostArguments(szArglist, nArgs);
-	::LocalFree(szArglist);
+		{
 
-	{
+			JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
+			JS::RootedValue rval(cx);
 
-	JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
-	JS::RootedValue rval(cx);
+			// embedded bootstrap script
+			if ( sizeof(embeddedBootstrapScript)-1 > 0 ) {
 
-	// embedded bootstrap script
-	if ( sizeof(embeddedBootstrapScript)-1 > 0 ) {
+				JS::AutoSaveContextOptions asco(cx);
+				JS::ContextOptionsRef(cx).setDontReportUncaught(false);
 
-		JS::AutoSaveContextOptions asco(cx);
-		JS::ContextOptionsRef(cx).setDontReportUncaught(false);
+				JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL) ); // -1 because sizeof("") == 1
+				JL_CHK( script );
+				JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
+			}
 
-		JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL) ); // -1 because sizeof("") == 1
-		JL_CHK( script );
-		JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
-	}
+			// construct script name
+			jl::memcpy( tmp, moduleName, TSIZE(moduleNameLen + 1) );
+			TCHAR *dotPos = jl::strrchr( tmp, TEXT( '.' ) );
+			JL_CHK( dotPos );
+			jl::strcpy( dotPos + 1, TEXT( "js" ) );
 
+			bool executeStatus;
+			executeStatus = jl::executeScriptFileName( cx, globalObject, tmp, EncodingType::ENC_UNKNOWN, false, &rval );
 
-	// construct script name
-	jl::memcpy( tmp, moduleName, TSIZE(moduleNameLen + 1) );
-	TCHAR *dotPos = jl::strrchr( tmp, TEXT( '.' ) );
-	JL_CHK( dotPos );
-	jl::strcpy( dotPos + 1, TEXT( "js" ) );
+			if ( !executeStatus )
+				if ( JL_IsExceptionPending(cx) )
+					JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
 
-	bool executeStatus;
-	executeStatus = jl::executeScriptFileName(cx, globalObject, tmp, false, &rval);
+		}
 
-	if ( !executeStatus )
-		if ( JL_IsExceptionPending(cx) )
-			JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
-
-	}
-
-	host.destroy();
-	hostRuntime.destroy();
-	host.free(); // must be executed after runtime destroy
-
+		host.destroy();
+		hostRuntime.destroy();
+		host.free(); // must be executed after runtime destroy
 	}
 
 	return 0;

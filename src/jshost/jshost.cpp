@@ -148,43 +148,59 @@ class HostStdIO : public jl::StdIO {
 	int stdin_fileno;
 	int stdout_fileno;
 	int stderr_fileno;
+
+	int stderr_initMode;
 public:
 
 	HostStdIO()
 	: stdin_fileno(-1), stdout_fileno(-1), stderr_fileno(-1) {
 	}
 
+	~HostStdIO() {
+
+		if ( stderr_fileno != -1 )
+			_setmode( stderr_fileno, stderr_initMode );
+	}
+
 	int
-	input( char *buffer, size_t bufferLength ) {
+	input( jl::BufString &buf ) {
 
 		if (unlikely( stdin_fileno == -1 ))
 			stdin_fileno = fileno(stdin);
-		return read( stdin_fileno, (void*)buffer, bufferLength );
+
+		buf.alloc( 4096 );
+		int res = read( stdin_fileno, buf.dataAs<uint8_t*>(), buf.allocSize() );
+		if ( res < 0 )
+			return -1;
+		buf.setUsed(res);
+		buf.maybeCrop();
+
+		buf.setCharSize( 1 );
+		buf.setNt( false );
+
+		return res;
 	}
 
 	int
-	output( const char *buffer, size_t length ) {
+	output( jl::BufString &buf ) {
 		
 		if (unlikely( stdout_fileno == -1 )) {
 			stdout_fileno = fileno(stdout);
-
-//			SetConsoleOutputCP( CP_UTF8 );
-//			CP_UTF8
-//			_setmode( stdout_fileno, _O_U8TEXT );
-//			_setmode( stdout_fileno, _O_U16TEXT );
 		}
-		return write(stdout_fileno, buffer, length);
+		return write( stdout_fileno, buf.toData<const uint8_t*>(), buf.length() );
 	}
 
 	int
-	error( const char *buffer, size_t length ) {
+	error( jl::BufString &buf ) {
 		
 		if (unlikely(stderr_fileno == -1)) {
 
 			stderr_fileno = fileno(stderr);
-//			_setmode(stderr_fileno, _O_U16TEXT);
+			stderr_initMode = _setmode( stderr_fileno, _O_TEXT );
 		}
-		return write(stderr_fileno, buffer, length);
+		//int res = write( stderr_fileno, buf.toData<const uint8_t*>(), buf.length() );
+		int prevMode = _setmode( stderr_fileno, buf.wide() ? _O_U16TEXT : _O_TEXT );
+		return write( stderr_fileno, buf.dataAs<const void*>(), buf.used() );
 	}
 };
 

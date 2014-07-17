@@ -5,8 +5,12 @@ var loadModule = host.loadModule;
 loadModule('jsstd');
 loadModule('jswinshell');
 
-
+Console.write('été');
 createProcess(expandEnvironmentStrings('%SystemRoot%\\System32\\calc.exe'));
+
+throw 0; //////////////////////////////////////////////////////////////////////
+
+
 
 throw 0; //////////////////////////////////////////////////////////////////////
 

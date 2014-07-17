@@ -110,19 +110,19 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const TCHAR *fileName, jl::En
 	bool hasCompFile = useCompFile && jl::stat( compiledFileName, &compFileStat ) != -1; // if not using compiled file, this is useless to compile it
 	bool compFileUpToDate = ( hasCompFile && !hasSrcFile ) || ( hasCompFile && hasSrcFile && (compFileStat.st_mtime > srcFileStat.st_mtime) ); // true if comp file is up to date or alone
 
-	JL_CHKM( hasSrcFile || hasCompFile, E_SCRIPT, E_NAME( fileName ), E_OR, E_NAME( compiledFileName ), E_NOTFOUND );
+	JL_CHKM( hasSrcFile || hasCompFile, E_SCRIPT, E_NAME16( fileName ), E_OR, E_NAME16( compiledFileName ), E_NOTFOUND );
 
 	if ( useCompFile && compFileUpToDate ) {
 
 		int file = jl::open(compiledFileName, O_RDONLY | O_BINARY | O_SEQUENTIAL);
-		JL_CHKM( file != -1, E_FILE, E_NAME(compiledFileName), E_ACCESS ); // "Unable to open file \"%s\" for reading.", compiledFileName
+		JL_CHKM( file != -1, E_FILE, E_NAME16(compiledFileName), E_ACCESS ); // "Unable to open file \"%s\" for reading.", compiledFileName
 		size_t compFileSize;
 		compFileSize = compFileStat.st_size; // filelength(file); ?
 		data = jl_malloca(compFileSize);
 		JL_ASSERT_ALLOC( data );
 		// jl::isInBounds<unsigned int>(
 		int readCount = read(file, data, compFileSize); // here we can use "Memory-Mapped I/O Functions" ( http://developer.mozilla.org/en/docs/NSPR_API_Reference:I/O_Functions#Memory-Mapped_I.2FO_Functions )
-		JL_CHKM( readCount >= 0 && (size_t)readCount == compFileSize, E_FILE, E_NAME(compiledFileName), E_READ ); // "Unable to read the file \"%s\" ", compiledFileName
+		JL_CHKM( readCount >= 0 && (size_t)readCount == compFileSize, E_FILE, E_NAME16(compiledFileName), E_READ ); // "Unable to read the file \"%s\" ", compiledFileName
 		close( file );
 
 		script.set( JS_DecodeScript( cx, data, readCount, NULL ) );
@@ -142,7 +142,7 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const TCHAR *fileName, jl::En
 	int scriptFile;
 	scriptFile = jl::open( fileName, O_RDONLY | O_BINARY | O_SEQUENTIAL );
 
-	JL_CHKM( scriptFile >= 0, E_FILE, E_NAME(fileName), E_ACCESS ); // "Unable to open file \"%s\" for reading.", fileName
+	JL_CHKM( scriptFile >= 0, E_FILE, E_NAME16(fileName), E_ACCESS ); // "Unable to open file \"%s\" for reading.", fileName
 
 	scriptBufferSize = lseek(scriptFile, 0, SEEK_END);
 	ASSERT( scriptBufferSize <= UINT_MAX ); // Compiled file too big.
@@ -155,13 +155,15 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const TCHAR *fileName, jl::En
 	close(scriptFile);
 
 	//JL_CHKM( res >= 0, "Unable to read file \"%s\".", fileName );
-	JL_CHKM( res >= 0, E_FILE, E_NAME(fileName), E_READ );
+	JL_CHKM( res >= 0, E_FILE, E_NAME16(fileName), E_READ );
 
 	ASSERT( (size_t)res == scriptBufferSize );
 	scriptBufferSize = (size_t)res;
 
 	{
-		jl::BufString fnUTF8 = UTF16LEToUTF8(jl::BufString(fileName));
+		jl::BufString fnUTF8;
+		jl::BufString fn( fileName );
+		JL_CHKM( UTF16LEToUTF8( fnUTF8, fn ), E_ENCODING, E_INVALID );
 		compileOptions.setFileAndLine(fnUTF8, 1);
 		script.set( compileScript( cx, obj, scriptBuffer, scriptBufferSize, encoding, compileOptions ) );
 		JL_CHK( script );

@@ -188,15 +188,14 @@ DEFINE_FUNCTION( createProcess ) {
 	ZeroMemory(&si, sizeof(STARTUPINFO));
 	si.cb = sizeof(STARTUPINFO);
 
-	
-	// doc. commandLine parameter: The Unicode version of CreateProcess function, CreateProcessW, can modify the contents of this string !
-
 	PROCESS_INFORMATION pi;
 
+	// doc. commandLine parameter: The Unicode version of CreateProcess function, CreateProcessW, may modify the contents of this string !
 	TCHAR *tmpCommandLine = commandLine.toStringZOrNull<TCHAR*>(); // The Unicode version, CreateProcessW, can modify the contents of this string.
-	
+	DWORD creationFlags = sizeof( TCHAR ) == sizeof( WCHAR ) ? CREATE_UNICODE_ENVIRONMENT : 0;
+
 	// doc: http://msdn2.microsoft.com/en-us/library/ms682425.aspx
-	BOOL st = ::CreateProcess( applicationName, tmpCommandLine, NULL, NULL, FALSE, (sizeof( TCHAR ) == 2 ? CREATE_UNICODE_ENVIRONMENT : 0), (LPVOID)environment.toStringZOrNull<const TCHAR*>(), currentDirectory, &si, &pi );
+	BOOL st = ::CreateProcess( applicationName, tmpCommandLine, NULL, NULL, FALSE, creationFlags, (LPVOID)environment.toStringZOrNull<const TCHAR*>(), currentDirectory, &si, &pi );
 	jl_free( tmpCommandLine );
 
 	if ( st == FALSE )

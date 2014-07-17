@@ -913,78 +913,78 @@ ALWAYS_INLINE bool isTypeFloat32(float) { return true; }
 template<typename Source>
 struct SignificandStringValue {
 	
-	static const TCHAR * min() {
+	static const char * min() {
 	
-		static TCHAR buffer[(::std::numeric_limits<Source>::is_signed ? ::std::numeric_limits<Source>::digits10 + 1 : 0) + 2];
-		static TCHAR* str = jl::itoa10( ::std::numeric_limits<Source>::min(), buffer );
+		static char buffer[(::std::numeric_limits<Source>::is_signed ? ::std::numeric_limits<Source>::digits10 + 1 : 0) + 2];
+		static char* str = jl::itoa10( ::std::numeric_limits<Source>::min(), buffer );
 		return str;
 	}
 
-	static const TCHAR * max() {
+	static const char * max() {
 	
-		static TCHAR buffer[::std::numeric_limits<Source>::digits10 + 2];
-		static TCHAR* str = jl::itoa10( ::std::numeric_limits<Source>::max(), buffer );
+		static char buffer[::std::numeric_limits<Source>::digits10 + 2];
+		static char* str = jl::itoa10( ::std::numeric_limits<Source>::max(), buffer );
 		return str;
 	}
 };
 
 template<>
 struct SignificandStringValue<int32_t> {
-	static const TCHAR * min() {
-		return TEXT( "-2^31" );
+	static const char * min() {
+		return ( "-2^31" );
 	}
-	static const TCHAR * max() {
-		return TEXT( "2^31-1" );
+	static const char * max() {
+		return ( "2^31-1" );
 	}
 };
 
 template<>
 struct SignificandStringValue<uint32_t> {
-	static const TCHAR * min() {
-		return TEXT( "0" );
+	static const char * min() {
+		return ( "0" );
 	}
-	static const TCHAR * max() {
-		return TEXT( "2^32" );
+	static const char * max() {
+		return ( "2^32" );
 	}
 };
 
 template<>
 struct SignificandStringValue<int64_t> {
-	static const TCHAR * min() {
-		return TEXT( "2^63" );
+	static const char * min() {
+		return ( "2^63" );
 	}
-	static const TCHAR * max() {
-		return TEXT( "2^63-1" );
+	static const char * max() {
+		return ( "2^63-1" );
 	}
 };
 
 template<>
 struct SignificandStringValue<uint64_t> {
-	static const TCHAR * min() {
-		return TEXT( "0" );
+	static const char * min() {
+		return ( "0" );
 	}
-	static const TCHAR * max() {
-		return TEXT( "2^64" );
+	static const char * max() {
+		return ( "2^64" );
 	}
 };
 
 template<>
 struct SignificandStringValue<float> {
-	static const TCHAR * min() {
-		return TEXT( "-2^24" );
+	static const char * min() {
+		return ( "-2^24" );
 	}
-	static const TCHAR * max() {
-		return TEXT( "2^24" );
+	static const char * max() {
+		return ( "2^24" );
 	}
 };
 
 template<>
 struct SignificandStringValue<double> {
-	static const TCHAR * min() {
-		return TEXT( "-2^53" );
+	static const char * min() {
+		return ( "-2^53" );
 	}
-	static const TCHAR * max() {
-		return TEXT( "2^53" );
+	static const char * max() {
+		return ( "2^53" );
 	}
 };
 
@@ -1535,6 +1535,94 @@ GetModuleFileName(TCHAR *hostFullPath) {
 }
 
 
+#if defined(WIN)
+
+// from: http://alter.org.ua/en/docs/win/args/
+
+ALWAYS_INLINE
+PWCHAR*
+CommandLineToArgvW( PWCHAR CmdLine, int* _argc ) {
+
+	PWCHAR* argv;
+	PWCHAR  _argv;
+	ULONG   len;
+	ULONG   argc;
+	WCHAR   a;
+	ULONG   i, j;
+
+	BOOLEAN  in_QM;
+	BOOLEAN  in_TEXT;
+	BOOLEAN  in_SPACE;
+
+	len = wcslen( CmdLine );
+	i = ((len + 2) / 2)*sizeof( PVOID ) + sizeof( PVOID );
+
+	//argv = (PWCHAR*)GlobalAlloc( GMEM_FIXED, i + (len + 2)*sizeof( WCHAR ) );
+	argv = (PWCHAR*)::malloc( i + (len + 2)*sizeof( WCHAR ) );
+
+	_argv = (PWCHAR)(((PUCHAR)argv) + i);
+
+	argc = 0;
+	argv[argc] = _argv;
+	in_QM = FALSE;
+	in_TEXT = FALSE;
+	in_SPACE = TRUE;
+	i = 0;
+	j = 0;
+
+	while ( (a = CmdLine[i]) != 0 ) {
+		if ( in_QM ) {
+			if ( a == '\"' ) {
+				in_QM = FALSE;
+			} else {
+				_argv[j] = a;
+				j++;
+			}
+		} else {
+			switch ( a ) {
+			case '\"':
+				in_QM = TRUE;
+				in_TEXT = TRUE;
+				if ( in_SPACE ) {
+					argv[argc] = _argv + j;
+					argc++;
+				}
+				in_SPACE = FALSE;
+				break;
+			case ' ':
+			case '\t':
+			case '\n':
+			case '\r':
+				if ( in_TEXT ) {
+					_argv[j] = '\0';
+					j++;
+				}
+				in_TEXT = FALSE;
+				in_SPACE = TRUE;
+				break;
+			default:
+				in_TEXT = TRUE;
+				if ( in_SPACE ) {
+					argv[argc] = _argv + j;
+					argc++;
+				}
+				_argv[j] = a;
+				j++;
+				in_SPACE = FALSE;
+				break;
+			}
+		}
+		i++;
+	}
+	_argv[j] = '\0';
+	argv[argc] = NULL;
+
+	(*_argc) = argc;
+	return argv;
+}
+
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////
 // Platform tools
 
@@ -1638,13 +1726,15 @@ Network64ToHost64( void *pval ) {
 ALWAYS_INLINE void FASTCALL
 strncpy(char *dst, const char *src, size_t nelem) {
 
-    jl::memcpy(dst, src, nelem * sizeof(char));
+    //jl::memcpy(dst, src, nelem * sizeof(char));
+	::strncpy( dst, src, nelem );
 }
 
 ALWAYS_INLINE void FASTCALL
 strncpy(wchar_t *dst, const wchar_t *src, size_t nelem) {
 
-    jl::memcpy(dst, src, nelem * sizeof(wchar_t)); // wcsncpy ?
+    //jl::memcpy(dst, src, nelem * sizeof(wchar_t)); // wcsncpy ?
+	::wcsncpy( dst, src, nelem );
 }
 
 ////

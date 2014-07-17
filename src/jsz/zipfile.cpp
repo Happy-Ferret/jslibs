@@ -104,6 +104,7 @@ bool PrepareReadCurrentFile( JSContext *cx, JS::HandleObject obj ) {
 		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTPASSWORD, &tmp) );
 		if ( !tmp.isUndefined() )
 			JL_CHK( jl::getValue(cx, tmp, &password) );
+
 		if ( !password )
 			return ThrowZipFileError(cx, JLERR_PASSWORDREQUIRED);
 		UNZ_CHK( unzOpenCurrentFilePassword(pv->uf, password) );

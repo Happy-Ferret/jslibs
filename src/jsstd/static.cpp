@@ -256,44 +256,6 @@ DEFINE_FUNCTION( switchCase ) {
 }
 */
 
-/**doc
-$TOC_MEMBER $INAME
- $VAL $INAME( value, caseArray, resultArray [, defaultResult] )
-**/
-DEFINE_FUNCTION( switchCase ) {
-
-	JL_DEFINE_ARGS;
-	JL_ASSERT_ARGC_RANGE( 3, 4 );
-	JL_ASSERT_ARG_IS_ARRAY(2);
-	JL_ASSERT_ARG_IS_ARRAY(3);
-
-	{
-
-	JS::RootedObject caseArray(cx, &JL_ARG(2).toObject());
-	unsigned caseArrayLength;
-	JL_CHK( JS_GetArrayLength(cx, caseArray, &caseArrayLength) );
-
-	unsigned i;
-	for ( i = 0; i < caseArrayLength; ++i ) {
-	
-		JL_CHK( JL_GetElement(cx, caseArray, i, JL_RVAL) );
-		
-		bool same;
-		JL_CHK( JS_SameValue(cx, JL_ARG(1), JL_RVAL, &same) );
-		if ( same ) {
-			JS::RootedObject resultArrayObj(cx, &JL_ARG(3).toObject());
-			return JL_GetElement(cx, resultArrayObj, i, JL_RVAL);
-		}
-	}
-
-	JL_RVAL.set( argc >= 4 ? JL_ARG(4) : JSVAL_VOID);
-	
-	}
-
-	return true;
-	JL_BAD;
-}
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
@@ -374,6 +336,7 @@ DEFINE_FUNCTION( countProperties ) {
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
+/*
 	{
 	JS::RootedObject argObj(cx, &JL_ARG(1).toObject());
 	JSIdArray *arr;
@@ -381,6 +344,9 @@ DEFINE_FUNCTION( countProperties ) {
 	JL_RVAL.setInt32(JS_IdArrayLength(cx, arr));
 	JS_DestroyIdArray(cx, arr);
 	}
+*/
+
+	JL_RVAL.setInt32( js::GetObjectSlotSpan( &JL_ARG( 1 ).toObject() ) );
 
 	return true;
 	JL_BAD;
@@ -410,28 +376,35 @@ DEFINE_FUNCTION( clearObject ) {
 	JL_DEFINE_ARGS;
 
 	JL_ASSERT_ARGC(1);
-	JL_ASSERT_ARG_IS_OBJECT(1);
-	
-	{
-	
-	JS::RootedObject argObj(cx, &JL_ARG(1).toObject());
-	JS::RootedId id(cx);
+	JL_ASSERT_ARG_IS_OBJECT( 1 );
 
-	JSIdArray *list;
-	list = JS_Enumerate(cx, argObj); // JS_NewPropertyIterator, JS_NextProperty ?
-	JL_CHK(list);
+	/*
+		{
 
-    bool junk;
-	for ( int i = 0; i < JS_IdArrayLength(cx, list); ++i ) {
+		JS::RootedObject argObj(cx, &JL_ARG(1).toObject());
+		JS::RootedId id(cx);
+
+		JSIdArray *list;
+		list = JS_Enumerate(cx, argObj); // JS_NewPropertyIterator, JS_NextProperty ?
+		JL_CHK(list);
+
+		bool junk;
+		for ( int i = 0; i < JS_IdArrayLength(cx, list); ++i ) {
 
 		id.set(JS_IdArrayGet(cx, list, i));
 		JL_CHK( JS_DeletePropertyById2(cx, argObj, id, &junk) );
-	}
+		}
 
-	JS_DestroyIdArray(cx, list);
+		JS_DestroyIdArray(cx, list);
 
-	JL_RVAL.setUndefined();
-	
+		JL_RVAL.setUndefined();
+
+		}
+		*/
+	{
+		JS::RootedObject argObj( cx, &JL_ARG( 1 ).toObject() );
+		JS_ClearNonGlobalObject( cx, argObj );
+		JL_RVAL.setUndefined();
 	}
 
 	return true;
@@ -1934,7 +1907,6 @@ CONFIGURE_STATIC
 
 	BEGIN_STATIC_FUNCTION_SPEC
 //		FUNCTION_ARGC( expand, 2 )
-		FUNCTION_ARGC( switchCase, 4 )
 		FUNCTION_ARGC( internString, 1 )
 		FUNCTION_ARGC( deepFreezeObject, 1 )
 		FUNCTION_ARGC( countProperties, 1 )

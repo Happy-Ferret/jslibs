@@ -1,6 +1,6 @@
 var loadModule = host.loadModule;
 
-loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsiconv'); throw 0; // -inlineOnly
+//loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsiconv'); throw 0; // -inlineOnly
 //loadModule('jsstd'); exec('../common/tools.js');
 //var QA = FakeQAApi;
 //runLocalQAFile();
@@ -9,6 +9,11 @@ loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsiconv'); throw 0;
 
 loadModule('jsstd'); 
 loadModule('jsiconv'); 
+
+print(Iconv.list)
+
+throw 0;
+
 
 	var conv = new Iconv('UTF-8', 'ISO-8859-1', true, false); // source is not wide, dest is wide
 	var res = conv.process('été');

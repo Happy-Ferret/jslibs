@@ -498,6 +498,13 @@ protoOfInheritFrom( JSContext *cx, JS::HandleObject obj, const JSClass *clasp ) 
 
 
 ALWAYS_INLINE JSObject* FASTCALL
+newObject(JSContext *cx) {
+
+	return JS_NewObject(cx, nullptr, JS::NullPtr(), JS::NullPtr());
+}
+
+
+ALWAYS_INLINE JSObject* FASTCALL
 newObjectWithGivenProto( JSContext *cx, const JSClass *clasp, IN JS::HandleObject proto, IN JS::HandleObject parent = JS::NullPtr() ) {
 
 	ASSERT_IF( proto != NULL, JL_GetParent(cx, proto) != NULL );
@@ -616,7 +623,7 @@ throwOSErrorCode( JSContext *cx, JLSystemErrorCode errorCode, const TCHAR *modul
 
 	TCHAR errMsg[1024];
 	JLSysetmErrorMessage(errMsg, COUNTOF(errMsg), errorCode, moduleName);
-	JL_ERR( E_OS, E_DETAILS, E_STR(errMsg) );
+	JL_ERR( E_OS, E_DETAILS, E_STR16(errMsg) );
 	JL_BAD;
 }
 
@@ -626,7 +633,7 @@ throwOSError( JSContext *cx ) {
 
 	TCHAR errMsg[1024];
 	JLLastSysetmErrorMessage(errMsg, COUNTOF(errMsg));
-	JL_ERR( E_OS, E_DETAILS, E_STR(errMsg) );
+	JL_ERR( E_OS, E_DETAILS, E_STR16(errMsg) );
 	JL_BAD;
 }
 

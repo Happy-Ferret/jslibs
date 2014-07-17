@@ -46,26 +46,28 @@
 
 enum E_TXTID {
 
-		E__INVALID,
-	#define JL_NEW_ERR
-	#define DEF( NAME, TEXT, EXN ) \
-		E_##NAME,
-	#include "jlerrors.msg"
-	#undef DEF
-	#undef JL_NEW_ERR
-		E__LIMIT,
+	E__INVALID,
+#define JL_NEW_ERR
+#define DEF( NAME, TEXT, EXN ) \
+	E_##NAME,
+#include "jlerrors.msg"
+#undef DEF
+#undef JL_NEW_ERR
+	E__LIMIT,
 };
 
 
 // simple helpers
 #define E_ERRNO( num )                E_ERRNO_1, num
-#define E_STR( str )                  E_STR_1, str
-#define E_NAME( str )                 E_NAME_1, str
+#define E_STR( str )                  E_STR_1, (static_cast<const char*>(str))
+#define E_STR16( str16 )              E_STR16_1, (static_cast<const jschar*>(str16))
+#define E_NAME( str )                 E_NAME_1, (static_cast<const char*>(str))
+#define E_NAME16( str16 )             E_NAME16_1, (static_cast<const jschar*>(str16))
 #define E_NUM( num )                  E_NUM_1, num
-#define E_COMMENT( str )              E_COMMENT_1, str
-#define E_COMMENT2( str1, str2 )      E_COMMENT_2, str1, str2
+#define E_COMMENT( str )              E_COMMENT_1, (static_cast<const char*>(str))
+#define E_COMMENT2( str1, str2 )      E_COMMENT_2, (static_cast<const char*>(str1)), (static_cast<const char*>(str2))
 #define E_INTERVAL_NUM( vMin, vMax )  E_INTERVAL_NUM_2, vMin, vMax
-#define E_INTERVAL_STR( sMin, sMax )  E_INTERVAL_STR_2, sMin, sMax
+#define E_INTERVAL_STR( sMin, sMax )  E_INTERVAL_STR_2, (static_cast<const char*>(sMin)), (static_cast<const char*>(sMax))
 #define E_TY_NARRAY( num )            E_TY_NARRAY_1, num
 #define E_TY_NVECTOR( num )           E_TY_NVECTOR_1, num
 

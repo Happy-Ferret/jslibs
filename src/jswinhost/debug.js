@@ -1,28 +1,31 @@
 var loadModule = host.loadModule;
 
+sdfgé()
+
+	host.stderr('été\n');
+throw 0;
+
+
 loadModule('jswinshell');
 var s = new Systray();
 s.icon = new Icon( 0 );
 
 s.onmouseup = function(button) {
 
-	this.popupMenu(['Quit']);
+	this.popupMenu(['Quité']);
 }
 
 s.oncommand = function(name) {
 
-	if ( name == 'Quit' )
+	if ( name == 'Quité' )
 		throw 0;
 }
-
 
 var ev = s.events();
 for (;;) {
 
 	processEvents(ev);
 }
-
-
 
 throw 0;
 

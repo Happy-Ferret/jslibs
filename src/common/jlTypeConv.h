@@ -327,12 +327,14 @@ setValue(JSContext *cx, JS::MutableHandleValue rval, const CStrSpec &s) {
 	if ( s.str() != NULL ) {
 
 		JS::RootedString str(cx, JS_NewStringCopyN(cx, s.str(), s.len())); // !length is checked
+		JL_CHK(str);
 		rval.setString(str);
 	} else {
 
 		rval.setUndefined();
 	}
 	return true;
+	JL_BAD;
 }
 
 ALWAYS_INLINE bool FASTCALL
@@ -341,12 +343,14 @@ setValue(JSContext *cx, JS::MutableHandleValue rval, const WCStrSpec &s) {
 	if ( s.str() != NULL ) {
 
 		JS::RootedString str(cx, JS_NewUCStringCopyN(cx, s.str(), s.len()));
+		JL_CHK(str);
 		rval.setString(str);
 	} else {
 
 		rval.setUndefined();
 	}
 	return true;
+	JL_BAD;
 }
 
 
@@ -603,11 +607,9 @@ template <class T>
 ALWAYS_INLINE bool FASTCALL
 pushElement( JSContext *cx, JS::HandleObject objArg, const T &v ) {
 
-	JS::RootedValue value(cx);
 	uint32_t length;
 	JL_CHK( JS_GetArrayLength(cx, objArg, &length) );
-	JL_CHK( setValue(cx, &value, v) );
-	return JS_SetElement(cx, objArg, length, value);
+	JL_CHK( jl::setElement( cx, objArg, length, v ) );
 	JL_BAD;
 }
 

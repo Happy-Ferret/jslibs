@@ -42,7 +42,7 @@ DEFINE_FUNCTION( open ) {
 	if ( status == FALSE )
 		return WinThrowError(cx, GetLastError());
 	::SetConsoleTitle(TEXT(""));
-	//::SetConsoleCP(65001)  // 65001 = UTF-8
+	//::SetConsoleOutputCP( CP_UTF8 );
 	return true;
 	JL_BAD;
 }

@@ -487,11 +487,21 @@ HostRuntime::setJSEngineAllocators(Allocators allocators) {
 void
 HostRuntime::errorReporterBasic( JSContext *cx, const char *message, JSErrorReport *report ) {
 
-	JL_IGNORE( cx );
-	if ( !report )
-		fprintf(stderr, "%s\n", message);
-	else
-		fprintf(stderr, "%s (%s:%d)\n", message, report->filename ? report->filename : "<no filename>", (unsigned int)report->lineno);
+	jl::SimpleBufferBuffer<wchar_t, 256> buf;
+
+	buf.cat( message );
+	if ( report ) {
+
+		buf.cat( L(" (") );
+		buf.cat( report->filename ? report->filename : "<no filename>" );
+		buf.cat( L(":") );
+		buf.cat( report->lineno, 10 );
+		buf.cat( L(")") );
+	}
+	buf.cat( L("\n") );
+
+	jl::BufString tmpErrTxt( buf.toString(), buf.length() );
+	Host::getHost( cx ).stdIO().error( tmpErrTxt );
 }
 
 
@@ -499,7 +509,7 @@ HostRuntime::HostRuntime( Allocators allocators, uint32_t maybeGCIntervalMs )
 : _allocators(allocators), rt(nullptr), cx(nullptr), _isEnding(false), _skipCleanup(false), _watchDog(*MOZ_THIS_IN_INITIALIZER_LIST(), maybeGCIntervalMs) {
 }
 
- 
+
 bool
 HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota, bool lazyStandardClasses ) {
 
@@ -529,7 +539,7 @@ HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota
 	// Info: Increasing JSContext stack size slows down my scripts:
 	//   http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 
-	JS_SetErrorReporter(cx, errorReporterBasic);
+	JS_SetErrorReporter( cx, HostRuntime::errorReporterBasic );
 	JS::RuntimeOptionsRef(cx)
 		.setIon(true)
 		.setAsmJS(true)
@@ -708,7 +718,7 @@ ModuleManager::loadModule(const char *libFileName, JS::HandleObject obj, JS::Mut
 		JL_CHK( !JL_IsExceptionPending(cx) );
 		TCHAR filename[PATH_MAX];
 		JLDynamicLibraryName((void*)moduleInit, filename, COUNTOF(filename));
-		JL_ERR( E_MODULE, E_NAME(filename), E_INIT );
+		JL_ERR( E_MODULE, E_NAME16(filename), E_INIT );
 	}
 	
 	//JL_CHK( JL_NewNumberValue(cx, uid, JL_RVAL) ); // really needed ? yes, UnloadModule will need this ID, ... but UnloadModule is too complicated to implement and will never exist.
@@ -740,7 +750,7 @@ ModuleManager::releaseModules() {
 
 					TCHAR filename[PATH_MAX];
 					JLDynamicLibraryName((void*)moduleRelease, filename, COUNTOF(filename));
-					JL_WARN( E_MODULE, E_NAME(filename), E_FIN ); // "Fail to release module \"%s\".", filename
+					JL_WARN( E_MODULE, E_NAME16(filename), E_FIN ); // "Fail to release module \"%s\".", filename
 				}
 			}
 		}
@@ -785,6 +795,22 @@ ModuleManager::freeModules(bool skipCleanup) {
 // host
 
 
+struct E_msg_t {
+	JSExnType exn;
+	const wchar_t *txt;
+};
+
+static E_msg_t E_msgInternal[] = {
+		{ JSEXN_NONE, 0 },
+#define DEF( NAME, TXT, EXN ) \
+			{ EXN, L(TXT) },
+#include "jlerrors.msg"
+#undef DEF
+};
+
+static E_msg_t *E_msg = E_msgInternal;
+
+
 BEGIN_CLASS( host )
 
 /**doc
@@ -813,6 +839,42 @@ DEFINE_PROPERTY_GETTER( jsVersion ) {
 	JL_BAD;
 }
 
+/**doc
+$TOC_MEMBER $INAME
+$BOOL $INAME $READONLY
+**/
+DEFINE_PROPERTY_GETTER(errorMessages) {
+
+	JL_DEFINE_PROP_ARGS;
+
+	JS::RootedObject errors(cx, jl::newArray(cx));
+	JS::RootedObject item(cx);
+	JL_ASSERT_ALLOC(errors);
+
+
+	for (size_t i = E__INVALID + 1; i < E__LIMIT; ++i) {
+
+		item.set(jl::newObject(cx));
+		JL_CHK(jl::setProperty(cx, item, "txt", E_msg[i].txt));
+		JL_CHK(jl::setProperty(cx, item, "type", E_msg[i].exn));
+		JL_CHK(jl::setElement(cx, errors, i-1, item));
+	}
+
+	JL_RVAL.setObject(*errors);
+	return true;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+$BOOL $INAME $READONLY
+**/
+DEFINE_PROPERTY_SETTER(errorMessages) {
+
+	JL_IGNORE(id, obj);
+	return true;
+	JL_BAD;
+}
 
 /* *doc
 $TOC_MEMBER $INAME
@@ -852,9 +914,9 @@ DEFINE_FUNCTION( stdout ) {
 	Host &host = Host::getHost( cx );
 	for ( unsigned i = 0; i < argc; ++i ) {
 
-		JL_CHK( jl::getValue(cx, JL_ARGV[i], &str) );
-		int status = host.stdIO().output( str.toData<const char*>(), str.length() );
-		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdout"), E_WRITE );
+		JL_CHK( jl::getValue( cx, JL_ARGV[i], &str ) );
+		int status = host.stdIO().output( str );
+		JL_ASSERT_WARN( status >= 0, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdout"), E_WRITE );
 	}
 	return true;
 	JL_BAD;
@@ -874,8 +936,8 @@ DEFINE_FUNCTION( stderr ) {
 	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( jl::getValue( cx, JL_ARGV[i], &str ) );
-		int status = host.stdIO().error( str.toData<const char *>(), str.length() );
-		JL_ASSERT_WARN( status != -1, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stderr"), E_WRITE );
+		int status = host.stdIO().error( str );
+		JL_ASSERT_WARN( status >= 0, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stderr"), E_WRITE );
 	}
 	return true;
 	JL_BAD;
@@ -903,6 +965,7 @@ DEFINE_FUNCTION( stdin ) {
 	}
 */
 
+/*
 	jl::ChunkedBuffer<char> buf;
 	int status;
 	do {
@@ -916,8 +979,14 @@ DEFINE_FUNCTION( stdin ) {
 
 	if ( status < 0 )
 		JL_WARN( E_HOST, E_INTERNAL, E_SEP, E_COMMENT( "stdin" ), E_READ );
-
 	JL_CHK( BlobCreate( cx, buf.GetDataOwnership(), buf.Length(), JL_RVAL ) );
+*/
+
+	jl::BufString buf;
+	int status = host.stdIO().input( buf );
+	JL_ASSERT_WARN( status >= 0, E_HOST, E_INTERNAL, E_SEP, E_COMMENT( "stdin" ), E_READ );
+	JL_CHK( BlobCreate( cx, buf, JL_RVAL ) );
+
 	return true;
 	JL_BAD;
 }
@@ -982,8 +1051,9 @@ CONFIGURE_CLASS
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_GETTER( unsafeMode )
-		PROPERTY_GETTER( jsVersion )
-//		PROPERTY( incrementalGarbageCollector )
+		PROPERTY_GETTER(jsVersion)
+		PROPERTY_GETTER(errorMessages)
+		//		PROPERTY( incrementalGarbageCollector )
 	END_STATIC_PROPERTY_SPEC
 
 END_CLASS
@@ -993,19 +1063,8 @@ END_CLASS
 //////////////////////////////////////////////////////////////////////////////
 // Host
 
-struct {
-	JSExnType exn;
-	const char *msg;
-} static E_msg[] = {
-		{ JSEXN_NONE, 0 },
-	#define DEF( NAME, TEXT, EXN ) \
-		{ EXN, TEXT },
-	#include "jlerrors.msg"
-	#undef DEF
-};
 
-
-
+// JSErrorCallback
 const JSErrorFormatString *
 Host::errorCallback(void *userRef, const char *, const unsigned) {
 
@@ -1013,23 +1072,12 @@ Host::errorCallback(void *userRef, const char *, const unsigned) {
 }
 
 void
-Host::errorReporterBasic(JSContext *cx, const char *message, JSErrorReport *report) {
-
-	JL_IGNORE( cx );
-	if ( !report )
-		fprintf(stderr, "%s\n", message);
-	else
-		fprintf(stderr, "%s (%s:%d)\n", message, report->filename ? report->filename : "<no filename>", (unsigned int)report->lineno);
-}
-
-
-void
 Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
 	// trap JSMSG_OUT_OF_MEMORY error to avoid calling ErrorReporter_stdErrRouter() that may allocate memory that will lead to nested call.
 	if (unlikely( report && report->errorNumber == JSMSG_OUT_OF_MEMORY )) {
 		
-		HostRuntime::errorReporterBasic(cx, message, report);
+		HostRuntime::errorReporterBasic( cx, message, report );
 		return;
 	}
 
@@ -1172,7 +1220,7 @@ Host::hostStderrWrite(const TCHAR *message, size_t length) {
 	AutoExceptionState autoEx(cx);
 
 	// avoid reentrancy if stderr function rise an error.
-	AutoErrorReporter autoErrorReporter(cx, JL_IS_SAFE ? errorReporterBasic : nullptr);
+	AutoErrorReporter autoErrorReporter( cx, JL_IS_SAFE ? HostRuntime::errorReporterBasic : nullptr );
 		
 	JS::RootedValue rval(cx);
 	JS::RootedValue fct(cx);
@@ -1183,8 +1231,8 @@ Host::hostStderrWrite(const TCHAR *message, size_t length) {
 	JL_CHK( jl::getProperty(cx, hostObj, JLID(cx, stderr), &fct) );
 	JL_CHK( jl::isCallable(cx, fct) );
 	JL_CHK( jl::call(cx, globalObject, fct, &rval, jl::strSpec(message, length)) ); // beware out of memory case !
-
 	return true;
+
 bad:
 	autoEx.drop();
 	return false;
@@ -1287,20 +1335,22 @@ Host::free(bool skipCleanup) {
 	}
 }
 
+
+
 bool
 Host::report( bool isWarning, ... ) const {
 
 	va_list vl;
 	va_start(vl, isWarning);
 
-	int id;
+	jl::SimpleBufferBuffer<wchar_t, 2048> buf;
+
 	JSExnType exn = JSEXN_NONE;
 
-	char message[1024];
-	char *buf = message;
-	const char *str, *strEnd, *pos;
+	for ( int id; (id = va_arg( vl, int )) != E__INVALID; ) {
 
-	while ( (id = va_arg(vl, int)) != E__INVALID ) {
+		const wchar_t *str, *strEnd, *pos;
+		int len;
 
 		ASSERT( id > E__INVALID );
 		ASSERT( id < E__LIMIT );
@@ -1308,77 +1358,76 @@ Host::report( bool isWarning, ... ) const {
 		if ( exn == JSEXN_NONE && E_msg[id].exn != JSEXN_NONE )
 			exn = E_msg[id].exn;
 
-		str = E_msg[id].msg;
+		str = E_msg[id].txt;
 
-		if ( buf != message ) {
+		if ( !buf.isEmpty() )
+			buf.cat( L(" ") );
 
-			jl::memcpy(buf, " ", 1);
-			buf += 1;
-		}
-
-		strEnd = str + strlen(str);
+		strEnd = str + jl::strlen( str );
 		pos = str;
 
-		for (;;) {
-			
-			const char *newPos = strchr(pos, '%');
-			if ( !newPos ) {
+		for ( ;; ) {
 
-				jl::memcpy(buf, pos, strEnd-pos);
-				buf += strEnd-pos;
+			const wchar_t *ppos = jl::strchr( pos, '%' );
+			if ( !ppos ) {
+				
+				buf.cat( pos, strEnd );
 				break;
-			} else {
-
-				jl::memcpy(buf, pos, newPos-pos);
-				buf += newPos-pos;
 			}
-			pos = newPos;
+			
+			buf.cat( pos, ppos );
+			pos = ppos + 1;
 
-			switch ( *++pos ) {
+			switch ( *pos ) {
 				case 'd':
 					++pos;
-					jl::itoa(va_arg(vl, long), buf, 10);
-					buf += strlen(buf);
+					buf.cat( va_arg( vl, long ), 10 );
 					break;
 				case 'x':
 					++pos;
-					jl::memcpy(buf, "0x", 2);
-					buf += 2;
-					jl::itoa(va_arg(vl, long), buf, 16);
-					buf += strlen(buf);
+					buf.cat( L( "0x" ) );
+					buf.cat( va_arg( vl, long ), 16 );
 					break;
 				case 's': {
 					++pos;
-					const char * tmp = va_arg(vl, char *);
-					int len = strlen(tmp);
+					const char * tmp = va_arg( vl, char * );
+					len = jl::strlen(tmp);
 					if ( len > 128 ) {
 						
-						jl::memcpy(buf, tmp, 128);
-						buf += 128;
-						jl::memcpy(buf, "...", 3);
-						buf += 3;
+						buf.cat( tmp, tmp + 128 );
+						buf.cat( L("...") );
 					} else {
 
-						jl::memcpy(buf, tmp, len);
-						buf += len;
+						buf.cat( tmp, tmp + len );
+					}
+					break;
+				}
+				case 'w': {
+					++pos;
+					const wchar_t * tmp = va_arg( vl, wchar_t * );
+					len = jl::strlen( tmp );
+					if ( len > 128 ) {
+
+						buf.cat( tmp, tmp + 128 );
+						buf.cat( L( "..." ) );
+					} else {
+
+						buf.cat( tmp, tmp + len );
 					}
 					break;
 				}
 				default:
-					*(buf++) = '%';
+					buf.cat( L( "%" ) );
 					break;
 			}
 		}
 	}
-	jl::memcpy(buf, ".", 1);
-	buf += 1;
-	*buf = '\0';
 
+	buf.cat( L( "." ) );
 	va_end(vl);
 
-	JSErrorFormatString format = { message, 0, (int16_t)exn };
-	//return JS_ReportErrorFlagsAndNumber( _hostRuntime.context(), isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, errorCallback, (void*)&format, 0);
-	return JS_ReportErrorFlagsAndNumberUC(_hostRuntime.context(), isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, errorCallback, (void*)&format, 0);
+	JSErrorFormatString format = { "{0}", 1, (int16_t)exn };
+	return JS_ReportErrorFlagsAndNumberUC( _hostRuntime.context(), isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, errorCallback, &format, 0, static_cast<const wchar_t *>(buf) );
 }
 
 

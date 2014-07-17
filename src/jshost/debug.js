@@ -7,13 +7,19 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('serial'); throw 0; // -inlineOnly
 
-loadModule('jsstd');
+//loadModule('jsstd');
 
-host.stdout(host.filename);
+host.stderr(JSON.stringify(host.errorMessages, 2));
+
+
+host.stdout(host.arguments[0], '\n');
 
 //loadModule('jsz');
 
 //exec('utf16_script.js');
+
+//host.stdout(host.stdin());
+host.stdout('a', 'b');
 
 throw 0;
 
