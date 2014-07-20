@@ -680,6 +680,56 @@ public:
 };
 
 
+class ErrorManager : public jl::CppAllocators {
+public:
+	struct MessageChunk {
+		wchar_t *name;
+		wchar_t *text;
+		JSExnType exn;
+	};
+
+	struct DynMessageChunk : public MessageChunk {
+		DynMessageChunk() {
+
+			name = nullptr;
+			text = nullptr;
+		}
+
+		~DynMessageChunk() {
+			
+			jl_free( text );
+		}
+	};
+
+private:
+	static MessageChunk _msgDefault[];
+	MessageChunk *_current = _msgDefault;
+	
+public:
+
+	~ErrorManager() {
+
+		if ( _current != _msgDefault ) {
+		
+			delete[] _current;
+		}
+	}
+
+	const MessageChunk &
+	getMessageChunk( int id ) const {
+		
+		return _current[id];
+	}
+
+	bool importMessages( JSContext *cx, JS::HandleValue messages );
+
+	bool exportMessages( JSContext *cx, JS::MutableHandleValue messages );
+
+};
+
+
+
+
 class DLLAPI Host : public jl::CppAllocators {
 
 	HostRuntime &_hostRuntime;
@@ -692,6 +742,8 @@ class DLLAPI Host : public jl::CppAllocators {
 	const JSClass *_objectClasp;
 	ProtoCache _classProtoCache;
 	StaticArray< JS::PersistentRootedId, LAST_JSID > _ids;
+	ErrorManager _errorManager;
+
 
 //
 
@@ -755,9 +807,6 @@ public:
 	}
 
 	bool
-	vsreport( bool isWarning, va_list vl ) const;
-
-	bool
 	report( bool isWarning, ... ) const;
 
 	bool
@@ -800,6 +849,12 @@ public:
 	moduleManager() {
 
 		return _moduleManager;
+	}
+
+	ALWAYS_INLINE ErrorManager&
+	errorManager() {
+
+		return _errorManager;
 	}
 
 

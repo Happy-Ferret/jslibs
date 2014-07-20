@@ -7,9 +7,16 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('serial'); throw 0; // -inlineOnly
 
-//loadModule('jsstd');
+host.errorMessages = ({
+//ERRNO_1:["(error number: %d)"],
+NUM_1:["%d"], STR_1:["%s"], STR16_1:["%w"], NAME_1:["'%s'"], NAME16_1:["'%w'"], COMMENT_1:["(%s)"], COMMENT_2:["(%s %s)"], COMMENT_BEGIN:["("], COMMENT_END:[")"], INTERVAL_NUM_2:["%d to %d"], INTERVAL_STR_2:["%s to %s"], DETAILS:[":"], SEP:[","], OR:["or"], AND:["and"], DATA:["data"], DATATYPE:["data type", 6], DATASIZE:["data size", 3], ARGC:["number of arguments", 3], ARG:["argument"], PARAM:["parameter"], PARAMTYPE:["type of the parameter"], VALUE:["value"], VALUELENGTH:["value length"], ARRAYLENGTH:["length of the array", 3], ARGVALUE:["value of argument"], RETURNVALUE:["return value"], THISOBJ:["current object"], OBJ:["object"], CLASS:["class"], PROP:["property"], API:["API"], FUNC:["function"], CALL:["function call"], FILE:["file"], FILENAME:["filename"], MODULE:["module"], LOCATION:["location"], SCRIPT:["script"], HOST:["jslibs host"], JSLIBS:["jslibs"], INTERFACE:["interface"], THISOPERATION:["this operation"], LIB:["library"], OS:["opera XXXXX ting system", 1], COUNT:["count", 3], STATE:["state"], RANGE:["must be between", 3], MIN:["must be >=", 3], MAX:["must be <=", 3], EQUALS:["must be equal to", 3], LENGTH:["must have a length of", 3], PRECISION:["has lost precision", 3], TYPE:["type must be", 6], INSTANCE:["must be an instance of", 6], INHERIT:["must inherit from", 6], CONVERT:["fails to convert to", 6], DEFINED:["must be defined", 6], NOTCOMPATIBLE:["is not compatible with", 6], NOTFOUND:["cannot be found", 4], NOTSPECIFIED:["is not specified", 1], NOTSUPPORTED:["is not supported", 1], CONSTRUCT:["must be constructed", 6], NOTCONSTRUCT:["cannot be constructed", 6], CREATE:["cannot be created", 1], INIT:["fails to initialize", 1], FIN:["fails to finalize", 1], INVALID:["is invalid", 0], UNEXP:["is unexpected", 0], ENCODING:["encoding", 0], FORMAT:["has an unsupported format", 0], VERSION:["has an invalid version", 0], ACCESS:["is not accessible", 6], READ:["cannot be read", 6], WRITE:["cannot be write", 6], FAILURE:["failed", 0], OPEN:["is open", 6], CLOSED:["is closed", 6], DISABLED:["is disabled", 6], NOTINIT:["is not initialized", 6], OPERATION:["fails to perform the operation", 0], COMPILE:["cannot be compiled", 0], INTERNAL:["encountered an internal failure", 1], IGNORED:["will be ignored", 6], REQUIRED:["is required", 6], NOTIMPLEMENTED:["is not implemented", 1], TOOBIG:["is too big", 3], TY_UNDEFINED:["undefined", 6], TY_PRIMITIVE:["a non-object", 6], TY_OBJECT:["an object", 6], TY_STRINGDATA:["a string or data", 6], TY_STRING:["a string", 6], TY_DATA:["data", 6], TY_CHAR:["a 1-char string", 6], TY_INTEGER:["an integer", 6], TY_INTEGERDOUBLE:["integer < 2^53 and > -2^53", 6], TY_BOOLEAN:["a boolean", 6], TY_NUMBER:["a number", 6], TY_ARRAY:["an array", 6], TY_TYPEDARRAY:["a TypedArray", 6], TY_ARRAYBUFFER:["an ArrayBuffer", 6], TY_NARRAY_1:["a %d-element array", 6], TY_FUNC:["a function", 6], TY_VECTOR:["a vector", 6], TY_NVECTOR_1:["a %d-element vector", 6], TY_ERROR:["an error", 6]})
 
-host.stderr(JSON.stringify(host.errorMessages, 2));
+//exec('asdfvasdfvasdfv');
+
+loadModule('zzz');
+
+
+throw 0;
 
 
 host.stdout(host.arguments[0], '\n');

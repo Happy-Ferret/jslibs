@@ -794,21 +794,94 @@ ModuleManager::freeModules(bool skipCleanup) {
 //////////////////////////////////////////////////////////////////////////////
 // host
 
-
+/*
 struct E_msg_t {
-	JSExnType exn;
+	const wchar_t *name;
 	const wchar_t *txt;
+	JSExnType exn;
 };
 
-static E_msg_t E_msgInternal[] = {
-		{ JSEXN_NONE, 0 },
-#define DEF( NAME, TXT, EXN ) \
-			{ EXN, L(TXT) },
+static E_msg_t E_msgInternal[] = { { NULL, NULL, JSEXN_NONE },
+#define DEF( NAME, TXT, EXN )      { L(#NAME), L(TXT), EXN },
 #include "jlerrors.msg"
 #undef DEF
 };
 
 static E_msg_t *E_msg = E_msgInternal;
+*/
+
+ErrorManager::MessageChunk ErrorManager::_msgDefault[] = {
+		{ NULL, NULL, JSEXN_NONE },
+#define DEF( NAME, TXT, EXN ) \
+			{ L(#NAME), L(TXT), EXN },
+#include "jlerrors.msg"
+#undef DEF
+};
+
+
+bool
+ErrorManager::exportMessages( JSContext *cx, JS::MutableHandleValue messages ) {
+
+	JS::RootedObject item( cx );
+	messages.setObject( *jl::newObject( cx ) );
+	JL_ASSERT_ALLOC( messages.toObjectOrNull() );
+
+	for ( size_t i = E__INVALID + 1; i < E__LIMIT; ++i ) {
+
+		item.set( jl::newArray( cx ) );
+		JL_CHK( jl::setElement( cx, item, 0, _current[i].text ) );
+		if ( _current[i].exn != JSEXN_NONE )
+			JL_CHK( jl::setElement( cx, item, 1, _current[i].exn ) );
+		JL_CHK( jl::setProperty( cx, messages, _current[i].name, item ) );
+	}
+
+	return true;
+	JL_BAD;
+}
+
+bool
+ErrorManager::importMessages( JSContext *cx, JS::HandleValue messages ) {
+
+	MessageChunk *msgTmp = new DynMessageChunk[E__LIMIT];
+
+	jl::BufString buf;
+	JS::RootedObject item( cx );
+	
+	JS::RootedValue exnVal( cx );
+
+	for ( size_t i = E__INVALID + 1; i < E__LIMIT; ++i ) {
+
+		JL_CHK( jl::getProperty( cx, messages, _msgDefault[i].name, &item ) );
+
+		JL_ASSERT( item );
+
+	
+		JL_CHK( jl::getElement( cx, item, 0, &buf ) );
+		_current[i].text = buf.toStringZ<wchar_t*>();
+
+		JL_CHK( jl::getElement( cx, item, 1, &exnVal ) );
+		if ( !exnVal.isUndefined() ) {
+
+			int exn;
+			JL_CHK( jl::getValue( cx, exnVal, &exn ) );
+			msgTmp[i].exn = static_cast<JSExnType>(exn);
+		} else {
+
+			msgTmp[i].exn = JSEXN_NONE;
+		}
+	}
+
+	if ( _current != _msgDefault )
+		delete[] _current;
+	_current = msgTmp;
+	return true;
+
+bad:
+	delete[] msgTmp;
+	return false;
+}
+
+
 
 
 BEGIN_CLASS( host )
@@ -843,35 +916,24 @@ DEFINE_PROPERTY_GETTER( jsVersion ) {
 $TOC_MEMBER $INAME
 $BOOL $INAME $READONLY
 **/
-DEFINE_PROPERTY_GETTER(errorMessages) {
+DEFINE_PROPERTY_GETTER( errorMessages ) {
 
 	JL_DEFINE_PROP_ARGS;
-
-	JS::RootedObject errors(cx, jl::newArray(cx));
-	JS::RootedObject item(cx);
-	JL_ASSERT_ALLOC(errors);
-
-
-	for (size_t i = E__INVALID + 1; i < E__LIMIT; ++i) {
-
-		item.set(jl::newObject(cx));
-		JL_CHK(jl::setProperty(cx, item, "txt", E_msg[i].txt));
-		JL_CHK(jl::setProperty(cx, item, "type", E_msg[i].exn));
-		JL_CHK(jl::setElement(cx, errors, i-1, item));
-	}
-
-	JL_RVAL.setObject(*errors);
+	if ( JL_RVAL.isUndefined() )
+		JL_CHK( Host::getHost( cx ).errorManager().exportMessages( cx, JL_RVAL ) );
 	return true;
 	JL_BAD;
 }
+
 
 /**doc
 $TOC_MEMBER $INAME
 $BOOL $INAME $READONLY
 **/
-DEFINE_PROPERTY_SETTER(errorMessages) {
+DEFINE_PROPERTY_SETTER( errorMessages ) {
 
-	JL_IGNORE(id, obj);
+	JL_DEFINE_PROP_ARGS;
+	JL_CHK( Host::getHost( cx ).errorManager().importMessages( cx, JL_RVAL ) );
 	return true;
 	JL_BAD;
 }
@@ -1051,8 +1113,8 @@ CONFIGURE_CLASS
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_GETTER( unsafeMode )
-		PROPERTY_GETTER(jsVersion)
-		PROPERTY_GETTER(errorMessages)
+		PROPERTY_GETTER( jsVersion )
+		PROPERTY( errorMessages )
 		//		PROPERTY( incrementalGarbageCollector )
 	END_STATIC_PROPERTY_SPEC
 
@@ -1349,22 +1411,26 @@ Host::report( bool isWarning, ... ) const {
 
 	for ( int id; (id = va_arg( vl, int )) != E__INVALID; ) {
 
-		const wchar_t *str, *strEnd, *pos;
+		const wchar_t *str;
+
+		const wchar_t *strEnd;
+		const wchar_t *pos;
 		int len;
 
 		ASSERT( id > E__INVALID );
 		ASSERT( id < E__LIMIT );
 
-		if ( exn == JSEXN_NONE && E_msg[id].exn != JSEXN_NONE )
-			exn = E_msg[id].exn;
+		ErrorManager::MessageChunk errChunk = _errorManager.getMessageChunk( id );
 
-		str = E_msg[id].txt;
+		if ( exn == JSEXN_NONE && errChunk.exn != JSEXN_NONE )
+			exn = errChunk.exn;
+		str = errChunk.text;
 
 		if ( !buf.isEmpty() )
 			buf.cat( L(" ") );
 
-		strEnd = str + jl::strlen( str );
 		pos = str;
+		strEnd = pos + jl::strlen(str);
 
 		for ( ;; ) {
 
@@ -1430,16 +1496,6 @@ Host::report( bool isWarning, ... ) const {
 	return JS_ReportErrorFlagsAndNumberUC( _hostRuntime.context(), isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, errorCallback, &format, 0, static_cast<const wchar_t *>(buf) );
 }
 
-
-//bool
-//Host::report( bool isWarning, ... ) const {
-//
-//  va_list va;
-//  va_start(va, isWarning);
-//  bool st = vsreport(isWarning,va);
-//  va_end(va);
-//  return st;
-//}
 
 
 bool
