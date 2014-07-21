@@ -44,38 +44,34 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Error management
 
-enum E_TXTID {
-
-	E__INVALID,
+enum {
 #define JL_NEW_ERR
 #define DEF( NAME, TEXT, EXN ) \
 	E_##NAME,
 #include "jlerrors.msg"
 #undef DEF
 #undef JL_NEW_ERR
-	E__LIMIT,
+	E__END
 };
 
 
 // simple helpers
 #define E_ERRNO( num )                E_ERRNO_1, num
-#define E_STR( str )                  E_STR_1, (static_cast<const char*>(str))
-#define E_STR16( str16 )              E_STR16_1, (static_cast<const jschar*>(str16))
-#define E_NAME( str )                 E_NAME_1, (static_cast<const char*>(str))
-#define E_NAME16( str16 )             E_NAME16_1, (static_cast<const jschar*>(str16))
+#define E_STR( str )                  E_STR_1, str
+#define E_NAME( str )                 E_NAME_1, str
 #define E_NUM( num )                  E_NUM_1, num
-#define E_COMMENT( str )              E_COMMENT_1, (static_cast<const char*>(str))
-#define E_COMMENT2( str1, str2 )      E_COMMENT_2, (static_cast<const char*>(str1)), (static_cast<const char*>(str2))
+#define E_COMMENT( str )              E_COMMENT_1, str
+#define E_COMMENT2( str1, str2 )      E_COMMENT_2, str1, str2
 #define E_INTERVAL_NUM( vMin, vMax )  E_INTERVAL_NUM_2, vMin, vMax
-#define E_INTERVAL_STR( sMin, sMax )  E_INTERVAL_STR_2, (static_cast<const char*>(sMin)), (static_cast<const char*>(sMax))
+#define E_INTERVAL_STR( sMin, sMax )  E_INTERVAL_STR_2, sMin, sMax
 #define E_TY_NARRAY( num )            E_TY_NARRAY_1, num
 #define E_TY_NVECTOR( num )           E_TY_NVECTOR_1, num
 
 
 #ifdef DEBUG
-#define JL__REPORT_END_ARG E_COMMENT(JL_CODE_LOCATION), E__INVALID
+#define JL__REPORT_END_ARG E_COMMENT(JL_CODE_LOCATION), E__END
 #else
-#define JL__REPORT_END_ARG E__INVALID
+#define JL__REPORT_END_ARG E__END
 #endif
 
 
@@ -88,16 +84,20 @@ enum E_TXTID {
 
 // note: Support for variadic macros was introduced in Visual C++ 2005
 #define JL_ERR( ... ) \
-	JL_MACRO_BEGIN \
-		jl::Host::getHost(cx).report(false, ##__VA_ARGS__, JL__REPORT_END_ARG); \
+JL_MACRO_BEGIN \
+		static const jl::ErrorManager::ErrArg args[] = { jl::ErrorManager::ErrArg() , ##__VA_ARGS__ , JL__REPORT_END_ARG }; \
+		jl::Host::getHost(cx).errorManager().report( false, COUNTOF(args)-1, args+1 ); \
 		goto bad; \
 	JL_MACRO_END
 
 
 #define JL_WARN( ... ) \
 	JL_MACRO_BEGIN \
-		if ( JL_IS_SAFE && !jl::Host::getHost(cx).report(true, ##__VA_ARGS__, JL__REPORT_END_ARG) ) \
-			goto bad; \
+		if ( JL_IS_SAFE ) { \
+			static const jl::ErrorManager::ErrArg args[] = { jl::ErrorManager::ErrArg() , ##__VA_ARGS__ , JL__REPORT_END_ARG }; \
+			if ( !jl::Host::getHost(cx).errorManager().report( true, COUNTOF(args)-1, args+1 ) ) \
+				goto bad; \
+		} \
 	JL_MACRO_END
 
 

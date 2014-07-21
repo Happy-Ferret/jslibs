@@ -718,7 +718,7 @@ ModuleManager::loadModule(const char *libFileName, JS::HandleObject obj, JS::Mut
 		JL_CHK( !JL_IsExceptionPending(cx) );
 		TCHAR filename[PATH_MAX];
 		JLDynamicLibraryName((void*)moduleInit, filename, COUNTOF(filename));
-		JL_ERR( E_MODULE, E_NAME16(filename), E_INIT );
+		JL_ERR( E_MODULE, E_NAME(filename), E_INIT );
 	}
 	
 	//JL_CHK( JL_NewNumberValue(cx, uid, JL_RVAL) ); // really needed ? yes, UnloadModule will need this ID, ... but UnloadModule is too complicated to implement and will never exist.
@@ -750,7 +750,7 @@ ModuleManager::releaseModules() {
 
 					TCHAR filename[PATH_MAX];
 					JLDynamicLibraryName((void*)moduleRelease, filename, COUNTOF(filename));
-					JL_WARN( E_MODULE, E_NAME16(filename), E_FIN ); // "Fail to release module \"%s\".", filename
+					JL_WARN( E_MODULE, E_NAME(filename), E_FIN ); // "Fail to release module \"%s\".", filename
 				}
 			}
 		}
@@ -794,26 +794,27 @@ ModuleManager::freeModules(bool skipCleanup) {
 //////////////////////////////////////////////////////////////////////////////
 // host
 
-/*
-struct E_msg_t {
-	const wchar_t *name;
-	const wchar_t *txt;
-	JSExnType exn;
-};
 
-static E_msg_t E_msgInternal[] = { { NULL, NULL, JSEXN_NONE },
-#define DEF( NAME, TXT, EXN )      { L(#NAME), L(TXT), EXN },
+/*
+wchar_t *ErrorManager::_errorMessageNameList[] = {
+#define DEF( NAME, TXT, EXN ) \
+	L(#NAME),
+#include "jlerrors.msg"
+#undef DEF
+};
+*/
+
+const ErrorManager::ErrorList ErrorManager::_errorList[] = {
+#define DEF( NAME, TXT, EXN ) \
+	{ L(#NAME), EXN },
 #include "jlerrors.msg"
 #undef DEF
 };
 
-static E_msg_t *E_msg = E_msgInternal;
-*/
 
-ErrorManager::MessageChunk ErrorManager::_msgDefault[] = {
-		{ NULL, NULL, JSEXN_NONE },
+const ErrorManager::MessageChunk ErrorManager::_msgDefault[] = {
 #define DEF( NAME, TXT, EXN ) \
-			{ L(#NAME), L(TXT), EXN },
+	L(TXT),
 #include "jlerrors.msg"
 #undef DEF
 };
@@ -822,19 +823,12 @@ ErrorManager::MessageChunk ErrorManager::_msgDefault[] = {
 bool
 ErrorManager::exportMessages( JSContext *cx, JS::MutableHandleValue messages ) {
 
-	JS::RootedObject item( cx );
 	messages.setObject( *jl::newObject( cx ) );
 	JL_ASSERT_ALLOC( messages.toObjectOrNull() );
 
-	for ( size_t i = E__INVALID + 1; i < E__LIMIT; ++i ) {
-
-		item.set( jl::newArray( cx ) );
-		JL_CHK( jl::setElement( cx, item, 0, _current[i].text ) );
-		if ( _current[i].exn != JSEXN_NONE )
-			JL_CHK( jl::setElement( cx, item, 1, _current[i].exn ) );
-		JL_CHK( jl::setProperty( cx, messages, _current[i].name, item ) );
-	}
-
+	for ( size_t i = 0; i < E__END; ++i )
+		JL_CHK(jl::setProperty(cx, messages, _errorList[i].name, _current[i].text));
+	
 	return true;
 	JL_BAD;
 }
@@ -842,43 +836,149 @@ ErrorManager::exportMessages( JSContext *cx, JS::MutableHandleValue messages ) {
 bool
 ErrorManager::importMessages( JSContext *cx, JS::HandleValue messages ) {
 
-	MessageChunk *msgTmp = new DynMessageChunk[E__LIMIT];
+	DynMessageChunk *msgTmp = new DynMessageChunk[E__END];
 
 	jl::BufString buf;
-	JS::RootedObject item( cx );
-	
-	JS::RootedValue exnVal( cx );
 
-	for ( size_t i = E__INVALID + 1; i < E__LIMIT; ++i ) {
+	for ( size_t i = 0; i < E__END; ++i ) {
 
-		JL_CHK( jl::getProperty( cx, messages, _msgDefault[i].name, &item ) );
-
-		JL_ASSERT( item );
-
-	
-		JL_CHK( jl::getElement( cx, item, 0, &buf ) );
-		_current[i].text = buf.toStringZ<wchar_t*>();
-
-		JL_CHK( jl::getElement( cx, item, 1, &exnVal ) );
-		if ( !exnVal.isUndefined() ) {
-
-			int exn;
-			JL_CHK( jl::getValue( cx, exnVal, &exn ) );
-			msgTmp[i].exn = static_cast<JSExnType>(exn);
-		} else {
-
-			msgTmp[i].exn = JSEXN_NONE;
-		}
+		JL_CHK(jl::getProperty(cx, messages, _errorList[i].name, &buf));
+		msgTmp[i].text = buf.toStringZ<wchar_t*>();
 	}
 
 	if ( _current != _msgDefault )
-		delete[] _current;
-	_current = msgTmp;
+		delete[] static_cast<const DynMessageChunk*>(_current);
+	_current = msgTmp; // no error, then we can definitely import new messages
 	return true;
 
 bad:
 	delete[] msgTmp;
 	return false;
+}
+
+
+// JSErrorCallback
+const JSErrorFormatString *
+ErrorManager::errorCallback( void *userRef, const char *, const unsigned ) {
+
+	return (JSErrorFormatString*)userRef;
+}
+
+
+
+bool
+ErrorManager::report( bool isWarning, size_t argc, const ErrArg *args ) const {
+
+	const ErrArg *argsEnd = args + argc;
+
+	jl::SimpleBufferBuffer<wchar_t, 2048> buf;
+
+	JSExnType exn = JSEXN_NONE;
+
+	for ( ; args != argsEnd && args->is<ErrArg::INTEGER>() && args->asInteger() != E__END; ++args ) {
+
+		const wchar_t *str;
+		const wchar_t *strEnd;
+		const wchar_t *pos;
+		int len;
+
+		ASSERT( args->asInteger() >= 0 );
+		ASSERT( args->asInteger() < E__END );
+
+		ErrorManager::MessageChunk errChunk = _current[args->asInteger()];
+
+		if (exn == JSEXN_NONE && _errorList[args->asInteger()].exn != JSEXN_NONE)
+			exn = _errorList[args->asInteger()].exn;
+		str = errChunk.text;
+
+		if ( !buf.isEmpty() )
+			buf.cat( L( " " ) );
+
+		pos = str;
+		strEnd = pos + jl::strlen(pos);
+
+		for ( ;; ) {
+
+			const wchar_t *ppos = jl::strchr( pos, '%' );
+			if ( !ppos ) {
+
+				buf.cat( pos, strEnd );
+				break;
+			}
+
+			buf.cat( pos, ppos );
+			pos = ppos + 1;
+
+			++args;
+			JL_CHK( args != argsEnd );
+
+			switch ( *pos ) {
+			case 'd':
+				++pos;
+				JL_CHK( args->type() == ErrArg::INTEGER );
+				buf.cat( args->asInteger(), 10 );
+				break;
+			case 'x':
+				++pos;
+				JL_CHK(args->type() == ErrArg::INTEGER);
+				buf.cat( L( "0x" ) );
+				buf.cat( args->asInteger(), 16 );
+				break;
+			case 's': {
+				++pos;
+				if (args->type() == ErrArg::STRING) {
+
+					const char * tmp = args->asString();
+					len = jl::strlen(tmp);
+					if (len > 128) {
+
+						buf.cat(tmp, tmp + 128);
+						buf.cat(L("..."));
+					}
+					else {
+
+						buf.cat(tmp, tmp + len);
+					}
+					break;
+				}
+				else if (args->type() == ErrArg::WSTRING) {
+
+					const wchar_t * tmp = args->asWstring();
+					len = jl::strlen(tmp);
+					if (len > 128) {
+
+						buf.cat(tmp, tmp + 128);
+						buf.cat(L("..."));
+					}
+					else {
+
+						buf.cat(tmp, tmp + len);
+					}
+					break;
+				}
+				JL_CHK(false);
+			}
+			default:
+				buf.cat( L( "%" ) );
+				break;
+			}
+		}
+	}
+
+	buf.cat( L( "." ) );
+	
+	JL_CHK( args == argsEnd || ( args->is<ErrArg::INTEGER>() && args->asInteger() == E__END) );
+	
+	{
+		JSErrorFormatString format = { "{0}", 1, (int16_t)exn };
+		return JS_ReportErrorFlagsAndNumberUC( _hostRuntime.context(), isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, errorCallback, &format, 0, static_cast<const wchar_t *>(buf) );
+	}
+
+bad:
+	{
+		JSErrorFormatString format = { "Invalid error message.", 0, JSEXN_INTERNALERR };
+		return JS_ReportErrorFlagsAndNumberUC( _hostRuntime.context(), JSREPORT_ERROR, errorCallback, &format, 0 );
+	}
 }
 
 
@@ -901,16 +1001,33 @@ DEFINE_PROPERTY_GETTER( unsafeMode ) {
 
 /**doc
 $TOC_MEMBER $INAME
- $BOOL $INAME $READONLY
+$BOOL $INAME $READONLY
 **/
-DEFINE_PROPERTY_GETTER( jsVersion ) {
+DEFINE_PROPERTY_GETTER(jsVersion) {
 
-	JL_IGNORE( id, obj );
+	JL_IGNORE(id, obj);
 
-	JL_CHK( jl::setValue(cx, vp, JS_GetVersion(cx)) ); // btw, see JS_GetImplementationVersion()
+	JL_CHK(jl::setValue(cx, vp, JS_GetVersion(cx))); // btw, see JS_GetImplementationVersion()
 	return true;
 	JL_BAD;
 }
+
+/**doc
+$TOC_MEMBER $INAME
+$BOOL $INAME $READONLY
+**/
+DEFINE_PROPERTY_GETTER(lang) {
+
+	JL_IGNORE(id, obj);
+
+	wchar_t lang[LOCALE_NAME_MAX_LENGTH];
+	JLGetUserLocaleName(lang, LOCALE_NAME_MAX_LENGTH);
+
+	JL_CHK(jl::setValue(cx, vp, lang));
+	return true;
+	JL_BAD;
+}
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -1113,8 +1230,9 @@ CONFIGURE_CLASS
 
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_GETTER( unsafeMode )
-		PROPERTY_GETTER( jsVersion )
-		PROPERTY( errorMessages )
+		PROPERTY_GETTER(jsVersion)
+		PROPERTY_GETTER(lang)
+		PROPERTY(errorMessages)
 		//		PROPERTY( incrementalGarbageCollector )
 	END_STATIC_PROPERTY_SPEC
 
@@ -1125,13 +1243,6 @@ END_CLASS
 //////////////////////////////////////////////////////////////////////////////
 // Host
 
-
-// JSErrorCallback
-const JSErrorFormatString *
-Host::errorCallback(void *userRef, const char *, const unsigned) {
-
-	return (JSErrorFormatString*)userRef;
-}
 
 void
 Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
@@ -1302,7 +1413,7 @@ bad:
 
 
 Host::Host( HostRuntime &hr, StdIO &hostStdIO, bool unsafeMode )
-: _hostRuntime(hr), _moduleManager(hr), _compatId(JL_HOST_VERSIONID), _unsafeMode(unsafeMode), _hostStdIO(hostStdIO), _objectProto(hr.runtime()), _hostObject(hr.runtime()), _ids() {
+: _hostRuntime(hr), _moduleManager(hr), _errorManager(hr), _compatId(JL_HOST_VERSIONID), _unsafeMode(unsafeMode), _hostStdIO(hostStdIO), _objectProto(hr.runtime()), _hostObject(hr.runtime()), _ids() {
 
 	::_unsafeMode = unsafeMode;
 	Host::setHostAllocators(_hostRuntime.allocators());
@@ -1396,106 +1507,6 @@ Host::free(bool skipCleanup) {
 		jslangModuleFree(skipCleanup, nullptr);
 	}
 }
-
-
-
-bool
-Host::report( bool isWarning, ... ) const {
-
-	va_list vl;
-	va_start(vl, isWarning);
-
-	jl::SimpleBufferBuffer<wchar_t, 2048> buf;
-
-	JSExnType exn = JSEXN_NONE;
-
-	for ( int id; (id = va_arg( vl, int )) != E__INVALID; ) {
-
-		const wchar_t *str;
-
-		const wchar_t *strEnd;
-		const wchar_t *pos;
-		int len;
-
-		ASSERT( id > E__INVALID );
-		ASSERT( id < E__LIMIT );
-
-		ErrorManager::MessageChunk errChunk = _errorManager.getMessageChunk( id );
-
-		if ( exn == JSEXN_NONE && errChunk.exn != JSEXN_NONE )
-			exn = errChunk.exn;
-		str = errChunk.text;
-
-		if ( !buf.isEmpty() )
-			buf.cat( L(" ") );
-
-		pos = str;
-		strEnd = pos + jl::strlen(str);
-
-		for ( ;; ) {
-
-			const wchar_t *ppos = jl::strchr( pos, '%' );
-			if ( !ppos ) {
-				
-				buf.cat( pos, strEnd );
-				break;
-			}
-			
-			buf.cat( pos, ppos );
-			pos = ppos + 1;
-
-			switch ( *pos ) {
-				case 'd':
-					++pos;
-					buf.cat( va_arg( vl, long ), 10 );
-					break;
-				case 'x':
-					++pos;
-					buf.cat( L( "0x" ) );
-					buf.cat( va_arg( vl, long ), 16 );
-					break;
-				case 's': {
-					++pos;
-					const char * tmp = va_arg( vl, char * );
-					len = jl::strlen(tmp);
-					if ( len > 128 ) {
-						
-						buf.cat( tmp, tmp + 128 );
-						buf.cat( L("...") );
-					} else {
-
-						buf.cat( tmp, tmp + len );
-					}
-					break;
-				}
-				case 'w': {
-					++pos;
-					const wchar_t * tmp = va_arg( vl, wchar_t * );
-					len = jl::strlen( tmp );
-					if ( len > 128 ) {
-
-						buf.cat( tmp, tmp + 128 );
-						buf.cat( L( "..." ) );
-					} else {
-
-						buf.cat( tmp, tmp + len );
-					}
-					break;
-				}
-				default:
-					buf.cat( L( "%" ) );
-					break;
-			}
-		}
-	}
-
-	buf.cat( L( "." ) );
-	va_end(vl);
-
-	JSErrorFormatString format = { "{0}", 1, (int16_t)exn };
-	return JS_ReportErrorFlagsAndNumberUC( _hostRuntime.context(), isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, errorCallback, &format, 0, static_cast<const wchar_t *>(buf) );
-}
-
 
 
 bool

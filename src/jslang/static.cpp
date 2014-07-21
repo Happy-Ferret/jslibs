@@ -93,6 +93,8 @@ DEFINE_FUNCTION( stringify ) {
 	JL_DEFINE_ARGS;
 	jl::BufString str;
 
+	JL_ASSERT_ARGC_MIN(1);
+
 	if ( JL_ARGC == 1 && JL_ARG(1).isString() ) { // identity
 		
 		JL_RVAL.set(JL_ARG(1));

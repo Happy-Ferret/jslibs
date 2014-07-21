@@ -623,7 +623,7 @@ throwOSErrorCode( JSContext *cx, JLSystemErrorCode errorCode, const TCHAR *modul
 
 	TCHAR errMsg[1024];
 	JLSysetmErrorMessage(errMsg, COUNTOF(errMsg), errorCode, moduleName);
-	JL_ERR( E_OS, E_DETAILS, E_STR16(errMsg) );
+	JL_ERR( E_OS, E_DETAILS, E_STR(errMsg) );
 	JL_BAD;
 }
 
@@ -633,7 +633,7 @@ throwOSError( JSContext *cx ) {
 
 	TCHAR errMsg[1024];
 	JLLastSysetmErrorMessage(errMsg, COUNTOF(errMsg));
-	JL_ERR( E_OS, E_DETAILS, E_STR16(errMsg) );
+	JL_ERR( E_OS, E_DETAILS, E_STR(errMsg) );
 	JL_BAD;
 }
 

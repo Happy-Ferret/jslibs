@@ -63,7 +63,9 @@ struct CmdLineArguments {
 	bool useFileBootstrapScript;
 	const TCHAR *inlineScript;
 	jl::EncodingType encoding;
-	IFDEBUG( bool debug; )
+#ifdef DEBUG
+	bool debug;
+#endif // DEBUG
 
 	int jsArgc;
 	TCHAR** jsArgv;
@@ -81,7 +83,10 @@ struct CmdLineArguments {
 		inlineScript = NULL;
 		help = false;
 		encoding = jl::EncodingType::ENC_UNKNOWN;
-		IFDEBUG( debug = false; )
+#ifdef DEBUG
+		debug = false;
+#endif // DEBUG
+
 
 		TCHAR** argumentVector = argv;
 		for ( argumentVector++; argumentVector[0] && argumentVector[0][0] == '-'; argumentVector++ )

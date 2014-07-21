@@ -3025,6 +3025,52 @@ JL_setMonoCPU() {
 // system interrupt
 //
 
+///////////////////////////////////////////////////////////////////////////////
+// user locale
+//
+
+#if defined(WIN)
+	// already defined
+#elif defined(UNIX)
+	#define LOCALE_NAME_MAX_LENGTH 256
+#else
+	#error NOT IMPLEMENTED YET	// (TBD)
+#endif
+
+ALWAYS_INLINE
+void
+JLGetUserLocaleName(wchar_t *localeName, size_t localeNameMaxLength) {
+
+#if defined(WIN)
+
+	::GetUserDefaultLocaleName(localeName, localeNameMaxLength);
+
+#elif defined(UNIX)
+
+	ASSERT( localeNameMaxLength >= 1 );
+	char *locale = setLocale(LC_MESSAGES, NULL);
+	if ( locale != NULL ) {
+
+		const wchar_t *localeNameEnd = localeName + localeNameMaxLength;
+		while ( localeName != localeNameEnd ) {
+
+			*localeName = static_cast<wchar_t>(*locale);
+			if ( *locale == 0 )
+				break;
+			++locale;
+			++localeName;
+		}
+	} else {
+
+		*locale = 0;
+	}
+#else
+
+	#error NOT IMPLEMENTED YET	// (TBD)
+
+#endif
+
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////

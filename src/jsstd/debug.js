@@ -4,6 +4,8 @@ var loadModule = host.loadModule;
 
 loadModule('jsstd');
 
+exec('123')
+
 var o = {a:1, b:2};
 
 print( countProperties(o), '\n' );

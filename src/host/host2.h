@@ -680,50 +680,215 @@ public:
 };
 
 
-class ErrorManager : public jl::CppAllocators {
+class DLLAPI ErrorManager {
 public:
-	struct MessageChunk {
-		wchar_t *name;
-		wchar_t *text;
-		JSExnType exn;
+	class ErrArg {
+	public:	
+		enum ErrArgType {
+			UNDEFINED,
+			STRING,
+			WSTRING,
+			INTEGER,
+			FLOAT
+		};
+
+	private:
+		ErrArgType _type;
+
+		union {
+			const char * _string;
+			const wchar_t * _wstring;
+			long int _integer;
+			float _float;
+		};
+
+	public:
+		ErrArg()
+		: _type(ErrArg::UNDEFINED) {
+		}
+
+		ErrArg( int val )
+		: _type(ErrArg::INTEGER), _integer(val) {
+		}
+
+		ErrArg( size_t val )
+		: _type(ErrArg::INTEGER), _integer(val) {
+		}
+
+		ErrArg( long val )
+		: _type(ErrArg::INTEGER), _integer(val) {
+		}
+
+		ErrArg( float val )
+		: _type(ErrArg::FLOAT), _float(val) {
+		}
+
+		ErrArg( double val )
+		: _type(ErrArg::FLOAT), _float(float(val)) {
+		}
+
+		ErrArg( const char * val )
+		: _type(ErrArg::STRING), _string(val) {
+		}
+
+		ErrArg( const wchar_t * val )
+		: _type(ErrArg::WSTRING), _wstring(val) {
+		}
+
+		ErrArgType
+		type() const {
+
+			return _type;
+		}
+
+		template <char TYPE>
+		bool is() const {
+
+			return type() == TYPE;
+		}
+
+		const char * asString() const {
+
+			ASSERT(is<STRING>());
+			return _string;
+		};
+
+		const wchar_t * asWstring() const {
+
+			ASSERT(is<WSTRING>());
+			return _wstring;
+		};
+
+		long int asInteger() const {
+
+			ASSERT(is<INTEGER>());
+			return _integer;
+		};
+
+		float asFloat() const {
+
+			ASSERT(is<FLOAT>());
+			return _float;
+		};
 	};
 
-	struct DynMessageChunk : public MessageChunk {
+	struct MessageChunk {
+		wchar_t *text;
+	};
+
+	struct DynMessageChunk : public MessageChunk, public jl::CppAllocators {
 		DynMessageChunk() {
 
-			name = nullptr;
 			text = nullptr;
 		}
 
 		~DynMessageChunk() {
-			
-			jl_free( text );
+
+			if (text)
+				jl_free(text);
 		}
 	};
 
 private:
-	static MessageChunk _msgDefault[];
-	MessageChunk *_current = _msgDefault;
+	HostRuntime &_hostRuntime;
+
+	struct ErrorList {
+		const wchar_t *name;
+		const JSExnType exn;
+	};
+	
+	static const ErrorList _errorList[];
+
+	static const MessageChunk _msgDefault[];
+
+	const MessageChunk *_current;
 	
 public:
 
-	~ErrorManager() {
-
-		if ( _current != _msgDefault ) {
-		
-			delete[] _current;
-		}
+	ErrorManager(HostRuntime &hostRuntime)
+	: _hostRuntime(hostRuntime), _current(_msgDefault) {
 	}
 
-	const MessageChunk &
-	getMessageChunk( int id ) const {
-		
-		return _current[id];
+	~ErrorManager() {
+
+		if ( _current != _msgDefault )
+			delete[] static_cast<const DynMessageChunk*>(_current); // need to cast back to DynMessageChunk (see new DynMessageChunk)
 	}
 
 	bool importMessages( JSContext *cx, JS::HandleValue messages );
 
 	bool exportMessages( JSContext *cx, JS::MutableHandleValue messages );
+
+
+	static const JSErrorFormatString *
+	errorCallback( void *userRef, const char *, const unsigned );
+
+
+	INLINE NEVER_INLINE
+	bool
+	report( bool isWarning, size_t argc, const ErrArg *args ) const;
+
+/*
+	bool report( bool isWarning, ErrArg a0 ) const {
+		const ErrArg args[] = { a0 }; return report( isWarning, COUNTOF(args), args );
+	}
+
+	bool report( bool isWarning, ErrArg a0, ErrArg a1 ) const {
+		const ErrArg args[] = { a0, a1 }; return report( isWarning, COUNTOF(args), args );
+	}
+
+	bool report( bool isWarning, ErrArg a0, ErrArg a1, ErrArg a2 ) const {
+		const ErrArg args[] = { a0, a1, a2 }; return report( isWarning, COUNTOF(args), args );
+	}
+
+	bool report( bool isWarning, ErrArg a0, ErrArg a1, ErrArg a2, ErrArg a3 ) const {
+		const ErrArg args[] = { a0, a1, a2, a3 }; return report( isWarning, COUNTOF(args), args );
+	}
+
+	bool report( bool isWarning, ErrArg a0, ErrArg a1, ErrArg a2, ErrArg a3, ErrArg a4 ) const {
+		const ErrArg args[] = { a0, a1, a2, a3, a4 }; return report( isWarning, COUNTOF(args), args );
+	}
+
+	bool report( bool isWarning, ErrArg a0, ErrArg a1, ErrArg a2, ErrArg a3, ErrArg a4, ErrArg a5 ) const {
+		const ErrArg args[] = { a0, a1, a2, a3, a4, a5 }; return report( isWarning, COUNTOF(args), args );
+	}
+
+	bool report( bool isWarning, ErrArg a0, ErrArg a1, ErrArg a2, ErrArg a3, ErrArg a4, ErrArg a5, ErrArg a6 ) const {
+		const ErrArg args[] = { a0, a1, a2, a3, a4, a5, a6 }; return report( isWarning, COUNTOF(args), args );
+	}
+
+	bool report( bool isWarning, ErrArg a0, ErrArg a1, ErrArg a2, ErrArg a3, ErrArg a4, ErrArg a5, ErrArg a6, ErrArg a7 ) const {
+		const ErrArg args[] = { a0, a1, a2, a3, a4, a5, a6, a7 }; return report( isWarning, COUNTOF(args), args );
+	}
+
+	bool report( bool isWarning, ErrArg a0, ErrArg a1, ErrArg a2, ErrArg a3, ErrArg a4, ErrArg a5, ErrArg a6, ErrArg a7, ErrArg a8 ) const {
+		const ErrArg args[] = { a0, a1, a2, a3, a4, a5, a6, a7, a8 }; return report( isWarning, COUNTOF(args), args );
+	}
+
+	bool report( bool isWarning, ErrArg a0, ErrArg a1, ErrArg a2, ErrArg a3, ErrArg a4, ErrArg a5, ErrArg a6, ErrArg a7, ErrArg a8, ErrArg a9 ) const {
+		const ErrArg args[] = { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9 }; return report( isWarning, COUNTOF(args), args );
+	}
+
+	bool report( bool isWarning, ErrArg a0, ErrArg a1, ErrArg a2, ErrArg a3, ErrArg a4, ErrArg a5, ErrArg a6, ErrArg a7, ErrArg a8, ErrArg a9, ErrArg a10 ) const {
+		const ErrArg args[] = { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10 }; return report( isWarning, COUNTOF(args), args );
+	}
+
+	bool report( bool isWarning, ErrArg a0, ErrArg a1, ErrArg a2, ErrArg a3, ErrArg a4, ErrArg a5, ErrArg a6, ErrArg a7, ErrArg a8, ErrArg a9, ErrArg a10, ErrArg a11 ) const {
+		const ErrArg args[] = { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11 }; return report( isWarning, COUNTOF(args), args );
+	}
+
+	bool report( bool isWarning, ErrArg a0, ErrArg a1, ErrArg a2, ErrArg a3, ErrArg a4, ErrArg a5, ErrArg a6, ErrArg a7, ErrArg a8, ErrArg a9, ErrArg a10, ErrArg a11, ErrArg a12 ) const {
+		const ErrArg args[] = { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12 }; return report( isWarning, COUNTOF(args), args );
+	}
+
+	bool report( bool isWarning, ErrArg a0, ErrArg a1, ErrArg a2, ErrArg a3, ErrArg a4, ErrArg a5, ErrArg a6, ErrArg a7, ErrArg a8, ErrArg a9, ErrArg a10, ErrArg a11, ErrArg a12, ErrArg a13 ) const {
+		const ErrArg args[] = { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13 }; return report( isWarning, COUNTOF(args), args );
+	}
+
+	bool report( bool isWarning, ErrArg a0, ErrArg a1, ErrArg a2, ErrArg a3, ErrArg a4, ErrArg a5, ErrArg a6, ErrArg a7, ErrArg a8, ErrArg a9, ErrArg a10, ErrArg a11, ErrArg a12, ErrArg a13, ErrArg a14 ) const {
+		const ErrArg args[] = { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14 }; return report( isWarning, COUNTOF(args), args );
+	}
+*/
 
 };
 
@@ -746,9 +911,6 @@ class DLLAPI Host : public jl::CppAllocators {
 
 
 //
-
-	static const JSErrorFormatString *
-	errorCallback( void *userRef, const char *, const unsigned );
 
 //	static void
 //	errorReporterBasic( JSContext *cx, const char *message, JSErrorReport *report );
@@ -805,9 +967,6 @@ public:
 
 		return _hostStdIO;
 	}
-
-	bool
-	report( bool isWarning, ... ) const;
 
 	bool
 	setHostArguments( TCHAR **hostArgv, size_t hostArgc );
