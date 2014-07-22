@@ -187,7 +187,10 @@ JL_MACRO_BEGIN \
 	JL_ASSERT( NOIL(jl::isArray)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_ARRAY )
 
 #define JL_ASSERT_IS_OBJECT(val, context) \
-	JL_ASSERT( !val.isPrimitive(), E_VALUE, E_STR(context), E_TYPE, E_TY_OBJECT )
+	JL_ASSERT( val.isObject(), E_VALUE, E_STR(context), E_TYPE, E_TY_OBJECT )
+
+#define JL_ASSERT_IS_OBJECT_OR_NULL(val, context) \
+	JL_ASSERT( val.isObjectOrNull(), E_VALUE, E_STR(context), E_TYPE, E_TY_OBJECT )
 
 #define JL_ASSERT_IS_STRING(val, context) \
 	JL_ASSERT( NOIL(JL_ValueIsData)(cx, val), E_VALUE, E_STR(context), E_TYPE, E_TY_STRINGDATA )

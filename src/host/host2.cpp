@@ -431,48 +431,6 @@ WatchDog::stop() {
 //////////////////////////////////////////////////////////////////////////////
 // HostRuntime
 
-static bool
-_globalClass_lazy_enumerate(JSContext *cx, JS::HandleObject obj) {
-
-	return JS_EnumerateStandardClasses(cx, obj);
-}
-
-static bool
-_globalClass_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, unsigned flags, JS::MutableHandleObject objp) {
-
-	bool resolved;
-
-	if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
-		return false;
-
-	if (resolved) {
-
-		objp.set(obj);
-		return true;
-	}
-	return true;
-}
-
-const JSClass HostRuntime::_globalClass_lazy = {
-	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS,
-	JS_PropertyStub, JS_DeletePropertyStub,
-	JS_PropertyStub, JS_StrictPropertyStub,
-	_globalClass_lazy_enumerate, (JSResolveOp)_globalClass_lazy_resolve,
-	JS_ConvertStub, nullptr,
-    nullptr, nullptr, nullptr,
-	JS_GlobalObjectTraceHook
-};
-
-const JSClass HostRuntime::_globalClass = {
-	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS,
-	JS_PropertyStub, JS_DeletePropertyStub,
-	JS_PropertyStub, JS_StrictPropertyStub,
-	JS_EnumerateStub, JS_ResolveStub,
-	JS_ConvertStub, nullptr,
-    nullptr, nullptr, nullptr,
-	JS_GlobalObjectTraceHook
-};
-
 
 void
 HostRuntime::setJSEngineAllocators(Allocators allocators) {
@@ -505,13 +463,8 @@ HostRuntime::errorReporterBasic( JSContext *cx, const char *message, JSErrorRepo
 }
 
 
-HostRuntime::HostRuntime( Allocators allocators, uint32_t maybeGCIntervalMs )
+HostRuntime::HostRuntime( Allocators allocators, uint32_t maybeGCIntervalMs, uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota )
 : _allocators(allocators), rt(nullptr), cx(nullptr), _isEnding(false), _skipCleanup(false), _watchDog(*MOZ_THIS_IN_INITIALIZER_LIST(), maybeGCIntervalMs) {
-}
-
-
-bool
-HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota, bool lazyStandardClasses ) {
 
 	rt = JS_NewRuntime(maxAlloc); // JSGC_MAX_MALLOC_BYTES
 	JL_CHK( rt );
@@ -522,8 +475,8 @@ HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota
 	// doc: maxMem specifies the number of allocated bytes after which garbage collection is run. Maximum nominal heap before last ditch GC.
 
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem); 
-	//JS_SetNativeStackQuota(rt, 128 * sizeof(size_t) * 1024); // doc. To disable stack size checking pass 0.
-	JS_SetNativeStackQuota(rt, 0);
+	JS_SetNativeStackQuota(rt, 128 * sizeof(size_t) * 1024); // doc. To disable stack size checking pass 0.
+	//JS_SetNativeStackQuota(rt, 0);
 
 	//JS::DisableGenerationalGC(rt);
 
@@ -562,6 +515,7 @@ HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota
 
 	// beware: avoid using JSOPTION_COMPILE_N_GO here.
 
+/*
 	{
 
 		JS::CompartmentOptions options;
@@ -578,20 +532,21 @@ HostRuntime::create( uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota
 		JL_CHK( JS_EnterCompartment(cx, globalObject) == nullptr );
 
 		JL_CHK( JS_InitStandardClasses(cx, globalObject) );
-		JL_CHK( JS_DefineDebuggerObject(cx, globalObject) ); // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
+//		JL_CHK( JS_DefineDebuggerObject(cx, globalObject) ); // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
 		JL_CHK( JS_InitReflect(cx, globalObject) );
 		#ifdef JS_HAS_CTYPES
 		JL_CHK( JS_InitCTypesClass(cx, globalObject) );
 		#endif
 
 		JS_FireOnNewGlobalObject(cx, globalObject);
-
 	}
+*/
 
 	JL_CHK( _watchDog.start() );
 
-	return true;
-	JL_BAD;
+	return;
+bad:
+	invalidate();
 }
 
 
@@ -620,7 +575,6 @@ HostRuntime::destroy(bool skipCleanup) {
 	//    The last JS_DestroyContext* API call will run a GC, no matter which API of that form you call on the last context in the runtime. /be
 		
 	// see create()
-	JS_LeaveCompartment(cx, nullptr);
 	JS_EndRequest(cx);
 	JS_DestroyContext(cx);
 	cx = nullptr;
@@ -638,7 +592,6 @@ bad:
 	// on error, do the minimum.
 	if ( cx ) {
 
-		JS_LeaveCompartment(cx, nullptr);
 		JS_DestroyContext(cx);
 		JS_DestroyRuntime(rt);
 	}
@@ -789,10 +742,107 @@ ModuleManager::freeModules(bool skipCleanup) {
 }
 
 
+//////////////////////////////////////////////////////////////////////////////
+// Global
+
+bool
+Global::_lazy_enumerate(JSContext *cx, JS::HandleObject obj) {
+
+	return JS_EnumerateStandardClasses(cx, obj);
+}
+
+bool
+Global::_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, unsigned flags, JS::MutableHandleObject objp) {
+
+	bool resolved;
+
+	if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
+		return false;
+
+	if (resolved) {
+
+		objp.set(obj);
+		return true;
+	}
+	return true;
+}
+
+const JSClass Global::_globalClass_lazy = {
+	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS,
+	JS_PropertyStub, JS_DeletePropertyStub,
+	JS_PropertyStub, JS_StrictPropertyStub,
+	Global::_lazy_enumerate, (JSResolveOp)Global::_lazy_resolve,
+	JS_ConvertStub, nullptr,
+    nullptr, nullptr, nullptr,
+	JS_GlobalObjectTraceHook
+};
+
+const JSClass Global::_globalClass = {
+	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS,
+	JS_PropertyStub, JS_DeletePropertyStub,
+	JS_PropertyStub, JS_StrictPropertyStub,
+	JS_EnumerateStub, JS_ResolveStub,
+	JS_ConvertStub, nullptr,
+    nullptr, nullptr, nullptr,
+	JS_GlobalObjectTraceHook
+};
+
+
+Global::Global( HostRuntime &hr, bool lazyStandardClasses, bool loadDebugger )
+: _hostRuntime(hr), _global( hr.context() ) {
+
+	JSContext *cx = _hostRuntime.context();
+
+	JS::CompartmentOptions compartmentOptions;
+	compartmentOptions
+		.setVersion(JSVERSION_LATEST)
+		.setInvisibleToDebugger(false)
+	;
+
+	_global.set( JS_NewGlobalObject(cx, lazyStandardClasses ? &_globalClass_lazy : &_globalClass, nullptr, JS::DontFireOnNewGlobalHook, compartmentOptions) );
+	JL_CHK( _global ); // "unable to create the global object." );
+
+	{
+		// set globalObject as current global object.
+		JSAutoCompartment ac(cx, _global);
+
+		JL_CHK( JS_InitStandardClasses(cx, _global) );
+		JL_CHK( JS_InitReflect(cx, _global) );
+		#ifdef JS_HAS_CTYPES
+		JL_CHK( JS_InitCTypesClass(cx, _global) );
+		#endif
+
+		JS_FireOnNewGlobalObject(cx, _global);
+	}
+
+
+	if ( loadDebugger ) {
+
+		// https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey/JS_Debugger_API_Reference/Debugger
+		
+		JS::RootedObject debug(cx, JS_NewGlobalObject(cx, &_globalClass_lazy, nullptr, JS::DontFireOnNewGlobalHook, CompartmentOptionsRef(_global)));
+		JSAutoCompartment ac(cx, debug);
+
+		//JL_CHK( JS_InitStandardClasses(cx, debug) );
+		JL_CHK( JS_DefineDebuggerObject(cx, debug) ); // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
+		JS_FireOnNewGlobalObject(cx, debug);
+
+		JS::RootedObject debuggeeWrapper(cx, _global);
+		JL_CHK(JS_WrapObject(cx, &debuggeeWrapper));
+
+		JS::RootedValue v(cx, JS::ObjectValue(*debug));
+		JL_CHK(JS_SetProperty(cx, debuggeeWrapper, "debug", v));
+	}
+
+
+	return;
+bad:
+	invalidate();
+}
 
 
 //////////////////////////////////////////////////////////////////////////////
-// host
+// Host
 
 
 /*
@@ -812,7 +862,7 @@ const ErrorManager::ErrorList ErrorManager::_errorList[] = {
 };
 
 
-const ErrorManager::MessageChunk ErrorManager::_msgDefault[] = {
+const wchar_t* ErrorManager::_defaultMessages[] = {
 #define DEF( NAME, TXT, EXN ) \
 	L(TXT),
 #include "jlerrors.msg"
@@ -821,38 +871,35 @@ const ErrorManager::MessageChunk ErrorManager::_msgDefault[] = {
 
 
 bool
-ErrorManager::exportMessages( JSContext *cx, JS::MutableHandleValue messages ) {
+ErrorManager::exportMessages( JSContext *cx, JS::MutableHandleObject messagesObj ) {
 
-	messages.setObject( *jl::newObject( cx ) );
-	JL_ASSERT_ALLOC( messages.toObjectOrNull() );
-
+	messagesObj.set( jl::newObject( cx ) );
+	JL_ASSERT_ALLOC( messagesObj );
 	for ( size_t i = 0; i < E__END; ++i )
-		JL_CHK(jl::setProperty(cx, messages, _errorList[i].name, _current[i].text));
-	
+		JL_CHK(jl::setProperty(cx, messagesObj, _errorList[i].name, _currentMessages[i]));
 	return true;
 	JL_BAD;
 }
 
 bool
-ErrorManager::importMessages( JSContext *cx, JS::HandleValue messages ) {
+ErrorManager::importMessages( JSContext *cx, JS::HandleObject messagesObj ) {
 
-	DynMessageChunk *msgTmp = new DynMessageChunk[E__END];
+	restoreDefaultMessages();
+	if ( messagesObj ) {
 
-	jl::BufString buf;
+		jl::BufString buf;
+		_currentMessages = (const wchar_t**)jl_calloc( sizeof(wchar_t*) * E__END, 1 );
+		JL_ASSERT_ALLOC(_currentMessages);
+		for ( size_t i = 0; i < E__END; ++i ) {
 
-	for ( size_t i = 0; i < E__END; ++i ) {
-
-		JL_CHK(jl::getProperty(cx, messages, _errorList[i].name, &buf));
-		msgTmp[i].text = buf.toStringZ<wchar_t*>();
+			JL_CHK(jl::getProperty(cx, messagesObj, _errorList[i].name, &buf));
+			_currentMessages[i] = buf.toStringZ<wchar_t*>();
+			JL_ASSERT_ALLOC(_currentMessages[i]);
+		}
 	}
-
-	if ( _current != _msgDefault )
-		delete[] static_cast<const DynMessageChunk*>(_current);
-	_current = msgTmp; // no error, then we can definitely import new messages
 	return true;
-
 bad:
-	delete[] msgTmp;
+	restoreDefaultMessages();
 	return false;
 }
 
@@ -885,11 +932,11 @@ ErrorManager::report( bool isWarning, size_t argc, const ErrArg *args ) const {
 		ASSERT( args->asInteger() >= 0 );
 		ASSERT( args->asInteger() < E__END );
 
-		ErrorManager::MessageChunk errChunk = _current[args->asInteger()];
+		const wchar_t* errChunk = _currentMessages[args->asInteger()];
 
 		if (exn == JSEXN_NONE && _errorList[args->asInteger()].exn != JSEXN_NONE)
 			exn = _errorList[args->asInteger()].exn;
-		str = errChunk.text;
+		str = errChunk;
 
 		if ( !buf.isEmpty() )
 			buf.cat( L( " " ) );
@@ -1036,8 +1083,9 @@ $BOOL $INAME $READONLY
 DEFINE_PROPERTY_GETTER( errorMessages ) {
 
 	JL_DEFINE_PROP_ARGS;
-	if ( JL_RVAL.isUndefined() )
-		JL_CHK( Host::getHost( cx ).errorManager().exportMessages( cx, JL_RVAL ) );
+	JS::RootedObject messagesObj(cx);
+	JL_CHK( Host::getHost( cx ).errorManager().exportMessages( cx, &messagesObj ) );
+	JL_RVAL.setObject(*messagesObj);
 	return true;
 	JL_BAD;
 }
@@ -1050,7 +1098,12 @@ $BOOL $INAME $READONLY
 DEFINE_PROPERTY_SETTER( errorMessages ) {
 
 	JL_DEFINE_PROP_ARGS;
-	JL_CHK( Host::getHost( cx ).errorManager().importMessages( cx, JL_RVAL ) );
+	JL_ASSERT_IS_OBJECT_OR_NULL(JL_RVAL, "error messages");
+	{
+		JS::RootedObject messagesObj(cx, JL_RVAL.toObjectOrNull());
+		JL_CHK( Host::getHost( cx ).errorManager().importMessages( cx, messagesObj ) );
+	}
+	JL_CHK( jl::StoreProperty(cx, obj, id, vp, false) );
 	return true;
 	JL_BAD;
 }
@@ -1412,8 +1465,8 @@ bad:
 }
 
 
-Host::Host( HostRuntime &hr, StdIO &hostStdIO, bool unsafeMode )
-: _hostRuntime(hr), _moduleManager(hr), _errorManager(hr), _compatId(JL_HOST_VERSIONID), _unsafeMode(unsafeMode), _hostStdIO(hostStdIO), _objectProto(hr.runtime()), _hostObject(hr.runtime()), _ids() {
+Host::Host( Global &glob, StdIO &hostStdIO, bool unsafeMode )
+: _global(glob), _hostRuntime(glob.hostRuntime()), _moduleManager(glob.hostRuntime()), _errorManager(glob.hostRuntime()), _compatId(JL_HOST_VERSIONID), _unsafeMode(unsafeMode), _hostStdIO(hostStdIO), _objectProto(glob.hostRuntime().runtime()), _hostObject(glob.hostRuntime().runtime()), _ids() {
 
 	::_unsafeMode = unsafeMode;
 	Host::setHostAllocators(_hostRuntime.allocators());
@@ -1421,18 +1474,14 @@ Host::Host( HostRuntime &hr, StdIO &hostStdIO, bool unsafeMode )
 	IFDEBUG( jl_free(js_malloc(256)) );
 	IFDEBUG( js_free(jl_malloc(256)) );
 
-	_ids.constructAll(hr.runtime());
+	_ids.constructAll(_hostRuntime.runtime());
+	
 	ASSERT( !JSID_IS_ZERO(_ids.get(0)) );
 	ASSERT( !JSID_IS_ZERO(_ids.get(LAST_JSID-1)) );
-}
-
-// init the host for jslibs usage (modules, errors, ...)
-bool
-Host::create() {
-
-	JL_SetRuntimePrivate(_hostRuntime.runtime(), this);
 
 	JSContext *cx = _hostRuntime.context();
+
+	JL_SetRuntimePrivate(_hostRuntime.runtime(), this);
 
 	JS::ContextOptionsRef(cx)
 		.setStrictMode(_unsafeMode)
@@ -1440,35 +1489,43 @@ Host::create() {
 	;
 	
 	JS_SetErrorReporter(cx, errorReporter);
-
-	JS::RootedObject obj(cx, JL_GetGlobal(cx));
-	ASSERT( obj != nullptr ); // "Global object not found."
-
-	_objectProto.set(JS_GetObjectPrototype(cx, obj));
-	_objectClasp = JL_GetClass(_objectProto);
 	
-	// global functions & properties
-	JL_CHKM( JS_DefinePropertyById(cx, obj, JLID(cx, global), obj, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
+	{
+	
+		JS::RootedObject obj(cx, _global.globalObject());
+		JSAutoCompartment ac(cx, obj);
 
-	ASSERT(cx && obj);
-	INIT_CLASS( host );
-	ASSERT( _objectProto );
+		JL_ASSERT( obj != nullptr, E_GLOBAL, E_NOTFOUND ); // "Global object not found."
 
-	// init static modules (jslang)
-	ModuleManager::Module &module = moduleManager().moduleSlot(jslangModuleId);
-	ASSERT( moduleManager().isSlotFree(module) ); // free slot
-	module.moduleHandle = JLDynamicLibraryNullHandler;
-	module.moduleId = jslangModuleId;
-	ASSERT( jslangModuleInit != (ModuleInitFunction)nullptr);
-	if ( !jslangModuleInit(cx, obj) )
-		JL_ERR( E_MODULE, E_NAME("jslang"), E_INIT );
+		_objectProto.set(JS_GetObjectPrototype(cx, obj));
+		_objectClasp = JL_GetClass(_objectProto);
+	
+		// global functions & properties
+		JL_CHKM( JS_DefinePropertyById(cx, obj, JLID(cx, global), obj, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
 
-	ASSERT( JS::IsIncrementalGCEnabled( _hostRuntime.runtime() ) );
-	ASSERT( JS::IsGenerationalGCEnabled( _hostRuntime.runtime() ) );
+		ASSERT(cx && obj);
+		INIT_CLASS( host );
+		ASSERT( _objectProto );
 
-	return true;
-	JL_BAD;
+		// init static modules (jslang)
+		ModuleManager::Module &module = moduleManager().moduleSlot(jslangModuleId);
+		ASSERT( moduleManager().isSlotFree(module) ); // free slot
+		module.moduleHandle = JLDynamicLibraryNullHandler;
+		module.moduleId = jslangModuleId;
+		ASSERT( jslangModuleInit != (ModuleInitFunction)nullptr);
+		if ( !jslangModuleInit(cx, obj) )
+			JL_ERR( E_MODULE, E_NAME("jslang"), E_INIT );
+
+		ASSERT( JS::IsIncrementalGCEnabled( _hostRuntime.runtime() ) );
+		ASSERT( JS::IsGenerationalGCEnabled( _hostRuntime.runtime() ) );
+	
+	}
+
+	return;
+bad:
+	invalidate();
 }
+
 
 
 bool

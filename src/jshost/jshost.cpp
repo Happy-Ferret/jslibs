@@ -498,10 +498,8 @@ int _tmain( int argc, TCHAR* argv[] ) {
 		//alloc.setSkipCleanup(true);
 		//nedAlloc.setSkipCleanup(true);
 
-		HostRuntime hostRuntime(allocators, uint32_t(args.maybeGCInterval * 1000)); // 0 mean no periodical GC
-
-		// HOST_MAIN_ASSERT
-		JL_CHK( hostRuntime.create((uint32_t)-1, (uint32_t)-1, HOST_STACK_SIZE) );
+		HostRuntime hostRuntime(allocators, uint32_t(args.maybeGCInterval * 1000), (uint32_t)-1, (uint32_t)-1, HOST_STACK_SIZE); // 0 mean no periodical GC
+		JL_CHK( hostRuntime );
 
 		JSContext *cx = hostRuntime.context();
 
@@ -511,111 +509,120 @@ int _tmain( int argc, TCHAR* argv[] ) {
 		//JS::RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
 		//JL_CHK( ExecuteScriptText(cx, global, "(function() { for (var i = 0; i < 10000; ++i); })()", false, &tmpVal) );
 
+
+		jl::Global global(hostRuntime, true, true);
+		JL_CHK( global );
+
+
 		HostStdIO hostIO;
-		jl::Host host(hostRuntime, hostIO);
-		JL_CHK( host.create() );
+		jl::Host host(global, hostIO);
+		JL_CHK( host );
 
 		JL_CHKM( initInterrupt(), E_HOST, E_INTERNAL );
-		// https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
-		JL_CHK( JS_DefineProperty(cx, host.hostObject(), "endSignal", JL_UNDEFINED, JSPROP_SHARED, EndSignalGetter, EndSignalSetter) );
-		JL_CHK( JS_DefineFunction(cx, host.hostObject(), "endSignalEvents", EndSignalEvents, 1, 0) );
-
-		TCHAR hostFullPath[PATH_MAX];
-		JL_CHK( jl::GetModuleFileName(hostFullPath) );
-
-		TCHAR *hostName;
-		hostName = jl::strrchr(hostFullPath, TEXT(PATH_SEPARATOR));
-		JL_CHK( hostName );
-		hostName += 1;
-		size_t hostPathLength;
-		hostPathLength = hostName - hostFullPath;
-
-		TCHAR hostPath[PATH_MAX];
-		jl::strncpy(hostPath, hostFullPath, hostPathLength);
-		hostPath[hostPathLength] = TEXT('\0');
-
-		JL_CHK( host.setHostPath(hostPath) );
-		JL_CHK( host.setHostName(hostName) );
-		
-		ASSERT( !JS_IsExceptionPending(cx) );
-
-		JL_CHK( host.setHostArguments(args.jsArgv, args.jsArgc) );
-
-		JL_ASSERT_WARN(!(!args.inlineScript && args.jsArgc == 0 && !args.useFileBootstrapScript && COUNTOF(embeddedBootstrapScript) - 1 == 0), E_SCRIPT, E_NOTSPECIFIED);
 
 		{
+			JSAutoCompartment ac(global.hostRuntime().context(), global.globalObject());
 
-			JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
-			JS::RootedValue rval(cx);
+			// https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
+			JL_CHK( JS_DefineProperty(cx, host.hostObject(), "endSignal", JL_UNDEFINED, JSPROP_SHARED, EndSignalGetter, EndSignalSetter) );
+			JL_CHK( JS_DefineFunction(cx, host.hostObject(), "endSignalEvents", EndSignalEvents, 1, 0) );
 
-			// embedded bootstrap script
+			TCHAR hostFullPath[PATH_MAX];
+			JL_CHK( jl::GetModuleFileName(hostFullPath) );
 
-			if (COUNTOF(embeddedBootstrapScript) - 1 > 0) {
+			TCHAR *hostName;
+			hostName = jl::strrchr(hostFullPath, TEXT(PATH_SEPARATOR));
+			JL_CHK( hostName );
+			hostName += 1;
+			size_t hostPathLength;
+			hostPathLength = hostName - hostFullPath;
 
-				JS::AutoSaveContextOptions asco(cx);
-				JS::ContextOptionsRef(cx).setDontReportUncaught(false);
+			TCHAR hostPath[PATH_MAX];
+			jl::strncpy(hostPath, hostFullPath, hostPathLength);
+			hostPath[hostPathLength] = TEXT('\0');
 
-				JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, COUNTOF(embeddedBootstrapScript) - 1, NULL)); // -1 because sizeof("") == 1
-				JL_CHK( script );
-				JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
-			}
+			JL_CHK( host.setHostPath(hostPath) );
+			JL_CHK( host.setHostName(hostName) );
+		
+			ASSERT( !JS_IsExceptionPending(cx) );
 
-			// file bootstrap script
+			JL_CHK( host.setHostArguments(args.jsArgv, args.jsArgc) );
 
-			if ( args.useFileBootstrapScript ) {
+			JL_ASSERT_WARN(!(!args.inlineScript && args.jsArgc == 0 && !args.useFileBootstrapScript && COUNTOF(embeddedBootstrapScript) - 1 == 0), E_SCRIPT, E_NOTSPECIFIED);
 
-				TCHAR bootstrapFilename[PATH_MAX];
-				jl::strcpy( bootstrapFilename, hostFullPath );
-				jl::strcat( bootstrapFilename, TEXT(".js") );
-				JL_CHK( jl::executeScriptFileName(cx, globalObject, bootstrapFilename, args.encoding, args.compileOnly, &rval) );
-			}
+			{
 
-			ASSERT( !JL_IsExceptionPending(cx) );
+				JS::RootedObject globalObject(cx, global.globalObject());
+				JS::RootedValue rval(cx);
 
-			bool executeStatus;
-			executeStatus = true;
+				// embedded bootstrap script
 
-			// inline (command-line) script
+				if (COUNTOF(embeddedBootstrapScript) - 1 > 0) {
 
-			if ( args.inlineScript != NULL ) {
+					JS::AutoSaveContextOptions asco(cx);
+					JS::ContextOptionsRef(cx).setDontReportUncaught(false);
 
-				executeStatus = jl::executeScriptText( cx, globalObject, args.inlineScript, jl::strlen( args.inlineScript ) * sizeof( TCHAR ), sizeof( TCHAR ) == 2 ? jl::EncodingType::ENC_UTF16le : jl::EncodingType::ENC_LATIN1, args.compileOnly, &rval );
-			}
+					JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, COUNTOF(embeddedBootstrapScript) - 1, NULL)); // -1 because sizeof("") == 1
+					JL_CHK( script );
+					JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
+				}
 
-			// file script
+				// file bootstrap script
 
-			if ( args.jsArgc == 1 && executeStatus == true ) {
+				if ( args.useFileBootstrapScript ) {
 
-				executeStatus = jl::executeScriptFileName( cx, globalObject, args.jsArgv[0], args.encoding, args.compileOnly, &rval );
-			}
+					TCHAR bootstrapFilename[PATH_MAX];
+					jl::strcpy( bootstrapFilename, hostFullPath );
+					jl::strcat( bootstrapFilename, TEXT(".js") );
+					JL_CHK( jl::executeScriptFileName(cx, globalObject, bootstrapFilename, args.encoding, args.compileOnly, &rval) );
+				}
 
-			if ( executeStatus == true ) {
+				ASSERT( !JL_IsExceptionPending(cx) );
 
-				if ( rval.isInt32() && rval.toInt32() >= 0 ) // (TBD) enhance this, use jl::getValue() ?
-					exitValue = rval.toInt32();
-				else
-					exitValue = EXIT_SUCCESS;
-			} else {
+				bool executeStatus;
+				executeStatus = true;
 
-				if ( JL_IsExceptionPending(cx) ) { // see JSOPTION_DONT_REPORT_UNCAUGHT option.
+				// inline (command-line) script
 
-					JS::RootedValue ex(cx);
-					JS_GetPendingException(cx, &ex);
-					JL_CHK( jl::getPrimitive(cx, ex, &ex) );
-					if ( ex.isInt32() ) {
+				if ( args.inlineScript != NULL ) {
 
-						exitValue = ex.toInt32();
-					} else {
+					executeStatus = jl::executeScriptText( cx, globalObject, args.inlineScript, jl::strlen( args.inlineScript ) * sizeof( TCHAR ), sizeof( TCHAR ) == 2 ? jl::EncodingType::ENC_UTF16le : jl::EncodingType::ENC_LATIN1, args.compileOnly, &rval );
+				}
 
-						JS_ReportPendingException(cx);
-						exitValue = EXIT_FAILURE;
-					}
+				// file script
+
+				if ( args.jsArgc == 1 && executeStatus == true ) {
+
+					executeStatus = jl::executeScriptFileName( cx, globalObject, args.jsArgv[0], args.encoding, args.compileOnly, &rval );
+				}
+
+				if ( executeStatus == true ) {
+
+					if ( rval.isInt32() && rval.toInt32() >= 0 ) // (TBD) enhance this, use jl::getValue() ?
+						exitValue = rval.toInt32();
+					else
+						exitValue = EXIT_SUCCESS;
 				} else {
 
-					exitValue = EXIT_FAILURE;
+					if ( JL_IsExceptionPending(cx) ) { // see JSOPTION_DONT_REPORT_UNCAUGHT option.
+
+						JS::RootedValue ex(cx);
+						JS_GetPendingException(cx, &ex);
+						JL_CHK( jl::getPrimitive(cx, ex, &ex) );
+						if ( ex.isInt32() ) {
+
+							exitValue = ex.toInt32();
+						} else {
+
+							JS_ReportPendingException(cx);
+							exitValue = EXIT_FAILURE;
+						}
+					} else {
+
+						exitValue = EXIT_FAILURE;
+					}
 				}
 			}
-
 		}
 
 		freeInterrupt();
@@ -623,12 +630,14 @@ int _tmain( int argc, TCHAR* argv[] ) {
 		// JS_SetGCCallback(JL_GetRuntime(cx), NULL, NULL);
 
 		host.destroy();
+		global.destroy();
 		hostRuntime.destroy();
 		host.free(); // must be executed after runtime destroy
 	}
 
 	return exitValue;
 	JL_BAD;
+
 
 /*
 #ifdef DBG_ALLOC

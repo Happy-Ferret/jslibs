@@ -116,6 +116,28 @@ public:
 };
 
 
+//////////////////////////////////////////////////////////////////////////////
+// Valid
+
+class DLLAPI Valid {
+	bool _valid;
+public:
+	Valid()
+	: _valid(true) {
+	}
+
+	operator bool() {
+		
+		return _valid;
+	}
+	
+	void
+	invalidate() {
+
+		_valid = false;
+	}
+};
+
 
 //////////////////////////////////////////////////////////////////////////////
 // Alloc
@@ -305,13 +327,7 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 // HostRuntime
 
-class DLLAPI HostRuntime : public jl::CppAllocators {
-
-	// global object
-	// doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
-	// note: global_class is a global variable, but this is not an issue even if several runtimes share the same JSClass.
-	static const JSClass _globalClass;
-	static const JSClass _globalClass_lazy;
+class DLLAPI HostRuntime : public Valid, public jl::CppAllocators {
 
 	JSContext *cx;
 	JSRuntime *rt;
@@ -335,7 +351,7 @@ public: // static
 
 public:
 
-	HostRuntime(Allocators allocators = StdAllocators(), uint32_t maybeGCInterval = 0);
+	HostRuntime(Allocators allocators = StdAllocators(), uint32_t maybeGCInterval = 0, uint32_t maxMem = uint32_t(-1), uint32_t maxAlloc = uint32_t(-1), size_t nativeStackQuota = 0);
 
 	JSRuntime *
 	runtime() const {
@@ -368,7 +384,7 @@ public:
 	}
 
 	bool
-	create(uint32_t maxMem = (uint32_t)-1, uint32_t maxAlloc = (uint32_t)-1, size_t nativeStackQuota = 0, bool lazyStandardClasses = true);
+	create(uint32_t maxMem = (uint32_t)-1, uint32_t maxAlloc = (uint32_t)-1, size_t nativeStackQuota = 0);
 
 	bool
 	destroy(bool skipCleanup = false);
@@ -389,7 +405,8 @@ class DLLAPI ModuleManager {
 		JLLibraryHandler moduleHandle; // JLDynamicLibraryNullHandler if uninitialized
 		void *privateData; // user data
 
-		Module() : moduleId(0), moduleHandle(JLDynamicLibraryNullHandler), privateData(NULL) {
+		Module()
+		: moduleId(0), moduleHandle(JLDynamicLibraryNullHandler), privateData(NULL) {
 		}
 	};
 
@@ -772,23 +789,6 @@ public:
 		};
 	};
 
-	struct MessageChunk {
-		wchar_t *text;
-	};
-
-	struct DynMessageChunk : public MessageChunk, public jl::CppAllocators {
-		DynMessageChunk() {
-
-			text = nullptr;
-		}
-
-		~DynMessageChunk() {
-
-			if (text)
-				jl_free(text);
-		}
-	};
-
 private:
 	HostRuntime &_hostRuntime;
 
@@ -796,28 +796,38 @@ private:
 		const wchar_t *name;
 		const JSExnType exn;
 	};
-	
+
 	static const ErrorList _errorList[];
 
-	static const MessageChunk _msgDefault[];
+	static const wchar_t * _defaultMessages[];
+	const wchar_t ** _currentMessages;
 
-	const MessageChunk *_current;
-	
 public:
 
 	ErrorManager(HostRuntime &hostRuntime)
-	: _hostRuntime(hostRuntime), _current(_msgDefault) {
+	: _hostRuntime(hostRuntime), _currentMessages(_defaultMessages) {
 	}
 
 	~ErrorManager() {
 
-		if ( _current != _msgDefault )
-			delete[] static_cast<const DynMessageChunk*>(_current); // need to cast back to DynMessageChunk (see new DynMessageChunk)
+		restoreDefaultMessages();
 	}
 
-	bool importMessages( JSContext *cx, JS::HandleValue messages );
+	void restoreDefaultMessages() {
 
-	bool exportMessages( JSContext *cx, JS::MutableHandleValue messages );
+		if ( _currentMessages != _defaultMessages && _currentMessages != nullptr ) {
+
+			for ( size_t i = 0; i < E__END; ++i )
+				jl_free( const_cast<wchar_t*>(_currentMessages[i]) );
+			jl_free( _currentMessages );
+		}
+		_currentMessages = _defaultMessages;
+	}
+
+
+	bool importMessages( JSContext *cx, JS::HandleObject messagesObj );
+
+	bool exportMessages( JSContext *cx, JS::MutableHandleObject messagesObj );
 
 
 	static const JSErrorFormatString *
@@ -889,16 +899,60 @@ public:
 		const ErrArg args[] = { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14 }; return report( isWarning, COUNTOF(args), args );
 	}
 */
+};
+
+
+class DLLAPI Global : public Valid, public jl::CppAllocators {
+
+	// global object
+	// doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
+	// note: global_class is a global variable, but this is not an issue even if several runtimes share the same JSClass.
+
+	static bool
+	_lazy_enumerate(JSContext *cx, JS::HandleObject obj);
+
+	static bool
+	Global::_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, unsigned flags, JS::MutableHandleObject objp);
+
+	static const JSClass _globalClass;
+	static const JSClass _globalClass_lazy;
+
+	HostRuntime &_hostRuntime;
+
+	JS::PersistentRootedObject _global;
+
+public:
+
+	Global( HostRuntime &hr, bool lazyStandardClasses = true, bool loadDebugger = false );
+
+	void
+	destroy() {
+
+		_global.set(nullptr);
+	}
+
+	HostRuntime &
+	hostRuntime() {
+
+		return _hostRuntime;
+	}
+
+	JSObject *
+	globalObject() {
+
+		return _global;		
+	}
 
 };
 
 
 
-
-class DLLAPI Host : public jl::CppAllocators {
+class DLLAPI Host : public Valid, public jl::CppAllocators {
 
 	HostRuntime &_hostRuntime;
+	Global &_global;
 	ModuleManager _moduleManager;
+
 	JS::PersistentRootedObject _hostObject;
 	StdIO &_hostStdIO;
 	const uint32_t _compatId; // used to ensure compatibility between host and modules. see JL_HOST_VERSIONID macro.
@@ -908,9 +962,6 @@ class DLLAPI Host : public jl::CppAllocators {
 	ProtoCache _classProtoCache;
 	StaticArray< JS::PersistentRootedId, LAST_JSID > _ids;
 	ErrorManager _errorManager;
-
-
-//
 
 //	static void
 //	errorReporterBasic( JSContext *cx, const char *message, JSErrorReport *report );
@@ -931,12 +982,12 @@ class DLLAPI Host : public jl::CppAllocators {
 
 
 public:
-	Host( HostRuntime &hr, StdIO &hostStdIO, bool unsafeMode = false );
+	Host( Global &glob, StdIO &hostStdIO, bool unsafeMode = false );
 
 	// init the host for jslibs usage (modules, errors, ...)
 	
 	bool
-	create();
+	create( bool lazyStandardClasses = true );
 
 	bool
 	destroy(bool skipCleanup = false);

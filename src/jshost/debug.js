@@ -7,12 +7,68 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('serial'); throw 0; // -inlineOnly
 
-loadModule('jsstd');
-host.errorMessages = exec('../common/errors-'+host.lang.split('-')[0].toLowerCase()+'.js');
+
+var dbg = new debug.Debugger;
+
+dbg.addDebuggee(global);
+
+dbg.onDebuggerStatement = function(frame) {
+	
+	host.stdout('onDebuggerStatement!\n');
+	
+	var line = frame.script.getOffsetLine(frame.offset);
+
+	host.stdout(frame.script.source.text.split('\n')[line-1], '\n');
+}
 
 
-exec('qsdfqsdfxxx.js');
+eval(`
+function test() {
 
+	debugger;	
+}
+`);
+
+test();
+
+
+
+
+throw 0;
+
+	var myDebugger = new Debugger;
+
+	myDebugger.addDebuggee(this);
+
+	myDebugger.onError = function() {
+	
+		host.stdout('debugger!');
+	}
+
+	myDebugger.enabled = true;	
+
+
+	ssadfsadf();
+
+throw 0;
+
+
+
+	loadModule('jsstd');
+
+	host.stdout(uneval(host.errorMessages));
+
+	host.errorMessages = exec('../common/errors-'+host.lang.split('-')[0].toLowerCase()+'.js');
+
+	host.errorMessages = {ERRNO_1:123};
+
+	host.stdout('\n---------------------\n');
+	host.stdout(uneval(host.errorMessages));
+	host.stdout('\n---------------------\n');
+	host.errorMessages = null;
+	host.stdout(uneval(host.errorMessages));
+
+	exec('qsdfqsdfxxx.js');
 
 throw 0;
 
