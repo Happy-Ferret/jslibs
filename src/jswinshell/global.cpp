@@ -919,8 +919,7 @@ struct DirectoryUserProcessEvent : public ProcessEvent2 {
 
 		if ( slot( 0 ) != JL_VALUEZ ) {
 
-			JS::RootedValue rval(cx);
-			JL_CHK( jl::call( cx, hslot( 0 ), hslot( 2 ), &rval, hslot( 1 ) ) );
+			JL_CHK( jl::callNoRval( cx, hslot( 0 ), hslot( 2 ), hslot( 1 ) ) );
 		}
 		return true;
 		JL_BAD;

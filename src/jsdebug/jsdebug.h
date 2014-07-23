@@ -16,13 +16,3 @@
 #pragma once
 
 #include <jlhelper.h>
-
-struct ModulePrivate {
-	
-	jl::Queue scriptFileList;
-	jsid JLID_onNewScript;
-};
-
-
-bool GetScriptLocation( JSContext *cx, jsval *val, unsigned lineno, JSScript **script, jsbytecode **pc );
-JSScript *ScriptByLocation(JSContext *cx, jl::Queue *scriptFileList, const char *filename, uint32_t lineno);

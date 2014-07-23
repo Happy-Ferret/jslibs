@@ -14,8 +14,6 @@
 
 #include "stdafx.h"
 
-#include <js/OldDebugAPI.h> // JS_DefineDebuggerObject
-
 #include "js/GCAPI.h"
 
 #include <jsprf.h> // JS_smprintf in ErrorReporter
@@ -324,6 +322,7 @@ CountedAlloc::CountedAlloc(Allocators &current)
 
 CountedAlloc::~CountedAlloc() {
 
+	// see HostStdIO on failure (wideshare issue)
 	fprintf(stderr, "\n{alloc:%d (%dB), leaks:%d (%dB)}\n", _allocCount, _allocAmount, _allocCount - _freeCount, _allocAmount - _freeAmount);
 		
 	_current = _base;
@@ -431,7 +430,6 @@ WatchDog::stop() {
 //////////////////////////////////////////////////////////////////////////////
 // HostRuntime
 
-
 void
 HostRuntime::setJSEngineAllocators(Allocators allocators) {
 
@@ -474,15 +472,16 @@ HostRuntime::HostRuntime( Allocators allocators, uint32_t maybeGCIntervalMs, uin
 
 	// doc: maxMem specifies the number of allocated bytes after which garbage collection is run. Maximum nominal heap before last ditch GC.
 
-	JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem); 
-	JS_SetNativeStackQuota(rt, 128 * sizeof(size_t) * 1024); // doc. To disable stack size checking pass 0.
+	//JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem);
+	//JS_SetNativeStackQuota(rt, 128 * sizeof(size_t) * 1024); // doc. To disable stack size checking pass 0.
 	//JS_SetNativeStackQuota(rt, 0);
-
-	//JS::DisableGenerationalGC(rt);
+	JS_SetNativeStackQuota(rt, nativeStackQuota); // doc: 0:disabled
 
 	//JS_SetGCParametersBasedOnAvailableMemory
 
-	//JS_SetNativeStackQuota(rt, nativeStackQuota); // doc: 0:disabled
+
+	//JS::DisableGenerationalGC(rt);
+
 
 	cx = JS_NewContext(rt, 8192); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 	JL_CHK( cx ); //, "unable to create the context." );
@@ -579,12 +578,12 @@ HostRuntime::destroy(bool skipCleanup) {
 	JS_DestroyContext(cx);
 	cx = nullptr;
 
-	#ifdef DEBUG
-//	JS_DumpHeap(rt, fopen("dump.txt", "w"), nullptr, JSTRACE_OBJECT, nullptr, 1, nullptr);
-	#endif
+	fireEvent(EventId::BEFORE_DESTROY_RUNTIME);
 
 	JS_DestroyRuntime(rt);
 	rt = nullptr;
+
+	fireEvent(EventId::AFTER_DESTROY_RUNTIME);
 
 	return true;
 
@@ -788,7 +787,7 @@ const JSClass Global::_globalClass = {
 };
 
 
-Global::Global( HostRuntime &hr, bool lazyStandardClasses, bool loadDebugger )
+Global::Global( HostRuntime &hr, bool lazyStandardClasses )
 : _hostRuntime(hr), _global( hr.context() ) {
 
 	JSContext *cx = _hostRuntime.context();
@@ -814,26 +813,6 @@ Global::Global( HostRuntime &hr, bool lazyStandardClasses, bool loadDebugger )
 
 		JS_FireOnNewGlobalObject(cx, _global);
 	}
-
-
-	if ( loadDebugger ) {
-
-		// https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey/JS_Debugger_API_Reference/Debugger
-		
-		JS::RootedObject debug(cx, JS_NewGlobalObject(cx, &_globalClass_lazy, nullptr, JS::DontFireOnNewGlobalHook, CompartmentOptionsRef(_global)));
-		JSAutoCompartment ac(cx, debug);
-
-		//JL_CHK( JS_InitStandardClasses(cx, debug) );
-		JL_CHK( JS_DefineDebuggerObject(cx, debug) ); // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
-		JS_FireOnNewGlobalObject(cx, debug);
-
-		JS::RootedObject debuggeeWrapper(cx, _global);
-		JL_CHK(JS_WrapObject(cx, &debuggeeWrapper));
-
-		JS::RootedValue v(cx, JS::ObjectValue(*debug));
-		JL_CHK(JS_SetProperty(cx, debuggeeWrapper, "debug", v));
-	}
-
 
 	return;
 bad:
@@ -1470,6 +1449,8 @@ Host::Host( Global &glob, StdIO &hostStdIO, bool unsafeMode )
 
 	::_unsafeMode = unsafeMode;
 	Host::setHostAllocators(_hostRuntime.allocators());
+
+//	JL_CHKM(_global, E_GLOBAL, E_INVALID);
 
 	IFDEBUG( jl_free(js_malloc(256)) );
 	IFDEBUG( js_free(jl_malloc(256)) );

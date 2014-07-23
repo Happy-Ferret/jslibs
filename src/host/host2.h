@@ -29,7 +29,7 @@ typedef ptrdiff_t moduleId_t;
 extern DLLAPI bool _unsafeMode;
 
 #include <jlalloc.h>
-
+#include <queue.h>
 
 #define JLID_SPEC(name) JLID_##name
 enum {
@@ -135,6 +135,55 @@ public:
 	invalidate() {
 
 		_valid = false;
+	}
+};
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Event system
+
+enum EventId {
+	BEFORE_DESTROY_RUNTIME,
+	AFTER_DESTROY_RUNTIME
+};
+
+
+class Callback : public jl::CppAllocators {
+public:
+	virtual void operator()() = 0;
+};
+
+
+class DLLAPI Events {
+
+	struct Listener {
+
+		EventId id;
+		Callback *cb;
+		~Listener() {
+			
+			delete cb;
+		}
+	};
+
+	typedef jl::Queue1<Listener> List;
+	List _list;
+
+public:
+	void
+	addListener( EventId id, Callback *cb ) {
+
+		_list.AddEnd();
+		_list.End()->data.id = id;
+		_list.End()->data.cb = cb;
+	}
+
+	void 
+	fireEvent( EventId id ) const {
+
+		for ( List::Item *it = _list.Begin(); it; it = it->next )
+			if ( it->data.id == id )
+				(*it->data.cb)();
 	}
 };
 
@@ -327,7 +376,7 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 // HostRuntime
 
-class DLLAPI HostRuntime : public Valid, public jl::CppAllocators {
+class DLLAPI HostRuntime : public Valid, public Events, public jl::CppAllocators {
 
 	JSContext *cx;
 	JSRuntime *rt;
@@ -353,14 +402,14 @@ public:
 
 	HostRuntime(Allocators allocators = StdAllocators(), uint32_t maybeGCInterval = 0, uint32_t maxMem = uint32_t(-1), uint32_t maxAlloc = uint32_t(-1), size_t nativeStackQuota = 0);
 
-	JSRuntime *
-	runtime() const {
+	JSRuntime *&
+	runtime() {
 
 		return rt;
 	}
 	
-	JSContext *
-	context() const {
+	JSContext *&
+	context() {
 
 		return cx;
 	}
@@ -382,9 +431,6 @@ public:
 
 		return _isEnding;
 	}
-
-	bool
-	create(uint32_t maxMem = (uint32_t)-1, uint32_t maxAlloc = (uint32_t)-1, size_t nativeStackQuota = 0);
 
 	bool
 	destroy(bool skipCleanup = false);
@@ -736,6 +782,10 @@ public:
 		: _type(ErrArg::INTEGER), _integer(val) {
 		}
 
+		ErrArg( unsigned long val )
+		: _type(ErrArg::INTEGER), _integer(val) {
+		}
+
 		ErrArg( float val )
 		: _type(ErrArg::FLOAT), _float(val) {
 		}
@@ -923,7 +973,7 @@ class DLLAPI Global : public Valid, public jl::CppAllocators {
 
 public:
 
-	Global( HostRuntime &hr, bool lazyStandardClasses = true, bool loadDebugger = false );
+	Global( HostRuntime &hr, bool lazyStandardClasses = true );
 
 	void
 	destroy() {
@@ -986,9 +1036,6 @@ public:
 
 	// init the host for jslibs usage (modules, errors, ...)
 	
-	bool
-	create( bool lazyStandardClasses = true );
-
 	bool
 	destroy(bool skipCleanup = false);
 

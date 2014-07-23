@@ -438,9 +438,8 @@ public:
 						arg.set(_serializerObj);
 					}
 
-					JS::RootedValue tmp(cx); // root no need
 					bool ok;
-					ok = jl::call(cx, obj, serializeFctVal, &tmp, arg); // rval not used
+					ok = jl::callNoRval(cx, obj, serializeFctVal, arg); // rval not used
 
 					if (serializerWrapper != NULL) {
 
@@ -802,9 +801,7 @@ public:
 					arg.set( _unserializerObj );
 				}
 
-				JS::RootedValue rval(cx); // note that no root needed
-
-				bool ok = jl::call(cx, newObj, JLID(cx, _unserialize), &rval, arg); // rval not used
+				bool ok = jl::callNoRval(cx, newObj, JLID(cx, _unserialize), arg); // rval not used
 
 				if ( unserializerWrapper != NULL )
 					JL_SetPrivate( unserializerWrapper, NULL);

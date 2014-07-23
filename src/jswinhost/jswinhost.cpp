@@ -123,71 +123,77 @@ int CALLBACK WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 	HostRuntime::setJSEngineAllocators(allocators); // need to be done before AutoJSEngineInit ?
 	AutoJSEngineInit ase;
 
-	HostRuntime hostRuntime(allocators, 0); // 0 mean no periodical GC
-	JL_CHK( hostRuntime.create((uint32_t)-1, (uint32_t)-1, HOST_STACK_SIZE) );
-	
-	JSContext *cx = hostRuntime.context();
 	//JS::ContextOptionsRef(cx).setWerror(args.warningsToErrors);
 
 	{
 
-		jl::Host host(hostRuntime, hostIO);
-		JL_CHK( host.create() );
+		HostRuntime hostRuntime(allocators, 0, uint32_t(-1), uint32_t(-1), HOST_STACK_SIZE / 2); // 0 mean no periodical GC
+		JSContext *cx = hostRuntime.context();
 
-		TCHAR moduleName[PATH_MAX];
-		TCHAR tmp[PATH_MAX];
+		jl::Global global(hostRuntime);
+		JL_CHK( global );
 
-		DWORD moduleNameLen = ::GetModuleFileName(hInstance, moduleName, COUNTOF(moduleName));
-
-		HOST_MAIN_ASSERT( moduleNameLen > 0 && moduleNameLen < PATH_MAX && moduleName[moduleNameLen] == '\0', "Invalid module filename." );
-
-		// construct host.path and host.name properties
-		jl::memcpy( tmp, moduleName, TSIZE(moduleNameLen + 1) );
-		TCHAR *name = jl::strrchr( tmp, TEXT( PATH_SEPARATOR ) );
-		JL_CHK( name );
-		name += 1;
-		JL_CHK( host.setHostName(name) );
-		*name = TEXT( '\0' );
-		JL_CHK( host.setHostPath(tmp) );
-
-		LPTSTR *szArglist;
-		int nArgs;
-		szArglist = jl::CommandLineToArgvW(::GetCommandLineW(), &nArgs);
-		host.setHostArguments(szArglist, nArgs);
-		::free(szArglist);
+		jl::Host host(global, hostIO);
+		JL_CHK( host );
 
 		{
+			JSAutoCompartment ac(global.hostRuntime().context(), global.globalObject());
 
-			JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
-			JS::RootedValue rval(cx);
+			TCHAR moduleName[PATH_MAX];
+			TCHAR tmp[PATH_MAX];
 
-			// embedded bootstrap script
-			if ( sizeof(embeddedBootstrapScript)-1 > 0 ) {
+			DWORD moduleNameLen = ::GetModuleFileName(hInstance, moduleName, COUNTOF(moduleName));
 
-				JS::AutoSaveContextOptions asco(cx);
-				JS::ContextOptionsRef(cx).setDontReportUncaught(false);
+			HOST_MAIN_ASSERT( moduleNameLen > 0 && moduleNameLen < PATH_MAX && moduleName[moduleNameLen] == '\0', "Invalid module filename." );
 
-				JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL) ); // -1 because sizeof("") == 1
-				JL_CHK( script );
-				JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
-			}
-
-			// construct script name
+			// construct host.path and host.name properties
 			jl::memcpy( tmp, moduleName, TSIZE(moduleNameLen + 1) );
-			TCHAR *dotPos = jl::strrchr( tmp, TEXT( '.' ) );
-			JL_CHK( dotPos );
-			jl::strcpy( dotPos + 1, TEXT( "js" ) );
+			TCHAR *name = jl::strrchr( tmp, TEXT( PATH_SEPARATOR ) );
+			JL_CHK( name );
+			name += 1;
+			JL_CHK( host.setHostName(name) );
+			*name = TEXT( '\0' );
+			JL_CHK( host.setHostPath(tmp) );
 
-			bool executeStatus;
-			executeStatus = jl::executeScriptFileName( cx, globalObject, tmp, EncodingType::ENC_UNKNOWN, false, &rval );
+			LPTSTR *szArglist;
+			int nArgs;
+			szArglist = jl::CommandLineToArgvW(::GetCommandLineW(), &nArgs);
+			host.setHostArguments(szArglist, nArgs);
+			::free(szArglist);
 
-			if ( !executeStatus )
-				if ( JL_IsExceptionPending(cx) )
-					JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
+			{
 
+				JS::RootedObject globalObject(cx, global.globalObject());
+				JS::RootedValue rval(cx);
+
+				// embedded bootstrap script
+				if ( sizeof(embeddedBootstrapScript)-1 > 0 ) {
+
+					JS::AutoSaveContextOptions asco(cx);
+					JS::ContextOptionsRef(cx).setDontReportUncaught(false);
+
+					JS::RootedScript script(cx, JS_DecodeScript(cx, embeddedBootstrapScript, sizeof(embeddedBootstrapScript)-1, NULL) ); // -1 because sizeof("") == 1
+					JL_CHK( script );
+					JL_CHK( JS_ExecuteScript(cx, globalObject, script, &rval) );
+				}
+
+				// construct script name
+				jl::memcpy( tmp, moduleName, TSIZE(moduleNameLen + 1) );
+				TCHAR *dotPos = jl::strrchr( tmp, TEXT( '.' ) );
+				JL_CHK( dotPos );
+				jl::strcpy( dotPos + 1, TEXT( "js" ) );
+
+				bool executeStatus;
+				executeStatus = jl::executeScriptFileName( cx, globalObject, tmp, EncodingType::ENC_UNKNOWN, false, &rval );
+
+				if ( !executeStatus )
+					if ( JL_IsExceptionPending(cx) )
+						JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
+			}
 		}
 
 		host.destroy();
+		global.destroy();
 		hostRuntime.destroy();
 		host.free(); // must be executed after runtime destroy
 	}

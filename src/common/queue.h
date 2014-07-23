@@ -253,7 +253,7 @@ class NOVTABLE Queue1 {
 
 public:
 	class Item {
-		friend Queue1;
+	public:
 		Item *prev;
 		Item *next;
 		T data;

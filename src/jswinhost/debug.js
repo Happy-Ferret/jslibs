@@ -1,10 +1,5 @@
 var loadModule = host.loadModule;
 
-sdfgé()
-
-	host.stderr('été\n');
-throw 0;
-
 
 loadModule('jswinshell');
 var s = new Systray();

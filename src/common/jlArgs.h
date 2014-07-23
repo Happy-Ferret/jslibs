@@ -21,57 +21,69 @@ JL_BEGIN_NAMESPACE
 
 #define ARGSARGS cx, argc, vp
 
-struct Args {
+class Args {
 
 	JS::PersistentRootedObject _thisObj; // use HandleObject instead ?
-	const JS::CallArgs _jsargs;
 	JSContext *&_cx;
+	const JS::CallArgs _jsargs;
 
-	Args(JSContext *&cx, unsigned argc, JS::Value *&vp)
+	void operator=( const Args & );
+
+public:
+	explicit Args(JSContext *&cx, unsigned argc, JS::Value *&vp)
 	: _cx(cx), _thisObj(cx), _jsargs( JS::CallArgsFromVp(argc, vp) ) {
 	}
 
-	JSObject *callee() {
+	JSObject *
+	callee() {
 
 		return &_jsargs.callee();
 	}
 
-	unsigned length() const {
+	unsigned
+	length() const {
 
 		return _jsargs.length();
 	}
 
-	bool hasDefined(unsigned i) const {
+	bool
+	hasDefined(unsigned i) const {
 
 		return _jsargs.hasDefined(i);
 	}
 
-	JS::MutableHandleValue operator[](unsigned i) const {
+	JS::MutableHandleValue
+	operator[](unsigned i) const {
 
 		return _jsargs.operator[](i);
 	}
 
-	JS::MutableHandleValue handleAt(unsigned i) const {
+	JS::MutableHandleValue
+	handleAt(unsigned i) const {
 
 		return _jsargs[i];
 	}
 
-	JS::HandleValue handleOrUndefinedAt(unsigned i) const {
+	JS::HandleValue
+	handleOrUndefinedAt(unsigned i) const {
 
 		return _jsargs.get(i);
 	}
 
-	JS::MutableHandleValue rval() const {
+	JS::MutableHandleValue
+	rval() const {
 
 		return _jsargs.rval();
 	}
 
-	bool isConstructing() const {
+	bool
+	isConstructing() const {
 
 		return _jsargs.isConstructing();
 	}
 
-	void constructThis(JSClass *clasp, JS::HandleObject proto) {
+	void
+	constructThis(JSClass *clasp, JS::HandleObject proto) {
 
 		//ASSERT( isConstructing() );
 		_thisObj.set( jl::newObjectWithGivenProto(_cx, clasp, proto) ); // JS_NewObjectForConstructor() use the callee to determine parentage and [[Prototype]].
@@ -79,7 +91,8 @@ struct Args {
 		_jsargs.setThis(rval());
 	}
 
-	void computeThis() {
+	void
+	computeThis() {
 
 		JS::Value tmp = _jsargs.thisv();
 		if ( tmp.isObject() ) {
@@ -99,76 +112,114 @@ struct Args {
 		_jsargs.setThis(JS::ObjectValue(*_thisObj));
 	}
 
-	JS::HandleObject thisObj() {
+	JS::HandleObject
+	thisObj() {
 
 		if ( !_thisObj )
 			computeThis();
 		return JS::HandleObject::fromMarkedLocation(_thisObj.address());
 	}
 
-	JS::HandleValue thisObjVal() {
+	JS::HandleValue
+	thisObjVal() {
 
 		if ( _jsargs.thisv().isObject() )
 			return _jsargs.thisv();
 		computeThis();
 		return _jsargs.thisv();
 	}
-
-private:
-	void operator=( const Args & );
 };
+
 
 
 #define PROPARGSARGS cx, obj, id, vp
 
-struct PropArgs {
+class PropArgs {
 
+	JSContext *&_cx;
 	JS::HandleObject &_thisObj;
 	JS::MutableHandleValue &_vp;
+	JS::HandleId &_id;
 
-	PropArgs(JSContext *cx, JS::HandleObject &obj, JS::HandleId id, JS::MutableHandleValue &vp)
-	: _thisObj(obj), _vp(vp) {
+	void operator=( const PropArgs & );
+
+public:
+	explicit PropArgs( JSContext *&cx, JS::HandleObject &obj, JS::HandleId &id, JS::MutableHandleValue &vp )
+	: _cx(cx), _thisObj(obj), _id(id), _vp(vp) {
 	}
 
-	unsigned length() const {
+	unsigned
+	length() const {
 
 		return 1;
 	}
 
-	bool hasDefined(unsigned) const {
+	bool
+	hasDefined(unsigned) const {
 
 		return true;
 	}
 
-	JS::MutableHandleValue operator[](unsigned i) const {
+	JS::MutableHandleValue 
+	operator[](unsigned i) const {
 
 		return _vp;
 	}
 
-	JS::MutableHandleValue &handleAt(unsigned) {
+	JS::MutableHandleValue &
+	handleAt(unsigned) {
 
 		return _vp;
 	}
 
-	JS::HandleValue handleOrUndefinedAt(unsigned) const {
+	JS::HandleValue
+	handleOrUndefinedAt(unsigned) const {
 
 		return _vp;
 	}
 
-	JS::MutableHandleValue &rval() {
+	JS::MutableHandleValue &
+	rval() const {
 
 		return _vp;
 	}
 
-	JS::HandleObject thisObj() const {
+	JS::HandleObject
+	thisObj() const {
 
 		return _thisObj;
 	}
 
-private:
-	void operator=( const PropArgs & );
-};
+	bool
+	store( bool removeGetterAndSetter ) const {
 
+		//return jl::StoreProperty(_cx, _obj, _id, _vp, removeGetterAndSetter);
+
+		JS::Rooted<JSPropertyDescriptor> desc(_cx);
+		if ( !JS_GetPropertyDescriptorById(_cx, _thisObj, _id, &desc) )
+			goto bad;
+		// bool found = desc.object() != NULL;
+		unsigned int attrs = desc.attributes();
+		JSPropertyOp getter = desc.getter();
+		JSStrictPropertyOp setter = desc.setter();
+
+		//JL_CHK( JS_GetPropertyAttrsGetterAndSetterById(cx, obj, id, &attrs, &found, &getter, &setter) );
+
+		//ASSERT( found );
+		// doc: JSPROP_SHARED: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
+		if ( (attrs & JSPROP_SHARED) == 0 ) // Has already been stored somewhere. The slot will be updated after JSPropertyOp returns.
+			return true;
+		attrs &= ~JSPROP_SHARED; // stored mean not shared.
+		if ( removeGetterAndSetter ) { // store and never call the getter or setter again.
+
+			getter = NULL;
+			setter = NULL;
+		}
+		return JS_DefinePropertyById( _cx, _thisObj, _id, _vp, attrs, getter, setter );
+	bad:
+		return false;
+	}
+};
 
 JL_END_NAMESPACE
 

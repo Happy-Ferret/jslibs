@@ -18,15 +18,9 @@
 #include <jlhelper.h>
 #include <jlclass.h>
 
-#include <jsdbgapi.h>
-//#include <jsopcode.h>
-//#include "../../../src/js/src/jsscript.h"
-
-#include <stack.h>
 
 #include <errno.h>
 #include <time.h>
 #include <string.h>
-
 
 #include "jsdebug.h"

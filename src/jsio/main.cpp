@@ -81,7 +81,8 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	JL_BAD;
 }
 
-bool ModuleRelease(JSContext *cx) {
+bool
+ModuleRelease(JSContext *cx) {
 
 	jl::Host &host = jl::Host::getHost(cx);
 	JsioPrivate *mpv = (JsioPrivate*)host.moduleManager().modulePrivate(moduleId());
@@ -99,7 +100,8 @@ bool ModuleRelease(JSContext *cx) {
 //	JL_BAD;
 }
 
-void ModuleFree(bool skipCleanup, void* pv) {
+void
+ModuleFree(bool skipCleanup, void* pv) {
 
 	if ( skipCleanup )
 		return;

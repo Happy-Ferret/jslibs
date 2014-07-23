@@ -7,27 +7,41 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('serial'); throw 0; // -inlineOnly
 
+loadModule('jsdebug');
 
-var dbg = new debug.Debugger;
+registerDumpHeap();
 
-dbg.addDebuggee(global);
+var debug = new Debugger;
 
-dbg.onDebuggerStatement = function(frame) {
+debug.addDebuggee(global);
+
+host.stdout([ i.source.url+':'+i.startLine for each (i in debug.findScripts())].join('\n'));
+
+debug.onDebuggerStatement = function(frame) {
 	
-	host.stdout('onDebuggerStatement!\n');
+//	host.stdout('onDebuggerStatement!\n');
 	
 	var line = frame.script.getOffsetLine(frame.offset);
 
-	host.stdout(frame.script.source.text.split('\n')[line-1], '\n');
+/*
+	var src = frame.script.source.text.split('\n');
+	src[line-1] = '>' + src[line-1];
+	host.stdout(src.join('\n'), '\n');
+*/
+
 }
 
-
-eval(`
+//# test
 function test() {
 
-	debugger;	
+	//# test
+	!function() {
+
+		//# test
+		debugger;
+	}();
 }
-`);
+
 
 test();
 

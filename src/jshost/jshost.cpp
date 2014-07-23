@@ -498,7 +498,7 @@ int _tmain( int argc, TCHAR* argv[] ) {
 		//alloc.setSkipCleanup(true);
 		//nedAlloc.setSkipCleanup(true);
 
-		HostRuntime hostRuntime(allocators, uint32_t(args.maybeGCInterval * 1000), (uint32_t)-1, (uint32_t)-1, HOST_STACK_SIZE); // 0 mean no periodical GC
+		HostRuntime hostRuntime(allocators, uint32_t(args.maybeGCInterval * 1000), (uint32_t)-1, (uint32_t)-1, HOST_STACK_SIZE / 2); // 0 mean no periodical GC
 		JL_CHK( hostRuntime );
 
 		JSContext *cx = hostRuntime.context();
@@ -510,9 +510,8 @@ int _tmain( int argc, TCHAR* argv[] ) {
 		//JL_CHK( ExecuteScriptText(cx, global, "(function() { for (var i = 0; i < 10000; ++i); })()", false, &tmpVal) );
 
 
-		jl::Global global(hostRuntime, true, true);
+		jl::Global global(hostRuntime);
 		JL_CHK( global );
-
 
 		HostStdIO hostIO;
 		jl::Host host(global, hostIO);
@@ -670,7 +669,8 @@ int _tmain( int argc, TCHAR* argv[] ) {
 }
 
 
-int basic_test_main(int argc, char* argv[]) {
+//int test_main(int argc, char* argv[]) {
+int XXX_tmain( int argc, TCHAR* argv[] ) {
 
 
 	const JSClass global_class = {
@@ -702,6 +702,13 @@ int basic_test_main(int argc, char* argv[]) {
 		char scriptText[] = "";
 		JS::RootedScript script(cx, JS_CompileScript(cx, globalObject, scriptText, jl::strlen(scriptText), compileOptions));
 
+		
+		JS::RootedValue rval(cx);
+		JS::RootedObject glob(cx, JL_GetGlobal(cx));
+
+		jl::call(cx, glob, "eval", &rval, "123;");
+
+		//jl::callNoRval(cx, JL_GetGlobal(cx), "eval", "123;");
 
 	}
 

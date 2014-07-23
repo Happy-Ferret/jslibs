@@ -1,15 +1,30 @@
-	loadModule('jsdebug');
-	loadModule('jsstd');
+var loadModule = host.loadModule;
 
-function a() {
+loadModule('jsdebug');
+loadModule('jsstd');
 
-function b() {
+registerDumpHeap();
 
-}
+	var debug = new Debugger;
 
-}
+	debug.addDebuggee(global);
 
+	debug.onDebuggerStatement = function(frame) {
+	
+		host.stdout('onDebuggerStatement!\n');
+	
+		var line = frame.script.getOffsetLine(frame.offset);
 
+		host.stdout(frame.script.source.text.split('\n')[line-1], '\n');
+	}
+
+	function test() {
+
+		debugger;	
+	}
+
+	test();
+	
 
 throw 0;
 

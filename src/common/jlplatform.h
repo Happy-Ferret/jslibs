@@ -634,6 +634,7 @@ LL(const wchar_t *s) {
 
 
 #if defined(WIN32)
+
 #define JL_ASSERT_FAILURE( message, location ) \
 	( \
 	_ftprintf(stderr, TEXT("JL Assertion failure:  %s  @%s\n"), message, location), \
@@ -644,6 +645,7 @@ LL(const wchar_t *s) {
 	)
 
 #elif defined(__APPLE__)
+
 #define JL_ASSERT_FAILURE( message, location ) \
 	( \
 	fprintf(stderr, "JL Assertion failure: %s @%s\n", message, location), \
@@ -654,6 +656,7 @@ LL(const wchar_t *s) {
 	)
 
 #else
+
 #define JL_ASSERT_FAILURE( message, location ) \
 	( \
 	fprintf(stderr, "JL Assertion failure: %s @%s\n", message, location), \

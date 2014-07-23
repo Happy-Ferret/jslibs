@@ -466,7 +466,6 @@ struct ConsoleProcessEvent : public ProcessEvent2 {
 		*hasEvent = WaitForSingleObject(consoleEvent, 0) == WAIT_OBJECT_0;
 
 		JS::RootedObject thisObj(cx, &hslot(0).toObject());
-		JS::RootedValue rval(cx);
 
 		if ( *hasEvent ) {
 	
@@ -489,7 +488,7 @@ struct ConsoleProcessEvent : public ProcessEvent2 {
 
 							for ( int i = 0; i < inputRecord.Event.KeyEvent.wRepeatCount; ++i ) {
 							
-								JL_CHK( jl::call(cx, thisObj, fct, &rval,
+								JL_CHK( jl::callNoRval(cx, thisObj, fct,
 									jl::strSpec(&inputRecord.Event.KeyEvent.uChar.UnicodeChar, 1),
 									inputRecord.Event.KeyEvent.wVirtualKeyCode,
 									!!(inputRecord.Event.KeyEvent.dwControlKeyState & (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED)),
@@ -541,7 +540,7 @@ struct ConsoleProcessEvent : public ProcessEvent2 {
 							JL_CHK( JS_CallFunctionValue(cx, thisObj, fct, 7, argv+1, argv) );
 */
 
-							JL_CHK( jl::call(cx, thisObj, fct, &rval,
+							JL_CHK( jl::callNoRval(cx, thisObj, fct,
 								inputRecord.Event.MouseEvent.dwMousePosition.X,
 								inputRecord.Event.MouseEvent.dwMousePosition.Y,
 								inputRecord.Event.MouseEvent.dwButtonState & 0x0000FFFF,
@@ -559,7 +558,7 @@ struct ConsoleProcessEvent : public ProcessEvent2 {
 						JL_CHK( jl::getProperty(cx, thisObj, "onSize", &fct) );
 						if ( jl::isCallable(cx, fct) ) {
 
-							JL_CHK( jl::call(cx, thisObj, fct, &rval,
+							JL_CHK( jl::callNoRval(cx, thisObj, fct,
 								inputRecord.Event.WindowBufferSizeEvent.dwSize.X,
 								inputRecord.Event.WindowBufferSizeEvent.dwSize.Y
 							) );
@@ -572,7 +571,7 @@ struct ConsoleProcessEvent : public ProcessEvent2 {
 						JL_CHK( jl::getProperty(cx, thisObj, "onFocus", &fct) );
 						if ( jl::isCallable(cx, fct) ) {
 
-							JL_CHK( jl::call(cx, thisObj, fct, &rval, inputRecord.Event.FocusEvent.bSetFocus) );
+							JL_CHK( jl::callNoRval(cx, thisObj, fct, inputRecord.Event.FocusEvent.bSetFocus) );
 						}
 						break;
 					}

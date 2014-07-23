@@ -409,8 +409,7 @@ struct AudioEvent : public ProcessEvent2 {
 
 		if ( *hasEvent && slot( 1 ) != JL_VALUEZ ) {
 		
-			JS::Value rval; // rval is unused then there is no need to root it
-			JL_CHK( jl::call(cx, hslot(0), hslot(1), JS::MutableHandleValue::fromMarkedLocation(&rval)) );
+			JL_CHK( jl::callNoRval(cx, hslot(0), hslot(1)) );
 		}
 		return true;
 		JL_BAD;

@@ -921,7 +921,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 				if ( jl::strcmp( keyStr, "icon" ) == 0 ) {
 
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
-					JL_ASSERT_IS_OBJECT(value, keyStr);
+					JL_ASSERT_IS_OBJECT(value, (const char*)keyStr);
 					
 					JS::RootedObject iconObj(cx, &value.toObject());
 					JL_ASSERT_INSTANCE( iconObj, JL_CLASS(Icon) );
@@ -934,7 +934,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 				if ( jl::strcmp( keyStr, "popup" ) == 0 ) {
 
 					JL_CHK( NormalizeMenuInfo(cx, itemObj, key, &value) );
-					JL_ASSERT_IS_OBJECT(value, keyStr);
+					JL_ASSERT_IS_OBJECT(value, (const char*)keyStr);
 					uFlags |= MF_POPUP;
 					popupMenu = CreatePopupMenu();
 					JS::RootedObject tmp(cx, &value.toObject());

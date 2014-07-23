@@ -1011,7 +1011,6 @@ getVector(JSContext *cx, IN JS::HandleValue val, OUT T * vector, IN uint32_t len
 }
 
 
-
 ////
 
 
@@ -1071,7 +1070,9 @@ call(JSContext *cx, JS::HandleValue thisArg, const JS::RootedValue &fval, const 
 	return JS::Call(cx, thisArg, fval, args, rval);
 }
 
-////
+
+///
+
 
 template <class THIS, class FCT>
 ALWAYS_INLINE bool FASTCALL
@@ -1172,6 +1173,71 @@ call( JSContext *cx, const THIS &thisArg, const FCT &fct, JS::MutableHandleValue
 }
 
 //...
+
+template <class THIS, class FCT>
+ALWAYS_INLINE bool FASTCALL
+callNoRval( JSContext *cx, const THIS &thisArg, const FCT &fct ) {
+
+	JS::RootedValue rval(cx);
+	//JS::Value val; JS::MutableHandleValue::fromMarkedLocation(&val);
+	return call(cx, thisArg, fct, &rval);
+}
+
+template <class THIS, class FCT, class T1>
+ALWAYS_INLINE bool FASTCALL
+callNoRval( JSContext *cx, const THIS &thisArg, const FCT &fct, const T1 &v1 ) {
+
+	JS::RootedValue rval(cx);
+	return call(cx, thisArg, fct, &rval, v1);
+}
+
+template <class THIS, class FCT, class T1, class T2>
+ALWAYS_INLINE bool FASTCALL
+callNoRval( JSContext *cx, const THIS &thisArg, const FCT &fct, const T1 &v1, const T2 &v2 ) {
+
+	JS::RootedValue rval(cx);
+	return call(cx, thisArg, fct, &rval, v1, v2);
+}
+
+template <class THIS, class FCT, class T1, class T2, class T3>
+ALWAYS_INLINE bool FASTCALL
+callNoRval( JSContext *cx, const THIS &thisArg, const FCT &fct, const T1 &v1, const T2 &v2, const T3 &v3 ) {
+
+	JS::RootedValue rval(cx);
+	return call(cx, thisArg, fct, &rval, v1, v2, v3);
+}
+
+template <class THIS, class FCT, class T1, class T2, class T3, class T4>
+ALWAYS_INLINE bool FASTCALL
+callNoRval( JSContext *cx, const THIS &thisArg, const FCT &fct, const T1 &v1, const T2 &v2, const T3 &v3, const T4 &v4 ) {
+
+	JS::RootedValue rval(cx);
+	return call(cx, thisArg, fct, &rval, v1, v2, v3, v4);
+}
+
+template <class THIS, class FCT, class T1, class T2, class T3, class T4, class T5>
+ALWAYS_INLINE bool FASTCALL
+callNoRval( JSContext *cx, const THIS &thisArg, const FCT &fct, const T1 &v1, const T2 &v2, const T3 &v3, const T4 &v4, const T5 &v5 ) {
+
+	JS::RootedValue rval(cx);
+	return call(cx, thisArg, fct, &rval, v1, v2, v3, v4, v5);
+}
+
+template <class THIS, class FCT, class T1, class T2, class T3, class T4, class T5, class T6>
+ALWAYS_INLINE bool FASTCALL
+callNoRval( JSContext *cx, const THIS &thisArg, const FCT &fct, const T1 &v1, const T2 &v2, const T3 &v3, const T4 &v4, const T5 &v5, const T6 &v6 ) {
+
+	JS::RootedValue rval(cx);
+	return call(cx, thisArg, fct, &rval, v1, v2, v3, v4, v5, v6);
+}
+
+template <class THIS, class FCT, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
+ALWAYS_INLINE bool FASTCALL
+callNoRval( JSContext *cx, const THIS &thisArg, const FCT &fct, const T1 &v1, const T2 &v2, const T3 &v3, const T4 &v4, const T5 &v5, const T6 &v6, const T7 &v7 ) {
+
+	JS::RootedValue rval(cx);
+	return call(cx, thisArg, fct, &rval, v1, v2, v3, v4, v5, v6, v7);
+}
 
 ////
 
