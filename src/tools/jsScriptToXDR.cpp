@@ -163,10 +163,14 @@ int main(int argc, char* argv[]) {
 
 	JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
 
+	JS::RuntimeOptionsRef(rt)
+		.setVarObjFix(true)
+	;
+
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, 0xffffffff);
 //	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, (uint32_t)-1);
 	
-	JS::DisableIncrementalGC(rt);
+//	JS::DisableIncrementalGC(rt);
 //	JS::DisableGenerationalGC(rt);
 
 	//JSC::MacroAssembler::SetSSE3Disabled();
@@ -179,12 +183,6 @@ int main(int argc, char* argv[]) {
 	
     //JS_SetGCParameter(rt, JSGC_MODE, JSGC_MODE_INCREMENTAL);
     JS_SetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES, 16 * 1024 * 1024);
-
-
-	JS::ContextOptionsRef(cx).setVarObjFix(true);
-	
-//	JS_SetOptions(cx, JS_GetOptions(cx));
-//	JS_SetVersion(cx, (JSVersion)JSVERSION_LATEST);
 
 	JS_SetErrorReporter(cx, my_ErrorReporter);
 
@@ -246,7 +244,8 @@ int main(int argc, char* argv[]) {
 		.setCompileAndGo(true)
 	;
 
-	JS::RootedScript script(cx, JS::Compile(cx, globalObject, options, srcCode, fileSize));
+	JS::RootedScript script(cx);
+	JS::Compile(cx, globalObject, options, srcCode, fileSize, &script);
 
 	free(srcCode);
 

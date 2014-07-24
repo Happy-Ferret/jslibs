@@ -881,7 +881,7 @@ public:
 
 
 	static const JSErrorFormatString *
-	errorCallback( void *userRef, const char *, const unsigned );
+	errorCallback( void *userRef, const unsigned errorNumber );
 
 
 	INLINE NEVER_INLINE

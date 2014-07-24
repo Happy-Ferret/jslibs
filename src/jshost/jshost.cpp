@@ -71,7 +71,7 @@ struct CmdLineArguments {
 	TCHAR** jsArgv;
 
 	bool
-	parse(int argc, TCHAR* argv[]) {
+	parseForMain(int argc, TCHAR* argv[]) {
 
 		maxMem = (uint32_t)-1; // by default, there are no limit
 		maxAlloc = (uint32_t)-1; // by default, there are no limit
@@ -467,7 +467,7 @@ int _tmain( int argc, TCHAR* argv[] ) {
 
 	int exitValue;
 	CmdLineArguments args;
-	JL_CHK( args.parse(argc, argv) );
+	JL_CHK( args.parseForMain(argc, argv) );
 
 	if ( args.help ) {
 
@@ -503,7 +503,9 @@ int _tmain( int argc, TCHAR* argv[] ) {
 
 		JSContext *cx = hostRuntime.context();
 
-		JS::ContextOptionsRef(cx).setWerror(args.warningsToErrors);
+		JS::RuntimeOptionsRef(cx)
+			.setWerror(args.warningsToErrors)
+		;
 
 		//JS::RootedValue tmpVal(cx);
 		//JS::RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
@@ -670,7 +672,7 @@ int _tmain( int argc, TCHAR* argv[] ) {
 
 
 //int test_main(int argc, char* argv[]) {
-int XXX_tmain( int argc, TCHAR* argv[] ) {
+int xxx_tmain( int argc, TCHAR* argv[] ) {
 
 
 	const JSClass global_class = {
@@ -700,7 +702,8 @@ int XXX_tmain( int argc, TCHAR* argv[] ) {
 		;
 
 		char scriptText[] = "";
-		JS::RootedScript script(cx, JS_CompileScript(cx, globalObject, scriptText, jl::strlen(scriptText), compileOptions));
+		JS::RootedScript script(cx);
+		JS_CompileScript(cx, globalObject, scriptText, jl::strlen(scriptText), compileOptions, &script);
 
 		
 		JS::RootedValue rval(cx);

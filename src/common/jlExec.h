@@ -17,8 +17,8 @@
 JL_BEGIN_NAMESPACE
 
 
-INLINE NEVER_INLINE JSScript* FASTCALL
-compileScript( JSContext *cx, JS::HandleObject obj, const void *scriptBuffer, size_t scriptBufferSize, jl::EncodingType encoding, JS::CompileOptions &compileOptions ) {
+INLINE NEVER_INLINE bool FASTCALL
+compileScript( JSContext *cx, JS::HandleObject obj, const void *scriptBuffer, size_t scriptBufferSize, jl::EncodingType encoding, JS::CompileOptions &compileOptions, JS::MutableHandleScript script ) {
 
 	//compileOptions.setSourcePolicy(JS::CompileOptions::NO_SOURCE);
 	
@@ -54,8 +54,8 @@ compileScript( JSContext *cx, JS::HandleObject obj, const void *scriptBuffer, si
 				scriptChars[0] = '/';
 				scriptChars[1] = '/';
 			}
-			JS::RootedScript script( cx, JS::Compile( cx, obj, compileOptions, scriptChars, scriptCharsLength ) );
-			return script;
+			JL_CHK( JS::Compile(cx, obj, compileOptions, scriptChars, scriptCharsLength, script) );
+			break;
 		}
 		// (TBD) support big-endian
 		case jl::ENC_UTF16le: {
@@ -68,12 +68,15 @@ compileScript( JSContext *cx, JS::HandleObject obj, const void *scriptBuffer, si
 				scriptChars[0] = L( '/' );
 				scriptChars[1] = L( '/' );
 			}
-			JS::RootedScript script( cx, JS::Compile( cx, obj, compileOptions, scriptChars, scriptCharsLength ) );
-			return script;
+			JL_CHK( JS::Compile(cx, obj, compileOptions, scriptChars, scriptCharsLength, script) );
+			break;
 		}
+		defualt:
+			goto bad;
 	}
 
-	return nullptr;
+	return true;
+	JL_BAD;
 }
 
 
@@ -91,10 +94,9 @@ compileScript( JSContext *cx, JS::HandleObject obj, const void *scriptBuffer, si
 //	on your script object.
 //
 //	/be
-INLINE NEVER_INLINE JSScript* FASTCALL
-loadScript(JSContext *cx, IN JS::HandleObject obj, const TCHAR *fileName, jl::EncodingType encoding, bool useCompFile, bool saveCompFile) {
+INLINE NEVER_INLINE bool FASTCALL
+loadScript(JSContext *cx, IN JS::HandleObject obj, const TCHAR *fileName, jl::EncodingType encoding, bool useCompFile, bool saveCompFile, JS::MutableHandleScript script) {
 
-	JS::RootedScript script( cx );
 	JS::CompileOptions compileOptions( cx );
 
 	void *scriptBuffer = NULL;
@@ -151,7 +153,7 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const TCHAR *fileName, jl::En
 	scriptBuffer = jl_malloca(scriptBufferSize);
 	
 	int res;
-	res = read(scriptFile, scriptBuffer, (unsigned int)scriptBufferSize);
+	res = read(scriptFile, scriptBuffer, scriptBufferSize);
 	close(scriptFile);
 
 	//JL_CHKM( res >= 0, "Unable to read file \"%s\".", fileName );
@@ -165,40 +167,38 @@ loadScript(JSContext *cx, IN JS::HandleObject obj, const TCHAR *fileName, jl::En
 		jl::BufString fn( fileName );
 		JL_CHKM( UTF16LEToUTF8( fnUTF8, fn ), E_ENCODING, E_INVALID );
 		compileOptions.setFileAndLine(fnUTF8, 1);
-		script.set( compileScript( cx, obj, scriptBuffer, scriptBufferSize, encoding, compileOptions ) );
-		JL_CHK( script );
+		JL_CHK( compileScript( cx, obj, scriptBuffer, scriptBufferSize, encoding, compileOptions, script ) );
 	}
 
-	if ( !saveCompFile )
-		goto good;
+	if ( saveCompFile ) {
 
-	int file;
-	file = jl::open(compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_SEQUENTIAL, srcFileStat.st_mode);
-	if ( file == -1 ) // if the file cannot be write, this is not an error ( eg. read-only drive )
-		goto good;
+		int file;
+		file = jl::open(compiledFileName, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_SEQUENTIAL, srcFileStat.st_mode);
+		if ( file != -1 ) { // if the file cannot be write, this is not an error ( eg. read-only drive )
 
-	uint32_t length;
-	void *buf;
-	buf = JS_EncodeScript(cx, script, &length);
-	JL_CHK( buf );
+			uint32_t length;
+			void *buf;
+			buf = JS_EncodeScript(cx, script, &length);
+			JL_CHK( buf );
 
-	// manage BIG_ENDIAN here ?
-	JL_CHK( write(file, buf, length) != -1 ); // On error, -1 is returned, and errno is set appropriately.
-	JL_CHK( close(file) == 0 );
-	js_free(buf);
-	goto good;
+			// manage BIG_ENDIAN here ?
+			JL_CHK( write(file, buf, length) != -1 ); // On error, -1 is returned, and errno is set appropriately.
+			JL_CHK( close(file) == 0 );
+			js_free(buf);
+		}
+	}
 
 good:
 	if ( scriptBuffer )
 		jl_freea(scriptBuffer);
-	return script;
+	return true;
 
 bad:
 	if ( scriptBuffer )
 		jl_freea( scriptBuffer );
 	if ( data )
 		jl_freea( data );
-	return NULL; // report a warning ?
+	return false; // report a warning ?
 }
 
 
@@ -208,8 +208,8 @@ executeScriptText( JSContext *cx, IN JS::HandleObject obj, const void *scriptTex
 	JS::AutoSaveContextOptions autoCxOpts(cx);
 	JS::CompileOptions compileOptions(cx);
 
-	JS::RootedScript script( cx, compileScript( cx, obj, scriptText, scriptSize, encoding, compileOptions ) );
-	JL_CHK( script );
+	JS::RootedScript script( cx );
+	JL_CHK( compileScript( cx, obj, scriptText, scriptSize, encoding, compileOptions, &script ) );
 
 	// mendatory else the exception is converted into an error before JL_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
 	JS::ContextOptionsRef(cx).setDontReportUncaught(true);
@@ -229,11 +229,12 @@ executeScriptFileName( JSContext *cx, IN JS::HandleObject obj, const TCHAR *scri
 
 	JS::AutoSaveContextOptions autoCxOpts(cx);
 
-	JS::RootedScript script( cx, loadScript( cx, obj, scriptFileName, encoding, true, false ) ); // use xdr if available, but don't save it.
-	JL_CHK( script );
-
-	// mendatory else the exception is converted into an error before JL_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
-	JS::ContextOptionsRef(cx).setDontReportUncaught(true);
+	JS::RootedScript script( cx );
+	JL_CHK( loadScript( cx, obj, scriptFileName, encoding, true, false, &script ) ); // use xdr if available, but don't save it.
+	
+	JS::ContextOptionsRef(cx)
+		.setDontReportUncaught(true) // mendatory else the exception is converted into an error before JL_IsExceptionPending can be used. Exceptions can be reported with JS_ReportPendingException().
+	;
 
 	// You need to protect a JSScript (via a rooted script object) if and only if a garbage collection can occur between compilation and the start of execution.
 	if ( !compileOnly )

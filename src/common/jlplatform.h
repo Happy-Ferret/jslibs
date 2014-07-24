@@ -131,6 +131,7 @@
 	#pragma warning(error : 4508) // 'XXX' : function should return a value; 'void' return type assumed
 	#pragma warning(error : 4800) // 'XXX' : forcing value to bool 'true' or 'false' (performance warning)
 	#pragma warning(error : 4101) // 'XXX' : unreferenced local variable
+	#pragma warning(error : 4172) // returning address of local variable or temporary
 	#ifdef DEBUG
 		#pragma warning(error : 4701) // potentially uninitialized local variable 'XXX' used
 	#endif
@@ -483,7 +484,7 @@ tstrToStr( const char *src, char * ) {
 	typedef double float64_t;
 
 
-	#define PATH_MAX MAX_PATH
+	#define PATH_MAX (MAX_PATH > _MAX_DIR ? MAX_PATH : _MAX_DIR)
 	#define DLL_EXT ".dll"
 	#define PATH_SEPARATOR_STRING "\\"
 	#define PATH_SEPARATOR (PATH_SEPARATOR_STRING[0])

@@ -25,11 +25,12 @@ class Args {
 
 	JS::PersistentRootedObject _thisObj; // use HandleObject instead ?
 	JSContext *&_cx;
-	const JS::CallArgs _jsargs;
 
 	void operator=( const Args & );
+	const JS::CallArgs _jsargs;
 
 public:
+
 	explicit Args(JSContext *&cx, unsigned argc, JS::Value *&vp)
 	: _cx(cx), _thisObj(cx), _jsargs( JS::CallArgsFromVp(argc, vp) ) {
 	}
@@ -44,6 +45,12 @@ public:
 	length() const {
 
 		return _jsargs.length();
+	}
+
+	const JS::HandleValueArray
+	argv() const {
+
+		return _jsargs;
 	}
 
 	bool

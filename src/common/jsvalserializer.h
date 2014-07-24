@@ -17,7 +17,6 @@
 
 JL_BEGIN_NAMESPACE
 
-
 typedef enum {
 	JLSTHole,
 	JLSTVoid,
@@ -25,7 +24,8 @@ typedef enum {
 	JLSTBool,
 	JLSTInt,
 	JLSTDouble,
-	JLSTString,
+	JLSTLatin1String,
+	JLSTTwoByteString,
 	JLSTFunction,
 	JLSTArray,
 	JLSTObject,
@@ -198,7 +198,7 @@ public:
 		return WriteRaw( cx, value );
 	}
 
-	bool Write( JSContext *cx, JSArrayBufferViewType &type ) {
+	bool Write( JSContext *cx, js::Scalar::Type &type ) {
 
 		return WriteRaw( cx, type );
 	}
@@ -220,12 +220,20 @@ public:
 		JL_BAD;
 	}
 
-	bool Write( JSContext *cx, JSString *jsstr ) {
+	bool Write( JSContext *cx, JS::HandleString str ) {
 
+		JS::AutoCheckCannotGC nogc;
+		
 		size_t length;
-		const jschar *chars;
-		chars = JS_GetStringCharsAndLength(cx, jsstr, &length); // doc. not null-terminated.
-		return Write(cx, SerializerConstBufferInfo(chars, length));
+		if ( JS_StringHasLatin1Chars(str) ) {
+
+			const JS::Latin1Char *chars = JS_GetLatin1StringCharsAndLength(cx, nogc, str, &length); // doc. not null-terminated.
+			return Write(cx, SerializerConstBufferInfo(chars, length));
+		} else {
+
+			const jschar *chars = JS_GetTwoByteStringCharsAndLength(cx, nogc, str, &length); // doc. not null-terminated.
+			return Write(cx, SerializerConstBufferInfo(chars, length));
+		}
 	}
 
 	bool Write( JSContext *cx, const SerializerConstBufferInfo &buf ) {
@@ -308,9 +316,17 @@ public:
 				JL_CHK( Write(cx, val.toInt32()) );
 			} else
 			if ( val.isString() ) {
+				
+				JS::RootedString str(cx, val.toString());
+				if ( JS_StringHasLatin1Chars(str) ) {
+					
+					JL_CHK( Write(cx, JLSTLatin1String) );
+					JL_CHK( Write(cx, str) );
+				} else {
 
-				JL_CHK( Write(cx, JLSTString) );
-				JL_CHK( Write(cx, val.toString()) );
+					JL_CHK( Write(cx, JLSTTwoByteString) );
+					JL_CHK( Write(cx, str) );
+				}
 			} else
 			if ( val.isUndefined() ) {
 
@@ -481,7 +497,8 @@ public:
 				JS::RootedValue tmp(cx);
 
 				JL_CHK(Write(cx, JLSTErrorObject));
-				JL_CHK(Write(cx, JS_GetFunctionId(JS_GetObjectFunction(JL_GetConstructor(cx, obj)))));
+				JS::RootedString errCtorName(cx, JS_GetFunctionId(JS_GetObjectFunction(JL_GetConstructor(cx, obj))));
+				JL_CHK(Write(cx, errCtorName));
 				JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, message), &tmp) );
 				JL_CHK( Write(cx, tmp) );
 				JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, fileName), &tmp) );
@@ -576,7 +593,7 @@ public:
 		return ReadRaw( cx, value );
 	}
 
-	bool Read( JSContext *cx, JSArrayBufferViewType &type ) {
+	bool Read( JSContext *cx, js::Scalar::Type &type ) {
 		
 		return ReadRaw( cx, type );
 	}
@@ -597,17 +614,19 @@ public:
 		return ReadRaw(cx, type);
 	}
 
-
+/*
 	bool Read( JSContext *cx, JS::MutableHandleString jsstr ) {
 
 		SerializerConstBufferInfo buf;
 		JL_CHK( Read(cx, buf) );
+		// JS_NewStringCopyN
 		jsstr.set( JS_NewUCStringCopyN(cx, (const jschar *)buf.Data(), buf.Length()/2) );
 		JL_CHK( jsstr );
 		//JL_CHK( jl::setValue( cx, jsstr, jl::WCStrSpec( (const jschar *)buf.Data(), buf.Length() / 2 ) ) );
 		return true;
 		JL_BAD;
 	}
+*/
 
 	bool Read( JSContext *cx, SerializerConstBufferInfo &buf ) {
 
@@ -702,10 +721,21 @@ public:
 				val.setNull();
 				break;
 			}
-			case JLSTString: {
+			case JLSTLatin1String: {
 
-				JS::RootedString jsstr(cx);
-				JL_CHK( Read(cx, &jsstr) );
+				SerializerConstBufferInfo buf;
+				JL_CHK( Read(cx, buf) );
+				JS::RootedString jsstr(cx, JS_NewStringCopyN(cx, (const char *)buf.Data(), buf.Length()));
+				JL_CHK( jsstr );
+				val.setString(jsstr);
+				break;
+			}
+			case JLSTTwoByteString: {
+
+				SerializerConstBufferInfo buf;
+				JL_CHK( Read(cx, buf) );
+				JS::RootedString jsstr(cx, JS_NewUCStringCopyN(cx, (const jschar *)buf.Data(), buf.Length()));
+				JL_CHK( jsstr );
 				val.setString(jsstr);
 				break;
 			}
@@ -859,7 +889,7 @@ public:
 
 				SerializerConstBufferInfo data;
 
-				JSArrayBufferViewType type;
+				js::Scalar::Type type;
 				JL_CHK( Read(cx, type) );
 				JL_CHK( Read(cx, data) );
 
@@ -870,31 +900,31 @@ public:
 				JS::RootedObject arrayBuffer(cx, JS_NewArrayBufferWithContents(cx, data.Length(), arrayBufferContents));
 				JS::RootedObject typedArray(cx);
 				switch ( type ) {
-					case js::ArrayBufferView::TYPE_INT8:
+				case js::Scalar::Type::Int8:
 						typedArray = JS_NewInt8ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
-					case js::ArrayBufferView::TYPE_UINT8:
+					case js::Scalar::Type::Uint8:
 						typedArray = JS_NewUint8ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
-					case js::ArrayBufferView::TYPE_INT16:
+					case js::Scalar::Type::Int16:
 						typedArray = JS_NewInt16ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
-					case js::ArrayBufferView::TYPE_UINT16:
+					case js::Scalar::Type::Uint16:
 						typedArray = JS_NewUint16ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
-					case js::ArrayBufferView::TYPE_INT32:
+					case js::Scalar::Type::Int32:
 						typedArray = JS_NewInt32ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
-					case js::ArrayBufferView::TYPE_UINT32:
+					case js::Scalar::Type::Uint32:
 						typedArray = JS_NewUint32ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
-					case js::ArrayBufferView::TYPE_FLOAT32:
+					case js::Scalar::Type::Float32:
 						typedArray = JS_NewFloat32ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
-					case js::ArrayBufferView::TYPE_FLOAT64:
+					case js::Scalar::Type::Float64:
 						typedArray = JS_NewFloat64ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
-					case js::ArrayBufferView::TYPE_UINT8_CLAMPED:
+					case js::Scalar::Type::Uint8Clamped:
 						typedArray = JS_NewUint8ClampedArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
 				}

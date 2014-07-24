@@ -23,14 +23,14 @@
 // Generic Image object
 
 enum ImageDataType {
-    TYPE_INT8    = js::ArrayBufferView::TYPE_INT8,
-    TYPE_UINT8   = js::ArrayBufferView::TYPE_UINT8,
-    TYPE_INT16   = js::ArrayBufferView::TYPE_INT16,
-    TYPE_UINT16  = js::ArrayBufferView::TYPE_UINT16,
-    TYPE_INT32   = js::ArrayBufferView::TYPE_INT32,
-    TYPE_UINT32  = js::ArrayBufferView::TYPE_UINT32,
-    TYPE_FLOAT32 = js::ArrayBufferView::TYPE_FLOAT32,
-    TYPE_FLOAT64 = js::ArrayBufferView::TYPE_FLOAT64
+    TYPE_INT8    = js::Scalar::Type::Int8,
+    TYPE_UINT8   = js::Scalar::Type::Uint8,
+    TYPE_INT16   = js::Scalar::Type::Int16,
+    TYPE_UINT16  = js::Scalar::Type::Uint16,
+    TYPE_INT32   = js::Scalar::Type::Int32,
+    TYPE_UINT32  = js::Scalar::Type::Uint32,
+    TYPE_FLOAT32 = js::Scalar::Type::Float32,
+    TYPE_FLOAT64 = js::Scalar::Type::Float64
 };
 
 template <class T, class U>

@@ -73,6 +73,8 @@
     <ClCompile />
     <ClCompile />
     <ClCompile />
+    <ClCompile />
+    <ClCompile />
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="jshost.cpp" />

@@ -766,7 +766,7 @@ DEFINE_FUNCTION( print ) {
 	if (likely( jl::isCallable(cx, fval) )) {
 
 		//return JS_CallFunctionValue(cx, JL_GetGlobal(cx), fval, JL_ARGC, JS_ARGV(cx,vp), fval.address());
-		return JS_CallFunctionValue(cx, JS::NullPtr(), fval, args._jsargs, &fval);
+		return JS_CallFunctionValue(cx, JS::NullPtr(), fval, args.argv(), &fval);
 	}
 	return true;
 	JL_BAD;
@@ -804,11 +804,11 @@ DEFINE_FUNCTION( exec ) {
 
 	{
 
-	JS::RootedScript script(cx, jl::loadScript(cx, JL_OBJ, fileName, jl::ENC_UNKNOWN, useAndSaveCompiledScripts, useAndSaveCompiledScripts));
-	JL_CHK( script );
+		JS::RootedScript script(cx);
+		JL_CHK( jl::loadScript(cx, JL_OBJ, fileName, jl::ENC_UNKNOWN, useAndSaveCompiledScripts, useAndSaveCompiledScripts, &script) );
 
-	// doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
-	JL_CHK( JS_ExecuteScript(cx, JL_OBJ, script, JL_RVAL) );
+		// doc: On successful completion, rval is a pointer to a variable that holds the value from the last executed expression statement processed in the script.
+		JL_CHK( JS_ExecuteScript(cx, JL_OBJ, script, JL_RVAL) );
 	
 	}
 
@@ -1036,7 +1036,7 @@ bool SandboxQueryFunction(JSContext *cx, unsigned argc, jsval *vp) {
 		JL_RVAL.setUndefined();
 	} else {
 
-		JL_CHK( JS_CallFunctionValue(cx, args.thisObj(), pv->queryFunctionValue, args._jsargs, JL_RVAL) );
+		JL_CHK( JS_CallFunctionValue(cx, args.thisObj(), pv->queryFunctionValue, args.argv(), JL_RVAL) );
 		JL_CHKM( JL_RVAL.isPrimitive(), E_RETURNVALUE, E_TYPE, E_TY_PRIMITIVE );
 
 	}
@@ -1050,6 +1050,8 @@ DEFINE_FUNCTION( sandboxEval ) {
 
 	SandboxContextPrivate pv(cx);
 
+	JS::AutoCheckCannotGC nogc;
+
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
 	JSString *jsstr;
@@ -1057,7 +1059,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 	JL_CHK( jsstr );
 	size_t srclen;
 	const jschar *src;
-	src = JS_GetStringCharsAndLength(cx, jsstr, &srclen);
+	src = JS_GetTwoByteStringCharsAndLength(cx, nogc, jsstr, &srclen);
 
 	if ( JL_ARG_ISDEF(2) ) {
 

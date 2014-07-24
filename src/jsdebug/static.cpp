@@ -264,7 +264,7 @@ DEFINE_PROPERTY_SETTER( gcZeal ) {
 #else // JS_GC_ZEAL
 
 	JL_WARN( E_THISOPERATION, E_NOTSUPPORTED );
-	*vp = JSVAL_VOID;
+	vp.setUndefined();
 	return true;
 
 #endif // JS_GC_ZEAL

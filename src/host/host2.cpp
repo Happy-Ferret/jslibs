@@ -495,12 +495,12 @@ HostRuntime::HostRuntime( Allocators allocators, uint32_t maybeGCIntervalMs, uin
 	JS::RuntimeOptionsRef(cx)
 		.setIon(true)
 		.setAsmJS(true)
+		.setVarObjFix(true)
 	;
 
 	JS::ContextOptionsRef(cx)
 		// doc. VarObjFix is recommended.  Without it, the two scripts "x = 1" and "var x = 1", where no variable x is in scope, do two different things.
 		//      The former creates a property on the global object.  The latter creates a property on obj.  With this flag, both create a global property.
-		.setVarObjFix(true)
 //		.setCloneSingletons(true)
 	;
 
@@ -575,10 +575,11 @@ HostRuntime::destroy(bool skipCleanup) {
 		
 	// see create()
 	JS_EndRequest(cx);
-	JS_DestroyContext(cx);
-	cx = nullptr;
 
 	fireEvent(EventId::BEFORE_DESTROY_RUNTIME);
+
+	JS_DestroyContext(cx);
+	cx = nullptr;
 
 	JS_DestroyRuntime(rt);
 	rt = nullptr;
@@ -885,7 +886,7 @@ bad:
 
 // JSErrorCallback
 const JSErrorFormatString *
-ErrorManager::errorCallback( void *userRef, const char *, const unsigned ) {
+ErrorManager::errorCallback(void *userRef, const unsigned errorNumber) {
 
 	return (JSErrorFormatString*)userRef;
 }
@@ -1464,8 +1465,11 @@ Host::Host( Global &glob, StdIO &hostStdIO, bool unsafeMode )
 
 	JL_SetRuntimePrivate(_hostRuntime.runtime(), this);
 
-	JS::ContextOptionsRef(cx)
+	JS::RuntimeOptionsRef(_hostRuntime.runtime())
 		.setStrictMode(_unsafeMode)
+	;
+
+	JS::ContextOptionsRef(cx)
 		.setExtraWarnings(!_unsafeMode)
 	;
 	

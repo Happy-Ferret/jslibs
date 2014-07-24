@@ -422,9 +422,18 @@ public:
 	get( JSContext *cx, JS::HandleString str ) {
 
 		size_t len;
-		const jschar *chars = JS_GetStringCharsAndLength(cx, str, &len);
-		get(chars, len, false);
-		_charSize = sizeof(*chars);
+		JS::AutoCheckCannotGC nogc;
+		if ( JS_StringHasLatin1Chars(str) ) {
+
+			const JS::Latin1Char *chars = JS_GetLatin1StringCharsAndLength(cx, nogc, str, &len);
+			get(chars, len, false);
+			_charSize = sizeof(*chars);
+		} else {
+
+			const jschar *chars = JS_GetTwoByteStringCharsAndLength(cx, nogc, str, &len);
+			get(chars, len, false);
+			_charSize = sizeof(*chars);
+		}
 		_terminatorLength = 0;
 	}
 
@@ -481,12 +490,29 @@ public:
 	: BufBase(buf, withOwnership), _charSize(buf._charSize), _terminatorLength(buf._terminatorLength) {
 	}
 
-	explicit BufString( JSContext *cx, JS::HandleString str )
-	: _charSize(sizeof(jschar)), _terminatorLength(0) {
+	explicit BufString( JSContext *cx, JS::HandleString str ) {
 
+/*
 		size_t len;
 		const jschar *chars = JS_GetStringCharsAndLength(cx, str, &len);
 		get(chars, len, false);
+*/
+		size_t len;
+		JS::AutoCheckCannotGC nogc;
+		if ( JS_StringHasLatin1Chars(str) ) {
+
+			const JS::Latin1Char *chars = JS_GetLatin1StringCharsAndLength(cx, nogc, str, &len);
+			get(chars, len, false);
+			_charSize = sizeof(*chars);
+		} else {
+
+			const jschar *chars = JS_GetTwoByteStringCharsAndLength(cx, nogc, str, &len);
+			get(chars, len, false);
+			_charSize = sizeof(*chars);
+		}
+		_terminatorLength = 0;
+
+
 		assertIntegrity();
 	}
 
