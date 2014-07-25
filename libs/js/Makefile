@@ -1,9 +1,14 @@
 include ../subdirs.mk
 
+_CONFIGURE_OPTIONS :=  --with-windows-version=601 --enable-nspr-build --without-intl-api --enable-ctypes --disable-tests
+# default:  --enable-threadsafe --enable-exact-rooting
+# prev: --enable-threadsafe --disable-gcgenerational --enable-exact-rooting --without-intl-api --enable-ctypes  --with-windows-version=601 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements --disable-tests
+#	--enable-intl-api (require to remove --disable-intl-api and to add jslibs/libs/js/src/intl directory)
+
 ifeq ($(BUILD),dbg)
-	_CONFIGURE_OPTIONS = --enable-debug --disable-optimize --enable-gczeal
+	_CONFIGURE_OPTIONS += --enable-debug --disable-optimize --enable-gczeal
 else
-	_CONFIGURE_OPTIONS = --enable-strip
+	_CONFIGURE_OPTIONS += --enable-strip --enable-optimize
 	#--enable-optimize=-Ox 
 	#_CFLAGS += -GL
 	#_LDFLAGS += -LTCG
@@ -16,9 +21,12 @@ else
 endif
 
 
-TARGET_FILES=$(INT_DIR)dist/bin/*.{so,dll}
+TIP_ID := mozilla-central-????????????
 
-TIP_NAME=mozilla-central-????????????
+TIP_NAME := $(shell ls -td $(TIP_ID) | head -1)
+
+TARGET_FILES := $(INT_DIR)dist/bin/*.{so,dll}
+
 
 .INTERMEDIATE: tip.zip
 .PRECIOUS: tip.zip
@@ -28,19 +36,19 @@ tip.zip:
 	touch -c --reference=$< $@
 	
 src.zip: tip.zip
-	7z x $< $(TIP_NAME)/{toolkit/*,nsprpub/*,mfbt/*,python/*,testing/*,build/*,config/*,intl/*,js/public/*,js/src/*,dom/bindings/mozwebidlcodegen/*,media/webrtc/trunk/tools/gyp/*,layout/tools/reftest/*,modules/zlib/*,moz.build,Makefile.in,mozilla-config.h.in,aclocal.m4,configure.in} -x\!$(TIP_NAME)/{js/src/jit-test/*,js/src/tests/*,js/src/v8/*} > /dev/null
-#	echo -n $(TIP_NAME) > ./$(TIP_NAME)/tip.txt
+	7z x -aos $< $(TIP_ID)/{toolkit/*,nsprpub/*,mfbt/*,python/*,testing/*,build/*,config/*,intl/*,js/public/*,js/src/*,dom/bindings/mozwebidlcodegen/*,media/webrtc/trunk/tools/gyp/*,layout/tools/reftest/*,modules/zlib/*,moz.build,Makefile.in,mozilla-config.h.in,aclocal.m4,configure.in} -x\!$(TIP_ID)/{js/src/jit-test/*,js/src/tests/*,js/src/v8/*} > /dev/null
+	echo -n $(TIP_NAME) > ./$(TIP_NAME)/tip.txt
 	mv $(TIP_NAME) src
 	touch -c --reference=$< src
 	7z -mx9 a $@ src > /dev/null
 	touch -c --reference=$< $@
+	touch -c --reference=$< src
 
 src: src.zip
 	7z x $< > /dev/null
 	touch -c --reference=$< $@
 
 ./src/js/src/configure: src
-	../src/js/src/configure --help > configure-help.txt
 	diff -q ./jsversion.h ./src/js/src/jsversion.h || cp ./jsversion.h ./src/js/src/
 	
 	#	diff src/js/public/Utility.h.orig src/js/public/Utility.h -U 3 --label "" > Utility.h.patch
@@ -51,21 +59,13 @@ src: src.zip
 
 	#	diff src/js/src/jspubtd.h.orig src/js/src/jspubtd.h -U 3 --label "" > jspubtd.h.patch
 	-patch -r tmp.rej -N src/js/src/jspubtd.h jspubtd.h.patch
-	
-	# -patch -r xtmp.rej -N src/js/src win32thread.patch
-	
-	# -cd src && patch -N -p1 < ../bug-975011-patch
-	
-	# rm tmp.rej
 
 	cd $</js/src/ && ( autoconf2.13 || autoconf-2.13 )
+	./src/js/src/configure --help > configure-help.txt
 
 $(INT_DIR)Makefile: ./src/js/src/configure
 	mkdir -p $(INT_DIR)
-	cd $(INT_DIR) && CXXFLAGS="$(_CFLAGS)" LDFLAGS="$(_LDFLAGS)" ../src/js/src/configure $(_CONFIGURE_OPTIONS) --with-windows-version=601 --enable-threadsafe --without-intl-api --enable-ctypes --disable-tests
-	# --disable-gcgenerational --enable-exact-rooting
-	# prev: --enable-threadsafe --disable-gcgenerational --enable-exact-rooting --without-intl-api --enable-ctypes  --with-windows-version=601 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements --disable-tests
-	#	--enable-intl-api (require to remove --disable-intl-api and to add jslibs/libs/js/src/intl directory)
+	cd $(INT_DIR) && CXXFLAGS="$(_CFLAGS)" LDFLAGS="$(_LDFLAGS)" ../src/js/src/configure $(_CONFIGURE_OPTIONS)
 
 all:: $(INT_DIR)Makefile
 	$(MAKE) -C $(INT_DIR) $@
