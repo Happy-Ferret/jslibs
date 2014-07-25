@@ -353,14 +353,18 @@ DEFINE_FUNCTION( createComObject ) {
 
 	HRESULT hr;
 
+	jl::BufString name;
+
 	JL_ASSERT_ARGC( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
 
-	JSString *idStr = JS::ToString(cx, JL_ARG(1));
-	LPOLESTR name = (LPOLESTR)JS_GetStringCharsZ(cx, idStr);
+	//JSString *idStr = JS::ToString(cx, JL_ARG(1));
+	//LPOLESTR name = (LPOLESTR)JS_GetStringCharsZ(cx, idStr);
+
+	JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
 
 	CLSID clsid;
-	hr = name[0] == L('{') ? CLSIDFromString(name, &clsid) : CLSIDFromProgID(name, &clsid);
+	hr = name.charAt<wchar_t>(0) == L('{') ? CLSIDFromString(name, &clsid) : CLSIDFromProgID(name, &clsid);
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
 

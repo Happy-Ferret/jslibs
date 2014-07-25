@@ -267,6 +267,12 @@ isString( JSContext *cx, JS::HandleValue val ) {
 }
 
 
+ALWAYS_INLINE bool FASTCALL
+hasLatin1Chars( JSContext *cx, JSString *str ) {
+	
+	return js::StringHasLatin1Chars(str); // jsfriendapi.h
+}
+
 
 ALWAYS_INLINE bool FASTCALL
 isArray( JSContext *cx, JS::HandleObject obj ) {

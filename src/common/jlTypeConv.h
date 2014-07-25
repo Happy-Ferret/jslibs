@@ -17,6 +17,24 @@
 
 JL_BEGIN_NAMESPACE
 
+/*
+ALWAYS_INLINE bool FASTCALL
+getStringChars(JSContext *cx, JSString *str) {
+
+    JS::AutoCheckCannotGC nogc;
+	JSLinearString *lstr = js::StringToLinearString(cx, str);
+    if (!lstr)
+        return false;
+    if ( js::LinearStringHasLatin1Chars(lstr) ) {
+
+        const JS::Latin1Char *src = js::GetLatin1LinearStringChars(nogc, lstr);
+	} else {
+	
+		const jschar *src = js::GetTwoByteLinearStringChars(nogc, lstr);
+	}
+	return true;
+}
+*/
 
 namespace pv {
 

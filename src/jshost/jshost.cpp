@@ -203,7 +203,10 @@ public:
 			stderr_fileno = fileno(stderr);
 			stderr_initMode = _setmode( stderr_fileno, _O_TEXT );
 		}
-		//int res = write( stderr_fileno, buf.toData<const uint8_t*>(), buf.length() );
+		
+//		_setmode( stderr_fileno, _O_U16TEXT );
+//		return write( stderr_fileno, buf.toData<const wchar_t*>(), buf.length() * 2 );
+		
 		int prevMode = _setmode( stderr_fileno, buf.wide() ? _O_U16TEXT : _O_TEXT );
 		return write( stderr_fileno, buf.dataAs<const void*>(), buf.used() );
 	}
@@ -461,9 +464,8 @@ volatile bool NedAllocators::_skipCleanup = false;
 
 using namespace jl;
 
-// see |int wmain(int argc, wchar_t* argv[])| for wide char
-//int main(int argc, char* argv[]) {
-int _tmain( int argc, TCHAR* argv[] ) {
+int
+_tmain( int argc, TCHAR* argv[] ) {
 
 	int exitValue;
 	CmdLineArguments args;
@@ -498,7 +500,7 @@ int _tmain( int argc, TCHAR* argv[] ) {
 		//alloc.setSkipCleanup(true);
 		//nedAlloc.setSkipCleanup(true);
 
-		HostRuntime hostRuntime(allocators, uint32_t(args.maybeGCInterval * 1000), (uint32_t)-1, (uint32_t)-1, HOST_STACK_SIZE / 2); // 0 mean no periodical GC
+		HostRuntime hostRuntime(allocators, uint32_t(args.maybeGCInterval * 1000), (uint32_t)-1, (uint32_t)-1, HOST_STACK_SIZE / 4); // 0 mean no periodical GC
 		JL_CHK( hostRuntime );
 
 		JSContext *cx = hostRuntime.context();
@@ -672,7 +674,8 @@ int _tmain( int argc, TCHAR* argv[] ) {
 
 
 //int test_main(int argc, char* argv[]) {
-int xxx_tmain( int argc, TCHAR* argv[] ) {
+int 
+xxx_tmain( int argc, TCHAR* argv[] ) {
 
 
 	const JSClass global_class = {
@@ -701,9 +704,10 @@ int xxx_tmain( int argc, TCHAR* argv[] ) {
 			.setNoScriptRval(true)
 		;
 
-		char scriptText[] = "";
+		char scriptText[] = " var a = 'ASDASD';";
 		JS::RootedScript script(cx);
 		JS_CompileScript(cx, globalObject, scriptText, jl::strlen(scriptText), compileOptions, &script);
+
 
 		
 		JS::RootedValue rval(cx);

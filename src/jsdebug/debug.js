@@ -3,7 +3,7 @@ var loadModule = host.loadModule;
 loadModule('jsdebug');
 loadModule('jsstd');
 
-registerDumpHeap();
+//registerDumpHeap();
 
 	var debug = new Debugger;
 

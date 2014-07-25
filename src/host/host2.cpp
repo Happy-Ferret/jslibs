@@ -1465,18 +1465,13 @@ Host::Host( Global &glob, StdIO &hostStdIO, bool unsafeMode )
 
 	JL_SetRuntimePrivate(_hostRuntime.runtime(), this);
 
-	JS::RuntimeOptionsRef(_hostRuntime.runtime())
-		.setStrictMode(_unsafeMode)
-	;
+	// JS::RuntimeOptionsRef(_hostRuntime.runtime()).setStrictMode(_unsafeMode); // users set "use strict" themselves
 
-	JS::ContextOptionsRef(cx)
-		.setExtraWarnings(!_unsafeMode)
-	;
+	JS::ContextOptionsRef(cx).setExtraWarnings(!_unsafeMode);
 	
 	JS_SetErrorReporter(cx, errorReporter);
 	
 	{
-	
 		JS::RootedObject obj(cx, _global.globalObject());
 		JSAutoCompartment ac(cx, obj);
 
@@ -1488,8 +1483,11 @@ Host::Host( Global &glob, StdIO &hostStdIO, bool unsafeMode )
 		// global functions & properties
 		JL_CHKM( JS_DefinePropertyById(cx, obj, JLID(cx, global), obj, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
 
-		ASSERT(cx && obj);
+		ASSERT(cx);
+		ASSERT(obj);
+		
 		INIT_CLASS( host );
+
 		ASSERT( _objectProto );
 
 		// init static modules (jslang)
@@ -1498,12 +1496,9 @@ Host::Host( Global &glob, StdIO &hostStdIO, bool unsafeMode )
 		module.moduleHandle = JLDynamicLibraryNullHandler;
 		module.moduleId = jslangModuleId;
 		ASSERT( jslangModuleInit != (ModuleInitFunction)nullptr);
-		if ( !jslangModuleInit(cx, obj) )
-			JL_ERR( E_MODULE, E_NAME("jslang"), E_INIT );
-
+		JL_CHKM( jslangModuleInit(cx, obj), E_MODULE, E_NAME("jslang"), E_INIT );
 		ASSERT( JS::IsIncrementalGCEnabled( _hostRuntime.runtime() ) );
 		ASSERT( JS::IsGenerationalGCEnabled( _hostRuntime.runtime() ) );
-	
 	}
 
 	return;

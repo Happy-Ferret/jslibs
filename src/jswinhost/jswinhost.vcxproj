@@ -55,7 +55,6 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>$(jslibsRootDir)libs\js\$(jslibsIntDir)dist\lib\mozjs-33a1.lib;kernel32.lib;$(StopEvaluating)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">
@@ -70,7 +69,6 @@
     <Link />
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>$(jslibsRootDir)libs\js\$(jslibsIntDir)dist\lib\mozjs-33a1.lib;kernel32.lib;$(StopEvaluating)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

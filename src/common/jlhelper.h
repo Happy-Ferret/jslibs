@@ -116,11 +116,13 @@ JL_GetClassName( IN JS::HandleObject obj ) {
 ALWAYS_INLINE size_t FASTCALL
 JL_GetStringLength( JSString *jsstr ) {
 
-	return JS_GetStringLength(jsstr);
+	//return JS_GetStringLength(jsstr);
+	return js::GetStringLength(jsstr); // jsfriendapi.h
 }
 
 ALWAYS_INLINE JS::Value FASTCALL
 JL_GetEmptyStringValue( JSContext *cx ) {
+
 
 	return JS_GetEmptyStringValue(cx);
 }
@@ -298,6 +300,7 @@ ALWAYS_INLINE JS::HandleValue FASTCALL
 handleValueTrue() {
 
     static const JS::Value v = JS::TrueValue();
+	ASSERT(!v.isMarkable());
 	return JS::HandleValue::fromMarkedLocation(&v);
 }
 
@@ -305,6 +308,7 @@ ALWAYS_INLINE JS::HandleValue FASTCALL
 handleValueFalse() {
 
 	static const JS::Value v = JS::FalseValue();
+	ASSERT(!v.isMarkable());
 	return JS::HandleValue::fromMarkedLocation(&v);
 }
 
@@ -312,13 +316,16 @@ ALWAYS_INLINE JS::HandleValue FASTCALL
 handleValueUndefined() {
 
 	static const JS::Value v = JS::UndefinedValue();
+	ASSERT(!v.isMarkable());
 	return JS::HandleValue::fromMarkedLocation(&v);
 }
 
-ALWAYS_INLINE JS::HandleObject FASTCALL
-handleObjectNull() {
+ALWAYS_INLINE JS::HandleValue FASTCALL
+handleValueNull() {
 
-	return JS::HandleObject::fromMarkedLocation(NULL);
+	static const JS::Value v = JS::NullValue();
+	ASSERT(!v.isMarkable());
+	return JS::HandleValue::fromMarkedLocation(&v);
 }
 
 // useful for structure with jsid initialized to 0.
@@ -331,7 +338,6 @@ handleIdZero() {
 	return JS::HandleId::fromMarkedLocation(&tmp);
 }
 
-
 ALWAYS_INLINE JS::Value FASTCALL
 handleValueZero() {
 
@@ -342,16 +348,36 @@ handleValueZero() {
 	return JS::Value();
 }
 
+
+
+const jsval JSVAL_NULL  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_NULL,      0));
+const jsval JSVAL_ZERO  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_INT32,     0));
+const jsval JSVAL_ONE   = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_INT32,     1));
+const jsval JSVAL_FALSE = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_BOOLEAN,   false));
+const jsval JSVAL_TRUE  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_BOOLEAN,   true));
+const jsval JSVAL_VOID  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_UNDEFINED, 0));
+
+const JS::HandleValue NullHandleValue = JS::HandleValue::fromMarkedLocation(&JSVAL_NULL);
+const JS::HandleValue UndefinedHandleValue = JS::HandleValue::fromMarkedLocation(&JSVAL_VOID);
+const JS::HandleValue TrueHandleValue = JS::HandleValue::fromMarkedLocation(&JSVAL_TRUE);
+const JS::HandleValue FalseHandleValue = JS::HandleValue::fromMarkedLocation(&JSVAL_FALSE);
+
+#define JL_NULL (jl::NullHandleValue)
+#define JL_UNDEFINED (jl::UndefinedHandleValue)
+#define JL_TRUE (jl::TrueHandleValue)
+#define JL_FALSE (jl::FalseHandleValue)
+
+/*
 #define JL_TRUE (jl::handleValueTrue())
 #define JL_FALSE (jl::handleValueFalse())
 #define JL_UNDEFINED (jl::handleValueUndefined())
-#define JL_NULL (jl::handleObjectNull())
+#define JL_NULL (jl::handleValueNull())
+*/
 #define JL_IDZ (jl::handleIdZero()) // useful for structure with jsid initialized to 0.
 #define JL_VALUEZ (jl::handleValueZero())
 
 
 ////
-
 
 
 class BufString;

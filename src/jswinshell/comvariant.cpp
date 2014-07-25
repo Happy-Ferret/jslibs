@@ -253,11 +253,12 @@ bool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *varia
 
 	if ( value.isString() ) {
 		
+		JS::AutoCheckCannotGC nogc;
 		JSString *jsstr = value.toString();
 		V_VT(variant) = VT_BSTR;
 		size_t srclen;
 		const jschar *src;
-		src = JS_GetStringCharsAndLength(cx, jsstr, &srclen);
+		src = JS_GetTwoByteStringCharsAndLength(cx, nogc, jsstr, &srclen);
 		V_BSTR(variant) = SysAllocStringLen( (OLECHAR*)src, srclen);
 		return true;
 	}
@@ -314,15 +315,21 @@ bool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *varia
 
 
 	// last resort
-	JSString *jsstr = JS::ToString(cx, value); // see JS_ConvertValue
-	JL_ASSERT( jsstr, E_VALUE, E_CONVERT, E_TY_STRING );
+	{
 
-	V_VT(variant) = VT_BSTR;
+		JS::AutoCheckCannotGC nogc;
 
-	size_t srclen;
-	const jschar *src;
-	src = JS_GetStringCharsAndLength(cx, jsstr, &srclen);
-	V_BSTR(variant) = SysAllocStringLen( (OLECHAR*)src, srclen );
+		JSString *jsstr = JS::ToString(cx, value); // see JS_ConvertValue
+		JL_ASSERT( jsstr, E_VALUE, E_CONVERT, E_TY_STRING );
+
+		V_VT(variant) = VT_BSTR;
+
+		size_t srclen;
+		const jschar *src;
+		src = JS_GetTwoByteStringCharsAndLength(cx, nogc, jsstr, &srclen);
+		V_BSTR(variant) = SysAllocStringLen( (OLECHAR*)src, srclen );
+	
+	}
 
 	return true;
 	JL_BAD;

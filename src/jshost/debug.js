@@ -7,81 +7,6 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('serial'); throw 0; // -inlineOnly
 
-
-	loadModule('jsstd');
-
-	host.stdout(uneval(host.errorMessages));
-
-	host.errorMessages = exec('../common/errors-'+host.lang.split('-')[0].toLowerCase()+'.js');
-
-	host.errorMessages = {ERRNO_1:123};
-
-	host.stdout('\n---------------------\n');
-	host.stdout(uneval(host.errorMessages));
-	host.stdout('\n---------------------\n');
-	host.errorMessages = null;
-	host.stdout(uneval(host.errorMessages));
-
-	exec('qsdfqsdfxxx.js');
-
-throw 0;
-
-
-loadModule('jsdebug');
-
-registerDumpHeap();
-
-var debug = new Debugger;
-
-debug.addDebuggee(global);
-
-//host.stdout([ i.source.text.length+':'+i.startLine for each (i in debug.findScripts())].join('\n'));
-
-debug.onDebuggerStatement = function(frame) {
-	
-//	host.stdout('onDebuggerStatement!\n');
-	
-	var line = frame.script.getOffsetLine(frame.offset);
-
-/*
-	var src = frame.script.source.text.split('\n');
-	src[line-1] = '>' + src[line-1];
-	host.stdout(src.join('\n'), '\n');
-*/
-}
-
-
-//# test
-function test() {
-
-	//# test
-	!function() {
-
-		//# test
-		debugger;
-	}();
-}
-
-
-test();
-
-
-throw 0;
-
-
-
-host.stdout(host.arguments[0], '\n');
-
-//loadModule('jsz');
-
-//exec('utf16_script.js');
-
-//host.stdout(host.stdin());
-host.stdout('a', 'b');
-
-throw 0;
-
-
 	function genReferenceError() {
 		
 		try {
@@ -108,7 +33,8 @@ throw 0;
 		'string', 
 		{__proto__:null, a:2}, 
 		[], 
-		[,,,,,], 
+		[,,,,,],
+		,
 		[,undefined,'arrayelt'], 
 		true, 
 		false,
@@ -136,10 +62,13 @@ throw 0;
 		new URIError(),
 		function(x,y) { return x+y+1; }
 	];
-	
+
 	var s = new Serializer();
+
+
 	s.write(myobj);
 	var s = new Unserializer(s.done());
+
 
 	var str = uneval(myobj);
 	var str1 = uneval(s.read());
@@ -148,6 +77,74 @@ throw 0;
 
 
 throw 0;
+
+
+	loadModule('jsstd');
+
+	host.stdout(uneval(host.errorMessages));
+
+	host.errorMessages = exec('../common/errors-'+host.lang.split('-')[0].toLowerCase()+'.js');
+//	host.errorMessages = {ERRNO_1:123};
+
+	exec('qsdfqsdfxxx.js');
+
+	host.stdout('\n---------------------\n');
+	host.stdout(uneval(host.errorMessages));
+	host.stdout('\n---------------------\n');
+	host.errorMessages = null;
+	host.stdout(uneval(host.errorMessages));
+
+	exec('qsdfqsdfxxx.js');
+
+throw 0;
+
+
+	loadModule('jsdebug');
+	//registerDumpHeap();
+	var debug = new Debugger;
+	debug.addDebuggee(global);
+	//host.stdout([ i.source.text.length+':'+i.startLine for each (i in debug.findScripts())].join('\n'));
+	debug.onDebuggerStatement = function(frame) {
+	//	host.stdout('onDebuggerStatement!\n');
+	//	var line = frame.script.getOffsetLine(frame.offset);
+	/*
+		var src = frame.script.source.text.split('\n');
+		src[line-1] = '>' + src[line-1];
+		host.stdout(src.join('\n'), '\n');
+	*/
+	}
+	//# test
+	function test() {
+
+		//# test
+		!function() {
+
+			//# test
+			debugger;
+		}();
+	}
+	test();
+
+
+throw 0;
+
+
+
+
+
+
+
+host.stdout(host.arguments[0], '\n');
+
+//loadModule('jsz');
+
+//exec('utf16_script.js');
+
+//host.stdout(host.stdin());
+host.stdout('a', 'b');
+
+throw 0;
+
 
 
 	var s = new Serializer();

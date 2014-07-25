@@ -161,13 +161,11 @@ DEFINE_FUNCTION( registerDumpHeap ) {
 /**doc
 $TOC_MEMBER $INAME
  $INAME $READONLY
+  see: https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey/JS_Debugger_API_Reference/Debugger
 **/
 DEFINE_PROPERTY_GETTER( Debugger ) {
 
 	JL_DEFINE_PROP_ARGS;
-
-	// https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey/JS_Debugger_API_Reference/Debugger
-
 	JS::RootedObject global(cx, JL_GetGlobal(cx));
 	JS::CompartmentOptions compartmentOptions( CompartmentOptionsRef(global) );
 	compartmentOptions.setInvisibleToDebugger(true);
@@ -176,7 +174,6 @@ DEFINE_PROPERTY_GETTER( Debugger ) {
 	{
 		JSAutoCompartment ac(cx, dbgGlobal);
 		//JL_CHK( JS_InitStandardClasses(cx, dbgGlobal) );
-		JL_CHK( JS_DefineProfilingFunctions(cx, dbgGlobal) );
 		JL_CHK( JS_DefineDebuggerObject(cx, dbgGlobal) ); // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
 		JS_FireOnNewGlobalObject(cx, dbgGlobal);
 	}

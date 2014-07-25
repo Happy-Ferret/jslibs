@@ -14,6 +14,16 @@
 
 #pragma once
 
+#undef JL_CHK
+#define JL_CHK( CONDITION ) \
+	JL_MACRO_BEGIN \
+		if (unlikely( !(CONDITION) )) { \
+			__debugbreak(); \
+			goto bad; \
+		} \
+		ASSUME(!!(CONDITION)); \
+	JL_MACRO_END
+
 
 JL_BEGIN_NAMESPACE
 
@@ -24,8 +34,9 @@ typedef enum {
 	JLSTBool,
 	JLSTInt,
 	JLSTDouble,
-	JLSTLatin1String,
-	JLSTTwoByteString,
+	JLSTString,
+//	JLSTLatin1String,
+//	JLSTTwoByteString,
 	JLSTFunction,
 	JLSTArray,
 	JLSTObject,
@@ -107,7 +118,7 @@ public:
 
 class Serializer : public jl::CppAllocators {
 
-	JS::PersistentRootedValue _serializerObj; // must be used to declare data members of heap classes only
+	JS::Heap<JS::Value> _serializerObj; // must be used to declare data members of heap classes only
 
 	uint8_t *_start;
 	uint8_t *_pos;
@@ -139,7 +150,7 @@ public:
 	}
 
 	explicit Serializer( JSContext *cx, JS::HandleValue serializerObj = JS::NullPtr() )
-	: _serializerObj(cx, serializerObj), _start(NULL), _pos(NULL), _length(0) {
+	: _serializerObj(serializerObj), _start(NULL), _pos(NULL), _length(0) {
 
 		PrepareBytes(JL_PAGESIZE / 2);
 	}
@@ -223,17 +234,21 @@ public:
 	bool Write( JSContext *cx, JS::HandleString str ) {
 
 		JS::AutoCheckCannotGC nogc;
-		
+
 		size_t length;
 		if ( JS_StringHasLatin1Chars(str) ) {
-
+			
+			JL_CHK( WriteRaw<uint8_t>(cx, 0) ); // !isWide
 			const JS::Latin1Char *chars = JS_GetLatin1StringCharsAndLength(cx, nogc, str, &length); // doc. not null-terminated.
-			return Write(cx, SerializerConstBufferInfo(chars, length));
+			JL_CHK( Write(cx, SerializerConstBufferInfo(chars, length)) );
 		} else {
 
+			JL_CHK( WriteRaw<uint8_t>(cx, 1) ); // isWide
 			const jschar *chars = JS_GetTwoByteStringCharsAndLength(cx, nogc, str, &length); // doc. not null-terminated.
-			return Write(cx, SerializerConstBufferInfo(chars, length));
+			JL_CHK( Write(cx, SerializerConstBufferInfo(chars, length)) );
 		}
+		return true;
+		JL_BAD;
 	}
 
 	bool Write( JSContext *cx, const SerializerConstBufferInfo &buf ) {
@@ -262,6 +277,7 @@ public:
 			JS::RootedId item(cx, aia[i]);
 			JL_CHK( JS_IdToValue(cx, item, &name) );
 			JS::RootedString jsstr(cx, name.isString() ? name.toString() : JS::ToString(cx, name));
+
 			JL_CHK( jsstr );
 			JL_CHK( JS_GetPropertyById(cx, sop, item, &value) );
 			JL_CHK( Write(cx, jsstr) );
@@ -316,7 +332,11 @@ public:
 				JL_CHK( Write(cx, val.toInt32()) );
 			} else
 			if ( val.isString() ) {
-				
+
+				JS::RootedString str(cx, val.toString());
+				JL_CHK( Write(cx, JLSTString) );
+				JL_CHK( Write(cx, str) );
+/*				
 				JS::RootedString str(cx, val.toString());
 				if ( JS_StringHasLatin1Chars(str) ) {
 					
@@ -327,6 +347,7 @@ public:
 					JL_CHK( Write(cx, JLSTTwoByteString) );
 					JL_CHK( Write(cx, str) );
 				}
+*/
 			} else
 			if ( val.isUndefined() ) {
 
@@ -531,7 +552,7 @@ public:
 
 class Unserializer : public jl::CppAllocators {
 
-	JS::PersistentRootedValue _unserializerObj; // must be used to declare data members of heap classes only
+	JS::Heap<JS::Value> _unserializerObj; // must be used to declare data members of heap classes only
 
 	uint8_t *_start;
 	uint8_t *_pos;
@@ -553,7 +574,7 @@ public:
 	}
 	
 	explicit Unserializer(JSContext *cx, void *dataOwnership, size_t length, JS::HandleValue unserializerObj = JS::NullPtr())
-	: _unserializerObj(cx, unserializerObj), _start((uint8_t*)dataOwnership), _pos(_start), _length(length) {
+	: _unserializerObj(unserializerObj), _start((uint8_t*)dataOwnership), _pos(_start), _length(length) {
 	}
 
 	bool IsEmpty() const {
@@ -614,19 +635,23 @@ public:
 		return ReadRaw(cx, type);
 	}
 
-/*
 	bool Read( JSContext *cx, JS::MutableHandleString jsstr ) {
 
 		SerializerConstBufferInfo buf;
+		uint8_t isWide;
+		JL_CHK( Read(cx, isWide) );
 		JL_CHK( Read(cx, buf) );
-		// JS_NewStringCopyN
-		jsstr.set( JS_NewUCStringCopyN(cx, (const jschar *)buf.Data(), buf.Length()/2) );
+		if ( isWide ) {
+		
+			jsstr.set( JS_NewUCStringCopyN(cx, (const jschar *)buf.Data(), buf.Length() / 2) );
+		} else {
+		
+			jsstr.set( JS_NewStringCopyN(cx, (const char *)buf.Data(), buf.Length()) );
+		}
 		JL_CHK( jsstr );
-		//JL_CHK( jl::setValue( cx, jsstr, jl::WCStrSpec( (const jschar *)buf.Data(), buf.Length() / 2 ) ) );
 		return true;
 		JL_BAD;
 	}
-*/
 
 	bool Read( JSContext *cx, SerializerConstBufferInfo &buf ) {
 
@@ -652,11 +677,13 @@ public:
 		JL_CHK( Read(cx, length) );
 		for ( uint32_t i = 0; i < length; ++i ) {
 
-			SerializerConstBufferInfo name;
+			JS::RootedString name(cx);
+			JS::RootedId nameId(cx);
 			JS::RootedValue value(cx);
-			JL_CHK( Read(cx, name) );
+			JL_CHK( Read(cx, &name) );
 			JL_CHK( Read(cx, &value) );
-			JL_CHK( JS_SetUCProperty(cx, sop, (const jschar *)name.Data(), name.Length()/2, value) );
+			JL_CHK( JS_StringToId(cx, name, &nameId) );
+			JL_CHK( JS_SetPropertyById(cx, sop, nameId, value) );
 		}
 
 		return true;
@@ -721,6 +748,32 @@ public:
 				val.setNull();
 				break;
 			}
+			case JLSTString: {
+
+				JS::RootedString jsstr(cx);
+				JL_CHK( Read(cx, &jsstr) );
+				val.setString(jsstr);
+				break;
+			}
+/*
+				SerializerConstBufferInfo buf;
+				uint8_t isWide;
+				JL_CHK( Read(cx, isWide) );
+				JL_CHK( Read(cx, buf) );
+				if ( isWide ) {
+
+					JS::RootedString jsstr(cx, JS_NewUCStringCopyN(cx, (const jschar *)buf.Data(), buf.Length() / 2));
+					JL_CHK( jsstr );
+					val.setString(jsstr);
+				} else {
+
+					JS::RootedString jsstr(cx, JS_NewStringCopyN(cx, (const char *)buf.Data(), buf.Length()));
+					JL_CHK( jsstr );
+					val.setString(jsstr);
+				}
+			}
+*/
+/*
 			case JLSTLatin1String: {
 
 				SerializerConstBufferInfo buf;
@@ -739,6 +792,7 @@ public:
 				val.setString(jsstr);
 				break;
 			}
+*/
 			case JLSTArray: {
 
 				JS::RootedValue tmp(cx);
@@ -935,7 +989,9 @@ public:
 			}
 			case JLSTErrorObject: {
 
-				SerializerConstBufferInfo constructorName;
+				JS::RootedString constructorName(cx);
+				JS::RootedId constructorNameId(cx);
+				//SerializerConstBufferInfo constructorName;
 				//jsval constructor, constructorArgs[3], stack;
 				JS::RootedValue constructor(cx);
 				JS::RootedValue stack(cx);
@@ -943,12 +999,11 @@ public:
 				//JS::AutoValueVector constructorArgs(cx);
 				JS::AutoValueArray<3> constructorArgs( cx );
 
-
-				JL_CHK( Read(cx, constructorName) );
-
-				// js_GetClassPrototype
 				JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
-				JL_CHK( JS_GetUCProperty(cx, globalObject, (const jschar *)constructorName.Data(), constructorName.Length() / 2, &constructor) );
+
+				JL_CHK( Read(cx, &constructorName) );
+				JL_CHK( JS_StringToId(cx, constructorName, &constructorNameId) );
+				JL_CHK( JS_GetPropertyById(cx, globalObject, constructorNameId, &constructor) );
 				JL_ASSERT( constructor.isObject(), E_TY_ERROR, E_NOTCONSTRUCT );
 
 				//JSClass *cl = JL_GetErrorClaspByProtoKey(cx, JSProto_Error, JL_GetGlobal(cx));
