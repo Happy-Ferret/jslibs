@@ -400,7 +400,7 @@ public: // static
 
 public:
 
-	HostRuntime(Allocators allocators = StdAllocators(), uint32_t maybeGCInterval = 0, uint32_t maxMem = uint32_t(-1), uint32_t maxAlloc = uint32_t(-1), size_t nativeStackQuota = 0);
+	HostRuntime(Allocators allocators = StdAllocators(), uint32_t maybeGCInterval = 0, uint32_t maxbytes = uint32_t(-1), size_t nativeStackQuota = 0);
 
 	JSRuntime *&
 	runtime() {

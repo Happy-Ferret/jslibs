@@ -7,6 +7,22 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('serial'); throw 0; // -inlineOnly
 
+
+
+	loadModule('jsstd');
+	loadModule('jswinshell');
+
+	while ( !host.endSignal ) {
+		
+		sleep(1000);
+		for ( var i = 0; i < 10000; ++i )
+			new Serializer();
+		print(Math.floor(currentMemoryUsage/1024/1024), '\n');
+	}
+
+throw 0;
+
+
 	function genReferenceError() {
 		
 		try {
@@ -173,16 +189,6 @@ throw 0;
 	
 throw 0;
 
-	loadModule('jsstd');
-	loadModule('jswinshell');
-
-	while ( !host.endSignal ) {
-		
-		sleep(10);
-		new Array(100000).join('x');
-	}
-
-throw 0;
 
 
 

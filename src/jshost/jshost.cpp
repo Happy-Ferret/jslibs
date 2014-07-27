@@ -78,7 +78,7 @@ struct CmdLineArguments {
 		warningsToErrors = false;
 		unsafeMode = false;
 		compileOnly = false;
-		maybeGCInterval = 10; // seconds
+		maybeGCInterval = 5; // seconds
 		useFileBootstrapScript = false;
 		inlineScript = NULL;
 		help = false;
@@ -500,7 +500,7 @@ _tmain( int argc, TCHAR* argv[] ) {
 		//alloc.setSkipCleanup(true);
 		//nedAlloc.setSkipCleanup(true);
 
-		HostRuntime hostRuntime(allocators, uint32_t(args.maybeGCInterval * 1000), (uint32_t)-1, (uint32_t)-1, HOST_STACK_SIZE / 4); // 0 mean no periodical GC
+		HostRuntime hostRuntime(allocators, uint32_t(args.maybeGCInterval * 1000), JS::DefaultHeapMaxBytes / 16, HOST_STACK_SIZE / 4); // 0 mean no periodical GC
 		JL_CHK( hostRuntime );
 
 		JSContext *cx = hostRuntime.context();

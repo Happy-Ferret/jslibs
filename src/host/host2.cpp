@@ -346,15 +346,21 @@ WatchDog::interruptCallback(JSContext *cx) {
 	// - All native objects that have their own trace hook must indicate that they implement read and write barriers with the JSCLASS_IMPLEMENTS_BARRIERS flag.
 
 
+//	JS_MaybeGC(cx);
 
 	if ( !JS::IsIncrementalGCInProgress( rt ) ) {
 
-		JS::IncrementalGC( rt, JS::gcreason::API, 5 );
+//		JS::PrepareForFullGC(rt);
+	    JS::PrepareForIncrementalGC(rt);
+
+		JS::IncrementalGC( rt, JS::gcreason::API, 50);
+
+		JS::IsIncrementalGCInProgress( rt );
 	} else {
 
+		JS::PrepareForIncrementalGC(rt);
 		JS::FinishIncrementalGC( rt, JS::gcreason::API );
 	}
-
 
 	//ASSERT( JS::IsIncrementalGCInProgress( rt ) );
 
@@ -461,10 +467,10 @@ HostRuntime::errorReporterBasic( JSContext *cx, const char *message, JSErrorRepo
 }
 
 
-HostRuntime::HostRuntime( Allocators allocators, uint32_t maybeGCIntervalMs, uint32_t maxMem, uint32_t maxAlloc, size_t nativeStackQuota )
+HostRuntime::HostRuntime( Allocators allocators, uint32_t maybeGCIntervalMs, uint32_t maxbytes, size_t nativeStackQuota )
 : _allocators(allocators), rt(nullptr), cx(nullptr), _isEnding(false), _skipCleanup(false), _watchDog(*MOZ_THIS_IN_INITIALIZER_LIST(), maybeGCIntervalMs) {
 
-	rt = JS_NewRuntime(maxAlloc); // JSGC_MAX_MALLOC_BYTES
+	rt = JS_NewRuntime(maxbytes); // JSGC_MAX_MALLOC_BYTES
 	JL_CHK( rt );
 
 	// Number of JS_malloc bytes before last ditch GC.
@@ -477,8 +483,11 @@ HostRuntime::HostRuntime( Allocators allocators, uint32_t maybeGCIntervalMs, uin
 	//JS_SetNativeStackQuota(rt, 0);
 	JS_SetNativeStackQuota(rt, nativeStackQuota); // doc: 0:disabled
 
-	//JS_SetGCParametersBasedOnAvailableMemory
+//	JS_SetGCParametersBasedOnAvailableMemory(rt, 4000); // MB ?
 
+	JS_SetGCParameter(rt, JSGC_MODE, JSGC_MODE_INCREMENTAL);
+
+	//JS_SetGCParametersBasedOnAvailableMemory
 
 	//JS::DisableGenerationalGC(rt);
 
@@ -486,10 +495,14 @@ HostRuntime::HostRuntime( Allocators allocators, uint32_t maybeGCIntervalMs, uin
 	cx = JS_NewContext(rt, 8192); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 	JL_CHK( cx ); //, "unable to create the context." );
 
+
+
 	JS_BeginRequest(cx);
 
 	// Info: Increasing JSContext stack size slows down my scripts:
 	//   http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
+
+    JS_SetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES, 16 * 1024 * 1024);
 
 	JS_SetErrorReporter( cx, HostRuntime::errorReporterBasic );
 	JS::RuntimeOptionsRef(cx)
@@ -505,8 +518,9 @@ HostRuntime::HostRuntime( Allocators allocators, uint32_t maybeGCIntervalMs, uin
 	;
 
 	//JS_SetNativeStackQuota(cx, DEFAULT_MAX_STACK_SIZE); // see https://developer.mozilla.org/En/SpiderMonkey/JSAPI_User_Guide
-	JS_SetGCParameter( rt, JSGC_MODE, JSGC_MODE_INCREMENTAL );
-	JS_SetGCParameterForThread( cx, JSGC_MAX_CODE_CACHE_BYTES, 32 * 1024 * 1024 );
+
+
+//	JS_SetGCParametersBasedOnAvailableMemory(rt, 1000000000);
 
 
 	// JSOPTION_ANONFUNFIX: https://bugzilla.mozilla.org/show_bug.cgi?id=376052 
