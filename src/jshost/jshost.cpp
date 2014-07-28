@@ -78,7 +78,7 @@ struct CmdLineArguments {
 		warningsToErrors = false;
 		unsafeMode = false;
 		compileOnly = false;
-		maybeGCInterval = 5; // seconds
+		maybeGCInterval = 1; // seconds
 		useFileBootstrapScript = false;
 		inlineScript = NULL;
 		help = false;
@@ -951,5 +951,3 @@ extern "C" __declspec(dllexport) bool ModuleInit(JSContext *cx, JSObject *obj) {
 		QA.ASSERTOP(host, 'has', 'endSignalEvents');
 	}
 **/
-
-

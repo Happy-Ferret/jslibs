@@ -12,11 +12,18 @@
  * License.
  * ***** END LICENSE BLOCK ***** */
 
-#include <js/RequiredDefines.h>
+
+#include <../../js/src/js-confdefs.h>
+//#include <js/RequiredDefines.h>
 
 #ifdef WIN32
-	#define _CRT_SECURE_NO_WARNINGS
-	#define _CRT_NONSTDC_NO_WARNINGS
+	#define JL_STRINGIFY(x) #x
+	#define JL_TOSTRING(x) JL_STRINGIFY(x)
+
+	#pragma comment(lib, "mozjs-" JL_TOSTRING( MOZJS_MAJOR_VERSION ) "a1.lib")
+#endif 
+
+#ifdef WIN32
 	#include <io.h>
 #else // Linux
 	#include <unistd.h>

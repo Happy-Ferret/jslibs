@@ -127,7 +127,7 @@ int CALLBACK WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
 	{
 
-		HostRuntime hostRuntime(allocators, 0, uint32_t(-1), uint32_t(-1), HOST_STACK_SIZE / 2); // 0 mean no periodical GC
+		HostRuntime hostRuntime(allocators, 0, uint32_t(-1), HOST_STACK_SIZE / 2); // 0 mean no periodical GC
 		JSContext *cx = hostRuntime.context();
 
 		jl::Global global(hostRuntime);

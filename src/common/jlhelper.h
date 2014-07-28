@@ -14,10 +14,14 @@
 
 #pragma once
 
-
-#include <js/RequiredDefines.h>
+#include <../../js/src/js-confdefs.h>
+//#include <js/RequiredDefines.h>
 
 #include "jlplatform.h"
+
+#ifdef MSC
+	#pragma comment(lib, "mozjs-" JL_TOSTRING( MOZJS_MAJOR_VERSION ) "a1.lib")
+#endif 
 
 #include "jlalloc.h"
 

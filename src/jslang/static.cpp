@@ -388,6 +388,7 @@ ProcessEventThread( void *data ) {
 DEFINE_FUNCTION( processEvents ) {
 
 	JL_DEFINE_ARGS;
+
 	int st;
 
 	ModulePrivate *mpv = (ModulePrivate*)jl::Host::getHost(cx).moduleManager().modulePrivate(jslangModuleId);

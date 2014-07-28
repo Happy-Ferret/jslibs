@@ -3046,8 +3046,19 @@ void
 JLGetUserLocaleName(wchar_t *localeName, size_t localeNameMaxLength) {
 
 #if defined(WIN)
+	
+#if (WINVER >= 0x0600)
 
 	::GetUserDefaultLocaleName(localeName, localeNameMaxLength);
+		
+#else
+
+	// The ccBuf counts the null-terminator too.
+	size_t ccBuf = GetLocaleInfoW(LOCALE_USER_DEFAULT, LOCALE_SISO639LANGNAME, localeName, localeNameMaxLength);
+	localeName[ccBuf-1] = '-'; // replace null-terminator by '-'
+	localeNameMaxLength -= ccBuf + GetLocaleInfoW(LOCALE_USER_DEFAULT, LOCALE_SISO3166CTRYNAME, localeName+ccBuf, localeNameMaxLength);
+
+#endif
 
 #elif defined(UNIX)
 

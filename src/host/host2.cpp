@@ -352,8 +352,7 @@ WatchDog::interruptCallback(JSContext *cx) {
 
 //		JS::PrepareForFullGC(rt);
 	    JS::PrepareForIncrementalGC(rt);
-
-		JS::IncrementalGC( rt, JS::gcreason::API, 50);
+		JS::IncrementalGC( rt, JS::gcreason::API, 50 );
 
 		JS::IsIncrementalGCInProgress( rt );
 	} else {
