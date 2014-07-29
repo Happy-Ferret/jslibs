@@ -333,42 +333,43 @@ CountedAlloc::~CountedAlloc() {
 //////////////////////////////////////////////////////////////////////////////
 // WatchDog
 
-bool 
+void _GCSliceCallback(JSRuntime *rt, JS::GCProgress progress, const JS::GCDescription &desc) {
+
+	switch ( progress ) {
+
+		case JS::GCProgress::GC_CYCLE_BEGIN: puts("GC_CYCLE_BEGIN"); break;
+		case JS::GCProgress::GC_SLICE_BEGIN: puts("GC_SLICE_BEGIN"); break;
+		case JS::GCProgress::GC_SLICE_END: puts("GC_SLICE_END"); break;
+		case JS::GCProgress::GC_CYCLE_END: puts("GC_CYCLE_END"); break;
+	}
+//	_putws(desc.formatMessage(rt));
+//	puts("");
+}
+
+
+bool
 WatchDog::interruptCallback(JSContext *cx) {
 
+	
 	JSRuntime *rt = JL_GetRuntime(cx);
 
-//	JSInterruptCallback tmp = JS_SetInterruptCallback(rt, nullptr);
+	//HostRuntime::fromRuntime
 
-	//For a collection to be carried out incrementally the following conditions must be met:
-	// - The collection must be run by calling JS::IncrementalGC() rather than JS_GC().
-	// - The GC mode must have been set to JSGC_MODE_INCREMENTAL with JS_SetGCParameter().
-	// - All native objects that have their own trace hook must indicate that they implement read and write barriers with the JSCLASS_IMPLEMENTS_BARRIERS flag.
+	//JS_GetRuntimePrivate(rt);
 
+	// http://dxr.mozilla.org/mozilla-central/source/js/public/GCAPI.h#195
 
-//	JS_MaybeGC(cx);
+	// PrepareZoneForGC(GetCompartmentZone(global));
 
-	if ( !JS::IsIncrementalGCInProgress( rt ) ) {
-
-//		JS::PrepareForFullGC(rt);
-	    JS::PrepareForIncrementalGC(rt);
-		JS::IncrementalGC( rt, JS::gcreason::API, 50 );
-
-		JS::IsIncrementalGCInProgress( rt );
-	} else {
+	if ( JS::IsIncrementalGCInProgress( rt ) ) {
 
 		JS::PrepareForIncrementalGC(rt);
-		JS::FinishIncrementalGC( rt, JS::gcreason::API );
+	} else {
+		
+		JS::PrepareForFullGC(rt); // select all zones
 	}
+	JS::IncrementalGC( rt, JS::gcreason::API );
 
-	//ASSERT( JS::IsIncrementalGCInProgress( rt ) );
-
-	//JS_MaybeGC(cx); 
-
-	//JS_GC(rt);
-	//JS::IncrementalGC(rt, JS::gcreason::MAYBEGC);
-
-//	JS_SetInterruptCallback(rt, tmp);
 	return true;
 }
 
@@ -381,7 +382,7 @@ WatchDog::watchDogThreadProc(void *threadArg) {
 	for (;;) {
 
 		// used as a breakable Sleep instead of SleepMilliseconds (see SandboxEval).
-		if ( JLSemaphoreAcquire(watchDog._watchDogSemEnd, watchDog._maybeGCInterval) != JLTIMEOUT )
+		if ( JLSemaphoreAcquire(watchDog._watchDogSemEnd, watchDog._interruptInterval) != JLTIMEOUT )
 			break;
 		JSRuntime *rt = watchDog._hostRuntime.runtime();
 
@@ -393,18 +394,20 @@ WatchDog::watchDogThreadProc(void *threadArg) {
 }
 
 
-WatchDog::WatchDog(HostRuntime &hostRuntime, uint32_t maybeGCInterval)
-: _hostRuntime(hostRuntime), _maybeGCInterval(maybeGCInterval) {
+WatchDog::WatchDog(HostRuntime &hostRuntime, uint32_t interruptInterval)
+: _hostRuntime(hostRuntime), _interruptInterval(interruptInterval) {
 }
 
 bool
 WatchDog::start() {
 
-	if ( _maybeGCInterval ) {
+	//	IFDEBUG( JS::SetGCSliceCallback(_hostRuntime.runtime(), _GCSliceCallback) );
+
+	if ( _interruptInterval ) {
 
 		JSContext *cx = _hostRuntime.context();
-		JSInterruptCallback prevOperationCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), interruptCallback);
-		ASSERT( prevOperationCallback == nullptr );
+		JSInterruptCallback prevInterruptCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), interruptCallback);
+		ASSERT( prevInterruptCallback == nullptr );
 		_watchDogSemEnd = JLSemaphoreCreate(0);
 		_watchDogThread = JLThreadStart(watchDogThreadProc, this);
 		JL_ASSERT( JLSemaphoreOk(_watchDogSemEnd) && JLThreadOk(_watchDogThread), E_HOST, E_CREATE ); // "Unable to create the GC thread."
@@ -418,7 +421,7 @@ WatchDog::stop() {
 
 	// beware: it is important to destroy the watchDogThread BEFORE destroying the cx !!!
 
-	if ( _maybeGCInterval ) {
+	if ( _interruptInterval ) {
 
 		JSInterruptCallback prev_interruptCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), nullptr);
 		ASSERT( prev_interruptCallback == interruptCallback );
@@ -466,60 +469,47 @@ HostRuntime::errorReporterBasic( JSContext *cx, const char *message, JSErrorRepo
 }
 
 
-HostRuntime::HostRuntime( Allocators allocators, uint32_t maybeGCIntervalMs, uint32_t maxbytes, size_t nativeStackQuota )
-: _allocators(allocators), rt(nullptr), cx(nullptr), _isEnding(false), _skipCleanup(false), _watchDog(*MOZ_THIS_IN_INITIALIZER_LIST(), maybeGCIntervalMs) {
+HostRuntime::HostRuntime( Allocators allocators, uint32_t interruptIntervalMs, uint32_t maxbytes, size_t nativeStackQuota )
+: _allocators(allocators), rt(nullptr), cx(nullptr), _isEnding(false), _skipCleanup(false), _watchDog(*MOZ_THIS_IN_INITIALIZER_LIST(), interruptIntervalMs) {
 
-	rt = JS_NewRuntime(maxbytes); // JSGC_MAX_MALLOC_BYTES
+	rt = JS_NewRuntime(maxbytes);
 	JL_CHK( rt );
 
-	// Number of JS_malloc bytes before last ditch GC.
-	// ASSERT( JS_GetGCParameter(rt, JSGC_MAX_MALLOC_BYTES) == maxAlloc ); // JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, maxAlloc);
+	JS_SetNativeStackQuota(rt, nativeStackQuota); // doc: 0:disabled ?
 
-	// doc: maxMem specifies the number of allocated bytes after which garbage collection is run. Maximum nominal heap before last ditch GC.
-
-	//JS_SetGCParameter(rt, JSGC_MAX_BYTES, maxMem);
-	//JS_SetNativeStackQuota(rt, 128 * sizeof(size_t) * 1024); // doc. To disable stack size checking pass 0.
-	//JS_SetNativeStackQuota(rt, 0);
-	JS_SetNativeStackQuota(rt, nativeStackQuota); // doc: 0:disabled
-
-//	JS_SetGCParametersBasedOnAvailableMemory(rt, 4000); // MB ?
+	//	JS_SetGCParametersBasedOnAvailableMemory(rt, 512); // MB ?
 
 	JS_SetGCParameter(rt, JSGC_MODE, JSGC_MODE_INCREMENTAL);
+	JS_SetGCParameter(rt, JSGC_SLICE_TIME_BUDGET, 40);
+	JS_SetGCParameter(rt, JSGC_MAX_MALLOC_BYTES, 2 * 1024 * 1024); // Number of JS_malloc bytes before last ditch GC.
+	JS_SetGCParameter(rt, JSGC_MAX_BYTES, 2 * 1024 * 1024); // Maximum nominal heap before last ditch GC. (impacted by JL_updateMallocCounter)
 
-	//JS_SetGCParametersBasedOnAvailableMemory
-
-	//JS::DisableGenerationalGC(rt);
+	JS::RuntimeOptionsRef(rt)
+		.setIon(true)
+		.setAsmJS(true)
+			// doc. VarObjFix is recommended.  Without it, the two scripts "x = 1" and "var x = 1", where no variable x is in scope, do two different things.
+			//      The former creates a property on the global object.  The latter creates a property on obj.  With this flag, both create a global property.
+		.setVarObjFix(true)
+		.setNativeRegExp(true)
+	;
 
 
 	cx = JS_NewContext(rt, 8192); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 	JL_CHK( cx ); //, "unable to create the context." );
 
 
-
-	JS_BeginRequest(cx);
-
 	// Info: Increasing JSContext stack size slows down my scripts:
 	//   http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 
+	JS_SetErrorReporter( cx, HostRuntime::errorReporterBasic );
+
     JS_SetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES, 16 * 1024 * 1024);
 
-	JS_SetErrorReporter( cx, HostRuntime::errorReporterBasic );
-	JS::RuntimeOptionsRef(cx)
-		.setIon(true)
-		.setAsmJS(true)
-		.setVarObjFix(true)
-	;
+	//JS::ContextOptionsRef(cx);
 
-	JS::ContextOptionsRef(cx)
-		// doc. VarObjFix is recommended.  Without it, the two scripts "x = 1" and "var x = 1", where no variable x is in scope, do two different things.
-		//      The former creates a property on the global object.  The latter creates a property on obj.  With this flag, both create a global property.
-//		.setCloneSingletons(true)
-	;
+	JS_BeginRequest(cx);
 
 	//JS_SetNativeStackQuota(cx, DEFAULT_MAX_STACK_SIZE); // see https://developer.mozilla.org/En/SpiderMonkey/JSAPI_User_Guide
-
-
-//	JS_SetGCParametersBasedOnAvailableMemory(rt, 1000000000);
 
 
 	// JSOPTION_ANONFUNFIX: https://bugzilla.mozilla.org/show_bug.cgi?id=376052 
@@ -587,9 +577,10 @@ HostRuntime::destroy(bool skipCleanup) {
 	//    The last JS_DestroyContext* API call will run a GC, no matter which API of that form you call on the last context in the runtime. /be
 		
 	// see create()
-	JS_EndRequest(cx);
 
 	fireEvent(EventId::BEFORE_DESTROY_RUNTIME);
+
+	JS_EndRequest(cx);
 
 	JS_DestroyContext(cx);
 	cx = nullptr;
@@ -818,6 +809,11 @@ Global::Global( HostRuntime &hr, bool lazyStandardClasses )
 	{
 		// set globalObject as current global object.
 		JSAutoCompartment ac(cx, _global);
+
+		//JS_SetCompartmentPrivate(js::GetObjectCompartment(_global), NULL):
+
+		//JS_SetCompartmentPrivate(NULL
+			
 
 		JL_CHK( JS_InitStandardClasses(cx, _global) );
 		JL_CHK( JS_InitReflect(cx, _global) );
@@ -1510,7 +1506,7 @@ Host::Host( Global &glob, StdIO &hostStdIO, bool unsafeMode )
 		module.moduleId = jslangModuleId;
 		ASSERT( jslangModuleInit != (ModuleInitFunction)nullptr);
 		JL_CHKM( jslangModuleInit(cx, obj), E_MODULE, E_NAME("jslang"), E_INIT );
-		ASSERT( JS::IsIncrementalGCEnabled( _hostRuntime.runtime() ) );
+//		ASSERT( JS::IsIncrementalGCEnabled( _hostRuntime.runtime() ) );
 		ASSERT( JS::IsGenerationalGCEnabled( _hostRuntime.runtime() ) );
 	}
 
@@ -1550,12 +1546,9 @@ Host::destroy(bool skipCleanup) {
 void
 Host::free(bool skipCleanup) {
 
-	if ( !skipCleanup ) {
-
-		_moduleManager.freeModules(skipCleanup);
-		ASSERT( jslangModuleFree != (ModuleFreeFunction)nullptr);
-		jslangModuleFree(skipCleanup, nullptr);
-	}
+	_moduleManager.freeModules(skipCleanup);
+	ASSERT( jslangModuleFree != (ModuleFreeFunction)nullptr);
+	jslangModuleFree(skipCleanup, nullptr);
 }
 
 
@@ -1602,16 +1595,14 @@ Host::hostObject() {
 	return JS::HandleObject::fromMarkedLocation(_hostObject.address());
 }
 
-
-
-//bool
-//report( JSContext *cx, bool isWarning, ... ) {
-//
-//  va_list va;
-//  va_start(va, isWarning);
-//  bool st = jl::Host::getHost(cx).report(isWarning, va);
-//  va_end(va);
-//  return st;
-//}
-
 JL_END_NAMESPACE
+
+/*
+
+runtime/context -> runtimePrivate
+ > global/compartment
+    > host -> compartmentPrivate
+
+
+
+*/

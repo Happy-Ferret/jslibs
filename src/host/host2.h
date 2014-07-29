@@ -144,7 +144,8 @@ public:
 
 enum EventId {
 	BEFORE_DESTROY_RUNTIME,
-	AFTER_DESTROY_RUNTIME
+	AFTER_DESTROY_RUNTIME,
+	INTERRUPT,
 };
 
 
@@ -353,7 +354,7 @@ class WatchDog {
 
 	JLSemaphoreHandler _watchDogSemEnd;
 	JLThreadHandler _watchDogThread;
-	uint32_t _maybeGCInterval;
+	uint32_t _interruptInterval;
 
 	static bool 
 	interruptCallback(JSContext *cx);
@@ -363,7 +364,7 @@ class WatchDog {
 
 public:
 
-	WatchDog(HostRuntime &hostRuntime, uint32_t maybeGCInterval);
+	WatchDog(HostRuntime &hostRuntime, uint32_t interruptInterval);
 
 	bool
 	start();
@@ -376,14 +377,22 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 // HostRuntime
 
+// see: http://lxr.mozilla.org/mozilla-central/source/js/xpconnect/src/XPCJSRuntime.cpp#3217
+// see: http://lxr.mozilla.org/mozilla-central/source/dom/workers/RuntimeService.cpp#95
+#if defined(MOZ_ASAN) || (defined(DEBUG) && !defined(XP_WIN))
+static const size_t defaultNativeStackQuota = 2 * 128 * sizeof(size_t) * 1024;
+#else
+static const size_t defaultNativeStackQuota = 128 * sizeof(size_t) * 1024;
+#endif
+
 class DLLAPI HostRuntime : public Valid, public Events, public jl::CppAllocators {
 
-	JSContext *cx;
 	JSRuntime *rt;
+	JSContext *cx;
 
 	Allocators _allocators;
 
-	uint32_t _maybeGCInterval;
+	uint32_t _interruptInterval;
 
 	WatchDog _watchDog;
 
@@ -400,7 +409,7 @@ public: // static
 
 public:
 
-	HostRuntime(Allocators allocators = StdAllocators(), uint32_t maybeGCInterval = 0, uint32_t maxbytes = uint32_t(-1), size_t nativeStackQuota = 0);
+	HostRuntime(Allocators allocators = StdAllocators(), uint32_t interruptInterval = 0, uint32_t maxbytes = JS::DefaultHeapMaxBytes, size_t nativeStackQuota = defaultNativeStackQuota);
 
 	JSRuntime *&
 	runtime() {
@@ -1205,6 +1214,8 @@ public:
 
 	static ALWAYS_INLINE Host&
 	getHost( JSRuntime *rt ) {
+
+
 
 		return *static_cast<Host*>(JL_GetRuntimePrivate(rt));
 	}

@@ -58,6 +58,36 @@ extern JS_FRIEND_API(int)
 js_DateGetSeconds(JSObject* obj);
 
 
+/*
+class NOVTABLE JSAllocators {
+public:
+	ALWAYS_INLINE void* 
+	operator new(size_t size) NOTHROW {
+
+		return JS_malloc(cx, size);
+	}
+
+	ALWAYS_INLINE void*
+	operator new[](size_t size) NOTHROW {
+
+		return JS_malloc(cx, size);
+	}
+
+	ALWAYS_INLINE void
+	operator delete(void *ptr, size_t) {
+
+		JS_free(cx, ptr);
+	}
+
+	ALWAYS_INLINE void
+	operator delete[](void *ptr, size_t) {
+
+		JS_free(cx, ptr);
+	}
+};
+*/
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // helper macros and inline functions to avoid a function call to the jsapi
 

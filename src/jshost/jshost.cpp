@@ -54,12 +54,12 @@ static const uint8_t embeddedBootstrapScript[] =
 
 struct CmdLineArguments {
 	int help;
-	uint32_t maxMem;
+	uint32_t maxBytes;
 	uint32_t maxAlloc;
 	bool warningsToErrors;
 	bool unsafeMode;
 	bool compileOnly;
-	float maybeGCInterval;
+	float interruptInterval;
 	bool useFileBootstrapScript;
 	const TCHAR *inlineScript;
 	jl::EncodingType encoding;
@@ -73,12 +73,12 @@ struct CmdLineArguments {
 	bool
 	parseForMain(int argc, TCHAR* argv[]) {
 
-		maxMem = (uint32_t)-1; // by default, there are no limit
+		maxBytes = (uint32_t)-1; // by default, there are no limit
 		maxAlloc = (uint32_t)-1; // by default, there are no limit
 		warningsToErrors = false;
 		unsafeMode = false;
 		compileOnly = false;
-		maybeGCInterval = 1; // seconds
+		interruptInterval = 0.1; // seconds
 		useFileBootstrapScript = false;
 		inlineScript = NULL;
 		help = false;
@@ -94,7 +94,7 @@ struct CmdLineArguments {
 				case 'm': // maxbytes (GC)
 					argumentVector++;
 					HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
-					maxMem = jl::atoi( *argumentVector, 10 ) * 1024L * 1024L;
+					maxBytes = jl::atoi( *argumentVector, 10 ) * 1024L * 1024L;
 					break;
 				case 'n': // maxAlloc (GC)
 					argumentVector++;
@@ -110,7 +110,7 @@ struct CmdLineArguments {
 				case 'g': // operationLimitGC
 					argumentVector++;
 					HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
-					maybeGCInterval = float(jl::atof(*argumentVector));
+					interruptInterval = float(jl::atof(*argumentVector));
 					break;
 				case 'c': // compileOnly
 					compileOnly = true;
@@ -488,7 +488,7 @@ _tmain( int argc, TCHAR* argv[] ) {
 //		#endif // USE_NEDMALLOC
 
 
-		//ThreadedAllocator alloc(allocators);
+//		ThreadedAllocator alloc(allocators);
 		
 		IFDEBUG( CountedAlloc countAlloc(allocators) );
 
@@ -500,7 +500,10 @@ _tmain( int argc, TCHAR* argv[] ) {
 		//alloc.setSkipCleanup(true);
 		//nedAlloc.setSkipCleanup(true);
 
-		HostRuntime hostRuntime(allocators, uint32_t(args.maybeGCInterval * 1000), JS::DefaultHeapMaxBytes / 16, HOST_STACK_SIZE / 4); // 0 mean no periodical GC
+
+		
+		
+		HostRuntime hostRuntime(allocators, uint32_t(args.interruptInterval * 1000), args.maxBytes);
 		JL_CHK( hostRuntime );
 
 		JSContext *cx = hostRuntime.context();
@@ -634,7 +637,7 @@ _tmain( int argc, TCHAR* argv[] ) {
 
 		host.destroy();
 		global.destroy();
-		hostRuntime.destroy();
+		hostRuntime.destroy(true);
 		host.free(); // must be executed after runtime destroy
 	}
 

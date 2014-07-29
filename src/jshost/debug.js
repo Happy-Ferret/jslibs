@@ -9,16 +9,21 @@ var loadModule = host.loadModule;
 
 	loadModule('jsstd');
 
+	var mem;
 	while ( !host.endSignal ) {
 		
 		for ( var i = 0; i < 1000; ++i )
-			new Serializer();
-		print(Math.floor(currentMemoryUsage/1024/1024), '\n');
+			void new Serializer();
+		
+		var cmu = currentMemoryUsage;
+		print(Math.floor((cmu-mem)/1024/1024), '\n');
+		mem = cmu;
 
-		processEvents(timeoutEvents(100));
+		processEvents(timeoutEvents(1000));
 	}
 
 throw 0;
+
 
 
 	function genReferenceError() {

@@ -120,16 +120,16 @@ template <class T>
 INLINE bool
 HandleCreate( JSContext *cx, T *data, OUT JS::MutableHandleValue handleVal ) {
 
-	HandlePrivate *pv = data;
-
 	const jl::ProtoCache::Item *classProtoCache = jl::Host::getHost(cx).getCachedClassProto("Handle");
 	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME("Handle"), E_NOTFOUND );
 
 	{
-	JS::RootedObject handleObj(cx, jl::newObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto));
-	JL_CHK( handleObj );
-	handleVal.setObject(*handleObj);
-	JL_SetPrivate(handleObj, pv);
+		JS::RootedObject handleObj(cx, jl::newObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto));
+		JL_CHK( handleObj );
+		handleVal.setObject(*handleObj);
+		HandlePrivate *pv = data;
+		JL_SetPrivate(handleObj, pv);
+		JL_updateMallocCounter(cx, sizeof(T));
 	}
 
 	return true;
@@ -143,13 +143,13 @@ HandleClose( JSContext *cx, IN JS::HandleValue handleVal ) {
 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
 	
 	{
-	JS::RootedObject handleObj(cx, &handleVal.toObject());
-	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
+		JS::RootedObject handleObj(cx, &handleVal.toObject());
+		JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
 
-	HandlePrivate *pv;
-	pv = static_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
-	delete pv;
-	JL_SetPrivate(handleObj, NULL);
+		HandlePrivate *pv;
+		pv = static_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
+		delete pv;
+		JL_SetPrivate(handleObj, NULL);
 	}
 
 	return true;
@@ -163,13 +163,13 @@ GetHandleType( JSContext *cx, JS::HandleValue handleVal ) {
 	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
 
 	{
-	JS::RootedObject handleObj(cx, &handleVal.toObject());
-	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
+		JS::RootedObject handleObj(cx, &handleVal.toObject());
+		JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
 
-	HandlePrivate *pv;
-	pv = static_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
-	JL_CHK( pv );
-	return pv->typeId();
+		HandlePrivate *pv;
+		pv = static_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
+		JL_CHK( pv );
+		return pv->typeId();
 	}
 
 bad:

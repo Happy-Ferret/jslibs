@@ -43,6 +43,9 @@ DEFINE_CONSTRUCTOR() {
 
 	ser = new jl::Serializer(cx, JL_OBJVAL);
 	JL_ASSERT_ALLOC(ser);
+
+	JL_updateMallocCounter(cx, sizeof(jl::Serializer));
+
 	ser->Write(cx, JL_THIS_CLASS_REVISION);
 
 	JL_SetPrivate(JL_OBJ, ser);
@@ -151,6 +154,9 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 	unser = new jl::Unserializer(cx, str.toData<char*>(), str.length(), JL_OBJVAL);
 	JL_ASSERT_ALLOC(unser);
+
+	JL_updateMallocCounter(cx, sizeof(jl::Unserializer));
+
 	jl::SourceId_t srcId;
 	JL_CHK( unser->Read(cx, srcId) );
 	JL_ASSERT( srcId == JL_THIS_CLASS_REVISION, E_ARG, E_NUM(1), E_VERSION, E_COMMENT("serialized data") );
