@@ -1,17 +1,15 @@
 include ../subdirs.mk
 
-_CONFIGURE_OPTIONS :=  --with-windows-version=601 --enable-nspr-build --without-intl-api --enable-ctypes --disable-tests
-# default:  --enable-threadsafe --enable-exact-rooting
-# prev: --enable-threadsafe --disable-gcgenerational --enable-exact-rooting --without-intl-api --enable-ctypes  --with-windows-version=601 --disable-static --disable-profile-guided-optimization --disable-vista-sdk-requirements --disable-tests
-#	--enable-intl-api (require to remove --disable-intl-api and to add jslibs/libs/js/src/intl directory)
+_CONFIGURE_OPTIONS := --with-windows-version=601 --enable-nspr-build --without-intl-api --enable-ctypes --disable-tests --disable-static --disable-gcgenerational
+#  --enable-threadsafe --disable-gcgenerational --enable-exact-rooting (--enable-intl-api require jslibs/libs/js/src/intl directory)
 
 ifeq ($(BUILD),dbg)
 	_CONFIGURE_OPTIONS += --enable-debug --disable-optimize --enable-gczeal
 else
 	_CONFIGURE_OPTIONS += --enable-strip --enable-optimize
-	#--enable-optimize=-Ox 
-	#_CFLAGS += -GL
-	#_LDFLAGS += -LTCG
+# --enable-optimize=-Ox 
+# _CFLAGS += -GL
+# _LDFLAGS += -LTCG
 endif
 
 ifeq ($(BITS),64)
