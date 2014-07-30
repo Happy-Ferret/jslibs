@@ -260,8 +260,8 @@ public:
 	};
 
 private:
-	Item *_begin;
-	Item *_end;
+	Item *_first;
+	Item *_last;
 	A<Item> allocator;
 
 public:
@@ -270,15 +270,15 @@ public:
 	enum { itemSize = sizeof(Item) };
 
 	Queue1()
-	: _begin(NULL), _end(NULL) {
+	: _first(NULL), _last(NULL) {
 	}
 
 	~Queue1() {
 
-		while ( _begin ) {
+		while ( _first ) {
 
-			Item *tmp = _begin;
-			_begin = _begin->next;
+			Item *tmp = _first;
+			_first = _first->next;
 			tmp->Item::~Item();
 			allocator.Free(tmp);
 		}
@@ -286,49 +286,49 @@ public:
 
 	ALWAYS_INLINE operator bool() const {
 		
-		return _begin != NULL;
+		return _first != NULL;
 	}
 
-	ALWAYS_INLINE Item* Begin() const {
+	ALWAYS_INLINE Item* First() const {
 
-		return _begin;
+		return _first;
 	}
 
-	ALWAYS_INLINE Item* End() const {
+	ALWAYS_INLINE Item* Last() const {
 
-		return _end;
+		return _last;
 	}
 
 	ALWAYS_INLINE void AddEnd() {
 
 		Item *newItem = ::new(allocator.Alloc()) Item;
 		ASSERT(newItem);
-		if ( _end != NULL ) {
+		if ( _last != NULL ) {
 
-			newItem->prev = _end;
+			newItem->prev = _last;
 			newItem->next = NULL;
-			_end->next = newItem;
-			_end = newItem;
+			_last->next = newItem;
+			_last = newItem;
 		} else {
 
 			newItem->prev = NULL;
 			newItem->next = NULL;
-			_begin = newItem;
-			_end = newItem;
+			_first = newItem;
+			_last = newItem;
 		}
 	}
 
 	ALWAYS_INLINE void RemoveEnd() {
 
-		Item *oldItem = _end;
-		if ( _begin != _end ) { // do we have only one cell ?
+		Item *oldItem = _last;
+		if ( _first != _last ) { // do we have only one cell ?
 
-			_end = oldItem->prev;
-			_end->next = NULL;
+			_last = oldItem->prev;
+			_last->next = NULL;
 		} else {
 
-			_begin = NULL;
-			_end = NULL;
+			_first = NULL;
+			_last = NULL;
 		}
 		oldItem->Item::~Item();
 		allocator.Free(oldItem);
@@ -337,32 +337,32 @@ public:
 	ALWAYS_INLINE void AddBegin() {
 
 		Item *newItem = ::new(allocator.Alloc()) Item;
-		if ( _begin != NULL ) {
+		if ( _first != NULL ) {
 
 			newItem->prev = NULL;
-			newItem->next = _begin;
-			_begin->prev = newItem;
-			_begin = newItem;
+			newItem->next = _first;
+			_first->prev = newItem;
+			_first = newItem;
 		} else {
 
 			newItem->next = NULL;
 			newItem->prev = NULL;
-			_begin = newItem;
-			_end = newItem;
+			_first = newItem;
+			_last = newItem;
 		}
 	}
 
 	ALWAYS_INLINE void RemoveBegin() {
 
-		Item *oldItem = _begin;
-		if ( _begin != _end ) { // do we have only one cell ?
+		Item *oldItem = _first;
+		if ( _first != _last ) { // do we have only one cell ?
 
-			_begin = oldItem->next;
-			_begin->prev = NULL;
+			_first = oldItem->next;
+			_first->prev = NULL;
 		} else {
 
-			_begin = NULL;
-			_end = NULL;
+			_first = NULL;
+			_last = NULL;
 		}
 		oldItem->Item::~Item();
 		allocator.Free(oldItem);
@@ -370,9 +370,9 @@ public:
 
 	ALWAYS_INLINE void Remove( Item *item ) {
 
-		if ( item == _begin )
+		if ( item == _first )
 			return RemoveBegin();
-		if ( item == _end )
+		if ( item == _last )
 			return RemoveEnd();
 		item->prev->next = item->next;
 		item->next->prev = item->prev;
@@ -382,10 +382,10 @@ public:
 
 	ALWAYS_INLINE void Insert( Item *nextItem, const T &data ) {
 
-		if ( nextItem == Begin() ) {
+		if ( nextItem == First() ) {
 
 			AddBegin();
-			Begin()->data = data;
+			First()->data = data;
 		}
 		
 		Item *newItem = ::new(allocator.Alloc()) Item;
@@ -399,7 +399,7 @@ public:
 
 	ALWAYS_INLINE Item* Find( const T &data ) const {
 
-		for ( Item *it = _begin; it; it = it->next )
+		for ( Item *it = _first; it; it = it->next )
 			if ( it->data == data )
 				return it;
 		return NULL;
@@ -409,18 +409,18 @@ public:
 	ALWAYS_INLINE void Push( const T &item ) {
 
 		AddEnd();
-		End()->data = item;
+		Last()->data = item;
 	}
 
 	ALWAYS_INLINE void Pop( T &item ) {
 
-		item = End()->data;
+		item = Last()->data;
 		RemoveEnd();
 	}
 
 	ALWAYS_INLINE T Pop() {
 
-		T item = End()->data;
+		T item = Last()->data;
 		RemoveEnd();
 		return item;
 	}
@@ -428,12 +428,12 @@ public:
 	ALWAYS_INLINE void Unshift( const T &item ) {
 		
 		AddBegin();
-		Begin()->data = item;
+		First()->data = item;
 	}
 
 	ALWAYS_INLINE void Shift( T &item ) {
 
-		item = Begin()->data;
+		item = First()->data;
 		RemoveBegin();
 	}
 

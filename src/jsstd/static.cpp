@@ -761,7 +761,7 @@ DEFINE_FUNCTION( print ) {
 	// print() => host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
 
 	JS::RootedValue fval(cx);
-	JL_CHK( JS_GetPropertyById(cx, jl::Host::getHost(cx).hostObject(), JLID(cx, stdout), &fval) );
+	JL_CHK( JS_GetPropertyById(cx, jl::Host::getJLHost(cx).hostObject(), JLID(cx, stdout), &fval) );
 	JL_RVAL.setUndefined();
 	if (likely( jl::isCallable(cx, fval) )) {
 
@@ -991,7 +991,7 @@ bool SandboxMaxOperationCallback(JSContext *cx) {
 		JS::RootedValue branchLimitExceptionVal(cx);
 		JSInterruptCallback tmp = JS_SetInterruptCallback(JL_GetRuntime(cx), NULL);
 
-		const jl::ProtoCache::Item* cpc = jl::Host::getHost(cx).getCachedClassProto(JL_CLASS_NAME(OperationLimit));
+		const jl::ProtoCache::Item* cpc = jl::Host::getJLHost(cx).getCachedClassProto(JL_CLASS_NAME(OperationLimit));
 		ASSERT( cpc );
 
 		JSCompartment *oldCompartment;

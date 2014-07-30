@@ -102,7 +102,7 @@ BEGIN_CLASS( Result )
 
 DEFINE_FINALIZE() {
 
-	if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
+	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 
 	sqlite3_stmt *pStmt = (sqlite3_stmt*)js::GetObjectPrivate(obj);

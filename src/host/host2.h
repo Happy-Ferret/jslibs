@@ -167,22 +167,32 @@ class DLLAPI Events {
 		}
 	};
 
+public:
 	typedef jl::Queue1<Listener> List;
+
+private:
 	List _list;
 
 public:
-	void
+	List::Item *
 	addListener( EventId id, Callback *cb ) {
 
 		_list.AddEnd();
-		_list.End()->data.id = id;
-		_list.End()->data.cb = cb;
+		_list.Last()->data.id = id;
+		_list.Last()->data.cb = cb;
+		return _list.Last();
+	}
+
+	void
+	removeListener( List::Item *item ) {
+
+		_list.Remove(item);
 	}
 
 	void 
 	fireEvent( EventId id ) const {
 
-		for ( List::Item *it = _list.Begin(); it; it = it->next )
+		for ( List::Item *it = _list.First(); it; it = it->next )
 			if ( it->data.id == id )
 				(*it->data.cb)();
 	}
@@ -362,15 +372,46 @@ class WatchDog {
 	static JLThreadFuncDecl
 	watchDogThreadProc(void *threadArg);
 
-public:
-
-	WatchDog(HostRuntime &hostRuntime, uint32_t interruptInterval);
-
 	bool
 	start();
 
 	bool
 	stop();
+
+public:
+
+	~WatchDog() {
+
+		if ( _interruptInterval != 0 )
+			stop();
+	}
+
+	WatchDog(HostRuntime &hostRuntime);
+
+	uint32_t
+	interruptInterval() const {
+
+		return _interruptInterval;
+	}
+	
+	void
+	setInterruptInterval( uint32_t interruptIntervalMs ) {
+		
+		if ( _interruptInterval == 0 && interruptIntervalMs != 0 ) {
+
+			_interruptInterval = interruptIntervalMs;
+			start();
+		} else			 
+		if ( _interruptInterval != 0 && interruptIntervalMs == 0 ) {
+			
+			_interruptInterval = interruptIntervalMs;
+			stop();
+		} else {
+
+			_interruptInterval = interruptIntervalMs;
+		}
+	}
+
 };
 
 
@@ -392,8 +433,6 @@ class DLLAPI HostRuntime : public Valid, public Events, public jl::CppAllocators
 
 	Allocators _allocators;
 
-	uint32_t _interruptInterval;
-
 	WatchDog _watchDog;
 
 	bool _isEnding;
@@ -407,9 +446,28 @@ public: // static
 	static void
 	errorReporterBasic(JSContext *cx, const char *message, JSErrorReport *report);
 
+	static HostRuntime&
+	HostRuntime::getJLRuntime( JSRuntime *rt ) {
+
+		//return static_cast<Host*>(JL_GetRuntimePrivate(rt))->hostRuntime();
+		void *runtimePrivate = JL_GetRuntimePrivate(rt);
+		ASSERT( runtimePrivate );
+		return *static_cast<HostRuntime*>(runtimePrivate);
+	}
+
+	static HostRuntime&
+	HostRuntime::getJLRuntime( JSContext *cx ) {
+
+		//return static_cast<Host*>(JL_GetRuntimePrivate(JL_GetRuntime(cx)))->hostRuntime();
+		void *runtimePrivate = JL_GetRuntimePrivate(JL_GetRuntime(cx));
+		ASSERT( runtimePrivate );
+		return *static_cast<HostRuntime*>(runtimePrivate);
+	}
+
+	HostRuntime();
 public:
 
-	HostRuntime(Allocators allocators = StdAllocators(), uint32_t interruptInterval = 0, uint32_t maxbytes = JS::DefaultHeapMaxBytes, size_t nativeStackQuota = defaultNativeStackQuota);
+	HostRuntime(Allocators allocators/* = StdAllocators()*/, uint32_t maxbytes = JS::DefaultHeapMaxBytes, size_t nativeStackQuota = defaultNativeStackQuota);
 
 	JSRuntime *&
 	runtime() {
@@ -440,6 +498,19 @@ public:
 
 		return _isEnding;
 	}
+
+	uint32_t
+	interruptInterval() const {
+
+		return _watchDog.interruptInterval();
+	}
+	
+	void
+	setInterruptInterval( uint32_t interruptIntervalMs ) {
+		
+		_watchDog.setInterruptInterval(interruptIntervalMs);
+	}
+
 
 	bool
 	destroy(bool skipCleanup = false);
@@ -1021,6 +1092,7 @@ class DLLAPI Host : public Valid, public jl::CppAllocators {
 	ProtoCache _classProtoCache;
 	StaticArray< JS::PersistentRootedId, LAST_JSID > _ids;
 	ErrorManager _errorManager;
+	Events::List::Item *_interruptHandler;
 
 //	static void
 //	errorReporterBasic( JSContext *cx, const char *message, JSErrorReport *report );
@@ -1212,19 +1284,38 @@ private:
 
 public:
 
+/*
+	// (TBD) remove:
 	static ALWAYS_INLINE Host&
 	getHost( JSRuntime *rt ) {
-
-
 
 		return *static_cast<Host*>(JL_GetRuntimePrivate(rt));
 	}
 
+	// (TBD) remove:
 	static ALWAYS_INLINE Host&
 	getHost( JSContext *cx ) {
 
 		return getHost(JL_GetRuntime(cx));
 	}
+*/
+
+	static ALWAYS_INLINE Host&
+	getJLHost( JS::HandleObject obj ) {
+
+		JSCompartment *objectCompartment = js::GetObjectCompartment(obj);
+		ASSERT( objectCompartment );
+		return *static_cast<Host*>(JS_GetCompartmentPrivate(objectCompartment));
+	}
+
+	static ALWAYS_INLINE Host&
+	getJLHost( JSContext *cx ) {
+
+		JSCompartment *currentCompartment = js::GetContextCompartment(cx);
+		ASSERT( currentCompartment );
+		return *static_cast<Host*>(JS_GetCompartmentPrivate(currentCompartment));
+	}
+
 
 };
 
@@ -1249,7 +1340,7 @@ JL_END_NAMESPACE
 #endif // DEBUG
 
 //#define JLID(cx, name) JL_GetPrivateJsid(cx, JLID_##name, (jschar*)L(#name))
-#define JLID(cx, name) (jl::Host::getHost(cx).getId(JLID_##name, L(#name)))
+#define JLID(cx, name) (jl::Host::getJLHost(cx).getId(JLID_##name, L(#name)))
 
 // eg:
 //   jsid cfg = JLID(cx, fileName); const char *name = JLID_NAME(fileName);
@@ -1262,13 +1353,13 @@ JL_END_NAMESPACE
 ALWAYS_INLINE JSObject* FASTCALL
 JL_NewObj( JSContext *cx ) {
 
-	return jl::Host::getHost(cx).newObject();
+	return jl::Host::getJLHost(cx).newObject();
 }
 
 
 ALWAYS_INLINE JSObject* FASTCALL
 JL_NewJslibsObject( JSContext *cx, const char *className ) {
 
-	return jl::Host::getHost(cx).newJLObject(className);
+	return jl::Host::getJLHost(cx).newJLObject(className);
 }
 

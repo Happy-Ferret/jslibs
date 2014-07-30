@@ -391,7 +391,7 @@ DEFINE_FUNCTION( processEvents ) {
 
 	int st;
 
-	ModulePrivate *mpv = (ModulePrivate*)jl::Host::getHost(cx).moduleManager().modulePrivate(jslangModuleId);
+	ModulePrivate *mpv = (ModulePrivate*)jl::Host::getJLHost(cx).moduleManager().modulePrivate(jslangModuleId);
 
 	ASSERT( JLSemaphoreOk(mpv->processEventSignalEventSem) );
 
@@ -411,7 +411,9 @@ DEFINE_FUNCTION( processEvents ) {
 	unsigned int i;
 	for ( i = 0; i < argc; ++i ) {
 
-		handleObj.set(&JL_ARG(i+1).toObject());
+		JL_ASSERT_IS_OBJECT(JL_ARGV[i], "processEvents argument");
+
+		handleObj.set(&JL_ARGV[i].toObject());
 		JL_ASSERT_ARG_TYPE( IsHandle(cx, handleObj), i+1, "(pev) Handle" );
 		JL_ASSERT_ARG_TYPE( IsHandleType(cx, handleObj, JLHID(pev)), i+1, "(pev) Handle" );
 		

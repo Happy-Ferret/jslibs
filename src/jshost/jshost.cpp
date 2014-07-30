@@ -59,7 +59,6 @@ struct CmdLineArguments {
 	bool warningsToErrors;
 	bool unsafeMode;
 	bool compileOnly;
-	float interruptInterval;
 	bool useFileBootstrapScript;
 	const TCHAR *inlineScript;
 	jl::EncodingType encoding;
@@ -78,7 +77,6 @@ struct CmdLineArguments {
 		warningsToErrors = false;
 		unsafeMode = false;
 		compileOnly = false;
-		interruptInterval = 0.1; // seconds
 		useFileBootstrapScript = false;
 		inlineScript = NULL;
 		help = false;
@@ -106,11 +104,6 @@ struct CmdLineArguments {
 					break;
 				case 'w': // convert warnings to errors
 					warningsToErrors = true;
-					break;
-				case 'g': // operationLimitGC
-					argumentVector++;
-					HOST_MAIN_ASSERT( *argumentVector, "Missing argument." );
-					interruptInterval = float(jl::atof(*argumentVector));
 					break;
 				case 'c': // compileOnly
 					compileOnly = true;
@@ -462,6 +455,22 @@ volatile bool NedAllocators::_skipCleanup = false;
 #endif // USE_NEDMALLOC
 
 
+
+void _GCSliceCallback(JSRuntime *rt, JS::GCProgress progress, const JS::GCDescription &desc) {
+
+	switch ( progress ) {
+
+		case JS::GCProgress::GC_CYCLE_BEGIN: puts("GC_CYCLE_BEGIN"); break;
+		case JS::GCProgress::GC_SLICE_BEGIN: puts("GC_SLICE_BEGIN"); break;
+		case JS::GCProgress::GC_SLICE_END: puts("GC_SLICE_END"); break;
+		case JS::GCProgress::GC_CYCLE_END: puts("GC_CYCLE_END"); break;
+	}
+//	_putws(desc.formatMessage(rt));
+//	puts("");
+}
+
+
+
 using namespace jl;
 
 int
@@ -499,14 +508,17 @@ _tmain( int argc, TCHAR* argv[] ) {
 
 		//alloc.setSkipCleanup(true);
 		//nedAlloc.setSkipCleanup(true);
-
-
 		
 		
-		HostRuntime hostRuntime(allocators, uint32_t(args.interruptInterval * 1000), args.maxBytes);
+		HostRuntime hostRuntime(allocators, args.maxBytes);
 		JL_CHK( hostRuntime );
 
 		JSContext *cx = hostRuntime.context();
+
+		ASSERT( &hostRuntime == &jl::HostRuntime::getJLRuntime(cx) );
+
+//		IFDEBUG( JS::SetGCSliceCallback(hostRuntime.runtime(), _GCSliceCallback) );
+
 
 		JS::RuntimeOptionsRef(cx)
 			.setWerror(args.warningsToErrors)
@@ -629,13 +641,15 @@ _tmain( int argc, TCHAR* argv[] ) {
 					}
 				}
 			}
+
+			freeInterrupt();
+
+			// JS_SetGCCallback(JL_GetRuntime(cx), NULL, NULL);
+
+			host.destroy();
+
 		}
 
-		freeInterrupt();
-
-		// JS_SetGCCallback(JL_GetRuntime(cx), NULL, NULL);
-
-		host.destroy();
 		global.destroy();
 		hostRuntime.destroy(true);
 		host.free(); // must be executed after runtime destroy

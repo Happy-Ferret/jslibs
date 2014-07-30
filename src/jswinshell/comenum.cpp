@@ -24,8 +24,9 @@ BEGIN_CLASS( ComEnum )
 
 DEFINE_FINALIZE() {
 
-	if ( obj == jl::Host::getHost(fop->runtime()).getCachedProto(JL_THIS_CLASS_NAME) )
-		return;
+//	if ( obj == jl::Host::getJLHost(fop->runtime()).getCachedProto(JL_THIS_CLASS_NAME) ) // we are finilizing the prototype ?
+//		return;
+
 	IEnumVARIANT *ienumv = (IEnumVARIANT*)js::GetObjectPrivate(obj);
 	if ( !ienumv )
 		return;
@@ -40,7 +41,7 @@ DEFINE_FUNCTION( next ) {
 	VARIANT *result = NULL;
 
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 
 	IEnumVARIANT *ienumv = (IEnumVARIANT*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(ienumv);

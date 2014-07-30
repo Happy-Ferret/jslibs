@@ -111,7 +111,7 @@ JL_HandleJSClass( JSContext *cx ) {
 	// it's safe to use static keyword because JSClass do not depend on the rt or cx.
 	static const JSClass *clasp = NULL;
 	if (unlikely( clasp == NULL ))
-		clasp = jl::Host::getHost(cx).getCachedClasp("Handle");
+		clasp = jl::Host::getJLHost(cx).getCachedClasp("Handle");
 	return clasp;
 }
 
@@ -120,7 +120,7 @@ template <class T>
 INLINE bool
 HandleCreate( JSContext *cx, T *data, OUT JS::MutableHandleValue handleVal ) {
 
-	const jl::ProtoCache::Item *classProtoCache = jl::Host::getHost(cx).getCachedClassProto("Handle");
+	const jl::ProtoCache::Item *classProtoCache = jl::Host::getJLHost(cx).getCachedClassProto("Handle");
 	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME("Handle"), E_NOTFOUND );
 
 	{

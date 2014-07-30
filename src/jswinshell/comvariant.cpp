@@ -521,8 +521,9 @@ BEGIN_CLASS( ComVariant )
 
 DEFINE_FINALIZE() {
 
-	if ( obj == jl::Host::getHost(fop->runtime()).getCachedProto(JL_THIS_CLASS_NAME) )
-		return;
+//	if ( obj == jl::Host::getJLHost(fop->runtime()).getCachedProto(JL_THIS_CLASS_NAME) )
+//		return;
+
 	VARIANT *variant = (VARIANT*)js::GetObjectPrivate(obj);
 	if ( !variant )
 		return;

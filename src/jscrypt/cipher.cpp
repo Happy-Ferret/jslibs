@@ -98,7 +98,7 @@ FinalizeCipher( JS::HandleObject obj, bool wipe ) {
 
 DEFINE_FINALIZE() {
 
-	if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
+	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 
 	JS::RootedObject o(fop->runtime(), obj);

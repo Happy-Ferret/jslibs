@@ -235,7 +235,7 @@ namespace jl2 { //JL_BEGIN_NAMESPACE
 				ASSERT( clasp.name && clasp.name[0] ); // Invalid class name.
 
 				HostPrivate *hpv;
-				hpv = jl::Host::getHost(cx);
+				hpv = jl::Host::getJLHost(cx);
 
 				JSObject *parentProto;
 				if ( parentProtoName != NULL ) {

@@ -574,6 +574,22 @@ getValue(JSContext *cx, JS::HandleValue val, OUT JS::MutableHandleObject* obj) {
 }
 
 
+// example:
+//   bool requestIncrementalGC = jl::getValueDef(cx, JL_SARG(1), false);
+//   int64_t sliceMillis = jl::getValueDef<int64_t>(cx, JL_SARG(2), 0);
+
+template <typename T>
+ALWAYS_INLINE T FASTCALL
+getValueDef(JSContext *cx, JS::HandleValue val, IN T defaultValue ) {
+	
+	T value;
+	if ( !val.isUndefined() && getValue(cx, val, &value) )
+		return value;
+	return defaultValue;
+}
+
+
+
 // rooted OUT: JS::Rooted& / JS::Rooted* / JS::MutableHandle
 
 

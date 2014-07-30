@@ -148,7 +148,7 @@ InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 	JL_CHK( obj );
 
 	ASSERT( cs->clasp.name && cs->clasp.name[0] ); // Invalid class name.
-	jl::Host &host = jl::Host::getHost(cx);
+	jl::Host &host = jl::Host::getJLHost(cx);
 
 	{
 
@@ -320,8 +320,8 @@ JL_END_NAMESPACE
 
 #define JL_THIS_CLASS_REVISION (classSpec->sourceId)
 
-#define JL_CLASS_PROTOTYPE(cx, CLASSNAME) (jl::Host::getHost(cx).getCachedProto(CLASSNAME::className) /*JL_GetCachedProto(JL_GetHostPrivate(cx), CLASSNAME::className)*/)
-#define JL_THIS_CLASS_PROTOTYPE (jl::Host::getHost(cx).getCachedProto(className) /*JL_GetCachedProto(JL_GetHostPrivate(cx), className)*/)
+#define JL_CLASS_PROTOTYPE(cx, CLASSNAME) (jl::Host::getJLHost(cx).getCachedProto(CLASSNAME::className) /*JL_GetCachedProto(JL_GetHostPrivate(cx), CLASSNAME::className)*/)
+#define JL_THIS_CLASS_PROTOTYPE (jl::Host::getJLHost(cx).getCachedProto(className) /*JL_GetCachedProto(JL_GetHostPrivate(cx), className)*/)
 
 #define _NULL NULL // because in _##getter and _##setter, getter or setter can be NULL.
 

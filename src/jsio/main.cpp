@@ -46,7 +46,7 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	JLDisableThreadNotifications();
 
-	JL_ASSERT(jl::Host::getHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
+	JL_ASSERT(jl::Host::getJLHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 
 	if ( PR_AtomicIncrement(&instanceCount) == 1 ) {
 
@@ -63,7 +63,7 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	JsioPrivate *mpv;
 	mpv = (JsioPrivate*)jl_calloc(sizeof(JsioPrivate), 1);
 	JL_ASSERT_ALLOC( mpv );
-	jl::Host::getHost(cx).moduleManager().modulePrivate(moduleId()) = mpv;
+	jl::Host::getJLHost(cx).moduleManager().modulePrivate(moduleId()) = mpv;
 
 	INIT_CLASS( IoError );
 	INIT_CLASS( Descriptor );
@@ -82,10 +82,9 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 }
 
 bool
-ModuleRelease(JSContext *cx) {
+ModuleRelease(JSContext *cx, void *pv) {
 
-	jl::Host &host = jl::Host::getHost(cx);
-	JsioPrivate *mpv = (JsioPrivate*)host.moduleManager().modulePrivate(moduleId());
+	JsioPrivate *mpv = static_cast<JsioPrivate*>(pv);
 
 	if ( host.hostRuntime().skipCleanup() ) // do not cleanup in unsafe mode.
 		return true;

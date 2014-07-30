@@ -73,7 +73,7 @@ isInstanceOf( JSContext *, JS::HandleObject obj, JSClass *clasp ) {
 ALWAYS_INLINE bool FASTCALL
 isObjectObject( JSContext *cx, JS::HandleObject obj ) {
 
-//	jl::Host::getHost(cx)._objectProto
+//	jl::Host::getJLHost(cx)._objectProto
 
 	ASSERT( obj != NULL );
 	JS::RootedObject proto(cx);

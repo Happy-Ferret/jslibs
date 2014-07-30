@@ -152,7 +152,7 @@ static const ov_callbacks ovCallbacks = { read_func, seek_func, 0, tell_func };
 
 DEFINE_FINALIZE() {
 
-	if ( jl::Host::getHost(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getJLHost(fop->runtime())->canSkipCleanup )
 		return;
 
 	Private *pv = (Private*)JL_GetPrivate(obj);

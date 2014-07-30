@@ -26,7 +26,7 @@ DEFINE_FINALIZE() { // see HandleClose()
 	HandlePrivate *pv = static_cast<HandlePrivate*>(js::GetObjectPrivate(obj));
 	if ( pv ) {
 
-		if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
+		if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 			pv->HandlePrivate::~HandlePrivate();
 		else
 			delete pv;
@@ -207,7 +207,7 @@ JL_Handle2JSClass( JSContext *cx ) {
 
 	//static const JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
 	//if (unlikely( clasp == NULL ))
-	//	clasp = jl::Host::getHost(cx).getCachedClasp("Handle");  //clasp = JL_GetCachedClass(JL_GetHostPrivate(cx), "Handle");
+	//	clasp = jl::Host::getJLHost(cx).getCachedClasp("Handle");  //clasp = JL_GetCachedClass(JL_GetHostPrivate(cx), "Handle");
 	//return clasp;
 
 	return &Handle2::classSpec->clasp;

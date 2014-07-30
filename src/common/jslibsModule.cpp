@@ -25,7 +25,7 @@ InitJslibsModule( JSContext *cx, uint32_t id ) {
 
 	JLDisableThreadNotifications();
 
-	jl::Host &host = jl::Host::getHost(cx);
+	jl::Host &host = jl::Host::getJLHost(cx);
 	if ( !host.checkCompatId(JL_HOST_VERSIONID) )
 		JL_ERR( E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 

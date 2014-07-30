@@ -58,21 +58,21 @@ BEGIN_CLASS( Transformation )
 
 DEFINE_FINALIZE() {
 
-	if (jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup())
+	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 	
 
-	//if ( obj == JL_GetCachedProto(jl::Host::getHost(fop->runtime()), className) ) {
-	if (obj == jl::Host::getHost(fop->runtime()).getCachedProto(JL_THIS_CLASS_NAME)) {
+	//if ( obj == JL_GetCachedProto(jl::Host::getJLHost(fop->runtime()), className) ) {
+	if (obj == jl::Host::getJLHost(fop->runtime()).getCachedProto(JL_THIS_CLASS_NAME)) {
 
 		while ( !PoolIsEmpty(&matrixPool) )
 			Matrix44Free((Matrix44*)jl::PoolPop(&matrixPool));
 		jl::PoolFinalize(&matrixPool);
 
-		ASSERT(jl::Host::getHost(fop->runtime()).hostRuntime().isEnding()); // (TBD) to be tested !
+		ASSERT( jl::HostRuntime::getJLRuntime( fop->runtime() ).isEnding()); // (TBD) to be tested !
 
-		//JL_RemoveCachedClassProto(jl::Host::getHost(fop->runtime()), JL_THIS_CLASS_NAME);
-		jl::Host::getHost(fop->runtime()).removeCachedClassProto(JL_THIS_CLASS_NAME);
+		//JL_RemoveCachedClassProto(jl::Host::getJLHost(fop->runtime()), JL_THIS_CLASS_NAME);
+		jl::Host::getJLHost(fop->runtime()).removeCachedClassProto(JL_THIS_CLASS_NAME);
 
 		return;
 	}
@@ -83,8 +83,8 @@ DEFINE_FINALIZE() {
 		return;
 
 	//beware: prototype may be finalized before the object
-	//if (JL_GetCachedProto(jl::Host::getHost(fop->runtime()), JL_THIS_CLASS_NAME) != NULL) { // add to the pool if the pool is still alive !
-	if (jl::Host::getHost(fop->runtime()).hasCachedClassProto(JL_THIS_CLASS_NAME)) { // add to the pool if the pool is still alive !
+	//if (JL_GetCachedProto(jl::Host::getJLHost(fop->runtime()), JL_THIS_CLASS_NAME) != NULL) { // add to the pool if the pool is still alive !
+	if (jl::Host::getJLHost(fop->runtime()).hasCachedClassProto(JL_THIS_CLASS_NAME)) { // add to the pool if the pool is still alive !
 
 		if ( /*JL_IsHostEnding(cx) ||*/ !jl::PoolPush(&matrixPool, pv->mat) ) // if the runtime is shutting down, there is no more need to fill the pool.
 			Matrix44Free(pv->mat);

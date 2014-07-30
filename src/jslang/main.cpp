@@ -36,11 +36,12 @@ $MODULE_FOOTER
 **/
 
 
-bool jslangModuleInit(JSContext *cx, JS::HandleObject obj) {
+bool
+jslangModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	ModulePrivate *mpv = (ModulePrivate*)jl_calloc(sizeof(ModulePrivate), 1);
 
-	jl::Host::getHost(cx).moduleManager().modulePrivate(jslangModuleId) = mpv;
+	jl::Host::getJLHost(cx).moduleManager().modulePrivate(jslangModuleId) = mpv;
 
 	// JL_CHKM( , E_MODULE, E_INIT );
 	
@@ -58,16 +59,17 @@ bool jslangModuleInit(JSContext *cx, JS::HandleObject obj) {
 }
 
 
-bool jslangModuleRelease(JSContext *cx) {
+bool
+jslangModuleRelease(JSContext *cx, void *pv) {
 
-	ModulePrivate *mpv = (ModulePrivate*)jl::Host::getHost(cx).moduleManager().modulePrivate(jslangModuleId);
+	ModulePrivate *mpv = static_cast<ModulePrivate*>(pv);
 	if ( !mpv )
 		return false;
 
 	for ( size_t i = 0; i < COUNTOF(mpv->processEventThreadInfo); ++i ) {
 
 		ProcessEventThreadInfo *ti = &mpv->processEventThreadInfo[i];
-		if ( ti->thread != 0 ) {
+		if ( ti->thread != JLThreadInvalidHandler ) {
 
 			ti->isEnd = true;
 			ASSERT( ti->startSem );
@@ -75,7 +77,7 @@ bool jslangModuleRelease(JSContext *cx) {
 			JLThreadWait(ti->thread);
 		}
 
-		if ( ti->startSem != 0 ) {
+		if ( ti->startSem != JLInvalidSemaphoreHandler ) {
 
 			JLSemaphoreFree(&ti->startSem);
 		}

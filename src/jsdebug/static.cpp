@@ -23,7 +23,7 @@ int _puts(JSContext *cx, const char *str) {
 
 	JS::RootedValue stdoutFunction(cx);
 
-	JL_CHK( JS_GetPropertyById(cx, jl::Host::getHost(cx).hostObject(), JLID(cx, stdout), &stdoutFunction) );
+	JL_CHK( JS_GetPropertyById(cx, jl::Host::getJLHost(cx).hostObject(), JLID(cx, stdout), &stdoutFunction) );
 
 	if ( jl::isCallable(cx, stdoutFunction) ) {
 
@@ -142,7 +142,7 @@ DEFINE_FUNCTION( registerDumpHeap ) {
 		}
 	};
 
-	jl::HostRuntime &hostRuntime = jl::Host::getHost(cx).hostRuntime();
+	jl::HostRuntime &hostRuntime = jl::HostRuntime::getJLRuntime(cx);
 
 	hostRuntime.addListener(jl::EventId::BEFORE_DESTROY_RUNTIME, new DumpHeap(hostRuntime) );
 

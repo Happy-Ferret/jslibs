@@ -3257,6 +3257,7 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 	#error NOT IMPLEMENTED YET	// (TBD)
 #endif
 
+#define JLInvalidSemaphoreHandler ((JLSemaphoreHandler)0)
 
 	ALWAYS_INLINE JLSemaphoreHandler JLSemaphoreCreate( int initCount ) {
 
@@ -3275,7 +3276,7 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 
 	ALWAYS_INLINE bool JLSemaphoreOk( JLSemaphoreHandler semaphore ) {
 
-		return semaphore != (JLSemaphoreHandler)0;
+		return semaphore != JLInvalidSemaphoreHandler;
 	}
 
 /*

@@ -36,7 +36,7 @@ DEFINE_FINALIZE() {
 	if ( alcGetCurrentContext() )
 		alDeleteFilters(1, &pv->filter);
 
-	if ( jl::Host::getHost( fop->runtime() ).hostRuntime().skipCleanup() )
+	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 
 	JS_freeop(fop, pv);

@@ -28,7 +28,7 @@ invalidateBlob(JSContext *cx, JS::HandleObject obj) {
 DEFINE_FINALIZE() { // see HandleClose()
 
 	void *pv = js::GetObjectPrivate(obj);
-	if ( pv && !jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
+	if ( pv && !jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		jl_free(pv);
 }
 

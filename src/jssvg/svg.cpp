@@ -87,7 +87,7 @@ BEGIN_CLASS( SVG ) // Start the definition of the class. It defines some symbols
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	if ( jl::Host::getHost(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getJLHost(fop->runtime())->canSkipCleanup )
 		return;
 
 	Private *pv = (Private*)JL_GetPrivate(obj);

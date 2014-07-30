@@ -730,7 +730,7 @@ struct IOProcessEvent : public ProcessEvent2 {
 //		JL_updateMallocCounter(cx, (sizeof(PRPollDesc) /*+ sizeof(jsval)*/) * _fdCount); // approximately (pollDesc + descVal)
 
 		JsioPrivate *mpv;
-		mpv = (JsioPrivate*)jl::Host::getHost(cx).moduleManager().modulePrivate(moduleId());
+		mpv = (JsioPrivate*)jl::Host::getJLHost(cx).moduleManager().modulePrivate(moduleId());
 		if ( mpv->peCancel == NULL ) {
 
 			mpv->peCancel = PR_NewPollableEvent();

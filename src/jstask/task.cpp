@@ -255,7 +255,7 @@ TaskThreadProc( void *threadArg ) {
 		JLThreadExit(0);
 
 	jl::Host& hpv;
-	hpv = jl::Host::getHost(cx);
+	hpv = jl::Host::getJLHost(cx);
 
 // allocator must be threadsafe !
 	hpv->alloc.malloc = jl_malloc;

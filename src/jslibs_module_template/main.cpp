@@ -38,7 +38,7 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 }
 
 bool
-ModuleRelease(JSContext *cx) {
+ModuleRelease(JSContext *cx, void *pv) {
 	
 	JL_IGNORE(cx);
 	//jl_free(JL_GetModulePrivate(cx, _moduleId));

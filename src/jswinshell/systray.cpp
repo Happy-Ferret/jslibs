@@ -485,7 +485,7 @@ CloseSystray(JSRuntime *rt, Private *pv) {
 	CloseHandle(pv->thread); // doc: The thread object remains in the system until the thread has terminated and all handles to it have been closed through a call to CloseHandle.
 	CloseHandle(pv->systrayEvent);
 	
-	if ( jl::Host::getHost(rt).hostRuntime().skipCleanup() ) { // do not cleanup in unsafe mode ?
+	if ( jl::HostRuntime::getJLRuntime( rt ).skipCleanup() ) { // do not cleanup in unsafe mode ?
 
 		while ( !jl::QueueIsEmpty(&pv->msgQueue) )
 			jl_free(jl::QueuePop(&pv->msgQueue));

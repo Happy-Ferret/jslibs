@@ -39,7 +39,7 @@ BEGIN_CLASS( Iconv ) // Start the definition of the class. It defines some symbo
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
+	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 
 	Private *pv = (Private*)js::GetObjectPrivate(obj);

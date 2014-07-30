@@ -860,7 +860,7 @@ public:
 				ASSERT(strlen(className) > 0);
 				ASSERT(strlen(className) < 64);
 
-				const jl::ProtoCache::Item* cpc = jl::Host::getHost(cx).getCachedClassProto(className);
+				const jl::ProtoCache::Item* cpc = jl::Host::getJLHost(cx).getCachedClassProto(className);
 
 				//const ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), className);
 
@@ -1048,7 +1048,7 @@ public:
 ALWAYS_INLINE bool
 JsvalIsSerializer( JSContext *cx, JS::HandleValue val ) {
 
-	return jl::isClass(cx, val, jl::Host::getHost(cx).getCachedClasp("Serializer"));
+	return jl::isClass(cx, val, jl::Host::getJLHost(cx).getCachedClasp("Serializer"));
 }
 
 ALWAYS_INLINE Serializer*
@@ -1061,7 +1061,7 @@ JsvalToSerializer( JSContext *cx, JS::MutableHandleValue val ) {
 ALWAYS_INLINE bool
 JsvalIsUnserializer( JSContext *cx, JS::HandleValue val ) {
 
-	return jl::isClass(cx, val, jl::Host::getHost(cx).getCachedClasp("Unserializer"));
+	return jl::isClass(cx, val, jl::Host::getJLHost(cx).getCachedClasp("Unserializer"));
 }
 
 ALWAYS_INLINE Unserializer*

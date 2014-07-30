@@ -23,7 +23,7 @@ BEGIN_CLASS( Serializer )
 
 DEFINE_FINALIZE() {
 
-	if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
+	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 
 	jl::Serializer *ser;
@@ -131,7 +131,7 @@ BEGIN_CLASS( Unserializer )
 
 DEFINE_FINALIZE() {
 
-	if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
+	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 
 	jl::Unserializer *unser;

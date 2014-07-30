@@ -39,7 +39,7 @@ struct Private {
 
 DEFINE_FINALIZE() {
 
-	if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
+	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 
 	Private *pv = (Private*)js::GetObjectPrivate(obj);
@@ -361,7 +361,7 @@ bad:
 
 DEFINE_FINALIZE() {
 
-	if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
+	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 
 	DatabasePrivate *pv = (DatabasePrivate*)js::GetObjectPrivate(obj);

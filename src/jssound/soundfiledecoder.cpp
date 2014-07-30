@@ -157,7 +157,7 @@ static SF_VIRTUAL_IO sfCallbacks = { SfGetFilelen, SfSeek, SfRead, 0, SfTell };
 
 DEFINE_FINALIZE() {
 
-	if ( jl::Host::getHost(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getJLHost(fop->runtime())->canSkipCleanup )
 		return;
 
 	Private *pv = (Private*)JL_GetPrivate(obj);

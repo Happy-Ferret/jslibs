@@ -32,7 +32,7 @@ BEGIN_CLASS( Hash )
 
 DEFINE_FINALIZE() {
 
-	if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() )
+	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 	HashPrivate *pv = (HashPrivate *)js::GetObjectPrivate(obj);
 	jl_free(pv); // NULL is supported but is quite rare.

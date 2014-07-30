@@ -39,7 +39,7 @@ BEGIN_CLASS( Trimesh ) // Start the definition of the class. It defines some sym
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	if ( jl::Host::getHost(fop->runtime()).hostRuntime().skipCleanup() ) // do not cleanup in unsafe mode.
+	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() ) // do not cleanup in unsafe mode.
 		return;
 
 	Surface *pv = (Surface*)js::GetObjectPrivate(obj);

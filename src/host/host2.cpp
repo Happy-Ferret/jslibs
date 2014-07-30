@@ -333,43 +333,10 @@ CountedAlloc::~CountedAlloc() {
 //////////////////////////////////////////////////////////////////////////////
 // WatchDog
 
-void _GCSliceCallback(JSRuntime *rt, JS::GCProgress progress, const JS::GCDescription &desc) {
-
-	switch ( progress ) {
-
-		case JS::GCProgress::GC_CYCLE_BEGIN: puts("GC_CYCLE_BEGIN"); break;
-		case JS::GCProgress::GC_SLICE_BEGIN: puts("GC_SLICE_BEGIN"); break;
-		case JS::GCProgress::GC_SLICE_END: puts("GC_SLICE_END"); break;
-		case JS::GCProgress::GC_CYCLE_END: puts("GC_CYCLE_END"); break;
-	}
-//	_putws(desc.formatMessage(rt));
-//	puts("");
-}
-
-
 bool
 WatchDog::interruptCallback(JSContext *cx) {
 
-	
-	JSRuntime *rt = JL_GetRuntime(cx);
-
-	//HostRuntime::fromRuntime
-
-	//JS_GetRuntimePrivate(rt);
-
-	// http://dxr.mozilla.org/mozilla-central/source/js/public/GCAPI.h#195
-
-	// PrepareZoneForGC(GetCompartmentZone(global));
-
-	if ( JS::IsIncrementalGCInProgress( rt ) ) {
-
-		JS::PrepareForIncrementalGC(rt);
-	} else {
-		
-		JS::PrepareForFullGC(rt); // select all zones
-	}
-	JS::IncrementalGC( rt, JS::gcreason::API );
-
+	jl::HostRuntime::getJLRuntime(cx).fireEvent(EventId::INTERRUPT);
 	return true;
 }
 
@@ -385,7 +352,8 @@ WatchDog::watchDogThreadProc(void *threadArg) {
 		if ( JLSemaphoreAcquire(watchDog._watchDogSemEnd, watchDog._interruptInterval) != JLTIMEOUT )
 			break;
 		JSRuntime *rt = watchDog._hostRuntime.runtime();
-
+		
+		ASSERT( rt );
 		ASSERT( JS_GetInterruptCallback(rt) );
 		JS_RequestInterruptCallback(rt);
 	}
@@ -394,24 +362,25 @@ WatchDog::watchDogThreadProc(void *threadArg) {
 }
 
 
-WatchDog::WatchDog(HostRuntime &hostRuntime, uint32_t interruptInterval)
-: _hostRuntime(hostRuntime), _interruptInterval(interruptInterval) {
+WatchDog::WatchDog(HostRuntime &hostRuntime) :
+_hostRuntime(hostRuntime),
+_interruptInterval(0),
+_watchDogThread(JLThreadInvalidHandler) {
 }
+	
 
 bool
 WatchDog::start() {
 
-	//	IFDEBUG( JS::SetGCSliceCallback(_hostRuntime.runtime(), _GCSliceCallback) );
+	ASSERT( _interruptInterval != 0 );
+	ASSERT( _watchDogThread == JLThreadInvalidHandler );
 
-	if ( _interruptInterval ) {
-
-		JSContext *cx = _hostRuntime.context();
-		JSInterruptCallback prevInterruptCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), interruptCallback);
-		ASSERT( prevInterruptCallback == nullptr );
-		_watchDogSemEnd = JLSemaphoreCreate(0);
-		_watchDogThread = JLThreadStart(watchDogThreadProc, this);
-		JL_ASSERT( JLSemaphoreOk(_watchDogSemEnd) && JLThreadOk(_watchDogThread), E_HOST, E_CREATE ); // "Unable to create the GC thread."
-	}	
+	JSContext *cx = _hostRuntime.context();
+	JSInterruptCallback prevInterruptCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), interruptCallback);
+	ASSERT( prevInterruptCallback == nullptr );
+	_watchDogSemEnd = JLSemaphoreCreate(0);
+	_watchDogThread = JLThreadStart(watchDogThreadProc, this);
+	JL_ASSERT( JLSemaphoreOk(_watchDogSemEnd) && JLThreadOk(_watchDogThread), E_HOST, E_CREATE ); // "Unable to create the GC thread."
 	return true;
 	JL_BAD;
 }
@@ -421,15 +390,16 @@ WatchDog::stop() {
 
 	// beware: it is important to destroy the watchDogThread BEFORE destroying the cx !!!
 
-	if ( _interruptInterval ) {
+	ASSERT( _hostRuntime.runtime() );
+	ASSERT( _interruptInterval == 0 );
+	ASSERT( _watchDogThread != JLThreadInvalidHandler );
 
-		JSInterruptCallback prev_interruptCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), nullptr);
-		ASSERT( prev_interruptCallback == interruptCallback );
-		JLSemaphoreRelease(_watchDogSemEnd);
-		JLThreadWait(_watchDogThread);
-		JLThreadFree(&_watchDogThread);
-		JLSemaphoreFree(&_watchDogSemEnd);
-	}
+	JSInterruptCallback prev_interruptCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), nullptr);
+	ASSERT( prev_interruptCallback == interruptCallback );
+	JLSemaphoreRelease(_watchDogSemEnd);
+	JLThreadWait(_watchDogThread);
+	JLThreadFree(&_watchDogThread);
+	JLSemaphoreFree(&_watchDogSemEnd);
 	return true;
 }
 
@@ -437,6 +407,7 @@ WatchDog::stop() {
 
 //////////////////////////////////////////////////////////////////////////////
 // HostRuntime
+
 
 void
 HostRuntime::setJSEngineAllocators(Allocators allocators) {
@@ -465,12 +436,12 @@ HostRuntime::errorReporterBasic( JSContext *cx, const char *message, JSErrorRepo
 	buf.cat( L("\n") );
 
 	jl::BufString tmpErrTxt( buf.toString(), buf.length() );
-	Host::getHost( cx ).stdIO().error( tmpErrTxt );
+	Host::getJLHost( cx ).stdIO().error( tmpErrTxt );
 }
 
 
-HostRuntime::HostRuntime( Allocators allocators, uint32_t interruptIntervalMs, uint32_t maxbytes, size_t nativeStackQuota )
-: _allocators(allocators), rt(nullptr), cx(nullptr), _isEnding(false), _skipCleanup(false), _watchDog(*MOZ_THIS_IN_INITIALIZER_LIST(), interruptIntervalMs) {
+HostRuntime::HostRuntime( Allocators allocators, uint32_t maxbytes, size_t nativeStackQuota )
+: _allocators(allocators), rt(nullptr), cx(nullptr), _isEnding(false), _skipCleanup(false), _watchDog(*MOZ_THIS_IN_INITIALIZER_LIST()) {
 
 	rt = JS_NewRuntime(maxbytes);
 	JL_CHK( rt );
@@ -544,7 +515,9 @@ HostRuntime::HostRuntime( Allocators allocators, uint32_t interruptIntervalMs, u
 	}
 */
 
-	JL_CHK( _watchDog.start() );
+	ASSERT( JL_GetRuntimePrivate(rt) == nullptr );
+
+	JL_SetRuntimePrivate(rt, this);
 
 	return;
 bad:
@@ -559,7 +532,7 @@ HostRuntime::destroy(bool skipCleanup) {
 	_isEnding = true;
 	_skipCleanup = skipCleanup;
 
-	JL_CHK( _watchDog.stop() );
+	_watchDog.setInterruptInterval(0);
 
 	//	don't try to break linked objects with JS_GC(cx) !
 
@@ -703,7 +676,7 @@ ModuleManager::releaseModules() {
 			ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)JLDynamicLibrarySymbol(module.moduleHandle, NAME_MODULE_RELEASE);
 			if ( moduleRelease != nullptr ) {
 
-				if ( !moduleRelease(cx) ) {
+				if ( !moduleRelease(cx, module.privateData) ) {
 
 					TCHAR filename[PATH_MAX];
 					JLDynamicLibraryName((void*)moduleRelease, filename, COUNTOF(filename));
@@ -1030,7 +1003,7 @@ DEFINE_PROPERTY_GETTER( unsafeMode ) {
 
 	JL_IGNORE( id, obj );
 
-	JL_CHK( jl::setValue(cx, vp, Host::getHost(cx).unsafeMode()) );
+	JL_CHK( jl::setValue(cx, vp, Host::getJLHost(cx).unsafeMode()) );
 	return true;
 	JL_BAD;
 }
@@ -1073,7 +1046,7 @@ DEFINE_PROPERTY_GETTER( errorMessages ) {
 
 	JL_DEFINE_PROP_ARGS;
 	JS::RootedObject messagesObj(cx);
-	JL_CHK( Host::getHost( cx ).errorManager().exportMessages( cx, &messagesObj ) );
+	JL_CHK( Host::getJLHost( cx ).errorManager().exportMessages( cx, &messagesObj ) );
 	JL_RVAL.setObject(*messagesObj);
 	return true;
 	JL_BAD;
@@ -1090,12 +1063,43 @@ DEFINE_PROPERTY_SETTER( errorMessages ) {
 	JL_ASSERT_IS_OBJECT_OR_NULL(JL_RVAL, "error messages");
 	{
 		JS::RootedObject messagesObj(cx, JL_RVAL.toObjectOrNull());
-		JL_CHK( Host::getHost( cx ).errorManager().importMessages( cx, messagesObj ) );
+		JL_CHK( Host::getJLHost( cx ).errorManager().importMessages( cx, messagesObj ) );
 	}
 	JL_CHK( jl::StoreProperty(cx, obj, id, vp, false) );
 	return true;
 	JL_BAD;
 }
+
+
+/**doc
+$TOC_MEMBER $INAME
+$BOOL $INAME $READONLY
+**/
+DEFINE_PROPERTY_SETTER( interruptInterval ) {
+
+	JL_DEFINE_PROP_ARGS;
+
+	uint32_t interval;
+	JL_CHK( jl::getValue(cx, JL_RVAL, &interval) );
+	jl::HostRuntime &runtime = jl::HostRuntime::getJLRuntime( cx );
+	runtime.setInterruptInterval(interval);
+	return true;
+	JL_BAD;
+}
+
+/**doc
+$TOC_MEMBER $INAME
+$BOOL $INAME $READONLY
+**/
+DEFINE_PROPERTY_GETTER( interruptInterval ) {
+
+	JL_DEFINE_PROP_ARGS;
+
+	JL_CHK( jl::setValue(cx, JL_RVAL, jl::HostRuntime::getJLRuntime( cx ).interruptInterval()) );
+	return true;
+	JL_BAD;
+}
+
 
 /* *doc
 $TOC_MEMBER $INAME
@@ -1132,7 +1136,7 @@ DEFINE_FUNCTION( stdout ) {
 	JL_DEFINE_ARGS;
 	JL_RVAL.setUndefined();
 	jl::BufString str;
-	Host &host = Host::getHost( cx );
+	Host &host = Host::getJLHost( cx );
 	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( jl::getValue( cx, JL_ARGV[i], &str ) );
@@ -1153,7 +1157,7 @@ DEFINE_FUNCTION( stderr ) {
 	JL_DEFINE_ARGS;
 	JL_RVAL.setUndefined();
 	jl::BufString str;
-	Host &host = Host::getHost( cx );
+	Host &host = Host::getJLHost( cx );
 	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( jl::getValue( cx, JL_ARGV[i], &str ) );
@@ -1171,7 +1175,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( stdin ) {
 
 	JL_DEFINE_ARGS;
-	Host &host = Host::getHost( cx );
+	Host &host = Host::getJLHost( cx );
 
 /*
 	char buffer[8192];
@@ -1233,7 +1237,61 @@ DEFINE_FUNCTION( loadModule ) {
 	jl::strcat( libFileName, DLL_EXT );
 	// MAC OSX: 	'@executable_path' ??
 
-	JL_CHK( Host::getHost(cx).moduleManager().loadModule(libFileName, JL_OBJ, JL_RVAL) );
+	JL_CHK( Host::getJLHost(cx).moduleManager().loadModule(libFileName, JL_OBJ, JL_RVAL) );
+	return true;
+	JL_BAD;
+}
+
+
+/**doc
+$TOC_MEMBER $INAME
+ $BOOL $INAME()
+**/
+DEFINE_FUNCTION( collectGarbage ) {
+
+	JL_DEFINE_ARGS;
+	JL_ASSERT_ARGC_RANGE(0, 3);
+
+	bool requestIncrementalGC = jl::getValueDef(cx, JL_SARG(1), false);
+	int64_t sliceMillis = jl::getValueDef<int64_t>(cx, JL_SARG(2), 0);
+	bool requestAllZonesGC = jl::getValueDef(cx, JL_SARG(3), false);
+
+	JSRuntime *rt = JL_GetRuntime(cx);
+
+	// http://dxr.mozilla.org/mozilla-central/source/js/public/GCAPI.h#195
+
+	bool incrementalGCInProgress = JS::IsIncrementalGCInProgress( rt );
+
+	if ( !incrementalGCInProgress && !requestIncrementalGC ) {
+		
+		JS_GC(rt);
+		JL_RVAL.setBoolean(true);
+		return true;
+	}
+
+	if ( incrementalGCInProgress ) {
+
+		JS::PrepareForIncrementalGC(rt); // select previously selected zones
+
+		if ( !requestIncrementalGC ) {
+		
+			JS::FinishIncrementalGC( rt, JS::gcreason::API );
+			JL_RVAL.setBoolean(true);
+			return true;
+		}
+
+	} else {
+
+		if ( requestAllZonesGC )
+			JS::PrepareForFullGC(rt); // select all zones
+		else
+			PrepareZoneForGC(js::GetCompartmentZone(js::GetObjectCompartment(JL_OBJ)));
+	}
+
+	JS::IncrementalGC( rt, JS::gcreason::API, sliceMillis );
+	
+	JL_RVAL.setBoolean( !JS::IsIncrementalGCInProgress( rt ) );
+
 	return true;
 	JL_BAD;
 }
@@ -1243,7 +1301,7 @@ DEFINE_INIT() {
 
 	JL_IGNORE( proto, cs );
 
-	Host::getHost(cx).setHostObject(obj);
+	Host::getJLHost(cx).setHostObject(obj);
 
 	return true;
 }
@@ -1268,6 +1326,7 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC(stdin, 0)
 		FUNCTION_ARGC(stdout, 1)
 		FUNCTION_ARGC(stderr, 1)
+		FUNCTION_ARGC(collectGarbage, 3)
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
@@ -1275,7 +1334,7 @@ CONFIGURE_CLASS
 		PROPERTY_GETTER(jsVersion)
 		PROPERTY_GETTER(lang)
 		PROPERTY(errorMessages)
-		//		PROPERTY( incrementalGarbageCollector )
+		PROPERTY(interruptInterval)
 	END_STATIC_PROPERTY_SPEC
 
 END_CLASS
@@ -1421,7 +1480,7 @@ Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 	#undef fflush
 
 	jl::BufString tmpErrTxt(jl::constPtr(buffer), buf - buffer, false);
-	Host::getHost( cx ).hostStderrWrite( tmpErrTxt, tmpErrTxt.length() );
+	Host::getJLHost( cx ).hostStderrWrite( tmpErrTxt, tmpErrTxt.length() );
 }
 
 
@@ -1454,11 +1513,21 @@ bad:
 }
 
 
-Host::Host( Global &glob, StdIO &hostStdIO, bool unsafeMode )
-: _global(glob), _hostRuntime(glob.hostRuntime()), _moduleManager(glob.hostRuntime()), _errorManager(glob.hostRuntime()), _compatId(JL_HOST_VERSIONID), _unsafeMode(unsafeMode), _hostStdIO(hostStdIO), _objectProto(glob.hostRuntime().runtime()), _hostObject(glob.hostRuntime().runtime()), _ids() {
+Host::Host( Global &glob, StdIO &hostStdIO, bool unsafeMode ) :
+_global(glob),
+_hostRuntime(glob.hostRuntime()),
+_moduleManager(glob.hostRuntime()),
+_errorManager(glob.hostRuntime()),
+_compatId(JL_HOST_VERSIONID),
+_unsafeMode(unsafeMode),
+_hostStdIO(hostStdIO),
+_objectProto(glob.hostRuntime().runtime()),
+_hostObject(glob.hostRuntime().runtime()),
+_ids(),
+_interruptHandler(nullptr) {
 
 	::_unsafeMode = unsafeMode;
-	Host::setHostAllocators(_hostRuntime.allocators());
+	Host::setHostAllocators(_hostRuntime.allocators()); 
 
 //	JL_CHKM(_global, E_GLOBAL, E_INVALID);
 
@@ -1472,7 +1541,9 @@ Host::Host( Global &glob, StdIO &hostStdIO, bool unsafeMode )
 
 	JSContext *cx = _hostRuntime.context();
 
-	JL_SetRuntimePrivate(_hostRuntime.runtime(), this);
+	//JL_SetRuntimePrivate(_hostRuntime.runtime(), this);
+
+	JS_SetCompartmentPrivate(js::GetObjectCompartment(glob.globalObject()), this);
 
 	// JS::RuntimeOptionsRef(_hostRuntime.runtime()).setStrictMode(_unsafeMode); // users set "use strict" themselves
 
@@ -1510,6 +1581,32 @@ Host::Host( Global &glob, StdIO &hostStdIO, bool unsafeMode )
 		ASSERT( JS::IsGenerationalGCEnabled( _hostRuntime.runtime() ) );
 	}
 
+
+	class OnInterupt : public jl::Callback {
+	public:
+		Host &_host;
+		OnInterupt(Host &host) : _host(host) {}
+		void operator()() {
+
+			JSContext *cx = _host.hostRuntime().context();
+			JS::AutoSaveExceptionState ase(cx);
+			JSAutoCompartment ac(cx, _host.hostObject());
+			JS::RootedValue fctVal(cx);
+			JL_CHK( JS_GetProperty(cx, _host.hostObject(), "onInterrupt", &fctVal) );
+			if ( jl::isCallable(cx, fctVal) ) {
+
+				JSAutoCompartment ac(cx, &fctVal.toObject());
+				JS::RootedValue rval(cx);
+				JL_CHK( JS_CallFunctionValue(cx, JS::NullPtr(), fctVal, JS::HandleValueArray::empty(), &rval) );
+			}
+			return;
+		bad:
+			JS_ReportPendingException(cx);
+		}
+	};
+
+	_interruptHandler = hostRuntime().addListener(EventId::INTERRUPT, new OnInterupt(*this));
+
 	return;
 bad:
 	invalidate();
@@ -1519,13 +1616,16 @@ bad:
 
 bool
 Host::destroy(bool skipCleanup) {
+
+	if ( _interruptHandler )
+		hostRuntime().removeListener(_interruptHandler);
 	
 	JSContext *cx = _hostRuntime.context();
 		
 	JL_CHK( _moduleManager.releaseModules() );
 
 	ASSERT( jslangModuleRelease != (ModuleReleaseFunction)nullptr );
-	if ( !jslangModuleRelease(cx) ) {
+	if ( !jslangModuleRelease(cx, _moduleManager.modulePrivate(jslangModuleId)) ) {
 		
 		JL_WARN( E_MODULE, E_NAME("jslang"), E_FIN ); // "Fail to release static module jslang."
 	}

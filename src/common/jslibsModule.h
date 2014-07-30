@@ -25,16 +25,16 @@ struct JSContext;
 #define NAME_MODULE_FREE JL_TOSTRING(SYM_MODULE_FREE)
 
 typedef bool (*ModuleInitFunction)(JSContext *, JS::HandleObject);
-typedef bool (*ModuleReleaseFunction)(JSContext *);
+typedef bool (*ModuleReleaseFunction)(JSContext *, void *);
 typedef void (*ModuleFreeFunction)(bool skipCleanup, void *);
 
 // jlModuleInit ?
 EXTERN_C DLLEXPORT bool ModuleInit(JSContext *cx, JS::HandleObject obj); // JSContext *cx, JS::HandleObject obj, ModuleReleaseFunction *moduleReleaseFct, ModuleFreeFunction *moduleFreeFct)
-EXTERN_C DLLEXPORT bool ModuleRelease(JSContext *cx);
+EXTERN_C DLLEXPORT bool ModuleRelease(JSContext *cx, void *pv);
 EXTERN_C DLLEXPORT void ModuleFree(bool skipCleanup, void *pv);
 
 bool ModuleInit(JSContext *cx, JS::HandleObject obj);
-bool ModuleRelease(JSContext *cx);
+bool ModuleRelease(JSContext *cx, void *pv);
 void ModuleFree(bool skipCleanup, void *);
 
 typedef ptrdiff_t moduleId_t;

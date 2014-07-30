@@ -20,8 +20,9 @@ BEGIN_CLASS( ComDispatch )
 
 DEFINE_FINALIZE() {
 
-	if ( obj == jl::Host::getHost(fop->runtime()).getCachedProto(JL_THIS_CLASS_NAME) )
-		return;
+//	if ( obj == jl::Host::getJLHost(fop->runtime()).getCachedProto(JL_THIS_CLASS_NAME) )
+//		return;
+
 	IDispatch *disp = (IDispatch*)js::GetObjectPrivate(obj);
 	if ( !disp )
 		return;

@@ -38,7 +38,7 @@ struct Private : jl::CppAllocators {
 
 DEFINE_FINALIZE() {
 
-	if ( obj == jl::Host::getHost(fop->runtime()).getCachedProto(className) )
+	if ( obj == jl::Host::getJLHost(fop->runtime()).getCachedProto(className) )
 		return;
 
 	Private *pv;
@@ -66,7 +66,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_ASSERT_ARGC_RANGE(1,5);
 
-	pv = new Private( jl::Host::getHost( cx ).moduleManager().modulePrivateT<videoInput*>( moduleId() ) );
+	pv = new Private( jl::Host::getJLHost( cx ).moduleManager().modulePrivateT<videoInput*>( moduleId() ) );
 	JL_ASSERT_ALLOC( pv );
 	pv->deviceID = -1; // invalid device
 
