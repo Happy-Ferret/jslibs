@@ -46,7 +46,7 @@ public:
 	HandlePrivate() {
 
 		//for ( int i = 0; i < JL_HANDLE_PUBLIC_SLOT_COUNT; ++i )
-		//	slots[i] = JS::Value();
+		//	slots[i] = JL_VALUEZ;
 		memset(_slots, 0, sizeof(_slots));
 		_dynSlotsCount = 0;
 		_dynSlots = NULL;

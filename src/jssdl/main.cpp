@@ -500,6 +500,20 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	StartVideo();
 
+
+	struct ReleaseModule : jl::Events::Callback {
+		bool operator()() {
+		
+			EndVideo();
+			SDL_Quit();
+			return true;
+		}
+	};
+
+	jl::HostRuntime::getJLRuntime(cx).addListener(jl::EventId::AFTER_DESTROY_RUNTIME, new ReleaseModule()); // frees mpv after rt and cx has been destroyed
+
+
+
 	const SDL_VideoInfo *vi = SDL_GetVideoInfo(); // Get the current information about the video hardware
 	desktopWidth = vi->current_w;
 	desktopHeight = vi->current_h;
@@ -518,11 +532,4 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	return true;
 	JL_BAD;
-}
-
-void ModuleFree(bool skipCleanup, void* pv) {
-
-	EndVideo();
-
-	SDL_Quit();
 }

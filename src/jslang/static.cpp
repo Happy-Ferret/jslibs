@@ -680,7 +680,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 
 
 /*
-	JS::Value val = JS::Value();
+	JS::Value val = JL_VALUEZ;
 
 	ASSERT(val.isDouble());
 	ASSERT(val.asRawBits() == 0);

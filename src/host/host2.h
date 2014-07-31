@@ -16,6 +16,8 @@
 
 typedef ptrdiff_t moduleId_t;
 
+static const moduleId_t FREE_MODULE_SLOT = 0;
+
 #define NAME_GLOBAL_CLASS "Global"
 
 #define NAME_GLOBAL_FUNCTION_LOAD_MODULE "loadModule"
@@ -145,18 +147,18 @@ public:
 enum EventId {
 	BEFORE_DESTROY_RUNTIME,
 	AFTER_DESTROY_RUNTIME,
+	DESTRUCT_HOSTRUNTIME,
 	INTERRUPT,
 };
 
 
-class Callback : public jl::CppAllocators {
-public:
-	virtual void operator()() = 0;
-};
-
-
 class DLLAPI Events {
+public:
+	struct Callback : public jl::CppAllocators {
+		virtual bool operator()() = 0;
+	};
 
+private:
 	struct Listener {
 
 		EventId id;
@@ -189,12 +191,15 @@ public:
 		_list.Remove(item);
 	}
 
-	void 
+	// returns false on the first listener that returns false (error)
+	bool 
 	fireEvent( EventId id ) const {
 
 		for ( List::Item *it = _list.First(); it; it = it->next )
 			if ( it->data.id == id )
-				(*it->data.cb)();
+				if ( !(*it->data.cb)() )
+					return false;
+		return true;
 	}
 };
 
@@ -364,7 +369,7 @@ class WatchDog {
 
 	JLSemaphoreHandler _watchDogSemEnd;
 	JLThreadHandler _watchDogThread;
-	uint32_t _interruptInterval;
+	volatile uint32_t _interruptInterval;
 
 	static bool 
 	interruptCallback(JSContext *cx);
@@ -467,6 +472,8 @@ public: // static
 	HostRuntime();
 public:
 
+	~HostRuntime();
+
 	HostRuntime(Allocators allocators/* = StdAllocators()*/, uint32_t maxbytes = JS::DefaultHeapMaxBytes, size_t nativeStackQuota = defaultNativeStackQuota);
 
 	JSRuntime *&
@@ -493,6 +500,12 @@ public:
 		return _skipCleanup;
 	}
 
+	ALWAYS_INLINE void
+	setSkipCleanup() {
+
+		_skipCleanup = true;
+	}
+
 	ALWAYS_INLINE bool
 	isEnding() const {
 
@@ -510,10 +523,6 @@ public:
 		
 		_watchDog.setInterruptInterval(interruptIntervalMs);
 	}
-
-
-	bool
-	destroy(bool skipCleanup = false);
 };
 
 
@@ -527,12 +536,14 @@ public:
 class DLLAPI ModuleManager {
 
 	struct Module {
-		moduleId_t moduleId; // 0 = free slot
+		moduleId_t moduleId;
 		JLLibraryHandler moduleHandle; // JLDynamicLibraryNullHandler if uninitialized
 		void *privateData; // user data
 
-		Module()
-		: moduleId(0), moduleHandle(JLDynamicLibraryNullHandler), privateData(NULL) {
+		Module() :
+			moduleId(FREE_MODULE_SLOT),
+			moduleHandle(JLDynamicLibraryNullHandler),
+			privateData(nullptr) {
 		}
 	};
 
@@ -546,7 +557,7 @@ class DLLAPI ModuleManager {
 	ALWAYS_INLINE uint16_t
 	moduleHash( const moduleId_t moduleId ) {
 
-		ASSERT( moduleId != 0 );
+		ASSERT( moduleId != FREE_MODULE_SLOT );
 		return moduleId % MAX_MODULES;
 		//	return ((uint8_t*)&moduleId)[0] ^ ((uint8_t*)&moduleId)[1] ^ ((uint8_t*)&moduleId)[2] ^ ((uint8_t*)&moduleId)[3] << 1;
 		// uint32_t a = moduleId ^ (moduleId >> 16);
@@ -557,24 +568,21 @@ class DLLAPI ModuleManager {
 
 public:
 
+	~ModuleManager();
+
 	ModuleManager(HostRuntime &hostRuntime);
 
 	bool
 	loadModule(const char *libFileName, JS::HandleObject obj, JS::MutableHandleValue rval);
 
-	bool
-	releaseModules();
-
-	void
-	freeModules(bool skipCleanup);
 
 /*
 	ALWAYS_INLINE Module &
 	getFreeModuleSlot( const moduleId_t moduleId ) {
 
-		ASSERT( moduleId );
+		ASSERT( moduleId != FREE_MODULE_SLOT );
 		uint16_t hashIndex = moduleHash(moduleId);
-		while ( _moduleList[hashIndex].moduleId != 0 ) {
+		while ( _moduleList[hashIndex].moduleId != FREE_MODULE_SLOT ) {
 
 			if ( ++hashIndex >= MAX_MODULES )
 				hashIndex = 0;
@@ -586,16 +594,16 @@ public:
 	ALWAYS_INLINE bool
 	isSlotFree( const Module &module ) const {
 
-		return module.moduleId == 0;
+		return module.moduleId == FREE_MODULE_SLOT;
 	}
 
 	ALWAYS_INLINE Module &
 	moduleSlot( const moduleId_t moduleId ) {
 
-		ASSERT( moduleId );
+		ASSERT( moduleId != FREE_MODULE_SLOT );
 		uint16_t hashIndex = moduleHash(moduleId);
 		
-		while ( !isIn(_moduleList[hashIndex].moduleId, 0, moduleId) ) {
+		while ( !isIn(_moduleList[hashIndex].moduleId, FREE_MODULE_SLOT, moduleId) ) {
 
 			if ( ++hashIndex >= MAX_MODULES )
 				hashIndex = 0;
@@ -606,7 +614,7 @@ public:
 	ALWAYS_INLINE void* & FASTCALL
 	modulePrivate( const moduleId_t moduleId ) {
 
-		ASSERT( moduleId );
+		ASSERT( moduleId != FREE_MODULE_SLOT );
 		return moduleSlot(moduleId).privateData;
 	}
 
@@ -614,7 +622,7 @@ public:
 	ALWAYS_INLINE T & FASTCALL
 	modulePrivateT( const moduleId_t moduleId ) {
 
-		ASSERT( moduleId );
+		ASSERT( moduleId != FREE_MODULE_SLOT );
 		return (T&)moduleSlot( moduleId ).privateData;
 	}
 
@@ -1049,17 +1057,11 @@ class DLLAPI Global : public Valid, public jl::CppAllocators {
 
 	HostRuntime &_hostRuntime;
 
-	JS::PersistentRootedObject _global;
+	JS::PersistentRootedObject _globalObject;
 
 public:
 
 	Global( HostRuntime &hr, bool lazyStandardClasses = true );
-
-	void
-	destroy() {
-
-		_global.set(nullptr);
-	}
 
 	HostRuntime &
 	hostRuntime() {
@@ -1070,7 +1072,7 @@ public:
 	JSObject *
 	globalObject() {
 
-		return _global;		
+		return _globalObject;		
 	}
 
 };
@@ -1113,13 +1115,11 @@ class DLLAPI Host : public Valid, public jl::CppAllocators {
 
 
 public:
+	~Host();
 	Host( Global &glob, StdIO &hostStdIO, bool unsafeMode = false );
 
 	// init the host for jslibs usage (modules, errors, ...)
 	
-	bool
-	destroy(bool skipCleanup = false);
-
 	void
 	free(bool skipCleanup = false);
 

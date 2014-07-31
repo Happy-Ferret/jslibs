@@ -146,29 +146,29 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	INIT_CLASS( World );
 	INIT_CLASS( SurfaceParameters );
 
+
+	struct ReleaseModule : jl::Events::Callback {
+		bool operator()() {
+		
+			ode::dCloseODE();
+
+			ode::dSetErrorHandler(0);
+			ode::dSetDebugHandler(0);
+			ode::dSetMessageHandler(0);
+
+			ode::dSetAllocHandler(0);
+			ode::dSetReallocHandler(0);
+			ode::dSetFreeHandler(0);
+			return true;
+		}
+	};
+
+	jl::HostRuntime &hostRuntime = jl::HostRuntime::getJLRuntime(cx);
+	hostRuntime.addListener(jl::EventId::AFTER_DESTROY_RUNTIME, new ReleaseModule()); // frees mpv after rt and cx has been destroyed
+
+
 	return true;
 	JL_BAD;
-}
-
-bool
-ModuleRelease(JSContext *cx, void *pv) {
-
-	JL_IGNORE(cx);
-	return true;
-}
-
-void
-ModuleFree() {
-
-	ode::dCloseODE();
-
-	ode::dSetErrorHandler(0);
-	ode::dSetDebugHandler(0);
-	ode::dSetMessageHandler(0);
-
-	ode::dSetAllocHandler(0);
-	ode::dSetReallocHandler(0);
-	ode::dSetFreeHandler(0);
 }
 
 // User guide: http://www.ode.org/ode-latest-userguide.html

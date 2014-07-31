@@ -2,9 +2,7 @@ var loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsstd'); throw 0;
 //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 
-loadModule('jsstd');
-
-exec('123')
+loadModule('jsstd'); exec('dgvklsdfhgsvldukfhg');
 
 var o = {a:1, b:2};
 

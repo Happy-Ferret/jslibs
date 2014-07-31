@@ -36,16 +36,53 @@ $MODULE_FOOTER
 **/
 
 
+struct ReleaseModule : jl::Events::Callback {
+	jl::HostRuntime &_hostRuntime;
+	ModulePrivate *_mpv;
+	
+	ReleaseModule(jl::HostRuntime &hostRuntime, ModulePrivate *mpv)
+	: _hostRuntime(hostRuntime), _mpv(mpv) {
+	}
+
+	bool operator()() {
+		
+		ASSERT( _hostRuntime );
+		ASSERT( _mpv );
+
+		for ( size_t i = 0; i < COUNTOF(_mpv->processEventThreadInfo); ++i ) {
+
+			ProcessEventThreadInfo *ti = &_mpv->processEventThreadInfo[i];
+			if ( ti->thread != JLThreadInvalidHandler ) {
+
+				ti->isEnd = true;
+				ASSERT( ti->startSem );
+				JLSemaphoreRelease(ti->startSem);
+				JLThreadWait(ti->thread);
+			}
+
+			if ( ti->startSem != JLInvalidSemaphoreHandler ) {
+
+				JLSemaphoreFree(&ti->startSem);
+			}
+		}
+		JLSemaphoreFree(&_mpv->processEventSignalEventSem);
+
+		jl_free( _mpv );
+
+		return true;
+	}
+};
+
+
 bool
 jslangModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	ModulePrivate *mpv = (ModulePrivate*)jl_calloc(sizeof(ModulePrivate), 1);
-
 	jl::Host::getJLHost(cx).moduleManager().modulePrivate(jslangModuleId) = mpv;
-
-	// JL_CHKM( , E_MODULE, E_INIT );
-	
 	mpv->processEventSignalEventSem = JLSemaphoreCreate(0);
+
+	jl::HostRuntime &hostRuntime = jl::HostRuntime::getJLRuntime(cx);
+	hostRuntime.addListener(jl::EventId::AFTER_DESTROY_RUNTIME, new ReleaseModule(hostRuntime, mpv)); // frees mpv after rt and cx has been destroyed
 
 	INIT_CLASS( Handle );
 	INIT_CLASS( Blob );
@@ -56,39 +93,4 @@ jslangModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	return true;
 	JL_BAD;
-}
-
-
-bool
-jslangModuleRelease(JSContext *cx, void *pv) {
-
-	ModulePrivate *mpv = static_cast<ModulePrivate*>(pv);
-	if ( !mpv )
-		return false;
-
-	for ( size_t i = 0; i < COUNTOF(mpv->processEventThreadInfo); ++i ) {
-
-		ProcessEventThreadInfo *ti = &mpv->processEventThreadInfo[i];
-		if ( ti->thread != JLThreadInvalidHandler ) {
-
-			ti->isEnd = true;
-			ASSERT( ti->startSem );
-			JLSemaphoreRelease(ti->startSem);
-			JLThreadWait(ti->thread);
-		}
-
-		if ( ti->startSem != JLInvalidSemaphoreHandler ) {
-
-			JLSemaphoreFree(&ti->startSem);
-		}
-	}
-	JLSemaphoreFree(&mpv->processEventSignalEventSem);
-
-	jl_free( mpv );
-
-	return true;
-}
-
-
-void jslangModuleFree(bool skipCleanup, void *pv) {
 }

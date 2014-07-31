@@ -41,12 +41,45 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
+struct ReleaseModule : jl::Events::Callback {
+	jl::HostRuntime &_hostRuntime;
+	JsioPrivate *_mpv;
+	
+	ReleaseModule(jl::HostRuntime &hostRuntime, JsioPrivate *mpv)
+	: _hostRuntime(hostRuntime), _mpv(mpv) {
+	}
+
+	bool operator()() {
+		
+		ASSERT( _hostRuntime );
+
+		if ( !_hostRuntime.skipCleanup() ) {
+	
+			if ( _mpv->peCancel != NULL )
+				PR_DestroyPollableEvent(_mpv->peCancel);
+
+			jl_free(_mpv);
+
+			if ( PR_AtomicDecrement(&instanceCount) == 0 ) {
+
+				ASSERT( PR_Initialized() );
+				PR_Cleanup(); // doc. PR_Cleanup must be called by the primordial thread near the end of the main function.
+				// (TBD) manage PR_Cleanup's return value
+			}
+		}
+
+		return true;
+	}
+};
+
 bool
 ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
-	JLDisableThreadNotifications();
+//	JLDisableThreadNotifications();
 
 	JL_ASSERT(jl::Host::getJLHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
+
+	//ASSERT( !PR_Initialized() ); // is already initialized by the JS engine 
 
 	if ( PR_AtomicIncrement(&instanceCount) == 1 ) {
 
@@ -56,7 +89,8 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 		} else {
 
 			PR_Init(PR_SYSTEM_THREAD, PR_PRIORITY_NORMAL, 0); // NSPR ignores threads of type PR_SYSTEM_THREAD when determining when a call to PR_Cleanup should return.
-			PR_DisableClockInterrupts();
+
+			// PR_DisableClockInterrupts();  is this compatible with the JS engine ?
 		}
 	}
 
@@ -64,6 +98,9 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	mpv = (JsioPrivate*)jl_calloc(sizeof(JsioPrivate), 1);
 	JL_ASSERT_ALLOC( mpv );
 	jl::Host::getJLHost(cx).moduleManager().modulePrivate(moduleId()) = mpv;
+
+	jl::HostRuntime &hostRuntime = jl::HostRuntime::getJLRuntime(cx);
+	hostRuntime.addListener(jl::EventId::AFTER_DESTROY_RUNTIME, new ReleaseModule(hostRuntime, mpv)); // frees mpv after rt and cx has been destroyed
 
 	INIT_CLASS( IoError );
 	INIT_CLASS( Descriptor );
@@ -79,36 +116,4 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	return true;
 	JL_BAD;
-}
-
-bool
-ModuleRelease(JSContext *cx, void *pv) {
-
-	JsioPrivate *mpv = static_cast<JsioPrivate*>(pv);
-
-	if ( host.hostRuntime().skipCleanup() ) // do not cleanup in unsafe mode.
-		return true;
-
-	if ( mpv->peCancel != NULL )
-		PR_DestroyPollableEvent(mpv->peCancel);
-
-	jl_free(mpv);
-
-
-	return true;
-//	JL_BAD;
-}
-
-void
-ModuleFree(bool skipCleanup, void* pv) {
-
-	if ( skipCleanup )
-		return;
-
-	if ( PR_AtomicDecrement(&instanceCount) == 0 ) {
-
-		ASSERT( PR_Initialized() );
-		PR_Cleanup(); // doc. PR_Cleanup must be called by the primordial thread near the end of the main function.
-		// (TBD) manage PR_Cleanup's return value
-	}
 }

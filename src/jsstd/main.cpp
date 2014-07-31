@@ -28,6 +28,24 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
+struct ReleaseModule : jl::Events::Callback {
+	jl::HostRuntime &_hostRuntime;
+	ModulePrivate *_mpv;
+	
+	ReleaseModule(jl::HostRuntime &hostRuntime, ModulePrivate *mpv)
+	: _hostRuntime(hostRuntime), _mpv(mpv) {
+	}
+
+	bool operator()() {
+		
+		ASSERT( _hostRuntime );
+		if ( !_hostRuntime.skipCleanup() )
+			jl_free(_mpv);
+		return true;
+	}
+};
+
+
 bool
 ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
@@ -40,26 +58,11 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	JL_ASSERT_ALLOC( mpv );
 	jl::Host::getJLHost(cx).moduleManager().modulePrivate(moduleId()) = mpv;
 
+	jl::HostRuntime &hostRuntime = jl::HostRuntime::getJLRuntime(cx);
+	hostRuntime.addListener(jl::EventId::AFTER_DESTROY_RUNTIME, new ReleaseModule(hostRuntime, mpv)); // frees mpv after rt and cx has been destroyed
+
 	INIT_STATIC();
 
 	return true;
 	JL_BAD;
-}
-
-
-bool
-ModuleRelease(JSContext *cx, void *pv) {
-
-	if ( jl::HostRuntime::getJLRuntime(cx).skipCleanup() ) // do not cleanup in unsafe mode.
-		return true;
-
-	ModulePrivate *mpv = static_cast<ModulePrivate*>(pv);
-
-	jl_free(mpv);
-
-	return true;
-}
-
-void
-ModuleFree(bool skipCleanup, void *pv) {
 }

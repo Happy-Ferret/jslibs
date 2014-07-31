@@ -36,19 +36,35 @@ ModuleInit( JSContext *cx, JS::HandleObject obj ) {
 	JL_ASSERT_ALLOC( vi );
 	jl::Host::getJLHost( cx ).moduleManager().modulePrivateT<videoInput*>( moduleId() ) = vi;
 
+		
+	struct ReleaseModule : jl::Events::Callback {
+		jl::HostRuntime &_hostRuntime;
+		ModulePrivate *_mpv;
+	
+		ReleaseModule(jl::HostRuntime &hostRuntime, ModulePrivate *mpv)
+		: _hostRuntime(hostRuntime), _mpv(mpv) {
+		}
+
+		bool operator()() {
+		
+			ASSERT( _hostRuntime );
+			if ( _hostRuntime.skipCleanup() )
+				return;
+
+			if ( _mpv != NULL )
+				delete static_cast<videoInput*>(_mpv);
+
+
+			return true;
+		}
+	};
+
+	jl::HostRuntime &hostRuntime = jl::HostRuntime::getJLRuntime(cx);
+	hostRuntime.addListener(jl::EventId::AFTER_DESTROY_RUNTIME, new ReleaseModule(hostRuntime, vi)); // frees mpv after rt and cx has been destroyed
+
+
 	INIT_CLASS( VideoInput );
 
 	return true;
 	JL_BAD;
-}
-
-
-void
-ModuleFree( bool skipCleanup, void* pv ) {
-
-	if ( skipCleanup )
-		return;
-
-	if ( pv != NULL )
-		delete static_cast<videoInput*>(pv);
 }

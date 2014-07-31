@@ -375,11 +375,14 @@ handleIdZero() {
 ALWAYS_INLINE JS::Value FASTCALL
 handleValueZero() {
 
-	ASSERT(JS::Value().asRawBits() == 0);
-	ASSERT(!JS::Value().isMarkable());
-	ASSERT(JS::Value().isDouble());
+	JS::Value value;
+	value.data.asBits = 0; //value.setDouble(0);
 
-	return JS::Value();
+	ASSERT(value.asRawBits() == 0);
+	ASSERT(!value.isMarkable());
+	ASSERT(value.isDouble());
+
+	return value;
 }
 
 

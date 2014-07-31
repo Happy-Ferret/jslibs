@@ -336,8 +336,7 @@ CountedAlloc::~CountedAlloc() {
 bool
 WatchDog::interruptCallback(JSContext *cx) {
 
-	jl::HostRuntime::getJLRuntime(cx).fireEvent(EventId::INTERRUPT);
-	return true;
+	return jl::HostRuntime::getJLRuntime(cx).fireEvent(EventId::INTERRUPT);
 }
 
 
@@ -440,6 +439,53 @@ HostRuntime::errorReporterBasic( JSContext *cx, const char *message, JSErrorRepo
 }
 
 
+HostRuntime::~HostRuntime() {
+
+	ASSERT( _isEnding == false );
+	_isEnding = true;
+
+	_watchDog.setInterruptInterval(0);
+
+	//	don't try to break linked objects with JS_GC(cx) !
+
+//	jsval tmp;
+//	JL_CHK( GetConfigurationValue(cx, JLID_NAME(_getErrorMessage), &tmp) );
+//	if ( tmp != JSVAL_VOID && JSVAL_TO_PRIVATE(tmp) )
+//		jl_free( JSVAL_TO_PRIVATE(tmp) );
+
+
+// cleanup
+
+	// doc:
+	//  - Is the only side effect of JS_DestroyContextNoGC that any finalizers I may have specified in custom objects will not get called ?
+	//  - Not if you destroy all contexts (whether by NoGC or not), destroy all runtimes, and call JS_ShutDown before exiting or hibernating.
+	//    The last JS_DestroyContext* API call will run a GC, no matter which API of that form you call on the last context in the runtime. /be
+		
+	// see create()
+
+	JL_CHKM( fireEvent(EventId::BEFORE_DESTROY_RUNTIME), E_HOST, E_INTERNAL, E_NAME("BEFORE_DESTROY_RUNTIME") );
+
+	JS_EndRequest(cx);
+
+	JS_DestroyContext(cx);
+	cx = nullptr;
+
+	JS_DestroyRuntime(rt);
+	rt = nullptr;
+
+	JL_CHKM( fireEvent(EventId::AFTER_DESTROY_RUNTIME), E_HOST, E_INTERNAL, E_NAME("AFTER_DESTROY_RUNTIME") );
+
+	JL_CHKM( fireEvent(EventId::DESTRUCT_HOSTRUNTIME), E_HOST, E_INTERNAL, E_NAME("DESTRUCT_HOSTRUNTIME") );
+
+bad:
+	// on error, do the minimum.
+	if ( cx ) {
+
+		JS_DestroyContext(cx);
+		JS_DestroyRuntime(rt);
+	}
+}
+
 HostRuntime::HostRuntime( Allocators allocators, uint32_t maxbytes, size_t nativeStackQuota )
 : _allocators(allocators), rt(nullptr), cx(nullptr), _isEnding(false), _skipCleanup(false), _watchDog(*MOZ_THIS_IN_INITIALIZER_LIST()) {
 
@@ -525,59 +571,36 @@ bad:
 }
 
 
-bool
-HostRuntime::destroy(bool skipCleanup) {
-
-	ASSERT( _isEnding == false );
-	_isEnding = true;
-	_skipCleanup = skipCleanup;
-
-	_watchDog.setInterruptInterval(0);
-
-	//	don't try to break linked objects with JS_GC(cx) !
-
-//	jsval tmp;
-//	JL_CHK( GetConfigurationValue(cx, JLID_NAME(_getErrorMessage), &tmp) );
-//	if ( tmp != JSVAL_VOID && JSVAL_TO_PRIVATE(tmp) )
-//		jl_free( JSVAL_TO_PRIVATE(tmp) );
-
-
-// cleanup
-
-	// doc:
-	//  - Is the only side effect of JS_DestroyContextNoGC that any finalizers I may have specified in custom objects will not get called ?
-	//  - Not if you destroy all contexts (whether by NoGC or not), destroy all runtimes, and call JS_ShutDown before exiting or hibernating.
-	//    The last JS_DestroyContext* API call will run a GC, no matter which API of that form you call on the last context in the runtime. /be
-		
-	// see create()
-
-	fireEvent(EventId::BEFORE_DESTROY_RUNTIME);
-
-	JS_EndRequest(cx);
-
-	JS_DestroyContext(cx);
-	cx = nullptr;
-
-	JS_DestroyRuntime(rt);
-	rt = nullptr;
-
-	fireEvent(EventId::AFTER_DESTROY_RUNTIME);
-
-	return true;
-
-bad:
-	// on error, do the minimum.
-	if ( cx ) {
-
-		JS_DestroyContext(cx);
-		JS_DestroyRuntime(rt);
-	}
-	return false;
-}
-
 
 //////////////////////////////////////////////////////////////////////////////
 // ModuleManager
+
+ModuleManager::~ModuleManager() {
+
+	struct FreeDynamicLibraryHandle : Events::Callback {
+		
+		JLLibraryHandler _libraryHandler;
+
+		FreeDynamicLibraryHandle(JLLibraryHandler libraryHandler) : _libraryHandler(libraryHandler) {
+		}
+
+		bool operator()() {
+
+			//#ifndef DEBUG // else the memory block was allocated in a DLL that was unloaded prior to the _CrtMemDumpAllObjectsSince() call.
+			if ( JLDynamicLibraryOk(_libraryHandler) )
+				JLDynamicLibraryClose(&_libraryHandler);
+			//#endif
+			return true;
+		}
+	};
+
+	for ( uint16_t i = 0; i < MAX_MODULES; ++i ) {
+		
+		ModuleManager::Module &module = _moduleList[i];
+		if ( module.moduleId != FREE_MODULE_SLOT )
+			_hostRuntime.addListener(jl::EventId::DESTRUCT_HOSTRUNTIME, new FreeDynamicLibraryHandle(module.moduleHandle));
+	}
+}
 
 
 ModuleManager::ModuleManager(HostRuntime &hostRuntime)
@@ -663,60 +686,6 @@ bad:
 	return false;
 }
 
-bool
-ModuleManager::releaseModules() {
-
-	JSContext *cx = _hostRuntime.context();
-
-	for ( uint16_t i = 0; i < MAX_MODULES; ++i ) {
-		
-		Module &module = _moduleList[i];
-		if ( module.moduleId ) {
-
-			ModuleReleaseFunction moduleRelease = (ModuleReleaseFunction)JLDynamicLibrarySymbol(module.moduleHandle, NAME_MODULE_RELEASE);
-			if ( moduleRelease != nullptr ) {
-
-				if ( !moduleRelease(cx, module.privateData) ) {
-
-					TCHAR filename[PATH_MAX];
-					JLDynamicLibraryName((void*)moduleRelease, filename, COUNTOF(filename));
-					JL_WARN( E_MODULE, E_NAME(filename), E_FIN ); // "Fail to release module \"%s\".", filename
-				}
-			}
-		}
-	}
-
-	return true;
-	JL_BAD;
-}
-
-void
-ModuleManager::freeModules(bool skipCleanup) {
-
-	// Beware: because JS engine allocate memory from the DLL, all memory must be disallocated before releasing the DLL
-
-	for ( uint16_t i = 0; i < MAX_MODULES; ++i ) {
-		
-		ModuleManager::Module &module = _moduleList[i];
-		if ( module.moduleId ) {
-
-			ModuleFreeFunction moduleFree = (ModuleFreeFunction)JLDynamicLibrarySymbol(module.moduleHandle, NAME_MODULE_FREE);
-			if ( moduleFree != nullptr ) {
-		
-				moduleFree(skipCleanup, module.privateData);
-			}
-
-			//#ifndef DEBUG // else the memory block was allocated in a DLL that was unloaded prior to the _CrtMemDumpAllObjectsSince() call.
-			if ( JLDynamicLibraryOk(module.moduleHandle) )
-				JLDynamicLibraryClose(&module.moduleHandle);
-			//#endif
-
-			#ifdef DEBUG
-			module = Module();
-			#endif
-		}
-	}
-}
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -765,8 +734,9 @@ const JSClass Global::_globalClass = {
 };
 
 
-Global::Global( HostRuntime &hr, bool lazyStandardClasses )
-: _hostRuntime(hr), _global( hr.context() ) {
+Global::Global( HostRuntime &hr, bool lazyStandardClasses ) :
+_hostRuntime(hr),
+_globalObject( hr.context() ) {
 
 	JSContext *cx = _hostRuntime.context();
 
@@ -776,25 +746,20 @@ Global::Global( HostRuntime &hr, bool lazyStandardClasses )
 		.setInvisibleToDebugger(false)
 	;
 
-	_global.set( JS_NewGlobalObject(cx, lazyStandardClasses ? &_globalClass_lazy : &_globalClass, nullptr, JS::DontFireOnNewGlobalHook, compartmentOptions) );
-	JL_CHK( _global ); // "unable to create the global object." );
+	_globalObject.set( JS_NewGlobalObject(cx, lazyStandardClasses ? &_globalClass_lazy : &_globalClass, nullptr, JS::DontFireOnNewGlobalHook, compartmentOptions) );
+	JL_CHK( _globalObject ); // "unable to create the global object." );
 
 	{
 		// set globalObject as current global object.
-		JSAutoCompartment ac(cx, _global);
+		JSAutoCompartment ac(cx, _globalObject);
 
-		//JS_SetCompartmentPrivate(js::GetObjectCompartment(_global), NULL):
-
-		//JS_SetCompartmentPrivate(NULL
-			
-
-		JL_CHK( JS_InitStandardClasses(cx, _global) );
-		JL_CHK( JS_InitReflect(cx, _global) );
+		JL_CHK( JS_InitStandardClasses(cx, _globalObject) );
+		JL_CHK( JS_InitReflect(cx, _globalObject) );
 		#ifdef JS_HAS_CTYPES
-		JL_CHK( JS_InitCTypesClass(cx, _global) );
+		JL_CHK( JS_InitCTypesClass(cx, _globalObject) );
 		#endif
 
-		JS_FireOnNewGlobalObject(cx, _global);
+		JS_FireOnNewGlobalObject(cx, _globalObject);
 	}
 
 	return;
@@ -1513,6 +1478,16 @@ bad:
 }
 
 
+
+
+Host::~Host() {
+	
+	if ( _interruptHandler )
+		hostRuntime().removeListener(_interruptHandler);
+	_ids.destructAll();
+}
+
+
 Host::Host( Global &glob, StdIO &hostStdIO, bool unsafeMode ) :
 _global(glob),
 _hostRuntime(glob.hostRuntime()),
@@ -1539,19 +1514,18 @@ _interruptHandler(nullptr) {
 	ASSERT( !JSID_IS_ZERO(_ids.get(0)) );
 	ASSERT( !JSID_IS_ZERO(_ids.get(LAST_JSID-1)) );
 
-	JSContext *cx = _hostRuntime.context();
-
-	//JL_SetRuntimePrivate(_hostRuntime.runtime(), this);
-
 	JS_SetCompartmentPrivate(js::GetObjectCompartment(glob.globalObject()), this);
 
-	// JS::RuntimeOptionsRef(_hostRuntime.runtime()).setStrictMode(_unsafeMode); // users set "use strict" themselves
+	JSContext *cx = _hostRuntime.context();
 
-	JS::ContextOptionsRef(cx).setExtraWarnings(!_unsafeMode);
+	JS::ContextOptionsRef(cx)
+		.setExtraWarnings(!_unsafeMode)
+	;
 	
 	JS_SetErrorReporter(cx, errorReporter);
 	
 	{
+
 		JS::RootedObject obj(cx, _global.globalObject());
 		JSAutoCompartment ac(cx, obj);
 
@@ -1582,11 +1556,10 @@ _interruptHandler(nullptr) {
 	}
 
 
-	class OnInterupt : public jl::Callback {
-	public:
+	struct OnInterupt : jl::Events::Callback {
 		Host &_host;
 		OnInterupt(Host &host) : _host(host) {}
-		void operator()() {
+		bool operator()() {
 
 			JSContext *cx = _host.hostRuntime().context();
 			JS::AutoSaveExceptionState ase(cx);
@@ -1599,9 +1572,10 @@ _interruptHandler(nullptr) {
 				JS::RootedValue rval(cx);
 				JL_CHK( JS_CallFunctionValue(cx, JS::NullPtr(), fctVal, JS::HandleValueArray::empty(), &rval) );
 			}
-			return;
+			return true;
 		bad:
 			JS_ReportPendingException(cx);
+			return true; // error is reported, but do not stop events fireing
 		}
 	};
 
@@ -1610,45 +1584,6 @@ _interruptHandler(nullptr) {
 	return;
 bad:
 	invalidate();
-}
-
-
-
-bool
-Host::destroy(bool skipCleanup) {
-
-	if ( _interruptHandler )
-		hostRuntime().removeListener(_interruptHandler);
-	
-	JSContext *cx = _hostRuntime.context();
-		
-	JL_CHK( _moduleManager.releaseModules() );
-
-	ASSERT( jslangModuleRelease != (ModuleReleaseFunction)nullptr );
-	if ( !jslangModuleRelease(cx, _moduleManager.modulePrivate(jslangModuleId)) ) {
-		
-		JL_WARN( E_MODULE, E_NAME("jslang"), E_FIN ); // "Fail to release static module jslang."
-	}
-
-	_classProtoCache.removeAll();
-	_hostObject.set(nullptr);
-	_objectProto.set(nullptr);
-
-	if ( !skipCleanup ) {
-	
-		_ids.destructAll();
-	}
-
-	return true;
-	JL_BAD;
-}
-
-void
-Host::free(bool skipCleanup) {
-
-	_moduleManager.freeModules(skipCleanup);
-	ASSERT( jslangModuleFree != (ModuleFreeFunction)nullptr);
-	jslangModuleFree(skipCleanup, nullptr);
 }
 
 
@@ -1697,12 +1632,9 @@ Host::hostObject() {
 
 JL_END_NAMESPACE
 
-/*
 
+/*
 runtime/context -> runtimePrivate
  > global/compartment
     > host -> compartmentPrivate
-
-
-
 */

@@ -63,7 +63,8 @@ DEFINE_FINALIZE() {
 	
 
 	//if ( obj == JL_GetCachedProto(jl::Host::getJLHost(fop->runtime()), className) ) {
-	if (obj == jl::Host::getJLHost(fop->runtime()).getCachedProto(JL_THIS_CLASS_NAME)) {
+	//if (obj == jl::Host::getJLHost(fop->runtime()).getCachedProto(JL_THIS_CLASS_NAME)) {
+	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).isEnding() ) {
 
 		while ( !PoolIsEmpty(&matrixPool) )
 			Matrix44Free((Matrix44*)jl::PoolPop(&matrixPool));

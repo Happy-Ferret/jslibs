@@ -123,8 +123,6 @@ int CALLBACK WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 	HostRuntime::setJSEngineAllocators(allocators); // need to be done before AutoJSEngineInit ?
 	AutoJSEngineInit ase;
 
-	//JS::ContextOptionsRef(cx).setWerror(args.warningsToErrors);
-
 	{
 
 		HostRuntime hostRuntime(allocators, uint32_t(-1), HOST_STACK_SIZE / 2);
@@ -191,15 +189,10 @@ int CALLBACK WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 						JS_ReportPendingException(cx); // see JSOPTION_DONT_REPORT_UNCAUGHT option.
 			}
 		}
-
-		host.destroy();
-		global.destroy();
-		hostRuntime.destroy();
-		host.free(); // must be executed after runtime destroy
 	}
 
 	return 0;
-	bad:
+bad:
 	return -1;
 }
 

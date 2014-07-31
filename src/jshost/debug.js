@@ -9,17 +9,15 @@ var loadModule = host.loadModule;
 
 	loadModule('jsstd');
 
-	host.interruptInterval = 0;
+	host.interruptInterval = 100;
 
 	host.onInterrupt = function() {
 
-	//sdfqsdf();
-		
 		var interruptInterval = host.interruptInterval;
 		var completed = host.collectGarbage(true, 50);
 		if ( completed ) {
 		
-			if ( interruptInterval < 100 )
+			if ( interruptInterval < 500 )
 				 host.interruptInterval = interruptInterval + 1;
 		} else {
 			
@@ -27,6 +25,7 @@ var loadModule = host.loadModule;
 				 host.interruptInterval = interruptInterval - 1;
 		}
 	}
+
 
 	var mem;
 	while ( !host.endSignal ) {
@@ -38,7 +37,7 @@ var loadModule = host.loadModule;
 		print(host.interruptInterval, '  ', cmu/1024/1024, ' ('+Math.floor((cmu-mem)/1024/1024), ')\n');
 		mem = cmu;
 
-		processEvents(timeoutEvents(10));
+		processEvents(timeoutEvents(100));
 	}
 
 throw 0;

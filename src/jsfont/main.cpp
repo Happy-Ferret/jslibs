@@ -69,6 +69,23 @@ void* JsfontRealloc( FT_Memory, long, long new_size, void* block ) {
 	return jl_realloc(block, new_size);
 }
 
+
+struct ReleaseModule : jl::Events::callbacks {
+	bool operator()() {
+		
+		JsfontModulePrivate *mpv = (JsfontModulePrivate*)ModulePrivateGet();
+
+		FT_Done_FreeType(mpv->ftLibrary);
+		ModulePrivateFree();
+
+		    <- incomplete
+
+
+		return true;
+	}
+};
+
+
 bool
 ModuleInit(JSContext *cx, JS::HandleObject obj, uint32_t id) {
 
@@ -93,23 +110,8 @@ ModuleInit(JSContext *cx, JS::HandleObject obj, uint32_t id) {
 
 	INIT_CLASS(Font);
 
+	jl::HostRuntime::getJLRuntime(cx).addEventListener(jl::EventId::AFTER_DESTROY_RUNTIME, new ReleaseModule());    <- incomplete
+
 	return true;
 	JL_BAD;
-}
-
-
-bool
-ModuleRelease(JSContext *cx, void *pv) {
-
-	return true;
-}
-
-
-void
-ModuleFree() {
-
-	JsfontModulePrivate *mpv = (JsfontModulePrivate*)ModulePrivateGet();
-
-	FT_Done_FreeType(mpv->ftLibrary);
-	ModulePrivateFree();
 }

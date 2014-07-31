@@ -36,16 +36,3 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	return true;
 	JL_BAD;
 }
-
-bool
-ModuleRelease(JSContext *cx, void *pv) {
-	
-	JL_IGNORE(cx);
-	//jl_free(JL_GetModulePrivate(cx, _moduleId));
-
-	return true;
-}
-
-//void
-//ModuleFree() {
-//}

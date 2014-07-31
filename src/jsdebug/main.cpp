@@ -41,18 +41,3 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	return true;
 	JL_BAD;
 }
-
-/*
-bool
-ModuleRelease(JSContext *cx, void *pv) {
-
-	return true;
-}
-
-void
-ModuleFree(bool skipCleanup, void* pv) {
-
-	if ( skipCleanup )
-		return;
-}
-*/

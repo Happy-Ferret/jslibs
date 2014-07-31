@@ -93,30 +93,31 @@ ModuleInit( JSContext *cx, JS::HandleObject obj ) {
 	INIT_CLASS( OalEffect );
 	INIT_CLASS( OalFilter );
 
-	return true;
-	JL_BAD;
-}
 
+	struct ReleaseModule : jl::Events::callbacks {
+		bool operator()() {
 
-bool
-ModuleRelease(JSContext *cx, void *pv) {
+			ALCcontext *context = alcGetCurrentContext();
+			if ( context == NULL )
+				return true; // already closed
 
-	ALCcontext *context = alcGetCurrentContext();
-	if ( context == NULL )
-		return true; // already closed
+			// cf. alutExit
+			ALCdevice *device;
+			if (!alcMakeContextCurrent (NULL))
+				JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_MAKE_CONTEXT_CURRENT") );
+			device = alcGetContextsDevice (context);
+			if (alcGetError (device) != ALC_NO_ERROR )
+				JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_ALC_ERROR_ON_ENTRY") );
+			alcDestroyContext (context);
+			if (alcGetError (device) != ALC_NO_ERROR)
+				JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_DESTROY_CONTEXT") );
+			if (!alcCloseDevice (device))
+				JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_CLOSE_DEVICE") );
+		}
+	};
 
-	// cf. alutExit
-	ALCdevice *device;
-	if (!alcMakeContextCurrent (NULL))
-		JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_MAKE_CONTEXT_CURRENT") );
-	device = alcGetContextsDevice (context);
-	if (alcGetError (device) != ALC_NO_ERROR )
-		JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_ALC_ERROR_ON_ENTRY") );
-	alcDestroyContext (context);
-	if (alcGetError (device) != ALC_NO_ERROR)
-		JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_DESTROY_CONTEXT") );
-	if (!alcCloseDevice (device))
-		JL_ERR( E_LIB, E_STR("OpenAL"), E_OPERATION, E_COMMENT("ALUT_ERROR_CLOSE_DEVICE") );
+	jl::HostRuntime::getJLRuntime(cx).addEventListener(jl::EventId::AFTER_DESTROY_RUNTIME, new ReleaseModule());
+
 
 	return true;
 	JL_BAD;

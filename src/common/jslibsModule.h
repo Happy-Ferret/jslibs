@@ -17,27 +17,17 @@
 struct JSContext;
 
 #define SYM_MODULE_INIT ModuleInit
-#define SYM_MODULE_RELEASE ModuleRelease
-#define SYM_MODULE_FREE ModuleFree
 
 #define NAME_MODULE_INIT JL_TOSTRING(SYM_MODULE_INIT)
-#define NAME_MODULE_RELEASE JL_TOSTRING(SYM_MODULE_RELEASE)
-#define NAME_MODULE_FREE JL_TOSTRING(SYM_MODULE_FREE)
 
 typedef bool (*ModuleInitFunction)(JSContext *, JS::HandleObject);
-typedef bool (*ModuleReleaseFunction)(JSContext *, void *);
-typedef void (*ModuleFreeFunction)(bool skipCleanup, void *);
 
 // jlModuleInit ?
 EXTERN_C DLLEXPORT bool ModuleInit(JSContext *cx, JS::HandleObject obj); // JSContext *cx, JS::HandleObject obj, ModuleReleaseFunction *moduleReleaseFct, ModuleFreeFunction *moduleFreeFct)
-EXTERN_C DLLEXPORT bool ModuleRelease(JSContext *cx, void *pv);
-EXTERN_C DLLEXPORT void ModuleFree(bool skipCleanup, void *pv);
 
 bool ModuleInit(JSContext *cx, JS::HandleObject obj);
-bool ModuleRelease(JSContext *cx, void *pv);
-void ModuleFree(bool skipCleanup, void *);
 
-typedef ptrdiff_t moduleId_t;
+//typedef ptrdiff_t moduleId_t;
 
 // call from inside a module
 ALWAYS_INLINE const moduleId_t

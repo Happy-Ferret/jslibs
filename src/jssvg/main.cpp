@@ -31,15 +31,21 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	JL_CHK( InitJslibsModule(cx, id)  );
 	rsvg_init();
+
+	struct ReleaseModule : jl::Events::Callback {
+		bool operator()() {
+		
+			rsvg_term();
+			return true;
+		}
+	};
+
+	jl::HostRuntime::getJLRuntime(cx).addListener(jl::EventId::AFTER_DESTROY_RUNTIME, new ReleaseModule()); // frees mpv after rt and cx has been destroyed
+	
+
 	INIT_CLASS( SVG );
 	return true;
 	JL_BAD;
-}
-
-void
-ModuleFree() {
-
-	rsvg_term();
 }
 
 

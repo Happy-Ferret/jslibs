@@ -52,23 +52,23 @@ bool ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	hr = CoInitialize(NULL);
 	JL_ASSERT( SUCCEEDED(hr), E_NAME("COM"), E_INIT );
 
+
+	struct ReleaseModule : jl::Events::Callback {
+		bool operator()() {
+		
+			// Closes the COM library on the current thread, unloads all DLLs loaded by the thread, frees any other resources that the thread maintains, and forces all RPC connections on the thread to close.
+			CoUninitialize();
+			return true;
+		}
+	};
+
+	jl::HostRuntime::getJLRuntime(cx).addListener(jl::EventId::AFTER_DESTROY_RUNTIME, new ReleaseModule()); // frees mpv after rt and cx has been destroyed
+
+
 	INIT_CLASS( ComVariant );
 	INIT_CLASS( ComEnum );
 	INIT_CLASS( ComDispatch );
 
 	return true;
 	JL_BAD;
-}
-
-
-bool
-ModuleRelease(JSContext *cx, void *pv) {
-
-	return true;
-}
-
-void
-ModuleFree(bool skipCleanup, void *pv) {
-
-	CoUninitialize();
 }

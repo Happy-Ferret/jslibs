@@ -128,13 +128,13 @@ bool GCCallTrace(JSContext *cx, JSGCStatus status) {
 
 DEFINE_FUNCTION( registerDumpHeap ) {
 
-	struct DumpHeap: jl::Callback {
+	struct DumpHeap : jl::Events::Callback {
 
 		jl::HostRuntime &_hostRuntime;
 		DumpHeap( jl::HostRuntime &hostRuntime )
 		: _hostRuntime(hostRuntime) {
 		}
-		void operator()() {
+		bool operator()() {
 
 			FILE *file = fopen("dump.txt", "w");
 			IFDEBUG( JS_DumpHeap(_hostRuntime.runtime(), file, nullptr, JSTRACE_OBJECT, nullptr, 1, nullptr) );

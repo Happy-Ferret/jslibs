@@ -18,7 +18,6 @@
 #define JL_CHK( CONDITION ) \
 	JL_MACRO_BEGIN \
 		if (unlikely( !(CONDITION) )) { \
-			__debugbreak(); \
 			goto bad; \
 		} \
 		ASSUME(!!(CONDITION)); \

@@ -13,10 +13,8 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include <jslibsModule.cpp>
-
 #include <jlmoduleprivate.h>
-DEFINE_MODULE_PRIVATE
+
 
 FT_DEFINE_SYMBOLS;
 
@@ -34,6 +32,24 @@ namespace OGLFT {
 }
 
 
+
+struct ReleaseModule : jl::Events::Callback {
+	jl::HostRuntime &_hostRuntime;
+	ModulePrivate *_mpv;
+	
+	ReleaseModule(jl::HostRuntime &hostRuntime, ModulePrivate *mpv)
+	: _hostRuntime(hostRuntime), _mpv(mpv) {
+	}
+
+	bool operator()() {
+		
+		ASSERT( _hostRuntime );
+		if ( !_hostRuntime.skipCleanup() )
+			jl_free(_mpv);
+		return true;
+	}
+};
+
 bool
 ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
@@ -46,6 +62,10 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	jsfontMpv->GetFTSymbols(&_ftSymbols);
 	mpv->ftLibrary = jsfontMpv->ftLibrary;
+
+	jl::HostRuntime &hostRuntime = jl::HostRuntime::getJLRuntime(cx);
+	hostRuntime.addListener(jl::EventId::AFTER_DESTROY_RUNTIME, new ReleaseModule(hostRuntime, mpv)); // frees mpv after rt and cx has been destroyed
+
 
 /*
 	CHKHEAP();
@@ -80,20 +100,4 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 	return true;
 	JL_BAD;
-}
-
-
-bool
-ModuleRelease(JSContext *cx, void *pv) {
-
-//	jl_free(GetModulePrivate(cx, _moduleId));
-
-	return true;
-}
-
-
-void
-ModuleFree() {
-
-	ModulePrivateFree();
 }
