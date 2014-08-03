@@ -669,6 +669,45 @@ LL(const wchar_t *s) {
 
 
 
+//
+// see js/src/mfbt/DebugOnly.h
+//
+template<typename T>
+struct Dbg {
+  ~Dbg() {}
+#ifdef DEBUG
+  T value;
+
+  Dbg() { }
+  Dbg(const T& aOther) : value(aOther) { }
+  Dbg(const Dbg& aOther) : value(aOther.value) { }
+  Dbg& operator=(const T& aRhs) {
+    value = aRhs;
+    return *this;
+  }
+
+  void operator++(int) { value++; }
+  void operator--(int) { value--; }
+
+  T* operator&() { return &value; }
+
+  operator T&() { return value; }
+  operator const T&() const { return value; }
+
+  T& operator->() { return value; }
+  const T& operator->() const { return value; }
+
+#else
+  Dbg() { }
+  Dbg(const T&) { }
+  Dbg(const Dbg&) { }
+  Dbg& operator=(const T&) { return *this; }
+  void operator++(int) { }
+  void operator--(int) { }
+#endif
+};
+
+
 #ifdef DEBUG
 
 #define ASSERT(expr) \
@@ -2004,7 +2043,7 @@ tstrncmp(const T *lhs, const U *rhs, size_t max ) {
 
 	const T *limit = lhs + max;
 	while ( lhs < limit ) {
-
+		
 		if ( *lhs != static_cast<T>(*rhs) )
 			return static_cast<int32_t>(*lhs) - static_cast<int32_t>(*rhs);
 		if ( *lhs == 0 )
@@ -3356,7 +3395,7 @@ ALWAYS_INLINE int JLAtomicAdd(volatile int32_t *ptr, int32_t val) {
 
 		ASSERT( JLSemaphoreOk(semaphore) );
 	#if defined(WIN)
-		BOOL st = ReleaseSemaphore(semaphore, 1, NULL);
+		Dbg<BOOL> st = ReleaseSemaphore(semaphore, 1, NULL);
 		ASSERT( st != FALSE );
 	#elif defined(UNIX)
 		int st = sem_post(semaphore);
@@ -3682,7 +3721,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 		ASSERT( ev != NULL && JLEventOk(*ev) );
 	#if defined(WIN)
 		DeleteCriticalSection(&(*ev)->cs);
-		BOOL st = CloseHandle((*ev)->hEvent);
+		Dbg<BOOL> st = CloseHandle((*ev)->hEvent);
 		ASSERT( st != FALSE );
 	#elif defined(UNIX)
 		int st = pthread_cond_destroy(&(*ev)->cond);
@@ -3939,7 +3978,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 	#if defined(WIN)
 		// yes, using TerminateThread can lead to memory leaks and worse.
 		// doc. The handle must have the THREAD_TERMINATE access right. ... Use the GetExitCodeThread function to retrieve a thread's exit value.
-		BOOL st = TerminateThread(thread, 0);
+		Dbg<BOOL> st = TerminateThread(thread, 0);
 		ASSERT( st != 0 );
 	#elif defined(UNIX)
 		int st = pthread_cancel(*thread);
@@ -3955,7 +3994,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 		ASSERT( JLThreadOk(thread) );
 	#if defined(WIN)
-		BOOL st = SetThreadPriority(thread, priority);
+		Dbg<BOOL> st = SetThreadPriority(thread, priority);
 		ASSERT( st != FALSE );
 	#elif defined(UNIX)
 		int st;
@@ -3979,7 +4018,7 @@ ALWAYS_INLINE void JLCondSignal( JLCondHandler cv ) {
 
 		ASSERT( JLThreadOk(thread) );
 	#if defined(WIN)
-		BOOL st = WaitForSingleObject(thread, INFINITE);
+		Dbg<DWORD> st = WaitForSingleObject(thread, INFINITE);
 		ASSERT( st == WAIT_OBJECT_0 );
 		if ( exitValue != NULL )
 			GetExitCodeThread(thread, (DWORD*)exitValue);

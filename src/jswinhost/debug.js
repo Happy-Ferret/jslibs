@@ -1,33 +1,33 @@
 var loadModule = host.loadModule;
 
 
-loadModule('jswinshell');
-var s = new Systray();
-s.icon = new Icon( 0 );
+	loadModule('jswinshell');
+	var s = new Systray();
+	s.icon = new Icon( 0 );
 
-s.onmouseup = function(button) {
+	s.onmouseup = function(button) {
 
-	this.popupMenu(['Quité']);
-}
+		this.popupMenu(['Quit']);
+	}
 
-s.oncommand = function(name) {
+	s.oncommand = function(name) {
 
-	if ( name == 'Quité' )
-		throw 0;
-}
+		if ( name == 'Quit' )
+			throw 0;
+	}
 
-var ev = s.events();
-for (;;) {
+	var ev = s.events();
+	for (;;) {
 
-	processEvents(ev);
-}
+		processEvents(ev);
+	}
 
 throw 0;
 
 
 
-loadModule('jsstd');
-exec('qwer');
+	loadModule('jsstd');
+	exec('qwer');
 throw 0;
 
 

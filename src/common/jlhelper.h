@@ -157,7 +157,6 @@ JL_GetStringLength( JSString *jsstr ) {
 ALWAYS_INLINE JS::Value FASTCALL
 JL_GetEmptyStringValue( JSContext *cx ) {
 
-
 	return JS_GetEmptyStringValue(cx);
 }
 
@@ -330,6 +329,7 @@ const HandleValue TrueHandleValue = HandleValue::fromMarkedLocation(&JSVAL_TRUE)
 const HandleValue FalseHandleValue = HandleValue::fromMarkedLocation(&JSVAL_FALSE);
 */
 
+/*
 ALWAYS_INLINE JS::HandleValue FASTCALL
 handleValueTrue() {
 
@@ -361,30 +361,32 @@ handleValueNull() {
 	ASSERT(!v.isMarkable());
 	return JS::HandleValue::fromMarkedLocation(&v);
 }
+*/
 
 // useful for structure with jsid initialized to 0.
-ALWAYS_INLINE JS::HandleId FASTCALL
-handleIdZero() {
+ALWAYS_INLINE jsid FASTCALL
+idZero() {
 
-	static const jsid tmp = { 0 };
+	jsid tmp = { 0 };
+
 	ASSERT( JSID_BITS(tmp) == 0 );
-	ASSERT( JSID_IS_ZERO(INT_TO_JSID(0)) );
-	return JS::HandleId::fromMarkedLocation(&tmp);
+	ASSERT( JSID_IS_ZERO(tmp) );
+
+	return tmp;
 }
 
 ALWAYS_INLINE JS::Value FASTCALL
-handleValueZero() {
+valueZero() {
 
 	JS::Value value;
-	value.data.asBits = 0; //value.setDouble(0);
+	value.data.asBits = 0;
 
-	ASSERT(value.asRawBits() == 0);
-	ASSERT(!value.isMarkable());
-	ASSERT(value.isDouble());
+	ASSERT( value.asRawBits() == 0 );
+	ASSERT( !value.isMarkable() );
+	ASSERT( value.isDouble() );
 
 	return value;
 }
-
 
 
 const jsval JSVAL_NULL  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_NULL,      0));
@@ -393,25 +395,26 @@ const jsval JSVAL_ONE   = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_INT32,     1));
 const jsval JSVAL_FALSE = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_BOOLEAN,   false));
 const jsval JSVAL_TRUE  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_BOOLEAN,   true));
 const jsval JSVAL_VOID  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_UNDEFINED, 0));
+const jsval JSVAL_Z  = valueZero();
 
 const JS::HandleValue NullHandleValue = JS::HandleValue::fromMarkedLocation(&JSVAL_NULL);
 const JS::HandleValue UndefinedHandleValue = JS::HandleValue::fromMarkedLocation(&JSVAL_VOID);
 const JS::HandleValue TrueHandleValue = JS::HandleValue::fromMarkedLocation(&JSVAL_TRUE);
 const JS::HandleValue FalseHandleValue = JS::HandleValue::fromMarkedLocation(&JSVAL_FALSE);
+const JS::HandleValue ZHandleValue = JS::HandleValue::fromMarkedLocation(&JSVAL_Z);
 
 #define JL_NULL (jl::NullHandleValue)
 #define JL_UNDEFINED (jl::UndefinedHandleValue)
 #define JL_TRUE (jl::TrueHandleValue)
 #define JL_FALSE (jl::FalseHandleValue)
+#define JL_VALUEZ (jl::ZHandleValue)
 
-/*
-#define JL_TRUE (jl::handleValueTrue())
-#define JL_FALSE (jl::handleValueFalse())
-#define JL_UNDEFINED (jl::handleValueUndefined())
-#define JL_NULL (jl::handleValueNull())
-*/
-#define JL_IDZ (jl::handleIdZero()) // useful for structure with jsid initialized to 0.
-#define JL_VALUEZ (jl::handleValueZero())
+
+const jsid JSID_ZERO    = idZero();
+
+const JS::HandleId ZeroHandleId = JS::HandleId::fromMarkedLocation(&JSID_ZERO);
+
+#define JL_IDZ (jl::ZeroHandleId) // useful for structure with jsid initialized to 0.
 
 
 ////
@@ -458,7 +461,7 @@ class AutoJSEngineInit {
 public:
 	AutoJSEngineInit() {
 
-		bool st = JS_Init();
+		Dbg<bool> st = JS_Init();
 		ASSERT(st);
 	}
 

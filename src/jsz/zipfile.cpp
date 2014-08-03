@@ -105,7 +105,7 @@ bool PrepareReadCurrentFile( JSContext *cx, JS::HandleObject obj ) {
 		if ( !tmp.isUndefined() )
 			JL_CHK( jl::getValue(cx, tmp, &password) );
 
-		if ( !password )
+		if ( password.isEmpty() )
 			return ThrowZipFileError(cx, JLERR_PASSWORDREQUIRED);
 		UNZ_CHK( unzOpenCurrentFilePassword(pv->uf, password) );
 	} else {
@@ -268,7 +268,7 @@ DEFINE_FUNCTION( open ) {
 #endif
 		if ( !pv->uf ) {
 
-			JL_ERR( E_FILE, E_ACCESS, E_SEP, E_NAME(filename), E_READ );
+			JL_ERR( E_FILE, E_ACCESS, E_SEP, E_NAME16(filename), E_READ );
 		}
 	} else {
 
@@ -281,7 +281,7 @@ DEFINE_FUNCTION( open ) {
 #endif
 		if (!pv->zf) {
 
-			JL_ERR( E_FILE, E_ACCESS, E_SEP, E_NAME(filename), E_WRITE );
+			JL_ERR( E_FILE, E_ACCESS, E_SEP, E_NAME16(filename), E_WRITE );
 		}
 	}
 

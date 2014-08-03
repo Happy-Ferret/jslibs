@@ -375,7 +375,7 @@ WatchDog::start() {
 	ASSERT( _watchDogThread == JLThreadInvalidHandler );
 
 	JSContext *cx = _hostRuntime.context();
-	JSInterruptCallback prevInterruptCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), interruptCallback);
+	Dbg<JSInterruptCallback> prevInterruptCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), interruptCallback);
 	ASSERT( prevInterruptCallback == nullptr );
 	_watchDogSemEnd = JLSemaphoreCreate(0);
 	_watchDogThread = JLThreadStart(watchDogThreadProc, this);
@@ -393,7 +393,7 @@ WatchDog::stop() {
 	ASSERT( _interruptInterval == 0 );
 	ASSERT( _watchDogThread != JLThreadInvalidHandler );
 
-	JSInterruptCallback prev_interruptCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), nullptr);
+	Dbg<JSInterruptCallback> prev_interruptCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), nullptr);
 	ASSERT( prev_interruptCallback == interruptCallback );
 	JLSemaphoreRelease(_watchDogSemEnd);
 	JLThreadWait(_watchDogThread);
@@ -1066,32 +1066,6 @@ DEFINE_PROPERTY_GETTER( interruptInterval ) {
 }
 
 
-/* *doc
-$TOC_MEMBER $INAME
- $BOOL $INAME $READONLY
-** /
-DEFINE_PROPERTY_GETTER( incrementalGarbageCollector ) {
-
-	JL_IGNORE( id, obj );
-
-	uint32_t gcMode = JS_GetGCParameter(JL_GetRuntime(cx), JSGC_MODE);
-	JL_CHK( jl::setValue(cx, vp, gcMode == JSGC_MODE_INCREMENTAL) ); // JSGC_MODE_GLOBAL
-	return true;
-	JL_BAD;
-}
-
-DEFINE_PROPERTY_SETTER( incrementalGarbageCollector ) {
-
-	JL_IGNORE( strict, id, obj );
-
-	bool incGc;
-	JL_CHK( jl::getValue(cx, vp, &incGc) );
-	JS_SetGCParameter(JL_GetRuntime(cx), JSGC_MODE, incGc ? JSGC_MODE_INCREMENTAL : JSGC_MODE_GLOBAL);
-	return true;
-	JL_BAD;
-}
-*/
-
 /**doc
 $TOC_MEMBER $INAME
  $BOOL $INAME()
@@ -1217,9 +1191,9 @@ DEFINE_FUNCTION( collectGarbage ) {
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(0, 3);
 
-	bool requestIncrementalGC = jl::getValueDef(cx, JL_SARG(1), false);
-	int64_t sliceMillis = jl::getValueDef<int64_t>(cx, JL_SARG(2), 0);
-	bool requestAllZonesGC = jl::getValueDef(cx, JL_SARG(3), false);
+	bool requestIncrementalGC = jl::getValueDefault(cx, JL_SARG(1), false);
+	int64_t sliceMillis = jl::getValueDefault<int64_t>(cx, JL_SARG(2), 0);
+	bool requestAllZonesGC = jl::getValueDefault(cx, JL_SARG(3), false);
 
 	JSRuntime *rt = JL_GetRuntime(cx);
 

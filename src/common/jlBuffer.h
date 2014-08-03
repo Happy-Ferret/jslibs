@@ -124,7 +124,7 @@ public:
 	}
 
 	bool
-	empty() {
+	isEmpty() {
 
 		return !hasData() || used() == 0;
 	}
@@ -388,7 +388,7 @@ public:
 	}
 
 	bool
-	empty() {
+	isEmpty() const {
 
 		return !hasData() || used() == 0 || used() == size_t(_terminatorLength * charSize());
 	}
@@ -549,10 +549,10 @@ public:
 	bool
 	operator ==( const BufString &str ) const {
 
-		if ( !str && !*this )
+		if ( !str && isEmpty() )
 			return true;
 
-		if ( str == !*this )
+		if ( str == isEmpty() )
 			return false;
 
 		size_t len = length();
@@ -582,10 +582,10 @@ public:
 	bool
 	operator ==( const T *str ) const {
 	
-		if ( str == nullptr && !*this )
+		if ( str == nullptr && isEmpty() )
 			return true;
 
-		if ( (str != nullptr) == !*this )
+		if ( (str != nullptr) == isEmpty() )
 			return false;
 
 		if ( nt() ) {
@@ -604,6 +604,29 @@ public:
 
 		return !(operator ==(str));
 	}
+
+
+	template <class T>
+	bool
+	operator icmp( const T *str ) const {
+	
+		if ( str == nullptr && !*this )
+			return true;
+
+		if ( (str != nullptr) == !*this )
+			return false;
+
+		if ( nt() ) {
+
+			return dataAs<T*>() == str || (wide() ? jl::tstricmpUnsigned( dataAs<WideChar*>(), str ) == 0 : jl::tstricmpUnsigned( dataAs<char*>(), str ) == 0);
+		} else {
+
+			size_t len = length();
+			return jl::strlen( str ) == len && (wide() ? jl::tstrnicmpUnsigned( dataAs<WideChar*>(), str, len ) == 0 : jl::tstrnicmpUnsigned( dataAs<char*>(), str, len ) == 0);
+		}
+	}
+
+
 
 //
 
@@ -662,7 +685,7 @@ public:
 		typedef RemoveConst(Base) MutableBase;
 		const bool asConst = IsConst(Base);
 
-		ASSERT( this->operator bool() );
+		ASSERT( !isEmpty() );
 		ASSERT( charSize() > 0 && charSize() <= 2 );
 
 		const size_t len = length();

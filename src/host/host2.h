@@ -428,7 +428,7 @@ public:
 #if defined(MOZ_ASAN) || (defined(DEBUG) && !defined(XP_WIN))
 static const size_t defaultNativeStackQuota = 2 * 128 * sizeof(size_t) * 1024;
 #else
-static const size_t defaultNativeStackQuota = 128 * sizeof(size_t) * 1024;
+static const size_t defaultNativeStackQuota = 128 * sizeof(size_t) * 1024; // 512KB
 #endif
 
 class DLLAPI HostRuntime : public Valid, public Events, public jl::CppAllocators {

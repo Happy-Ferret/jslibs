@@ -150,8 +150,10 @@ class HostStdIO : public jl::StdIO {
 	int stderr_initMode;
 public:
 
-	HostStdIO()
-	: stdin_fileno(-1), stdout_fileno(-1), stderr_fileno(-1) {
+	HostStdIO()	:
+		stdin_fileno(-1),
+		stdout_fileno(-1),
+		stderr_fileno(-1) {
 	}
 
 	~HostStdIO() {
@@ -200,7 +202,7 @@ public:
 //		_setmode( stderr_fileno, _O_U16TEXT );
 //		return write( stderr_fileno, buf.toData<const wchar_t*>(), buf.length() * 2 );
 		
-		int prevMode = _setmode( stderr_fileno, buf.wide() ? _O_U16TEXT : _O_TEXT );
+		_setmode( stderr_fileno, buf.wide() ? _O_U16TEXT : _O_TEXT );
 		return write( stderr_fileno, buf.dataAs<const void*>(), buf.used() );
 	}
 };
@@ -485,6 +487,8 @@ _tmain( int argc, TCHAR* argv[] ) {
 		fprintf( stderr, "Help: http://code.google.com/p/jslibs/wiki/jshost#Command_line_options\n" );
 		return EXIT_SUCCESS;
 	} else {
+
+		jl::BufString data;
 
 		//JL_setMonoCPU();
 		JL_enableLowFragmentationHeap();

@@ -47,6 +47,18 @@ getNumberValue_slow( JSContext *cx, const JS::HandleValue &val, bool valIsDouble
 	if ( valIsDouble ) {
 
 		d = val.toDouble();
+
+		// if T is float
+		if ( jl::isTypeFloat32(*num) ) {
+
+			if ( abs(d) < ::std::numeric_limits<T>::max() ) { //if ( isInBounds<T>(d) ) {
+
+				*num = static_cast<T>(d);
+				return true;
+			}
+			goto bad_range;
+		}
+
 	} else {
 
 		// try getPrimitive instead ?
@@ -92,28 +104,16 @@ getNumberValue( JSContext *cx, const JS::HandleValue &val, T *num ) {
 		goto bad_range;
 	}
 
-	bool valIsDouble = val.isDouble();
+	bool isDouble = val.isDouble();
 	
 	// optimization when T and val are double
-	if ( jl::isTypeFloat64(*num) && valIsDouble ) {
+	if ( jl::isTypeFloat64(*num) && isDouble ) {
 
-		*num = (T)val.toDouble();
+		*num = static_cast<T>(val.toDouble());
 		return true;
 	}
 
-	// optimization when T is float
-	if ( jl::isTypeFloat32(*num) && valIsDouble ) {
-
-		double d = val.toDouble();
-		if ( abs(d) < ::std::numeric_limits<T>::max() ) { //if ( isInBounds<T>(d) ) {
-
-			*num = static_cast<T>(d);
-			return true;
-		}
-		goto bad_range;
-	}
-
-	return getNumberValue_slow(cx, val, valIsDouble, num);
+	return getNumberValue_slow(cx, val, isDouble, num);
 bad_range:
 	JL_ERR( E_VALUE, E_RANGE, E_INTERVAL_STR(SignificandStringValue<T>::min(), SignificandStringValue<T>::max()) );
 	JL_BAD;
@@ -124,8 +124,18 @@ bad_range:
 
 namespace pv {
 
+// bool
 INLINE NEVER_INLINE bool FASTCALL
-getValue_slow( JSContext *cx, JS::HandleValue val, jl::BufString* data ) {
+getBoolValue_slow( JSContext *cx, JS::HandleValue val, bool *b ) {
+
+	ASSERT( !val.isBoolean() );
+	return !( val.isUndefined() || val.isNull() || (val.isInt32() && val.toInt32() == 0) || (val.isString() && val == JL_GetEmptyStringValue(cx)) || (val.isDouble() && val.toDouble() == 0) );
+}
+
+
+// BufString
+INLINE NEVER_INLINE bool FASTCALL
+getStringValue_slow( JSContext *cx, JS::HandleValue val, jl::BufString* data ) {
 
 	if ( val.isObject() ) {
 
@@ -463,15 +473,19 @@ getValue( JSContext *cx, JS::HandleValue val, OUT jl::BufString* str ) {
 		str->get(cx, tmp);
 		return true;
 	}
-	return pv::getValue_slow(cx, val, str);
+	return pv::getStringValue_slow(cx, val, str);
 }
 
 
 ALWAYS_INLINE bool FASTCALL
 getValue( JSContext *cx, JS::HandleValue val, OUT bool *b ) {
 
-	*b = val.toBoolean();
-	return true;
+	if ( val.isBoolean() ) {
+		
+		*b = val.toBoolean();
+		return true;
+	}
+	return pv::getBoolValue_slow(cx, val, b);
 }
 
 ALWAYS_INLINE bool FASTCALL
@@ -563,7 +577,6 @@ getValue(JSContext *cx, JS::HandleValue val, OUT JS::MutableHandleValue* rval) {
 	return true;
 }
 
-
 ALWAYS_INLINE bool FASTCALL
 getValue(JSContext *cx, JS::HandleValue val, OUT JS::MutableHandleObject* obj) {
 
@@ -574,24 +587,7 @@ getValue(JSContext *cx, JS::HandleValue val, OUT JS::MutableHandleObject* obj) {
 }
 
 
-// example:
-//   bool requestIncrementalGC = jl::getValueDef(cx, JL_SARG(1), false);
-//   int64_t sliceMillis = jl::getValueDef<int64_t>(cx, JL_SARG(2), 0);
-
-template <typename T>
-ALWAYS_INLINE T FASTCALL
-getValueDef(JSContext *cx, JS::HandleValue val, IN T defaultValue ) {
-	
-	T value;
-	if ( !val.isUndefined() && getValue(cx, val, &value) )
-		return value;
-	return defaultValue;
-}
-
-
-
 // rooted OUT: JS::Rooted& / JS::Rooted* / JS::MutableHandle
-
 
 // since neither implicit constructors nor conversion operators are applied during template deduction, we have to force the JS::Rooted* to JS::MutableHandle conversion here.
 template <typename T>
@@ -611,6 +607,25 @@ getValue(JSContext *cx, JS::HandleValue val, OUT JS::MutableHandle<T> rval) {
 	return getValue(cx, val, &rval);
 }
 
+
+////
+
+
+// example:
+//   bool requestIncrementalGC = jl::getValueDefault(cx, JL_SARG(1), false);
+//   int64_t sliceMillis = jl::getValueDefault<int64_t>(cx, JL_SARG(2), 0);
+
+template <typename T>
+ALWAYS_INLINE T FASTCALL
+getValueDefault(JSContext *cx, JS::HandleValue val, IN const T defaultValue) {
+	
+	T value;
+	if ( !val.isUndefined() && getValue(cx, val, &value) )
+		return value;
+	if ( JS_IsExceptionPending(cx) )
+		JS_ClearPendingException(cx); // JS_ReportPendingException(cx);
+	return defaultValue;
+}
 
 
 ////////

@@ -58,7 +58,9 @@ enum {
 // simple helpers
 #define E_ERRNO( num )                E_ERRNO_1, num
 #define E_STR( str )                  E_STR_1, str
+#define E_STR16( str )                E_STR_1, static_cast<const wchar_t*>(str)
 #define E_NAME( str )                 E_NAME_1, str
+#define E_NAME16( str )               E_NAME_1, static_cast<const wchar_t*>(str)
 #define E_NUM( num )                  E_NUM_1, num
 #define E_COMMENT( str )              E_COMMENT_1, str
 #define E_COMMENT2( str1, str2 )      E_COMMENT_2, str1, str2

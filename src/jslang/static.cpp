@@ -1102,13 +1102,13 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	{
 		jl::BufBase b;
-		ASSERT( b.empty() );
+		ASSERT( b.isEmpty() );
 	}
 
 	{
 		jl::BufBase b("123", 3);
 		b.setEmpty();
-		ASSERT( b.empty() );
+		ASSERT( b.isEmpty() );
 	}
 
 	{
@@ -1198,30 +1198,30 @@ DEFINE_FUNCTION( jslangTest ) {
 		jl::BufString str;
 		str.setEmpty();
 		ASSERT(str == "");
-		ASSERT(str.empty());
+		ASSERT(str.isEmpty());
 	}
 
 	{
 		jl::BufString str;
 		ASSERT(str != "");
-		ASSERT(str.empty());
+		ASSERT(str.isEmpty());
 	}
 
 	{
 		jl::BufString str( jl::BufString().setEmpty() );
-		ASSERT( str.empty() );
+		ASSERT( str.isEmpty() );
 
 		jl::BufString str1 = jl::BufString();
-		ASSERT( str1.empty() );
+		ASSERT( str1.isEmpty() );
 
 		jl::BufString str3 = jl::BufBase();
-		ASSERT( str3.empty() );
+		ASSERT( str3.isEmpty() );
 
 		jl::BufString str2( jl::BufBase().setEmpty() );
-		ASSERT( str2.empty() );
+		ASSERT( str2.isEmpty() );
 
 		jl::BufBase str4;
-		ASSERT( str4.empty() );
+		ASSERT( str4.isEmpty() );
 	}
 
 	{

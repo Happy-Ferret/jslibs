@@ -31,23 +31,23 @@ static uint8_t embeddedBootstrapScript[] =
 
 #ifdef DEBUG
 
-	class hostIO : public jl::StdIO {
+class hostIO : public jl::StdIO {
 public:
-		int
-		output( jl::BufString &buf ) {
+	int
+	output( jl::BufString &buf ) {
 			
-			OutputDebugString( buf );
-			return buf.length();
-		}
+		OutputDebugString( buf );
+		return buf.length();
+	}
 
-		int
-		error( jl::BufString &buf ) {
+	int
+	error( jl::BufString &buf ) {
 
-			OutputDebugString( TEXT( "STDERR: " ) );
-			OutputDebugString( buf );
-			return 8 + buf.length();
-		}
-	} hostIO;
+		OutputDebugString( TEXT( "STDERR: " ) );
+		OutputDebugString( buf );
+		return 8 + buf.length();
+	}
+} hostIO;
 
 #else
 
@@ -125,7 +125,7 @@ int CALLBACK WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
 	{
 
-		HostRuntime hostRuntime(allocators, uint32_t(-1), HOST_STACK_SIZE / 2);
+		HostRuntime hostRuntime(allocators); // HOST_STACK_SIZE / 2
 		JSContext *cx = hostRuntime.context();
 
 		jl::Global global(hostRuntime);
