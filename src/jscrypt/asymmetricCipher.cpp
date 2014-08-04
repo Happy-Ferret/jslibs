@@ -149,14 +149,17 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &asymmetricCipherName) );
 
 	AsymmetricCipherType asymmetricCipher;
-	if ( strcasecmp( asymmetricCipherName, "RSA" ) == 0 )
+	if ( asymmetricCipherName == "RSA" )
 		asymmetricCipher = rsa;
-	else if ( strcasecmp( asymmetricCipherName, "DSA" ) == 0 )
+	else
+	if ( asymmetricCipherName == "DSA" )
 		asymmetricCipher = dsa;
-	else if ( strcasecmp( asymmetricCipherName, "ECC" ) == 0 )
+	else
+	if ( asymmetricCipherName == "ECC" )
 		asymmetricCipher = ecc;
 #ifdef MKAT
-	else if ( strcasecmp( asymmetricCipherName, "KATJA" ) == 0 )
+	else
+	if ( asymmetricCipherName == "KATJA" )
 		asymmetricCipher = katja;
 #endif
 	else
@@ -194,10 +197,10 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 			jl::BufString paddingName;
 			JL_CHK( jl::getValue(cx, JL_ARG(4), &paddingName) );
 
-			if ( strcasecmp(paddingName, "1_OAEP") == 0 ) {
+			if ( paddingName == "1_OAEP" ) {
 				pv->padding = LTC_LTC_PKCS_1_OAEP;
 			} else
-			if ( strcasecmp(paddingName, "1_V1_5") == 0 ) {
+			if ( paddingName == "1_V1_5" ) {
 				pv->padding = LTC_LTC_PKCS_1_V1_5;
 			} else
 				JL_ERR( E_ARG, E_NUM(4), E_INVALID, E_SEP, E_NAME(paddingName), E_NOTSUPPORTED );

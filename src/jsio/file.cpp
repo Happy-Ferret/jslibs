@@ -534,7 +534,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 	//JL_ASSERT( bytesSent == (int)buf.length(), E_FILE, E_NAME(fileName), E_WRITE );
 	if ( bytesSent != (int)buf.length() ) {
 
-		JL_ERR( E_FILE, E_NAME((const wchar_t*)fileName), E_WRITE );
+		JL_ERR( E_FILE, E_NAME(fileName), E_WRITE );
 	}
 
 	if ( PR_Close(fd) != PR_SUCCESS )

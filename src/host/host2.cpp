@@ -769,8 +769,7 @@ bad:
 
 
 //////////////////////////////////////////////////////////////////////////////
-// Host
-
+// ErrorManager
 
 /*
 wchar_t *ErrorManager::_errorMessageNameList[] = {
@@ -838,6 +837,22 @@ ErrorManager::errorCallback(void *userRef, const unsigned errorNumber) {
 	return (JSErrorFormatString*)userRef;
 }
 
+
+
+// ErrArg
+
+ErrorManager::ErrArg::ErrArg( jl::BufString & val ) {
+			
+	if ( val.isWide() ) {
+
+		_type = ErrArg::WSTRING;
+		_wstring = val.toStringZ<const wchar_t*>();
+	} else {
+
+		_type = ErrArg::STRING;
+		_string = val.toStringZ<const char*>();
+	}
+}
 
 
 bool
@@ -956,6 +971,8 @@ bad:
 }
 
 
+//////////////////////////////////////////////////////////////////////////////
+// Host
 
 
 BEGIN_CLASS( host )

@@ -59,5 +59,18 @@ JS_NewObjectForConstructor(JSContext *cx, const JSClass *cl, const jsval *vp) {
 }
 */
 
+/*
+void foo() {
 
+	JS_GetRuntime(cx) // return cx->runtime();
+	JS_GetRuntimePrivate() // return rt->data;
+	JS_GetContextPrivate() // return cx->data;
+	JS_GetSecondContextPrivate(JSContext *cx) // return cx->data2;
 
+	JS_GetCompartmentPrivate() // return compartment->data;
+	JS_GetPrivate(JSObject *obj) // return obj->getPrivate();
+
+	js::GetContextCompartment(cx) // already inline
+	GetObjectPrivate(JSObject *obj) // already inline
+}
+*/

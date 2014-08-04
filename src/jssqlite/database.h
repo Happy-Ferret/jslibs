@@ -189,7 +189,7 @@ jsvalToSqlite( JSContext *cx, T sqliteTarget, IN JS::HandleValue val ) {
 		jl::BufString buf;
 		JL_CHK( jl::getValue( cx, val, &buf ) );
 		// beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
-		if ( buf.wide() )
+		if ( buf.isWide() )
 			sqliteStatus = sqliteTarget.setText16( buf.toData<const jschar*>(), buf.length() * buf.charSize(), SQLITE_STATIC );
 		else
 			sqliteStatus = sqliteTarget.setText( buf.toData<const char*>(), buf.length(), SQLITE_STATIC );

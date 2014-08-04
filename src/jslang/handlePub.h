@@ -46,8 +46,9 @@ public:
 	HandlePrivate() {
 
 		//for ( int i = 0; i < JL_HANDLE_PUBLIC_SLOT_COUNT; ++i )
-		//	slots[i] = JL_VALUEZ;
+		//	_slots[i] = JL_VALUEZ;
 		memset(_slots, 0, sizeof(_slots));
+		
 		_dynSlotsCount = 0;
 		_dynSlots = NULL;
 
@@ -76,11 +77,12 @@ public:
 			
 			_dynSlots = static_cast<JS::Value*>(jl_realloc(_dynSlots, sizeof(JS::Value) * count));
 		}
+
 		memset(_dynSlots, 0, sizeof(JS::Value) * count);
 
 		_dynSlotsCount = count;
 		ASSERT_IF( _dynSlotsCount >= 1, _dynSlots[0] == JL_VALUEZ );
-		ASSERT_IF( _dynSlotsCount >= 1, !_slots[0].isMarkable() );
+		ASSERT_IF( _dynSlotsCount >= 1, !_dynSlots[0].isMarkable() );
 		return _dynSlots != 0;
 	}
 

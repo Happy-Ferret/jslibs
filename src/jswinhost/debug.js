@@ -26,6 +26,8 @@ throw 0;
 
 
 
+
+
 	loadModule('jsstd');
 	exec('qwer');
 throw 0;

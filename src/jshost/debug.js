@@ -8,12 +8,12 @@ var loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('serial'); throw 0; // -inlineOnly
 
 
+
 	loadModule('jsstd');
-	//print(0b10000000000000000000000000000000);
 
 	host.interruptInterval = 100;
 
-	host.onInterrupt = function() {
+	host.onInterrupt = () => {
 
 		var interruptInterval = host.interruptInterval;
 		var completed = host.collectGarbage(true, 50, "test");

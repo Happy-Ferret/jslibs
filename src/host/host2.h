@@ -833,7 +833,7 @@ public:
 
 class DLLAPI ErrorManager {
 public:
-	class ErrArg {
+	class DLLAPI ErrArg {
 	public:	
 		enum ErrArgType {
 			UNDEFINED,
@@ -889,6 +889,8 @@ public:
 		ErrArg( const wchar_t * val )
 		: _type(ErrArg::WSTRING), _wstring(val) {
 		}
+
+		ErrArg( jl::BufString & val );
 
 		ErrArgType
 		type() const {

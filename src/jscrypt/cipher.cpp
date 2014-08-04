@@ -165,22 +165,30 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &modeName) ); // warning: GC on the returned buffer !
 
 	CryptMode mode;
-	if ( strcasecmp( modeName, "ECB" ) == 0 )
+	if ( modeName == "ECB" )
 		mode = mode_ecb;
-	else if ( strcasecmp( modeName, "CFB" ) == 0 )
+	else
+	if ( modeName == "CFB" )
 		mode = mode_cfb;
-	else if ( strcasecmp( modeName, "OFB" ) == 0 )
+	else
+	if ( modeName == "OFB" )
 		mode = mode_ofb;
-	else if ( strcasecmp( modeName, "CBC" ) == 0 )
+	else
+	if ( modeName == "CBC" )
 		mode = mode_cbc;
-	else if ( strcasecmp( modeName, "CTR" ) == 0 )
+	else
+	if ( modeName == "CTR" )
 		mode = mode_ctr;
-	else if ( strcasecmp( modeName, "LRW" ) == 0 )
+	else
+	if ( modeName == "LRW" )
 		mode = mode_lrw;
-	else if ( strcasecmp( modeName, "F8" ) == 0 )
+	else
+	if ( modeName == "F8" )
 		mode = mode_f8;
 	else
 		JL_ERR( E_ARG, E_NUM(1), E_INVALID, E_SEP, E_NAME(modeName), E_NOTSUPPORTED );
+
+
 
 	JL_CHK( jl::getValue(cx, JL_ARG(2), &cipherName) ); // warning: GC on the returned buffer !
 	JL_CHK( jl::getValue(cx, JL_ARG(3), &key) ); // warning: GC on the returned buffer !

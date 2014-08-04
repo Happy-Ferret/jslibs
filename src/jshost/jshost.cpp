@@ -62,9 +62,7 @@ struct CmdLineArguments {
 	bool useFileBootstrapScript;
 	const TCHAR *inlineScript;
 	jl::EncodingType encoding;
-#ifdef DEBUG
-	bool debug;
-#endif // DEBUG
+	IFDEBUG( bool debug );
 
 	int jsArgc;
 	TCHAR** jsArgv;
@@ -81,10 +79,8 @@ struct CmdLineArguments {
 		inlineScript = NULL;
 		help = false;
 		encoding = jl::EncodingType::ENC_UNKNOWN;
-#ifdef DEBUG
-		debug = false;
-#endif // DEBUG
-
+		IFDEBUG( debug = false );
+		
 
 		TCHAR** argumentVector = argv;
 		for ( argumentVector++; argumentVector[0] && argumentVector[0][0] == '-'; argumentVector++ )
@@ -202,7 +198,7 @@ public:
 //		_setmode( stderr_fileno, _O_U16TEXT );
 //		return write( stderr_fileno, buf.toData<const wchar_t*>(), buf.length() * 2 );
 		
-		_setmode( stderr_fileno, buf.wide() ? _O_U16TEXT : _O_TEXT );
+		_setmode( stderr_fileno, buf.isWide() ? _O_U16TEXT : _O_TEXT );
 		return write( stderr_fileno, buf.dataAs<const void*>(), buf.used() );
 	}
 };

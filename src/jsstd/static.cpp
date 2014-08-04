@@ -1309,6 +1309,29 @@ DEFINE_FUNCTION( isStatementValid ) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
 $TOC_MEMBER $INAME
+ $BOOL $INAME( maxFrameCount )
+  Capture the current call stack as a chain of SavedFrame objects, and returns the SavedFrame for the newest stack frame. If _maxFrameCount_ is given, capture at most the youngest _maxFrameCount_ frames.
+  $H example
+  {{{
+  loadModule('jsstd');
+  }}}
+**/
+DEFINE_FUNCTION( captureCurrentStack ) {
+
+	JL_DEFINE_ARGS;
+
+	JS::RootedObject stack(cx);
+	JL_CHK( JS::CaptureCurrentStack(cx, &stack, jl::getValueDefault(cx, JL_SARG(1), 0U)) );
+	JL_RVAL.setObject(*stack);
+
+	return true;
+	JL_BAD;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/**doc
+$TOC_MEMBER $INAME
  $VOID $INAME()
   Stop the execution of the program. This is a ungraceful way to finish a program and should only be used in critical cases.
 **/
@@ -1916,6 +1939,7 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( exec, 2 )
 		FUNCTION_ARGC( sandboxEval, 3 )
 		FUNCTION_ARGC( isStatementValid, 1 )
+		FUNCTION_ARGC( captureCurrentStack, 1)
 		FUNCTION_ARGC( stringRepeat, 2 )
 		FUNCTION_ARGC( print, 1 ) // ...
 		FUNCTION_ARGC( sleep, 1 )

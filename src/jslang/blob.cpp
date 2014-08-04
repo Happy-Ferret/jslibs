@@ -89,6 +89,7 @@ DEFINE_PROPERTY_GETTER( string ) {
 		int32_t size = JL_RVAL.toInt32();
 		if ( size > 0 ) {
 
+			// wait for Bug 1045830 - restore JS_NewString function for latin1 strings
 			jl::BufString(static_cast<char*>(JL_GetPrivate(JL_OBJ)), size, false).toString(cx, JL_RVAL);
 		} else {
 

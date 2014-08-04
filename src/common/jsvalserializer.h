@@ -952,31 +952,31 @@ public:
 				JS::RootedObject arrayBuffer(cx, JS_NewArrayBufferWithContents(cx, data.Length(), arrayBufferContents));
 				JS::RootedObject typedArray(cx);
 				switch ( type ) {
-				case js::Scalar::Type::Int8:
+				case js::Scalar::Int8:
 						typedArray = JS_NewInt8ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
-					case js::Scalar::Type::Uint8:
+					case js::Scalar::Uint8:
 						typedArray = JS_NewUint8ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
-					case js::Scalar::Type::Int16:
+					case js::Scalar::Int16:
 						typedArray = JS_NewInt16ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
-					case js::Scalar::Type::Uint16:
+					case js::Scalar::Uint16:
 						typedArray = JS_NewUint16ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
-					case js::Scalar::Type::Int32:
+					case js::Scalar::Int32:
 						typedArray = JS_NewInt32ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
-					case js::Scalar::Type::Uint32:
+					case js::Scalar::Uint32:
 						typedArray = JS_NewUint32ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
-					case js::Scalar::Type::Float32:
+					case js::Scalar::Float32:
 						typedArray = JS_NewFloat32ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
-					case js::Scalar::Type::Float64:
+					case js::Scalar::Float64:
 						typedArray = JS_NewFloat64ArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
-					case js::Scalar::Type::Uint8Clamped:
+					case js::Scalar::Uint8Clamped:
 						typedArray = JS_NewUint8ClampedArrayWithBuffer(cx, arrayBuffer, 0, -1);
 						break;
 				}

@@ -180,10 +180,7 @@ JL_GetPrivate( IN JS::HandleValue val ) {
 
 	ASSERT( val.isObject() );
 	ASSERT( JS_IsNative(&val.toObject()) );
-//	ASSERT( JL_HasPrivate(JS::HandleObject::fromMarkedLocation(val.toObjectOrNull())) );
-	// JS::RootedObject obj(cx, &val.toObject());
-	// return JL_GetPrivate(obj);
-	return js::GetObjectPrivate(&val.toObject()); // jsfriendapi // rooting issue?
+	return js::GetObjectPrivate(&val.toObject()); // jsfriendapi
 }
 
 ALWAYS_INLINE void FASTCALL
@@ -389,13 +386,13 @@ valueZero() {
 }
 
 
-const jsval JSVAL_NULL  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_NULL,      0));
-const jsval JSVAL_ZERO  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_INT32,     0));
-const jsval JSVAL_ONE   = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_INT32,     1));
-const jsval JSVAL_FALSE = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_BOOLEAN,   false));
-const jsval JSVAL_TRUE  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_BOOLEAN,   true));
-const jsval JSVAL_VOID  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_UNDEFINED, 0));
-const jsval JSVAL_Z  = valueZero();
+const JS::Value JSVAL_NULL  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_NULL,      0));
+const JS::Value JSVAL_ZERO  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_INT32,     0));
+const JS::Value JSVAL_ONE   = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_INT32,     1));
+const JS::Value JSVAL_FALSE = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_BOOLEAN,   false));
+const JS::Value JSVAL_TRUE  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_BOOLEAN,   true));
+const JS::Value JSVAL_VOID  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_UNDEFINED, 0));
+const JS::Value JSVAL_Z  = valueZero();
 
 const JS::HandleValue NullHandleValue = JS::HandleValue::fromMarkedLocation(&JSVAL_NULL);
 const JS::HandleValue UndefinedHandleValue = JS::HandleValue::fromMarkedLocation(&JSVAL_VOID);

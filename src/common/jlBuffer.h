@@ -82,7 +82,7 @@ public:
 		if ( hasData() && owner() )
 			free();
 		setData(data, !IsConst(T));
-		setAllocSize(size);
+		setAllocSize(size); // at least
 		setUsed(size);
 	}
 
@@ -329,6 +329,9 @@ public:
 
 ////////
 
+S_ASSERT( sizeof(jschar) != sizeof(char) );
+S_ASSERT( sizeof(jschar) == sizeof(wchar_t) );
+
 
 class BufString : public BufBase {
 	typedef jschar WideChar;
@@ -354,13 +357,13 @@ public:
 	}
 
 	bool
-	wide() const {
+	isWide() const {
 
 		return _charSize == sizeof(WideChar);
 	}
 
 	bool
-	nt() const {
+	isNt() const {
 
 		return _terminatorLength != 0;
 	}
@@ -415,7 +418,7 @@ public:
 
 		BufBase::get(buf, withOwnership);
 		setCharSize( buf.charSize() );
-		setNt( buf.nt() );
+		setNt( buf.isNt() );
 	}
 
 	void
@@ -423,18 +426,21 @@ public:
 
 		size_t len;
 		JS::AutoCheckCannotGC nogc;
+		// doc: Flat strings and interned strings are always null-terminated so JS_FlattenString can be used to get a null-terminated string.
+		bool isFlatOrInterned = JS_StringIsFlat(str) || JS_StringHasBeenInterned(cx, str);
 		if ( JS_StringHasLatin1Chars(str) ) {
 
 			const JS::Latin1Char *chars = JS_GetLatin1StringCharsAndLength(cx, nogc, str, &len);
-			get(chars, len, false);
-			_charSize = sizeof(*chars);
+			get(chars, len, isFlatOrInterned);
+			ASSERT( !isWide() );
 		} else {
 
 			const jschar *chars = JS_GetTwoByteStringCharsAndLength(cx, nogc, str, &len);
-			get(chars, len, false);
-			_charSize = sizeof(*chars);
+			get(chars, len, isFlatOrInterned);
+			ASSERT( isWide() );
 		}
-		_terminatorLength = 0;
+
+		assertIntegrity();
 	}
 
 //
@@ -455,24 +461,25 @@ public:
 		if ( IS_DEBUG ) {
 
 			ASSERT( hasData() );
-			ASSERT_IF( used() == UnknownSize, nt() );
+			ASSERT_IF( used() == UnknownSize, isNt() );
 
 			size_t len;
 			if ( used() == UnknownSize ) {
 
-				len = wide() ? jl::strlen(dataAs<WideChar*>()) : jl::strlen(dataAs<char*>());
+				len = isWide() ? jl::strlen(dataAs<WideChar*>()) : jl::strlen(dataAs<NarrowChar*>());
 			} else {
 				
 				len = used() / charSize() - _terminatorLength;
 			}
 
-			ASSERT_IF( used() != UnknownSize && wide(), used() % 2 == 0 );
-			ASSERT_IF( owner() && wide() && !nt(), jl_msize(data()) >= len*2 );
-			ASSERT_IF( owner() && !wide() && !nt(), jl_msize(data()) >= len );
-			ASSERT_IF( owner() && wide() && nt(), jl_msize(data()) >= len*2+2 );
-			ASSERT_IF( owner() && !wide() && nt(), jl_msize(data()) >= len+1 );
-			ASSERT_IF( nt() && wide(), ((jschar*)data())[len] == 0 );
-			ASSERT_IF( nt() && !wide(), ((char*)data())[len] == 0 );
+			ASSERT_IF( used() != UnknownSize && isWide(), used() % 2 == 0 );
+			ASSERT_IF( owner() && isWide() && !isNt(), jl_msize(data()) >= len*2 );
+			ASSERT_IF( owner() && !isWide() && !isNt(), jl_msize(data()) >= len );
+			ASSERT_IF( owner() && isWide() && isNt(), jl_msize(data()) >= len*2+2 );
+			ASSERT_IF( owner() && !isWide() && isNt(), jl_msize(data()) >= len+1 );
+			ASSERT_IF( isNt() && isWide(), ((jschar*)data())[len] == 0 );
+			ASSERT_IF( isNt() && !isWide(), ((char*)data())[len] == 0 );
+			ASSERT_IF( used() != UnknownSize, used() / charSize() >= _terminatorLength );
 		}
 	}
 	
@@ -492,28 +499,7 @@ public:
 
 	explicit BufString( JSContext *cx, JS::HandleString str ) {
 
-/*
-		size_t len;
-		const jschar *chars = JS_GetStringCharsAndLength(cx, str, &len);
-		get(chars, len, false);
-*/
-		size_t len;
-		JS::AutoCheckCannotGC nogc;
-		if ( JS_StringHasLatin1Chars(str) ) {
-
-			const JS::Latin1Char *chars = JS_GetLatin1StringCharsAndLength(cx, nogc, str, &len);
-			get(chars, len, false);
-			_charSize = sizeof(*chars);
-		} else {
-
-			const jschar *chars = JS_GetTwoByteStringCharsAndLength(cx, nogc, str, &len);
-			get(chars, len, false);
-			_charSize = sizeof(*chars);
-		}
-		_terminatorLength = 0;
-
-
-		assertIntegrity();
+		get(cx, str);
 	}
 
 //
@@ -524,7 +510,7 @@ public:
 		size_t len;
 		if ( used() == UnknownSize ) {
 
-			len = wide() ? jl::strlen(dataAs<WideChar*>()) : jl::strlen(dataAs<char*>());
+			len = isWide() ? jl::strlen(dataAs<WideChar*>()) : jl::strlen(dataAs<NarrowChar*>());
 			setUsed((len + 1) * charSize());
 			setAllocSize(used());
 		} else {
@@ -549,21 +535,21 @@ public:
 	bool
 	operator ==( const BufString &str ) const {
 
-		if ( !str && isEmpty() )
+		if ( str.isEmpty() && isEmpty() )
 			return true;
 
-		if ( str == isEmpty() )
+		if ( !str.isEmpty() == isEmpty() )
 			return false;
 
 		size_t len = length();
 		if ( len == str.length() ) {
 
-			if ( wide() ) {
+			if ( isWide() ) {
 			
-				return str.wide() ? jl::tstrncmp(dataAs<WideChar*>(), str.dataAs<WideChar*>(), len) == 0 : jl::tstrncmpUnsigned(dataAs<WideChar*>(), str.dataAs<char*>(), len) == 0;
+				return str.isWide() ? jl::tstrncmp(dataAs<WideChar*>(), str.dataAs<WideChar*>(), len) == 0 : jl::tstrncmpUnsigned(dataAs<WideChar*>(), str.dataAs<NarrowChar*>(), len) == 0;
 			} else {
 
-				return str.wide() ? jl::tstrncmp( dataAs<char*>(), str.dataAs<WideChar*>(), len ) == 0 : jl::tstrncmpUnsigned( dataAs<char*>(), str.dataAs<char*>(), len) == 0;
+				return str.isWide() ? jl::tstrncmp( dataAs<NarrowChar*>(), str.dataAs<WideChar*>(), len ) == 0 : jl::tstrncmpUnsigned( dataAs<NarrowChar*>(), str.dataAs<NarrowChar*>(), len) == 0;
 			}
 		} else {
 
@@ -588,13 +574,13 @@ public:
 		if ( (str != nullptr) == isEmpty() )
 			return false;
 
-		if ( nt() ) {
+		if ( isNt() ) {
 
-			return dataAs<T*>() == str || (wide() ? jl::tstrcmpUnsigned( dataAs<WideChar*>(), str ) == 0 : jl::tstrcmpUnsigned( dataAs<char*>(), str ) == 0);
+			return dataAs<T*>() == str || (isWide() ? jl::tstrcmpUnsigned( dataAs<WideChar*>(), str ) == 0 : jl::tstrcmpUnsigned( dataAs<NarrowChar*>(), str ) == 0);
 		} else {
 
 			size_t len = length();
-			return jl::strlen( str ) == len && (wide() ? jl::tstrncmpUnsigned( dataAs<WideChar*>(), str, len ) == 0 : jl::tstrncmpUnsigned( dataAs<char*>(), str, len ) == 0);
+			return jl::strlen( str ) == len && (isWide() ? jl::tstrncmpUnsigned( dataAs<WideChar*>(), str, len ) == 0 : jl::tstrncmpUnsigned( dataAs<NarrowChar*>(), str, len ) == 0);
 		}
 	}
 
@@ -605,27 +591,27 @@ public:
 		return !(operator ==(str));
 	}
 
-
+/*
 	template <class T>
 	bool
 	operator icmp( const T *str ) const {
 	
-		if ( str == nullptr && !*this )
+		if ( str == nullptr && isEmpty() )
 			return true;
 
-		if ( (str != nullptr) == !*this )
+		if ( (str != nullptr) == isEmpty() )
 			return false;
 
-		if ( nt() ) {
+		if ( isNt() ) {
 
-			return dataAs<T*>() == str || (wide() ? jl::tstricmpUnsigned( dataAs<WideChar*>(), str ) == 0 : jl::tstricmpUnsigned( dataAs<char*>(), str ) == 0);
+			return dataAs<T*>() == str || (isWide() ? jl::tstricmpUnsigned( dataAs<WideChar*>(), str ) == 0 : jl::tstricmpUnsigned( dataAs<NarrowChar*>(), str ) == 0);
 		} else {
 
 			size_t len = length();
-			return jl::strlen( str ) == len && (wide() ? jl::tstrnicmpUnsigned( dataAs<WideChar*>(), str, len ) == 0 : jl::tstrnicmpUnsigned( dataAs<char*>(), str, len ) == 0);
+			return jl::strlen( str ) == len && (isWide() ? jl::tstrnicmpUnsigned( dataAs<WideChar*>(), str, len ) == 0 : jl::tstrnicmpUnsigned( dataAs<NarrowChar*>(), str, len ) == 0);
 		}
 	}
-
+*/
 
 
 //
@@ -642,10 +628,10 @@ public:
 			retChar = dataAs<T*>()[index];
 		else
 		if (sizeof(T) == sizeof(NarrowChar))
-			retChar = wide() ? dataAs<WideChar*>()[index] : dataAs<NarrowChar*>()[index];
+			retChar = isWide() ? dataAs<WideChar*>()[index] : dataAs<NarrowChar*>()[index];
 		else
 		if ( sizeof(T) == sizeof(WideChar) )
-			retChar = wide() ? dataAs<WideChar*>()[index] : dataAs<NarrowChar*>()[index];
+			retChar = isWide() ? dataAs<WideChar*>()[index] : dataAs<NarrowChar*>()[index];
 		else
 			ASSERT(false);
 		
@@ -685,25 +671,26 @@ public:
 		typedef RemoveConst(Base) MutableBase;
 		const bool asConst = IsConst(Base);
 
-		ASSERT( !isEmpty() );
+		ASSERT( this-operator bool() );
 		ASSERT( charSize() > 0 && charSize() <= 2 );
 
 		const size_t len = length();
 
-		ASSERT_IF( len == UnknownSize, nt() );
-		ASSERT_IF( len != UnknownSize && owner() && wide() && !nt(), jl_msize(data()) >= len*2 );
-		ASSERT_IF( len != UnknownSize && owner() && !wide() && !nt(), jl_msize(data()) >= len );
-		ASSERT_IF( len != UnknownSize && owner() && wide() && nt(), jl_msize(data()) >= len*2+2 );
-		ASSERT_IF( len != UnknownSize && owner() && !wide() && nt(), jl_msize(data()) >= len+1 );
-		ASSERT_IF( len != UnknownSize && nt() && wide(), ((jschar*)data())[len] == 0 );
-		ASSERT_IF( len != UnknownSize && nt() && !wide(), ((char*)data())[len] == 0 );
-		ASSERT_IF( wide(), used() % 2 == 0 );
+		ASSERT_IF( len == UnknownSize, isNt() );
+		ASSERT_IF( len != UnknownSize && owner() && isWide() && !isNt(), jl_msize(data()) >= len*2 );
+		ASSERT_IF( len != UnknownSize && owner() && !isWide() && !isNt(), jl_msize(data()) >= len );
+		ASSERT_IF( len != UnknownSize && owner() && isWide() && isNt(), jl_msize(data()) >= len*2+2 );
+		ASSERT_IF( len != UnknownSize && owner() && !isWide() && isNt(), jl_msize(data()) >= len+1 );
+		ASSERT_IF( len != UnknownSize && isNt() && isWide(), ((jschar*)data())[len] == 0 );
+		ASSERT_IF( len != UnknownSize && isNt() && !isWide(), ((char*)data())[len] == 0 );
+		ASSERT_IF( isWide(), used() % 2 == 0 );
+		ASSERT_IF( len != UnknownSize, used() / charSize() >= _terminatorLength );
 
 		if ( data() == nullptr )
 			return nullptr;
 
 		// something to do ?
-		if ( sizeof(Base) != charSize() || (!asConst && !owner()) || (nullTerminated && !nt()) ) {
+		if ( sizeof(Base) != charSize() || (!asConst && !owner()) || (nullTerminated && !isNt()) ) {
 
 			const size_t requiredSize = (len + (nullTerminated ? 1 : 0)) * sizeof(Base);
 
@@ -781,9 +768,9 @@ public:
 	}
 
 	ALWAYS_INLINE
-	operator const char *() {
+	operator const NarrowChar *() {
 
-		return toStringZOrNull<const char*>();
+		return toStringZOrNull<const NarrowChar*>();
 	}
 
 	ALWAYS_INLINE
@@ -875,7 +862,7 @@ ALWAYS_INLINE
 bool
 UTF16LEToUTF8( jl::BufString &dstBuf, jl::BufString &srcBuf ) {
 
-	ASSERT(srcBuf.wide());
+	ASSERT(srcBuf.isWide());
 
 	const uint8_t *src = reinterpret_cast<const uint8_t *>(srcBuf.toData<const wchar_t *>());
 	const uint8_t *srcEnd = src + srcBuf.length() * 2;

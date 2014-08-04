@@ -720,8 +720,13 @@ struct IOProcessEvent : public ProcessEvent2 {
 
 	bool prepareWait(JSContext *cx, JS::HandleObject obj) {
 
+		ASSERT( !JS::IsPoisonedValue(slot(0)) );
+		//ASSERT( !JS::IsPoisonedValue(js::GetObjectSlot(&hslot(0).toObject(), 0)) );
+
 		JS::RootedValue descriptor(cx);
-		JS::RootedObject fdArrayObj(cx, &slot(0).toObject());
+		JS::RootedObject fdArrayObj(cx, &hslot(0).toObject());
+		ASSERT( jl::isArrayLike(cx, hslot(0)) );
+
 		JL_CHK( JS_GetArrayLength(cx, fdArrayObj, &_fdCount) );
 
 		_pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * (1 + _fdCount)); // pollDesc[0] is the peCancel event fd, _fdCount excludes peCancel descriptior.

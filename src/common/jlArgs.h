@@ -107,7 +107,8 @@ public:
 			_thisObj.set( &tmp.toObject() );
 		} else
 		if ( tmp.isNullOrUndefined() ) {
-
+			
+			ASSERT( JL_GetGlobal(_cx) != nullptr );
 			_thisObj.set( JL_GetGlobal(_cx) ); //_thisObj.set( JS_GetGlobalForObject(_cx, &_jsargs.callee() ) );
 		} else {
 

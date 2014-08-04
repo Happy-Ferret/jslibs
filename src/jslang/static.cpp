@@ -317,7 +317,7 @@ DEFINE_FUNCTION( indexOf ) {
 		start = 0;
 	}
 
-	if ( srcStr.wide() )
+	if ( srcStr.isWide() )
 		JL_RVAL.setInt32( jl::Match(srcStr.toData<const jschar *>()+start, srcStr.length()-start, patStr.toData<const jschar *>(), patStr.length()) );
 	else
 		JL_RVAL.setInt32( jl::Match(srcStr.toData<const char *>()+start, srcStr.length()-start, patStr.toData<const char *>(), patStr.length()) );

@@ -289,7 +289,7 @@ DEFINE_SET_PROPERTY() {
 
 		switch ( hr ) {
 			case DISP_E_BADPARAMCOUNT: // doc. An error return value that indicates that the number of elements provided to the method is different from the number of arguments accepted by the method.
-				JL_ERR( E_NAME((const wchar_t*)name), E_WRITE ); //JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "read-only property"); // (TBD) be more specific
+				JL_ERR( E_NAME(name), E_WRITE ); //JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "read-only property"); // (TBD) be more specific
 				return true;
 			//case DISP_E_PARAMNOTFOUND:
 			//	JL_REPORT_WARNING("Invalid argument %d.", argErr);

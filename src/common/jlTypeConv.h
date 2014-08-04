@@ -163,7 +163,7 @@ getStringValue_slow( JSContext *cx, JS::HandleValue val, jl::BufString* data ) {
 			uint32_t length = JS_GetTypedArrayLength(obj);
 			if ( length ) {
 
-				if ( JS_GetArrayBufferViewType(obj) == js::Scalar::Type::Uint16 )
+				if ( JS_GetArrayBufferViewType(obj) == js::Scalar::Uint16 )
 					data->get(reinterpret_cast<const jschar*>(JS_GetUint16ArrayData(obj)), length, false);
 				else
 					data->get(static_cast<const uint8_t*>(JS_GetArrayBufferViewData(obj)), length, false);
@@ -962,14 +962,14 @@ setVector( JSContext *cx, JS::MutableHandleValue rval, const T *vector, uint32_t
 
 
 
-ALWAYS_INLINE js::Scalar::Type JLNativeTypeToTypedArrayType(const int8_t &) { return js::Scalar::Type::Int8; }
-ALWAYS_INLINE js::Scalar::Type JLNativeTypeToTypedArrayType(const uint8_t &) { return js::Scalar::Type::Uint8; }
-ALWAYS_INLINE js::Scalar::Type JLNativeTypeToTypedArrayType(const int16_t &) { return js::Scalar::Type::Int16; }
-ALWAYS_INLINE js::Scalar::Type JLNativeTypeToTypedArrayType(const uint16_t &) { return js::Scalar::Type::Uint16; }
-ALWAYS_INLINE js::Scalar::Type JLNativeTypeToTypedArrayType(const int32_t &) { return js::Scalar::Type::Int32; }
-ALWAYS_INLINE js::Scalar::Type JLNativeTypeToTypedArrayType(const uint32_t &) { return js::Scalar::Type::Uint32; }
-ALWAYS_INLINE js::Scalar::Type JLNativeTypeToTypedArrayType(const float32_t &) { return js::Scalar::Type::Float32; }
-ALWAYS_INLINE js::Scalar::Type JLNativeTypeToTypedArrayType(const float64_t &) { return js::Scalar::Type::Float64; }
+ALWAYS_INLINE js::Scalar::Type JLNativeTypeToTypedArrayType(const int8_t &) { return js::Scalar::Int8; }
+ALWAYS_INLINE js::Scalar::Type JLNativeTypeToTypedArrayType(const uint8_t &) { return js::Scalar::Uint8; }
+ALWAYS_INLINE js::Scalar::Type JLNativeTypeToTypedArrayType(const int16_t &) { return js::Scalar::Int16; }
+ALWAYS_INLINE js::Scalar::Type JLNativeTypeToTypedArrayType(const uint16_t &) { return js::Scalar::Uint16; }
+ALWAYS_INLINE js::Scalar::Type JLNativeTypeToTypedArrayType(const int32_t &) { return js::Scalar::Int32; }
+ALWAYS_INLINE js::Scalar::Type JLNativeTypeToTypedArrayType(const uint32_t &) { return js::Scalar::Uint32; }
+ALWAYS_INLINE js::Scalar::Type JLNativeTypeToTypedArrayType(const float32_t &) { return js::Scalar::Float32; }
+ALWAYS_INLINE js::Scalar::Type JLNativeTypeToTypedArrayType(const float64_t &) { return js::Scalar::Float64; }
 
 ALWAYS_INLINE const char * JLNativeTypeToString( const int8_t & ) { return "Int8Array"; }
 ALWAYS_INLINE const char * JLNativeTypeToString( const uint8_t & ) { return "Uint8Array"; }

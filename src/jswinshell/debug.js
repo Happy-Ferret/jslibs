@@ -2,8 +2,6 @@ var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
 
-
-
 	loadModule('jsio');
 	loadModule('jsstd');
 	loadModule('jswinshell');
@@ -23,10 +21,8 @@ var loadModule = host.loadModule;
 
 	function log(msg) {
 
-		print( stringify(msg).replace(/\n/g, '\n   '), '\n' );
+//		print( stringify(msg).replace(/\n/g, '\n   '), '\n' );
 	}
-
-
 
 
 	function Buffer() {
@@ -132,119 +128,117 @@ var loadModule = host.loadModule;
 		bits:16,
 		channels:2,
 		rate:44100,
-		frames: 1000  * 44100 / 1000
+		frames: 5  * 44100 / 1000
 	};
 
 
 
-	var webPage = (function() {/*
-	<!DOCTYPE html>
-	<html>
-	<head>
+	var webPage = 
+`<!DOCTYPE html>
+<html>
+<head>
 	<meta name="viewport" content="initial-scale=1.5">
 	<title>Exemple</title>
-	</head>
-	<body>
+</head>
+<body>
 	<input type="button" value="stop" onclick="socket.close()"></div>
 	<input type="button" value="reload" onclick="location.reload(true)"></div>
 	<div id="output"></div>
-	</body>
-	<script>
+</body>
+<script>
+	var logindex = 0;
+	function log(msg) {
 
-		var logindex = 0;
-		function log(msg) {
+		var output = document.getElementById("output");
+		var pre = document.createElement("p");
+		pre.style.wordWrap = "break-word";
+		pre.innerHTML = ''+(logindex++)+msg;
+		output.insertBefore(pre, output.firstElementChild);
+	}
 
-			var output = document.getElementById("output");
-			var pre = document.createElement("p");
-			pre.style.wordWrap = "break-word";
-			pre.innerHTML = ''+(logindex++)+msg;
-			output.insertBefore(pre, output.firstElementChild);
-		}
+	function log(msg) {
 
-		function log(msg) {
+		document.getElementById("output").innerHTML = msg;
+	}
 
-			document.getElementById("output").innerHTML = msg;
-		}
+	var socket = new WebSocket('ws://'+location.host+'/');
+	socket.binaryType = "arraybuffer";
 
-
-		var socket = new WebSocket('ws://'+location.host+'/');
-		socket.binaryType = "arraybuffer";
-
-		socket.onopen = function(ev) {
+	socket.onopen = function(ev) {
 		
-	//		log('OPEN')
-		}
+//		log('OPEN')
+	}
 
-		socket.onclose = function(ev) {
+	socket.onclose = function(ev) {
 		
-			log('CLOSE')
-		}
+		log('CLOSE')
+	}
 
-		socket.onerror = function(ev) {
+	socket.onerror = function(ev) {
 		
-			log('ERROR:'+ev.data)
-		};
+		log('ERROR:'+ev.data)
+	};
 
 
-		window.AudioContext = window.AudioContext||window.webkitAudioContext;
-		var audioCtx = new AudioContext();
+	window.AudioContext = window.AudioContext||window.webkitAudioContext;
+	var audioCtx = new AudioContext();
 
-		var chunkList = [];
-		var chunkByteOffset = 0;
+	var chunkList = [];
+	var chunkByteOffset = 0;
 
-		var audioNode = audioCtx.createScriptProcessor(256, 0, 2);
-		audioNode.onaudioprocess = function(audioProcessingEvent) {
+	var audioNode = audioCtx.createScriptProcessor(256, 0, 2);
+	audioNode.onaudioprocess = function(audioProcessingEvent) {
 
-			if ( chunkList.length < 1 )
-				return;
+		if ( chunkList.length < 1 )
+			return;
 
-			var outputBuffer = audioProcessingEvent.outputBuffer;
-			var l = outputBuffer.getChannelData(0);
-			var r = outputBuffer.getChannelData(1);
+		var outputBuffer = audioProcessingEvent.outputBuffer;
+		var l = outputBuffer.getChannelData(0);
+		var r = outputBuffer.getChannelData(1);
 
-			var chunk = chunkList[0];
-			var chunkByteLength = chunk.byteLength;
+		var chunk = chunkList[0];
+		var chunkByteLength = chunk.byteLength;
 		
-			for ( var i = 0; i < outputBuffer.length; ++i ) {
+		for ( var i = 0; i < outputBuffer.length; ++i ) {
 
-				if ( chunkByteOffset >= chunkByteLength ) {
+			if ( chunkByteOffset >= chunkByteLength ) {
 
-					chunkList.shift();
-					if ( chunkList.length == 0 )
-						return;
-					chunk = chunkList[0];
-					var chunkByteLength = chunk.byteLength;
-					chunkByteOffset = 0;
-				}
-
-				l[i] = chunk.getInt16(chunkByteOffset, true) / 32768;
-				r[i] = chunk.getInt16(chunkByteOffset+2, true) / 32768;
-				chunkByteOffset += 4;
+				chunkList.shift();
+				if ( chunkList.length == 0 )
+					return;
+				chunk = chunkList[0];
+				var chunkByteLength = chunk.byteLength;
+				chunkByteOffset = 0;
 			}
+
+			l[i] = chunk.getInt16(chunkByteOffset, true) / 32768;
+			r[i] = chunk.getInt16(chunkByteOffset+2, true) / 32768;
+			chunkByteOffset += 4;
 		}
-		audioNode.connect(audioCtx.destination);
+	}
+	audioNode.connect(audioCtx.destination);
 
 
-		socket.onmessage = function(ev) {
+	socket.onmessage = function(ev) {
 
-			if ( typeof(ev.data) == 'string' ) {
+		if ( typeof(ev.data) == 'string' ) {
 			
-				var msg = JSON.parse(ev.data);
-				log(ev.data);
-				return;
-			}
-			chunkList.push(new DataView(ev.data));
+			var msg = JSON.parse(ev.data);
+			log(ev.data);
+			return;
 		}
+		chunkList.push(new DataView(ev.data));
+	}
 
-	</script>
-	</html>
-	*/}).toString().match(/\/\*([^]*)\*\//)[1];
+</script>
+</html>
+`;
 
 
 
 	function ProcessAudio(framesPerBuffer, audioFormat, audioHandler) {
 	
-		var audio = new AudioIn(AudioIn.inputDeviceList[0], audioFormat.rate, audioFormat.bits, audioFormat.channels, framesPerBuffer);
+		var audio = new AudioIn(AudioIn.inputDeviceList[1], audioFormat.rate, audioFormat.bits, audioFormat.channels, framesPerBuffer);
 
 		this.read = function() {
 		
@@ -490,6 +484,9 @@ var loadModule = host.loadModule;
 			socketList.push(clientSocket);
 			clientSocket.buffer = new Buffer();
 			clientSocket.state = processRequest;
+
+//		clientSocket.writable = function() {		print('w');	}
+
 			clientSocket.readable = function(s) {
 
 				var buf = s.read();
@@ -530,7 +527,7 @@ var loadModule = host.loadModule;
 		
 			for ( var chunk of chunkList ) {
 
-				print(chunk.constructor.name);
+//				print(chunk.constructor.name);
 			
 				send(chunk.data, WS_BINARY_DATA);
 			}
@@ -558,9 +555,12 @@ var loadModule = host.loadModule;
 			listener(chunkList);
 	});
 
+//	print(AudioIn.inputDeviceList.join('\n'));
+
 	audio.start();
-	for (;;)
+	for (;;) {
 		processEvents(host.endSignalEvents(function() { throw 0 }), audio.events, http.events );
+	}
 	audio.stop();
 
 throw 0;

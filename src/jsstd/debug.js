@@ -2,13 +2,18 @@ var loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsstd'); throw 0;
 //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 
-loadModule('jsstd'); exec('dgvklsdfhgsvldukfhg');
+loadModule('jsstd');
+
+//exec('dgvklsdfhgsvldukfhg');
 
 var o = {a:1, b:2};
 
 print( countProperties(o), '\n' );
 print( clearObject(o), '\n' );
 print( countProperties(o), '\n' );
+print( '\n' );
+
+(function test() { print( captureCurrentStack(), '\n' )})();
 
 throw 0;
 

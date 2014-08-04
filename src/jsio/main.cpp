@@ -45,8 +45,9 @@ struct ReleaseModule : jl::Events::Callback {
 	jl::HostRuntime &_hostRuntime;
 	JsioPrivate *_mpv;
 	
-	ReleaseModule(jl::HostRuntime &hostRuntime, JsioPrivate *mpv)
-	: _hostRuntime(hostRuntime), _mpv(mpv) {
+	ReleaseModule(jl::HostRuntime &hostRuntime, JsioPrivate *mpv) :
+		_hostRuntime(hostRuntime),
+		_mpv(mpv) {
 	}
 
 	bool operator()() {
