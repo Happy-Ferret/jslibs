@@ -1,5 +1,11 @@
 loadModule('jsstd');
 
+/// crash (barrier issue)
+
+	var ev = timeoutEvents.call([], 10, function(){});
+	host.collectGarbage();
+	processEvents(ev);
+
 /// crash
 
 	var b = stringify('abc', true);

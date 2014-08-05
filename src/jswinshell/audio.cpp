@@ -407,9 +407,11 @@ struct AudioEvent : public ProcessEvent2 {
 		*hasEvent = !!_pv->bufferList;
 		LeaveCriticalSection(&_pv->cs);
 
-		if ( *hasEvent && slot( 1 ) != JL_VALUEZ ) {
-		
-			JL_CHK( jl::callNoRval(cx, hslot(0), hslot(1)) );
+		if ( *hasEvent && !slot(1).isUndefined() ) {
+			
+			JS::RootedValue thisArg(cx, slot(0));
+			JS::RootedValue fct(cx, slot(1));
+			JL_CHK( jl::callNoRval(cx, thisArg, fct) );
 		}
 		return true;
 		JL_BAD;

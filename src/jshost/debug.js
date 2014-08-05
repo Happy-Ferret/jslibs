@@ -8,6 +8,24 @@ var loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('serial'); throw 0; // -inlineOnly
 
 
+	//loadModule('jsstd');
+
+	var ev = timeoutEvents.call([], 10, function(){});
+	host.collectGarbage();
+	processEvents(ev);
+
+	
+	
+throw 0;
+
+
+
+	loadModule('jsio');
+	var io = Descriptor.events([new Socket]);
+	processEvents(io,io, timeoutEvents(10));
+
+throw 0;
+
 
 	loadModule('jsstd');
 

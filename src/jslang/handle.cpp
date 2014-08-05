@@ -66,19 +66,23 @@ DEFINE_TRACER() {
 
 		uint32_t i;
 
+		// in that case, you need your JS::Value vector to be JS::Heap<JS::Value>, and to call JS_CallHeapValueTracer on each item in the vector
+
+		//doc: The argument to JS_Call*Tracer is an in-out param: when the function returns, the garbage collector might have moved the GC thing
+
 		for ( i = 0; i < JL_HANDLE_PUBLIC_SLOT_COUNT; ++i ) {
 			
 			if ( pv->slot(i).isMarkable() ) {
-
-				JS_CallValueTracer(trc, &pv->slot(i), "HandlePrivate slot");
+				
+				JS_CallHeapValueTracer(trc, &pv->slot(i), "HandlePrivate slot");
 			}
 		}
 
 		for ( i = 0; i < pv->dynSlotsCount(); ++i ) {
 
 			if ( pv->dynSlot(i).isMarkable() ) {
-
-				JS_CallValueTracer(trc, &pv->dynSlot(i), "HandlePrivate dynSlot");
+				
+				JS_CallHeapValueTracer(trc, &pv->dynSlot(i), "HandlePrivate dynSlot");
 			}
 		}
 	}

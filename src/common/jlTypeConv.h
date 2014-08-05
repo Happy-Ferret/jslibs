@@ -456,7 +456,6 @@ setValue( JSContext *cx, JS::MutableHandleValue rval, JS::Rooted<T>*pv ) {
 //     jl::setValue(cx, obj, "foo", &rtVal) );
 
 
-
 ////////
 
 
@@ -1075,6 +1074,14 @@ call(JSContext *cx, JS::HandleObject thisObj, JS::HandleFunction fun, const JS::
 
     return JS_CallFunction(cx, thisObj, fun, args, rval);
 }
+
+ALWAYS_INLINE bool FASTCALL
+call(JSContext *cx, JS::HandleObject thisObj, JS::Heap< JS::Value > &fun, const JS::HandleValueArray &args, JS::MutableHandleValue rval) {
+
+	JS::RootedValue fval(cx, fun);
+    return JS_CallFunctionValue(cx, thisObj, fval, args, rval);
+}
+
 
 // fun as name (obj.fun)
 ALWAYS_INLINE bool FASTCALL

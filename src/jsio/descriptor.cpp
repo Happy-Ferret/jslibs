@@ -720,12 +720,11 @@ struct IOProcessEvent : public ProcessEvent2 {
 
 	bool prepareWait(JSContext *cx, JS::HandleObject obj) {
 
-		ASSERT( !JS::IsPoisonedValue(slot(0)) );
-		//ASSERT( !JS::IsPoisonedValue(js::GetObjectSlot(&hslot(0).toObject(), 0)) );
-
 		JS::RootedValue descriptor(cx);
-		JS::RootedObject fdArrayObj(cx, &hslot(0).toObject());
-		ASSERT( jl::isArrayLike(cx, hslot(0)) );
+		JS::RootedValue descArray(cx, slot(0));
+
+		JS::RootedObject fdArrayObj(cx, &descArray.toObject());
+		ASSERT( jl::isArrayLike(cx, descArray) );
 
 		JL_CHK( JS_GetArrayLength(cx, fdArrayObj, &_fdCount) );
 
@@ -741,10 +740,25 @@ struct IOProcessEvent : public ProcessEvent2 {
 			mpv->peCancel = PR_NewPollableEvent();
 			if ( mpv->peCancel == NULL )
 				return ThrowIoError(cx);
+/*
+			#ifdef DEBUG
+			// test pollable event
+			PR_SetPollableEvent(mpv->peCancel);
+			PR_WaitForPollableEvent(mpv->peCancel);
+			// PR_WaitForPollableEvent(mpv->peCancel); // lock !
+
+			PR_SetPollableEvent(mpv->peCancel);
+			_pollDesc[0].fd = mpv->peCancel;
+			_pollDesc[0].in_flags = PR_POLL_READ; // doc: The only I/O operation you can perform on a pollable event is to poll it with the PR_POLL_READ flag
+			_pollDesc[0].out_flags = 0;
+			PR_Poll(_pollDesc, 1, PR_INTERVAL_NO_TIMEOUT); // 1 is the PollableEvent
+			PR_WaitForPollableEvent(mpv->peCancel); // don't lock, PR_Poll does not unset the poolable event.
+			#endif
+*/
 		}
 
 		_pollDesc[0].fd = mpv->peCancel;
-		_pollDesc[0].in_flags = PR_POLL_READ;
+		_pollDesc[0].in_flags = PR_POLL_READ; // doc: The only I/O operation you can perform on a pollable event is to poll it with the PR_POLL_READ flag
 		_pollDesc[0].out_flags = 0;
 
 		// in order to avoid a Descriptor being GC because it has been removed from the descriptor list (slot(0)), we just duplicate it.
@@ -752,7 +766,7 @@ struct IOProcessEvent : public ProcessEvent2 {
 		for ( uint32_t i = 0; i < _fdCount; ++i ) {
 
 			JL_CHK( JL_GetElement(cx, fdArrayObj, i, &descriptor) ); // read the item
-			hDynSlot(i).set(descriptor);
+			dynSlot(i).set(descriptor);
 			JL_CHK( InitPollDesc(cx, descriptor, &_pollDesc[1 + i]) ); // _pollDesc[0] is reserved for mpv->peCancel
 		}
 
@@ -762,6 +776,7 @@ struct IOProcessEvent : public ProcessEvent2 {
 
 	void startWait() {
 
+		ASSERT( _pollDesc[0].in_flags == PR_POLL_READ );
 		_pollResult = PR_Poll(_pollDesc, 1 + _fdCount, PR_INTERVAL_NO_TIMEOUT); // 1 is the PollableEvent
 	}
 
@@ -770,25 +785,33 @@ struct IOProcessEvent : public ProcessEvent2 {
 		PRStatus st;
 		st = PR_SetPollableEvent(_pollDesc[0].fd); // cancel the poll
 		ASSERT( st == PR_SUCCESS );
-		st = PR_WaitForPollableEvent(_pollDesc[0].fd); // resets the event. doc. blocks the calling thread until the pollable event is set, and then it atomically unsets the pollable event before it returns.
-		ASSERT( st == PR_SUCCESS );
 		return true;
 	}
 
 	bool endWait(bool *hasEvent, JSContext *cx, JS::HandleObject) {
+
+		JS::RootedValue tmp(cx);
+		// warning: be sure that PR_Poll returns before reseting the pollable event (PR_WaitForPollableEvent) else lock !
+		PRStatus st;
+		st = PR_SetPollableEvent(_pollDesc[0].fd); // cancel the poll
+		ASSERT( st == PR_SUCCESS );
+		st = PR_WaitForPollableEvent(_pollDesc[0].fd);
+		ASSERT( st == PR_SUCCESS );
 
 		JLAutoPtr<PRPollDesc> pollDesc(_pollDesc);
 
 		if ( _pollResult == -1 )
 			JL_CHK( ThrowIoError(cx) );
 
+		 // doc: When the pollable event is set, PR_Poll returns with the PR_POLL_READ flag set in the out_flags.
 		*hasEvent = _pollResult > 0 && !( _pollDesc[0].out_flags & PR_POLL_READ ); // has an event but not the cancel event
 
 		if ( *hasEvent ) { // optimization
 		
 			for ( uint32_t i = 0; i < _fdCount; ++i ) {
 
-				JL_CHK( PollDescNotify(cx, hDynSlot(i), &_pollDesc[1 + i], i) );
+				tmp.set( dynSlot(i) );
+				JL_CHK( PollDescNotify(cx, tmp, &_pollDesc[1 + i], i) );
 			}
 		}
 		return true;

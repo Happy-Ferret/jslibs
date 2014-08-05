@@ -921,9 +921,13 @@ struct DirectoryUserProcessEvent : public ProcessEvent2 {
 		if ( !*hasEvent )
 			return true;
 
-		if ( slot( 0 ) != JL_VALUEZ ) {
+		if ( !slot( 0 ).isUndefined() ) {
 
-			JL_CHK( jl::callNoRval( cx, hslot( 0 ), hslot( 2 ), hslot( 1 ) ) );
+			JS::RootedValue thisVal(cx, slot( 0 ));
+			JS::RootedValue arg(cx, slot( 1 ));
+			JS::RootedValue fval(cx, slot( 2 ));
+
+			JL_CHK( jl::callNoRval( cx, thisVal, fval, arg ) );
 		}
 		return true;
 		JL_BAD;
@@ -955,9 +959,9 @@ DEFINE_FUNCTION( directoryChangesEvents ) {
 	if ( JL_ARG_ISDEF(2) ) {
 
 		JL_ASSERT_ARG_IS_CALLABLE(2);
-		upe->hslot(0).set(JL_OBJVAL); // store "this" object.
-		upe->hslot(1).set(JL_ARG(1)); // dmon handle (argument 1 of the callback function)
-		upe->hslot(2).set(JL_ARG(2)); // onChange function
+		upe->slot(0).set(JL_OBJVAL); // store "this" object.
+		upe->slot(1).set(JL_ARG(1)); // dmon handle (argument 1 of the callback function)
+		upe->slot(2).set(JL_ARG(2)); // onChange function
 	}
 
 	upe->dc = dc;

@@ -22,7 +22,7 @@ struct ProcessEventThreadInfo {
 	/*volatile*/ ProcessEvent2 *peSlot;
 	volatile bool isEnd;
 	JLSemaphoreHandler startSem;
-	JLSemaphoreHandler signalEventSem;
+	volatile JLSemaphoreHandler signalEventSem;  // simple reference to mpv->processEventSignalEventSem
 	JLThreadHandler thread;
 };
 

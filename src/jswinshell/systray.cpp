@@ -767,7 +767,7 @@ DEFINE_FUNCTION( events ) {
 	JL_ASSERT_ALLOC(upe);
 	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
 
-	upe->hslot(0).set(JL_OBJVAL);
+	upe->slot(0).set(JL_OBJVAL);
 
 	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset
 	if ( upe->cancelEvent == NULL )

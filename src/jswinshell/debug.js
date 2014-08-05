@@ -1,6 +1,10 @@
 var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
+	
+	host.interruptInterval = 1000;
+	host.onInterrupt = () => host.collectGarbage(true, 50);
+
 
 	loadModule('jsio');
 	loadModule('jsstd');
@@ -21,7 +25,7 @@ var loadModule = host.loadModule;
 
 	function log(msg) {
 
-//		print( stringify(msg).replace(/\n/g, '\n   '), '\n' );
+		print( stringify(msg).replace(/\n/g, '\n   '), '\n' );
 	}
 
 
@@ -128,7 +132,7 @@ var loadModule = host.loadModule;
 		bits:16,
 		channels:2,
 		rate:44100,
-		frames: 5  * 44100 / 1000
+		frames: 50  * 44100 / 1000
 	};
 
 

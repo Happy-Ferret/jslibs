@@ -2,6 +2,18 @@
 loadModule('jsio');
 loadModule('jsdebug');
 
+/// deadlosk test
+
+	for ( var i = 0; i < 1000; ++i )
+		processEvents(timeoutEvents(0), Descriptor.events([]));
+
+
+/// crash with listening several times on the same fd
+
+	var io = Descriptor.events([new Socket]);
+	processEvents(io,io, timeoutEvents(10));
+
+
 /// listen: several times on the same address
 
 	var s1 = new Socket();

@@ -4,10 +4,61 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js'); runQATests('-exclude jstask -rep 1 jsio -stopAfterNIssues 1'); halt();
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('jsio'); throw 0;
 
-
+ 
 //loadModule('jstask');
-//loadModule('jsstd');
-loadModule('jsio');
+
+
+	loadModule('jsstd');
+	loadModule('jsio');
+
+	host.interruptInterval = 100;
+	host.onInterrupt = () => host.collectGarbage(true, 50);
+
+	var desc = [new Socket];
+
+
+	function connect() {
+
+		var s = new Socket;
+		s.connect('127.0.0.1', 81);
+		desc.push(s);
+		s.readable = function(s)  {
+		
+			var data = s.read();
+			if ( !data ) {
+				print('c')
+				s.close();
+				desc.splice(desc.indexOf(s), 1);
+				connect();
+				return;
+			}
+		
+			print('d'); //print(data);
+		}
+	}
+
+	desc[0].bind(81, '127.0.0.1');
+	desc[0].listen();
+
+	desc[0].readable = function(s)  {
+		
+		print('i')
+		var cl = s.accept();
+		desc.push(cl);
+		cl.writable = function(s) {
+
+			s.write('xxx');
+			s.close();
+			desc.splice(desc.indexOf(s), 1);
+		}
+	}
+	connect();
+
+	while ( !host.endSignal ) {
+	
+		processEvents(Descriptor.events(desc), timeoutEvents(0));
+		//print('.');
+	}
 
 throw 0;
 

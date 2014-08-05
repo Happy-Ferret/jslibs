@@ -330,12 +330,13 @@ struct EndSignalProcessEvent : public ProcessEvent2 {
 		if ( !*hasEvent )
 			return true;
 
-		if ( slot( 0 ) != JL_VALUEZ ) {
+		if ( !slot( 0 ).isUndefined() ) {
 		
 			JS::RootedObject callThisObj(cx);
+			JS::RootedValue fval(cx, slot(0));
 			callThisObj.set(&slot(1).toObject());
 			JS::Value rval; // rval is unused then there is no need to root it
-			JL_CHK( JS_CallFunctionValue(cx, callThisObj, hslot(0), JS::HandleValueArray::empty(), JS::MutableHandleValue::fromMarkedLocation(&rval)) );
+			JL_CHK( JS_CallFunctionValue(cx, callThisObj, fval, JS::HandleValueArray::empty(), JS::MutableHandleValue::fromMarkedLocation(&rval)) );
 		}
 		return true;
 		JL_BAD;
