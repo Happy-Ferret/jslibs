@@ -322,7 +322,8 @@ DEFINE_FUNCTION( process ) {
 	} else {
 
 		//jsEncStr = JL_NewString(cx, outBuf, length); // loose outBuf ownership	// JL_CHK( StringAndLengthToJsval(cx, JL_RVAL, outBuf, length) );
-		JL_CHK( jl::BufString(outBuf, length, true).toString(cx, JL_RVAL) );
+		//JL_CHK( jl::BufString(outBuf, length, true).toString(cx, JL_RVAL) );
+		JL_RVAL.setString( JL_NewString(cx, outBuf, length) );
 	}
 
 	return true;

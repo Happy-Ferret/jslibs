@@ -7,7 +7,7 @@ var loadModule = host.loadModule;
 
 	s.onmouseup = function(button) {
 
-		this.popupMenu(['Quit']);
+		this.popupMenu(['Quit', '1', '2', '3']);
 	}
 
 	s.oncommand = function(name) {

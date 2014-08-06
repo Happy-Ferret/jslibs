@@ -2,6 +2,12 @@
 loadModule('jsio');
 loadModule('jsdebug');
 
+/// invalid descriptor
+
+	var s = new Socket();
+	s.close();
+	QA.ASSERTOP( function() s.write(1), 'ex', IoError );
+
 /// deadlosk test
 
 	for ( var i = 0; i < 1000; ++i )

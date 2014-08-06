@@ -209,6 +209,12 @@ isNaN( JSContext *cx, IN JS::HandleValue val ) {
 }
 
 ALWAYS_INLINE bool FASTCALL
+isZero( JSContext *cx, IN JS::HandleValue val ) {
+
+	return (val.isInt32() && val.toInt32() == 0) || ( val.isDouble() && val.toDouble() == 0.0); // handle "0" string too ?
+}
+
+ALWAYS_INLINE bool FASTCALL
 isPInfinity( JSContext *cx, IN JS::HandleValue val ) {
 
 	return val == JS_GetPositiveInfinityValue(cx);

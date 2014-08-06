@@ -257,11 +257,7 @@ class SemProcessEvent : public ProcessEvent2 {
 
 		if ( !slot( 0 ).isUndefined() ) {
 		
-			JS::RootedObject callThisObj(cx);
-			JS::RootedValue fval(cx, slot(0));
-			callThisObj.set(&slot(1).toObject());
-			JS::Value rval; // rval is unused then there is no need to root it
-			JL_CHK( JS_CallFunctionValue(cx, callThisObj, fval, JS::HandleValueArray::empty(), JS::MutableHandleValue::fromMarkedLocation(&rval)) );
+			JL_CHK( jl::callNoRval(cx, slot(1), slot(0)) );
 		}
 
 		return true;

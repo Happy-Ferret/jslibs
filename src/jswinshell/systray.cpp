@@ -43,8 +43,6 @@ Shell_NotifyIconA_retry(DWORD dwMessage, PNOTIFYICONDATA lpData) {
 	return status;
 }
 
-S_ASSERT( sizeof(WPARAM) >= sizeof(JS::Value*) );
-S_ASSERT( sizeof(UINT_PTR) >= sizeof(JS::Value*) );
 
 struct Private : public jl::CppAllocators {
 	NOTIFYICONDATA nid;
@@ -52,7 +50,6 @@ struct Private : public jl::CppAllocators {
 	HANDLE systrayEvent;
 	jl::Queue msgQueue;
 	CRITICAL_SECTION cs; // protects msgQueue
-	jl::Stack<JS::Value> popupMenuRoots;
 	POINT lastMousePos;
 	bool mouseIn;
 };
@@ -68,15 +65,39 @@ struct MSGInfo {
 };
 
 
-JS::Value* AddPopupMenuRoot(Private *pv, JS::HandleValue value) {
 
-	*++(pv->popupMenuRoots) = value;
-	return &pv->popupMenuRoots;
+#define SLOT_MENUITEMS 0
+
+bool
+AddPopupMenuRoot(JSContext *cx, JS::HandleObject obj, JS::HandleValue value, uint32_t *index) {
+
+	JS::RootedObject menuItemsArrayObj(cx);
+	JL_CHK( jl::getSlot(cx, obj, SLOT_MENUITEMS, &menuItemsArrayObj) );
+
+	JL_CHK( JS_GetArrayLength(cx, menuItemsArrayObj, index) );
+	JL_CHK( JS_SetElement( cx, menuItemsArrayObj, *index, value ) );
+	return true;
+	JL_BAD;
 }
 
-void FreePopupMenuRoots(Private *pv) {
+bool
+GetPopupMenuRoot(JSContext *cx, JS::HandleObject obj, uint32_t index, JS::MutableHandleValue value) {
 
-	(pv->popupMenuRoots).Clear();
+	JS::RootedObject menuItemsArrayObj(cx);
+	JL_CHK( jl::getSlot(cx, obj, SLOT_MENUITEMS, &menuItemsArrayObj) );
+	JL_CHK( JS_GetElement( cx, menuItemsArrayObj, index, value ) );
+	return true;
+	JL_BAD;
+}
+
+bool
+FreePopupMenuRoots(JSContext *cx, JS::HandleObject obj) {
+	
+	JS::RootedObject menuItemsArrayObj(cx);
+	JL_CHK( jl::getSlot(cx, obj, SLOT_MENUITEMS, &menuItemsArrayObj) );
+	JL_CHK( JS_SetArrayLength(cx, menuItemsArrayObj, 0) );
+	return true;
+	JL_BAD;
 }
 
 
@@ -430,33 +451,40 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_ARGS;
 
 	Private *pv = NULL;
-
-	{
-	JL_DEFINE_ARGS;
+		
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	//Private *pv = (Private*)jl_malloc(sizeof(Private));
+	{
 
-	pv = new Private();
-	JL_ASSERT_ALLOC( pv );
-	JL_updateMallocCounter(cx, sizeof(Private));
+		//Private *pv = (Private*)jl_malloc(sizeof(Private));
 
-	InitializeCriticalSection(&pv->cs);
-	jl::QueueInitialize(&pv->msgQueue);
-//	jl::QueueInitialize(&pv->popupMenuRoots);
+		pv = new Private();
+		JL_ASSERT_ALLOC( pv );
+		JL_updateMallocCounter(cx, sizeof(Private));
 
-	pv->mouseIn = false;
-	pv->systrayEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	JL_ASSERT(pv->systrayEvent, E_OS, E_OBJ, E_CREATE, E_COMMENT("systray event") );
-	pv->thread = CreateThread(NULL, 0, SystrayThread, pv, 0, NULL);
-	JL_ASSERT(pv->thread, E_OS, E_OBJ, E_CREATE, E_COMMENT("thread"));
-	SetThreadPriority(pv->thread, THREAD_PRIORITY_ABOVE_NORMAL);
-	WaitForSingleObject(pv->systrayEvent, INFINITE); // first pulse
+		InitializeCriticalSection(&pv->cs);
+		jl::QueueInitialize(&pv->msgQueue);
+	//	jl::QueueInitialize(&pv->popupMenuRoots);
 
-	JL_SetPrivate(JL_OBJ, pv);
-	return true;
+		JS::RootedValue menuItemsVal(cx);
+		menuItemsVal.setObject( *jl::newArray(cx) );
+		jl::setSlot(cx, JL_OBJ, SLOT_MENUITEMS, menuItemsVal);
+
+		pv->mouseIn = false;
+		pv->systrayEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+		JL_ASSERT(pv->systrayEvent, E_OS, E_OBJ, E_CREATE, E_COMMENT("systray event") );
+		pv->thread = CreateThread(NULL, 0, SystrayThread, pv, 0, NULL);
+		JL_ASSERT(pv->thread, E_OS, E_OBJ, E_CREATE, E_COMMENT("thread"));
+		SetThreadPriority(pv->thread, THREAD_PRIORITY_ABOVE_NORMAL);
+		WaitForSingleObject(pv->systrayEvent, INFINITE); // first pulse
+
+		JL_SetPrivate(JL_OBJ, pv);
+	
 	}
+
+	return true;
+	
 
 bad:
 	if ( pv ) {
@@ -492,7 +520,11 @@ CloseSystray(JSRuntime *rt, Private *pv) {
 	}
 
 	DeleteCriticalSection(&pv->cs);
-	FreePopupMenuRoots(pv);
+	//FreePopupMenuRoots(pv);
+
+//	JS::RootedValue menuItemsVal(rt);
+//	jl::getSlot(cx, JL_OBJ, SLOT_MENUITEMS, &menuItemsVal);
+
 
 	delete pv;
 }
@@ -518,14 +550,16 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( close ) {
 
-	JL_IGNORE( argc );
-
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
-	JL_SetPrivate(JL_OBJ, NULL);
+	Private *pv = static_cast<Private*>(JL_GetPrivate(JL_OBJ));
+
+	JL_ASSERT_THIS_OBJECT_STATE(pv);
+
+	JL_CHK( FreePopupMenuRoots(cx, JL_OBJ) );
 	CloseSystray(JL_GetRuntime(cx), pv);
+	JL_SetPrivate(JL_OBJ, NULL);
 	
 	JL_RVAL.setUndefined();
 	return true;
@@ -579,11 +613,14 @@ bool ProcessSystrayMessage( JSContext *cx, JS::HandleObject obj, const MSGInfo *
 			JL_CHK( jl::getProperty(cx, obj, "oncommand", &functionVal) );
 			if ( jl::isCallable(cx, functionVal) ) {
 
-				JS::RootedValue key(cx, *(JS::Value*)wParam);
+				JS::RootedValue key(cx);
+				JL_CHK( GetPopupMenuRoot(cx, obj, wParam, &key) );
 				JL_CHK( jl::call(cx, obj, functionVal, rval, key, trayMsg->lButton ? 1 : trayMsg->rButton ? 2 : 0) );
 				Private *pv = (Private*)JL_GetPrivate(obj);
-				if ( pv )
-					FreePopupMenuRoots(pv);
+				if ( pv ) {
+
+					FreePopupMenuRoots(cx, obj);
+				}
 			}
 			break;
 
@@ -596,7 +633,9 @@ bool ProcessSystrayMessage( JSContext *cx, JS::HandleObject obj, const MSGInfo *
 					JL_CHK( jl::getProperty(cx, obj, "onidle", &functionVal) );
 					if ( jl::isCallable(cx, functionVal) ) {
 
-						JS::RootedValue key(cx, *(JS::Value*)wParam);
+						JS::RootedValue key(cx);
+						jl::setValue(cx, &key, wParam);
+
 						JL_CHK( jl::call(cx, obj, functionVal, rval, key, trayMsg->lButton ? 1 : trayMsg->rButton ? 2 : 0) );
 					}
 				break;
@@ -966,7 +1005,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 			lpNewItem = (LPCTSTR)phIcon;
 		} else {
 
-			if ( label != JSVAL_VOID ) {
+			if ( !label.isUndefined() ) {
 
 				JL_CHK( jl::getValue(cx, label, &newItemStr) );
 				
@@ -989,9 +1028,14 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 			uIDNewItem = (UINT_PTR)popupMenu; // ignore warning C4703
 		} else {
 
-			if ( cmdid == JSVAL_VOID )
+			if ( cmdid.isUndefined() ) {
+
 				cmdid = label;
-			uIDNewItem = (UINT_PTR)AddPopupMenuRoot((Private*)JL_GetPrivate(systrayObj), item);
+			}
+
+			uint32_t itemId;
+			JL_CHK( AddPopupMenuRoot(cx, systrayObj, item, &itemId) );
+			uIDNewItem = itemId;
 		}
 
 		BOOL res = AppendMenu(*hMenu, uFlags, uIDNewItem, lpNewItem);
@@ -1058,7 +1102,7 @@ systray.popupMenu([
 DEFINE_FUNCTION( popupMenu ) {
 
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 
@@ -1073,13 +1117,16 @@ DEFINE_FUNCTION( popupMenu ) {
 //	st = DestroyMenu(hMenu);
 //	ASSERT( st );
 	
-	// there is no way to detect the menu popup has been closed. Here we free previous items.
+	
+
 	{
-	FreePopupMenuRoots(pv);
-	JS::RootedObject tmp(cx, &JL_ARG(1).toObject());
-	JL_CHK( FillMenu(cx, JL_OBJ, tmp, &hMenu) );
-	st = PostMessage(pv->nid.hWnd, MSG_POPUP_MENU, 0, 0);
-	ASSERT( st );
+		// there is no way to detect the menu popup has been closed. Here we free previous items.
+		JL_CHK( FreePopupMenuRoots(cx, JL_OBJ) );
+
+		JS::RootedObject tmp(cx, &JL_ARG(1).toObject());
+		JL_CHK( FillMenu(cx, JL_OBJ, tmp, &hMenu) );
+		st = PostMessage(pv->nid.hWnd, MSG_POPUP_MENU, 0, 0);
+		ASSERT( st );
 	}
 
 	JL_RVAL.setUndefined();
@@ -1377,26 +1424,6 @@ DEFINE_PROPERTY_GETTER( text ) {
 }
 
 
-DEFINE_TRACER() {
-
-	Private *pv = (Private*)js::GetObjectPrivate(obj);
-	if ( pv ) {
-
-		struct Tmp {
-			JSTracer *_trc;
-			Tmp( JSTracer *trc ) : _trc(trc) {
-			}
-
-			bool operator()( JS::Value &value ) {
-
-				JS_CallValueTracer(_trc, &value, "jswinshell/Systray/popupMenuRoots");
-				return false;
-			}
-		} tmp(trc);
-		pv->popupMenuRoots.BackForEach( tmp );
-	}
-}
-
 
 /**doc
 === Callback functions ===
@@ -1428,7 +1455,8 @@ CONFIGURE_CLASS
 
 	HAS_CONSTRUCTOR
 	HAS_FINALIZE
-	HAS_TRACER
+	HAS_RESERVED_SLOTS(1)
+//	HAS_TRACER
 
 	BEGIN_FUNCTION_SPEC
 		FUNCTION(close)

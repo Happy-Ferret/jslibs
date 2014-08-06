@@ -90,7 +90,8 @@ DEFINE_PROPERTY_GETTER( string ) {
 		if ( size > 0 ) {
 
 			// wait for Bug 1045830 - restore JS_NewString function for latin1 strings
-			jl::BufString(static_cast<char*>(JL_GetPrivate(JL_OBJ)), size, false).toString(cx, JL_RVAL);
+			//jl::BufString(static_cast<char*>(JL_GetPrivate(JL_OBJ)), size, false).toString(cx, JL_RVAL);
+			JL_RVAL.setString( JL_NewString(cx, static_cast<char*>(JL_GetPrivate(JL_OBJ)), size) );
 		} else {
 
 			JL_RVAL.set(JL_GetEmptyStringValue(cx));
@@ -118,7 +119,8 @@ DEFINE_PROPERTY_GETTER( ucString ) {
 		if ( size > 0 ) {
 
 			JL_CHKM( size % 2 == 0, E_DATASIZE, E_INVALID );
-			jl::BufString(static_cast<jschar*>(JL_GetPrivate(JL_OBJ)), size / 2, false).toString(cx, JL_RVAL);
+			//jl::BufString(static_cast<jschar*>(JL_GetPrivate(JL_OBJ)), size / 2, false).toString(cx, JL_RVAL);
+			JL_CHK( JS_NewUCString(cx, static_cast<jschar*>(JL_GetPrivate(JL_OBJ)), size / 2) );
 		} else {
 
 			JL_RVAL.set(JL_GetEmptyStringValue(cx));

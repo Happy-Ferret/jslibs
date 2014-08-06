@@ -191,7 +191,7 @@ bad:
 
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
 static bool
-sandbox_resolve(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, unsigned flags, JS::MutableHandleObject objp) {
+sandbox_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, unsigned flags, JS::MutableHandleObject objp) {
 
 	bool resolved;
 	if ( (flags & JSRESOLVE_ASSIGNING) == 0 ) {
@@ -757,7 +757,7 @@ int main_test_call(int argc, char* argv[]) {
 	JSObject *fctObj = JS_DecodeInterpretedFunction(cx, xdrData, xdrLength, NULL, NULL);
 	
 	//JS::AutoObjectRooter tvr(cx, fctObj);
-	JS::Rooted<JSObject*> tmpRt(cx, fctObj);
+	JS::RootedObject tmpRt(cx, fctObj);
 
 	jsval rval;
 	JS_CallFunctionValue(cx, globalObject, OBJECT_TO_JSVAL(fctObj), 0, NULL, &rval); // <- crash here

@@ -10,11 +10,25 @@ var loadModule = host.loadModule;
 
 	//loadModule('jsstd');
 
+	loadModule('jsio');
+	loadModule('jsstd');
+
+try {
+} catch(ex) {
+	print(ex.valueOf());
+}
+
+	var s = new Socket();
+	s.close();
+	s.write(1);
+
+
+throw 0;
+
 	var ev = timeoutEvents.call([], 10, function(){});
 	host.collectGarbage();
 	processEvents(ev);
 
-	
 	
 throw 0;
 

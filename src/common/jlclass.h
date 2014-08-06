@@ -24,7 +24,7 @@ typedef int32_t SourceId_t;
 
 struct ConstValueSpec {
 	const char *name;
-	JS::Value val;
+	JS::Value val; // use JS::Heap<JS::Value> ?
 };
 
 
@@ -391,7 +391,8 @@ JL_END_NAMESPACE
 	ASSERT(cs.constructor == NULL); \
 	cs.constructor = Constructor;
 
-#define DEFINE_CONSTRUCTOR() static bool Constructor(JSContext *cx, unsigned argc, JS::Value *vp)
+#define DEFINE_CONSTRUCTOR() \
+	static bool Constructor(JSContext *cx, unsigned argc, JS::Value *vp)
 
 // throw an error if one tries to construct it
 #define IS_UNCONSTRUCTIBLE \
@@ -430,7 +431,7 @@ JL_END_NAMESPACE
 #define DEFINE_TRACER() static void Tracer(JSTracer *trc, JSObject *obj)
 
 #define HAS_HAS_INSTANCE cs.clasp.hasInstance = HasInstance;
-#define DEFINE_HAS_INSTANCE() static bool HasInstance(JSContext *cx, JS::Handle<JSObject*> obj, JS::MutableHandle<JS::Value> vp, bool *bp)
+#define DEFINE_HAS_INSTANCE() static bool HasInstance(JSContext *cx, JS::HandleObject obj, JS::MutableHandleValue vp, bool *bp)
 
 //#define HAS_EQUALITY_OP js::Valueify(&cs.clasp)->ext.equality = EqualityOp;
 //#define DEFINE_EQUALITY_OP() static bool EqualityOp(JSContext *cx, JS::HandleObject obj, const JS::Value *v, bool *bp)

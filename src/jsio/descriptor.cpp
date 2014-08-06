@@ -945,7 +945,7 @@ DEFINE_PROPERTY_SETTER( timeout ) {
 	if ( !JL_RVAL.isUndefined() ) {
 
 		PRIntervalTime timeout;
-		if ( (JS::Value)JL_RVAL == JSVAL_ZERO ) {
+		if ( jl::isZero(cx, JL_RVAL) ) {
 
 			timeout = PR_INTERVAL_NO_WAIT;
 		} else
@@ -956,7 +956,13 @@ DEFINE_PROPERTY_SETTER( timeout ) {
 
 			PRUint32 milli;
 			JL_CHK( jl::getValue(cx, JL_RVAL, &milli) );
-			timeout = PR_MillisecondsToInterval(milli);
+			if ( milli != 0 ) {
+
+				timeout = PR_MillisecondsToInterval(milli);
+			} else {
+
+				timeout = PR_INTERVAL_NO_WAIT;
+			}
 		}
 		JL_CHK( jl::setValue(cx, JL_RVAL, timeout) );
 	}

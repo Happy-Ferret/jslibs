@@ -407,11 +407,9 @@ struct AudioEvent : public ProcessEvent2 {
 		*hasEvent = !!_pv->bufferList;
 		LeaveCriticalSection(&_pv->cs);
 
-		if ( *hasEvent && !slot(1).isUndefined() ) {
-			
-			JS::RootedValue thisArg(cx, slot(0));
-			JS::RootedValue fct(cx, slot(1));
-			JL_CHK( jl::callNoRval(cx, thisArg, fct) );
+		if ( *hasEvent && !slot(0).isUndefined() ) {
+
+			JL_CHK( jl::callNoRval(cx, slot(1), slot(0)) );
 		}
 		return true;
 		JL_BAD;
@@ -432,11 +430,11 @@ DEFINE_FUNCTION( events ) {
 	JL_ASSERT_ALLOC(upe);
 	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
 
-	upe->slot(0) = JL_OBJVAL; // Audio object
 	if ( JL_ARG_ISDEF(1) ) {
 
 		JL_ASSERT_ARG_IS_CALLABLE(1);
-		upe->slot(1) = JL_ARG(1);
+		upe->slot(0) = JL_ARG(1); // callback
+		upe->slot(1) = JL_OBJVAL; // Audio object
 	}
 
 	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset

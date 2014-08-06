@@ -211,7 +211,7 @@ static JLCondHandler gEndSignalCond;
 static JLMutexHandler gEndSignalLock;
 
 bool
-EndSignalGetter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp) {
+EndSignalGetter(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleValue vp) {
 
 	JL_IGNORE(id, obj);
 
@@ -221,7 +221,7 @@ EndSignalGetter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, J
 }
 
 bool
-EndSignalSetter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, bool strict, JS::MutableHandle<JS::Value> vp) {
+EndSignalSetter(JSContext *cx, JS::HandleObject obj, JS::HandleId id, bool strict, JS::MutableHandleValue vp) {
 
 	JL_IGNORE(strict, id, obj);
 
@@ -332,11 +332,7 @@ struct EndSignalProcessEvent : public ProcessEvent2 {
 
 		if ( !slot( 0 ).isUndefined() ) {
 		
-			JS::RootedObject callThisObj(cx);
-			JS::RootedValue fval(cx, slot(0));
-			callThisObj.set(&slot(1).toObject());
-			JS::Value rval; // rval is unused then there is no need to root it
-			JL_CHK( JS_CallFunctionValue(cx, callThisObj, fval, JS::HandleValueArray::empty(), JS::MutableHandleValue::fromMarkedLocation(&rval)) );
+			JL_CHK( jl::callNoRval(cx, slot(1), slot(0)) );
 		}
 		return true;
 		JL_BAD;

@@ -293,6 +293,18 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 	return JS_NewUCString(cx, chars, length); // doc. https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_NewString
 }
 
+
+// wait for Bug 1045830 - restore JS_NewString function for latin1 strings
+ALWAYS_INLINE JSString* FASTCALL
+JL_NewString(JSContext *cx, char *chars, size_t length) {
+	
+	JSString *str = JS_NewStringCopyN(cx, chars, length);
+	jl_free(chars); // caller lose the ownershim of chars
+	return str;
+}
+
+
+
 /*
 JL_BEGIN_NAMESPACE
 
@@ -372,6 +384,7 @@ idZero() {
 	return tmp;
 }
 
+/*
 ALWAYS_INLINE JS::Value FASTCALL
 valueZero() {
 
@@ -384,7 +397,7 @@ valueZero() {
 
 	return value;
 }
-
+*/
 
 const JS::Value JSVAL_NULL  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_NULL,      0));
 const JS::Value JSVAL_ZERO  = IMPL_TO_JSVAL(BUILD_JSVAL(JSVAL_TAG_INT32,     0));

@@ -384,9 +384,9 @@ namespace jl2 { //JL_BEGIN_NAMESPACE
 
 
 #define JL_GETTER() \
-	static bool getter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, JS::MutableHandle<JS::Value> vp)
+	static bool getter(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleValue vp)
 
 #define JL_SETTER() \
-	static bool setter(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, bool strict, JS::MutableHandle<JS::Value> vp)
+	static bool setter(JSContext *cx, JS::HandleObject obj, JS::HandleId id, bool strict, JS::MutableHandleValue vp)
 
 

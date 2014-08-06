@@ -414,7 +414,7 @@ setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::HandleObject obj)
 ALWAYS_INLINE bool FASTCALL
 setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::HandleId id) {
 
-	rval.set(js::IdToValue(id)); // -or- return JS_IdToValue(cx, id, val);
+	rval.set( js::IdToValue(id) ); // -or- return JS_IdToValue(cx, id, val);
 	return true;
 }
 
@@ -424,6 +424,15 @@ setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::HandleString str)
 	rval.setString(str);
 	return true;
 }
+
+
+ALWAYS_INLINE bool FASTCALL
+setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::HandleFunction fun) {
+
+	rval.setObjectOrNull( JS_GetFunctionObject(fun) );
+	return true;
+}
+
 
 // rooted IN : JS::Rooted& / JS::Rooted* / JS::MutableHandle / JS::Handle
 
@@ -454,6 +463,16 @@ setValue( JSContext *cx, JS::MutableHandleValue rval, JS::Rooted<T>*pv ) {
 }
 // eg. JS::RootedValue rtVal(cx);
 //     jl::setValue(cx, obj, "foo", &rtVal) );
+
+
+template <typename T>
+ALWAYS_INLINE bool FASTCALL
+setValue( JSContext *cx, JS::MutableHandleValue rval, const JS::Heap<T> &heap ) {
+
+	JS::Rooted<T> rootedThing(cx, heap);
+	return setValue( cx, rval, rootedThing );
+}
+
 
 
 ////////
@@ -1059,9 +1078,22 @@ getVector(JSContext *cx, IN JS::HandleValue val, OUT T * vector, IN uint32_t len
 }
 
 
-////
+
+//// jl::call()
 
 
+/* thisObj, fun, args, rval
+JS::call( cx, HandleObject, HandleFunction, args, rval )
+JS::call( cx, HandleObject, char*,          args, rval )
+JS::call( cx, HandleObject, HandleValue,    args, rval )
+JS::call( cx, HandleValue,  HandleValue,    args, rval )
+JS::call( cx, HandleValue,  HandleObject,   args, rval )  ->  JS::call( cx, HandleValue,  HandleValue,    args, rval )
+  ->  js::Invoke(JSContext *cx, const Value &thisv, const Value &fval, unsigned argc, const Value *argv, MutableHandleValue rval)
+*/
+
+
+
+/*
 // fun as function
 ALWAYS_INLINE bool FASTCALL
 call(JSContext *cx, JS::HandleObject thisObj, JS::HandleValue fun, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
@@ -1076,7 +1108,7 @@ call(JSContext *cx, JS::HandleObject thisObj, JS::HandleFunction fun, const JS::
 }
 
 ALWAYS_INLINE bool FASTCALL
-call(JSContext *cx, JS::HandleObject thisObj, JS::Heap< JS::Value > &fun, const JS::HandleValueArray &args, JS::MutableHandleValue rval) {
+call(JSContext *cx, JS::HandleObject thisObj, const JS::Heap< JS::Value > &fun, const JS::HandleValueArray &args, JS::MutableHandleValue rval) {
 
 	JS::RootedValue fval(cx, fun);
     return JS_CallFunctionValue(cx, thisObj, fval, args, rval);
@@ -1127,8 +1159,104 @@ call(JSContext *cx, JS::HandleValue thisArg, const JS::RootedValue &fval, const 
 }
 
 
+// handle case when thisArg is a JS::Heap<JS::Value>
+template <class FCT>
+ALWAYS_INLINE bool FASTCALL
+call(JSContext *cx, const JS::Heap<JS::Value> &thisArg, const FCT &fct, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
+
+	JS::RootedValue thisArgVal(cx, thisArg);
+	return JS::Call(cx, JS::HandleValue(&thisArgVal), fct, args, rval);
+}
+*/
+
+
+////
+
+// likely
+ALWAYS_INLINE bool FASTCALL
+call(JSContext *cx, JS::HandleValue thisVal, JS::HandleValue fctVal, const JS::HandleValueArray &args, JS::MutableHandleValue rval) {
+
+	JL_CHK( JS::Call(cx, thisVal, fctVal, args, rval) );
+	return true;
+	JL_BAD;
+}
+
+
+// handle FCT  -  call(cx, HandleValue, *, HandleValueArray, rval)
+
+// last resort
+template <class FCT>
+ALWAYS_INLINE bool FASTCALL
+callTfun(JSContext *cx, JS::HandleValue thisVal, const FCT &fct, const JS::HandleValueArray &args, JS::MutableHandleValue rval) {
+
+	JS::RootedValue fctVal(cx);
+	JL_CHK( jl::setValue(cx, &fctVal, fct) );
+	JL_CHK( JS::Call(cx, thisVal, fctVal, args, rval) );
+	return true;
+	JL_BAD;
+}
+
+// fun is a name (obj.funId)
+ALWAYS_INLINE bool FASTCALL
+callTfun(JSContext *cx, JS::HandleValue thisVal, JS::HandleId funId, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
+
+    JS::RootedObject thisObj(cx, &thisVal.toObject());
+    JS::RootedValue funVal(cx);
+	
+	JL_CHK( JS_GetPropertyById(cx, thisObj, funId, &funVal) );
+	return JS::Call(cx, thisVal, funVal, args, rval);
+	JL_BAD;
+}
+
+// fun is a name (obj.wideName)
+ALWAYS_INLINE bool FASTCALL
+callTfun(JSContext *cx, JS::HandleValue thisVal, const WCStrSpec name, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
+
+    JS::RootedObject thisObj(cx, &thisVal.toObject());
+	JS::RootedValue funVal(cx);
+	JL_CHK( JS_GetUCProperty(cx, thisObj, name.str(), name.len(), &funVal) );
+	return JS::Call(cx, thisVal, funVal, args, rval);
+	JL_BAD;
+}
+
+// fun is a name (obj.name)
+ALWAYS_INLINE bool FASTCALL
+callTfun(JSContext *cx, JS::HandleValue thisVal, const CStrSpec name, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
+
+    JS::RootedObject thisObj(cx, &thisVal.toObject());
+    return JS::Call(cx, thisObj, name.str(), args, rval);
+}
+
+
+// handle the THIS  -  call(cx, *, <FCT>, HandleValueArray, rval)
+
+// last resort
+template <class THIS, class FCT>
+ALWAYS_INLINE bool FASTCALL
+call(JSContext *cx, const THIS &calleeThis, const FCT &fct, const JS::HandleValueArray &args, JS::MutableHandleValue rval) {
+
+	JS::RootedValue thisVal(cx);
+	JL_CHK( jl::setValue(cx, &thisVal, calleeThis) );
+	JL_CHK( callTfun(cx, thisVal, fct, args, rval) );
+	return true;
+	JL_BAD;
+}
+
+template <class FCT>
+ALWAYS_INLINE bool FASTCALL
+call(JSContext *cx, JS::HandleObject thisObj, const FCT &fct, const JS::HandleValueArray &args, JS::MutableHandleValue rval) {
+	
+	JS::RootedValue thisVal(cx, JS::ObjectValue(*thisObj));
+	JL_CHK( callTfun(cx, thisVal, fct, args, rval) );
+	return true;
+	JL_BAD;
+}
+
+
 ///
 
+// transform: call(cx, <T>, <T>, MutableHandleValue, args... )
+//      into: call(cx, <T>, <T>, HandleValueArray, MutableHandleValue )
 
 template <class THIS, class FCT>
 ALWAYS_INLINE bool FASTCALL
@@ -1235,7 +1363,7 @@ ALWAYS_INLINE bool FASTCALL
 callNoRval( JSContext *cx, const THIS &thisArg, const FCT &fct ) {
 
 	JS::RootedValue rval(cx);
-	//JS::Value val; JS::MutableHandleValue::fromMarkedLocation(&val);
+	//JS::Value val; JS::MutableHandleValue::fromMarkedLocation(&val); ?
 	return call(cx, thisArg, fct, &rval);
 }
 

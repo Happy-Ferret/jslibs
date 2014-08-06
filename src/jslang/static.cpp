@@ -605,12 +605,7 @@ public:
 
 		if ( !slot( 0 ).isUndefined() ) {
 		
-			JS::RootedObject callThisObj(cx);
-			JS::RootedValue fval(cx, slot(0));
-			callThisObj.set(&slot(1).toObject());
-			JS::Value rval; // rval is unused then there is no need to root it
-
-			JL_CHK( JS_CallFunctionValue(cx, callThisObj, fval, JS::HandleValueArray::empty(), JS::MutableHandleValue::fromMarkedLocation(&rval)) );
+			JL_CHK( jl::callNoRval(cx, slot(1), slot(0)) );
 		}
 
 		return true;
@@ -638,7 +633,7 @@ DEFINE_FUNCTION( timeoutEvents ) {
 	if ( JL_ARG_ISDEF(2) ) {
 
 		JL_ASSERT_ARG_IS_CALLABLE(2);
-		upe->slot(0) = JL_ARG(2);
+		upe->slot(0) = JL_ARG(2); // callback function
 		upe->slot(1) = JL_OBJVAL;
 	}
 

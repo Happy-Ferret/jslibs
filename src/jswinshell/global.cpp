@@ -921,13 +921,9 @@ struct DirectoryUserProcessEvent : public ProcessEvent2 {
 		if ( !*hasEvent )
 			return true;
 
-		if ( !slot( 0 ).isUndefined() ) {
+		if ( !slot( 2 ).isUndefined() ) {
 
-			JS::RootedValue thisVal(cx, slot( 0 ));
-			JS::RootedValue arg(cx, slot( 1 ));
-			JS::RootedValue fval(cx, slot( 2 ));
-
-			JL_CHK( jl::callNoRval( cx, thisVal, fval, arg ) );
+			JL_CHK( jl::callNoRval( cx, slot(0), slot(2), slot(1) ) );
 		}
 		return true;
 		JL_BAD;

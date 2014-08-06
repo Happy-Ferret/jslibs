@@ -1456,10 +1456,9 @@ struct SurfaceReadyProcessEvent : public ProcessEvent2 {
 		if ( !*hasEvent )
 			return true;
 
-		if (slot(0) != JL_VALUEZ) {
+		if ( !slot(0).isUndefined() ) {
 
-			JS::RootedValue rval(cx);
-			jl::call(cx, hslot(1), hslot(0), &rval);
+			jl::callNoRval(cx, hslot(1), hslot(0));
 		}
 		
 		return true;

@@ -906,7 +906,7 @@ END_CLASS
 /*
 // source: http://mxr.mozilla.org/mozilla/source/js/src/js.c
 static bool
-sandbox_resolve(JSContext *cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id, unsigned flags, JS::MutableHandleObject objp) {
+sandbox_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, unsigned flags, JS::MutableHandleObject objp) {
 
 	bool resolved;
 	if ( (flags & JSRESOLVE_ASSIGNING) == 0 ) {

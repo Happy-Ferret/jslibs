@@ -1,7 +1,7 @@
 var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
-	
+
 	host.interruptInterval = 1000;
 	host.onInterrupt = () => host.collectGarbage(true, 50);
 
@@ -132,7 +132,7 @@ var loadModule = host.loadModule;
 		bits:16,
 		channels:2,
 		rate:44100,
-		frames: 50  * 44100 / 1000
+		frames: 20  * 44100 / 1000
 	};
 
 
@@ -281,10 +281,14 @@ var loadModule = host.loadModule;
 
 			s.close();
 			socketList.splice(socketList.indexOf(s), 1);
+			s.state(undefined);
 			log('[connection closed]');
 		}
 
 		function processRequest(s, b) {
+			
+			if ( !s )
+				return;
 
 			log('[http:'+s.peerPort+']');
 
@@ -334,8 +338,9 @@ var loadModule = host.loadModule;
 					head += 'upgrade:WebSocket'+CRLF;
 					s.write(head+CRLF);
 
-					function wsSend(d, dataType) {
-					
+
+					var wsMessageHandler = wsHandler( function(d, dataType) {
+
 						if ( typeof(d) == 'string' ) {
 
 							var data = new Uint8Array(d.length);
@@ -372,11 +377,16 @@ var loadModule = host.loadModule;
 						log('ws> length:'+dataLen);
 
 						s.write(data);
-					}
+					});
 
-					var wsMessageHandler = wsHandler(wsSend);
 
 					function processWebSocket(s, b) {
+
+						if ( !s ) {
+
+							wsMessageHandler();
+							return;
+						}
 			
 						if ( b.length < 2 )
 							return;
@@ -418,7 +428,7 @@ var loadModule = host.loadModule;
 
 						function processPayload(s, b) {
 
-							if ( b.length < length )
+							if ( !s || b.length < length )
 								return;
 
 							log('got payload: '+b.length);
@@ -489,7 +499,7 @@ var loadModule = host.loadModule;
 			clientSocket.buffer = new Buffer();
 			clientSocket.state = processRequest;
 
-//		clientSocket.writable = function() {		print('w');	}
+	//		clientSocket.writable = function() {		print('w');	}
 
 			clientSocket.readable = function(s) {
 
@@ -561,11 +571,16 @@ var loadModule = host.loadModule;
 
 //	print(AudioIn.inputDeviceList.join('\n'));
 
+try {
+
 	audio.start();
 	for (;;) {
 		processEvents(host.endSignalEvents(function() { throw 0 }), audio.events, http.events );
 	}
 	audio.stop();
+} catch ( ex ) {
+	print(ex, '\n', ex.stack)
+}
 
 throw 0;
 
