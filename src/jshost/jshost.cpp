@@ -469,7 +469,7 @@ void _GCSliceCallback(JSRuntime *rt, JS::GCProgress progress, const JS::GCDescri
 using namespace jl;
 
 int
-_tmain( int argc, TCHAR* argv[] ) {
+xxx_tmain( int argc, TCHAR* argv[] ) {
 
 	int exitValue;
 	CmdLineArguments args;
@@ -505,7 +505,6 @@ _tmain( int argc, TCHAR* argv[] ) {
 
 		//alloc.setSkipCleanup(true);
 		//nedAlloc.setSkipCleanup(true);
-		
 		
 		HostRuntime hostRuntime(allocators, args.maxBytes);
 		JL_CHK( hostRuntime );
@@ -579,6 +578,7 @@ _tmain( int argc, TCHAR* argv[] ) {
 				jl::strcat( bootstrapFilename, TEXT(".js") );
 				JL_CHK( jl::executeScriptFileName(cx, globalObject, bootstrapFilename, args.encoding, args.compileOnly, &rval) );
 			}
+
 
 			ASSERT( !JL_IsExceptionPending(cx) );
 
@@ -666,7 +666,7 @@ _tmain( int argc, TCHAR* argv[] ) {
 
 //int test_main(int argc, char* argv[]) {
 int 
-xxx_tmain( int argc, TCHAR* argv[] ) {
+_tmain( int argc, TCHAR* argv[] ) {
 
 
 	const JSClass global_class = {
@@ -689,6 +689,19 @@ xxx_tmain( int argc, TCHAR* argv[] ) {
 		JS_GC(rt);
 	*/
 
+		JS::RootedObject a(cx, jl::newObject(cx));
+		JS::RootedValue b(cx, JS::NumberValue(123));
+		jl::setProperty(cx, a, "test", b);
+
+		jl::getProperty(cx, a, "test", &b);
+			
+		JS::MutableHandleValue test(&b);
+
+		setValue(cx, &b, test);
+
+
+
+
 		JS::CompileOptions compileOptions(cx);
 		compileOptions
 			.setFileAndLine(__FILE__, __LINE__)
@@ -706,7 +719,13 @@ xxx_tmain( int argc, TCHAR* argv[] ) {
 
 		jl::call(cx, glob, "eval", &rval, "123;");
 
-		//jl::callNoRval(cx, JL_GetGlobal(cx), "eval", "123;");
+		jl::callNoRval(cx, glob, "eval", "123;");
+
+
+
+		jl::callNoRval(cx, glob, "jslangTest");
+
+		
 
 	}
 

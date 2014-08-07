@@ -13,6 +13,8 @@ var loadModule = host.loadModule;
 	loadModule('jsio');
 	loadModule('jsstd');
 
+//	jslangTest();
+
 try {
 } catch(ex) {
 	print(ex.valueOf());
