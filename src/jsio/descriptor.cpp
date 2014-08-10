@@ -721,7 +721,7 @@ struct IOProcessEvent : public ProcessEvent2 {
 	bool prepareWait(JSContext *cx, JS::HandleObject obj) {
 
 		JS::RootedValue descriptor(cx);
-		JS::RootedValue descArray(cx, slot(0));
+		JS::RootedValue descArray(cx, getSlot(0));
 
 		JS::RootedObject fdArrayObj(cx, &descArray.toObject());
 		ASSERT( jl::isArrayLike(cx, descArray) );
@@ -766,7 +766,7 @@ struct IOProcessEvent : public ProcessEvent2 {
 		for ( uint32_t i = 0; i < _fdCount; ++i ) {
 
 			JL_CHK( JL_GetElement(cx, fdArrayObj, i, &descriptor) ); // read the item
-			dynSlot(i).set(descriptor);
+			setDynSlot(i, descriptor);
 			JL_CHK( InitPollDesc(cx, descriptor, &_pollDesc[1 + i]) ); // _pollDesc[0] is reserved for mpv->peCancel
 		}
 
@@ -806,14 +806,15 @@ struct IOProcessEvent : public ProcessEvent2 {
 		 // doc: When the pollable event is set, PR_Poll returns with the PR_POLL_READ flag set in the out_flags.
 		*hasEvent = _pollResult > 0 && !( _pollDesc[0].out_flags & PR_POLL_READ ); // has an event but not the cancel event
 
-		if ( *hasEvent ) { // optimization
+		if ( !*hasEvent ) // optimization
+			return true;
 		
-			for ( uint32_t i = 0; i < _fdCount; ++i ) {
+		for ( uint32_t i = 0; i < _fdCount; ++i ) {
 
-				tmp.set( dynSlot(i) );
-				JL_CHK( PollDescNotify(cx, tmp, &_pollDesc[1 + i], i) );
-			}
+			tmp.set( getDynSlot(i) );
+			JL_CHK( PollDescNotify(cx, tmp, &_pollDesc[1 + i], i) );
 		}
+
 		return true;
 		JL_BAD;
 	}
@@ -829,7 +830,7 @@ DEFINE_FUNCTION( events ) {
 	IOProcessEvent *upe = new IOProcessEvent();
 	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
 
-	upe->slot(0) = JL_ARG(1);
+	upe->setSlot(0, JL_ARG(1));
 
 	return true;
 	JL_BAD;

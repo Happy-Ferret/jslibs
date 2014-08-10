@@ -24,7 +24,7 @@ typedef int32_t SourceId_t;
 
 struct ConstValueSpec {
 	const char *name;
-	JS::Value val; // use JS::Heap<JS::Value> ?
+	JS::Value val; // ASSERT( !val.isGCThing() )
 };
 
 
@@ -104,6 +104,7 @@ DefineConstValues(JSContext *cx, JS::HandleObject obj, ConstValueSpec *cs) {
 	JS::RootedValue tmp(cx);
     for ( ; cs->name; cs++ ) {
 
+		ASSERT( !cs->val.isGCThing() );
 		tmp.set(cs->val);
 		JL_CHK( JS_DefineProperty(cx, obj, cs->name, tmp, JSPROP_READONLY | JSPROP_PERMANENT) );
 	}

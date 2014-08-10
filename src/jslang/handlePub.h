@@ -31,11 +31,40 @@ JL_HIDToStr(JL_HANDLE_TYPE hid, char *dst) {
 }
 */
 
+
 class HandlePrivate : public jl::CppAllocators {
+
 	JS::Heap<JS::Value> _slots[JL_HANDLE_PUBLIC_SLOT_COUNT];
 	JS::Heap<JS::Value> *_dynSlots;
 	uint32_t _dynSlotsCount;
 public:
+
+	void
+	trace(JSTracer *trc, JSObject *obj) {
+
+		uint32_t i;
+
+		// in that case, you need your JS::Value vector to be JS::Heap<JS::Value>, and to call JS_CallHeapValueTracer on each item in the vector
+
+		//doc: The argument to JS_Call*Tracer is an in-out param: when the function returns, the garbage collector might have moved the GC thing
+
+		for ( i = 0; i < JL_HANDLE_PUBLIC_SLOT_COUNT; ++i ) {
+			
+			if ( _slots[i].isMarkable() ) {
+				
+				JS_CallHeapValueTracer(trc, &_slots[i], "HandlePrivate slot");
+			}
+		}
+
+		for ( i = 0; i < dynSlotsCount(); ++i ) {
+
+			if ( _dynSlots[i].isMarkable() ) {
+				
+				JS_CallHeapValueTracer(trc, &_dynSlots[i], "HandlePrivate dynSlot");
+			}
+		}
+	}
+
 
 	virtual JL_HANDLE_TYPE typeId() const = 0;
 	virtual ~HandlePrivate() {
@@ -50,16 +79,21 @@ public:
 		_dynSlots = nullptr;
 	}
 
-	JS::Heap<JS::Value> &
-	slot(uint32_t index) {
+	JS::Value
+	getSlot(uint32_t index) const {
 
 		ASSERT( index < JL_HANDLE_PUBLIC_SLOT_COUNT );
-		
-		// http://logs.glob.uno/?c=mozilla%23jsapi#c450574
-
-		//JS::ExposeValueToActiveJS(_slots[index]);
+		JS::ExposeValueToActiveJS(_slots[index]);
 		return _slots[index];
 	}
+
+	void
+	setSlot(uint32_t index, JS::HandleValue val) {
+
+		ASSERT( index < JL_HANDLE_PUBLIC_SLOT_COUNT );
+		_slots[index].set(val);
+	}
+
 
 	bool
 	allocDynSlots(uint32_t count) {
@@ -79,13 +113,19 @@ public:
 		return _dynSlotsCount;
 	}
 
-	JS::Heap<JS::Value> &
-	dynSlot(uint32_t index) {
+	JS::Value
+	getDynSlot(uint32_t index) const {
 
 		ASSERT( _dynSlots && index < _dynSlotsCount );
-
-		//JS::ExposeValueToActiveJS(_dynSlots[index]);
+		JS::ExposeValueToActiveJS(_dynSlots[index]);
 		return _dynSlots[index];
+	}
+
+	void
+	setDynSlot(uint32_t index, JS::HandleValue val) {
+
+		ASSERT( _dynSlots && index < _dynSlotsCount );
+		_dynSlots[index].set(val);
 	}
 };
 

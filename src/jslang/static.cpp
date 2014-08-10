@@ -17,6 +17,7 @@
 #include "../jslang/blobPub.h"
 #include "jslang.h"
 
+
 DECLARE_CLASS(Handle)
 
 
@@ -603,9 +604,12 @@ public:
 		JLEventReset(cancel);
 		canceled = false;
 
-		if ( !slot( 0 ).isUndefined() ) {
+		JS::RootedValue fct(cx, getSlot(0));
+
+		if ( !fct.isUndefined() ) {
 		
-			JL_CHK( jl::callNoRval(cx, slot(1), slot(0)) );
+			JS::RootedValue calleeThis(cx, getSlot(1));
+			JL_CHK( jl::callNoRval(cx, calleeThis, fct) );
 		}
 
 		return true;
@@ -633,8 +637,8 @@ DEFINE_FUNCTION( timeoutEvents ) {
 	if ( JL_ARG_ISDEF(2) ) {
 
 		JL_ASSERT_ARG_IS_CALLABLE(2);
-		upe->slot(0) = JL_ARG(2); // callback function
-		upe->slot(1) = JL_OBJVAL;
+		upe->setSlot(0, JL_ARG(2)); // callback function
+		upe->setSlot(1, JL_OBJVAL);
 	}
 
 	return true;
@@ -1062,9 +1066,67 @@ struct is_const
 
 DEFINE_FUNCTION( jslangTest ) {
 
-	JL_IGNORE(cx, argc, vp);
-
 	JL_DEFINE_ARGS;
+
+	using namespace jl;
+
+	typedef const char *ConstStr;
+
+	JS::CallArgs jsargs( JS::CallArgsFromVp(argc, vp) );
+
+	JS::Heap<JS::Value> hp;
+	hp.set(jsargs.rval());
+
+	JS::RootedValue rv(cx, JS::ObjectValue(*jl::newArray(cx)));
+	const JS::RootedValue crv(cx, JS::ObjectValue(*jl::newArray(cx)));
+	JS::MutableHandleValue mhv(&rv);
+	const JS::MutableHandleValue cmhv(&rv);
+	JS::HandleValue hv(rv);
+	int i = 5;
+	bool b = true;
+
+	ConstStr str1 = "test1";
+	const ConstStr &str2 = str1;
+
+	JS::RootedObject rto(cx, jl::newArray(cx));
+	const JS::RootedObject &crto(rto);
+
+	setValue(cx, mhv, rto);
+	setValue(cx, mhv, crto);
+	setValue(cx, mhv, i);
+	setValue(cx, mhv, i);
+	setValue(cx, mhv, b);
+	setValue(cx, mhv, str1); // ptr !
+	setValue(cx, mhv, str2); // ptr !
+	setValue(cx, mhv, "test"); // ptr !
+	setValue(cx, mhv, rv);
+	setValue(cx, mhv, crv);
+	setValue(cx, mhv, &rv); // ptr !
+	setValue(cx, mhv, &crv); // ptr !
+	setValue(cx, mhv, hv);
+	setValue(cx, mhv, mhv);
+	setValue(cx, mhv, cmhv);
+	setValue(cx, mhv, jsargs.thisv()); // HandleValue
+	setValue(cx, mhv, jsargs.rval()); // MutableHandleValue
+	setValue(cx, mhv, JS::NullHandleValue); // HandleValue
+	setValue(cx, mhv, JS::HandleValue(mhv)); // HandleValue
+	setValue(cx, mhv, JS::MutableHandleValue(&rv)); // HandleValue
+	setValue(cx, mhv, hp);
+	setValue(cx, mhv, JS::Heap<JS::Value>(jsargs.rval()));
+
+	getValue(cx, rv, &i);
+	getValue(cx, hv, &i);
+	getValue(cx, hv, &b);
+	getValue(cx, hv, &rv);
+	getValue(cx, hv, rv);
+	getValue(cx, hv, &mhv);
+	getValue(cx, hv, mhv);
+	getValue(cx, hv, jsargs.rval());
+	getValue(cx, hv, &hp);
+	getValue(cx, hv, hp);
+
+
+
 
 /*
 	jl::AutoBuffer test;

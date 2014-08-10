@@ -1456,9 +1456,11 @@ struct SurfaceReadyProcessEvent : public ProcessEvent2 {
 		if ( !*hasEvent )
 			return true;
 
-		if ( !slot(0).isUndefined() ) {
+		JS::RootedValue fct(cx, getSlot(0));
+		if ( !fct.isUndefined() ) {
 
-			jl::callNoRval(cx, hslot(1), hslot(0));
+			JS::RootedValue calleeThis(cx, getSlot(1));
+			jl::callNoRval(cx, calleeThis, fct);
 		}
 		
 		return true;
@@ -1479,8 +1481,8 @@ DEFINE_FUNCTION( surfaceReadyEvents ) {
 	if (JL_ARG_ISDEF(1)) {
 
 		JL_ASSERT_ARG_IS_CALLABLE(1);
-		upe->slot(0) = JL_ARG(1);
-		upe->slot(1) = JL_OBJVAL;
+		upe->setSlot(0, JL_ARG(1));
+		upe->setSlot(1, JL_OBJVAL);
 	}
 	
 	return true;
@@ -1540,8 +1542,8 @@ struct SdlEventsProcessEvent : public ProcessEvent2 {
 
 		*hasEvent = false;
 
-		JS::RootedObject thisObj(cx, &slot(0).toObject());
-		JS::RootedObject listenersObj(cx, &slot(1).toObject());
+		JS::RootedObject thisObj(cx, &getSlot(0).toObject());
+		JS::RootedObject listenersObj(cx, &getSlot(1).toObject());
 		JS::RootedValue rval(cx); // unused
 
 		for (;;) {
@@ -1580,8 +1582,8 @@ DEFINE_FUNCTION( sdlEvents ) {
 	SdlEventsProcessEvent *upe = new SdlEventsProcessEvent();
 	JL_CHK(HandleCreate(cx, upe, JL_RVAL));
 
-	upe->slot(0) = JL_OBJVAL;
-	upe->slot(1) = JL_ARG(1);
+	upe->setSlot(0, JL_OBJVAL);
+	upe->setSlot(1, JL_ARG(1));
 
 	return true;
 	JL_BAD;

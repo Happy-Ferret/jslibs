@@ -39,21 +39,20 @@ ModuleInit( JSContext *cx, JS::HandleObject obj ) {
 		
 	struct ReleaseModule : jl::Events::Callback {
 		jl::HostRuntime &_hostRuntime;
-		ModulePrivate *_mpv;
+		videoInput *_vi;
 	
-		ReleaseModule(jl::HostRuntime &hostRuntime, ModulePrivate *mpv)
-		: _hostRuntime(hostRuntime), _mpv(mpv) {
+		ReleaseModule(jl::HostRuntime &hostRuntime, videoInput *vi)
+		: _hostRuntime(hostRuntime), _vi(vi) {
 		}
 
 		bool operator()() {
 		
 			ASSERT( _hostRuntime );
 			if ( _hostRuntime.skipCleanup() )
-				return;
+				return true;
 
-			if ( _mpv != NULL )
-				delete static_cast<videoInput*>(_mpv);
-
+			if ( _vi != NULL )
+				delete _vi;
 
 			return true;
 		}

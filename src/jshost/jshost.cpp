@@ -14,6 +14,8 @@
 
 #include "stdafx.h"
 
+//#define TESTMODE
+
 #define HOST_STACK_SIZE 4194304 // = 4 * 1024 * 1024
 
 // set stack to 4MB:
@@ -330,9 +332,11 @@ struct EndSignalProcessEvent : public ProcessEvent2 {
 		if ( !*hasEvent )
 			return true;
 
-		if ( !slot( 0 ).isUndefined() ) {
-		
-			JL_CHK( jl::callNoRval(cx, slot(1), slot(0)) );
+		JS::RootedValue fct(cx, getSlot(0));
+		if ( !fct.isUndefined() ) {
+
+			JS::RootedValue calleeThis(cx, getSlot(1));
+			JL_CHK( jl::callNoRval(cx, calleeThis, fct) );
 		}
 		return true;
 		JL_BAD;
@@ -353,8 +357,8 @@ EndSignalEvents( JSContext *cx, unsigned argc, jsval *vp ) {
 	if ( JL_ARG_ISDEF(1) ) {
 
 		JL_ASSERT_ARG_IS_CALLABLE(1);
-		upe->slot(0) = JL_ARG(1);
-		upe->slot(1) = JL_OBJVAL;
+		upe->setSlot(0, JL_ARG(1));
+		upe->setSlot(1, JL_OBJVAL);
 	}
 
 	return true;
@@ -469,7 +473,12 @@ void _GCSliceCallback(JSRuntime *rt, JS::GCProgress progress, const JS::GCDescri
 using namespace jl;
 
 int
-xxx_tmain( int argc, TCHAR* argv[] ) {
+
+#ifdef TESTMODE
+_disabled_tmain( int argc, TCHAR* argv[] ) {
+#else
+_tmain( int argc, TCHAR* argv[] ) {
+#endif
 
 	int exitValue;
 	CmdLineArguments args;
@@ -660,9 +669,11 @@ xxx_tmain( int argc, TCHAR* argv[] ) {
 	}
 #endif
 */
-
 }
 
+
+
+#ifdef TESTMODE
 
 //int test_main(int argc, char* argv[]) {
 int 
@@ -692,8 +703,8 @@ _tmain( int argc, TCHAR* argv[] ) {
 		JS::RootedObject a(cx, jl::newObject(cx));
 		JS::RootedValue b(cx, JS::NumberValue(123));
 		jl::setProperty(cx, a, "test", b);
-
 		jl::getProperty(cx, a, "test", &b);
+
 			
 		JS::MutableHandleValue test(&b);
 
@@ -735,6 +746,8 @@ _tmain( int argc, TCHAR* argv[] ) {
 	JS_ShutDown();
 	return 0;
 }
+
+#endif
 
 /*
 int main_test2(int argc, char* argv[]) {

@@ -38,8 +38,8 @@ struct Private : jl::CppAllocators {
 
 DEFINE_FINALIZE() {
 
-	if ( obj == jl::Host::getJLHost(fop->runtime()).getCachedProto(className) )
-		return;
+//	if ( obj == jl::Host::getJLHost(fop->runtime()).getCachedProto(className) ) // if we are finalizing the proto
+//		return;
 
 	Private *pv;
 	pv = (Private*)js::GetObjectPrivate(obj);
@@ -203,14 +203,13 @@ struct VIEvent : public ProcessEvent2 {
 			imageEvent = pv->vi->ImageEvent( pv->deviceID );
 			cancelEvent = CreateEvent( NULL, FALSE, FALSE, NULL ); // auto-reset
 
-			JS::RootedValue rval( cx );
+			JS::RootedValue viObj(cx, getSlot(0) );
 			JS::RootedValue fct( cx );
-			JS::RootedObject thisObj( cx, &hslot( 0 ).toObject() );
 
-			JL_CHK( jl::getProperty( cx, thisObj, "onFocus", &fct ) );
+			JL_CHK( jl::getProperty( cx, viObj, "onFocus", &fct ) );
 			if ( jl::isCallable( cx, fct ) ) {
 
-				JL_CHK( jl::call( cx, thisObj, fct, &rval ) );
+				JL_CHK( jl::callNoRval(cx, viObj, fct) );
 			}
 		}
 
@@ -242,7 +241,7 @@ DEFINE_FUNCTION( events ) {
 
 	upe->imageEvent = pv->vi->ImageEvent( pv->deviceID );
 	upe->cancelEvent = CreateEvent( NULL, FALSE, FALSE, NULL ); // auto-reset
-	upe->hslot( 0 ).set( JL_OBJVAL );
+	upe->setSlot(0, JL_OBJVAL);
 
 	return true;
 	JL_BAD;

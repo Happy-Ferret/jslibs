@@ -669,7 +669,7 @@ addScriptLocation( JSContext * RESTRICT cx, IN JS::MutableHandleObject obj ) {
 	JS::RootedValue tmp(cx);
 	JS::AutoFilename autoFilename;
 	const char *filename;
-	unsigned lineno;
+	unsigned int lineno;
 	JL_CHK( JS::DescribeScriptedCaller(cx, &autoFilename, &lineno) );
 	if ( autoFilename.get() == NULL || *autoFilename.get() == '\0' )
 		filename = "<no_filename>";

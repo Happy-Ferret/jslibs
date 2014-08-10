@@ -761,7 +761,7 @@ struct SystrayEvent : public ProcessEvent2 {
 
 	bool endWait(bool *hasEvent, JSContext *cx, JS::HandleObject) {
 
-		JS::RootedObject systrayObj(cx, &slot(0).toObject());
+		JS::RootedObject systrayObj(cx, &getSlot(0).toObject());
 
 		Private *pv = (Private*)JL_GetPrivate(systrayObj);
 	
@@ -806,7 +806,7 @@ DEFINE_FUNCTION( events ) {
 	JL_ASSERT_ALLOC(upe);
 	JL_CHK( HandleCreate(cx, upe, JL_RVAL) );
 
-	upe->slot(0).set(JL_OBJVAL);
+	upe->setSlot(0, JL_OBJVAL);
 
 	upe->cancelEvent = CreateEvent(NULL, FALSE, FALSE, NULL); // auto-reset
 	if ( upe->cancelEvent == NULL )

@@ -465,7 +465,7 @@ struct ConsoleProcessEvent : public ProcessEvent2 {
 
 		*hasEvent = WaitForSingleObject(consoleEvent, 0) == WAIT_OBJECT_0;
 
-		JS::RootedObject thisObj(cx, &slot(0).toObject());
+		JS::RootedObject thisObj(cx, &getSlot(0).toObject());
 
 		if ( *hasEvent ) {
 	

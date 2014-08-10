@@ -132,7 +132,8 @@
 	#pragma warning(error : 4800) // 'XXX' : forcing value to bool 'true' or 'false' (performance warning)
 	#pragma warning(error : 4101) // 'XXX' : unreferenced local variable
 	#pragma warning(error : 4172) // returning address of local variable or temporary
-	#pragma warning(error : 4482) //  nonstandard extension used: enum 'XXX' used in qualified name
+	#pragma warning(error : 4482) // nonstandard extension used: enum 'XXX' used in qualified name
+	#pragma warning(error : 4238) // nonstandard extension used : class rvalue used as lvalue
 	#ifdef DEBUG
 		#pragma warning(error : 4701) // potentially uninitialized local variable 'XXX' used
 	#endif

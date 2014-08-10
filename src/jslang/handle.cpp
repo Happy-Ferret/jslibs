@@ -23,6 +23,8 @@ BEGIN_CLASS( Handle )
 
 DEFINE_FINALIZE() { // see HandleClose()
 
+	// is there a simple way to detect that we are finalizing the prototype of an object ?
+
 	HandlePrivate *pv = static_cast<HandlePrivate*>(js::GetObjectPrivate(obj));
 	if ( pv ) {
 
@@ -50,7 +52,7 @@ DEFINE_FUNCTION( toString ) {
 		str[8 + jl::CastUint32ToCStr(pv->typeId(), str+8)] = ']';
 	} else {
 
-		// this handle host.stdout( Handle.prototype ) 
+		// this handle host.stdout( Handle.prototype )
 		str[7] = ']';
 	}
 	JL_CHK( jl::setValue( cx, JL_RVAL, jl::CStrSpec( str ) ) );
@@ -60,32 +62,10 @@ DEFINE_FUNCTION( toString ) {
 
 
 DEFINE_TRACER() {
-
+	
 	HandlePrivate *pv = static_cast<HandlePrivate*>(js::GetObjectPrivate(obj));
-	if ( pv ) {
-
-		uint32_t i;
-
-		// in that case, you need your JS::Value vector to be JS::Heap<JS::Value>, and to call JS_CallHeapValueTracer on each item in the vector
-
-		//doc: The argument to JS_Call*Tracer is an in-out param: when the function returns, the garbage collector might have moved the GC thing
-
-		for ( i = 0; i < JL_HANDLE_PUBLIC_SLOT_COUNT; ++i ) {
-			
-			if ( pv->slot(i).isMarkable() ) {
-				
-				JS_CallHeapValueTracer(trc, &pv->slot(i), "HandlePrivate slot");
-			}
-		}
-
-		for ( i = 0; i < pv->dynSlotsCount(); ++i ) {
-
-			if ( pv->dynSlot(i).isMarkable() ) {
-				
-				JS_CallHeapValueTracer(trc, &pv->dynSlot(i), "HandlePrivate dynSlot");
-			}
-		}
-	}
+	if ( pv )
+		pv->trace(trc, obj);
 }
 
 

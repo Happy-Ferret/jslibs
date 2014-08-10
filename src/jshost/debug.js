@@ -7,13 +7,11 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('serial'); throw 0; // -inlineOnly
 
-
-	//loadModule('jsstd');
-
-	loadModule('jsio');
 	loadModule('jsstd');
 
-//	jslangTest();
+	//jslangTest();
+
+throw 0;
 
 try {
 } catch(ex) {
