@@ -43,7 +43,7 @@ DEFINE_FINALIZE() {
 	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 
-	Private *pv = (Private*)js::GetObjectPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivateFromFinalize(obj);
 	if ( !pv )
 		return;
 

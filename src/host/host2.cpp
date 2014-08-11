@@ -698,7 +698,7 @@ Global::_lazy_enumerate(JSContext *cx, JS::HandleObject obj) {
 }
 
 bool
-Global::_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, unsigned flags, JS::MutableHandleObject objp) {
+Global::_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleObject objp) {
 
 	bool resolved;
 
@@ -714,7 +714,8 @@ Global::_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, unsi
 }
 
 const JSClass Global::_globalClass_lazy = {
-	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS,
+	NAME_GLOBAL_CLASS,
+	JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,
 	JS_PropertyStub, JS_DeletePropertyStub,
 	JS_PropertyStub, JS_StrictPropertyStub,
 	Global::_lazy_enumerate, (JSResolveOp)Global::_lazy_resolve,
@@ -724,7 +725,8 @@ const JSClass Global::_globalClass_lazy = {
 };
 
 const JSClass Global::_globalClass = {
-	NAME_GLOBAL_CLASS, JSCLASS_GLOBAL_FLAGS,
+	NAME_GLOBAL_CLASS,
+	JSCLASS_GLOBAL_FLAGS,
 	JS_PropertyStub, JS_DeletePropertyStub,
 	JS_PropertyStub, JS_StrictPropertyStub,
 	JS_EnumerateStub, JS_ResolveStub,

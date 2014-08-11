@@ -42,7 +42,7 @@ DEFINE_FINALIZE() {
 //		return;
 
 	Private *pv;
-	pv = (Private*)js::GetObjectPrivate(obj);
+	pv = (Private*)JL_GetPrivateFromFinalize(obj);
 	if ( pv != NULL ) {
 
 		pv->vi->stopDevice( pv->deviceID );

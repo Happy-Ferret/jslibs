@@ -79,7 +79,7 @@ DEFINE_FINALIZE() {
 	}
 
 	//	printf("Fin:%d\n", matrixPoolLength);
-	TransformationPrivate *pv = (TransformationPrivate*)js::GetObjectPrivate(obj);
+	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivateFromFinalize(obj);
 	if ( pv == NULL )
 		return;
 

@@ -34,7 +34,7 @@ DEFINE_FINALIZE() {
 
 	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
-	HashPrivate *pv = (HashPrivate *)js::GetObjectPrivate(obj);
+	HashPrivate *pv = (HashPrivate *)JL_GetPrivateFromFinalize(obj);
 	jl_free(pv); // NULL is supported but is quite rare.
 }
 

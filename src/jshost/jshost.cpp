@@ -678,6 +678,7 @@ _tmain( int argc, TCHAR* argv[] ) {
 //int test_main(int argc, char* argv[]) {
 int 
 _tmain( int argc, TCHAR* argv[] ) {
+	puts("TEST MODE");
 
 
 	const JSClass global_class = {
@@ -700,17 +701,26 @@ _tmain( int argc, TCHAR* argv[] ) {
 		JS_GC(rt);
 	*/
 
+
+		JS::AutoValueVector avv(cx);
+		avv.append(JS::ObjectValue(*jl::newObject(cx)));
+
+
 		JS::RootedObject a(cx, jl::newObject(cx));
 		JS::RootedValue b(cx, JS::NumberValue(123));
 		jl::setProperty(cx, a, "test", b);
 		jl::getProperty(cx, a, "test", &b);
 
-			
+		
+		a.set(nullptr);
+		JL_GetClassOfPrototype(cx, a);
+
+
+
+
 		JS::MutableHandleValue test(&b);
 
 		setValue(cx, &b, test);
-
-
 
 
 		JS::CompileOptions compileOptions(cx);

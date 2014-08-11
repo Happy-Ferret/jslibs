@@ -1052,7 +1052,7 @@ class DLLAPI Global : public Valid, public jl::CppAllocators {
 	_lazy_enumerate(JSContext *cx, JS::HandleObject obj);
 
 	static bool
-	Global::_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, unsigned flags, JS::MutableHandleObject objp);
+	Global::_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleObject objp);
 
 	static const JSClass _globalClass;
 	static const JSClass _globalClass_lazy;
@@ -1307,7 +1307,9 @@ public:
 
 		JSCompartment *objectCompartment = js::GetObjectCompartment(obj);
 		ASSERT( objectCompartment );
-		return *static_cast<Host*>(JS_GetCompartmentPrivate(objectCompartment));
+		Host* pHost = static_cast<Host*>(JS_GetCompartmentPrivate(objectCompartment));
+		ASSERT( pHost );
+		return *pHost;
 	}
 
 	static ALWAYS_INLINE Host&
@@ -1315,10 +1317,10 @@ public:
 
 		JSCompartment *currentCompartment = js::GetContextCompartment(cx);
 		ASSERT( currentCompartment );
-		return *static_cast<Host*>(JS_GetCompartmentPrivate(currentCompartment));
+		Host* pHost = static_cast<Host*>(JS_GetCompartmentPrivate(currentCompartment));
+		ASSERT( pHost );
+		return *pHost;
 	}
-
-
 };
 
 

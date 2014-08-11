@@ -4,33 +4,63 @@ var loadModule = host.loadModule;
 
 loadModule('jsstd');
 
-//exec('dgvklsdfhgsvldukfhg');
+	print(true, '\n');
 
-var o = {a:1, b:2};
+	try {
+		sandboxEval('for ( var i = 0; i < 10000000; ++i );', undefined, 100);
+		print(false, '\n');
+	} catch(ex if ex instanceof OperationLimit) {
+		print(true, '\n');
+	}
 
-print( countProperties(o), '\n' );
-print( clearObject(o), '\n' );
-print( countProperties(o), '\n' );
-print( '\n' );
+	print( sandboxEval('') == undefined, '\n' );
 
-(function test() { print( captureCurrentStack(), '\n' )})();
+	print( sandboxEval('this') != global, '\n' );
+
+	sandboxEval('query', a=>a);
+
+	print( sandboxEval('query(5)', a=>a) == 5, '\n' );
+
+	print( sandboxEval('query([1,2,3])', a=>a) == '1,2,3', '\n' );
+
+	sandboxEval('Math').cos.aaa = 123;
+	print( !('aaa' in Math.cos) )
+
+
+
+	//var res = sandboxEval('Math').cos == Math.cos
+	//print(res);
+
 
 throw 0;
 
-try {
 
-	//var res = sandboxEval('throw ({x:123})', undefined, 1000);
-	var res = sandboxEval('for ( var i = 0; i < 1000000; ++i );', undefined, 100);
+	try {
 
-} catch(ex if ex instanceof OperationLimit) {
+		//var res = sandboxEval('throw ({x:123})', undefined, 1000);
+		var res = sandboxEval('for ( var i = 0; i < 1000000; ++i );', undefined, 100);
 
-	print(ex);
-}
+	} catch(ex if ex instanceof OperationLimit) {
 
-throw ({})
-
+		print(ex);
+	}
 
 throw 0;
+
+
+	//exec('dgvklsdfhgsvldukfhg');
+
+	var o = {a:1, b:2};
+
+	print( countProperties(o), '\n' );
+	print( clearObject(o), '\n' );
+	print( countProperties(o), '\n' );
+	print( '\n' );
+
+	(function test() { print( captureCurrentStack(), '\n' )})();
+
+throw 0;
+
 
 
 

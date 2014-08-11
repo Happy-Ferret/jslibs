@@ -27,7 +27,7 @@ DEFINE_FINALIZE() {
 //	if ( obj == jl::Host::getJLHost(fop->runtime()).getCachedProto(JL_THIS_CLASS_NAME) ) // we are finilizing the prototype ?
 //		return;
 
-	IEnumVARIANT *ienumv = (IEnumVARIANT*)js::GetObjectPrivate(obj);
+	IEnumVARIANT *ienumv = (IEnumVARIANT*)JL_GetPrivateFromFinalize(obj);
 	if ( !ienumv )
 		return;
 	ienumv->Release();

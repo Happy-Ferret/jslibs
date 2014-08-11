@@ -6,12 +6,14 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); loadModule('jsio'); currentDirectory += '/../../tests/jslinux'; exec('start.js'); throw 0;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('serial'); throw 0; // -inlineOnly
+//jslangTest();
 
 	loadModule('jsstd');
-
-	//jslangTest();
+	var ev = timeoutEvents(10);
 
 throw 0;
+
+Math.cos
 
 try {
 } catch(ex) {

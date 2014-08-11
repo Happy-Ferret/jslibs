@@ -30,7 +30,7 @@ DEFINE_FINALIZE() {
 
 	JL_IGNORE(fop);
 
-	PRDir *dd = (PRDir*)js::GetObjectPrivate( obj );
+	PRDir *dd = (PRDir*)JL_GetPrivateFromFinalize(obj);
 	if ( dd != NULL ) {
 
 		if ( PR_CloseDir(dd) != PR_SUCCESS ) {

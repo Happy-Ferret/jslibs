@@ -142,7 +142,7 @@ bad:
 
 DEFINE_FINALIZE() {
 
-	HICON *phIcon = (HICON*)js::GetObjectPrivate(obj);
+	HICON *phIcon = (HICON*)JL_GetPrivateFromFinalize(obj);
 	if ( !phIcon )
 		return;
 

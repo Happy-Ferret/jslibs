@@ -105,7 +105,7 @@ DEFINE_FINALIZE() {
 	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 
-	sqlite3_stmt *pStmt = (sqlite3_stmt*)js::GetObjectPrivate(obj);
+	sqlite3_stmt *pStmt = (sqlite3_stmt*)JL_GetPrivateFromFinalize(obj);
 	if ( pStmt != NULL ) {
 
 /* unable to do this because the database may have already been finalized.

@@ -21,9 +21,14 @@ loadModule('jsstd');
 	function test() {
 
 		debugger;	
+		[];
 	}
 
+	debug.memory.trackingAllocationSites = true;
+
 	test();
+
+
 	
 
 throw 0;

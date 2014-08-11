@@ -33,7 +33,7 @@ struct ClassPrivate {
 
 DEFINE_FINALIZE() {
 
-	ClassPrivate *pv = (ClassPrivate*)js::GetObjectPrivate(obj);
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivateFromFinalize(obj);
 	if ( !pv )
 		return;
 

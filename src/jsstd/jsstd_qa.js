@@ -1,5 +1,9 @@
 loadModule('jsstd');
 
+/// sandboxEval
+
+	sandboxEval('[].a');
+
 /// exec error
 
 	var filename = 'jsqa_' + QA.randomString(8);

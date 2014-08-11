@@ -146,7 +146,7 @@ WaveInThreadProc( LPVOID lpParam ) {
 
 DEFINE_FINALIZE() {
 
-	Private *pv = (Private*)js::GetObjectPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivateFromFinalize(obj);
 	if ( !pv )
 		return;
 
@@ -282,7 +282,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( read ) {
 
 	JL_DEFINE_ARGS;
-	Private *pv = (Private*)js::GetObjectPrivate(JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	{
 	AutoCriticalSection acs(pv->cs);
 	if ( !pv->bufferList ) {
@@ -309,7 +309,7 @@ DEFINE_FUNCTION( start ) {
 	JL_DEFINE_ARGS;
 
 	MMRESULT res;
-	Private *pv = (Private*)js::GetObjectPrivate(JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 
 	res = waveInStart(pv->hwi);
 	ASSERT( res == MMSYSERR_NOERROR );
@@ -328,7 +328,7 @@ DEFINE_FUNCTION( stop ) {
 	JL_DEFINE_ARGS;
 
 	MMRESULT res;
-	Private *pv = (Private*)js::GetObjectPrivate(JL_OBJ);
+	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
 	res = waveInStop(pv->hwi);
 	ASSERT( res == MMSYSERR_NOERROR );
 

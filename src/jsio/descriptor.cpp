@@ -92,7 +92,7 @@ bool NativeInterfaceStreamRead( JSContext *cx, JS::HandleObject obj, char *buf, 
 
 void FinalizeDescriptor(JSFreeOp *fop, JSObject *obj) {
 
-	PRFileDesc *fd = (PRFileDesc*)js::GetObjectPrivate(obj);
+	PRFileDesc *fd = (PRFileDesc*)JL_GetPrivateFromFinalize(obj);
 	if ( !fd ) // check if not already closed
 		return;
 

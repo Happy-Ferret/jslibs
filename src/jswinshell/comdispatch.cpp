@@ -23,7 +23,7 @@ DEFINE_FINALIZE() {
 //	if ( obj == jl::Host::getJLHost(fop->runtime()).getCachedProto(JL_THIS_CLASS_NAME) )
 //		return;
 
-	IDispatch *disp = (IDispatch*)js::GetObjectPrivate(obj);
+	IDispatch *disp = (IDispatch*)JL_GetPrivateFromFinalize(obj);
 	if ( !disp )
 		return;
 	disp->Release();

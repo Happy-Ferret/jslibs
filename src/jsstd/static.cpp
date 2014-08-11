@@ -15,6 +15,8 @@
 #include "stdafx.h"
 #include <jslibsModule.h>
 #include "jsstd.h"
+#include <jswrapper.h>
+
 
 #include <jsvalserializer.h>
 
@@ -946,7 +948,7 @@ sandboxClass_lazy_enumerate(JSContext *cx, JS::HandleObject obj) {
 }
 
 static bool
-sandboxClass_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, unsigned flags, JS::MutableHandleObject objp) {
+sandboxClass_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleObject objp) {
 
 	bool resolved;
 
@@ -964,23 +966,24 @@ sandboxClass_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, 
 
 static JSClass sandbox_class = {
     "Sandbox",
-    JSCLASS_NEW_RESOLVE | JSCLASS_GLOBAL_FLAGS,
-    JS_PropertyStub,   JS_DeletePropertyStub,
-    JS_PropertyStub,   JS_StrictPropertyStub,
+    JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,
+    JS_PropertyStub, JS_DeletePropertyStub,
+    JS_PropertyStub, JS_StrictPropertyStub,
     sandboxClass_lazy_enumerate, (JSResolveOp)sandboxClass_lazy_resolve,
 	JS_ConvertStub, nullptr, nullptr, nullptr, nullptr, JS_GlobalObjectTraceHook
 };
 
 class SandboxContextPrivate {
 public:
-	SandboxContextPrivate(JSContext *cx) : queryFunctionValue(cx) {
-	}
-
 	JLSemaphoreHandler semEnd;
 	unsigned int maxExecutionTime;
 	volatile bool expired;
-	JS::PersistentRootedValue queryFunctionValue; //jsval queryFunctionValue;
+	JS::PersistentRootedValue queryFunctionValue;
 	JSInterruptCallback prevInterruptCallback;
+
+	SandboxContextPrivate(JSContext *cx) :
+		queryFunctionValue(cx) {
+	}
 };
 
 bool SandboxMaxOperationCallback(JSContext *cx) {
@@ -988,28 +991,21 @@ bool SandboxMaxOperationCallback(JSContext *cx) {
 	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(cx);
 	if ( pv->expired && !JL_IsExceptionPending(cx) ) {
 
-		JS::RootedValue branchLimitExceptionVal(cx);
-		JSInterruptCallback tmp = JS_SetInterruptCallback(JL_GetRuntime(cx), NULL);
-
+		jl::AutoInterruptCallback aic(JL_GetRuntime(cx), NULL);
 		const jl::ProtoCache::Item* cpc = jl::Host::getJLHost(cx).getCachedClassProto(JL_CLASS_NAME(OperationLimit));
 		ASSERT( cpc );
 
-		JSCompartment *oldCompartment;
-
-		oldCompartment = JS_EnterCompartment(cx, cpc->proto);
-		JL_CHK( oldCompartment );
 		{
-		JS::RootedObject branchLimitExceptionObj(cx, jl::newObjectWithGivenProto(cx, cpc->clasp, cpc->proto));
-	
-		branchLimitExceptionVal.setObject(*branchLimitExceptionObj);
-		JS_SetPendingException(cx, branchLimitExceptionVal);
-		JS_LeaveCompartment(cx, oldCompartment);
-		JL_CHK( branchLimitExceptionObj );
-		JS_SetInterruptCallback(JL_GetRuntime(cx), tmp);
+			JSAutoCompartment ac(cx, cpc->proto);
+			JS::RootedObject branchLimitExceptionObj(cx, jl::newObjectWithGivenProto(cx, cpc->clasp, cpc->proto));
+			JS::RootedValue branchLimitExceptionVal(cx, JS::ObjectValue(*branchLimitExceptionObj));
+			JL_CHK( branchLimitExceptionObj );
+			JS_SetPendingException(cx, branchLimitExceptionVal);
+			goto bad;
 		}
-		JL_BAD;
 	}
 	return pv->prevInterruptCallback(cx);
+	JL_BAD;
 }
 
 JLThreadFuncDecl SandboxWatchDogThreadProc(void *threadArg) {
@@ -1037,8 +1033,7 @@ bool SandboxQueryFunction(JSContext *cx, unsigned argc, jsval *vp) {
 	} else {
 
 		JL_CHK( JS_CallFunctionValue(cx, args.thisObj(), pv->queryFunctionValue, args.argv(), JL_RVAL) );
-		JL_CHKM( JL_RVAL.isPrimitive(), E_RETURNVALUE, E_TYPE, E_TY_PRIMITIVE );
-
+//		JL_CHKM( JL_RVAL.isPrimitive(), E_RETURNVALUE, E_TYPE, E_TY_PRIMITIVE );
 	}
 	return true;
 	JL_BAD;
@@ -1049,41 +1044,12 @@ DEFINE_FUNCTION( sandboxEval ) {
 	JL_DEFINE_ARGS;
 
 	SandboxContextPrivate pv(cx);
-
-	JS::AutoCheckCannotGC nogc;
+	jl::AutoSaveContextPrivate ascp(cx, &pv);
 
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
-	JSString *jsstr;
-	jsstr = JS::ToString(cx, JL_ARG(1));
-	JL_CHK( jsstr );
-	size_t srclen;
-	const jschar *src;
-	src = JS_GetTwoByteStringCharsAndLength(cx, nogc, jsstr, &srclen);
-
-	if ( JL_ARG_ISDEF(2) ) {
-
-		JL_ASSERT_ARG_IS_CALLABLE(2);
-		pv.queryFunctionValue = JL_ARG(2);
-	} else {
-
-		pv.queryFunctionValue = JSVAL_VOID;
-	}
-
-	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( jl::getValue(cx, JL_ARG(3), &pv.maxExecutionTime) );
-	else
-		pv.maxExecutionTime = 1000; // default value
-
-
-	const char *filename;
-	unsigned lineno;
-	
-	{
-	JS::AutoFilename autoFilename;
-	JL_CHK( JS::DescribeScriptedCaller(cx, &autoFilename, &lineno) );
-	filename = autoFilename.get();
-	}
+	pv.queryFunctionValue.set(JL_SARG(2));
+	pv.maxExecutionTime = jl::getValueDefault(cx, JL_SARG(3), 1000 );
 
 	pv.expired = false;
 	pv.semEnd = JLSemaphoreCreate(0);
@@ -1092,68 +1058,95 @@ DEFINE_FUNCTION( sandboxEval ) {
 	if ( !JLThreadOk(sandboxWatchDogThread) )
 		return jl::throwOSError(cx);
 
-	void *prevCxPrivate;
-	prevCxPrivate = JS_GetContextPrivate(cx);
-	JS_SetContextPrivate(cx, &pv);
-
-	bool ok;
-
 	{
 
-	JS::RootedObject globalObj(cx, JS_NewGlobalObject(cx, &sandbox_class, NULL, JS::DontFireOnNewGlobalHook));
-	JL_CHK( globalObj != NULL );
+//		jl::AutoErrorReporter autoErrorReporter( cx, JL_IS_SAFE ? jl::HostRuntime::errorReporterBasic : nullptr );
 
-	{
-	JSAutoCompartment ac(cx, globalObj);
+		JS::RootedString srcStr(cx, JS::ToString(cx, JL_ARG(1)));
+		size_t srcLen;
 
-	//JS_SetNativeStackQuota(JL_GetRuntime(cx), 8192 * sizeof(size_t));
+		unsigned lineno;
+		JS::AutoFilename autoFilename;
+		JL_CHK( JS::DescribeScriptedCaller(cx, &autoFilename, &lineno) );
 
-	//uintptr_t limit = js::GetNativeStackLimit(cx);
+		JS::RootedObject globalObj(cx, JS_NewGlobalObject(cx, &sandbox_class, nullptr, JS::DontFireOnNewGlobalHook));
+		JL_CHK( globalObj != NULL );
 
-	if ( !pv.queryFunctionValue.get().isUndefined() ) {
+		{
+			void *compartmentPv = JS_GetCompartmentPrivate(js::GetObjectCompartment(JL_OBJ)); // give Host reference to the new compartment
+			JSAutoCompartment ac(cx, globalObj);
+			JS_SetCompartmentPrivate(js::GetObjectCompartment(globalObj), compartmentPv);
 
-		JL_CHK( JS_WrapValue(cx, &pv.queryFunctionValue) );
-		JL_CHK( JS_DefineFunction(cx, globalObj, "query", SandboxQueryFunction, 1, JSPROP_PERMANENT | JSPROP_READONLY) );
+			if ( !pv.queryFunctionValue.get().isUndefined() ) {
+
+				JL_CHK( JS_WrapValue(cx, &pv.queryFunctionValue) );
+				JL_CHK( JS_SetProperty(cx, globalObj, "query", pv.queryFunctionValue) );
+				//JL_CHK( JS_DefineFunction(cx, globalObj, "query", SandboxQueryFunction, 1, JSPROP_PERMANENT | JSPROP_READONLY) );
+			}
+		}
+
+		JS_FireOnNewGlobalObject(cx, globalObj);
+		JL_CHK( JS_WrapObject(cx, &globalObj) );
+
+		//JS_SetNativeStackQuota(JL_GetRuntime(cx), 8192 * sizeof(size_t));
+
+		pv.prevInterruptCallback = JS_SetInterruptCallback(JL_GetRuntime(cx), SandboxMaxOperationCallback);
+
+		bool ok;
+
+		{
+
+			mozilla::Maybe<JSAutoCompartment> ac;
+			unsigned flags;
+			JSObject *unwrapped = js::UncheckedUnwrap(globalObj, true, &flags);
+			if (flags & js::Wrapper::CROSS_COMPARTMENT) {
+            
+				globalObj = unwrapped;
+				ac.construct(cx, globalObj);
+			}
+
+			JS::AutoSaveContextOptions asco(cx);
+			JS::ContextOptionsRef(cx)
+				.setDontReportUncaught(true)
+				.setExtraWarnings(false)
+			;
+
+			JS::CompileOptions options(cx);
+			options
+				.setFileAndLine(autoFilename.get(), lineno)
+				.setCompileAndGo(true)
+			;
+
+			if ( JS_StringHasLatin1Chars(srcStr) ) {
+
+				const char *src = (const char *)JS_GetLatin1StringCharsAndLength(cx, JS::AutoCheckCannotGC(), srcStr, &srcLen);
+				ok = JS::Evaluate(cx, globalObj, options, src, srcLen, args.rval());
+			} else {
+
+				const jschar *src = JS_GetTwoByteStringCharsAndLength(cx, JS::AutoCheckCannotGC(), srcStr, &srcLen);
+				ok = JS::Evaluate(cx, globalObj, options, src, srcLen, args.rval());
+			}
+		}
+
+		JL_CHK( JS_WrapValue(cx, args.rval()) );
+
+		JSInterruptCallback tmp;
+		tmp = JS_SetInterruptCallback(JL_GetRuntime(cx), pv.prevInterruptCallback);
+		ASSERT( tmp == SandboxMaxOperationCallback );
+
+		JLSemaphoreRelease(pv.semEnd);
+		JLThreadWait(sandboxWatchDogThread);
+		JLThreadFree(&sandboxWatchDogThread);
+		JLSemaphoreFree(&pv.semEnd);
+
+		if ( !ok ) {
+
+			ASSERT( JL_IsExceptionPending(cx) ); // JL_REPORT_ERROR_NUM( JLSMSG_RUNTIME_ERROR, "exception is expected");
+			goto bad;
+		}
+
+		JL_CHK( JS_WrapValue(cx, JL_RVAL) );
 	}
-
-	}
-	
-	pv.prevInterruptCallback = JS_SetInterruptCallback(JL_GetRuntime(cx), SandboxMaxOperationCallback);
-
-	JS_FireOnNewGlobalObject(cx, globalObj);
-
-
-	{
-	JSAutoCompartment ac(cx, globalObj);
-	
-	ok = JS_EvaluateUCScript(cx, globalObj, src, srclen, filename, lineno, JL_RVAL);
-
-	JSInterruptCallback tmp;
-	tmp = JS_SetInterruptCallback(JL_GetRuntime(cx), pv.prevInterruptCallback);
-	ASSERT( tmp == SandboxMaxOperationCallback );
-
-
-	JLSemaphoreRelease(pv.semEnd);
-	JLThreadWait(sandboxWatchDogThread);
-	JLThreadFree(&sandboxWatchDogThread);
-	JLSemaphoreFree(&pv.semEnd);
-
-	JS_SetContextPrivate(cx, prevCxPrivate);
-
-	// JL_CHK( JS_DeleteProperty(scx, globalObject, "query") ); // (TBD) needed ? also check of the deletion is successful using JS_HasProperty...
-
-	}
-
-	if ( !ok ) {
-
-		ASSERT( JL_IsExceptionPending(cx) ); // JL_REPORT_ERROR_NUM( JLSMSG_RUNTIME_ERROR, "exception is expected");
-		goto bad;
-	}
-
-	JL_CHK( JS_WrapValue(cx, JL_RVAL) );
-	}
-
-
 	return true;
 	JL_BAD;
 }

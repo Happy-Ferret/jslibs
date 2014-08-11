@@ -139,6 +139,7 @@ DEFINE_FUNCTION( registerDumpHeap ) {
 			FILE *file = fopen("dump.txt", "w");
 			IFDEBUG( JS_DumpHeap(_hostRuntime.runtime(), file, nullptr, JSTRACE_OBJECT, nullptr, 1, nullptr) );
 			fclose(file);
+			return true;
 		}
 	};
 

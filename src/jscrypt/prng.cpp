@@ -28,7 +28,7 @@ DEFINE_FINALIZE() {
 	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 
-	PrngPrivate *pv = (PrngPrivate *)js::GetObjectPrivate(obj);
+	PrngPrivate *pv = (PrngPrivate *)JL_GetPrivateFromFinalize(obj);
 	if ( !pv )
 		return;
 

@@ -27,7 +27,7 @@ DEFINE_FINALIZE() {
 		return;
 
 	jl::Serializer *ser;
-	ser = static_cast<jl::Serializer*>(js::GetObjectPrivate(obj));
+	ser = static_cast<jl::Serializer*>(JL_GetPrivateFromFinalize(obj));
 	if ( !ser )
 		return;
 	delete ser;
@@ -135,7 +135,7 @@ DEFINE_FINALIZE() {
 		return;
 
 	jl::Unserializer *unser;
-	unser = static_cast<jl::Unserializer*>(js::GetObjectPrivate(obj));
+	unser = static_cast<jl::Unserializer*>(JL_GetPrivateFromFinalize(obj));
 	if ( !unser )
 		return;
 	delete unser;

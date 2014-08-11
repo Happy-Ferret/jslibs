@@ -532,7 +532,7 @@ CloseSystray(JSRuntime *rt, Private *pv) {
 
 DEFINE_FINALIZE() {
 
-	Private *pv = (Private*)js::GetObjectPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivateFromFinalize(obj);
 	if ( !pv )
 		return;
 	CloseSystray(fop->runtime(), pv);

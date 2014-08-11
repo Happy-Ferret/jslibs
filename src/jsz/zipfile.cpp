@@ -157,7 +157,7 @@ DEFINE_FINALIZE() {
 
 	JL_IGNORE( fop );
 
-	Private *pv = (Private*)js::GetObjectPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivateFromFinalize(obj);
 	if ( pv ) {
 
 		if ( pv->zf ) {

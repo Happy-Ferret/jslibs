@@ -45,7 +45,7 @@ BEGIN_CLASS( MemoryMapped )
 
 DEFINE_FINALIZE() {
 
-	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)js::GetObjectPrivate(obj);
+	MemoryMappedPrivate *pv = (MemoryMappedPrivate*)JL_GetPrivateFromFinalize(obj);
 	if ( !pv )
 		return;
 

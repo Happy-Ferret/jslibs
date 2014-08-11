@@ -42,7 +42,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 
-	Private *pv = (Private*)js::GetObjectPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivateFromFinalize(obj);
 	if ( !pv )
 		return;
 	int status = iconv_close(pv->cd); // if ( status == -1 ) error is in errno.

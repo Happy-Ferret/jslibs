@@ -183,6 +183,13 @@ JL_GetPrivate( IN JS::HandleValue val ) {
 	return js::GetObjectPrivate(&val.toObject()); // jsfriendapi
 }
 
+ALWAYS_INLINE void* FASTCALL
+JL_GetPrivateFromFinalize( IN JSObject *obj ) {
+
+	ASSERT( JS_IsNative( JS::HandleObject::fromMarkedLocation(&obj) ) );
+	return js::GetObjectPrivate(obj); // jsfriendapi
+}
+
 ALWAYS_INLINE void FASTCALL
 JL_SetPrivate( IN JS::HandleObject obj, void *data ) {
 
@@ -204,14 +211,20 @@ JL_GetPrototype(JSContext *cx, IN JS::HandleObject obj) {
 ALWAYS_INLINE const JSClass* FASTCALL
 JL_GetClassOfPrototype(JSContext *cx, IN JS::HandleObject proto) {
 
-	JS::RootedObject obj(cx, JL_GetPrototype(cx, proto));
-	return JL_GetClass(obj);
+	if ( proto ) {
+	
+		JS::RootedObject obj(cx, JL_GetPrototype(cx, proto));
+		return JL_GetClass(obj);
+	} else {
+		
+		return nullptr;
+	}
 }
 
 ALWAYS_INLINE const JSClass* FASTCALL
 JL_GetClassOfPrototype(JSContext *cx, IN JS::HandleValue protoVal) {
 
-	JS::RootedObject proto(cx, &protoVal.toObject());
+	JS::RootedObject proto(cx, protoVal.toObjectOrNull());
 	return JL_GetClassOfPrototype(cx, proto);
 }
 
@@ -456,13 +469,34 @@ class AutoInterruptCallback {
 	AutoInterruptCallback();
 	AutoInterruptCallback( const AutoInterruptCallback & );
 public:
-	AutoInterruptCallback(JSRuntime *rt, JSInterruptCallback newCallback)
-	: _rt(rt), _prevCallback(JS_SetInterruptCallback(rt, newCallback)) {
+	AutoInterruptCallback(JSRuntime *rt, JSInterruptCallback newCallback) :
+		_rt(rt),
+		_prevCallback(JS_SetInterruptCallback(rt, newCallback)) {
 	}
 
 	~AutoInterruptCallback() {
 
 		JS_SetInterruptCallback(_rt, _prevCallback);
+	}
+};
+
+
+class AutoSaveContextPrivate {
+	JSContext *_cx;
+	void* _prevCxPrivate;
+	AutoSaveContextPrivate();
+	AutoSaveContextPrivate( const AutoInterruptCallback & );
+public:
+	AutoSaveContextPrivate(JSContext *cx, void* newCxPrivate) :
+		_cx(cx),
+		_prevCxPrivate(JS_GetContextPrivate(cx)) {
+		
+		JS_SetContextPrivate(cx, newCxPrivate);
+	}
+
+	~AutoSaveContextPrivate() {
+
+		JS_SetContextPrivate(_cx, _prevCxPrivate);
 	}
 };
 

@@ -68,7 +68,7 @@ bool SharedMemoryBufferGet( JSContext *cx, JS::HandleObject obj, jl::BufString *
 
 bool CloseSharedMemory( JSObject *obj ) {
 
-	ClassPrivate *pv = (ClassPrivate*)js::GetObjectPrivate(obj);
+	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivateFromFinalize(obj);
 
 	JL_CHK( PR_WaitSemaphore( pv->accessSem ) == PR_SUCCESS );
 
@@ -112,9 +112,8 @@ DEFINE_FINALIZE() {
 
 	JL_IGNORE( fop );
 
-	if ( !js::GetObjectPrivate(obj) )
-		return;
-	CloseSharedMemory(obj);
+	if ( JL_GetPrivateFromFinalize(obj) )
+		CloseSharedMemory(obj);
 }
 
 // doc.

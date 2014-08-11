@@ -34,7 +34,7 @@ DEFINE_FINALIZE() {
 	JL_IGNORE(fop);
 
 	PRProcess *process;
-	process = (PRProcess*)js::GetObjectPrivate(obj);
+	process = (PRProcess*)JL_GetPrivateFromFinalize(obj);
 	if ( process )
 		PR_DetachProcess(process); // may crash ?
 }

@@ -28,7 +28,7 @@ DEFINE_FINALIZE() {
 
 	JL_IGNORE(fop);
 
-	SDL_Cursor *cursor = (SDL_Cursor*)js::GetObjectPrivate(obj);
+	SDL_Cursor *cursor = (SDL_Cursor*)JL_GetPrivateFromFinalize(obj);
 	if ( cursor != NULL ) {
 
 		SDL_FreeCursor(cursor); // default cursor is restored

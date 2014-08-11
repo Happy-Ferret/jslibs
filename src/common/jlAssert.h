@@ -258,18 +258,15 @@ JL_MACRO_BEGIN \
 
 // obj
 
-// note:
-//   If JS_IsConstructing is true, JS_THIS must not be used, the constructor should construct and return a new object.
-//   JS_IsConstructing must be called from within a native given the native's original cx and vp arguments !
 #define JL_ASSERT_CONSTRUCTING() \
-	JL_ASSERT( args.isConstructing() /*(JL_ARGC, JS_IsConstructing(cx, vp))*/, E_THISOBJ, E_CONSTRUCT )
+	JL_ASSERT( args.isConstructing(), E_THISOBJ, E_CONSTRUCT )
 
 // note: JL_GetClass(JL_GetPrototype(... because |JL_ASSERT_THIS_INSTANCE( new Stream() )| must pass whereas |JL_ASSERT_THIS_INSTANCE( Stream.prototype )| must fail.
 #define JL_ASSERT_INSTANCE( jsObject, jsClass ) \
 	JL_ASSERT( JL_GetClassOfPrototype(cx, jsObject) == jsClass, E_OBJ, E_INSTANCE, E_NAME((jsClass)->name) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
 
 #define JL_ASSERT_THIS_INSTANCE() \
-	JL_ASSERT( JL_GetClassOfPrototype(cx, JL_OBJ) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
+	JL_ASSERT( NOIL(JL_GetClassOfPrototype)(cx, JL_OBJ) == JL_THIS_CLASS, E_THISOBJ, E_INSTANCE, E_NAME(JL_THIS_CLASS_NAME) ) // ReportIncompatibleMethod(cx, CallReceiverFromArgv(argv), Valueify(clasp));
 
 #define JL_ASSERT_INHERITANCE( jsObject, jsClass ) \
 	JL_ASSERT( NOIL(jl::protoOfInheritFrom)(cx, jsObject, (jsClass)), E_OBJ, E_INHERIT, E_NAME((jsClass)->name) )

@@ -42,7 +42,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() ) // do not cleanup in unsafe mode.
 		return;
 
-	Surface *pv = (Surface*)js::GetObjectPrivate(obj);
+	Surface *pv = (Surface*)JL_GetPrivateFromFinalize(obj);
 	if ( !pv )
 		return;
 

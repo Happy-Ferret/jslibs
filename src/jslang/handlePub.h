@@ -165,17 +165,13 @@ HandleCreate( JSContext *cx, T *data, OUT JS::MutableHandleValue handleVal ) {
 INLINE bool
 HandleClose( JSContext *cx, IN JS::HandleValue handleVal ) {
 	
-	JL_ASSERT_IS_OBJECT(handleVal, "(handle)");
-	
-	{
-		JS::RootedObject handleObj(cx, &handleVal.toObject());
-		JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
+	JS::RootedObject handleObj(cx, handleVal.toObjectOrNull());
+	JL_ASSERT_INSTANCE( handleObj, JL_HandleJSClass(cx) );
 
-		HandlePrivate *pv;
-		pv = static_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
-		delete pv;
-		JL_SetPrivate(handleObj, NULL);
-	}
+	HandlePrivate *pv;
+	pv = static_cast<HandlePrivate*>(JL_GetPrivate(handleObj));
+	delete pv;
+	JL_SetPrivate(handleObj, NULL);
 
 	return true;
 	JL_BAD;

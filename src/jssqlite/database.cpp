@@ -42,7 +42,7 @@ DEFINE_FINALIZE() {
 	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 
-	Private *pv = (Private*)js::GetObjectPrivate(obj);
+	Private *pv = (Private*)JL_GetPrivateFromFinalize(obj);
 	if ( pv != NULL ) {
 		
 //		sqlite3_blob_close(pv->pBlob); // closed
@@ -364,7 +364,7 @@ DEFINE_FINALIZE() {
 	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 
-	DatabasePrivate *pv = (DatabasePrivate*)js::GetObjectPrivate(obj);
+	DatabasePrivate *pv = (DatabasePrivate*)JL_GetPrivateFromFinalize(obj);
 	if ( pv == NULL )
 		return;
 

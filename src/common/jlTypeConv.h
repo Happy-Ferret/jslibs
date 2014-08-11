@@ -651,15 +651,33 @@ getValue( JSContext *cx, JS::HandleValue val, JS::Heap<T> &h ) {
 //   bool requestIncrementalGC = jl::getValueDefault(cx, JL_SARG(1), false);
 //   int64_t sliceMillis = jl::getValueDefault<int64_t>(cx, JL_SARG(2), 0);
 
-template <typename T>
+template <class T>
 ALWAYS_INLINE T FASTCALL
-getValueDefault(JSContext *cx, JS::HandleValue val, IN const T defaultValue) {
+getValueDefault(JSContext *cx, const JS::HandleValue &val, IN const T &defaultValue) {
 	
-	T value;
-	if ( !val.isUndefined() && getValue(cx, val, &value) )
-		return value;
-	if ( JS_IsExceptionPending(cx) )
-		JS_ClearPendingException(cx); // JS_ReportPendingException(cx);
+	if ( !val.isUndefined() ) {
+
+		T value;
+		if ( getValue(cx, val, &value) )
+			return value;
+		if ( JS_IsExceptionPending(cx) )
+			JS_ClearPendingException(cx); // JS_ReportPendingException(cx);
+	}
+	return defaultValue;
+}
+
+template <class T>
+ALWAYS_INLINE T FASTCALL
+getValueDefault(JSContext *cx, const JS::HandleValue &val, IN const JS::Handle<T> &defaultValue) {
+	
+	if ( !val.isUndefined() ) {
+
+		JS::Rooted<T> value(cx);
+		if ( getValue(cx, val, &value) )
+			return value;
+		if ( JS_IsExceptionPending(cx) )
+			JS_ClearPendingException(cx); // JS_ReportPendingException(cx);
+	}
 	return defaultValue;
 }
 

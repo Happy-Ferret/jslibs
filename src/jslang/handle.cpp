@@ -24,8 +24,7 @@ BEGIN_CLASS( Handle )
 DEFINE_FINALIZE() { // see HandleClose()
 
 	// is there a simple way to detect that we are finalizing the prototype of an object ?
-
-	HandlePrivate *pv = static_cast<HandlePrivate*>(js::GetObjectPrivate(obj));
+	HandlePrivate *pv = static_cast<HandlePrivate*>(JL_GetPrivateFromFinalize(obj));
 	if ( pv ) {
 
 		if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
