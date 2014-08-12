@@ -176,7 +176,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( read ) {
 
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(0);
 
 	jl::Unserializer *unser;
@@ -194,10 +194,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( eof ) {
 	
-	JL_IGNORE( id );
-
 	JL_DEFINE_PROP_ARGS;	
-
 	JL_ASSERT_THIS_INSTANCE();
 
 	jl::Unserializer *unser;

@@ -730,8 +730,7 @@ struct IOProcessEvent : public ProcessEvent2 {
 
 		_pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * (1 + _fdCount)); // pollDesc[0] is the peCancel event fd, _fdCount excludes peCancel descriptior.
 		JL_ASSERT_ALLOC( _pollDesc );
-
-//		JL_updateMallocCounter(cx, (sizeof(PRPollDesc) /*+ sizeof(jsval)*/) * _fdCount); // approximately (pollDesc + descVal)
+		JL_updateMallocCounter(cx, sizeof(PRPollDesc) * (1 + _fdCount));
 
 		JsioPrivate *mpv;
 		mpv = (JsioPrivate*)jl::Host::getJLHost(cx).moduleManager().modulePrivate(moduleId());
@@ -798,8 +797,6 @@ struct IOProcessEvent : public ProcessEvent2 {
 		st = PR_WaitForPollableEvent(_pollDesc[0].fd);
 		ASSERT( st == PR_SUCCESS );
 
-		JLAutoPtr<PRPollDesc> pollDesc(_pollDesc);
-
 		if ( _pollResult == -1 )
 			JL_CHK( ThrowIoError(cx) );
 
@@ -817,6 +814,11 @@ struct IOProcessEvent : public ProcessEvent2 {
 
 		return true;
 		JL_BAD;
+	}
+
+	~IOProcessEvent() {
+		
+		jl_free(_pollDesc);
 	}
 };
 

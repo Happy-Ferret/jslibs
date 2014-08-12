@@ -915,6 +915,7 @@ public:
 				}
 				
 				JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
+
 				bool ok = jl::call(cx, globalObject, funVal, val, arg_1);
 
 				if ( unserializerWrapper != NULL )
@@ -1028,8 +1029,9 @@ public:
 				JL_CHK( Read(cx, encodedFunction) );
 				
 				JS::RootedObject fctObj(cx, JS_DecodeInterpretedFunction(cx, encodedFunction.Data(), encodedFunction.Length(), NULL));
-				//JS::RootedObject parentObject(cx, JS_GetParent(fctObj));
-				// fctObj = JS_CloneFunctionObject(cx, fctObj, parentObject); // (TBD) remove this wen bz#741597 wil be fixed. -> seems ok before 741597 fix
+				JS::RootedObject parentObject(cx, JS_GetParent(fctObj));
+				fctObj = JS_CloneFunctionObject(cx, fctObj, parentObject); // (TBD) remove this wen bz#741597 wil be fixed. -> seems ok before 741597 fix
+
 				val.setObject(*fctObj);
 				break;
 			}

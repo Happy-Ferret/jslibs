@@ -412,8 +412,9 @@ JL_END_NAMESPACE
 #define HAS_OBJECT_CONSTRUCTOR cs.clasp.construct = ObjectConstructor;
 #define DEFINE_OBJECT_CONSTRUCTOR() static bool ObjectConstructor(JSContext *cx, unsigned argc, JS::Value *vp)
 
-#define HAS_CALL cs.clasp.call = Call;
-#define DEFINE_CALL() static bool Call(JSContext *cx, unsigned argc, JS::Value *vp)
+// not used any more
+//#define HAS_CALL cs.clasp.call = Call;
+//#define DEFINE_CALL() static bool Call(JSContext *cx, unsigned argc, JS::Value *vp)
 // see also JL_DEFINE_CALL_FUNCTION_OBJ
 
 #define HAS_CONVERT cs.clasp.convert = Convert;

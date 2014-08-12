@@ -362,44 +362,44 @@ WatchDog::watchDogThreadProc(void *threadArg) {
 
 
 WatchDog::WatchDog(HostRuntime &hostRuntime) :
-_hostRuntime(hostRuntime),
-_interruptInterval(0),
-_watchDogThread(JLThreadInvalidHandler) {
+	_hostRuntime(hostRuntime),
+	_interruptInterval(0),
+	_watchDogThread(JLThreadInvalidHandler) {
 }
 	
 
-bool
+void
 WatchDog::start() {
 
 	ASSERT( _interruptInterval != 0 );
 	ASSERT( _watchDogThread == JLThreadInvalidHandler );
 
-	JSContext *cx = _hostRuntime.context();
 	Dbg<JSInterruptCallback> prevInterruptCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), interruptCallback);
 	ASSERT( prevInterruptCallback == nullptr );
+
 	_watchDogSemEnd = JLSemaphoreCreate(0);
+	ASSERT( JLSemaphoreOk(_watchDogSemEnd) );
+
 	_watchDogThread = JLThreadStart(watchDogThreadProc, this);
-	JL_ASSERT( JLSemaphoreOk(_watchDogSemEnd) && JLThreadOk(_watchDogThread), E_HOST, E_CREATE ); // "Unable to create the GC thread."
-	return true;
-	JL_BAD;
+	ASSERT( JLThreadOk(_watchDogThread) );
 }
 
-bool
+void
 WatchDog::stop() {
 
 	// beware: it is important to destroy the watchDogThread BEFORE destroying the cx !!!
-
 	ASSERT( _hostRuntime.runtime() );
-	ASSERT( _interruptInterval == 0 );
-	ASSERT( _watchDogThread != JLThreadInvalidHandler );
 
-	Dbg<JSInterruptCallback> prev_interruptCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), nullptr);
-	ASSERT( prev_interruptCallback == interruptCallback );
+	ASSERT( _interruptInterval == 0 );
+	ASSERT( JLThreadOk(_watchDogThread) );
+
 	JLSemaphoreRelease(_watchDogSemEnd);
 	JLThreadWait(_watchDogThread);
 	JLThreadFree(&_watchDogThread);
 	JLSemaphoreFree(&_watchDogSemEnd);
-	return true;
+
+	Dbg<JSInterruptCallback> prev_interruptCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), nullptr);
+	ASSERT( prev_interruptCallback == interruptCallback );
 }
 
 
@@ -465,12 +465,15 @@ HostRuntime::~HostRuntime() {
 
 	JL_CHKM( fireEvent(EventId::BEFORE_DESTROY_RUNTIME), E_HOST, E_INTERNAL, E_NAME("BEFORE_DESTROY_RUNTIME") );
 
-	JS_EndRequest(cx);
+	if ( JS_IsInRequest(rt) )
+		JS_EndRequest(cx);
 
-	JS_DestroyContext(cx);
+	if ( cx != nullptr )
+		JS_DestroyContext(cx);
 	cx = nullptr;
 
-	JS_DestroyRuntime(rt);
+	if ( rt != nullptr )
+		JS_DestroyRuntime(rt);
 	rt = nullptr;
 
 	JL_CHKM( fireEvent(EventId::AFTER_DESTROY_RUNTIME), E_HOST, E_INTERNAL, E_NAME("AFTER_DESTROY_RUNTIME") );
@@ -510,10 +513,8 @@ HostRuntime::HostRuntime( Allocators allocators, uint32_t maxbytes, size_t nativ
 		.setNativeRegExp(true)
 	;
 
-
 	cx = JS_NewContext(rt, 8192); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 	JL_CHK( cx ); //, "unable to create the context." );
-
 
 	// Info: Increasing JSContext stack size slows down my scripts:
 	//   http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
@@ -701,16 +702,13 @@ bool
 Global::_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleObject objp) {
 
 	bool resolved;
-
 	if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
 		return false;
-
-	if (resolved) {
-
+	if (resolved)
 		objp.set(obj);
-		return true;
-	}
-	return true;
+	else 
+		objp.set(nullptr);
+    return true;
 }
 
 const JSClass Global::_globalClass_lazy = {
@@ -1247,9 +1245,7 @@ DEFINE_FUNCTION( collectGarbage ) {
 	}
 
 	JS::IncrementalGC( rt, JS::gcreason::API, sliceMillis );
-	
 	JL_RVAL.setBoolean( !JS::IsIncrementalGCInProgress( rt ) );
-
 	return true;
 	JL_BAD;
 }
@@ -1431,13 +1427,15 @@ Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
 //	 ---8<---
 
+	fputc('\0', file);
+
 	#undef fprintf
 	#undef fputs
 	#undef fwrite
 	#undef fputc
 	#undef fflush
 
-	jl::BufString tmpErrTxt(jl::constPtr(buffer), buf - buffer, false);
+	jl::BufString tmpErrTxt(jl::constPtr(buffer), buf - buffer -1, true);
 	Host::getJLHost( cx ).hostStderrWrite( tmpErrTxt, tmpErrTxt.length() );
 }
 
@@ -1446,27 +1444,27 @@ bool
 Host::hostStderrWrite(const TCHAR *message, size_t length) {
 
 	JSContext *cx = _hostRuntime.context();
+	AutoRestoreExceptionState ares( cx );
+	// avoid reentrancy if stderr function rise an error.
+	AutoRestoreErrorReporter arer( cx, JL_IS_SAFE ? HostRuntime::errorReporterBasic : nullptr );
 
 	JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
 	ASSERT( globalObject );
-	AutoExceptionState autoEx(cx);
-
-	// avoid reentrancy if stderr function rise an error.
-	AutoErrorReporter autoErrorReporter( cx, JL_IS_SAFE ? HostRuntime::errorReporterBasic : nullptr );
 		
-	JS::RootedValue rval(cx);
 	JS::RootedValue fct(cx);
 	JS::RootedObject hostObj(cx, _hostObject);
 
 	JL_CHK( JS_WrapObject(cx, &hostObj) );
 
 	JL_CHK( jl::getProperty(cx, hostObj, JLID(cx, stderr), &fct) );
-	JL_CHK( jl::isCallable(cx, fct) );
-	JL_CHK( jl::call(cx, globalObject, fct, &rval, jl::strSpec(message, length)) ); // beware out of memory case !
+	if ( jl::isCallable(cx, fct) ) {
+
+		JL_CHK( jl::callNoRval(cx, globalObject, fct, jl::strSpec(message, length)) ); // beware out of memory case !
+	}
 	return true;
 
 bad:
-	autoEx.drop();
+	ares.drop();
 	return false;
 }
 
@@ -1511,9 +1509,11 @@ _interruptHandler(nullptr) {
 
 	JSContext *cx = _hostRuntime.context();
 
-	JS::ContextOptionsRef(cx)
+	JS::RuntimeOptionsRef(cx)
 		.setExtraWarnings(!_unsafeMode)
 	;
+
+	
 	
 	JS_SetErrorReporter(cx, errorReporter);
 	

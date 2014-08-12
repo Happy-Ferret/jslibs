@@ -1070,6 +1070,15 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	using namespace jl;
 
+	//JS::AutoCheckCannotGC nogc;
+	stringToJsid(cx, L"test");
+
+	JS::AutoValueVector av(cx);
+	av.append(JS::ObjectValue(*jl::newArray(cx)));
+
+return true;
+
+
 	typedef const char *ConstStr;
 
 	JS::CallArgs jsargs( JS::CallArgsFromVp(argc, vp) );

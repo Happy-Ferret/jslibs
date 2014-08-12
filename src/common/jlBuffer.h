@@ -483,6 +483,7 @@ public:
 		}
 	}
 	
+	// len argument does not include the possible \0
 	template <class T>
 	explicit BufString( T *str, size_t len = UnknownSize, bool nullTerminated = true )
 	: BufBase( str, len != UnknownSize ? (len + (nullTerminated ? 1 : 0)) * sizeof( T ) : UnknownSize ), _charSize( sizeof( T ) ), _terminatorLength( nullTerminated ? 1 : 0 ) {

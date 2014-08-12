@@ -355,139 +355,6 @@ DEFINE_FUNCTION( countProperties ) {
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
-$TOC_MEMBER $INAME
- $VOID $INAME( obj )
-  Remove all properties associated with an object.
-  $H note
-   $INAME removes all of obj's own properties, except the special __proto__ and __parent__ properties, in a single operation. Properties belonging to objects on obj's prototype chain are not affected.
-  $H example
-  {{{
-  loadModule('jsstd');
-
-  var obj = { a:1, b:[2,3,4], c:{} };
-  print( uneval(obj) ); // prints: ({a:1, b:[2, 3, 4], c:{}})
-
-  clearObject(obj);
-  print( uneval(obj) ); // prints: ({})
-  }}}
-**/
-DEFINE_FUNCTION( clearObject ) {
-
-	JL_DEFINE_ARGS;
-
-	JL_ASSERT_ARGC(1);
-	JL_ASSERT_ARG_IS_OBJECT( 1 );
-
-	/*
-		{
-
-		JS::RootedObject argObj(cx, &JL_ARG(1).toObject());
-		JS::RootedId id(cx);
-
-		JSIdArray *list;
-		list = JS_Enumerate(cx, argObj); // JS_NewPropertyIterator, JS_NextProperty ?
-		JL_CHK(list);
-
-		bool junk;
-		for ( int i = 0; i < JS_IdArrayLength(cx, list); ++i ) {
-
-		id.set(JS_IdArrayGet(cx, list, i));
-		JL_CHK( JS_DeletePropertyById2(cx, argObj, id, &junk) );
-		}
-
-		JS_DestroyIdArray(cx, list);
-
-		JL_RVAL.setUndefined();
-
-		}
-		*/
-	{
-		JS::RootedObject argObj( cx, &JL_ARG( 1 ).toObject() );
-		JS_ClearNonGlobalObject( cx, argObj );
-		JL_RVAL.setUndefined();
-	}
-
-	return true;
-	JL_BAD;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/* beware:
-     once an object is exposed to a script, the object's parent must not change. The JavaScript engine relies on this invariant.
-	 JS_SetParent has no way to check that this is the case, but nonetheless, applications must not call JS_SetParent on an object that has already been exposed to a script.
-	 If an application does this, the behavior is undefined.
-	 (see MDN doc.)
-
-/ **doc
-$TOC_MEMBER $INAME
- $OBJ $INAME( obj, scopeObject )
-  Set the scope object of _obj_. Use this function with care.
-  $H example 1
-  {{{
-  function foo() {
-
-   var data = 55;
-   function bar() { print( data, '\n' ); }
-   bar();
-   var old = setScope( bar, {data:7} );
-   bar();
-   var old = setScope( bar, old );
-   bar();
-  }
-  foo();
-  }}}
-  prints:
-   $F 55 $LF
-   $F 7 $LF
-   $F 55 $LF
-  $H example 2
-  {{{
-  loadModule('jsstd');
-
-  function bind(fun, obj) {
-
-   setScope(obj, setScope(fun, obj));
-  }
-
-
-  function MyClass() {
-
-   this.test = function() {
-
-    foo();
-   }
-
-   this.foo = function() {
-
-    print('foo\n');
-   }
-
-   bind(this.test, this);
-  }
-
-  var myObj = new MyClass();
-  myObj.test(); // prints: foo
-  var fct = myObj.test;
-  fct(); // prints: foo
-  }}}
-** /
-DEFINE_FUNCTION( setScope ) {
-
-	JL_ASSERT_ARGC(2);
-
-	JSObject *o, *p;
-	JL_CHK( JS_ValueToObject(cx, JL_ARG(1), &o) ); // o = JSVAL_TO_OBJECT(JL_ARG(1));
-	JL_CHK( JS_ValueToObject(cx, JL_ARG(2), &p) ); // p = JSVAL_TO_OBJECT(JL_ARG(2));
-	*JL_RVAL = OBJECT_TO_JSVAL( JS_GetParent(o) );
-	JL_CHK( JS_SetParent(cx, o, p) );
-	return true;
-	JL_BAD;
-}
-
-
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
@@ -951,16 +818,13 @@ static bool
 sandboxClass_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleObject objp) {
 
 	bool resolved;
-
 	if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
 		return false;
-
-	if (resolved) {
-
+	if (resolved)
 		objp.set(obj);
-		return true;
-	}
-	return true;
+	else
+		objp.set(nullptr);
+    return true;
 }
 
 
@@ -978,33 +842,27 @@ public:
 	JLSemaphoreHandler semEnd;
 	unsigned int maxExecutionTime;
 	volatile bool expired;
-	JS::PersistentRootedValue queryFunctionValue;
 	JSInterruptCallback prevInterruptCallback;
 
-	SandboxContextPrivate(JSContext *cx) :
-		queryFunctionValue(cx) {
+	SandboxContextPrivate(JSContext *cx) {
 	}
 };
 
 bool SandboxMaxOperationCallback(JSContext *cx) {
 
 	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(cx);
-	if ( pv->expired && !JL_IsExceptionPending(cx) ) {
+	if ( !pv->expired || JL_IsExceptionPending(cx) )
+		return pv->prevInterruptCallback(cx);
 
-		jl::AutoInterruptCallback aic(JL_GetRuntime(cx), NULL);
-		const jl::ProtoCache::Item* cpc = jl::Host::getJLHost(cx).getCachedClassProto(JL_CLASS_NAME(OperationLimit));
-		ASSERT( cpc );
-
-		{
-			JSAutoCompartment ac(cx, cpc->proto);
-			JS::RootedObject branchLimitExceptionObj(cx, jl::newObjectWithGivenProto(cx, cpc->clasp, cpc->proto));
-			JS::RootedValue branchLimitExceptionVal(cx, JS::ObjectValue(*branchLimitExceptionObj));
-			JL_CHK( branchLimitExceptionObj );
-			JS_SetPendingException(cx, branchLimitExceptionVal);
-			goto bad;
-		}
-	}
-	return pv->prevInterruptCallback(cx);
+	jl::AutoSaveInterruptCallback aic(JL_GetRuntime(cx), NULL);
+	const jl::ProtoCache::Item* cpc = jl::Host::getJLHost(cx).getCachedClassProto(JL_CLASS_NAME(OperationLimit));
+	ASSERT( cpc );
+	
+	JSAutoCompartment ac(cx, cpc->proto);
+	JS::RootedObject branchLimitExceptionObj(cx, jl::newObjectWithGivenProto(cx, cpc->clasp, cpc->proto));
+	JS::RootedValue branchLimitExceptionVal(cx, JS::ObjectValue(*branchLimitExceptionObj));
+	JL_CHK( branchLimitExceptionObj );
+	JS_SetPendingException(cx, branchLimitExceptionVal);
 	JL_BAD;
 }
 
@@ -1022,22 +880,6 @@ JLThreadFuncDecl SandboxWatchDogThreadProc(void *threadArg) {
 	return 0;
 }
 
-bool SandboxQueryFunction(JSContext *cx, unsigned argc, jsval *vp) {
-
-	JL_DEFINE_ARGS;
-
-	SandboxContextPrivate *pv = (SandboxContextPrivate*)JS_GetContextPrivate(cx);
-	if ( pv->queryFunctionValue.get().isUndefined() ) {
-
-		JL_RVAL.setUndefined();
-	} else {
-
-		JL_CHK( JS_CallFunctionValue(cx, args.thisObj(), pv->queryFunctionValue, args.argv(), JL_RVAL) );
-//		JL_CHKM( JL_RVAL.isPrimitive(), E_RETURNVALUE, E_TYPE, E_TY_PRIMITIVE );
-	}
-	return true;
-	JL_BAD;
-}
 
 DEFINE_FUNCTION( sandboxEval ) {
 
@@ -1048,21 +890,29 @@ DEFINE_FUNCTION( sandboxEval ) {
 
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
-	pv.queryFunctionValue.set(JL_SARG(2));
-	pv.maxExecutionTime = jl::getValueDefault(cx, JL_SARG(3), 1000 );
-
-	pv.expired = false;
-	pv.semEnd = JLSemaphoreCreate(0);
-	JLThreadHandler sandboxWatchDogThread;
-	sandboxWatchDogThread = JLThreadStart(SandboxWatchDogThreadProc, cx);
-	if ( !JLThreadOk(sandboxWatchDogThread) )
-		return jl::throwOSError(cx);
-
 	{
-
-//		jl::AutoErrorReporter autoErrorReporter( cx, JL_IS_SAFE ? jl::HostRuntime::errorReporterBasic : nullptr );
-
 		JS::RootedString srcStr(cx, JS::ToString(cx, JL_ARG(1)));
+		JS::RootedValue queryFunctionValue(cx, JL_SARG(2));
+		pv.maxExecutionTime = jl::getValueDefault(cx, JL_SARG(3), 1000);
+		bool hasInterrupt = pv.maxExecutionTime > 0;
+
+		jl::AutoSaveInterruptCallback aic(JL_GetRuntime(cx));
+		JLThreadHandler sandboxWatchDogThread;
+		if ( hasInterrupt ) {
+
+			JS_SetInterruptCallback(JL_GetRuntime(cx), SandboxMaxOperationCallback);
+
+			pv.expired = false;
+			pv.semEnd = JLSemaphoreCreate(0);
+			sandboxWatchDogThread = JLThreadStart(SandboxWatchDogThreadProc, cx);
+			if ( !JLThreadOk(sandboxWatchDogThread) )
+				return jl::throwOSError(cx);
+			JLThreadPriority(sandboxWatchDogThread, JL_THREAD_PRIORITY_HIGH);
+		} else {
+
+			sandboxWatchDogThread = JLThreadInvalidHandler;
+		}
+
 		size_t srcLen;
 
 		unsigned lineno;
@@ -1077,11 +927,10 @@ DEFINE_FUNCTION( sandboxEval ) {
 			JSAutoCompartment ac(cx, globalObj);
 			JS_SetCompartmentPrivate(js::GetObjectCompartment(globalObj), compartmentPv);
 
-			if ( !pv.queryFunctionValue.get().isUndefined() ) {
+			if ( !JL_SARG(2).isUndefined() ) {
 
-				JL_CHK( JS_WrapValue(cx, &pv.queryFunctionValue) );
-				JL_CHK( JS_SetProperty(cx, globalObj, "query", pv.queryFunctionValue) );
-				//JL_CHK( JS_DefineFunction(cx, globalObj, "query", SandboxQueryFunction, 1, JSPROP_PERMANENT | JSPROP_READONLY) );
+				JL_CHK( JS_WrapValue(cx, &queryFunctionValue) );
+				JL_CHK( JS_SetProperty(cx, globalObj, "query", queryFunctionValue) );
 			}
 		}
 
@@ -1090,12 +939,9 @@ DEFINE_FUNCTION( sandboxEval ) {
 
 		//JS_SetNativeStackQuota(JL_GetRuntime(cx), 8192 * sizeof(size_t));
 
-		pv.prevInterruptCallback = JS_SetInterruptCallback(JL_GetRuntime(cx), SandboxMaxOperationCallback);
-
 		bool ok;
 
 		{
-
 			mozilla::Maybe<JSAutoCompartment> ac;
 			unsigned flags;
 			JSObject *unwrapped = js::UncheckedUnwrap(globalObj, true, &flags);
@@ -1105,14 +951,14 @@ DEFINE_FUNCTION( sandboxEval ) {
 				ac.construct(cx, globalObj);
 			}
 
+
 			JS::AutoSaveContextOptions asco(cx);
 			JS::ContextOptionsRef(cx)
 				.setDontReportUncaught(true)
-				.setExtraWarnings(false)
 			;
 
-			JS::CompileOptions options(cx);
-			options
+			JS::CompileOptions compileOpt(cx);
+			compileOpt
 				.setFileAndLine(autoFilename.get(), lineno)
 				.setCompileAndGo(true)
 			;
@@ -1120,24 +966,21 @@ DEFINE_FUNCTION( sandboxEval ) {
 			if ( JS_StringHasLatin1Chars(srcStr) ) {
 
 				const char *src = (const char *)JS_GetLatin1StringCharsAndLength(cx, JS::AutoCheckCannotGC(), srcStr, &srcLen);
-				ok = JS::Evaluate(cx, globalObj, options, src, srcLen, args.rval());
+				ok = JS::Evaluate(cx, globalObj, compileOpt, src, srcLen, args.rval());
 			} else {
 
 				const jschar *src = JS_GetTwoByteStringCharsAndLength(cx, JS::AutoCheckCannotGC(), srcStr, &srcLen);
-				ok = JS::Evaluate(cx, globalObj, options, src, srcLen, args.rval());
+				ok = JS::Evaluate(cx, globalObj, compileOpt, src, srcLen, args.rval());
 			}
 		}
 
-		JL_CHK( JS_WrapValue(cx, args.rval()) );
+		if ( hasInterrupt ) {
 
-		JSInterruptCallback tmp;
-		tmp = JS_SetInterruptCallback(JL_GetRuntime(cx), pv.prevInterruptCallback);
-		ASSERT( tmp == SandboxMaxOperationCallback );
-
-		JLSemaphoreRelease(pv.semEnd);
-		JLThreadWait(sandboxWatchDogThread);
-		JLThreadFree(&sandboxWatchDogThread);
-		JLSemaphoreFree(&pv.semEnd);
+			JLSemaphoreRelease(pv.semEnd);
+			JLThreadWait(sandboxWatchDogThread);
+			JLThreadFree(&sandboxWatchDogThread);
+			JLSemaphoreFree(&pv.semEnd);
+		}
 
 		if ( !ok ) {
 
@@ -1150,99 +993,6 @@ DEFINE_FUNCTION( sandboxEval ) {
 	return true;
 	JL_BAD;
 }
-
-
-
-
-
-/*
-
-	SandboxContextPrivate pv;
-	pv.cx = cx;
-
-	if ( JL_ARG_ISDEF(2) ) {
-
-		JL_ASSERT_ARG_IS_CALLABLE(2);
-		pv.queryFunctionValue = JL_ARG(2);
-		JL_CHK( JS_DefineFunction(scx, globalObject, "query", SandboxQueryFunction, 1, JSPROP_PERMANENT | JSPROP_READONLY) );
-	} else {
-
-		pv.queryFunctionValue = JSVAL_VOID;
-	}
-
-	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( jl::getValue(cx, JL_ARG(3), &pv.maxExecutionTime) );
-	else
-		pv.maxExecutionTime = 1000; // default value
-
-	JSString *jsstr;
-	jsstr = JS::ToString(cx, JL_ARG(1));
-	JL_CHK( jsstr );
-
-//	size_t srclen;
-//	srclen = JL_GetStringLength(jsstr);
-//	jschar *src;
-//	src = JS_GetStringChars(jsstr);
-	size_t srclen;
-	const jschar *src;
-	src = JS_GetStringCharsAndLength(cx, jsstr, &srclen);
-
-	JSOperationCallback prev;
-	prev = JS_SetOperationCallback(scx, SandboxMaxOperationCallback);
-
-	JSStackFrame *fp;
-	fp = JS_GetScriptedCaller(cx, NULL);
-	JL_CHK( fp );
-	JS::RootedScript script;
-	script = JS_GetFrameScript(cx, fp);
-	JL_CHK( script );
-	const char *filename;
-	filename = JS_GetScriptFilename(cx, script);
-	jsbytecode *pc;
-	pc = JS_GetFramePC(cx, fp);
-	unsigned lineno;
-	lineno = JS_PCToLineNumber(cx, script, pc);
-
-	JS_SetContextPrivate(scx, &pv);
-
-	pv.semEnd = JLSemaphoreCreate(0);
-
-	JLThreadHandler sandboxWatchDogThread;
-	sandboxWatchDogThread = JLThreadStart(SandboxWatchDogThreadProc, scx);
-	if ( !JLThreadOk(sandboxWatchDogThread) )
-		return jl::throwOSError(cx);
-
-//	JSCrossCompartmentCall *call = JS_EnterCrossCompartmentCall(cx, globalObject);
-
-	bool ok;
-	ok = JS_EvaluateUCScript(scx, globalObject, src, (unsigned)srclen, filename, lineno, JL_RVAL);
-
-//	JS_LeaveCrossCompartmentCall(call);
-
-	JLSemaphoreRelease(pv.semEnd);
-
-	JLThreadWait(sandboxWatchDogThread);
-	JLThreadFree(&sandboxWatchDogThread);
-	JLSemaphoreFree(&pv.semEnd);
-
-	prev = JS_SetOperationCallback(scx, prev);
-	JL_ASSERT( prev == SandboxMaxOperationCallback, "Invalid SandboxMaxOperationCallback handler." );
-
-	JL_CHK( JS_DeleteProperty(scx, globalObject, "query") ); // (TBD) also check of the deletion is successful using JS_HasProperty...
-
-	if (!ok) {
-
-		jsval ex;
-		if ( JS_GetPendingException(scx, &ex) )
-			JS_SetPendingException(cx, ex);
-		else
-			JS_ReportError(cx, "Unexpected error.");
-	}
-
-	JS_DestroyContextNoGC(scx);
-	return ok;
-*/
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1928,7 +1678,6 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( internString, 1 )
 		FUNCTION_ARGC( deepFreezeObject, 1 )
 		FUNCTION_ARGC( countProperties, 1 )
-		FUNCTION_ARGC( clearObject, 1 )
 		FUNCTION_ARGC( exec, 2 )
 		FUNCTION_ARGC( sandboxEval, 3 )
 		FUNCTION_ARGC( isStatementValid, 1 )
@@ -1950,6 +1699,7 @@ CONFIGURE_STATIC
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_GETTER( currentFilename )
 		PROPERTY_GETTER( currentLineNumber )
+		PROPERTY_SETTER( disableGarbageCollector )
 		PROPERTY_GETTER( currentMemoryUsage )
 		PROPERTY_GETTER( peakMemoryUsage )
 		PROPERTY_GETTER( privateMemoryUsage )

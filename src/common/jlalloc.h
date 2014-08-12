@@ -47,7 +47,7 @@ template<class T>
 class JLAutoPtr {
    T *_ptr;
 public:
-	JLAutoPtr(T *p = NULL)
+	JLAutoPtr(T *p)
 	: _ptr(p) {
 	}
 

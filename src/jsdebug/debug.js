@@ -24,11 +24,13 @@ loadModule('jsstd');
 		[];
 	}
 
-	debug.memory.trackingAllocationSites = true;
 
+	
 	test();
 
-
+//	debug.memory.trackingAllocationSites = true;
+//	print( JSON.stringify(debug.memory.takeCensus(), undefined, 2) );
+	
 	
 
 throw 0;

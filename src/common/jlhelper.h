@@ -17,6 +17,12 @@
 #include <../../js/src/js-confdefs.h>
 //#include <js/RequiredDefines.h>
 
+#ifndef DEBUG
+#pragma message ("*****************")
+#pragma message ("*** OPT BUILD ***")
+#pragma message ("*****************")
+#endif
+
 #include "jlplatform.h"
 
 #ifdef MSC
@@ -463,18 +469,23 @@ matrix44GetInterface( JSContext *cx, JS::HandleObject obj );
 ////////////////////
 // helper classes
 
-class AutoInterruptCallback {
+class AutoSaveInterruptCallback {
 	JSRuntime *_rt;
 	JSInterruptCallback _prevCallback;
-	AutoInterruptCallback();
-	AutoInterruptCallback( const AutoInterruptCallback & );
+	AutoSaveInterruptCallback();
+	AutoSaveInterruptCallback( const AutoSaveInterruptCallback & );
 public:
-	AutoInterruptCallback(JSRuntime *rt, JSInterruptCallback newCallback) :
+	AutoSaveInterruptCallback(JSRuntime *rt, JSInterruptCallback newCallback) :
 		_rt(rt),
 		_prevCallback(JS_SetInterruptCallback(rt, newCallback)) {
 	}
 
-	~AutoInterruptCallback() {
+	AutoSaveInterruptCallback(JSRuntime *rt) :
+		_rt(rt),
+		_prevCallback(JS_GetInterruptCallback(rt)) {
+	}
+
+	~AutoSaveInterruptCallback() {
 
 		JS_SetInterruptCallback(_rt, _prevCallback);
 	}
@@ -485,7 +496,7 @@ class AutoSaveContextPrivate {
 	JSContext *_cx;
 	void* _prevCxPrivate;
 	AutoSaveContextPrivate();
-	AutoSaveContextPrivate( const AutoInterruptCallback & );
+	AutoSaveContextPrivate( const AutoSaveInterruptCallback & );
 public:
 	AutoSaveContextPrivate(JSContext *cx, void* newCxPrivate) :
 		_cx(cx),
@@ -516,17 +527,17 @@ public:
 };
 
 
-class AutoExceptionState {
+class AutoRestoreExceptionState {
 	JSContext *_cx;
 	JSExceptionState *_exState;
 public:
-	~AutoExceptionState() {
+	~AutoRestoreExceptionState() {
 
 		if ( _exState )
 			JS_RestoreExceptionState(_cx, _exState);
 	}
 
-	AutoExceptionState(JSContext *cx) : _cx(cx) {
+	AutoRestoreExceptionState(JSContext *cx) : _cx(cx)	{
 
 		_exState = JS_SaveExceptionState(_cx);
 		JS_ClearPendingException(_cx);
@@ -541,16 +552,16 @@ public:
 };
 
 
-class AutoErrorReporter {
+class AutoRestoreErrorReporter {
 	JSContext *_cx;
 	JSErrorReporter _errReporter;
 public:
-	~AutoErrorReporter() {
+	~AutoRestoreErrorReporter() {
 
 		JS_SetErrorReporter(_cx, _errReporter);
 	}
 
-	AutoErrorReporter(JSContext *cx, JSErrorReporter errorReporter) : _cx(cx) {
+	AutoRestoreErrorReporter(JSContext *cx, JSErrorReporter errorReporter) : _cx(cx) {
 
 		_errReporter = JS_SetErrorReporter(_cx, errorReporter);
 	}
@@ -639,24 +650,46 @@ newObjectWithoutProto( JSContext *cx ) {
 
 ALWAYS_INLINE jsid FASTCALL
 stringToJsid( JSContext *cx, JS::HandleString jsstr ) {
-
+	
+	JS::AutoCheckCannotGC nogc;
 	ASSERT( jsstr != NULL );
-	JS::RootedString tmp(cx, JS_InternJSString(cx, jsstr)); // if ( !JS_StringHasBeenInterned(cx, jsstr) )
-	ASSERT( tmp );
-	JS::RootedId id(cx, INTERNED_STRING_TO_JSID(cx, jsstr));
-	return id;
+	//JS::RootedString tmp(cx, JS_InternJSString(cx, jsstr)); // if ( !JS_StringHasBeenInterned(cx, jsstr) )
+	//ASSERT( tmp );
+	//JS::RootedId id(cx, INTERNED_STRING_TO_JSID(cx, jsstr));
+	//return id;
+	return INTERNED_STRING_TO_JSID(cx, JS_InternJSString(cx, jsstr)); // 
 }
 
 
 ALWAYS_INLINE jsid FASTCALL
 stringToJsid( JSContext *cx, const jschar *wstr ) {
 
+	JS::AutoCheckCannotGC nogc;
 	ASSERT( wstr != NULL );
+	//JS::RootedString jsstr(cx, JS_InternUCString(cx, wstr));
+	//ASSERT( jsstr );
+	//JS::RootedId id(cx, stringToJsid(cx, jsstr));
+	//ASSERT( JSID_IS_STRING(id) );
+	//return id;
 	JS::RootedString jsstr(cx, JS_InternUCString(cx, wstr));
 	ASSERT( jsstr );
-	JS::RootedId id(cx, stringToJsid(cx, jsstr));
-	ASSERT( JSID_IS_STRING(id) );
-	return id;
+	return stringToJsid(cx, jsstr);
+}
+
+
+ALWAYS_INLINE jsid FASTCALL
+stringToJsid( JSContext *cx, const char *str ) {
+
+	JS::AutoCheckCannotGC nogc;
+	ASSERT( str != NULL );
+	//JS::RootedString jsstr(cx, JS_InternString(cx, str));
+	//ASSERT( jsstr );
+	//JS::RootedId id(cx, stringToJsid(cx, jsstr));
+	//ASSERT( JSID_IS_STRING(id) );
+	//return id;
+	JS::RootedString jsstr(cx, JS_InternString(cx, str));
+	ASSERT( jsstr );
+	return stringToJsid(cx, jsstr);
 }
 
 

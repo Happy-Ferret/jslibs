@@ -80,8 +80,9 @@ BEGIN_STATIC
 
 
 
-static bool hasGCTrace = false; // (TBD) fix static keyword issue
-static JSGCCallback prevGCCallback = NULL; // (TBD) fix static keyword issue
+//static bool hasGCTrace = false; // (TBD) fix static keyword issue
+//static JSGCCallback prevGCCallback = NULL; // (TBD) fix static keyword issue
+
 static char GCTraceFileName[PATH_MAX]; // (TBD) fix static keyword issue
 
 bool GCCallTrace(JSContext *cx, JSGCStatus status) {
@@ -174,7 +175,6 @@ DEFINE_PROPERTY_GETTER( Debugger ) {
 
 	{
 		JSAutoCompartment ac(cx, dbgGlobal);
-		//JL_CHK( JS_InitStandardClasses(cx, dbgGlobal) );
 		JL_CHK( JS_DefineDebuggerObject(cx, dbgGlobal) ); // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
 		JS_FireOnNewGlobalObject(cx, dbgGlobal);
 	}
@@ -460,8 +460,6 @@ DEFINE_FUNCTION( setPerfTestMode ) {
 	return true;
 	JL_BAD;
 }
-
-
 
 
 #ifdef DEBUG

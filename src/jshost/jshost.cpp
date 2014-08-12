@@ -454,22 +454,6 @@ volatile bool NedAllocators::_skipCleanup = false;
 #endif // USE_NEDMALLOC
 
 
-
-void _GCSliceCallback(JSRuntime *rt, JS::GCProgress progress, const JS::GCDescription &desc) {
-
-	switch ( progress ) {
-
-		case JS::GCProgress::GC_CYCLE_BEGIN: puts("GC_CYCLE_BEGIN"); break;
-		case JS::GCProgress::GC_SLICE_BEGIN: puts("GC_SLICE_BEGIN"); break;
-		case JS::GCProgress::GC_SLICE_END: puts("GC_SLICE_END"); break;
-		case JS::GCProgress::GC_CYCLE_END: puts("GC_CYCLE_END"); break;
-	}
-//	_putws(desc.formatMessage(rt));
-//	puts("");
-}
-
-
-
 using namespace jl;
 
 int
@@ -516,10 +500,10 @@ _tmain( int argc, TCHAR* argv[] ) {
 		//nedAlloc.setSkipCleanup(true);
 		
 		HostRuntime hostRuntime(allocators, args.maxBytes);
+
 		JL_CHK( hostRuntime );
 		JSContext *cx = hostRuntime.context();
 		ASSERT( &hostRuntime == &jl::HostRuntime::getJLRuntime(cx) );
-		//	IFDEBUG( JS::SetGCSliceCallback(hostRuntime.runtime(), _GCSliceCallback) );
 
 		JS::RuntimeOptionsRef(cx)
 			.setWerror(args.warningsToErrors)
@@ -595,14 +579,12 @@ _tmain( int argc, TCHAR* argv[] ) {
 			executeStatus = true;
 
 			// inline (command-line) script
-
 			if ( args.inlineScript != NULL ) {
 
 				executeStatus = jl::executeScriptText( cx, globalObject, args.inlineScript, jl::strlen( args.inlineScript ) * sizeof( TCHAR ), sizeof( TCHAR ) == 2 ? jl::EncodingType::ENC_UTF16le : jl::EncodingType::ENC_LATIN1, args.compileOnly, &rval );
 			}
 
 			// file script
-
 			if ( args.jsArgc == 1 && executeStatus == true ) {
 
 				executeStatus = jl::executeScriptFileName( cx, globalObject, args.jsArgv[0], args.encoding, args.compileOnly, &rval );

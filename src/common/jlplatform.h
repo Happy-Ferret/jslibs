@@ -638,33 +638,33 @@ LL(const wchar_t *s) {
 
 #if defined(WIN32)
 
-#define JL_ASSERT_FAILURE( message, location ) \
-	( \
-	_ftprintf(stderr, TEXT("JL Assertion failure:  %s  @%s\n"), message, location), \
-	fflush(stderr), \
-	__debugbreak(), \
-	(*((volatile int*) NULL) = 123), \
-	::TerminateProcess(::GetCurrentProcess(), 3) \
+#define JL_ASSERT_FAILURE( message, location )										 \
+	(																				 \
+	_ftprintf(stderr, TEXT("JL Assertion failure:  %S  @%S\n"), message, location),	 \
+	fflush(stderr),																	 \
+	__debugbreak(),																	 \
+	(*((volatile int*) NULL) = 123),												 \
+	::TerminateProcess(::GetCurrentProcess(), 3)									 \
 	)
 
 #elif defined(__APPLE__)
 
-#define JL_ASSERT_FAILURE( message, location ) \
-	( \
-	fprintf(stderr, "JL Assertion failure: %s @%s\n", message, location), \
-	fflush(stderr), \
-	__debugbreak(), \
-	(*((volatile int*) NULL) = 123), \
-	raise(SIGABRT) \
+#define JL_ASSERT_FAILURE( message, location )										 \
+	(																				 \
+	fprintf(stderr, "JL Assertion failure: %s @%s\n", message, location),			 \
+	fflush(stderr),																	 \
+	__debugbreak(),																	 \
+	(*((volatile int*) NULL) = 123),												 \
+	raise(SIGABRT)																	 \
 	)
 
 #else
 
-#define JL_ASSERT_FAILURE( message, location ) \
-	( \
-	fprintf(stderr, "JL Assertion failure: %s @%s\n", message, location), \
-	fflush(stderr), \
-	raise(SIGABRT) \
+#define JL_ASSERT_FAILURE( message, location )										 \
+	(																				 \
+	fprintf(stderr, "JL Assertion failure: %s @%s\n", message, location),			 \
+	fflush(stderr),																	 \
+	raise(SIGABRT)																	 \
 	)
 
 #endif
@@ -1826,8 +1826,8 @@ strchr(wchar_t *s, wchar_t c) {
 	return ::wcschr(s, c);
 }
 
-////
 
+////
 
 
 ALWAYS_INLINE const char* FASTCALL
@@ -1945,8 +1945,8 @@ strncmp( const wchar_t *str1, const wchar_t *str2, size_t maxCount ) {
 	return ::wcsncmp( str1, str2, maxCount );
 }
 
-////
 
+////
 
 
 ALWAYS_INLINE int FASTCALL
@@ -1960,6 +1960,7 @@ open( const wchar_t * filename, int openFlag, int permissionMode = 0 ) {
 
 	return _wopen( filename, openFlag, permissionMode );
 }
+
 
 ////
 
@@ -1975,6 +1976,37 @@ stat( const wchar_t * filename, struct _stat * st ) {
 
 	return _wstat( filename, st );
 }
+
+////
+
+ALWAYS_INLINE int FASTCALL
+puts( const char * str ) {
+
+	return ::puts( str );
+}
+
+ALWAYS_INLINE int FASTCALL
+puts( const wchar_t * str ) {
+
+	return ::_putws( str );
+}
+
+
+////
+
+
+ALWAYS_INLINE int FASTCALL
+fputs( const char * str, FILE * file ) {
+
+	return ::fputs( str, file );
+}
+
+ALWAYS_INLINE int FASTCALL
+fputs( const wchar_t * str, FILE * file ) {
+
+	return ::fputws( str, file );
+}
+
 
 ////
 

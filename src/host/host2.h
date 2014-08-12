@@ -377,10 +377,10 @@ class WatchDog {
 	static JLThreadFuncDecl
 	watchDogThreadProc(void *threadArg);
 
-	bool
+	void
 	start();
 
-	bool
+	void
 	stop();
 
 public:
@@ -1110,11 +1110,8 @@ class DLLAPI Host : public Valid, public jl::CppAllocators {
 	static INLINE NEVER_INLINE void FASTCALL
 	getPrivateJsidSlow( JSContext *cx, JS::PersistentRootedId &id, const jschar *name ) {
 
-		JS::RootedString jsstr(cx, JS_InternUCStringN(cx, name, jl::strlen(name)));
-		ASSERT( jsstr );
-		id.set(stringToJsid(cx, jsstr));
+		id.set(stringToJsid(cx, name));
 	}
-
 
 public:
 	~Host();
@@ -1265,7 +1262,7 @@ public:
 
 			getPrivateJsidSlow(_hostRuntime.context(), id, name);
 		}
-		return JS::HandleId::fromMarkedLocation(id.address());
+		return JS::HandleId::fromMarkedLocation(&id.get());
 	}
 
 
@@ -1343,7 +1340,6 @@ JL_END_NAMESPACE
 #define JLID_NAME(cx, name) (#name)
 #endif // DEBUG
 
-//#define JLID(cx, name) JL_GetPrivateJsid(cx, JLID_##name, (jschar*)L(#name))
 #define JLID(cx, name) (jl::Host::getJLHost(cx).getId(JLID_##name, L(#name)))
 
 // eg:

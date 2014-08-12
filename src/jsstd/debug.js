@@ -4,14 +4,21 @@ var loadModule = host.loadModule;
 
 loadModule('jsstd');
 
-	print(true, '\n');
+	var prevStderr;
+	[prevStderr, host.stderr] = [host.stderr, undefined];
 
 	try {
-		sandboxEval('for ( var i = 0; i < 10000000; ++i );', undefined, 100);
+		sandboxEval('for ( var i = 0; i < 10000000; ++i );', undefined, 10);
 		print(false, '\n');
 	} catch(ex if ex instanceof OperationLimit) {
 		print(true, '\n');
 	}
+
+	print( sandboxEval('for ( var i = 0; i < 1000; ++i ); true', undefined, 0), '\n' );
+
+	host.stderr = prevStderr;
+
+	print( sandboxEval('123') == 123, '\n' );
 
 	print( sandboxEval('') == undefined, '\n' );
 

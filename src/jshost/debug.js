@@ -8,17 +8,59 @@ var loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('serial'); throw 0; // -inlineOnly
 //jslangTest();
 
-	loadModule('jsstd');
-	var ev = timeoutEvents(10);
+//	loadModule('jsstd');
+
+	host.interruptInterval = 1;
+	host.onInterrupt = () => { host.collectGarbage(true, 1) };
+
+
+
+	function JsClass() {
+	
+		this.a = 5;
+		this._serialize = function(ser) {
+		
+			ser.write(this.a);
+		}
+		this._unserialize = function(unser) {
+			
+			var o = new JsClass();
+			o.a = unser.read();
+			return o;
+		}
+	}
+
+	var myobj = new JsClass();
+
+	var s = new Serializer();
+	s.write(myobj);
+
+	var s = new Unserializer(s.done());
+	var str1 = s.read();
+
+
 
 throw 0;
 
-Math.cos
+	host.interruptInterval = 1;
+	host.onInterrupt = () => { host.collectGarbage(true, 1) };
 
-try {
-} catch(ex) {
-	print(ex.valueOf());
-}
+	host.stdout('press ctrl-c to exit\n');
+	while ( !host.endSignal ) {
+
+
+		jslangTest();
+	}
+
+
+
+throw 0;
+
+
+	try {
+	} catch(ex) {
+		print(ex.valueOf());
+	}
 
 	var s = new Socket();
 	s.close();

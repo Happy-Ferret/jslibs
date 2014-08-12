@@ -8,6 +8,14 @@ var loadModule = host.loadModule;
 //loadModule('jstask');
 
 
+	loadModule('jsio');
+	var io = Descriptor.events([new Socket]);
+	processEvents(io,io, timeoutEvents(10));
+
+
+throw 0;
+
+
 	loadModule('jsstd');
 	loadModule('jsio');
 
