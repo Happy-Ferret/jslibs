@@ -19,11 +19,9 @@ else
 endif
 
 
-TIP_ID := mozilla-central-????????????
+TIP_ID=mozilla-central-????????????
 
-TIP_NAME := $(shell ls -td $(TIP_ID) | head -1)
-
-TARGET_FILES := $(INT_DIR)dist/bin/*.{so,dll}
+TARGET_FILES=$(INT_DIR)dist/bin/*.{so,dll}
 
 
 .INTERMEDIATE: tip.zip
@@ -31,22 +29,21 @@ TARGET_FILES := $(INT_DIR)dist/bin/*.{so,dll}
 
 tip.zip:
 	wget http://hg.mozilla.org/mozilla-central/archive/tip.zip
-	touch -c --reference=$< $@
 	
-src.zip: tip.zip
+src.zip:tip.zip
 	7z x -aos $< $(TIP_ID)/{toolkit/*,nsprpub/*,mfbt/*,python/*,testing/*,build/*,config/*,intl/*,js/public/*,js/src/*,dom/bindings/mozwebidlcodegen/*,media/webrtc/trunk/tools/gyp/*,layout/tools/reftest/*,modules/zlib/*,moz.build,Makefile.in,mozilla-config.h.in,aclocal.m4,configure.in} -x\!$(TIP_ID)/{js/src/jit-test/*,js/src/tests/*,js/src/v8/*} > /dev/null
-	echo -n $(TIP_NAME) > ./$(TIP_NAME)/tip.txt
-	mv $(TIP_NAME) src
+	echo -n `ls -td $(TIP_ID) | head -1` > ./`ls -td $(TIP_ID) | head -1`/tip.txt
+	mv `ls -td $(TIP_ID) | head -1` src
 	touch -c --reference=$< src
 	7z -mx9 a $@ src > /dev/null
 	touch -c --reference=$< $@
 	touch -c --reference=$< src
 
-src: src.zip
+src:src.zip
 	7z x $< > /dev/null
 	touch -c --reference=$< $@
 
-./src/js/src/configure: src
+./src/js/src/configure:src
 	diff -q ./jsversion.h ./src/js/src/jsversion.h || cp ./jsversion.h ./src/js/src/
 	
 	#	diff src/js/public/Utility.h.orig src/js/public/Utility.h -U 3 --label "" > Utility.h.patch
@@ -61,11 +58,11 @@ src: src.zip
 	cd $</js/src/ && ( autoconf2.13 || autoconf-2.13 )
 	./src/js/src/configure --help > configure-help.txt
 
-$(INT_DIR)Makefile: ./src/js/src/configure
+$(INT_DIR)Makefile:./src/js/src/configure
 	mkdir -p $(INT_DIR)
 	cd $(INT_DIR) && CXXFLAGS="$(_CFLAGS)" LDFLAGS="$(_LDFLAGS)" ../src/js/src/configure $(_CONFIGURE_OPTIONS)
 
-all:: $(INT_DIR)Makefile
+all::$(INT_DIR)Makefile
 	$(MAKE) -C $(INT_DIR) $@
 
 clean::
