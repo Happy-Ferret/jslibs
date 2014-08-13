@@ -424,11 +424,19 @@ public:
 
 			if ( JS_ObjectIsFunction(cx, obj) ) {
 
+				/* with XDR API */
 				uint32_t length;
 				void *data = JS_EncodeInterpretedFunction(cx, obj, &length);
 				JL_CHK( Write(cx, JLSTFunction) );
 				JL_CHK( Write(cx, SerializerConstBufferInfo(data, length)) );
 				js_free(data);
+				
+				/* without XDR API
+				JS::RootedString str(cx, JS_ValueToSource(cx, val));
+				JL_CHK( Write(cx, JLSTFunction) );
+				JL_CHK( Write(cx, str) );
+				*/
+
 				return true;
 			}
 
@@ -437,26 +445,27 @@ public:
 				JS::RootedValue serializeFctVal(cx);
 
 				JL_CHK(JS_GetPropertyById(cx, obj, JLID(cx, _serialize), &serializeFctVal)); // JL_CHK( JS_GetProperty(cx, obj, "_serialize", &serializeFctVal) );
-				if (!serializeFctVal.isUndefined()) {
+
+				if ( !serializeFctVal.isUndefined() ) {
 
 					JS::RootedValue arg(cx);
 
-					JL_ASSERT(jl::isCallable(cx, serializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_serialize"), E_DEFINED);
+					JL_ASSERT( jl::isCallable(cx, serializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_serialize"), E_DEFINED );
 
-					if (!jl::isObjectObject(cx, obj)) {
+					if ( !jl::isObjectObject(cx, obj) ) {
 
 						JL_CHK(Write(cx, JLSTSerializableNativeObject));
 						JL_CHK(Write(cx, JL_GetClassName(obj)));
 					} else {
 
 						JS::RootedValue unserializeFctVal(cx);
-						JL_CHK(Write(cx, JLSTSerializableScriptObject));
 						JL_CHK(JS_GetPropertyById(cx, obj, JLID(cx, _unserialize), &unserializeFctVal));
 						JL_ASSERT(jl::isCallable(cx, unserializeFctVal), E_OBJ, E_NAME(JL_GetClassName(obj)), E_INTERNAL, E_SEP, E_TY_FUNC, E_NAME("_unserialize"), E_DEFINED);
+
+						JL_CHK(Write(cx, JLSTSerializableScriptObject));
 						JL_CHK(Write(cx, unserializeFctVal));
 					}
 
-					//JSObject *serializerWrapper;
 					JS::RootedObject serializerWrapper(cx, NULL);
 
 					if ( _serializerObj.get().isNull() ) {
@@ -464,23 +473,22 @@ public:
 						// create a temporary wrapper to this serializer c++ object.
 
 						// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
+
 						serializerWrapper = JL_NewJslibsObject(cx, "Serializer");
-						JL_CHK(serializerWrapper);
+						JL_ASSERT_ALLOC( serializerWrapper );
+
 						arg.setObject(*serializerWrapper);
 						JL_SetPrivate(serializerWrapper, this);
-					}
-					else {
+					} else {
 
 						arg.set(_serializerObj);
 					}
 
 					bool ok;
-					ok = jl::callNoRval(cx, obj, serializeFctVal, arg); // rval not used
+					ok = jl::callNoRval(cx, obj, serializeFctVal, arg);
 
-					if (serializerWrapper != NULL) {
-
+					if ( serializerWrapper != NULL )
 						JL_SetPrivate(serializerWrapper, NULL);
-					}
 
 					JL_CHK(ok);
 
@@ -551,7 +559,7 @@ public:
 
 class Unserializer : public jl::CppAllocators {
 
-	JS::Heap<JS::Value> _unserializerObj; // must be used to declare data members of heap classes only
+	JS::Heap<JSObject*> _unserializerObj; // must be used to declare data members of heap classes only
 
 	uint8_t *_start;
 	uint8_t *_pos;
@@ -572,8 +580,11 @@ public:
 		jl_free(_start);
 	}
 	
-	explicit Unserializer(JSContext *cx, void *dataOwnership, size_t length, JS::HandleValue unserializerObj = JS::NullPtr())
-	: _unserializerObj(unserializerObj), _start((uint8_t*)dataOwnership), _pos(_start), _length(length) {
+	explicit Unserializer(JSContext *cx, void *dataOwnership, size_t length, JS::HandleObject unserializerObj = JS::NullPtr()) :
+		_unserializerObj(unserializerObj),
+		_start((uint8_t*)dataOwnership),
+		_pos(_start),
+		_length(length) {
 	}
 
 	bool IsEmpty() const {
@@ -870,7 +881,7 @@ public:
 				JS::RootedValue arg(cx);
 
 				JS::RootedObject unserializerWrapper(cx);
-				if ( _unserializerObj.get().isNull() ) {
+				if ( !_unserializerObj.get() ) {
 
 					// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
 					unserializerWrapper = JL_NewJslibsObject(cx, "Unserializer");
@@ -880,7 +891,7 @@ public:
 				} else {
 
 					//unserializerWrapper is null by default
-					arg.set( _unserializerObj );
+					arg.setObject( *_unserializerObj );
 				}
 
 				bool ok = jl::callNoRval(cx, newObj, JLID(cx, _unserialize), arg); // rval not used
@@ -901,7 +912,7 @@ public:
 				JS::RootedValue arg_1(cx);
 				JS::RootedObject unserializerWrapper(cx);
 
-				if ( _unserializerObj.get().isNull() ) {
+				if ( !_unserializerObj.get() ) {
 
 					// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
 					unserializerWrapper = JL_NewJslibsObject(cx, "Unserializer");
@@ -911,7 +922,7 @@ public:
 				} else {
 
 					unserializerWrapper = NULL;
-					arg_1 = _unserializerObj;
+					arg_1.setObject( *_unserializerObj );
 				}
 				
 				JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
@@ -920,6 +931,7 @@ public:
 
 				if ( unserializerWrapper != NULL )
 					JL_SetPrivate( unserializerWrapper, NULL);
+
 				JL_CHK( ok );
 
 
@@ -1025,14 +1037,50 @@ public:
 			}
 			case JLSTFunction: {
 
+				/* with XDR API */
+
 				SerializerConstBufferInfo encodedFunction;
 				JL_CHK( Read(cx, encodedFunction) );
-				
+			
 				JS::RootedObject fctObj(cx, JS_DecodeInterpretedFunction(cx, encodedFunction.Data(), encodedFunction.Length(), NULL));
-				JS::RootedObject parentObject(cx, JS_GetParent(fctObj));
-				fctObj = JS_CloneFunctionObject(cx, fctObj, parentObject); // (TBD) remove this wen bz#741597 wil be fixed. -> seems ok before 741597 fix
+				ASSERT( JS_ObjectIsFunction(cx, fctObj) );
+				
+				JS::RootedObject parent(cx, JS_GetParent(_unserializerObj));
+				val.setObjectOrNull(JS_CloneFunctionObject(cx, fctObj, parent)); // (TBD) remove this wen bz#741597 will be fixed. -> seems ok before 741597 fix -> no!
+				ASSERT( !val.isNull() );
 
-				val.setObject(*fctObj);
+				//val.setObject(*fctObj);
+				
+
+				/* without XDR API
+
+				JS::RootedString fctStr(cx);
+				JL_CHK( Read(cx, &fctStr) );
+
+				JS::CompileOptions compOpt(cx);
+				compOpt
+					.setCompileAndGo(false)
+					.setCanLazilyParse(false)
+					.setSourceIsLazy(false)
+				;
+
+				JS::RootedObject global(cx, JL_GetGlobal(cx));
+				JS::RootedValue rval(cx);
+
+				if ( JS_StringHasLatin1Chars(fctStr) ) {
+				
+					size_t len;
+					const char *chars = (const char *)JS_GetLatin1StringCharsAndLength(cx, JS::AutoCheckCannotGC(), fctStr, &len);
+					JL_CHK( JS::Evaluate(cx, global, compOpt, chars, len, &rval) );
+				} else {
+					size_t len;
+					const jschar *chars = (const jschar *)JS_GetTwoByteStringCharsAndLength(cx, JS::AutoCheckCannotGC(), fctStr, &len);
+					JL_CHK( JS::Evaluate(cx, global, compOpt, chars, len, &rval) );
+				}
+
+				val.set(rval);
+				*/
+
 				break;
 			}
 			default:

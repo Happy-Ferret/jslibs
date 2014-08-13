@@ -1699,7 +1699,6 @@ CONFIGURE_STATIC
 	BEGIN_STATIC_PROPERTY_SPEC
 		PROPERTY_GETTER( currentFilename )
 		PROPERTY_GETTER( currentLineNumber )
-		PROPERTY_SETTER( disableGarbageCollector )
 		PROPERTY_GETTER( currentMemoryUsage )
 		PROPERTY_GETTER( peakMemoryUsage )
 		PROPERTY_GETTER( privateMemoryUsage )

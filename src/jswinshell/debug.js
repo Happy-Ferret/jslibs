@@ -40,13 +40,19 @@ var loadModule = host.loadModule;
 		});
 
 		this.write = function(data) {
-		
-			var tmp = new Uint8Array(data);
+			
+			if ( typeof(data) == 'string' )
+				data = [ c.charCodeAt() for (c of data) ];
+
+			var tmp = Uint8Array(data);
 			chunkList.push(tmp);
 			length += tmp.length;
 		}
 	
 		this.unread = function(data) {
+
+			if ( typeof(data) == 'string' )
+				data = [ c.charCodeAt() for (c of data) ];
 
 			var tmp = new Uint8Array(data);
 			chunkList.unshift(tmp);
@@ -125,14 +131,17 @@ var loadModule = host.loadModule;
 	b.write(str2ab('dgsdfgsdfg'));
 	b.write(str2ab('\r\n\r\nbefgh'));
 	print( b.indexOf(str2ab('\r\n\r\n')) );
+
 	*/
 
+
+////
 
 	var audioFormat = {
 		bits:16,
 		channels:2,
 		rate:44100,
-		frames: 20  * 44100 / 1000
+		frames: 10  * 44100 / 1000
 	};
 
 
@@ -141,12 +150,23 @@ var loadModule = host.loadModule;
 `<!DOCTYPE html>
 <html>
 <head>
-	<meta name="viewport" content="initial-scale=1.5">
+	<meta name="viewport" content="initial-scale=1">
 	<title>Exemple</title>
+	<style>
+		#output p {
+			padding: 0px;
+			margin: 0px;
+		}
+		input[type=button] {
+			
+			padding: 2em;
+		}
+	</style>
 </head>
 <body>
 	<input type="button" value="stop" onclick="socket.close()"></div>
 	<input type="button" value="reload" onclick="location.reload(true)"></div>
+	<input type="button" value="sync" onclick="chunkByteOffset = 0; chunkList.length = 0"></div>
 	<div id="output"></div>
 </body>
 <script>
@@ -155,12 +175,14 @@ var loadModule = host.loadModule;
 
 		var output = document.getElementById("output");
 		var pre = document.createElement("p");
-		pre.style.wordWrap = "break-word";
-		pre.innerHTML = ''+(logindex++)+msg;
+//		pre.style.wordWrap = "break-word";
+		pre.innerHTML = '' + (logindex++) + ':' + msg;
 		output.insertBefore(pre, output.firstElementChild);
+		if ( logindex > 16 )
+			output.removeChild(output.lastElementChild);
 	}
 
-	function log(msg) {
+	function XXXlog(msg) {
 
 		document.getElementById("output").innerHTML = msg;
 	}
@@ -180,7 +202,11 @@ var loadModule = host.loadModule;
 
 	socket.onerror = function(ev) {
 		
-		log('ERROR:'+ev.data)
+		log('ERROR:' + ev.data )
+
+//	var socket = new WebSocket('ws://'+location.host+'/');
+//	socket.binaryType = "arraybuffer";
+
 	};
 
 
@@ -190,11 +216,20 @@ var loadModule = host.loadModule;
 	var chunkList = [];
 	var chunkByteOffset = 0;
 
-	var audioNode = audioCtx.createScriptProcessor(256, 0, 2);
+	var outputBufferSampleLength = 256;
+	var audioNode = audioCtx.createScriptProcessor(outputBufferSampleLength, 0, 2);
+
 	audioNode.onaudioprocess = function(audioProcessingEvent) {
 
 		if ( chunkList.length < 1 )
 			return;
+
+		if ( chunkList.length > 10 ) {
+
+			chunkList.length--;
+					
+			log('chunkList overrun ('+chunkList.length+')');
+		}
 
 		var outputBuffer = audioProcessingEvent.outputBuffer;
 		var l = outputBuffer.getChannelData(0);
@@ -202,21 +237,25 @@ var loadModule = host.loadModule;
 
 		var chunk = chunkList[0];
 		var chunkByteLength = chunk.byteLength;
-		
-		for ( var i = 0; i < outputBuffer.length; ++i ) {
+				
+		for ( var i = 0; i < outputBufferSampleLength; ++i ) {
 
 			if ( chunkByteOffset >= chunkByteLength ) {
 
-				chunkList.shift();
-				if ( chunkList.length == 0 )
+				chunkList.shift(); // exhausted
+				
+				if ( chunkList.length == 0 ) {
+					
+					log('chunkList underrun');
 					return;
+				}
 				chunk = chunkList[0];
-				var chunkByteLength = chunk.byteLength;
+				chunkByteLength = chunk.byteLength;
 				chunkByteOffset = 0;
 			}
 
 			l[i] = chunk.getInt16(chunkByteOffset, true) / 32768;
-			r[i] = chunk.getInt16(chunkByteOffset+2, true) / 32768;
+			r[i] = chunk.getInt16(chunkByteOffset + 2, true) / 32768;
 			chunkByteOffset += 4;
 		}
 	}
@@ -285,6 +324,7 @@ var loadModule = host.loadModule;
 			log('[connection closed]');
 		}
 
+
 		function processRequest(s, b) {
 			
 			if ( !s )
@@ -322,7 +362,7 @@ var loadModule = host.loadModule;
 				if ( basicAuthRequest && basicAuth != base64Encode(basicAuthRequest) ) {
 
 					sleep(2000);
-					s.write('HTTP/1.1 401 Authorization Required'+CRLF+'WWW-Authenticate: Basic realm="test"'+CRLF+'Content-length: 0'+CRLF+CRLF);
+					s.bufWrite('HTTP/1.1 401 Authorization Required'+CRLF+'WWW-Authenticate: Basic realm="test"'+CRLF+'Content-length: 0'+CRLF+CRLF);
 					return;
 				}
 
@@ -336,23 +376,10 @@ var loadModule = host.loadModule;
 					head += 'sec-websocket-accept:'+base64Encode(sha1.done())+CRLF;
 					head += 'connection:Upgrade'+CRLF;
 					head += 'upgrade:WebSocket'+CRLF;
-					s.write(head+CRLF);
+					s.bufWrite(head+CRLF);
 
 
-					var wsMessageHandler = wsHandler( function(d, dataType) {
-
-						if ( typeof(d) == 'string' ) {
-
-							var data = new Uint8Array(d.length);
-							for ( var i = 0, strLen = d.length; i < strLen; ++i ) {
-		
-								data[i] = d.charCodeAt(i);
-							}
-						} else {
-					
-							var data = new Uint8Array(d);
-						}
-
+					var wsMessageHandler = wsHandler( function(data, dataType) {
 					
 						var header = new Uint8Array(10);
 						var dataLen = data.length;
@@ -360,23 +387,23 @@ var loadModule = host.loadModule;
 						if ( dataLen < 126 ) {
 						
 							header[1] = dataLen;
-							s.write(header.subarray(0, 2));
+							s.bufWrite(header.subarray(0, 2));
 						} else
 						if ( dataLen > 65535 ) {
 						
 							header[1] = 127;
 							new DataView(header.buffer).setInt32(6, dataLen);
-							s.write(header.subarray(0, 10));
+							s.bufWrite(header.subarray(0, 10));
 						} else {
 
 							header[1] = 126;
 							new DataView(header.buffer).setInt16(2, dataLen);
-							s.write(header.subarray(0, 4));
+							s.bufWrite(header.subarray(0, 4));
 						}
 
 						log('ws> length:'+dataLen);
 
-						s.write(data);
+						s.bufWrite(data);
 					});
 
 
@@ -460,7 +487,7 @@ var loadModule = host.loadModule;
 						return closeSocket(s);
 					if ( response == undefined ) {
 
-						s.write('HTTP/1.1 204 No Content'+CRLF+CRLF);
+						s.bufWrite('HTTP/1.1 204 No Content'+CRLF+CRLF);
 					} else {
 
 						var head = 'HTTP/1.1 200 OK';
@@ -473,7 +500,7 @@ var loadModule = host.loadModule;
 						}
 	*/
 						head += 'content-length: '+response.length + CRLF;
-						s.write(head + responseHeaders + CRLF + response);
+						s.bufWrite(head + responseHeaders + CRLF + response);
 					}
 
 					s.state = processRequest;
@@ -499,7 +526,24 @@ var loadModule = host.loadModule;
 			clientSocket.buffer = new Buffer();
 			clientSocket.state = processRequest;
 
-	//		clientSocket.writable = function() {		print('w');	}
+			var sendBuffer = new Buffer();
+
+			clientSocket.bufWrite = function(data) {
+
+				//clientSocket.write(data);
+
+				sendBuffer.write(data);
+
+				clientSocket.writable = function(s) {
+
+					var data = sendBuffer.read();
+					s.write(data);
+
+					if ( sendBuffer.length == 0 )
+						delete s.writable;
+				}
+
+			}
 
 			clientSocket.readable = function(s) {
 
@@ -541,9 +585,7 @@ var loadModule = host.loadModule;
 		
 			for ( var chunk of chunkList ) {
 
-//				print(chunk.constructor.name);
-			
-				send(chunk.data, WS_BINARY_DATA);
+				send(Uint8Array(chunk.data), WS_BINARY_DATA);
 			}
 		}
 	

@@ -64,7 +64,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( write ) {
 
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
 	JL_RVAL.setObject(*JL_OBJ);
@@ -152,7 +152,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARG_IS_STRING(1);
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-	unser = new jl::Unserializer(cx, str.toData<char*>(), str.length(), JL_OBJVAL);
+	unser = new jl::Unserializer(cx, str.toData<char*>(), str.length(), JL_OBJ);
 	JL_ASSERT_ALLOC(unser);
 
 	JL_updateMallocCounter(cx, sizeof(jl::Unserializer));

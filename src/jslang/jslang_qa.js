@@ -163,6 +163,11 @@ loadModule('jsstd');
 		QA.ASSERT_STR( res, 'abcdefghijklmnopqrstuvwxyz', 'stringified stream' );
 
 
+/// Stringify result length [p]
+
+		QA.ASSERT( stringify('test', false).length, stringify('test', true).byteLength, 'toArrayBuffer = true/false behave same' );
+
+
 /// Stringify function [p]
 
 		QA.ASSERT( 'test', stringify('test'), 'force string conversion' );
@@ -346,7 +351,7 @@ loadModule('jsstd');
 	s.read();
 
 
-/// Serialization / Unserialization of custom class
+/// Serialization / Unserialization of custom class [d]
 
 	function JsClass() {
 	

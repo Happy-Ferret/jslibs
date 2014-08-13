@@ -784,13 +784,40 @@ public:
 	toString( JSContext *cx, JS::MutableHandleValue rval ) {
 
 		size_t len = length();
-		if ( len == 0 )
+		if ( len == 0 ) {
+
 			rval.set(JL_GetEmptyStringValue(cx));
-		else
-			rval.setString(JL_NewUCString(cx, toStringZ<jschar*>(), len));
+		} else {
+
+			if ( isWide() )
+				rval.setString(JL_NewUCString(cx, toData<WideChar*>(), len));
+			else
+				rval.setString(JL_NewString(cx, toData<NarrowChar*>(), len));
+			JL_CHK( !rval.isNull() );
+		}
 		return true;
 		JL_BAD;
 	}
+
+	bool
+	toArrayBuffer( JSContext *cx, JS::MutableHandleValue rval ) {
+		
+		size_t len = length();
+		if ( len == 0 ) {
+			
+			rval.setObjectOrNull(JS_NewArrayBuffer(cx, 0));
+		} else {
+
+			if ( !owner() )
+				own();
+			rval.setObjectOrNull(JS_NewArrayBufferWithContents(cx, len * charSize(), data())); // avoid the terminal \0
+			dropOwnership();
+		}
+		JL_CHK( !rval.isNull() );
+		return true;
+		JL_BAD;
+	}
+
 };
 
 

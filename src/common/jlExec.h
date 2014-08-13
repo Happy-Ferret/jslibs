@@ -27,8 +27,8 @@ compileScript( JSContext *cx, JS::HandleObject obj, const void *scriptBuffer, si
 	// see https://bugzilla.mozilla.org/show_bug.cgi?id=494363
 	// see also bug 920322 : Add support for compileAndGo optimizations to XDRScript
 	//if ( saveCompFile ) // saving the compiled file mean that we cannot promise to execute compiled script once only.
-	//	compileOptions.setCompileAndGo(false);  // JS_SetOptions(cx, prevOpts & ~JSOPTION_COMPILE_N_GO); // previous options a restored below.
-	compileOptions.setCompileAndGo( true );
+	
+	compileOptions.setCompileAndGo(true);
 
 	if ( compileOptions.filename() == nullptr )
 		compileOptions.setFileAndLine( "<inline>", 1 );

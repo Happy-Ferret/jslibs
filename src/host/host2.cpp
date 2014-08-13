@@ -1513,6 +1513,8 @@ _interruptHandler(nullptr) {
 		.setExtraWarnings(!_unsafeMode)
 	;
 
+	JS::ContextOptionsRef(cx)
+	;
 	
 	
 	JS_SetErrorReporter(cx, errorReporter);

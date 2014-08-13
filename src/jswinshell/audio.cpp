@@ -251,8 +251,7 @@ DEFINE_CONSTRUCTOR() {
 	InitializeCriticalSection(&pv->cs);
 	pv->audioEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	pv->bufferReadyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	JL_ASSERT(pv->audioEvent, E_OS, E_OBJ, E_CREATE, E_COMMENT("event"));
-	JL_ASSERT(pv->audioEvent, E_OS, E_OBJ, E_CREATE, E_COMMENT("event"));
+	JL_CHKB( pv->audioEvent, osError );
 
 	pv->thread = NULL;
 
@@ -262,15 +261,13 @@ DEFINE_CONSTRUCTOR() {
 		return ThrowWinAudioError(cx, res);
 
 	pv->thread = CreateThread(NULL, 0, WaveInThreadProc, pv, CREATE_SUSPENDED, NULL);
-	JL_ASSERT(pv->thread, E_OS, E_OBJ, E_CREATE, E_COMMENT("audio thread"));
-
-	SetThreadPriority(pv->thread, THREAD_PRIORITY_HIGHEST);
-	ResumeThread(pv->thread);
-
-	DWORD status = WaitForSingleObject(pv->audioEvent, INFINITE); // first pulse
-	ASSERT( status != WAIT_FAILED );
-		
+	JL_CHKB( pv->thread, osError );
+	JL_CHKB( SetThreadPriority(pv->thread, THREAD_PRIORITY_HIGHEST) != FALSE, osError );
+	JL_CHKB( ResumeThread(pv->thread) != (DWORD)-1, osError );
+	JL_CHKB( WaitForSingleObject(pv->audioEvent, INFINITE) != WAIT_FAILED, osError ); // first pulse
 	return true;
+osError:
+	jl::throwOSError(cx);
 	JL_BAD;
 }
 

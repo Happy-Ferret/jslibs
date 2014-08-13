@@ -659,12 +659,17 @@ _tmain( int argc, TCHAR* argv[] ) {
 
 //int test_main(int argc, char* argv[]) {
 int 
-_tmain( int argc, TCHAR* argv[] ) {
-	puts("TEST MODE");
+_tmain( int argc, TCHAR* argv[] ) { 
+	::puts("TEST MODE"); 
+
 
 
 	const JSClass global_class = {
-		"global", JSCLASS_GLOBAL_FLAGS, JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub, JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, nullptr, nullptr, nullptr, nullptr, JS_GlobalObjectTraceHook
+		"global", JSCLASS_GLOBAL_FLAGS,
+		JS_PropertyStub, JS_DeletePropertyStub, JS_PropertyStub, JS_StrictPropertyStub,
+		JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub,
+		nullptr, nullptr, nullptr, nullptr,
+		JS_GlobalObjectTraceHook
 	};
 
 	JS_Init();
@@ -674,19 +679,57 @@ _tmain( int argc, TCHAR* argv[] ) {
 	JS_BeginRequest(cx);
 
 	{
-
 		JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &global_class, nullptr, JS::FireOnNewGlobalHook));
 		JSAutoCompartment ac(cx, globalObject);
 		JS_InitStandardClasses(cx, globalObject);
-	/*
-		JS::PersistentRootedObject pr(cx);
-		JS_GC(rt);
-	*/
+
+		JS::RuntimeOptionsRef(cx).setVarObjFix(true);
+		JS::ContextOptionsRef(cx).setNoScriptRval(false);
+		JS::CompartmentOptionsRef(cx).setVersion(JSVERSION_LATEST);
+
+		const char *script = "		  \
+			(function() {			  \
+				var a = 123;		  \
+				return function() {	  \
+					return a;		  \
+				};					  \
+			})();					  \
+		";
+
+		// const char *script = "(function(){})";
+
+		uint32_t encLen;
+		void *encBuf;
+
+		{ // encode
+			JS::RootedValue rval(cx);
+			JS::CompileOptions compOpt(cx);
+			compOpt
+				.setCompileAndGo(false)
+				.setCanLazilyParse(false)
+				.setSourceIsLazy(false)
+			;
+			JS::RootedScript s(cx);
+			ASSERT( JS_CompileScript(cx, globalObject, script, ::strlen(script), compOpt, &s) );
+			JS_ExecuteScript(cx, globalObject, s, &rval);
+			JS::RootedObject rvalObj(cx, rval.toObjectOrNull());
+			ASSERT( JS_ObjectIsFunction(cx, rvalObj) );
+			encBuf = JS_EncodeInterpretedFunction(cx, rvalObj, &encLen);
+		}
+
+		{ // decode
+			JS::RootedValue rval(cx);
+			JS::RootedObject fctObj(cx, JS_DecodeInterpretedFunction(cx, encBuf, encLen, nullptr));
+			//fctObj.set( JS_CloneFunctionObject(cx, fctObj, globalObject) );
+			JS::RootedValue fctVal(cx, JS::ObjectValue(*fctObj));
+			JS::Call(cx, globalObject, fctVal, JS::HandleValueArray::empty(), &rval);
+		}
 
 
+
+/*
 		JS::AutoValueVector avv(cx);
 		avv.append(JS::ObjectValue(*jl::newObject(cx)));
-
 
 		JS::RootedObject a(cx, jl::newObject(cx));
 		JS::RootedValue b(cx, JS::NumberValue(123));
@@ -696,8 +739,6 @@ _tmain( int argc, TCHAR* argv[] ) {
 		
 		a.set(nullptr);
 		JL_GetClassOfPrototype(cx, a);
-
-
 
 
 		JS::MutableHandleValue test(&b);
@@ -727,15 +768,17 @@ _tmain( int argc, TCHAR* argv[] ) {
 
 
 		jl::callNoRval(cx, glob, "jslangTest");
+*/	
 
-		
 
 	}
 
 	JS_EndRequest(cx);
 	JS_DestroyContext(cx);
 	JS_DestroyRuntime(rt);
+
 	JS_ShutDown();
+
 	return 0;
 }
 

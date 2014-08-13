@@ -10,44 +10,114 @@ var loadModule = host.loadModule;
 
 //	loadModule('jsstd');
 
-	host.interruptInterval = 1;
-	host.onInterrupt = () => { host.collectGarbage(true, 1) };
+host.interruptInterval = 1;
+host.onInterrupt = () => { host.collectGarbage(true, 1) };
+
+
+////
 
 
 
-	function JsClass() {
+	var myobj = (function() {
+
+		function JsClass() {
 	
-		this.a = 5;
-		this._serialize = function(ser) {
+			this._serialize = function(ser) {
+				
+				ser.write(JsClass);
+			}
+
+			this._unserialize = function(unser) {
+
+				var _JsClass = unser.read();
+
+				return new _JsClass;
+			}
+		}
+
+		return new JsClass;
+	})();
+
+	var s = new Unserializer(new Serializer().write(myobj).done());
+	s.read();
+
+throw 0;
+
+
+
+	var myobj = (function() {
+
+		function JsClass() {
+	
+			this._serialize = function(ser) {
+			}
+
+			this._unserialize = function(unser) {
+
+				return new this.constructor();
+			}
+		}
+
+		return new JsClass;
+	})();
+
+	var s = new Unserializer(new Serializer().write(myobj).done());
+	s.read();
+
+throw 0;
+
+
+
+	var obj1 = (function() {var a = 123;return function() {	return a;};})();
+	var obj2 = new Unserializer(new Serializer().write(obj1).done()).read();
+	host.stdout( obj2() );
+
+throw 0;
+
+
+
+	(function() {
+
+		function JsClass() {
+	
+			this.a = 5;
+		}
+
+		JsClass.prototype._serialize = function(ser) {
 		
 			ser.write(this.a);
 		}
-		this._unserialize = function(unser) {
+
+		JsClass.prototype._unserialize = function(unser) {
 			
-			var o = new JsClass();
+			var o = new this.constructor();
 			o.a = unser.read();
 			return o;
 		}
-	}
-
-	var myobj = new JsClass();
-
-	var s = new Serializer();
-	s.write(myobj);
-
-	var s = new Unserializer(s.done());
-	var str1 = s.read();
 
 
+		var ob = new JsClass();
+		ob.a = 7;
+
+		var myobj = [ ob ];
+
+		var s = new Serializer();
+		s.write(myobj);
+		var s = new Unserializer(s.done());
+		host.stdout( uneval(myobj), '\n' );
+		host.stdout( uneval(s.read() ), '\n' );
+	})();
 
 throw 0;
+
+
+
 
 	host.interruptInterval = 1;
 	host.onInterrupt = () => { host.collectGarbage(true, 1) };
 
 	host.stdout('press ctrl-c to exit\n');
 	while ( !host.endSignal ) {
-
 
 		jslangTest();
 	}
