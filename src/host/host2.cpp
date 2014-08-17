@@ -505,6 +505,7 @@ HostRuntime::HostRuntime( Allocators allocators, uint32_t maxbytes, size_t nativ
 	JS_SetGCParameter(rt, JSGC_MAX_BYTES, 2 * 1024 * 1024); // Maximum nominal heap before last ditch GC. (impacted by JL_updateMallocCounter)
 
 	JS::RuntimeOptionsRef(rt)
+		.setBaseline(true)
 		.setIon(true)
 		.setAsmJS(true)
 			// doc. VarObjFix is recommended.  Without it, the two scripts "x = 1" and "var x = 1", where no variable x is in scope, do two different things.
@@ -748,6 +749,7 @@ _globalObject( hr.context() ) {
 
 	_globalObject.set( JS_NewGlobalObject(cx, lazyStandardClasses ? &_globalClass_lazy : &_globalClass, nullptr, JS::DontFireOnNewGlobalHook, compartmentOptions) );
 	JL_CHK( _globalObject ); // "unable to create the global object." );
+
 
 	{
 		// set globalObject as current global object.

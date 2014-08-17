@@ -89,7 +89,7 @@ WaveInThreadProc( LPVOID lpParam ) {
 	for ( int i = 0; i < 2; ++i ) {
 
 		arrayBuf[i].alloc(bufferLength, true);
-		waveHeader[i].lpData = (LPSTR)arrayBuf[i].data();
+		waveHeader[i].lpData = arrayBuf[i].dataAs<LPSTR>();
 		waveHeader[i].dwBufferLength = bufferLength;
 		waveHeader[i].dwFlags = 0;
 
@@ -100,7 +100,7 @@ WaveInThreadProc( LPVOID lpParam ) {
 		ASSERT( res == MMSYSERR_NOERROR );
 	}
 
-	PulseEvent(pv->audioEvent); // first pulse
+	ResetEvent(pv->audioEvent); // waveInOpen sets the events ?!
 
 	for ( size_t index = 0; ; ++index ) {
 
@@ -118,10 +118,11 @@ WaveInThreadProc( LPVOID lpParam ) {
 		EnterCriticalSection(&pv->cs);
 		pv->bufferList.Push(arrayBuf[bufferIndex]);
 		LeaveCriticalSection(&pv->cs);
-		PulseEvent(pv->bufferReadyEvent);
+
+		SetEvent(pv->bufferReadyEvent); // signals a new audio chunk
 
 		arrayBuf[bufferIndex].alloc(bufferLength, true);
-		waveHeader[bufferIndex].lpData = (LPSTR)arrayBuf[bufferIndex].data();
+		waveHeader[bufferIndex].lpData = arrayBuf[bufferIndex].dataAs<LPSTR>();
 		waveHeader[bufferIndex].dwFlags = 0;
 
 		res = waveInPrepareHeader(pv->hwi, &waveHeader[bufferIndex], sizeof(WAVEHDR));
@@ -132,6 +133,7 @@ WaveInThreadProc( LPVOID lpParam ) {
 	}
 
 	res = waveInReset(pv->hwi);
+	ASSERT( res == MMSYSERR_NOERROR );
 
 	for ( int i = 0; i < 2; ++i ) {
 
@@ -151,7 +153,9 @@ DEFINE_FINALIZE() {
 		return;
 
 	pv->state = Private::ENDING;
-	PulseEvent(pv->audioEvent);
+	
+	SetEvent(pv->audioEvent); // signals ending state
+
 	WaitForSingleObject(pv->thread, INFINITE);
 	if ( pv->thread )
 		CloseHandle(pv->thread);
@@ -260,11 +264,10 @@ DEFINE_CONSTRUCTOR() {
 	if ( res != MMSYSERR_NOERROR )
 		return ThrowWinAudioError(cx, res);
 
-	pv->thread = CreateThread(NULL, 0, WaveInThreadProc, pv, CREATE_SUSPENDED, NULL);
+	pv->thread = CreateThread(NULL, 0, WaveInThreadProc, pv, 0, NULL);
 	JL_CHKB( pv->thread, osError );
-	JL_CHKB( SetThreadPriority(pv->thread, THREAD_PRIORITY_HIGHEST) != FALSE, osError );
-	JL_CHKB( ResumeThread(pv->thread) != (DWORD)-1, osError );
-	JL_CHKB( WaitForSingleObject(pv->audioEvent, INFINITE) != WAIT_FAILED, osError ); // first pulse
+	JL_CHKB( SetThreadPriority(pv->thread, THREAD_PRIORITY_TIME_CRITICAL) != FALSE, osError );
+
 	return true;
 osError:
 	jl::throwOSError(cx);
@@ -364,7 +367,7 @@ DEFINE_PROPERTY_GETTER( inputDeviceList ) {
 
 struct AudioEvent : public ProcessEvent2 {
 	HANDLE cancelEvent;
-	HANDLE audioEvent;
+	HANDLE audioBufferReadyEvent;
 	Private *_pv;
 
 	AudioEvent(Private *pv)
@@ -374,7 +377,7 @@ struct AudioEvent : public ProcessEvent2 {
 	~AudioEvent() {
 
 		CloseHandle(cancelEvent);
-		CloseHandle(audioEvent);
+		CloseHandle(audioBufferReadyEvent);
 	}
 
 	bool prepareWait(JSContext *cx, JS::HandleObject obj) {
@@ -384,7 +387,7 @@ struct AudioEvent : public ProcessEvent2 {
 
 	void startWait() {
 
-		HANDLE events[] = { audioEvent, cancelEvent };
+		HANDLE events[] = { audioBufferReadyEvent, cancelEvent };
 		DWORD status = WaitForMultipleObjects(COUNTOF(events), events, FALSE, INFINITE);
 		ASSERT( status != WAIT_FAILED );
 	}
@@ -397,7 +400,7 @@ struct AudioEvent : public ProcessEvent2 {
 
 	bool endWait(bool *hasEvent, JSContext *cx, JS::HandleObject) {
 
-		DWORD status = WaitForSingleObject(audioEvent, 0);
+		DWORD status = WaitForSingleObject(audioBufferReadyEvent, 0);
 		ASSERT( status != WAIT_FAILED );
 
 		EnterCriticalSection(&_pv->cs);
@@ -422,7 +425,7 @@ struct AudioEvent : public ProcessEvent2 {
 DEFINE_FUNCTION( events ) {
 	
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(0, 1);
 
 	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
@@ -443,7 +446,7 @@ DEFINE_FUNCTION( events ) {
 	if ( upe->cancelEvent == NULL )
 		JL_CHK( jl::throwOSError(cx) );
 	
-	BOOL st = DuplicateHandle(GetCurrentProcess(), pv->bufferReadyEvent, GetCurrentProcess(), &upe->audioEvent, 0, FALSE, DUPLICATE_SAME_ACCESS);
+	BOOL st = DuplicateHandle(GetCurrentProcess(), pv->bufferReadyEvent, GetCurrentProcess(), &upe->audioBufferReadyEvent, 0, FALSE, DUPLICATE_SAME_ACCESS);
 	if ( !st )
 		JL_CHK( jl::throwOSError(cx) );
 

@@ -718,6 +718,12 @@ struct IOProcessEvent : public ProcessEvent2 {
 	PRPollDesc *_pollDesc;
 	PRInt32 _pollResult;
 
+
+	IOProcessEvent() : 
+		_pollDesc(nullptr) {
+
+	}
+
 	bool prepareWait(JSContext *cx, JS::HandleObject obj) {
 
 		JS::RootedValue descriptor(cx);
@@ -727,6 +733,8 @@ struct IOProcessEvent : public ProcessEvent2 {
 		ASSERT( jl::isArrayLike(cx, descArray) );
 
 		JL_CHK( JS_GetArrayLength(cx, fdArrayObj, &_fdCount) );
+
+		JL_ASSERT( _pollDesc == nullptr, E_OBJ, E_NAME("Descriptor.events"), E_INUSE );
 
 		_pollDesc = (PRPollDesc*)jl_malloc(sizeof(PRPollDesc) * (1 + _fdCount)); // pollDesc[0] is the peCancel event fd, _fdCount excludes peCancel descriptior.
 		JL_ASSERT_ALLOC( _pollDesc );
@@ -739,21 +747,6 @@ struct IOProcessEvent : public ProcessEvent2 {
 			mpv->peCancel = PR_NewPollableEvent();
 			if ( mpv->peCancel == NULL )
 				return ThrowIoError(cx);
-/*
-			#ifdef DEBUG
-			// test pollable event
-			PR_SetPollableEvent(mpv->peCancel);
-			PR_WaitForPollableEvent(mpv->peCancel);
-			// PR_WaitForPollableEvent(mpv->peCancel); // lock !
-
-			PR_SetPollableEvent(mpv->peCancel);
-			_pollDesc[0].fd = mpv->peCancel;
-			_pollDesc[0].in_flags = PR_POLL_READ; // doc: The only I/O operation you can perform on a pollable event is to poll it with the PR_POLL_READ flag
-			_pollDesc[0].out_flags = 0;
-			PR_Poll(_pollDesc, 1, PR_INTERVAL_NO_TIMEOUT); // 1 is the PollableEvent
-			PR_WaitForPollableEvent(mpv->peCancel); // don't lock, PR_Poll does not unset the poolable event.
-			#endif
-*/
 		}
 
 		_pollDesc[0].fd = mpv->peCancel;
@@ -789,6 +782,8 @@ struct IOProcessEvent : public ProcessEvent2 {
 
 	bool endWait(bool *hasEvent, JSContext *cx, JS::HandleObject) {
 
+		//JLAutoPtr<PRPollDesc> aptr(_pollDesc);
+
 		JS::RootedValue tmp(cx);
 		// warning: be sure that PR_Poll returns before reseting the pollable event (PR_WaitForPollableEvent) else lock !
 		PRStatus st;
@@ -803,22 +798,23 @@ struct IOProcessEvent : public ProcessEvent2 {
 		 // doc: When the pollable event is set, PR_Poll returns with the PR_POLL_READ flag set in the out_flags.
 		*hasEvent = _pollResult > 0 && !( _pollDesc[0].out_flags & PR_POLL_READ ); // has an event but not the cancel event
 
-		if ( !*hasEvent ) // optimization
-			return true;
+		if ( *hasEvent ) { // optimization
 		
-		for ( uint32_t i = 0; i < _fdCount; ++i ) {
+			for ( uint32_t i = 0; i < _fdCount; ++i ) {
 
-			tmp.set( getDynSlot(i) );
-			JL_CHK( PollDescNotify(cx, tmp, &_pollDesc[1 + i], i) );
+				tmp.set( getDynSlot(i) );
+				JL_CHK( PollDescNotify(cx, tmp, &_pollDesc[1 + i], i) );
+			}
 		}
 
-		return true;
-		JL_BAD;
-	}
 
-	~IOProcessEvent() {
-		
 		jl_free(_pollDesc);
+		_pollDesc = nullptr;
+		return true;
+	bad:
+		jl_free(_pollDesc);
+		_pollDesc = nullptr;
+		return false;
 	}
 };
 

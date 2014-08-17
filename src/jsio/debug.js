@@ -12,6 +12,8 @@ var loadModule = host.loadModule;
 	var io = Descriptor.events([new Socket]);
 	processEvents(io,io, timeoutEvents(10));
 
+	//processEvents(io, timeoutEvents(10)); processEvents(io, timeoutEvents(10));
+
 
 throw 0;
 
