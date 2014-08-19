@@ -57,7 +57,7 @@ size_t readStream( void *ptr, size_t size, size_t nmemb, void *pv ) {
 //	if ( info->streamRead( info->cx, info->obj, (char*)ptr, &amount ) != true )
 //		return -1; // (TBD) check for a better error
 
-	NIStreamRead read = StreamReadInterface(info->cx, info->obj);
+	jl::NIStreamRead read = jl::streamReadInterface(info->cx, info->obj);
 	JL_CHK( read );
 	JL_CHK( read(info->cx, info->obj, (char*)ptr, &amount) );
 	return amount;
@@ -265,7 +265,7 @@ sf_count_t SfRead(void *ptr, sf_count_t count, void *user_data) {
 //	if ( pv->streamRead( pv->cx, pv->obj, (char*)ptr, &amount ) != true )
 //		return -1; // (TBD) find a better error
 
-	NIStreamRead read = StreamReadInterface( pv->cx, pv->obj);
+	jl::NIStreamRead read = jl::streamReadInterface( pv->cx, pv->obj);
 	JL_CHK( read );
 	JL_CHK( read(pv->cx, pv->obj, (char*)ptr, &amount) );
 	return amount;

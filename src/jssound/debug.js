@@ -8,28 +8,31 @@ loadModule('jsio');
 loadModule('jssound');
 
 
-var audioFileName = './41_30secOgg-q0.ogg';
 
-var data = new File(audioFileName).content;
+	var audioFileName = './41_30secOgg-q0.ogg';
 
-var data = new File('tmpFile').content;
+	var data = new File(audioFileName).content;
 
+	var stream = new Stream(data);
 
-var stream = new Stream(data);
+	var decoder = new OggVorbisDecoder( stream );
 
-var decoder = new OggVorbisDecoder( stream );
-
-var block = decoder.read();
-
-print( block.frames, '\n' );
+	var audioBlock = decoder.read();
+	
+	var enc = new VorbisEncoder(2, 44100, 0);
+	
+	var encData = enc.encode(audioBlock);
+	print( encData.length, '\n' );
+	var encData = enc.encode();
+	print( encData.length, '\n' );
 
 
 throw 0;
 
 
-loadModule('jsstd');
-loadModule('jsio');
-loadModule('jssound');
+	loadModule('jsstd');
+	loadModule('jsio');
+	loadModule('jssound');
 
 
 	loadModule('jsio');
@@ -41,17 +44,17 @@ loadModule('jssound');
 throw 0;
 
 
-var audioFileName = './41_30secOgg-q0.ogg';
+	var audioFileName = './41_30secOgg-q0.ogg';
 
-var data = new File(audioFileName).content;
+	var data = new File(audioFileName).content;
 
-var stream = new Stream(data);
+	var stream = new Stream(data);
 
-var decoder = new OggVorbisDecoder( stream );
+	var decoder = new OggVorbisDecoder( stream );
 
-var block = decoder.read();
+	var block = decoder.read();
 
-print( block.frames, '\n' );
+	print( block.frames, '\n' );
 
 
 throw 0;

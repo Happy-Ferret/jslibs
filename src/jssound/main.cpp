@@ -13,7 +13,13 @@
  * ***** END LICENSE BLOCK ***** */
 
 #include "stdafx.h"
-#include <jslibsModule.cpp>
+#include <jslibsModule.h>
+
+// used by ogg_static and libsndfile
+void* jl_malloc_fct(size_t n) { return jl_malloc(n); }
+void* jl_realloc_fct(void *p, size_t n) { return jl_realloc(p, n); }
+void* jl_calloc_fct(size_t n, size_t s) { return jl_calloc(n, s); }
+void jl_free_fct(void *p) { jl_free(p); }
 
 
 /**doc t:header
@@ -31,17 +37,20 @@ DECLARE_STATIC()
 //DECLARE_CLASS(Sound)
 DECLARE_CLASS(SoundFileDecoder)
 DECLARE_CLASS(OggVorbisDecoder)
+DECLARE_CLASS(VorbisEncoder)
 
 
 bool
-ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
+ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
-	JL_CHK( InitJslibsModule(cx, id)  );
+	JL_ASSERT( jl::Host::getJLHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
+
 
 	INIT_STATIC();
 //	INIT_CLASS( Sound );
 	INIT_CLASS( SoundFileDecoder );
 	INIT_CLASS( OggVorbisDecoder );
+	INIT_CLASS( VorbisEncoder );
 
 	return true;
 	JL_BAD;

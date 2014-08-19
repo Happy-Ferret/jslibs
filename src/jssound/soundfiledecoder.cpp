@@ -40,21 +40,26 @@ $SVN_REVISION $Revision$
 **/
 BEGIN_CLASS( SoundFileDecoder )
 
-typedef struct {
+struct Private {
 	JSContext *cx; // temporary set to the current JSContext while sndfile API is called !
-	JSObject *streamObject;
+	JS::PersistentRootedObject streamObject;
 	SNDFILE *sfDescriptor;
 	SF_INFO sfInfo;
 	int bits;
-} Private;
+	Private(JSContext *cx) :
+		cx(cx),
+		streamObject(cx) {
+	}
+};
 
 
 sf_count_t SfGetFilelen(void *user_data) {
 
-	Private *pv = (Private*)user_data;
+	Private *pv = static_cast<Private*>(user_data);
 
-	jsval tmpVal;
-	int position, available;
+	JS::RootedValue tmpVal(pv->cx);
+	int position;
+	int available;
 
 	ASSERT( pv->cx );
 	JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) );
@@ -77,34 +82,35 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 	ASSERT( pv->cx );
 
 	JS::RootedValue tmpVal(pv->cx);
-	int position, available;
+	int position;
+	int available;
 
 	switch ( whence ) {
 		case SEEK_SET:
 			if ( offset < 0 )
 				return -1;
-			JL_CHK( jl::setValue(pv->cx, tmpVal, offset) );
-			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
+			JL_CHK( jl::setValue(pv->cx, &tmpVal, offset) );
+			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal) );
 			return 0;
 
 		case SEEK_CUR:
-			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
+			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) );
 			if ( tmpVal.isUndefined() )
 				return -1;
 			JL_CHK( jl::getValue(pv->cx, tmpVal, &position) );
 
 			position += int(offset);
-			JL_CHK( jl::setValue(pv->cx, tmpVal, position) );
-			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
+			JL_CHK( jl::setValue(pv->cx, &tmpVal, position) );
+			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal) );
 			return 0;
 
 		case SEEK_END:
-			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, available), tmpVal.address()) );
+			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, available), &tmpVal) );
 			if ( tmpVal.isUndefined() )
 				return -1;
 			JL_CHK( jl::getValue(pv->cx, tmpVal, &available) );
 
-			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
+			JL_CHK( JS_GetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), &tmpVal) );
 			if ( tmpVal.isUndefined() )
 				return -1;
 			JL_CHK( jl::getValue(pv->cx, tmpVal, &position) );
@@ -112,8 +118,8 @@ sf_count_t SfSeek(sf_count_t offset, int whence, void *user_data) {
 			if ( offset > 0 || -offset > position + available )
 				return -1;
 			JL_CHK( jl::getValue(pv->cx, tmpVal, &position) );
-			JL_CHK( jl::setValue(pv->cx, tmpVal, position + available + offset) ); // the pointer is set to the size of the file plus offset.
-			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal.address()) );
+			JL_CHK( jl::setValue(pv->cx, &tmpVal, position + available + offset) ); // the pointer is set to the size of the file plus offset.
+			JL_CHK( JS_SetPropertyById(pv->cx, pv->streamObject, JLID(pv->cx, position), tmpVal) );
 			return 0;
 	}
 bad:
@@ -122,9 +128,9 @@ bad:
 
 sf_count_t SfTell(void *user_data) {
 
-	Private *pv = (Private*)user_data;
+	Private *pv = static_cast<Private*>(user_data);
 	
-	jsval tmpVal;
+	JS::RootedValue tmpVal(pv->cx);
 	int position;
 
 	ASSERT( pv->cx );
@@ -144,7 +150,7 @@ sf_count_t SfRead(void *ptr, sf_count_t count, void *user_data) {
 
 	ASSERT(pv->cx);
 
-	NIStreamRead read = StreamReadInterface(pv->cx, pv->streamObject);
+	jl::NIStreamRead read = jl::streamReadInterface(pv->cx, pv->streamObject);
 	JL_CHK( read );
 	JL_CHK( read(pv->cx, pv->streamObject, (char*)ptr, &amount) );
 	return amount;
@@ -157,10 +163,10 @@ static SF_VIRTUAL_IO sfCallbacks = { SfGetFilelen, SfSeek, SfRead, 0, SfTell };
 
 DEFINE_FINALIZE() {
 
-	if ( jl::Host::getJLHost(fop->runtime())->canSkipCleanup )
+	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 
-	Private *pv = (Private*)JL_GetPrivate(obj);
+	Private *pv = static_cast<Private*>(JL_GetPrivateFromFinalize(obj));
 	if ( !pv )
 		return;
 
@@ -205,7 +211,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_CHK( pv );
 	pv->sfDescriptor = NULL; // see bad:
 
-	JL_CHK( JL_SetReservedSlot( obj, SLOT_INPUT_STREAM, JL_ARG(1) ) );
+	JL_CHK( JL_SetReservedSlot( JL_OBJ, SLOT_INPUT_STREAM, JL_ARG(1) ) );
 	pv->streamObject = &JL_ARG(1).toObject();
 
 	SF_INFO tmp; // = {0};
@@ -235,7 +241,7 @@ DEFINE_CONSTRUCTOR() {
 
 	pv->cx = NULL; // see definition
 
-	JL_SetPrivate(obj, pv);
+	JL_SetPrivate(JL_OBJ, pv);
 	return true;
 
 bad:
@@ -287,9 +293,9 @@ DEFINE_FUNCTION( read ) {
 	uint8_t *buf = NULL;
 
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 
-	Private *pv = (Private*)JL_GetPrivate(JL_OBJ);
+	Private *pv = static_cast<Private*>(JL_GetPrivate(JL_OBJ));
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
 	JL_CHKM( pv->sfInfo.channels == 1 || pv->sfInfo.channels == 2, E_NUM(pv->sfInfo.channels), E_STR("channels"), E_FORMAT );
@@ -305,7 +311,7 @@ DEFINE_FUNCTION( read ) {
 		if ( frames <= 0 ) {
 
 			// like Descriptor::read, returns an empty audio object even if EOF
-			JL_CHK( JL_NewByteAudioObjectOwner(cx, NULL, pv->bits, pv->sfInfo.channels, 0, pv->sfInfo.samplerate, *JL_RVAL) );
+			JL_CHK( JL_NewByteAudioObjectOwner(cx, NULL, pv->bits, pv->sfInfo.channels, 0, pv->sfInfo.samplerate, JL_RVAL) );
 			return true;
 		}
 	} else {
@@ -352,7 +358,7 @@ DEFINE_FUNCTION( read ) {
 
 			if ( jl::maybeRealloc(amount, totalSize) )
 				buf = (uint8_t*)jl_realloc(buf, totalSize);
-			JL_CHK( JL_NewByteAudioObjectOwner(cx, buf, pv->bits, pv->sfInfo.channels, totalSize / (pv->sfInfo.channels * pv->bits / 8), pv->sfInfo.samplerate, *JL_RVAL) );
+			JL_CHK( JL_NewByteAudioObjectOwner(cx, buf, pv->bits, pv->sfInfo.channels, totalSize / (pv->sfInfo.channels * pv->bits / 8), pv->sfInfo.samplerate, JL_RVAL) );
 		}
 
 	} else {
@@ -375,7 +381,7 @@ DEFINE_FUNCTION( read ) {
 		} while ( items > 0 );
 
 		if ( buffer.Length() )
-			JL_CHK( JL_NewByteAudioObjectOwner(cx, buffer.GetDataOwnership(), pv->bits, pv->sfInfo.channels, buffer.Length() / (pv->sfInfo.channels * pv->bits/8), pv->sfInfo.samplerate, *JL_RVAL) );
+			JL_CHK( JL_NewByteAudioObjectOwner(cx, buffer.GetDataOwnership(), pv->bits, pv->sfInfo.channels, buffer.Length() / (pv->sfInfo.channels * pv->bits/8), pv->sfInfo.samplerate, JL_RVAL) );
 		else
 			JL_RVAL.setUndefined();
 	}
@@ -400,7 +406,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( inputStream ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
@@ -418,7 +424,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( bits ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
@@ -435,7 +441,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( rate ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
@@ -452,7 +458,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( channels ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
@@ -470,7 +476,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_PROPERTY_GETTER( frames ) {
 
-	JL_IGNORE(id);
+	JL_DEFINE_PROP_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
