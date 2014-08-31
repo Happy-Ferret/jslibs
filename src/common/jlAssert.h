@@ -200,7 +200,7 @@ JL_MACRO_BEGIN \
 //
 
 #define JL_ASSERT_RANGE(val, valMin, valMax, context) \
-	JL_ASSERT( jl::isInRange((int)val, (int)valMin, (int)valMax), E_VALUE, E_STR(context), E_RANGE, E_INTERVAL_NUM(valMin, valMax) )
+	JL_ASSERT( jl::isInRange(val, valMin, valMax), E_VALUE, E_STR(context), E_RANGE, E_INTERVAL_NUM(valMin, valMax) )
 
 
 // arg

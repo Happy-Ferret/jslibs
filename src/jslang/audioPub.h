@@ -21,6 +21,26 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Generic Audio object
 
+INLINE bool FASTCALL
+JL_isAudioObject( IN JSContext *cx, IN JS::HandleValue val ) {
+
+	if ( val.isObject() ) {
+	
+		JS::RootedObject audioObj(cx, &val.toObject());
+		return
+			jl::hasProperty(cx, audioObj, JLID(cx, data)) &&
+			jl::hasProperty(cx, audioObj, JLID(cx, bits)) &&
+			jl::hasProperty(cx, audioObj, JLID(cx, channels)) &&
+			jl::hasProperty(cx, audioObj, JLID(cx, frames)) &&
+			jl::hasProperty(cx, audioObj, JLID(cx, rate))
+		;
+	} else {
+
+		return false;
+	}
+}
+
+
 template <class T, class U, class V, class W>
 ALWAYS_INLINE uint8_t* FASTCALL
 JL_NewByteAudioObject( JSContext *cx, T bits, U channels, V frames, W rate, OUT JS::MutableHandleValue vp ) {

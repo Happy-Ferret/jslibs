@@ -10,6 +10,8 @@ var loadModule = host.loadModule;
 
 //	loadModule('jsstd');
 
+loadModule('jssound');
+
 host.interruptInterval = 1;
 host.onInterrupt = () => { host.collectGarbage(true, 1) };
 

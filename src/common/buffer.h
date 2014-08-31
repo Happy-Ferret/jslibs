@@ -418,6 +418,13 @@ public:
 		_length += length;
 	}
 
+	void Write( T *data, size_t length ) {
+
+		Reserve(length);
+		jl::memcpy(data, Ptr(), length * sizeof(T));
+		Advance(length);
+	}
+
 	void CopyTo( T *dest, size_t length ) const {
 
 		size_t chunkIndex = 0;

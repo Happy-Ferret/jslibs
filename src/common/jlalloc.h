@@ -24,12 +24,14 @@ typedef void* (__cdecl *jl_realloc_t)( void*, size_t );
 typedef size_t (__cdecl *jl_msize_t)( void* );
 typedef void (__cdecl *jl_free_t)( void* );
 
+
 extern DLLAPI jl_malloc_t jl_malloc;
 extern DLLAPI jl_calloc_t jl_calloc;
 extern DLLAPI jl_memalign_t jl_memalign;
 extern DLLAPI jl_realloc_t jl_realloc;
 extern DLLAPI jl_msize_t jl_msize;
 extern DLLAPI jl_free_t jl_free;
+
 
 // provide functions to access jl allocators (external libraries are using these symbols).
 EXTERN_C void* jl_malloc_fct( size_t size );

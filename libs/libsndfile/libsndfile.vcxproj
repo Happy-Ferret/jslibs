@@ -1,0 +1,182 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Unicode Debug|Win32">
+      <Configuration>Unicode Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Unicode Release|Win32">
+      <Configuration>Unicode Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{69DEA591-D760-48EE-93B8-2A3DF3AB9503}</ProjectGuid>
+    <RootNamespace>libsndfile</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode Release|Win32'">$(ProjectDir)$(IntDir)</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode Debug|Win32'">$(ProjectDir)$(IntDir)</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)$(IntDir)</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)$(IntDir)</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.;.\win32;.\src\Win32;.\src\include;.\src\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;malloc=jl_malloc_fct;calloc=jl_calloc_fct;realloc=jl_realloc_fct;free=jl_free_fct;inline=__inline;NDEBUG;_LIB;inline=__inline;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Unicode Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.;.\win32;.\src\Win32;.\src\include;.\src\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;malloc=jl_malloc_fct;calloc=jl_calloc_fct;realloc=jl_realloc_fct;free=jl_free_fct;inline=__inline;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.;.\win32;.\src\Win32;.\src\include;.\src\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;malloc=jl_malloc_fct;calloc=jl_calloc_fct;realloc=jl_realloc_fct;free=jl_free_fct;inline=__inline;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.;.\win32;.\src\Win32;.\src\include;.\src\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;malloc=jl_malloc_fct;calloc=jl_calloc_fct;realloc=jl_realloc_fct;free=jl_free_fct;inline=__inline;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\src\aiff.c" />
+    <ClCompile Include="src\src\alaw.c" />
+    <ClCompile Include="src\src\au.c" />
+    <ClCompile Include="src\src\avr.c" />
+    <ClCompile Include="src\src\broadcast.c" />
+    <ClCompile Include="src\src\caf.c" />
+    <ClCompile Include="src\src\command.c" />
+    <ClCompile Include="src\src\common.c" />
+    <ClCompile Include="src\src\dither.c" />
+    <ClCompile Include="src\src\double64.c" />
+    <ClCompile Include="src\src\dwd.c" />
+    <ClCompile Include="src\src\dwvw.c" />
+    <ClCompile Include="src\src\file_io.c" />
+    <ClCompile Include="src\src\flac.c" />
+    <ClCompile Include="src\src\float32.c" />
+    <ClCompile Include="src\src\g72x.c" />
+    <ClCompile Include="src\src\gsm610.c" />
+    <ClCompile Include="src\src\htk.c" />
+    <ClCompile Include="src\src\ima_adpcm.c" />
+    <ClCompile Include="src\src\interleave.c" />
+    <ClCompile Include="src\src\ircam.c" />
+    <ClCompile Include="src\src\macbinary3.c" />
+    <ClCompile Include="src\src\macos.c" />
+    <ClCompile Include="src\src\mat4.c" />
+    <ClCompile Include="src\src\mat5.c" />
+    <ClCompile Include="src\src\ms_adpcm.c" />
+    <ClCompile Include="src\src\nist.c" />
+    <ClCompile Include="src\src\ogg.c" />
+    <ClCompile Include="src\src\paf.c" />
+    <ClCompile Include="src\src\pcm.c" />
+    <ClCompile Include="src\src\pvf.c" />
+    <ClCompile Include="src\src\raw.c" />
+    <ClCompile Include="src\src\rx2.c" />
+    <ClCompile Include="src\src\sd2.c" />
+    <ClCompile Include="src\src\sds.c" />
+    <ClCompile Include="src\src\sndfile.c" />
+    <ClCompile Include="src\src\strings.c" />
+    <ClCompile Include="src\src\svx.c" />
+    <ClCompile Include="src\src\txw.c" />
+    <ClCompile Include="src\src\ulaw.c" />
+    <ClCompile Include="src\src\voc.c" />
+    <ClCompile Include="src\src\vox_adpcm.c" />
+    <ClCompile Include="src\src\w64.c" />
+    <ClCompile Include="src\src\wav.c" />
+    <ClCompile Include="src\src\wav_w64.c" />
+    <ClCompile Include="src\src\wve.c" />
+    <ClCompile Include="src\src\xi.c" />
+    <ClCompile Include="src\src\G72x\g721.c" />
+    <ClCompile Include="src\src\G72x\g723_16.c" />
+    <ClCompile Include="src\src\G72x\g723_24.c" />
+    <ClCompile Include="src\src\G72x\g723_40.c" />
+    <ClCompile Include="src\src\G72x\g72x.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)g72x_g72x.obj</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)g72x_g72x.obj</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Unicode Debug|Win32'">$(IntDir)g72x_g72x.obj</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Unicode Release|Win32'">$(IntDir)g72x_g72x.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="src\src\GSM610\add.c" />
+    <ClCompile Include="src\src\GSM610\code.c" />
+    <ClCompile Include="src\src\GSM610\decode.c" />
+    <ClCompile Include="src\src\GSM610\gsm_create.c" />
+    <ClCompile Include="src\src\GSM610\gsm_decode.c" />
+    <ClCompile Include="src\src\GSM610\gsm_destroy.c" />
+    <ClCompile Include="src\src\GSM610\gsm_encode.c" />
+    <ClCompile Include="src\src\GSM610\gsm_option.c" />
+    <ClCompile Include="src\src\GSM610\long_term.c" />
+    <ClCompile Include="src\src\GSM610\lpc.c" />
+    <ClCompile Include="src\src\GSM610\preprocess.c" />
+    <ClCompile Include="src\src\GSM610\rpe.c" />
+    <ClCompile Include="src\src\GSM610\short_term.c" />
+    <ClCompile Include="src\src\GSM610\table.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\src\common.h" />
+    <ClInclude Include="src\src\float_cast.h" />
+    <ClInclude Include="src\src\sf_unistd.h" />
+    <ClInclude Include="src\src\sfconfig.h" />
+    <ClInclude Include="src\src\sfendian.h" />
+    <ClInclude Include="src\src\wav_w64.h" />
+    <ClInclude Include="src\src\G72x\g72x.h" />
+    <ClInclude Include="src\src\G72x\g72x_priv.h" />
+    <ClInclude Include="src\src\GSM610\config.h" />
+    <ClInclude Include="src\src\GSM610\gsm.h" />
+    <ClInclude Include="src\src\GSM610\gsm610_priv.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

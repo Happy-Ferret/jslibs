@@ -3,6 +3,12 @@ var loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssound'); throw 0; // -inlineOnly
 
 
+	loadModule('jsstd');
+	exec('..\\..\\tests\\wirelessHeadset.js', false);
+throw 0;
+
+
+
 loadModule('jsstd');
 loadModule('jsio');
 loadModule('jssound');

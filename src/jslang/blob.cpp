@@ -64,7 +64,7 @@ DEFINE_PROPERTY_GETTER( arrayBuffer ) {
 		} else {
 
 			JL_RVAL.setObjectOrNull( JS_NewArrayBuffer( cx, 0 ) );
-			JL_ASSERT_ALLOC( JL_RVAL.isNull() );
+			JL_ASSERT_ALLOC( !JL_RVAL.isNull() );
 		}
 
 		JL_CHK( invalidateBlob(cx, JL_OBJ) );
