@@ -111,8 +111,9 @@ var webPage =
 				return;
 			}
 
-			//chunkList.push(new DataView(ev.data));
+			chunkList.push(new DataView(ev.data));
 
+/*
 			audioCtx.decodeAudioData(ev.data, function(buffer) {
 				
 				log('decodeAudioData ok');
@@ -122,7 +123,7 @@ var webPage =
 				
 				log('decodeAudioData err: ', err)
 			});
-
+*/
 			
 		}
 	}
@@ -169,7 +170,7 @@ function Buffer() {
 		if ( typeof(data) == 'string' )
 			data = [ c.charCodeAt() for (c of data) ];
 
-		var tmp = Uint8Array(data);
+		var tmp = new Uint8Array(data);
 		chunkList.push(tmp);
 		length += tmp.length;
 	}
@@ -412,7 +413,6 @@ function SimpleHTTPServer(port, bind, basicAuthRequest, requestHandler, wsHandle
 					processPayload(s, b);
 				}
 
-
 				s.state = processWebSocket;
 				processWebSocket(s, b);
 				return;
@@ -563,19 +563,22 @@ function wsHandler(send) {
 
 	send(JSON.stringify({ init: { format: audioFormat } }), WS_TEXT_DATA);
 	
-	var encoder = new VorbisEncoder(audioFormat.channels, audioFormat.rate, -0.1);
+	//var encoder = new VorbisEncoder(audioFormat.channels, audioFormat.rate, -0.1);
 
 	function audioListener(chunkList) {
 		
 		for ( var chunk of chunkList ) {
 
-			//send(Uint8Array(chunk), WS_BINARY_DATA);
+			send(Uint8Array(chunk.data), WS_BINARY_DATA);
 
+/*
 			var encBinChunk = encoder.encode(chunk);
 			log('send '+encBinChunk.arrayBuffer.byteLength)
 			
 			if ( encBinChunk.arrayBuffer.byteLength > 0 )
 				send(Uint8Array(encBinChunk.arrayBuffer), WS_BINARY_DATA);
+*/
+
 		}
 	}
 	
