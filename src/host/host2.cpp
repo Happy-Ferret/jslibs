@@ -1093,6 +1093,7 @@ DEFINE_FUNCTION( stdout ) {
 
 	JL_DEFINE_ARGS;
 	JL_RVAL.setUndefined();
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString str;
 	Host &host = Host::getJLHost( cx );
 	for ( unsigned i = 0; i < argc; ++i ) {
@@ -1114,6 +1115,7 @@ DEFINE_FUNCTION( stderr ) {
 
 	JL_DEFINE_ARGS;
 	JL_RVAL.setUndefined();
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString str;
 	Host &host = Host::getJLHost( cx );
 	for ( unsigned i = 0; i < argc; ++i ) {
@@ -1181,6 +1183,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( loadModule ) {
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString str;
 
 	JL_DEFINE_ARGS;

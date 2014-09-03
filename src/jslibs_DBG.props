@@ -55,6 +55,7 @@
       <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
       <AdditionalLibraryDirectories>$(jslibsRootDir)libs\js\$(jslibsIntDir)dist\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>kernel32.lib</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <Lib>
       <LinkTimeCodeGeneration>true</LinkTimeCodeGeneration>

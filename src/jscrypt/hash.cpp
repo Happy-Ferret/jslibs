@@ -67,6 +67,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_ARGS;
 
 	HashPrivate *pv = NULL;
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString hashName;
 
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -171,6 +172,7 @@ DEFINE_FUNCTION( write ) {
 
 	JL_DEFINE_ARGS;
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString in;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
@@ -371,6 +373,7 @@ DEFINE_FUNCTION( cipherHash ) {
 
 	JL_DEFINE_ARGS;
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString cipherName;
 
 	JL_ASSERT_THIS_INSTANCE();

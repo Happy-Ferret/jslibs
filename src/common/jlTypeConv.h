@@ -135,7 +135,7 @@ getBoolValue_slow( JSContext *cx, JS::HandleValue val, bool *b ) {
 
 // BufString
 INLINE NEVER_INLINE bool FASTCALL
-getStringValue_slow( JSContext *cx, JS::HandleValue val, jl::BufString* data ) {
+getStringValue_slow( JSContext *cx, JS::HandleValue val, jl::BufString* data, const JS::AutoCheckCannotGC &nogc ) {
 
 	if ( val.isObject() ) {
 
@@ -179,12 +179,12 @@ getStringValue_slow( JSContext *cx, JS::HandleValue val, jl::BufString* data ) {
 	// fallback
 	JS::RootedString jsstr(cx, JS::ToString(cx, val));
 	JL_CHKM( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
-	data->get(cx, jsstr);
+	data->get(cx, jsstr, nogc);
 	return true;
 	JL_BAD;
 }
 
-}
+} // pv
 
 
 ////
@@ -481,13 +481,14 @@ namespace getValue_pv {
 	ALWAYS_INLINE bool FASTCALL
 	getValue( JSContext *cx, JS::HandleValue val, OUT jl::BufString* str ) {
 
+		JS::AutoCheckCannotGC nogc;
 		if ( val.isString() ) { // for string literals
 
 			JS::RootedString tmp(cx, val.toString());
-			str->get(cx, tmp);
+			str->get(cx, tmp, nogc);
 			return true;
 		}
-		return jl::pv::getStringValue_slow(cx, val, str);
+		return jl::pv::getStringValue_slow(cx, val, str, nogc);
 	}
 
 

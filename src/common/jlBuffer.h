@@ -308,15 +308,14 @@ public:
 	toArrayBuffer( JSContext *cx, JS::MutableHandleValue rval ) {
 		
 		ASSERT( used() != UnknownSize );
-
 		if ( used() == 0 ) {
 			
-			rval.setObject(*JS_NewArrayBuffer(cx, 0));
+			rval.setObjectOrNull(JS_NewArrayBuffer(cx, 0));
 		} else {
 
 			if ( !owner() )
 				own();
-			rval.setObject(*JS_NewArrayBufferWithContents(cx, used(), data()));
+			rval.setObjectOrNull(JS_NewArrayBufferWithContents(cx, used(), data()));
 			dropOwnership();
 		}
 		JL_CHK( !rval.isNull() );
@@ -422,10 +421,9 @@ public:
 	}
 
 	void
-	get( JSContext *cx, JS::HandleString str ) {
+	get( JSContext *cx, JS::HandleString str, const JS::AutoCheckCannotGC &nogc /*= JS::AutoCheckCannotGC()*/ ) {
 
 		size_t len;
-		JS::AutoCheckCannotGC nogc;
 		// doc: Flat strings and interned strings are always null-terminated so JS_FlattenString can be used to get a null-terminated string.
 		bool isFlatOrInterned = JS_StringIsFlat(str) || JS_StringHasBeenInterned(cx, str);
 		if ( JS_StringHasLatin1Chars(str) ) {
@@ -498,9 +496,9 @@ public:
 	: BufBase(buf, withOwnership), _charSize(buf._charSize), _terminatorLength(buf._terminatorLength) {
 	}
 
-	explicit BufString( JSContext *cx, JS::HandleString str ) {
+	explicit BufString( JSContext *cx, JS::HandleString str, const JS::AutoCheckCannotGC &nogc ) {
 
-		get(cx, str);
+		get(cx, str, nogc);
 	}
 
 //

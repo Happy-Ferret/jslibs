@@ -1393,7 +1393,8 @@ return true;
 		JL_CHK( jl::getProperty(cx, JL_RVAL, "string", JL_RVAL) );
 		JS::RootedString str(cx, JL_RVAL.toString());
 
-		jl::BufString test2(cx, str);
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString test2(cx, str, nogc);
 		ASSERT( test2 == "abcd" );
 	}
 
@@ -1406,7 +1407,8 @@ return true;
 		JL_CHK( jl::getProperty(cx, JL_RVAL, "string", JL_RVAL) );
 		JS::RootedString str(cx, JL_RVAL.toString());
 
-		jl::BufString test2(cx, str);
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString test2(cx, str, nogc);
 		ASSERT( test2 == jl::BufString("\xff\xfe\xfd") );
 		ASSERT( test2 == "\xff\xfe\xfd" );
 	}

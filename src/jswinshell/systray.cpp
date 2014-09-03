@@ -262,7 +262,8 @@ ForwardMessage(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	jl::QueuePush(&pv->msgQueue, msg);
 	LeaveCriticalSection(&pv->cs);
 
-	PulseEvent(pv->systrayEvent);
+	//PulseEvent(pv->systrayEvent);
+	SetEvent(pv->systrayEvent);
 }
 
 
@@ -410,7 +411,8 @@ SystrayThread( LPVOID lpParam ) {
 	BOOL status = Shell_NotifyIconA_retry(NIM_ADD, &pv->nid);
 	ASSERT( status );
 
-	PulseEvent(pv->systrayEvent); // first pulse
+	//PulseEvent(pv->systrayEvent); // first pulse
+	SetEvent(pv->systrayEvent);
 
 	BOOL st;
 	MSG msg;

@@ -139,7 +139,9 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 	JL_DEFINE_ARGS;
 
 	AsymmetricCipherPrivate *pv = NULL;
-	jl::BufString asymmetricCipherName, hashName;
+	JS::AutoCheckCannotGC nogc;
+	jl::BufString asymmetricCipherName;
+	jl::BufString hashName;
 
 	JL_ASSERT_ARGC_MIN( 3 );
 	JL_ASSERT_CONSTRUCTING();
@@ -194,6 +196,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 
 		if ( JL_ARGC >= 4 && !JL_ARG(4).isUndefined() ) {
 
+			JS::AutoCheckCannotGC nogc;
 			jl::BufString paddingName;
 			JL_CHK( jl::getValue(cx, JL_ARG(4), &paddingName) );
 
@@ -356,6 +359,7 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 	
 	unsigned long outLength = REQUEST_SIZE;
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString in;
 	jl::BufBase out;
 
@@ -390,6 +394,7 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 //			unsigned long lparamlen = 0;
 //			if ( argc >= 2 && !JSVAL_IS_VOID( JL_ARG(2) ) )
 //				JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(2), &in, &inLength) );
+			JS::AutoCheckCannotGC nogc;
 			jl::BufString lparam;
 			if ( argc >= 2 && !JL_ARG(2).isUndefined() )
 				JL_CHK( jl::getValue(cx, JL_ARG(2), &lparam) );
@@ -408,6 +413,7 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 		}
 #ifdef MKAT
 		case katja: {
+			JS::AutoCheckCannotGC nogc;
 			jl::BufString lparam;
 			if ( argc >= 2 && !JL_ARG(2).isUndefined() )
 				JL_CHK( jl::getValue(cx, JL_ARG(2), &lparam) );
@@ -458,6 +464,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 
 	unsigned long outLength = REQUEST_SIZE;
 	//uint8_t *out = NULL;
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString in;
 	jl::BufBase out;
 
@@ -483,6 +490,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 	switch ( pv->cipher ) {
 		case rsa: {
 
+			JS::AutoCheckCannotGC nogc;
 			jl::BufString lparam;
 			if ( argc >= 2 && !JL_ARG(2).isUndefined() )
 				JL_CHK( jl::getValue(cx, JL_ARG(2), &lparam) );
@@ -508,6 +516,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 #ifdef MKAT
 		case katja: {
 
+			JS::AutoCheckCannotGC nogc;
 			jl::BufString lparam;
 			if ( argc >= 2 && !JL_ARG(2).isUndefined() )
 				JL_CHK( jl::getValue(cx, JL_ARG(2), &lparam) );
@@ -553,6 +562,7 @@ DEFINE_FUNCTION( sign ) { // ( data [, saltLength] )
 
 	unsigned long outLength = REQUEST_SIZE;
 	//uint8_t *out = NULL;
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString in;
 	jl::BufBase out;
 
@@ -630,6 +640,7 @@ DEFINE_FUNCTION( verifySignature ) { // ( data, signature [, saltLength] )
 
 	JL_DEFINE_ARGS;
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString data, sign;
 
 	JL_ASSERT_THIS_INSTANCE();
@@ -803,7 +814,8 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( key ) {
 	
 	JL_DEFINE_PROP_ARGS;
-
+	
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString key;
 
 	JL_ASSERT_THIS_INSTANCE();

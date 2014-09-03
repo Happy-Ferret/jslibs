@@ -156,6 +156,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_ARGS;
 
 	CipherPrivate *pv = NULL; // see. bad label
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString modeName, cipherName, key, IV, optarg;
 
 	JL_ASSERT_CONSTRUCTING();
@@ -343,6 +344,7 @@ DEFINE_FUNCTION( encrypt ) {
 	JL_DEFINE_ARGS;
 
 	jl::BufBase buffer;
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString pt;
 
 	JL_ASSERT_THIS_INSTANCE();
@@ -417,6 +419,7 @@ DEFINE_FUNCTION( decrypt ) {
 	JL_DEFINE_ARGS;
 
 	jl::BufBase buffer;
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString ct;
 
 	JL_ASSERT_THIS_INSTANCE();
@@ -548,7 +551,8 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( IV ) {
 
 	JL_DEFINE_PROP_ARGS;
-
+	
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString IV;
 
 	JL_ASSERT_THIS_INSTANCE();

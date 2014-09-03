@@ -529,7 +529,7 @@ DEFINE_FUNCTION( timeCounter ) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**doc
+/* *doc
 $TOC_MEMBER $INAME
  $STR $INAME( $STR str, $INT count )
   Returns the string that is _count_ times _str_.
@@ -537,7 +537,7 @@ $TOC_MEMBER $INAME
   {{{
   print( stringRepeat('foo', 3) ); // prints: foofoofoo
   }}}
-**/
+** /
 DEFINE_FUNCTION( stringRepeat ) {
 
 	JL_DEFINE_ARGS;
@@ -597,7 +597,7 @@ DEFINE_FUNCTION( stringRepeat ) {
 	return true;
 	JL_BAD;
 }
-
+*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**doc
@@ -1682,7 +1682,7 @@ CONFIGURE_STATIC
 		FUNCTION_ARGC( sandboxEval, 3 )
 		FUNCTION_ARGC( isStatementValid, 1 )
 		FUNCTION_ARGC( captureCurrentStack, 1)
-		FUNCTION_ARGC( stringRepeat, 2 )
+//		FUNCTION_ARGC( stringRepeat, 2 )
 		FUNCTION_ARGC( print, 1 ) // ...
 		FUNCTION_ARGC( sleep, 1 )
 		FUNCTION_ARGC( timeCounter, 0 )

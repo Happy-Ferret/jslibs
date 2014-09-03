@@ -37,6 +37,7 @@ DEFINE_FUNCTION( base64Encode ) {
 
 	JL_DEFINE_ARGS;
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString in;
 	jl::BufBase out;
 
@@ -71,6 +72,8 @@ DEFINE_FUNCTION( base64Decode ) {
 	JL_DEFINE_ARGS;
 
 	jl::BufBase buffer;
+	
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString in;
 
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -107,6 +110,7 @@ DEFINE_FUNCTION( hexEncode ) {
 
 	JL_DEFINE_ARGS;
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString data;
 	jl::BufBase out;
 
@@ -159,6 +163,7 @@ DEFINE_FUNCTION( hexDecode ) {
 
 	JL_DEFINE_ARGS;
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString in;
 	jl::BufBase out;
 

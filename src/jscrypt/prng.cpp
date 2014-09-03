@@ -53,6 +53,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_ARGS;
 
 	PrngPrivate *pv = NULL;
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString prngName;
 
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -156,6 +157,7 @@ DEFINE_FUNCTION( addEntropy ) {
 
 	JL_DEFINE_ARGS;
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString entropy;
 
 	JL_ASSERT_THIS_INSTANCE();
@@ -262,6 +264,7 @@ DEFINE_PROPERTY_SETTER( state ) {
 
 	JL_DEFINE_PROP_ARGS;
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString state;
 
 	JL_ASSERT_THIS_INSTANCE();
