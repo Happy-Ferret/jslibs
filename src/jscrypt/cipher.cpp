@@ -156,145 +156,154 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_ARGS;
 
 	CipherPrivate *pv = NULL; // see. bad label
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString modeName, cipherName, key, IV, optarg;
 
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_ASSERT_ARGC_MIN( 3 );
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &modeName) ); // warning: GC on the returned buffer !
+	{
 
-	CryptMode mode;
-	if ( modeName == "ECB" )
-		mode = mode_ecb;
-	else
-	if ( modeName == "CFB" )
-		mode = mode_cfb;
-	else
-	if ( modeName == "OFB" )
-		mode = mode_ofb;
-	else
-	if ( modeName == "CBC" )
-		mode = mode_cbc;
-	else
-	if ( modeName == "CTR" )
-		mode = mode_ctr;
-	else
-	if ( modeName == "LRW" )
-		mode = mode_lrw;
-	else
-	if ( modeName == "F8" )
-		mode = mode_f8;
-	else
-		JL_ERR( E_ARG, E_NUM(1), E_INVALID, E_SEP, E_NAME(modeName), E_NOTSUPPORTED );
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString modeName;
+		jl::BufString cipherName;
+		jl::BufString key;
+		jl::BufString IV;
+		jl::BufString optarg;
+
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &modeName) ); // warning: GC on the returned buffer !
+
+		CryptMode mode;
+		if ( modeName == "ECB" )
+			mode = mode_ecb;
+		else
+		if ( modeName == "CFB" )
+			mode = mode_cfb;
+		else
+		if ( modeName == "OFB" )
+			mode = mode_ofb;
+		else
+		if ( modeName == "CBC" )
+			mode = mode_cbc;
+		else
+		if ( modeName == "CTR" )
+			mode = mode_ctr;
+		else
+		if ( modeName == "LRW" )
+			mode = mode_lrw;
+		else
+		if ( modeName == "F8" )
+			mode = mode_f8;
+		else
+			JL_ERR( E_ARG, E_NUM(1), E_INVALID, E_SEP, E_NAME(modeName), E_NOTSUPPORTED );
 
 
 
-	JL_CHK( jl::getValue(cx, JL_ARG(2), &cipherName) ); // warning: GC on the returned buffer !
-	JL_CHK( jl::getValue(cx, JL_ARG(3), &key) ); // warning: GC on the returned buffer !
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &cipherName) ); // warning: GC on the returned buffer !
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &key) ); // warning: GC on the returned buffer !
 
-	if ( argc >= 4 && !JL_ARG(4).isUndefined() )
-		JL_CHK( jl::getValue(cx, JL_ARG(4), &IV) ); // warning: GC on the returned buffer !
-	else
-		IV.setEmpty();
+		if ( argc >= 4 && !JL_ARG(4).isUndefined() )
+			JL_CHK( jl::getValue(cx, JL_ARG(4), &IV) ); // warning: GC on the returned buffer !
+		else
+			IV.setEmpty();
 
-	if ( argc >= 5 && !JL_ARG(5).isUndefined() )
-		JL_CHK( jl::getValue(cx, JL_ARG(5), &optarg) ); // warning: GC on the returned buffer !
+		if ( argc >= 5 && !JL_ARG(5).isUndefined() )
+			JL_CHK( jl::getValue(cx, JL_ARG(5), &optarg) ); // warning: GC on the returned buffer !
 
-   int numRounds;
-   numRounds = 0; // default value, us a default number of rounds.
-	if ( argc >= 6 && !JL_ARG(6).isUndefined() )
-		JL_CHK( jl::getValue(cx, JL_ARG(6), &numRounds) );
+	   int numRounds;
+	   numRounds = 0; // default value, us a default number of rounds.
+		if ( argc >= 6 && !JL_ARG(6).isUndefined() )
+			JL_CHK( jl::getValue(cx, JL_ARG(6), &numRounds) );
 
-	pv = (CipherPrivate*)jl_malloc(sizeof(CipherPrivate));
-	JL_CHK( pv );
-	pv->symmetric_XXX = NULL; // see. bad: label
+		pv = (CipherPrivate*)jl_malloc(sizeof(CipherPrivate));
+		JL_CHK( pv );
+		pv->symmetric_XXX = NULL; // see. bad: label
 
-	pv->mode = mode;
+		pv->mode = mode;
 
-	int cipherIndex;
-	cipherIndex = find_cipher(cipherName);
-	JL_ASSERT( cipherIndex != -1, E_STR("cipher"), E_NAME(cipherName), E_NOTFOUND );
+		int cipherIndex;
+		cipherIndex = find_cipher(cipherName);
+		JL_ASSERT( cipherIndex != -1, E_STR("cipher"), E_NAME(cipherName), E_NOTFOUND );
 
-	ltc_cipher_descriptor *cipher;
-	cipher = &cipher_descriptor[cipherIndex];
+		ltc_cipher_descriptor *cipher;
+		cipher = &cipher_descriptor[cipherIndex];
 
-	pv->descriptor = cipher;
-	JL_ASSERT( cipher->test() == CRYPT_OK, E_LIB, E_STR("libtomcrypt"), E_INTERNAL, E_SEP, E_STR(cipherName), E_STR("test"), E_FAILURE );
+		pv->descriptor = cipher;
+		JL_ASSERT( cipher->test() == CRYPT_OK, E_LIB, E_STR("libtomcrypt"), E_INTERNAL, E_SEP, E_STR(cipherName), E_STR("test"), E_FAILURE );
 
-	int err;
-	switch ( mode ) {
-		case mode_ecb: {
-			pv->symmetric_XXX = jl_malloc(sizeof(symmetric_ECB));
-			JL_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
-//			JL_ASSERT( IV == NULL, "Initialization vector is invalid for this mode." );
-			JL_ASSERT_WARN( !optarg, E_ARG, E_NUM(5), E_IGNORED );
-			err = ecb_start( cipherIndex, key.toData<const uint8_t*>(), (int)key.length(), numRounds, (symmetric_ECB *)pv->symmetric_XXX );
-			break;
+		int err;
+		switch ( mode ) {
+			case mode_ecb: {
+				pv->symmetric_XXX = jl_malloc(sizeof(symmetric_ECB));
+				JL_ASSERT_ALLOC( pv->symmetric_XXX );
+				JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
+	//			JL_ASSERT( IV == NULL, "Initialization vector is invalid for this mode." );
+				JL_ASSERT_WARN( !optarg, E_ARG, E_NUM(5), E_IGNORED );
+				err = ecb_start( cipherIndex, key.toData<const uint8_t*>(), (int)key.length(), numRounds, (symmetric_ECB *)pv->symmetric_XXX );
+				break;
+			}
+			case mode_cfb: {
+				pv->symmetric_XXX = jl_malloc(sizeof(symmetric_CFB));
+				JL_ASSERT_ALLOC( pv->symmetric_XXX );
+				JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
+	//			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
+				JL_ASSERT_WARN( !optarg, E_ARG, E_NUM(5), E_IGNORED );
+				err = cfb_start( cipherIndex, IV.toData<const uint8_t*>(), key.toData<const uint8_t*>(), (int)key.length(), numRounds, (symmetric_CFB *)pv->symmetric_XXX );
+				break;
+			}
+			case mode_ofb: {
+				pv->symmetric_XXX = jl_malloc(sizeof(symmetric_OFB));
+				JL_ASSERT_ALLOC( pv->symmetric_XXX );
+				JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
+	//			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
+				JL_ASSERT_WARN( !optarg, E_ARG, E_NUM(5), E_IGNORED );
+				err = ofb_start( cipherIndex, IV.toData<const uint8_t*>(), key.toData<const uint8_t*>(), (int)key.length(), numRounds, (symmetric_OFB *)pv->symmetric_XXX );
+				break;
+			}
+			case mode_cbc: {
+				pv->symmetric_XXX = jl_malloc(sizeof(symmetric_CBC));
+				JL_ASSERT_ALLOC( pv->symmetric_XXX );
+				JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
+	//			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
+				JL_ASSERT_WARN( !optarg, E_ARG, E_NUM(5), E_IGNORED );
+				err = cbc_start( cipherIndex, IV.toData<const uint8_t*>(), key.toData<const uint8_t*>(), (int)key.length(), numRounds, (symmetric_CBC *)pv->symmetric_XXX );
+				break;
+			}
+			case mode_ctr: {
+				pv->symmetric_XXX = jl_malloc(sizeof(symmetric_CTR));
+				JL_ASSERT_ALLOC( pv->symmetric_XXX );
+				JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
+	//			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
+				JL_ASSERT_WARN( !optarg, E_ARG, E_NUM(5), E_IGNORED );
+				err = ctr_start( cipherIndex, IV.toData<const uint8_t*>(), key.toData<const uint8_t*>(), (int)key.length(), numRounds, CTR_COUNTER_LITTLE_ENDIAN, (symmetric_CTR *)pv->symmetric_XXX );
+				break;
+			}
+			case mode_lrw: {
+				pv->symmetric_XXX = jl_malloc(sizeof(symmetric_LRW));
+				JL_ASSERT_ALLOC( pv->symmetric_XXX );
+				JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
+	//			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
+				JL_ASSERT( optarg && optarg.length() == key.length(), E_ARG, E_NUM(5), E_SEP, E_STR("tweak"), E_LENGTH, E_NUM((int)key.length()) );
+				err = lrw_start( cipherIndex, IV.toData<const uint8_t*>(), key.toData<const uint8_t*>(), (int)key.length(), optarg.toData<const uint8_t*>(), numRounds, (symmetric_LRW *)pv->symmetric_XXX );
+				break;
+			}
+			case mode_f8: {
+				pv->symmetric_XXX = jl_malloc(sizeof(symmetric_F8));
+				JL_ASSERT_ALLOC( pv->symmetric_XXX );
+				JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
+	//			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
+				JL_ASSERT( optarg.lengthOrZero(), E_ARG, E_NUM(5), E_COMMENT("salt"), E_REQUIRED );
+				err = f8_start( cipherIndex, IV.toData<const uint8_t*>(), key.toData<const uint8_t*>(), (int)key.length(), optarg.toDataOrNull<const uint8_t*>(), (int)optarg.lengthOrZero(), numRounds, (symmetric_F8 *)pv->symmetric_XXX );
+				break;
+			}
+			default:
+				IFDEBUG( err = 0 );
+				ASSERT(false);
 		}
-		case mode_cfb: {
-			pv->symmetric_XXX = jl_malloc(sizeof(symmetric_CFB));
-			JL_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
-//			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			JL_ASSERT_WARN( !optarg, E_ARG, E_NUM(5), E_IGNORED );
-			err = cfb_start( cipherIndex, IV.toData<const uint8_t*>(), key.toData<const uint8_t*>(), (int)key.length(), numRounds, (symmetric_CFB *)pv->symmetric_XXX );
-			break;
-		}
-		case mode_ofb: {
-			pv->symmetric_XXX = jl_malloc(sizeof(symmetric_OFB));
-			JL_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
-//			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			JL_ASSERT_WARN( !optarg, E_ARG, E_NUM(5), E_IGNORED );
-			err = ofb_start( cipherIndex, IV.toData<const uint8_t*>(), key.toData<const uint8_t*>(), (int)key.length(), numRounds, (symmetric_OFB *)pv->symmetric_XXX );
-			break;
-		}
-		case mode_cbc: {
-			pv->symmetric_XXX = jl_malloc(sizeof(symmetric_CBC));
-			JL_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
-//			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			JL_ASSERT_WARN( !optarg, E_ARG, E_NUM(5), E_IGNORED );
-			err = cbc_start( cipherIndex, IV.toData<const uint8_t*>(), key.toData<const uint8_t*>(), (int)key.length(), numRounds, (symmetric_CBC *)pv->symmetric_XXX );
-			break;
-		}
-		case mode_ctr: {
-			pv->symmetric_XXX = jl_malloc(sizeof(symmetric_CTR));
-			JL_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
-//			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			JL_ASSERT_WARN( !optarg, E_ARG, E_NUM(5), E_IGNORED );
-			err = ctr_start( cipherIndex, IV.toData<const uint8_t*>(), key.toData<const uint8_t*>(), (int)key.length(), numRounds, CTR_COUNTER_LITTLE_ENDIAN, (symmetric_CTR *)pv->symmetric_XXX );
-			break;
-		}
-		case mode_lrw: {
-			pv->symmetric_XXX = jl_malloc(sizeof(symmetric_LRW));
-			JL_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
-//			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			JL_ASSERT( optarg && optarg.length() == key.length(), E_ARG, E_NUM(5), E_SEP, E_STR("tweak"), E_LENGTH, E_NUM((int)key.length()) );
-			err = lrw_start( cipherIndex, IV.toData<const uint8_t*>(), key.toData<const uint8_t*>(), (int)key.length(), optarg.toData<const uint8_t*>(), numRounds, (symmetric_LRW *)pv->symmetric_XXX );
-			break;
-		}
-		case mode_f8: {
-			pv->symmetric_XXX = jl_malloc(sizeof(symmetric_F8));
-			JL_ASSERT_ALLOC( pv->symmetric_XXX );
-			JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
-//			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
-			JL_ASSERT( optarg.lengthOrZero(), E_ARG, E_NUM(5), E_COMMENT("salt"), E_REQUIRED );
-			err = f8_start( cipherIndex, IV.toData<const uint8_t*>(), key.toData<const uint8_t*>(), (int)key.length(), optarg.toDataOrNull<const uint8_t*>(), (int)optarg.lengthOrZero(), numRounds, (symmetric_F8 *)pv->symmetric_XXX );
-			break;
-		}
-		default:
-			IFDEBUG( err = 0 );
-			ASSERT(false);
+
+		if ( err != CRYPT_OK )
+			JL_CHK( ThrowCryptError(cx, err) );
+	
 	}
-
-	if ( err != CRYPT_OK )
-		JL_CHK( ThrowCryptError(cx, err) );
 
 	JL_SetPrivate(JL_OBJ, pv);
 	return true;
@@ -344,8 +353,6 @@ DEFINE_FUNCTION( encrypt ) {
 	JL_DEFINE_ARGS;
 
 	jl::BufBase buffer;
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString pt;
 
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -354,56 +361,52 @@ DEFINE_FUNCTION( encrypt ) {
 	pv = (CipherPrivate *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &pt) );
+	{
 
-	//uint8_t *ct;
-	//ct = JL_NewBuffer(cx, pt.Length(), JL_RVAL);
-	//JL_CHK( ct );
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString pt;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &pt) );
 
-	buffer.alloc(pt.length(), true);
-	JL_ASSERT_ALLOC(buffer);
+		buffer.alloc(pt.length(), true);
+		JL_ASSERT_ALLOC(buffer);
 
-	int err;
-	switch ( pv->mode ) {
-		case mode_ecb:
-			JL_ASSERT( buffer.allocSize() == (size_t)pv->descriptor->block_length, E_DATA, E_LENGTH, E_NUM(pv->descriptor->block_length) );
-			err = ecb_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_ECB *)pv->symmetric_XXX );
-			break;
-		case mode_cfb:
-			err = cfb_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_CFB *)pv->symmetric_XXX );
-			break;
-		case mode_ofb:
-			err = ofb_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_OFB *)pv->symmetric_XXX );
-			break;
-		case mode_cbc:
-			JL_ASSERT( buffer.allocSize() == (size_t)pv->descriptor->block_length, E_DATA, E_LENGTH, E_NUM(pv->descriptor->block_length) );
-			err = cbc_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_CBC *)pv->symmetric_XXX );
-			break;
-		case mode_ctr:
-			err = ctr_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_CTR *)pv->symmetric_XXX );
-			break;
-		case mode_lrw:
-			JL_ASSERT( buffer.allocSize() == (size_t)pv->descriptor->block_length, E_DATA, E_LENGTH, E_NUM(pv->descriptor->block_length) );
-			err = lrw_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_LRW *)pv->symmetric_XXX );
-			break;
-		case mode_f8:
-			err = f8_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_F8 *)pv->symmetric_XXX );
-			break;
-		default:
-			IFDEBUG( err = 0 );
-			ASSERT(false);
+		int err;
+		switch ( pv->mode ) {
+			case mode_ecb:
+				JL_ASSERT( buffer.allocSize() == (size_t)pv->descriptor->block_length, E_DATA, E_LENGTH, E_NUM(pv->descriptor->block_length) );
+				err = ecb_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_ECB *)pv->symmetric_XXX );
+				break;
+			case mode_cfb:
+				err = cfb_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_CFB *)pv->symmetric_XXX );
+				break;
+			case mode_ofb:
+				err = ofb_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_OFB *)pv->symmetric_XXX );
+				break;
+			case mode_cbc:
+				JL_ASSERT( buffer.allocSize() == (size_t)pv->descriptor->block_length, E_DATA, E_LENGTH, E_NUM(pv->descriptor->block_length) );
+				err = cbc_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_CBC *)pv->symmetric_XXX );
+				break;
+			case mode_ctr:
+				err = ctr_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_CTR *)pv->symmetric_XXX );
+				break;
+			case mode_lrw:
+				JL_ASSERT( buffer.allocSize() == (size_t)pv->descriptor->block_length, E_DATA, E_LENGTH, E_NUM(pv->descriptor->block_length) );
+				err = lrw_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_LRW *)pv->symmetric_XXX );
+				break;
+			case mode_f8:
+				err = f8_encrypt( pt.toData<const uint8_t*>(), buffer.data(), buffer.allocSize(), (symmetric_F8 *)pv->symmetric_XXX );
+				break;
+			default:
+				IFDEBUG( err = 0 );
+				ASSERT(false);
+		}
+
+		if ( err != CRYPT_OK )
+			return ThrowCryptError(cx, err);
+	
 	}
 
-	if ( err != CRYPT_OK )
-		return ThrowCryptError(cx, err);
-
 	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
-
-	//ct[pt.Length()] = '\0';
-	//JL_CHK( JL_NewBlob( cx, ct, pt.Length(), JL_RVAL ) );
-
-//	JL_CHK( JL_NativeToJsval(cx, ct, pt.Length(), JL_RVAL ) );
-//	jl_free(ct);
 
 	return true;
 	JL_BAD;
@@ -419,8 +422,6 @@ DEFINE_FUNCTION( decrypt ) {
 	JL_DEFINE_ARGS;
 
 	jl::BufBase buffer;
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString ct;
 
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
@@ -429,51 +430,48 @@ DEFINE_FUNCTION( decrypt ) {
 	pv = (CipherPrivate *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-//	const char *ct;
-//	size_t ctLength;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &ct, &ctLength) ); // warning: GC on the returned buffer !
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &ct) );
+	{
 
-	//uint8_t *pt;
-	//pt = JL_NewBuffer(cx, ct.Length(), JL_RVAL);
-	//JL_CHK( pt );
-	buffer.alloc(ct.length(), true);
-	JL_ASSERT_ALLOC(buffer);
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString ct;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &ct) );
 
-	int err;
-	switch ( pv->mode ) {
-		case mode_ecb:
-			err = ecb_decrypt( ct.toData<const uint8_t*>(), buffer.data(), ct.length(), (symmetric_ECB *)pv->symmetric_XXX );
-			break;
-		case mode_cfb:
-			err = cfb_decrypt( ct.toData<const uint8_t*>(), buffer.data(), ct.length(), (symmetric_CFB *)pv->symmetric_XXX );
-			break;
-		case mode_ofb:
-			err = ofb_decrypt( ct.toData<const uint8_t*>(), buffer.data(), ct.length(), (symmetric_OFB *)pv->symmetric_XXX );
-			break;
-		case mode_cbc:
-			err = cbc_decrypt( ct.toData<const uint8_t*>(), buffer.data(), ct.length(), (symmetric_CBC *)pv->symmetric_XXX );
-			break;
-		case mode_ctr:
-			err = ctr_decrypt( ct.toData<const uint8_t*>(), buffer.data(), ct.length(), (symmetric_CTR *)pv->symmetric_XXX );
-			break;
-		case mode_lrw:
-			err = lrw_decrypt( ct.toData<const uint8_t*>(), buffer.data(), ct.length(), (symmetric_LRW *)pv->symmetric_XXX );
-			break;
-		case mode_f8:
-			err = f8_decrypt( ct.toData<const uint8_t*>(), buffer.data(), ct.length(), (symmetric_F8 *)pv->symmetric_XXX );
-			break;
-		default:
-			IFDEBUG( err = 0 );
-			ASSERT(false);
+		buffer.alloc(ct.length(), true);
+		JL_ASSERT_ALLOC(buffer);
+
+		int err;
+		switch ( pv->mode ) {
+			case mode_ecb:
+				err = ecb_decrypt( ct.toData<const uint8_t*>(), buffer.data(), ct.length(), (symmetric_ECB *)pv->symmetric_XXX );
+				break;
+			case mode_cfb:
+				err = cfb_decrypt( ct.toData<const uint8_t*>(), buffer.data(), ct.length(), (symmetric_CFB *)pv->symmetric_XXX );
+				break;
+			case mode_ofb:
+				err = ofb_decrypt( ct.toData<const uint8_t*>(), buffer.data(), ct.length(), (symmetric_OFB *)pv->symmetric_XXX );
+				break;
+			case mode_cbc:
+				err = cbc_decrypt( ct.toData<const uint8_t*>(), buffer.data(), ct.length(), (symmetric_CBC *)pv->symmetric_XXX );
+				break;
+			case mode_ctr:
+				err = ctr_decrypt( ct.toData<const uint8_t*>(), buffer.data(), ct.length(), (symmetric_CTR *)pv->symmetric_XXX );
+				break;
+			case mode_lrw:
+				err = lrw_decrypt( ct.toData<const uint8_t*>(), buffer.data(), ct.length(), (symmetric_LRW *)pv->symmetric_XXX );
+				break;
+			case mode_f8:
+				err = f8_decrypt( ct.toData<const uint8_t*>(), buffer.data(), ct.length(), (symmetric_F8 *)pv->symmetric_XXX );
+				break;
+			default:
+				IFDEBUG( err = 0 );
+				ASSERT(false);
+		}
+
+		if (err != CRYPT_OK)
+			return ThrowCryptError(cx, err);
+	
 	}
-
-	if (err != CRYPT_OK)
-		return ThrowCryptError(cx, err);
-
-	//pt[ct.Length()] = '\0';
-	//JL_CHK( JL_NewBlob( cx, pt, ct.Length(), JL_RVAL ) );
-
+	
 	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
 	return true;
 	JL_BAD;
@@ -552,75 +550,69 @@ DEFINE_PROPERTY_SETTER( IV ) {
 
 	JL_DEFINE_PROP_ARGS;
 	
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString IV;
-
 	JL_ASSERT_THIS_INSTANCE();
 
 	CipherPrivate *pv;
 	pv = (CipherPrivate *)JL_GetPrivate( obj );
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
 
-//	const char *IV;
-//	size_t IVLength;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, vp, &IV, &IVLength) );
-	JL_CHK( jl::getValue(cx, JL_RVAL, &IV) );
+	{
 
-	int err;
-	switch ( pv->mode ) {
-		case mode_ecb:
-			JL_WARN( E_VALUE, E_IGNORED, E_SEP, E_STR("IV"), E_NOTSUPPORTED, E_COMMENT("ECB") );
-			break;
-		case mode_cfb: {
-			symmetric_CFB *tmp = (symmetric_CFB *)pv->symmetric_XXX;
-			JL_ASSERT( IV.length() == (size_t)tmp->blocklen, E_STR("IV"), E_LENGTH, E_NUM(tmp->blocklen) );
-			err = cfb_setiv( IV.toData<const uint8_t *>(), IV.length(), tmp );
-			if (err != CRYPT_OK)
-				return ThrowCryptError(cx, err);
-			break;
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString IV;
+		JL_CHK( jl::getValue(cx, JL_RVAL, &IV) );
+
+		int err;
+		switch ( pv->mode ) {
+			case mode_ecb: {
+				JL_WARN( E_VALUE, E_IGNORED, E_SEP, E_STR("IV"), E_NOTSUPPORTED, E_COMMENT("ECB") );
+				err = CRYPT_INVALID_ARG;
+				break;
+			}
+			case mode_cfb: {
+				symmetric_CFB *tmp = (symmetric_CFB *)pv->symmetric_XXX;
+				JL_ASSERT( IV.length() == (size_t)tmp->blocklen, E_STR("IV"), E_LENGTH, E_NUM(tmp->blocklen) );
+				err = cfb_setiv( IV.toData<const uint8_t *>(), IV.length(), tmp );
+				break;
+			}
+			case mode_ofb: {
+				symmetric_OFB *tmp = (symmetric_OFB *)pv->symmetric_XXX;
+				JL_ASSERT( IV.length() == (size_t)tmp->blocklen, E_STR("IV"), E_LENGTH, E_NUM(tmp->blocklen) );
+				err = ofb_setiv( IV.toData<const uint8_t *>(), IV.length(), tmp );
+				break;
+			}
+			case mode_cbc: {
+				symmetric_CBC *tmp = (symmetric_CBC *)pv->symmetric_XXX;
+				JL_ASSERT( IV.length() == (size_t)tmp->blocklen, E_STR("IV"), E_LENGTH, E_NUM(tmp->blocklen) );
+				err = cbc_setiv( IV.toData<const uint8_t *>(), IV.length(), tmp );
+				break;
+			}
+			case mode_ctr: {
+				symmetric_CTR *tmp = (symmetric_CTR *)pv->symmetric_XXX;
+				JL_ASSERT( IV.length() == (size_t)tmp->blocklen, E_STR("IV"), E_LENGTH, E_NUM(tmp->blocklen) );
+				err = ctr_setiv( IV.toData<const uint8_t *>(), IV.length(), tmp );
+				break;
+			}
+			case mode_lrw: {
+				symmetric_LRW *tmp = (symmetric_LRW *)pv->symmetric_XXX;
+				JL_ASSERT( IV.length() == 16, E_STR("IV"), E_LENGTH, E_NUM(16) ); // (TBD) 16 == tmp->blocklen ???
+				err = lrw_setiv( IV.toData<const uint8_t *>(), IV.length(), tmp );
+				break;
+			}
+			case mode_f8: {
+				symmetric_F8 *tmp = (symmetric_F8 *)pv->symmetric_XXX;
+				JL_ASSERT( IV.length() == (size_t)tmp->blocklen, E_STR("IV"), E_LENGTH, E_NUM(tmp->blocklen) );
+				err = f8_setiv( IV.toData<const uint8_t *>(), IV.length(), tmp );
+				break;
+			}
+			default:
+				err = CRYPT_INVALID_ARG;
+				ASSERT(false);
 		}
-		case mode_ofb: {
-			symmetric_OFB *tmp = (symmetric_OFB *)pv->symmetric_XXX;
-			JL_ASSERT( IV.length() == (size_t)tmp->blocklen, E_STR("IV"), E_LENGTH, E_NUM(tmp->blocklen) );
-			err = ofb_setiv( IV.toData<const uint8_t *>(), IV.length(), tmp );
-			if (err != CRYPT_OK)
-				return ThrowCryptError(cx, err);
-			break;
-		}
-		case mode_cbc: {
-			symmetric_CBC *tmp = (symmetric_CBC *)pv->symmetric_XXX;
-			JL_ASSERT( IV.length() == (size_t)tmp->blocklen, E_STR("IV"), E_LENGTH, E_NUM(tmp->blocklen) );
-			err = cbc_setiv( IV.toData<const uint8_t *>(), IV.length(), tmp );
-			if (err != CRYPT_OK)
-				return ThrowCryptError(cx, err);
-			break;
-		}
-		case mode_ctr: {
-			symmetric_CTR *tmp = (symmetric_CTR *)pv->symmetric_XXX;
-			JL_ASSERT( IV.length() == (size_t)tmp->blocklen, E_STR("IV"), E_LENGTH, E_NUM(tmp->blocklen) );
-			err = ctr_setiv( IV.toData<const uint8_t *>(), IV.length(), tmp );
-			if (err != CRYPT_OK)
-				return ThrowCryptError(cx, err);
-			break;
-		}
-		case mode_lrw: {
-			symmetric_LRW *tmp = (symmetric_LRW *)pv->symmetric_XXX;
-			JL_ASSERT( IV.length() == 16, E_STR("IV"), E_LENGTH, E_NUM(16) ); // (TBD) 16 == tmp->blocklen ???
-			err = lrw_setiv( IV.toData<const uint8_t *>(), IV.length(), tmp );
-			if (err != CRYPT_OK)
-				return ThrowCryptError(cx, err);
-			break;
-		}
-		case mode_f8: {
-			symmetric_F8 *tmp = (symmetric_F8 *)pv->symmetric_XXX;
-			JL_ASSERT( IV.length() == (size_t)tmp->blocklen, E_STR("IV"), E_LENGTH, E_NUM(tmp->blocklen) );
-			err = f8_setiv( IV.toData<const uint8_t *>(), IV.length(), tmp );
-			if (err != CRYPT_OK)
-				return ThrowCryptError(cx, err);
-			break;
-		}
-		default:
-			ASSERT(false);
+
+		if (err != CRYPT_OK)
+			return ThrowCryptError(cx, err);
+
 	}
 
 	return true;

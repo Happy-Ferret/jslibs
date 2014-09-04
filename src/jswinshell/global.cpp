@@ -42,7 +42,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( extractIcon ) {
 
-	jl::BufString fileName;
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 
@@ -52,24 +51,34 @@ DEFINE_FUNCTION( extractIcon ) {
 	HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
 	if ( hInst == NULL )
 		return jl::throwOSError(cx);
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &fileName) );
-	HICON hIcon = ExtractIcon( hInst, fileName, iconIndex ); // see SHGetFileInfo(
-	if ( hIcon == NULL ) {
-
-//		if ( GetLastError() != 0 )
-//			return WinThrowError(cx, GetLastError());
-		JL_RVAL.setUndefined();
-		return true;
-	}
+	
+	HICON hIcon;
 
 	{
 
-	JS::RootedObject icon(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(Icon), JL_CLASS_PROTOTYPE(cx, Icon)));
-	HICON *phIcon = (HICON*)jl_malloc(sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
-	JL_ASSERT_ALLOC( phIcon );
-	*phIcon = hIcon;
-	JL_SetPrivate(icon, phIcon);
-	JL_RVAL.setObject(*icon);
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString fileName;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &fileName) );
+		hIcon = ExtractIcon( hInst, fileName, iconIndex ); // see SHGetFileInfo(
+		if ( hIcon == NULL ) {
+
+	//		if ( GetLastError() != 0 )
+	//			return WinThrowError(cx, GetLastError());
+			JL_RVAL.setUndefined();
+			return true;
+		}
+	
+	}
+
+
+	{
+
+		JS::RootedObject icon(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(Icon), JL_CLASS_PROTOTYPE(cx, Icon)));
+		HICON *phIcon = (HICON*)jl_malloc(sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
+		JL_ASSERT_ALLOC( phIcon );
+		*phIcon = hIcon;
+		JL_SetPrivate(icon, phIcon);
+		JL_RVAL.setObject(*icon);
 
 	}
 
@@ -128,8 +137,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( messageBox ) {
 
-	jl::BufString caption, text;
-
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 
@@ -137,15 +144,24 @@ DEFINE_FUNCTION( messageBox ) {
 	if ( argc >= 3 )
 		JL_CHK( jl::getValue(cx, JL_ARG(3), &type) );
 
-	if ( argc >= 2 && !JL_ARG(2).isUndefined() )
-		JL_CHK( jl::getValue(cx, JL_ARG(2), &caption) );
+	{
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &text) );
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString caption;
+		jl::BufString text;
 
-	int res = MessageBox(NULL, text, caption, type);
-	if ( res == 0 )
-		return jl::throwOSError(cx);
-	JL_RVAL.setInt32(res);
+		if ( argc >= 2 && !JL_ARG(2).isUndefined() )
+			JL_CHK( jl::getValue(cx, JL_ARG(2), &caption) );
+
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &text) );
+
+		int res = MessageBox(NULL, text, caption, type);
+		if ( res == 0 )
+			return jl::throwOSError(cx);
+		JL_RVAL.setInt32(res);
+
+	}
+
 	return true;
 	JL_BAD;
 }
@@ -167,42 +183,50 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( createProcess ) {
 
-	jl::BufString applicationName, commandLine, environment, currentDirectory;
-
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 
-	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( jl::getValue(cx, JL_ARG(1), &applicationName) ); // warning: GC on the returned buffer !
+	{
 
-	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( jl::getValue(cx, JL_ARG(2), &commandLine) ); // warning: GC on the returned buffer !
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString applicationName;
+		jl::BufString commandLine;
+		jl::BufString environment;
+		jl::BufString currentDirectory;
 
-	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( jl::getValue(cx, JL_ARG(3), &environment) ); // warning: GC on the returned buffer !
+		if ( JL_ARG_ISDEF(1) )
+			JL_CHK( jl::getValue(cx, JL_ARG(1), &applicationName) ); // warning: GC on the returned buffer !
 
-	if ( JL_ARG_ISDEF(4) )
-		JL_CHK( jl::getValue(cx, JL_ARG(4), &currentDirectory) ); // warning: GC on the returned buffer !
+		if ( JL_ARG_ISDEF(2) )
+			JL_CHK( jl::getValue(cx, JL_ARG(2), &commandLine) ); // warning: GC on the returned buffer !
 
-	STARTUPINFO si;
-	ZeroMemory(&si, sizeof(STARTUPINFO));
-	si.cb = sizeof(STARTUPINFO);
+		if ( JL_ARG_ISDEF(3) )
+			JL_CHK( jl::getValue(cx, JL_ARG(3), &environment) ); // warning: GC on the returned buffer !
 
-	PROCESS_INFORMATION pi;
+		if ( JL_ARG_ISDEF(4) )
+			JL_CHK( jl::getValue(cx, JL_ARG(4), &currentDirectory) ); // warning: GC on the returned buffer !
 
-	// doc. commandLine parameter: The Unicode version of CreateProcess function, CreateProcessW, may modify the contents of this string !
-	TCHAR *tmpCommandLine = commandLine.toStringZOrNull<TCHAR*>(); // The Unicode version, CreateProcessW, can modify the contents of this string.
-	DWORD creationFlags = sizeof( TCHAR ) == sizeof( WCHAR ) ? CREATE_UNICODE_ENVIRONMENT : 0;
+		STARTUPINFO si;
+		ZeroMemory(&si, sizeof(STARTUPINFO));
+		si.cb = sizeof(STARTUPINFO);
 
-	// doc: http://msdn2.microsoft.com/en-us/library/ms682425.aspx
-	BOOL st = ::CreateProcess( applicationName, tmpCommandLine, NULL, NULL, FALSE, creationFlags, (LPVOID)environment.toStringZOrNull<const TCHAR*>(), currentDirectory, &si, &pi );
-	jl_free( tmpCommandLine );
+		PROCESS_INFORMATION pi;
 
-	if ( st == FALSE )
-		return WinThrowError(cx, GetLastError());
+		// doc. commandLine parameter: The Unicode version of CreateProcess function, CreateProcessW, may modify the contents of this string !
+		TCHAR *tmpCommandLine = commandLine.toStringZOrNull<TCHAR*>(); // The Unicode version, CreateProcessW, can modify the contents of this string.
+		DWORD creationFlags = sizeof( TCHAR ) == sizeof( WCHAR ) ? CREATE_UNICODE_ENVIRONMENT : 0;
 
-	CloseHandle(pi.hProcess);
-	CloseHandle(pi.hThread);
+		// doc: http://msdn2.microsoft.com/en-us/library/ms682425.aspx
+		BOOL st = ::CreateProcess( applicationName, tmpCommandLine, NULL, NULL, FALSE, creationFlags, (LPVOID)environment.toStringZOrNull<const TCHAR*>(), currentDirectory, &si, &pi );
+		jl_free( tmpCommandLine );
+
+		if ( st == FALSE )
+			return WinThrowError(cx, GetLastError());
+
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
+	
+	}
 
 	JL_RVAL.setUndefined();
 	return true;
@@ -229,6 +253,7 @@ DEFINE_FUNCTION( fileOpenDialog ) {
 
 	if ( argc >= 1 && !JL_ARG(1).isUndefined() ) {
 
+		JS::AutoCheckCannotGC nogc;
 		jl::BufString str;
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 		jl::strcpy( filter, str );
@@ -240,10 +265,12 @@ DEFINE_FUNCTION( fileOpenDialog ) {
 
 	if ( argc >= 2 && !JL_ARG(2).isUndefined() ) {
 
+		JS::AutoCheckCannotGC nogc;
 		jl::BufString tmp;
 		JL_CHK( jl::getValue(cx, JL_ARG(2), &tmp) );
 		jl::strcpy( fileName, tmp );
 	} else {
+
 		*fileName = '\0';
 	}
 
@@ -272,16 +299,22 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( expandEnvironmentStrings ) {
 
 	JL_DEFINE_ARGS;
-
-	jl::BufString src;
 	JL_ASSERT_ARGC_MIN(1);
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &src) );
-	TCHAR dst[PATH_MAX];
-	DWORD res = ExpandEnvironmentStrings( src, dst, COUNTOF(dst) );
-	if ( res == 0 )
-		return jl::throwOSError(cx);
-	JL_CHK( jl::setValue( cx, JL_RVAL, jl::strSpec( dst, res ) ) );
+	{
+
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString src;
+
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &src) );
+		TCHAR dst[PATH_MAX];
+		DWORD res = ExpandEnvironmentStrings( src, dst, COUNTOF(dst) );
+		if ( res == 0 )
+			return jl::throwOSError(cx);
+		JL_CHK( jl::setValue( cx, JL_RVAL, jl::strSpec( dst, res ) ) );
+
+	}
+	
 	return true;
 	JL_BAD;
 }
@@ -353,20 +386,25 @@ DEFINE_FUNCTION( createComObject ) {
 
 	HRESULT hr;
 
-	jl::BufString name;
-
 	JL_ASSERT_ARGC( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
 
 	//JSString *idStr = JS::ToString(cx, JL_ARG(1));
 	//LPOLESTR name = (LPOLESTR)JS_GetStringCharsZ(cx, idStr);
-
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
-
+	
 	CLSID clsid;
-	hr = name.charAt<wchar_t>(0) == L('{') ? CLSIDFromString(name, &clsid) : CLSIDFromProgID(name, &clsid);
-	if ( FAILED(hr) )
-		JL_CHK( WinThrowError(cx, hr) );
+
+	{
+
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString name;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
+
+		hr = name.charAt<wchar_t>(0) == L('{') ? CLSIDFromString(name, &clsid) : CLSIDFromProgID(name, &clsid);
+		if ( FAILED(hr) )
+			JL_CHK( WinThrowError(cx, hr) );
+	
+	}
 
 	hr = GetActiveObject(clsid, NULL, &punk);
 	if ( FAILED(hr) ) {
@@ -462,84 +500,94 @@ ParseRootKey(IN const TCHAR *path, OUT size_t *length) {
 
 DEFINE_FUNCTION( registrySet ) {
 
-	JS::RootedValue value(cx);
-	jl::BufString subKeyStr, valueNameStr;
-	const TCHAR *subKey;
-
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(3);
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &subKeyStr) );
-	subKey = subKeyStr.toStringZ<const TCHAR*>();
+	{
 
-	size_t length;
-	HKEY rootHKey = ParseRootKey(subKey, &length);
-	JL_ASSERT( subKey != NULL, E_ARG, E_NUM(1), E_INVALID, E_COMMENT("root key") );
-	subKey += length;
-	if ( subKey[0] == '\\' )
-		subKey += 1;
+		JS::RootedValue value(cx);
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString subKeyStr;
+		const TCHAR *subKey;
 
-	LONG st;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &subKeyStr) );
+		subKey = subKeyStr.toStringZ<const TCHAR*>();
 
-	value = JL_ARG(3);
+		size_t length;
+		HKEY rootHKey = ParseRootKey(subKey, &length);
+		JL_ASSERT( subKey != NULL, E_ARG, E_NUM(1), E_INVALID, E_COMMENT("root key") );
+		subKey += length;
+		if ( subKey[0] == '\\' )
+			subKey += 1;
 
-	if ( JL_ARG(2).isUndefined() ) {
+		LONG st;
 
-		if ( value.isUndefined() ) {
+		value = JL_ARG(3);
 
-			st = ::RegDeleteKey(rootHKey, subKey);
+		if ( JL_ARG(2).isUndefined() ) {
+
+			if ( value.isUndefined() ) {
+
+				st = ::RegDeleteKey(rootHKey, subKey);
+				if ( st != ERROR_SUCCESS )
+					return WinThrowError(cx, st);
+			}
+		} else {
+
+			HKEY hKey;
+			st = RegCreateKeyEx(rootHKey, subKey, 0, NULL, 0, KEY_WRITE, NULL, &hKey, NULL); // http://msdn.microsoft.com/en-us/library/windows/desktop/ms724844(v=vs.85).aspx
+			if ( st != ERROR_SUCCESS )
+				return WinThrowError(cx, st);
+		
+			JS::AutoCheckCannotGC nogc;
+			jl::BufString valueNameStr;
+
+			JL_CHK( jl::getValue(cx, JL_ARG(2), &valueNameStr) );
+
+			if ( value.isUndefined() ) {
+
+				st = RegDeleteValue(hKey, valueNameStr);
+			} else
+			if ( value.isNull() ) {
+
+				st = RegSetValueEx(hKey, valueNameStr, 0, REG_NONE, NULL, 0);
+			} else
+			if ( value.isInt32() ) {
+
+				DWORD num;
+				JL_CHK( jl::getValue(cx, value, &num) );
+				st = RegSetValueEx(hKey, valueNameStr, 0, REG_DWORD, (LPBYTE)&num, sizeof(DWORD));
+			} else
+			if ( value.isDouble() ) {
+
+				uint64_t num;
+				JL_CHK( jl::getValue(cx, value, &num) );
+				st = RegSetValueEx(hKey, valueNameStr, 0, REG_QWORD, (LPBYTE)&num, sizeof(uint64_t));
+			} else
+			if ( value.isString() ) {
+
+				JS::AutoCheckCannotGC nogc;
+				jl::BufString tmp;
+				JL_CHK( jl::getValue(cx, value, &tmp) );
+				// doc: When writing a string to the registry, you must specify the length of the string, including the terminating null character (\0).
+				st = RegSetValueEx(hKey, valueNameStr, 0, REG_SZ, (LPBYTE)tmp.toStringZ<const char*>(), tmp.length() + 1);
+			} else
+			if ( jl::isData(cx, value) ) {
+
+				JS::AutoCheckCannotGC nogc;
+				jl::BufString tmp;
+				JL_CHK( jl::getValue(cx, value, &tmp) );
+				st = RegSetValueEx(hKey, valueNameStr, 0, REG_BINARY, tmp.toStringZ<const uint8_t*>(), tmp.length());
+			}
+
+			if ( st != ERROR_SUCCESS )
+				return WinThrowError(cx, st);
+
+			st = RegCloseKey(hKey);
 			if ( st != ERROR_SUCCESS )
 				return WinThrowError(cx, st);
 		}
-	} else {
 
-		HKEY hKey;
-		st = RegCreateKeyEx(rootHKey, subKey, 0, NULL, 0, KEY_WRITE, NULL, &hKey, NULL); // http://msdn.microsoft.com/en-us/library/windows/desktop/ms724844(v=vs.85).aspx
-		if ( st != ERROR_SUCCESS )
-			return WinThrowError(cx, st);
-
-		JL_CHK( jl::getValue(cx, JL_ARG(2), &valueNameStr) );
-
-		if ( value.isUndefined() ) {
-
-			st = RegDeleteValue(hKey, valueNameStr);
-		} else
-		if ( value.isNull() ) {
-
-			st = RegSetValueEx(hKey, valueNameStr, 0, REG_NONE, NULL, 0);
-		} else
-		if ( value.isInt32() ) {
-
-			DWORD num;
-			JL_CHK( jl::getValue(cx, value, &num) );
-			st = RegSetValueEx(hKey, valueNameStr, 0, REG_DWORD, (LPBYTE)&num, sizeof(DWORD));
-		} else
-		if ( value.isDouble() ) {
-
-			uint64_t num;
-			JL_CHK( jl::getValue(cx, value, &num) );
-			st = RegSetValueEx(hKey, valueNameStr, 0, REG_QWORD, (LPBYTE)&num, sizeof(uint64_t));
-		} else
-		if ( value.isString() ) {
-
-			jl::BufString tmp;
-			JL_CHK( jl::getValue(cx, value, &tmp) );
-			// doc: When writing a string to the registry, you must specify the length of the string, including the terminating null character (\0).
-			st = RegSetValueEx(hKey, valueNameStr, 0, REG_SZ, (LPBYTE)tmp.toStringZ<const char*>(), tmp.length() + 1);
-		} else
-		if ( jl::isData(cx, value) ) {
-
-			jl::BufString tmp;
-			JL_CHK( jl::getValue(cx, value, &tmp) );
-			st = RegSetValueEx(hKey, valueNameStr, 0, REG_BINARY, tmp.toStringZ<const uint8_t*>(), tmp.length());
-		}
-
-		if ( st != ERROR_SUCCESS )
-			return WinThrowError(cx, st);
-
-		st = RegCloseKey(hKey);
-		if ( st != ERROR_SUCCESS )
-			return WinThrowError(cx, st);
 	}
 
 	JL_RVAL.setUndefined();
@@ -572,128 +620,133 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( registryGet ) {
 
-	//uint8_t *buffer = NULL;
-	jl::BufBase buffer;
-	jl::BufString pathStr, valueName;
-
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(1,2);
 
-	const TCHAR *path;
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &pathStr) );
-	path = pathStr.toStringZ<const TCHAR *>();
+	{
 
-	size_t length;
-	HKEY rootHKey = ParseRootKey(path, &length);
-	JL_ASSERT( rootHKey != NULL, E_ARG, E_NUM(1), E_INVALID, E_COMMENT("root key") );
-	path += length;
+		JS::AutoCheckCannotGC nogc;
+		jl::BufBase buffer;
+		jl::BufString pathStr;
+		jl::BufString valueName;
 
-	if ( path[0] == '\\' )
-		path++;
+		const TCHAR *path;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &pathStr) );
+		path = pathStr.toStringZ<const TCHAR *>();
 
-	HKEY hKey;
-	LONG st;
+		size_t length;
+		HKEY rootHKey = ParseRootKey(path, &length);
+		JL_ASSERT( rootHKey != NULL, E_ARG, E_NUM(1), E_INVALID, E_COMMENT("root key") );
+		path += length;
 
-	st = ::RegOpenKeyEx(rootHKey, path, 0, KEY_READ, &hKey); // http://msdn.microsoft.com/en-us/library/ms724897%28VS.85%29.aspx
-	if ( st != ERROR_SUCCESS )
-		return WinThrowError(cx, st);
+		if ( path[0] == '\\' )
+			path++;
 
-	if ( (argc == 1) || (argc >= 2 && JL_ARG(2).isUndefined()) ) {
+		HKEY hKey;
+		LONG st;
 
-		JS::RootedObject arrObj(cx, JS_NewArrayObject(cx, 0));
-		JL_CHK( arrObj );
-		JL_RVAL.setObject(*arrObj);
-
-		TCHAR name[16384]; // http://msdn.microsoft.com/en-us/library/ms724872%28VS.85%29.aspx
-		DWORD nameLength, index;
-		index = 0;
-		for (;;) {
-
-			nameLength = COUNTOF(name);
-			if ( argc == 1 ) // enum keys
-				st = RegEnumKeyEx(hKey, index, name, &nameLength, NULL, NULL, NULL, NULL);
-			else
-				st = RegEnumValue(hKey, index, name, &nameLength, NULL, NULL, NULL, NULL); // doc. http://msdn.microsoft.com/en-us/library/ms724865(VS.85).aspx
-
-			if ( st != ERROR_SUCCESS )
-				break;
-			JS::RootedValue strName(cx);
-			JL_CHK( jl::setValue(cx, &strName, jl::strSpec(name, nameLength)) );
-			JL_CHK( JL_SetElement(cx, arrObj, index, strName) );
-			index++;
-		}
-		if ( st != ERROR_NO_MORE_ITEMS )
+		st = ::RegOpenKeyEx(rootHKey, path, 0, KEY_READ, &hKey); // http://msdn.microsoft.com/en-us/library/ms724897%28VS.85%29.aspx
+		if ( st != ERROR_SUCCESS )
 			return WinThrowError(cx, st);
 
-		RegCloseKey(hKey);
-		return true;
-	}
+		if ( (argc == 1) || (argc >= 2 && JL_ARG(2).isUndefined()) ) {
 
-	JL_CHK( jl::getValue(cx, JL_ARG(2), &valueName) );
+			JS::RootedObject arrObj(cx, JS_NewArrayObject(cx, 0));
+			JL_CHK( arrObj );
+			JL_RVAL.setObject(*arrObj);
 
-	DWORD type, size;
+			TCHAR name[16384]; // http://msdn.microsoft.com/en-us/library/ms724872%28VS.85%29.aspx
+			DWORD nameLength, index;
+			index = 0;
+			for (;;) {
 
-	// doc. http://msdn.microsoft.com/en-us/library/ms724911(VS.85).aspx
-	st = RegQueryValueEx(hKey, valueName, NULL, &type, NULL, &size);
+				nameLength = COUNTOF(name);
+				if ( argc == 1 ) // enum keys
+					st = RegEnumKeyEx(hKey, index, name, &nameLength, NULL, NULL, NULL, NULL);
+				else
+					st = RegEnumValue(hKey, index, name, &nameLength, NULL, NULL, NULL, NULL); // doc. http://msdn.microsoft.com/en-us/library/ms724865(VS.85).aspx
 
-	if ( st == ERROR_FILE_NOT_FOUND ) {
+				if ( st != ERROR_SUCCESS )
+					break;
+				JS::RootedValue strName(cx);
+				JL_CHK( jl::setValue(cx, &strName, jl::strSpec(name, nameLength)) );
+				JL_CHK( JL_SetElement(cx, arrObj, index, strName) );
+				index++;
+			}
+			if ( st != ERROR_NO_MORE_ITEMS )
+				return WinThrowError(cx, st);
 
-		JL_RVAL.setUndefined();
-		RegCloseKey(hKey);
-		return true;
-	}
-
-	if ( st != ERROR_SUCCESS ) {
-
-		RegCloseKey(hKey);
-		return WinThrowError(cx, st);
-	}
-
-	//buffer = JL_DataBufferAlloc(cx, size);
-	buffer.alloc(size, true);
-	JL_ASSERT_ALLOC( buffer );
-
-	st = RegQueryValueEx(hKey, valueName, NULL, NULL, buffer.data(), &size);
-
-	// doc. http://msdn.microsoft.com/en-us/library/ms724884(VS.85).aspx
-	switch (type) {
-		case REG_NONE:
-			JL_RVAL.setNull();
-			//JL_DataBufferFree(cx, buffer);
-			break;
-		case REG_BINARY:
-			//JL_CHK( JL_NewBufferGetOwnership(cx, buffer, size, JL_RVAL) );
-			JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
-			break;
-		case REG_DWORD:
-			JL_CHK( jl::setValue(cx, JL_RVAL, *(DWORD*)buffer.data()) );
-			//JL_DataBufferFree(cx, buffer);
-			break;
-		case REG_QWORD:
-			JL_CHK( jl::setValue(cx, JL_RVAL, (double)*(DWORD64*)buffer.data()) );
-			break;
-		case REG_LINK: {
-			//JSString *jsstr = JL_NewUCString(cx, (jschar*)buffer, size/2);
-			//JL_CHK( jsstr );
-			//JL_RVAL.setString(jsstr);
-			//JL_CHK( buffer.toExternalStringUC(cx, JL_RVAL) );
-
-			jl::BufString(buffer).setCharSize(2).toString(cx, JL_RVAL);
-			break;
+			RegCloseKey(hKey);
+			return true;
 		}
-		case REG_EXPAND_SZ:
-		case REG_MULTI_SZ:
-		case REG_SZ: {
-			//JSString *jsstr = JL_NewString(cx, (char*)buffer, size-1); // note: ((char*)buffer)[size] already == '\0'
-			//JL_CHK( JLData((char*)buffer, true, size-1).GetJSString(cx, JL_RVAL) );
-			buffer.setUsed(size-1);
-			//JL_CHK( buffer.toExternalStringUC(cx, JL_RVAL) );
-			jl::BufString(buffer).setCharSize(1).toString(cx, JL_RVAL);
-			break;
-		}
-	}
 
-	RegCloseKey(hKey);
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &valueName) );
+
+		DWORD type, size;
+
+		// doc. http://msdn.microsoft.com/en-us/library/ms724911(VS.85).aspx
+		st = RegQueryValueEx(hKey, valueName, NULL, &type, NULL, &size);
+
+		if ( st == ERROR_FILE_NOT_FOUND ) {
+
+			JL_RVAL.setUndefined();
+			RegCloseKey(hKey);
+			return true;
+		}
+
+		if ( st != ERROR_SUCCESS ) {
+
+			RegCloseKey(hKey);
+			return WinThrowError(cx, st);
+		}
+
+		//buffer = JL_DataBufferAlloc(cx, size);
+		buffer.alloc(size, true);
+		JL_ASSERT_ALLOC( buffer );
+
+		st = RegQueryValueEx(hKey, valueName, NULL, NULL, buffer.data(), &size);
+
+		// doc. http://msdn.microsoft.com/en-us/library/ms724884(VS.85).aspx
+		switch (type) {
+			case REG_NONE:
+				JL_RVAL.setNull();
+				//JL_DataBufferFree(cx, buffer);
+				break;
+			case REG_BINARY:
+				//JL_CHK( JL_NewBufferGetOwnership(cx, buffer, size, JL_RVAL) );
+				JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
+				break;
+			case REG_DWORD:
+				JL_CHK( jl::setValue(cx, JL_RVAL, *(DWORD*)buffer.data()) );
+				//JL_DataBufferFree(cx, buffer);
+				break;
+			case REG_QWORD:
+				JL_CHK( jl::setValue(cx, JL_RVAL, (double)*(DWORD64*)buffer.data()) );
+				break;
+			case REG_LINK: {
+				//JSString *jsstr = JL_NewUCString(cx, (jschar*)buffer, size/2);
+				//JL_CHK( jsstr );
+				//JL_RVAL.setString(jsstr);
+				//JL_CHK( buffer.toExternalStringUC(cx, JL_RVAL) );
+
+				jl::BufString(buffer).setCharSize(2).toString(cx, JL_RVAL);
+				break;
+			}
+			case REG_EXPAND_SZ:
+			case REG_MULTI_SZ:
+			case REG_SZ: {
+				//JSString *jsstr = JL_NewString(cx, (char*)buffer, size-1); // note: ((char*)buffer)[size] already == '\0'
+				//JL_CHK( JLData((char*)buffer, true, size-1).GetJSString(cx, JL_RVAL) );
+				buffer.setUsed(size-1);
+				//JL_CHK( buffer.toExternalStringUC(cx, JL_RVAL) );
+				jl::BufString(buffer).setCharSize(1).toString(cx, JL_RVAL);
+				break;
+			}
+		}
+
+		RegCloseKey(hKey);
+		
+	}
 
 	return true;
 	JL_BAD;
@@ -743,13 +796,11 @@ struct DirectoryChanges : public HandlePrivate {
 
 
 DEFINE_FUNCTION( directoryChangesInit ) {
-
-	jl::BufString pathName;
+	
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(2,3);
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &pathName) );
 
 	unsigned int notifyFilter;
 	JL_CHK( jl::getValue(cx, JL_ARG(2), &notifyFilter) );
@@ -766,10 +817,18 @@ DEFINE_FUNCTION( directoryChangesInit ) {
 
 	dc->watchSubtree = watchSubtree;
 	dc->notifyFilter = notifyFilter;
+	
+	{
 
-	dc->hDirectory = CreateFile(pathName, FILE_LIST_DIRECTORY, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
-	if ( dc->hDirectory == INVALID_HANDLE_VALUE )
-		return WinThrowError(cx, GetLastError());
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString pathName;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &pathName) );
+
+		dc->hDirectory = CreateFile(pathName, FILE_LIST_DIRECTORY, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
+		if ( dc->hDirectory == INVALID_HANDLE_VALUE )
+			return WinThrowError(cx, GetLastError());
+	
+	}
 
 	dc->currentBuffer = 0;
 	dc->overlapped.hEvent = NULL;
@@ -986,23 +1045,27 @@ print(guidToString(f.id).quote());
 **/
 DEFINE_FUNCTION( guidToString ) {
 
-	jl::BufString str;
-
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
+	{
 
-	JL_ASSERT( str.length() == sizeof(GUID), E_ARG, E_NUM(1), E_LENGTH, E_NUM(sizeof(GUID)) );
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString str;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 
-	GUID guid;
-	CopyMemory(&guid, str.toData<const char*>(), sizeof(GUID));
-	WCHAR szGuid[39];
-	int len = StringFromGUID2(guid, szGuid, COUNTOF(szGuid));
-	ASSERT( len == COUNTOF(szGuid) );
-	ASSERT( szGuid[COUNTOF(szGuid)-1] == 0 );
+		JL_ASSERT( str.length() == sizeof(GUID), E_ARG, E_NUM(1), E_LENGTH, E_NUM(sizeof(GUID)) );
 
-	JL_CHK( jl::setValue(cx, JL_RVAL, jl::strSpec(szGuid, COUNTOF(szGuid)-1)) );
+		GUID guid;
+		CopyMemory(&guid, str.toData<const char*>(), sizeof(GUID));
+		WCHAR szGuid[39];
+		int len = StringFromGUID2(guid, szGuid, COUNTOF(szGuid));
+		ASSERT( len == COUNTOF(szGuid) );
+		ASSERT( szGuid[COUNTOF(szGuid)-1] == 0 );
+
+		JL_CHK( jl::setValue(cx, JL_RVAL, jl::strSpec(szGuid, COUNTOF(szGuid)-1)) );
+
+	}
 
 	return true;
 	JL_BAD;
@@ -1062,6 +1125,7 @@ DEFINE_PROPERTY_SETTER( clipboard ) {
 
 	if ( !vp.isNullOrUndefined() ) {
 
+		JS::AutoCheckCannotGC nogc;
 		jl::BufString str;
 
 		res = OpenClipboard(NULL);

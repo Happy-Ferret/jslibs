@@ -133,8 +133,7 @@ DEFINE_CONSTRUCTOR() {
 	ClassPrivate *pv = NULL;
 	PRSem *accessSem = NULL;
 	PRSharedMemory *shm = NULL;
-	jl::BufString name;
-
+	
 	JL_DEFINE_ARGS;
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
@@ -149,51 +148,59 @@ DEFINE_CONSTRUCTOR() {
 	else
 		mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
+	{
 
-	char semName[PATH_MAX];
-	jl::strcpy( semName, name );
-	jl::strcat( semName, SEMAPHORE_EXTENSION );
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString name;
 
-	bool isCreation;
-	isCreation = true;
-	accessSem = PR_OpenSemaphore(semName, PR_SEM_EXCL | PR_SEM_CREATE, mode, 1); // fail if already exists
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
 
-	if ( accessSem == NULL ) {
+		char semName[PATH_MAX];
+		jl::strcpy( semName, name );
+		jl::strcat( semName, SEMAPHORE_EXTENSION );
 
-		accessSem = PR_OpenSemaphore(semName, 0, 0, 0); // If PR_SEM_CREATE is not specified, the third and fourth arguments are ignored.
-		JL_CHKB( accessSem != NULL, bad_ioerror );
-		isCreation = false;
-	}
+		bool isCreation;
+		isCreation = true;
+		accessSem = PR_OpenSemaphore(semName, PR_SEM_EXCL | PR_SEM_CREATE, mode, 1); // fail if already exists
 
-	JL_CHKB( PR_WaitSemaphore( accessSem ) == PR_SUCCESS, bad_ioerror );
+		if ( accessSem == NULL ) {
 
-	shm = PR_OpenSharedMemory( name, size + sizeof(MemHeader), PR_SHM_CREATE, mode );
-	JL_CHKB( shm != NULL, bad_ioerror ); // PR_SHM_READONLY
+			accessSem = PR_OpenSemaphore(semName, 0, 0, 0); // If PR_SEM_CREATE is not specified, the third and fourth arguments are ignored.
+			JL_CHKB( accessSem != NULL, bad_ioerror );
+			isCreation = false;
+		}
 
-	void *mem;
-	mem = PR_AttachSharedMemory(shm, 0);
-	JL_CHKB( mem != NULL, bad_ioerror ); // PR_SHM_READONLY
+		JL_CHKB( PR_WaitSemaphore( accessSem ) == PR_SUCCESS, bad_ioerror );
 
-	pv = (ClassPrivate*)jl_malloc(sizeof(ClassPrivate));
-	JL_CHK( pv );
+		shm = PR_OpenSharedMemory( name, size + sizeof(MemHeader), PR_SHM_CREATE, mode );
+		JL_CHKB( shm != NULL, bad_ioerror ); // PR_SHM_READONLY
 
-	jl::strcpy( pv->name, name );
-	pv->shm = shm;
-	pv->mem = mem;
-	pv->size = size + sizeof(MemHeader);
-	pv->accessSem = accessSem;
+		void *mem;
+		mem = PR_AttachSharedMemory(shm, 0);
+		JL_CHKB( mem != NULL, bad_ioerror ); // PR_SHM_READONLY
 
-	MemHeader *mh;
-	mh = (MemHeader*)pv->mem;
+		pv = (ClassPrivate*)jl_malloc(sizeof(ClassPrivate));
+		JL_CHK( pv );
 
-	if ( isCreation ) {
+		jl::strcpy( pv->name, name );
 
-		mh->accessCount = 0;
-		mh->currentDataLength = 0;
-	} else {
+		pv->shm = shm;
+		pv->mem = mem;
+		pv->size = size + sizeof(MemHeader);
+		pv->accessSem = accessSem;
 
-		mh->accessCount++;
+		MemHeader *mh;
+		mh = (MemHeader*)pv->mem;
+
+		if ( isCreation ) {
+
+			mh->accessCount = 0;
+			mh->currentDataLength = 0;
+		} else {
+
+			mh->accessCount++;
+		}
+
 	}
 
 	JL_CHKB( PR_PostSemaphore( accessSem ) == PR_SUCCESS, bad_ioerror );
@@ -228,10 +235,9 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( write ) {
 
-	jl::BufString data;
-	
+
 	JL_DEFINE_ARGS;
-		JL_ASSERT_ARGC_MIN( 1 );
+	JL_ASSERT_ARGC_MIN( 1 );
 
 	ClassPrivate *pv;
 	pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
@@ -242,20 +248,23 @@ DEFINE_FUNCTION( write ) {
 	if ( JL_ARG_ISDEF(2) )
 		JL_CHK( jl::getValue(cx, JL_ARG(2), &offset) );
 
-//	const char *data;
-//	size_t dataLength;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &data, &dataLength) );
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
+	{
 
-	JL_ASSERT( sizeof(MemHeader) + offset + data.length() <= pv->size, E_DATASIZE, E_MAX, E_NUM(pv->size - sizeof(MemHeader) - offset) ); // JL_ASSERT( sizeof(MemHeader) + offset + data.length() <= pv->size, "SharedMemory too small to hold the given data." );
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString data;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
 
-	JL_CHK( Lock(cx, pv) );
+		JL_ASSERT( sizeof(MemHeader) + offset + data.length() <= pv->size, E_DATASIZE, E_MAX, E_NUM(pv->size - sizeof(MemHeader) - offset) ); // JL_ASSERT( sizeof(MemHeader) + offset + data.length() <= pv->size, "SharedMemory too small to hold the given data." );
 
-	MemHeader *mh;
-	mh = (MemHeader*)pv->mem;
-	if ( offset + data.length() > mh->currentDataLength )
-		mh->currentDataLength = offset + data.length();
-	memmove( (char *)pv->mem + sizeof(MemHeader) + offset, data.toData<const uint8_t*>(), data.length() ); // doc. Use memmove to handle overlapping regions.
+		JL_CHK( Lock(cx, pv) );
+
+		MemHeader *mh;
+		mh = (MemHeader*)pv->mem;
+		if ( offset + data.length() > mh->currentDataLength )
+			mh->currentDataLength = offset + data.length();
+		memmove( (char *)pv->mem + sizeof(MemHeader) + offset, data.toData<const uint8_t*>(), data.length() ); // doc. Use memmove to handle overlapping regions.
+	
+	}
 
 	JL_CHK( Unlock(cx, pv) );
 
@@ -392,10 +401,8 @@ DEFINE_PROPERTY_SETTER( content ) {
 		JL_CHK( Unlock(cx, pv) );
 	} else {
 
+		JS::AutoCheckCannotGC nogc;
 		jl::BufString data;
-//		const char *data;
-//		size_t dataLength;
-//		JL_CHK( JL_JsvalToStringAndLength(cx, vp, &data, &dataLength) );
 		JL_CHK( jl::getValue(cx, vp, &data) );
 
 		JL_ASSERT( sizeof(MemHeader) + data.length() <= pv->size, E_DATASIZE, E_MAX, E_NUM(pv->size - sizeof(MemHeader)) ); //JL_ASSERT( sizeof(MemHeader) + data.length() <= pv->size, "SharedMemory too small to hold the given data." );

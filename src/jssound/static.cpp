@@ -386,40 +386,44 @@ DEFINE_FUNCTION( splitChannels ) {
 
 	{
 
-	int bits, rate, channels, frames;
-	jl::BufString data( JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &channels, &frames, &rate) );
+		JS::AutoCheckCannotGC nogc;
 
-	JL_ASSERT( bits == 8 || bits == 16, E_ARG, E_NUM(1), E_FORMAT, E_COMMENT_BEGIN, E_NUM(bits), E_STR("bit"), E_COMMENT_END );
-	JL_ASSERT( data, E_INVALID, E_DATA );
+		int bits, rate, channels, frames;
+		jl::BufString data( JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &channels, &frames, &rate, nogc) );
 
-	const char *srcBuf;
-	srcBuf = data.toData<const char*>();
+		JL_ASSERT( bits == 8 || bits == 16, E_ARG, E_NUM(1), E_FORMAT, E_COMMENT_BEGIN, E_NUM(bits), E_STR("bit"), E_COMMENT_END );
+		JL_ASSERT( data, E_INVALID, E_DATA );
 
-	JS::RootedObject destArray(cx, JS_NewArrayObject(cx, 0));
-	JL_RVAL.setObject(*destArray);
+		const char *srcBuf;
+		srcBuf = data.toData<const char*>();
 
-	JS::RootedValue tmpVal(cx);
+		JS::RootedObject destArray(cx, JS_NewArrayObject(cx, 0));
+		JL_RVAL.setObject(*destArray);
 
-	for ( int c = 0; c < channels; c++ ) {
+		JS::RootedValue tmpVal(cx);
 
-		uint8_t *buf = JL_NewByteAudioObject(cx, bits, 1, frames, rate, &tmpVal);
-		JL_CHK( buf );
-		JL_CHK( JL_SetElement(cx, destArray, c, tmpVal) );
+		for ( int c = 0; c < channels; c++ ) {
 
-		if ( bits == 16 ) {
+			uint8_t *buf = JL_NewByteAudioObject(cx, bits, 1, frames, rate, &tmpVal);
+			JL_CHK( buf );
+			JL_CHK( JL_SetElement(cx, destArray, c, tmpVal) );
 
-			for ( int frame = 0; frame < frames; frame++ )
-				((int16_t*)buf)[frame] = ((int16_t*)srcBuf)[frame*channels+c];
-		} else
-		if ( bits == 8 ) {
+			if ( bits == 16 ) {
 
-			for ( int frame = 0; frame < frames; frame++ )
-				((int8_t*)buf)[frame] = ((int8_t*)srcBuf)[frame*channels+c];
+				for ( int frame = 0; frame < frames; frame++ )
+					((int16_t*)buf)[frame] = ((int16_t*)srcBuf)[frame*channels+c];
+			} else
+			if ( bits == 8 ) {
+
+				for ( int frame = 0; frame < frames; frame++ )
+					((int8_t*)buf)[frame] = ((int8_t*)srcBuf)[frame*channels+c];
+			}
 		}
+
+		return true;
+	
 	}
 
-	return true;
-	}
 	JL_BAD;
 }
 

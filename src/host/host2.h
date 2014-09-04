@@ -124,8 +124,8 @@ public:
 class DLLAPI Valid {
 	bool _valid;
 public:
-	Valid()
-	: _valid(true) {
+	Valid() :
+	_valid(true) {
 	}
 
 	operator bool() {

@@ -97,7 +97,7 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 		}
 	};
 
-	jl::HostRuntime::getJLRuntime(cx).addListener(jl::EventId::AFTER_DESTROY_RUNTIME, new ReleaseModule()); // frees mpv after rt and cx has been destroyed
+	jl::HostRuntime::getJLRuntime(cx).addListener(jl::AFTER_DESTROY_RUNTIME, new ReleaseModule()); // frees mpv after rt and cx has been destroyed
 
 
 	INIT_CLASS( SqliteError );

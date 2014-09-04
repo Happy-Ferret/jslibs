@@ -92,8 +92,6 @@ ADD_DOC(stringify, "string|ArrayBuffer stringify(value [, toArrayBuffer])", "con
 DEFINE_FUNCTION( stringify ) {
 
 	JL_DEFINE_ARGS;
-	jl::BufString str;
-
 	JL_ASSERT_ARGC_MIN(1);
 
 	if ( JL_ARGC == 1 && JL_ARG(1).isString() ) { // identity
@@ -148,9 +146,14 @@ DEFINE_FUNCTION( stringify ) {
 	}
 
 	// fallback:
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-	JL_CHK( toArrayBuffer ? str.toArrayBuffer(cx, JL_RVAL) : str.toString(cx, JL_RVAL) );
+	{
 
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString str;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
+		JL_CHK( toArrayBuffer ? str.toArrayBuffer(cx, JL_RVAL) : str.toString(cx, JL_RVAL) );
+
+	}
 	return true;
 	JL_BAD;
 }
@@ -194,6 +197,7 @@ DEFINE_FUNCTION( join ) {
 	JS::AutoValueVector avr(cx);
 	avr.reserve(16);
 
+	JS::AutoCheckCannotGC nogc;
 	jl::Stack<jl::BufString, jl::StaticAllocMedium> strList;
 	size_t length = 0;
 
@@ -296,32 +300,37 @@ ADD_DOC( indexOf, "string|ArrayBuffer indexOf(data, pattern [,startIndex = 0])",
 DEFINE_FUNCTION( indexOf ) {
 
 	JL_DEFINE_ARGS;
-
-	jl::BufString srcStr, patStr;
-	uint32_t start;
-	
 	JL_ASSERT_ARGC_MIN(2);
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &srcStr) );
-	JL_CHK( jl::getValue(cx, JL_ARG(2), &patStr) );
+	{
 
-	if ( JL_ARG_ISDEF(3) ) {
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString srcStr;
+		jl::BufString patStr;
+		uint32_t start;
 
-		JL_CHK( jl::getValue(cx, JL_ARG(3), &start) );
-		if ( start > srcStr.length() - patStr.length() ) {
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &srcStr) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &patStr) );
+
+		if ( JL_ARG_ISDEF(3) ) {
+
+			JL_CHK( jl::getValue(cx, JL_ARG(3), &start) );
+			if ( start > srcStr.length() - patStr.length() ) {
 			
-			JL_RVAL.setInt32(-1);
-			return true;
-		}
-	} else {
+				JL_RVAL.setInt32(-1);
+				return true;
+			}
+		} else {
 	
-		start = 0;
-	}
+			start = 0;
+		}
 
-	if ( srcStr.isWide() )
-		JL_RVAL.setInt32( jl::Match(srcStr.toData<const jschar *>()+start, srcStr.length()-start, patStr.toData<const jschar *>(), patStr.length()) );
-	else
-		JL_RVAL.setInt32( jl::Match(srcStr.toData<const char *>()+start, srcStr.length()-start, patStr.toData<const char *>(), patStr.length()) );
+		if ( srcStr.isWide() )
+			JL_RVAL.setInt32( jl::Match(srcStr.toData<const jschar *>()+start, srcStr.length()-start, patStr.toData<const jschar *>(), patStr.length()) );
+		else
+			JL_RVAL.setInt32( jl::Match(srcStr.toData<const char *>()+start, srcStr.length()-start, patStr.toData<const char *>(), patStr.length()) );
+
+	}
 
 	return true;
 	JL_BAD;

@@ -169,8 +169,8 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( process ) {
 
 	jl::ChunkedBuffer<Bytef> resultBuffer;
-	jl::BufString inputData;
 	int flushType;
+	int xflateStatus;
 
 	JL_DEFINE_ARGS;
 
@@ -180,67 +180,73 @@ DEFINE_FUNCTION( process ) {
 	pv = (Private*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	// force finish
-	bool forceFinish;
-	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( jl::getValue(cx, JL_ARG(2), &forceFinish) );
-	else
-		forceFinish = false;
+	{
 
-	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( jl::getValue(cx, JL_ARG(1), &inputData) ); // warning: GC on the returned buffer !
-	else
-		forceFinish = true;
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString inputData;
 
-	// doc. Z_SYNC_FLUSH: all pending output is flushed to the output buffer and the output is aligned on a byte boundary, so that the decompressor can get all input data available so far.
-	// doc. Z_FINISH: pending input is processed, pending output is flushed and deflate returns with Z_STREAM_END if there was enough output space; if deflate returns with Z_OK, this function must be called again with Z_FINISH and more output space.
-	flushType = forceFinish ? Z_FINISH : Z_SYNC_FLUSH;
-
-	if ( pv->stream.state == Z_NULL ) {
-
-		int status;
-		if ( pv->method == DEFLATE )
-			status = deflateInit2(&pv->stream, pv->level, Z_DEFLATED, MAX_WBITS, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+		// force finish
+		bool forceFinish;
+		if ( JL_ARG_ISDEF(2) )
+			JL_CHK( jl::getValue(cx, JL_ARG(2), &forceFinish) );
 		else
-			status = inflateInit2(&pv->stream, MAX_WBITS);
+			forceFinish = false;
 
-		if ( status < 0 )
-			JL_CHK( ThrowZError(cx, status, pv->stream.msg) );
-	}
+		if ( JL_ARG_ISDEF(1) )
+			JL_CHK( jl::getValue(cx, JL_ARG(1), &inputData) ); // warning: GC on the returned buffer !
+		else
+			forceFinish = true;
 
-	ASSERT( inputData.lengthOrZero() <= UINT_MAX );
+		// doc. Z_SYNC_FLUSH: all pending output is flushed to the output buffer and the output is aligned on a byte boundary, so that the decompressor can get all input data available so far.
+		// doc. Z_FINISH: pending input is processed, pending output is flushed and deflate returns with Z_STREAM_END if there was enough output space; if deflate returns with Z_OK, this function must be called again with Z_FINISH and more output space.
+		flushType = forceFinish ? Z_FINISH : Z_SYNC_FLUSH;
 
-	pv->stream.avail_in = (uInt)inputData.lengthOrZero();
-	pv->stream.next_in = (Bytef*)inputData.toDataOrNull<const Bytef*>();
+		if ( pv->stream.state == Z_NULL ) {
 
-	// first length is a guess.
-	size_t length;
-	length = pv->method == DEFLATE ? (size_t)(12 + 1.001f * pv->stream.avail_in) : (size_t)(1.5f * pv->stream.avail_in); // if DEFLATE, dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
+			int status;
+			if ( pv->method == DEFLATE )
+				status = deflateInit2(&pv->stream, pv->level, Z_DEFLATED, MAX_WBITS, MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+			else
+				status = inflateInit2(&pv->stream, MAX_WBITS);
 
-	int xflateStatus;
-	for (;;) {
+			if ( status < 0 )
+				JL_CHK( ThrowZError(cx, status, pv->stream.msg) );
+		}
 
-//		length = jl::max( length, BufferGetOptimalLength(&resultBuffer) );
+		ASSERT( inputData.lengthOrZero() <= UINT_MAX );
 
-		ASSERT( length <= (uInt)-1 );
-		pv->stream.avail_out = (uInt)length;
-		resultBuffer.Reserve(pv->stream.avail_out);
-		pv->stream.next_out = resultBuffer.Ptr();
+		pv->stream.avail_in = (uInt)inputData.lengthOrZero();
+		pv->stream.next_in = (Bytef*)inputData.toDataOrNull<const Bytef*>();
 
-//		printf("D%d, ca%d ai%d ao%d ti%d to%d", method == DEFLATE, chunk->avail, stream->avail_in, stream->avail_out, stream->total_in, stream->total_out );
-		xflateStatus = pv->method == DEFLATE ? deflate(&pv->stream, flushType) : inflate(&pv->stream, flushType); // Before the call of inflate()/deflate(), the application should ensure that at least one of the actions is possible, by providing more input and/or consuming more output, ...
-//		printf("..ai%d ca%d ao%d ti%d to%d\n", 			method == DEFLATE, 			chunk->avail,			stream->avail_in, 			stream->avail_out, 			stream->total_in, 			stream->total_out		);
+		// first length is a guess.
+		size_t length;
+		length = pv->method == DEFLATE ? (size_t)(12 + 1.001f * pv->stream.avail_in) : (size_t)(1.5f * pv->stream.avail_in); // if DEFLATE, dest. buffer must be at least 0.1% larger than sourceLen plus 12 bytes
 
-		if ( xflateStatus < Z_OK && xflateStatus != Z_BUF_ERROR ) // fatal error ?
-			JL_CHK( ThrowZError(cx, xflateStatus, pv->stream.msg) );
-		resultBuffer.Advance(length - pv->stream.avail_out);
-		if ( xflateStatus == Z_STREAM_END || pv->stream.avail_in == 0 )
-			break;
-		// doc. Z_BUF_ERROR if no progress is possible (for example avail_in or avail_out was zero). Note that Z_BUF_ERROR is not fatal, and deflate() can be called again with more input and more output space to continue compressing.
-		length = pv->stream.avail_in * pv->stream.total_out / pv->stream.total_in;
+		for (;;) {
 
-//		if ( xflateStatus == Z_BUF_ERROR )
-//			length = length * 2 + 4096;
+	//		length = jl::max( length, BufferGetOptimalLength(&resultBuffer) );
+
+			ASSERT( length <= (uInt)-1 );
+			pv->stream.avail_out = (uInt)length;
+			resultBuffer.Reserve(pv->stream.avail_out);
+			pv->stream.next_out = resultBuffer.Ptr();
+
+	//		printf("D%d, ca%d ai%d ao%d ti%d to%d", method == DEFLATE, chunk->avail, stream->avail_in, stream->avail_out, stream->total_in, stream->total_out );
+			xflateStatus = pv->method == DEFLATE ? deflate(&pv->stream, flushType) : inflate(&pv->stream, flushType); // Before the call of inflate()/deflate(), the application should ensure that at least one of the actions is possible, by providing more input and/or consuming more output, ...
+	//		printf("..ai%d ca%d ao%d ti%d to%d\n", 			method == DEFLATE, 			chunk->avail,			stream->avail_in, 			stream->avail_out, 			stream->total_in, 			stream->total_out		);
+
+			if ( xflateStatus < Z_OK && xflateStatus != Z_BUF_ERROR ) // fatal error ?
+				JL_CHK( ThrowZError(cx, xflateStatus, pv->stream.msg) );
+			resultBuffer.Advance(length - pv->stream.avail_out);
+			if ( xflateStatus == Z_STREAM_END || pv->stream.avail_in == 0 )
+				break;
+			// doc. Z_BUF_ERROR if no progress is possible (for example avail_in or avail_out was zero). Note that Z_BUF_ERROR is not fatal, and deflate() can be called again with more input and more output space to continue compressing.
+			length = pv->stream.avail_in * pv->stream.total_out / pv->stream.total_in;
+
+	//		if ( xflateStatus == Z_BUF_ERROR )
+	//			length = length * 2 + 4096;
+		}
+
 	}
 
 	//JL_CHK( JL_NewBufferGetOwnership(cx, resultBuffer.GetDataOwnership(), resultBuffer.Length(), JL_RVAL) );

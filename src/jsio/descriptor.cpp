@@ -400,8 +400,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( write ) {
 
-	jl::BufString str;
-
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INHERITANCE();
 	JL_ASSERT_ARGC( 1 );
@@ -411,93 +409,99 @@ DEFINE_FUNCTION( write ) {
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 	size_t sentAmount;
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
+	{
 
-	ASSERT( str.length() <= PR_INT32_MAX );
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString str;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 
-	PRInt32 res;
-	res = PR_Write( fd, str.toData<const uint8_t*>(), (PRInt32)str.length() );
-	if (unlikely( res == -1 )) {
+		ASSERT( str.length() <= PR_INT32_MAX );
 
-		switch ( PR_GetError() ) {
-			case PR_WOULD_BLOCK_ERROR: // The operation would have blocked.
-				sentAmount = 0;
-				break;
-//			case PR_NOT_CONNECTED_ERROR: // Network file descriptor is not connected.
+		PRInt32 res;
+		res = PR_Write( fd, str.toData<const uint8_t*>(), (PRInt32)str.length() );
+		if (unlikely( res == -1 )) {
 
-			case PR_CONNECT_ABORTED_ERROR: // Connection aborted
-				//Berkeley description:
-				//A connection abort was caused internal to your host machine. The software caused
-				//a connection abort because there is no space on the socket’s queue and the socket
-				// cannot receive further connections.
-				//
-				//WinSock description:
-				//Partly the same as Berkeley. The error can occur when the local network system aborts
-				//a connection. This would occur if WinSock aborts an established connection after data
-				//retransmission fails  (receiver never acknowledges data sent on a datastream socket).
-				//
-				//TCP/IP scenario:
-				//A connection will timeout if the local system doesn’t receive an (ACK)nowledgement for
-				//data sent.  It would also timeout if a (FIN)ish TCP packet is not ACK’d
-				//(and even if the FIN is ACK’d, it will eventually timeout if a FIN is not returned).
-				// source: http://www.chilkatsoft.com/p/p_299.asp
+			switch ( PR_GetError() ) {
+				case PR_WOULD_BLOCK_ERROR: // The operation would have blocked.
+					sentAmount = 0;
+					break;
+	//			case PR_NOT_CONNECTED_ERROR: // Network file descriptor is not connected.
 
-//			case PR_SOCKET_SHUTDOWN_ERROR: // Socket shutdown
-				// Cannot send after socket shutdown.
-				// A request to send or receive data was disallowed because the socket had already been shut down in that direction with a previous shutdown call.
-				// By calling shutdown a partial close of a socket is requested, which is a signal that sending or receiving, or both have been discontinued.
-				// source: msdn, Winsock Error Codes
+				case PR_CONNECT_ABORTED_ERROR: // Connection aborted
+					//Berkeley description:
+					//A connection abort was caused internal to your host machine. The software caused
+					//a connection abort because there is no space on the socket’s queue and the socket
+					// cannot receive further connections.
+					//
+					//WinSock description:
+					//Partly the same as Berkeley. The error can occur when the local network system aborts
+					//a connection. This would occur if WinSock aborts an established connection after data
+					//retransmission fails  (receiver never acknowledges data sent on a datastream socket).
+					//
+					//TCP/IP scenario:
+					//A connection will timeout if the local system doesn’t receive an (ACK)nowledgement for
+					//data sent.  It would also timeout if a (FIN)ish TCP packet is not ACK’d
+					//(and even if the FIN is ACK’d, it will eventually timeout if a FIN is not returned).
+					// source: http://www.chilkatsoft.com/p/p_299.asp
 
-			case PR_CONNECT_RESET_ERROR: // TCP connection reset by peer
-				// Connection reset by peer. An existing connection was forcibly closed by the remote host. This normally results if the peer application on the remote host is suddenly stopped,
-				// the host is rebooted, or the remote host uses a hard close (see setsockopt for more information on the SO_LINGER option on the remote socket.) This error may also result if
-				// a connection was broken due to keep-alive activity detecting a failure while one or more operations are in progress. Operations that were in progress fail with WSAENETRESET.
-				// Subsequent operations fail with WSAECONNRESET.
-				// source: msdn, Winsock Error Codes
+	//			case PR_SOCKET_SHUTDOWN_ERROR: // Socket shutdown
+					// Cannot send after socket shutdown.
+					// A request to send or receive data was disallowed because the socket had already been shut down in that direction with a previous shutdown call.
+					// By calling shutdown a partial close of a socket is requested, which is a signal that sending or receiving, or both have been discontinued.
+					// source: msdn, Winsock Error Codes
 
-				JL_RVAL.setUndefined();
-				return true;
-			default:
-				return ThrowIoError(cx);
-		}
-	} else {
+				case PR_CONNECT_RESET_ERROR: // TCP connection reset by peer
+					// Connection reset by peer. An existing connection was forcibly closed by the remote host. This normally results if the peer application on the remote host is suddenly stopped,
+					// the host is rebooted, or the remote host uses a hard close (see setsockopt for more information on the SO_LINGER option on the remote socket.) This error may also result if
+					// a connection was broken due to keep-alive activity detecting a failure while one or more operations are in progress. Operations that were in progress fail with WSAENETRESET.
+					// Subsequent operations fail with WSAECONNRESET.
+					// source: msdn, Winsock Error Codes
 
-		sentAmount = res;
-	}
-
-	ASSERT( sentAmount <= str.length() );
-
-	if (likely( sentAmount == str.length() )) { // nothing remains
-
-		//JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
-		JL_CHK( BlobCreateEmpty(cx, JL_RVAL) );
-	} else if ( sentAmount == 0 ) { // nothing has been sent
-
-		if ( JL_ARG(1).isString() ) { // optimization (string are immutable)
-
-			JL_RVAL.set(JL_ARG(1));
+					JL_RVAL.setUndefined();
+					return true;
+				default:
+					return ThrowIoError(cx);
+			}
 		} else {
 
-			//JL_CHK( str.GetArrayBuffer(cx, JL_RVAL) );
-			JL_CHK( BlobCreate(cx, str.toData<uint8_t*>(), str.length(), JL_RVAL) );
+			sentAmount = res;
 		}
-	} else { // return unsent data
 
-		//JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.length() - sentAmount, JL_RVAL) );
-		//JL_CHK( BlobCreateCopy(cx, str.GetConstStr() + sentAmount, str.length() - sentAmount, JL_RVAL) );
+		ASSERT( sentAmount <= str.length() );
 
-		if ( JL_ARG(1).isString() ) {
+		if (likely( sentAmount == str.length() )) { // nothing remains
+
+			//JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
+			JL_CHK( BlobCreateEmpty(cx, JL_RVAL) );
+		} else if ( sentAmount == 0 ) { // nothing has been sent
+
+			if ( JL_ARG(1).isString() ) { // optimization (string are immutable)
+
+				JL_RVAL.set(JL_ARG(1));
+			} else {
+
+				//JL_CHK( str.GetArrayBuffer(cx, JL_RVAL) );
+				JL_CHK( BlobCreate(cx, str.toData<uint8_t*>(), str.length(), JL_RVAL) );
+			}
+		} else { // return unsent data
+
+			//JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.length() - sentAmount, JL_RVAL) );
+			//JL_CHK( BlobCreateCopy(cx, str.GetConstStr() + sentAmount, str.length() - sentAmount, JL_RVAL) );
+
+			if ( JL_ARG(1).isString() ) {
 			
-			JS::RootedString tmp(cx, JL_ARG(3).toString());
-			JL_RVAL.setString(JS_NewDependentString(cx, tmp, sentAmount, str.length() - sentAmount));
-		} else {
+				JS::RootedString tmp(cx, JL_ARG(3).toString());
+				JL_RVAL.setString(JS_NewDependentString(cx, tmp, sentAmount, str.length() - sentAmount));
+			} else {
 			
-			size_t length = str.length() - sentAmount;
-			void *data = jl_malloc(length);
-			JL_ASSERT_ALLOC(data);
-			jl::memcpy(data, str.toData<const uint8_t*>() + sentAmount, length);
-			JL_RVAL.setObject(*JS_NewArrayBufferWithContents(cx, length, data));
+				size_t length = str.length() - sentAmount;
+				void *data = jl_malloc(length);
+				JL_ASSERT_ALLOC(data);
+				jl::memcpy(data, str.toData<const uint8_t*>() + sentAmount, length);
+				JL_RVAL.setObject(*JS_NewArrayBufferWithContents(cx, length, data));
+			}
 		}
+
 	}
 
 	return true;

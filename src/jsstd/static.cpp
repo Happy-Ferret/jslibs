@@ -366,6 +366,7 @@ DEFINE_FUNCTION( warning ) {
 
 	JL_DEFINE_ARGS;
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString str;
 	JL_ASSERT_ARGC(1);
 
@@ -409,6 +410,7 @@ DEFINE_FUNCTION( assert ) {
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &assert) );
 	if ( !assert ) {
 
+		JS::AutoCheckCannotGC nogc;
 		jl::BufString str;
 		if ( JL_ARG_ISDEF(2) )
 			JL_CHK( jl::getValue(cx, JL_ARG(2), &str) );
@@ -662,16 +664,16 @@ DEFINE_FUNCTION( exec ) {
 
 	JL_DEFINE_ARGS;
 
-	jl::BufString fileName;
-//	JSObject *scriptObjRoot;
-	
 	JL_ASSERT_ARGC_RANGE(1, 2);
 
 	bool useAndSaveCompiledScripts;
 	useAndSaveCompiledScripts = !JL_ARG_ISDEF(2) || JL_ARG(2).isTrue();
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &fileName) );
 
 	{
+
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString fileName;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &fileName) );
 
 		JS::RootedScript script(cx);
 		JL_CHK( jl::loadScript(cx, JL_OBJ, fileName, jl::ENC_UNKNOWN, useAndSaveCompiledScripts, useAndSaveCompiledScripts, &script) );
@@ -965,11 +967,13 @@ DEFINE_FUNCTION( sandboxEval ) {
 
 			if ( JS_StringHasLatin1Chars(srcStr) ) {
 
-				const char *src = (const char *)JS_GetLatin1StringCharsAndLength(cx, JS::AutoCheckCannotGC(), srcStr, &srcLen);
+				JS::AutoCheckCannotGC nogc;
+				const char *src = (const char *)JS_GetLatin1StringCharsAndLength(cx, nogc, srcStr, &srcLen);
 				ok = JS::Evaluate(cx, globalObj, compileOpt, src, srcLen, args.rval());
 			} else {
 
-				const jschar *src = JS_GetTwoByteStringCharsAndLength(cx, JS::AutoCheckCannotGC(), srcStr, &srcLen);
+				JS::AutoCheckCannotGC nogc;
+				const jschar *src = JS_GetTwoByteStringCharsAndLength(cx, nogc, srcStr, &srcLen);
 				ok = JS::Evaluate(cx, globalObj, compileOpt, src, srcLen, args.rval());
 			}
 		}
@@ -1036,14 +1040,17 @@ DEFINE_FUNCTION( isStatementValid ) {
 
 	JL_DEFINE_ARGS;
 
-	jl::BufString str;
 	JL_ASSERT_ARGC(1);
 
-	//const char *buffer;
-	//size_t length;
-	//JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &buffer, &length) );
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-	JL_CHK( jl::setValue(cx, JL_RVAL, JS_BufferIsCompilableUnit(cx, JL_OBJ, str, str.length())) );
+	{
+
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString str;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
+		JL_CHK( jl::setValue(cx, JL_RVAL, JS_BufferIsCompilableUnit(cx, JL_OBJ, str, str.length())) );
+
+	}
+
 	return true;
 	JL_BAD;
 }

@@ -276,22 +276,28 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getEnv ) {
 
-	jl::BufString name;
-	
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
-	char* value;
-	value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
+	{
 
-	if ( value == NULL || *value == '\0' ) { // this will cause an 'undefined' return value
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString name;
+	
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
+		char* value;
+		value = PR_GetEnv(name); // If the environment variable is not defined, the function returns NULL.
 
-		JL_RVAL.setUndefined();
-	} else {
+		if ( value == NULL || *value == '\0' ) { // this will cause an 'undefined' return value
 
-		JL_CHK( jl::setValue(cx, JL_RVAL, value) );
+			JL_RVAL.setUndefined();
+		} else {
+
+			JL_CHK( jl::setValue(cx, JL_RVAL, value) );
+		}
+	
 	}
+
 	return true;
 	JL_BAD;
 }
@@ -404,8 +410,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( waitSemaphore ) {
 
-	jl::BufString name;
-	
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
 
@@ -414,38 +418,41 @@ DEFINE_FUNCTION( waitSemaphore ) {
 	if ( JL_ARG_ISDEF(2) )
 		JL_CHK( jl::getValue(cx, JL_ARG(2), &mode) );
 
-//	const char *name;
-//	size_t nameLength;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &name, &nameLength) );
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
+	{
 
-	bool isCreation;
-	isCreation = true;
-	PRSem *semaphore;
-	semaphore = PR_OpenSemaphore(name, PR_SEM_EXCL | PR_SEM_CREATE, mode, 1); // fail if already exists
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString name;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
 
-	if ( semaphore == NULL ) {
+		bool isCreation;
+		isCreation = true;
+		PRSem *semaphore;
+		semaphore = PR_OpenSemaphore(name, PR_SEM_EXCL | PR_SEM_CREATE, mode, 1); // fail if already exists
 
-		semaphore = PR_OpenSemaphore(name, 0, 0, 0); // If PR_SEM_CREATE is not specified, the third and fourth arguments are ignored.
-		if ( semaphore == NULL )
-			return ThrowIoError(cx);
-		isCreation = false;
-	}
+		if ( semaphore == NULL ) {
 
-	PRStatus status;
-	status = PR_WaitSemaphore( semaphore );
-	if ( status != PR_SUCCESS )
-		return ThrowIoError(cx);
+			semaphore = PR_OpenSemaphore(name, 0, 0, 0); // If PR_SEM_CREATE is not specified, the third and fourth arguments are ignored.
+			if ( semaphore == NULL )
+				return ThrowIoError(cx);
+			isCreation = false;
+		}
 
-	status = PR_CloseSemaphore(semaphore);
-	if ( status != PR_SUCCESS )
-		return ThrowIoError(cx);
-
-	if ( isCreation ) {
-
-		status = PR_DeleteSemaphore(name);
+		PRStatus status;
+		status = PR_WaitSemaphore( semaphore );
 		if ( status != PR_SUCCESS )
 			return ThrowIoError(cx);
+
+		status = PR_CloseSemaphore(semaphore);
+		if ( status != PR_SUCCESS )
+			return ThrowIoError(cx);
+
+		if ( isCreation ) {
+
+			status = PR_DeleteSemaphore(name);
+			if ( status != PR_SUCCESS )
+				return ThrowIoError(cx);
+		}
+	
 	}
 
 	JL_RVAL.setUndefined();
@@ -461,18 +468,19 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( postSemaphore ) {
 
-	jl::BufString name;
-	
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
 
-//	const char *name;
-//	size_t nameLength;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &name, &nameLength) );
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
-
 	PRSem *semaphore;
-	semaphore = PR_OpenSemaphore(name, 0, 0, 0);
+
+	{
+	
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString name;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
+		semaphore = PR_OpenSemaphore(name, 0, 0, 0);
+
+	}
 
 	if ( semaphore != NULL ) {
 
@@ -624,29 +632,33 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( availableSpace ) {
 
-	jl::BufString path;
-	
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
-	
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &path) );
 
-	double available;
+	{
 
-#ifdef WIN
-	ULARGE_INTEGER freeBytesAvailable;
-	BOOL res = ::GetDiskFreeSpaceEx(path, &freeBytesAvailable, NULL, NULL);
-	if ( res == 0 )
-		jl::throwOSError(cx);
-	available = (double)freeBytesAvailable.QuadPart;
-#else // now for UNIX and  MAC ?
-	struct statvfs fsd;
-	if ( statvfs(path, &fsd) < 0 )
-		jl::throwOSError(cx);
-	available = (double)fsd.f_bsize * (double)fsd.f_bavail;
-#endif
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString path;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &path) );
 
-	JL_RVAL.setDouble(available);
+		double available;
+
+	#ifdef WIN
+		ULARGE_INTEGER freeBytesAvailable;
+		BOOL res = ::GetDiskFreeSpaceEx(path, &freeBytesAvailable, NULL, NULL);
+		if ( res == 0 )
+			jl::throwOSError(cx);
+		available = (double)freeBytesAvailable.QuadPart;
+	#else // now for UNIX and  MAC ?
+		struct statvfs fsd;
+		if ( statvfs(path, &fsd) < 0 )
+			jl::throwOSError(cx);
+		available = (double)fsd.f_bsize * (double)fsd.f_bavail;
+	#endif
+
+		JL_RVAL.setDouble(available);
+
+	}
 
 	return true;
 	JL_BAD;
@@ -993,6 +1005,7 @@ DEFINE_PROPERTY_SETTER( currentDirectory ) {
 
 	JL_DEFINE_PROP_ARGS;
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString dir;
 	JL_CHK( jl::getValue(cx, vp, &dir ) );
 #ifdef WIN

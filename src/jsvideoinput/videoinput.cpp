@@ -78,6 +78,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_ASSERT_ARG_VAL_RANGE( pv->deviceID, 0, numDevices-1, 1 );
 	} else {
 	
+		JS::AutoCheckCannotGC nogc;
 		jl::BufString requiredDeviceName;
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &requiredDeviceName) );
 		for ( int i = 0; i < numDevices; i++ ) {

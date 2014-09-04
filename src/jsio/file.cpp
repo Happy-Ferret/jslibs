@@ -133,9 +133,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( open ) {
 
-	JS::RootedValue jsvalFileName(cx);
-	jl::BufString fileName;
-
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MAX(2);
@@ -149,6 +146,7 @@ DEFINE_FUNCTION( open ) {
 			JL_CHK( jl::getValue(cx, JL_ARG(1), &flags) );
 		} else {
 
+			JS::AutoCheckCannotGC nogc;
 			jl::BufString strFlags;
 			JL_CHK( jl::getValue(cx, JL_ARG(1), &strFlags) );
 			flags = FileOpenFlagsFromString(strFlags);
@@ -166,6 +164,7 @@ DEFINE_FUNCTION( open ) {
 			JL_CHK( jl::getValue(cx, JL_ARG(2), &mode) );
 		} else {
 
+			JS::AutoCheckCannotGC nogc;
 			jl::BufString strMode;
 			JL_CHK( jl::getValue(cx, JL_ARG(2), &strMode) );
 			mode = FileOpenModeFromString(strMode);
@@ -176,16 +175,27 @@ DEFINE_FUNCTION( open ) {
 		mode = DEFAULT_ACCESS_RIGHTS;
 	}
 
-	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
-	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
-	JL_CHK( jl::getValue(cx, jsvalFileName, &fileName) );
+	{
 
-	PRFileDesc *fd;
-	fd = PR_OpenFile(fileName, flags, mode); // PR_OpenFile has the same prototype as PR_Open but implements the specified file mode where possible.
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString fileName;
+		JS::RootedValue jsvalFileName(cx);
 
-	if ( fd == NULL )
-		return ThrowIoError(cx);
-	JL_SetPrivate(JL_OBJ, fd);
+		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
+		JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
+
+		JL_CHK( jl::getValue(cx, jsvalFileName, &fileName) );
+
+		PRFileDesc *fd;
+		fd = PR_OpenFile(fileName, flags, mode); // PR_OpenFile has the same prototype as PR_Open but implements the specified file mode where possible.
+	
+		if ( fd == NULL )
+			return ThrowIoError(cx);
+
+		JL_SetPrivate(JL_OBJ, fd);
+
+	}
+
 
 	JL_CHK( jl::setStreamReadInterface(cx, JL_OBJ, NativeInterfaceStreamRead) );
 
@@ -252,7 +262,6 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( delete ) {
 
 	JS::RootedValue jsvalFileName(cx);
-	jl::BufString str;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
@@ -263,9 +272,16 @@ DEFINE_FUNCTION( delete ) {
 
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
-	JL_CHK( jl::getValue(cx, jsvalFileName, &str) );
-	if ( PR_Delete(str) != PR_SUCCESS )
-		return ThrowIoError(cx);
+
+	{
+
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString str;
+		JL_CHK( jl::getValue(cx, jsvalFileName, &str) );
+		if ( PR_Delete(str) != PR_SUCCESS )
+			return ThrowIoError(cx);
+	
+	}
 
 	JL_RVAL.setUndefined();
 	return true;
@@ -308,40 +324,45 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( move ) {
 
 	JS::RootedValue jsvalFileName(cx);
-	jl::BufString fileName, destDirName;
 	
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT( !fd, E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
+	
+	{
 
-	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
-	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
-	JL_CHK( jl::getValue(cx, jsvalFileName, &fileName) ); // warning: GC on the returned buffer !
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString fileName;
+		jl::BufString destDirName;
 
-//	const char *destDirName;
-//	size_t destDirNameLength;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &destDirName, &destDirNameLength) ); // warning: GC on the returned buffer !
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &destDirName) ); // warning: GC on the returned buffer !
+		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
+		JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
+		JL_CHK( jl::getValue(cx, jsvalFileName, &fileName) ); // warning: GC on the returned buffer !
 
-	const char *fileNameOnly;
-	fileNameOnly = strrchr(fileName, '/');
-	if ( fileNameOnly == NULL )
-		fileNameOnly = fileName;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &destDirName) ); // warning: GC on the returned buffer !
 
-	JL_ASSERT( destDirName.length() + strlen(fileNameOnly) + 1 < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
+		const char *fileNameOnly;
+		fileNameOnly = strrchr(fileName, '/');
+		if ( fileNameOnly == NULL )
+			fileNameOnly = fileName;
 
-	char destFileName[PATH_MAX];
-	jl::strcpy( destFileName, destDirName );
-	jl::strcat( destFileName, "/" );
-	jl::strcat( destFileName, fileNameOnly );
+		JL_ASSERT( destDirName.length() + strlen(fileNameOnly) + 1 < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
 
-	if ( PR_Rename(fileName, destFileName) != PR_SUCCESS )
-		return ThrowIoError(cx);
-	JL_CHK( jl::setSlot( cx, JL_OBJ, SLOT_JSIO_FILE_NAME, destFileName ) );
+		char destFileName[PATH_MAX];
+		jl::strcpy( destFileName, destDirName );
+		jl::strcat( destFileName, "/" );
+		jl::strcat( destFileName, fileNameOnly );
+
+		if ( PR_Rename(fileName, destFileName) != PR_SUCCESS )
+			return ThrowIoError(cx);
+		JL_CHK( jl::setSlot( cx, JL_OBJ, SLOT_JSIO_FILE_NAME, destFileName ) );
+
+	}
+
 	JL_RVAL.setUndefined();
 	return true;
 	JL_BAD;
@@ -408,27 +429,34 @@ DEFINE_PROPERTY_GETTER( content ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	JS::RootedValue jsvalFileName(cx);
 	jl::BufBase buf;
-	jl::BufString fileName;
-
-	JL_ASSERT( !JL_GetPrivate(JL_OBJ), E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
-	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) ); // (TBD) add somthing like J_SCHK instead
-	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
-	JL_CHK( jl::getValue(cx, jsvalFileName, &fileName) );
-
-/*
-	PRStatus status;
-	status = PR_Access(fileName, PR_ACCESS_READ_OK); // We want to read the whole file, then first check if the file is readable
-	if (unlikely( status != PR_SUCCESS )) {
-
-		*vp = JSVAL_VOID;
-		return true;
-	}
-*/
-
 	PRFileDesc *fd;
-	fd = PR_Open(fileName, PR_RDONLY, 0);
+
+	{
+
+		JS::AutoCheckCannotGC nogc;
+		JS::RootedValue jsvalFileName(cx);
+		jl::BufString fileName;
+
+		JL_ASSERT( !JL_GetPrivate(JL_OBJ), E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
+		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) ); // (TBD) add somthing like J_SCHK instead
+		JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
+		JL_CHK( jl::getValue(cx, jsvalFileName, &fileName) );
+
+	/*
+		PRStatus status;
+		status = PR_Access(fileName, PR_ACCESS_READ_OK); // We want to read the whole file, then first check if the file is readable
+		if (unlikely( status != PR_SUCCESS )) {
+
+			*vp = JSVAL_VOID;
+			return true;
+		}
+	*/
+
+		fd = PR_Open(fileName, PR_RDONLY, 0);
+
+	}
+
 	if (unlikely( fd == NULL )) {
 
 		PRErrorCode err = PR_GetError();
@@ -492,6 +520,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 
 	JL_IGNORE( strict, id );
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString fileName;
 	jl::BufString buf;
 	JS::RootedValue jsvalFileName(cx);
@@ -560,23 +589,30 @@ DEFINE_PROPERTY_SETTER( name ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	JS::RootedValue jsvalFileName(cx);
-	jl::BufString fromFileName, toFileName;
-
 	PRFileDesc *fd;
 	fd = (PRFileDesc *)JL_GetPrivate(JL_OBJ);
 
 	JL_ASSERT( !fd, E_THISOPERATION, E_INVALID, E_SEP, E_NAME(JL_THIS_CLASS_NAME), E_OPEN );
 	JL_ASSERT( !vp.isUndefined(), E_VALUE, E_DEFINED );
 
-	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
-	JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
+	{
 
-	JL_CHK( jl::getValue(cx, jsvalFileName, &fromFileName) ); // warning: GC on the returned buffer !
-	JL_CHK( jl::getValue(cx, vp, &toFileName) ); // warning: GC on the returned buffer !
-	if ( PR_Rename(fromFileName, toFileName) != PR_SUCCESS ) // if status == PR_FILE_EXISTS_ERROR ...
-		return ThrowIoError(cx);
-	JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, vp) );
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString fromFileName;
+		jl::BufString toFileName;
+		JS::RootedValue jsvalFileName(cx);
+
+		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
+		JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
+
+		JL_CHK( jl::getValue(cx, jsvalFileName, &fromFileName) ); // warning: GC on the returned buffer !
+		JL_CHK( jl::getValue(cx, vp, &toFileName) ); // warning: GC on the returned buffer !
+		if ( PR_Rename(fromFileName, toFileName) != PR_SUCCESS ) // if status == PR_FILE_EXISTS_ERROR ...
+			return ThrowIoError(cx);
+		JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, vp) );
+	
+	}
+
 	return true;
 	JL_BAD;
 }
@@ -591,6 +627,7 @@ DEFINE_PROPERTY_GETTER( exist ) {
 
 	JL_DEFINE_PROP_ARGS;
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString fileName;
 	JS::RootedValue jsvalFileName(cx);
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
@@ -610,6 +647,7 @@ DEFINE_PROPERTY_GETTER( hasWriteAccess ) {
 	
 	JL_DEFINE_PROP_ARGS;
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString fileName;
 	JS::RootedValue jsvalFileName(cx);
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
@@ -629,6 +667,7 @@ DEFINE_PROPERTY_GETTER( hasReadAccess ) {
 
 	JL_DEFINE_PROP_ARGS;
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString fileName;
 	JS::RootedValue jsvalFileName(cx);
 	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
@@ -671,6 +710,7 @@ DEFINE_PROPERTY_GETTER( info ) {
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( obj );
 	if ( fd == NULL ) {
 
+		JS::AutoCheckCannotGC nogc;
 		jl::BufString fileName;
 		JS::RootedValue jsvalFileName(cx);
 		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );

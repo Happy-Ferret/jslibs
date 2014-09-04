@@ -556,8 +556,6 @@ DEFINE_PROPERTY_SETTER( icon ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	jl::BufString data;
-
 	if ( JL_RVAL.isUndefined() ) {
 
 		SDL_WM_SetIcon(NULL, NULL);
@@ -568,36 +566,43 @@ DEFINE_PROPERTY_SETTER( icon ) {
 
 	//JS::RootedObject imageObj(cx, &JL_RVAL.toObject());
 
-	int sWidth, sHeight, sChannels;
-	ImageDataType dataType;
-	data = JL_GetImageObject(cx, JL_RVAL, &sWidth, &sHeight, &sChannels, &dataType);
+	{
 
-	JL_ASSERT( data.hasData(), E_ARG, E_INVALID );
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString data;
+		int sWidth, sHeight, sChannels;
+		ImageDataType dataType;
+		data = JL_GetImageObject(cx, JL_RVAL, &sWidth, &sHeight, &sChannels, &dataType, nogc);
 
-	JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_DATATYPE, E_INVALID );
-	JL_ASSERT( sChannels == 3 || sChannels == 4, E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(3, 4) );
+		JL_ASSERT( data.hasData(), E_ARG, E_INVALID );
 
-	Uint32 rmask, gmask, bmask, amask;
+		JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_DATATYPE, E_INVALID );
+		JL_ASSERT( sChannels == 3 || sChannels == 4, E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(3, 4) );
 
-	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		 rmask = 0xff000000;
-		 gmask = 0x00ff0000;
-		 bmask = 0x0000ff00;
-		 amask = 0x000000ff;
-	#else
-		 rmask = 0x000000ff;
-		 gmask = 0x0000ff00;
-		 bmask = 0x00ff0000;
-		 amask = 0xff000000;
-	#endif
+		Uint32 rmask, gmask, bmask, amask;
 
-	SDL_Surface *surface = SDL_CreateRGBSurfaceFrom((void*)data.toData<const uint8_t *>(), sWidth, sHeight, 8 * sChannels, sWidth * sChannels, rmask, gmask, bmask, amask);
+		#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+			 rmask = 0xff000000;
+			 gmask = 0x00ff0000;
+			 bmask = 0x0000ff00;
+			 amask = 0x000000ff;
+		#else
+			 rmask = 0x000000ff;
+			 gmask = 0x0000ff00;
+			 bmask = 0x00ff0000;
+			 amask = 0xff000000;
+		#endif
 
-	if ( surface == NULL )
-		return ThrowSdlError(cx);
+		SDL_Surface *surface = SDL_CreateRGBSurfaceFrom((void*)data.toData<const uint8_t *>(), sWidth, sHeight, 8 * sChannels, sWidth * sChannels, rmask, gmask, bmask, amask);
 
-	SDL_WM_SetIcon(surface, NULL); // (TBD) manage mask with image alpha ?
-	SDL_FreeSurface(surface);
+		if ( surface == NULL )
+			return ThrowSdlError(cx);
+
+		SDL_WM_SetIcon(surface, NULL); // (TBD) manage mask with image alpha ?
+		SDL_FreeSurface(surface);
+
+	}
+
 	return true;
 	JL_BAD;
 }
@@ -782,6 +787,7 @@ DEFINE_PROPERTY_SETTER( caption ) {
 	
 	JL_DEFINE_PROP_ARGS;
 	
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString title;
 	JL_CHK( jl::getValue(cx, JL_RVAL, &title) );
 	SDL_WM_SetCaption(title, NULL);

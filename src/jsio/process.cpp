@@ -58,8 +58,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	jl::BufString path;
-	jl::BufString currentDir;
 	PRProcessAttr *psattr = NULL;
 	PRProcess *process = NULL;
 
@@ -69,131 +67,141 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT( !JL_ARG_ISDEF(2) || jl::isArrayLike(cx, JL_ARG(2)), E_ARG, E_NUM(2), E_TYPE, E_TY_ARRAY );
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &path) );
+	{
 
-	uint32_t processArgc;
-	const char **processArgv;
-	if ( JL_ARG_ISDEF(2) ) {
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString path;
+		jl::BufString currentDir;
 
-		JS::RootedObject argObj(cx, &JL_ARG(2).toObject());
-		JL_CHK( JS_GetArrayLength(cx, argObj, &processArgc) );
-		processArgc++; // +1 is argv[0]
-		processArgv = (const char**)alloca(sizeof(char**) * (processArgc +1)); // +1 because the NULL list terminator.
-		JL_ASSERT_ALLOC( processArgv );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &path) );
 
-		for ( uint32_t i = 1; i < processArgc; ++i ) {
+		uint32_t processArgc;
+		const char **processArgv;
+		if ( JL_ARG_ISDEF(2) ) {
 
-			jl::BufString tmp;
+			JS::RootedObject argObj(cx, &JL_ARG(2).toObject());
+			JL_CHK( JS_GetArrayLength(cx, argObj, &processArgc) );
+			processArgc++; // +1 is argv[0]
+			processArgv = (const char**)alloca(sizeof(char**) * (processArgc +1)); // +1 because the NULL list terminator.
+			JL_ASSERT_ALLOC( processArgv );
 
-			//JL_CHK( JL_GetElement(cx, argObj, i -1, &propVal) ); // -1 because 0 is reserved to argv[0]
-			//JL_CHK( jl::getValue(cx, propVal, &tmp) ); // warning: GC on the returned buffer !
+			JS::AutoCheckCannotGC nogc;
+			for ( uint32_t i = 1; i < processArgc; ++i ) {
 
-			jl::getElement(cx, argObj, i - 1, &tmp);
+				jl::BufString tmp;
 
-			processArgv[i] = tmp.toStringZ<char*>();
+				//JL_CHK( JL_GetElement(cx, argObj, i -1, &propVal) ); // -1 because 0 is reserved to argv[0]
+				//JL_CHK( jl::getValue(cx, propVal, &tmp) ); // warning: GC on the returned buffer !
+
+				jl::getElement(cx, argObj, i - 1, &tmp);
+
+				processArgv[i] = tmp.toStringZ<char*>();
+			}
+		} else {
+
+			processArgc = 0 +1; // +1 is argv[0]
+			processArgv = (const char**)alloca(sizeof(char**) * (processArgc +1)); // +1 is NULL
+			JL_ASSERT_ALLOC( processArgv );
 		}
-	} else {
 
-		processArgc = 0 +1; // +1 is argv[0]
-		processArgv = (const char**)alloca(sizeof(char**) * (processArgc +1)); // +1 is NULL
-		JL_ASSERT_ALLOC( processArgv );
-	}
+		processArgv[0] = path.toStringZ<const char *>();
+		processArgv[processArgc] = NULL;
 
-	processArgv[0] = path.toStringZ<const char *>();
-	processArgv[processArgc] = NULL;
+		if ( JL_ARG_ISDEF(3) )
+			JL_CHK( jl::getValue(cx, JL_ARG(3), &currentDir) );
 
-	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( jl::getValue(cx, JL_ARG(3), &currentDir) );
+		bool stdioRedirect;
+		if ( JL_ARG_ISDEF(4) )
+			JL_CHK( jl::getValue(cx, JL_ARG(4), &stdioRedirect) );
+		else
+			stdioRedirect = true;
 
-	bool stdioRedirect;
-	if ( JL_ARG_ISDEF(4) )
-		JL_CHK( jl::getValue(cx, JL_ARG(4), &stdioRedirect) );
-	else
-		stdioRedirect = true;
+		PRFileDesc *stdin_child, *stdout_child, *stderr_child;
+		PRFileDesc *stdin_parent, *stdout_parent, *stderr_parent;
+		IFDEBUG( stdin_child = stdout_child = stderr_child = stdin_parent = stdout_parent = stderr_parent = NULL ); // avoid "potentially uninitialized local variable" warning
 
-	PRFileDesc *stdin_child, *stdout_child, *stderr_child;
-	PRFileDesc *stdin_parent, *stdout_parent, *stderr_parent;
-	IFDEBUG( stdin_child = stdout_child = stderr_child = stdin_parent = stdout_parent = stderr_parent = NULL ); // avoid "potentially uninitialized local variable" warning
+		if ( stdioRedirect || currentDir ) {
 
-	if ( stdioRedirect || currentDir ) {
+			psattr = PR_NewProcessAttr();
+			JL_CHKB( psattr, bad_throw );
 
-		psattr = PR_NewProcessAttr();
-		JL_CHKB( psattr, bad_throw );
-
-		if ( currentDir ) {
+			if ( currentDir ) {
 			
-			JL_CHKB( PR_ProcessAttrSetCurrentDirectory(psattr, currentDir) == PR_SUCCESS, bad_throw );
+				JL_CHKB( PR_ProcessAttrSetCurrentDirectory(psattr, currentDir) == PR_SUCCESS, bad_throw );
+			}
+
+			if ( stdioRedirect ) {
+
+				JL_CHKB( PR_CreatePipe(&stdin_parent, &stdin_child) == PR_SUCCESS, bad_throw );
+				JL_CHKB( PR_CreatePipe(&stdout_parent, &stdout_child) == PR_SUCCESS, bad_throw );
+				JL_CHKB( PR_CreatePipe(&stderr_parent, &stderr_child) == PR_SUCCESS, bad_throw );
+				PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardInput, stdin_child);
+				PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardOutput, stdout_child);
+				PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardError, stderr_child);
+			}
 		}
+
+		//	JL_CHKB( PR_ProcessAttrSetCurrentDirectory(psattr, buf) == PR_SUCCESS, bad_throw );
+		// PR_ProcessAttrSetInheritableFD
+
+		// cf. bug 113095 -  PR_CreateProcess reports success even when it fails to create the process. (https://bugzilla.mozilla.org/show_bug.cgi?id=113095)
+		// workaround: check the rights and execution flag before runiong the file
+		process = PR_CreateProcess(processArgv[0], (char *const *)processArgv, NULL, psattr);
+
+		//printf("***[%p - %s - %d]\n", processArgv[0], processArgv[0], processArgv[0][0]);
+
+		if ( psattr != NULL ) {
+	
+			PR_DestroyProcessAttr(psattr);
+			psattr = NULL;
+		}
+
+		if ( JL_ARG_ISDEF(2) ) // see GetStrZOwnership
+			for ( uint32_t i = 0; i < processArgc - 1; ++i )
+				jl_free( const_cast<char*>(processArgv[i+1]) );
+
+		//free(processArgv); // alloca do not need free
 
 		if ( stdioRedirect ) {
 
-			JL_CHKB( PR_CreatePipe(&stdin_parent, &stdin_child) == PR_SUCCESS, bad_throw );
-			JL_CHKB( PR_CreatePipe(&stdout_parent, &stdout_child) == PR_SUCCESS, bad_throw );
-			JL_CHKB( PR_CreatePipe(&stderr_parent, &stderr_child) == PR_SUCCESS, bad_throw );
-			PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardInput, stdin_child);
-			PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardOutput, stdout_child);
-			PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardError, stderr_child);
+			JL_CHKB( PR_Close(stderr_child) == PR_SUCCESS, bad_throw );
+			JL_CHKB( PR_Close(stdout_child) == PR_SUCCESS, bad_throw );
+			JL_CHKB( PR_Close(stdin_child) == PR_SUCCESS, bad_throw );
+
+			if ( !process ) {
+
+				JL_CHKB( PR_Close(stderr_parent) == PR_SUCCESS, bad_throw );
+				JL_CHKB( PR_Close(stdout_parent) == PR_SUCCESS, bad_throw );
+				JL_CHKB( PR_Close(stdin_parent) == PR_SUCCESS, bad_throw );
+			}
 		}
-	}
 
-	//	JL_CHKB( PR_ProcessAttrSetCurrentDirectory(psattr, buf) == PR_SUCCESS, bad_throw );
-	// PR_ProcessAttrSetInheritableFD
+		JL_CHKB( process != NULL, bad_throw );
 
-	// cf. bug 113095 -  PR_CreateProcess reports success even when it fails to create the process. (https://bugzilla.mozilla.org/show_bug.cgi?id=113095)
-	// workaround: check the rights and execution flag before runiong the file
-	process = PR_CreateProcess(processArgv[0], (char *const *)processArgv, NULL, psattr);
+		if ( stdioRedirect ) {
 
-	//printf("***[%p - %s - %d]\n", processArgv[0], processArgv[0], processArgv[0][0]);
+			JS::RootedValue tmp(cx);
 
-	if ( psattr != NULL ) {
+			JS::RootedObject fdInObj(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe)));
+			tmp.setObject(*fdInObj);
+			JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_PROCESS_STDIN, tmp) );
+			JL_SetPrivate(  fdInObj, stdin_parent );
+
+			JS::RootedObject fdOutObj(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe)));
+			tmp.setObject(*fdOutObj);
+			JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_PROCESS_STDOUT, tmp) );
+			JL_SetPrivate(  fdOutObj, stdout_parent );
+
+			JS::RootedObject fdErrObj(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe)));
+			tmp.setObject(*fdErrObj);
+			JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_PROCESS_STDERR, tmp) );
+			JL_SetPrivate(  fdErrObj, stderr_parent );
+		}
+
+		JL_SetPrivate(JL_OBJ, process);
 	
-		PR_DestroyProcessAttr(psattr);
-		psattr = NULL;
 	}
 
-	if ( JL_ARG_ISDEF(2) ) // see GetStrZOwnership
-		for ( uint32_t i = 0; i < processArgc - 1; ++i )
-			jl_free( const_cast<char*>(processArgv[i+1]) );
-
-	//free(processArgv); // alloca do not need free
-
-	if ( stdioRedirect ) {
-
-		JL_CHKB( PR_Close(stderr_child) == PR_SUCCESS, bad_throw );
-		JL_CHKB( PR_Close(stdout_child) == PR_SUCCESS, bad_throw );
-		JL_CHKB( PR_Close(stdin_child) == PR_SUCCESS, bad_throw );
-
-		if ( !process ) {
-
-			JL_CHKB( PR_Close(stderr_parent) == PR_SUCCESS, bad_throw );
-			JL_CHKB( PR_Close(stdout_parent) == PR_SUCCESS, bad_throw );
-			JL_CHKB( PR_Close(stdin_parent) == PR_SUCCESS, bad_throw );
-		}
-	}
-
-	JL_CHKB( process != NULL, bad_throw );
-
-	if ( stdioRedirect ) {
-
-		JS::RootedValue tmp(cx);
-
-		JS::RootedObject fdInObj(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe)));
-		tmp.setObject(*fdInObj);
-		JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_PROCESS_STDIN, tmp) );
-		JL_SetPrivate(  fdInObj, stdin_parent );
-
-		JS::RootedObject fdOutObj(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe)));
-		tmp.setObject(*fdOutObj);
-		JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_PROCESS_STDOUT, tmp) );
-		JL_SetPrivate(  fdOutObj, stdout_parent );
-
-		JS::RootedObject fdErrObj(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe)));
-		tmp.setObject(*fdErrObj);
-		JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_PROCESS_STDERR, tmp) );
-		JL_SetPrivate(  fdErrObj, stderr_parent );
-	}
-
-	JL_SetPrivate(JL_OBJ, process);
 	return true;
 
 bad_throw:

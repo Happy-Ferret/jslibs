@@ -18,6 +18,32 @@ host.onInterrupt = () => { host.collectGarbage(true, 1) };
 
 ////
 
+loadModule('jsstd');
+loadModule('jsz');
+
+
+	var g = new ZipFile('test.zip');
+	g.open(ZipFile.READ);
+//	g.password = 'aze';
+
+	g.goFirst();
+	g.select('xxx');
+	print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.read(), '\n' );
+	
+
+	/*
+	for ( g.goFirst(); !g.eol; g.goNext() ) {
+
+		print( '"'+g.filename+'"', '\n' );
+	}
+	*/
+
+	g.close();
+
+
+throw 0;
+
+
 
 
 	var myobj = (function() {

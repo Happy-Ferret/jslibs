@@ -79,22 +79,28 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( open ) {
 
-	jl::BufString directoryName;
-
 	JL_DEFINE_ARGS;
 	
-	JS::RootedValue jsvalDirectoryName(cx);
-	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName) );
-	JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );
-	JL_CHK( jl::getValue(cx, jsvalDirectoryName, &directoryName) );
+	{	
 
-	PRDir *dd;
-	dd = PR_OpenDir(directoryName);
-	if ( dd == NULL )
-		return ThrowIoError(cx);
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString directoryName;
 
-	JL_SetPrivate(JL_OBJ, dd);
+		JS::RootedValue jsvalDirectoryName(cx);
+		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName) );
+		JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );
+		JL_CHK( jl::getValue(cx, jsvalDirectoryName, &directoryName) );
+
+		PRDir *dd;
+		dd = PR_OpenDir(directoryName);
+		if ( dd == NULL )
+			return ThrowIoError(cx);
+
+		JL_SetPrivate(JL_OBJ, dd);
+	}
+
 	JL_RVAL.setObject(*JL_OBJ);
+
 	return true;
 	JL_BAD;
 }
@@ -182,21 +188,25 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( make ) {
 
-	JL_IGNORE( argc );
-
-	jl::BufString directoryName;
 	JL_DEFINE_ARGS;
+
+	{
+
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString directoryName;
 	
-	JS::RootedValue jsvalDirectoryName(cx);
-	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName) );
-	JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );
+		JS::RootedValue jsvalDirectoryName(cx);
+		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName) );
+		JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );
 
-	JL_CHK( jl::getValue(cx, jsvalDirectoryName, &directoryName) );
+		JL_CHK( jl::getValue(cx, jsvalDirectoryName, &directoryName) );
 
-	PRIntn mode;
-	mode = 0766; // the permissions need to be set to 766 (linux uses the eXecute bit on directory as permission to allow access to a directory).
-	if ( PR_MkDir(directoryName, mode) != PR_SUCCESS )
-		return ThrowIoError(cx);
+		PRIntn mode;
+		mode = 0766; // the permissions need to be set to 766 (linux uses the eXecute bit on directory as permission to allow access to a directory).
+		if ( PR_MkDir(directoryName, mode) != PR_SUCCESS )
+			return ThrowIoError(cx);
+
+	}
 
 	JL_RVAL.setUndefined();
 	return true;
@@ -212,30 +222,35 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( remove ) {
 
-	JL_IGNORE( argc );
-
-	jl::BufString directoryName;
 	JL_DEFINE_ARGS;
+
+	{
 	
-	JS::RootedValue jsvalDirectoryName(cx);
-	JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName) );
-	JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );
-	JL_CHK( jl::getValue(cx, jsvalDirectoryName, &directoryName) );
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString directoryName;
 
-	if ( PR_RmDir(directoryName) != PR_SUCCESS ) { // PR_RmDir removes the directory specified by the pathname name. The directory must be empty. If the directory is not empty, PR_RmDir fails and PR_GetError returns the error code PR_DIRECTORY_NOT_EMPTY_ERROR.
+		JS::RootedValue jsvalDirectoryName(cx);
+		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName) );
+		JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );
+		JL_CHK( jl::getValue(cx, jsvalDirectoryName, &directoryName) );
 
-		PRErrorCode errorCode = PR_GetError();
-		if ( errorCode == PR_DIRECTORY_NOT_EMPTY_ERROR || errorCode == PR_READ_ONLY_FILESYSTEM_ERROR ) {
+		if ( PR_RmDir(directoryName) != PR_SUCCESS ) { // PR_RmDir removes the directory specified by the pathname name. The directory must be empty. If the directory is not empty, PR_RmDir fails and PR_GetError returns the error code PR_DIRECTORY_NOT_EMPTY_ERROR.
 
-			JL_RVAL.setBoolean(false);
+			PRErrorCode errorCode = PR_GetError();
+			if ( errorCode == PR_DIRECTORY_NOT_EMPTY_ERROR || errorCode == PR_READ_ONLY_FILESYSTEM_ERROR ) {
+
+				JL_RVAL.setBoolean(false);
+			} else {
+
+				return ThrowIoError(cx);
+			}
 		} else {
 
-			return ThrowIoError(cx);
+			JL_RVAL.setBoolean(true);
 		}
-	} else {
-
-		JL_RVAL.setBoolean(true);
+	
 	}
+
 	return true;
 	JL_BAD;
 }
@@ -253,15 +268,21 @@ DEFINE_PROPERTY_GETTER( exist ) {
 
 	JL_IGNORE( id );
 
-	jl::BufString directoryName;
-
-	JS::RootedValue jsvalDirectoryName(cx);
-	JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName ) );
-	JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );
-	JL_CHK( jl::getValue(cx, jsvalDirectoryName, &directoryName) );
-
 	PRDir *dd;
-	dd = PR_OpenDir(directoryName);
+	
+	{
+
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString directoryName;
+
+		JS::RootedValue jsvalDirectoryName(cx);
+		JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName ) );
+		JL_ASSERT_THIS_OBJECT_STATE( !jsvalDirectoryName.isUndefined() );
+		JL_CHK( jl::getValue(cx, jsvalDirectoryName, &directoryName) );
+
+		dd = PR_OpenDir(directoryName);
+
+	}
 
 	if ( dd == NULL ) {
 		
@@ -342,100 +363,106 @@ loadModule('jsio');
 **/
 DEFINE_FUNCTION( list ) {
 
-	jl::BufString directoryName;
 	PRDir *dd = NULL;
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_RANGE(1, 3);
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &directoryName) );
-	JL_ASSERT( directoryName.length() < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
-
-	PRDirFlags flags;
-	S_ASSERT( sizeof(PRDirFlags) == sizeof(int) );
-	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( jl::getValue(cx, JL_ARG(2), (int*)&flags) );
-	else
-		flags = PR_SKIP_DOT;
-
-	bool showDirectoryChar;
-	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( jl::getValue(cx, JL_ARG(3), &showDirectoryChar) );
-	else
-		showDirectoryChar = false;
-
 	{
-	JS::RootedObject addrJsObj(cx, JS_NewArrayObject(cx, 0));
-	JL_CHK( addrJsObj );
-	JL_RVAL.setObject(*addrJsObj);
 
-	char dirSepChar;
-	dirSepChar = PR_GetDirectorySeparator();
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString directoryName;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &directoryName) );
+		JL_ASSERT( directoryName.length() < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
 
-	char entryName[PATH_MAX];
-	int entryNameLength;
+		PRDirFlags flags;
+		S_ASSERT( sizeof(PRDirFlags) == sizeof(int) );
+		if ( JL_ARG_ISDEF(2) )
+			JL_CHK( jl::getValue(cx, JL_ARG(2), (int*)&flags) );
+		else
+			flags = PR_SKIP_DOT;
 
-	dd = PR_OpenDir(directoryName);
-	JL_CHKB( dd, bad_throw );
+		bool showDirectoryChar;
+		if ( JL_ARG_ISDEF(3) )
+			JL_CHK( jl::getValue(cx, JL_ARG(3), &showDirectoryChar) );
+		else
+			showDirectoryChar = false;
 
-	for ( unsigned int index = 0; ; ++index ) {
+		{
 
-		PRDirEntry *dirEntry = PR_ReadDir(dd, flags); // & 0x0F
-		if ( dirEntry == NULL ) {
+			JS::RootedObject addrJsObj(cx, JS_NewArrayObject(cx, 0));
+			JL_CHK( addrJsObj );
+			JL_RVAL.setObject(*addrJsObj);
 
-			if ( PR_GetError() == PR_NO_MORE_FILES_ERROR ) { // reaching the end of the directory
+			char dirSepChar;
+			dirSepChar = PR_GetDirectorySeparator();
+
+			char entryName[PATH_MAX];
+			int entryNameLength;
+
+			dd = PR_OpenDir(directoryName);
+			JL_CHKB( dd, bad_throw );
+
+			for ( unsigned int index = 0; ; ++index ) {
+
+				PRDirEntry *dirEntry = PR_ReadDir(dd, flags); // & 0x0F
+				if ( dirEntry == NULL ) {
+
+					if ( PR_GetError() == PR_NO_MORE_FILES_ERROR ) { // reaching the end of the directory
 				
-				// PR_SetError(0, 0); needed ?
-				break;
-			}
-			goto bad_throw; // or when an error occurs.
-		}
+						// PR_SetError(0, 0); needed ?
+						break;
+					}
+					goto bad_throw; // or when an error occurs.
+				}
 
-		entryNameLength = jl::strlen( dirEntry->name );
-		jl::strcpy(entryName, dirEntry->name);
+				entryNameLength = jl::strlen( dirEntry->name );
+				jl::strcpy(entryName, dirEntry->name);
 
-		if ( showDirectoryChar || flags & (_SKIP_FILE | _SKIP_DIRECTORY | _SKIP_OTHER) ) {
+				if ( showDirectoryChar || flags & (_SKIP_FILE | _SKIP_DIRECTORY | _SKIP_OTHER) ) {
 
-			// add dir separator if not present
-			char fileName[PATH_MAX];
-			char *tmp = fileName;
-			directoryName.copyTo(tmp);
-			tmp += directoryName.length();
+					// add dir separator if not present
+					char fileName[PATH_MAX];
+					char *tmp = fileName;
+					directoryName.copyTo(tmp);
+					tmp += directoryName.length();
 
-			char lastDirNameChar = directoryName.charAt<char>(directoryName.length()-1);
-			if ( lastDirNameChar != '/' && lastDirNameChar != dirSepChar ) {
+					char lastDirNameChar = directoryName.charAt<char>(directoryName.length()-1);
+					if ( lastDirNameChar != '/' && lastDirNameChar != dirSepChar ) {
 
-				*tmp = dirSepChar;
-				++tmp;
-			}
-			jl::strcpy( tmp, entryName );
+						*tmp = dirSepChar;
+						++tmp;
+					}
+					jl::strcpy( tmp, entryName );
 
 
-			PRFileInfo fileInfo;
-			PRStatus status;
-			status = PR_GetFileInfo(fileName, &fileInfo);
-			JL_CHKB( status == PR_SUCCESS, bad_throw );
+					PRFileInfo fileInfo;
+					PRStatus status;
+					status = PR_GetFileInfo(fileName, &fileInfo);
+					JL_CHKB( status == PR_SUCCESS, bad_throw );
 
-			if ( flags & _SKIP_FILE && fileInfo.type == PR_FILE_FILE )
-				continue;
+					if ( flags & _SKIP_FILE && fileInfo.type == PR_FILE_FILE )
+						continue;
 
-			if ( flags & _SKIP_DIRECTORY && fileInfo.type == PR_FILE_DIRECTORY )
-				continue;
+					if ( flags & _SKIP_DIRECTORY && fileInfo.type == PR_FILE_DIRECTORY )
+						continue;
 
-			if ( flags & _SKIP_OTHER && fileInfo.type == PR_FILE_OTHER )
-				continue;
+					if ( flags & _SKIP_OTHER && fileInfo.type == PR_FILE_OTHER )
+						continue;
 
-			if ( fileInfo.type == PR_FILE_DIRECTORY ) {
+					if ( fileInfo.type == PR_FILE_DIRECTORY ) {
 				
-				entryName[entryNameLength] = dirSepChar;
-				entryName[++entryNameLength] = '\0';
+						entryName[entryNameLength] = dirSepChar;
+						entryName[++entryNameLength] = '\0';
+					}
+				}
+
+				JL_CHK( jl::setElement(cx, addrJsObj, index, jl::strSpec(entryName, entryNameLength)) );
 			}
+
+			JL_CHKB( PR_CloseDir(dd) == PR_SUCCESS, bad_throw);
+
 		}
-
-		JL_CHK( jl::setElement(cx, addrJsObj, index, jl::strSpec(entryName, entryNameLength)) );
-	}
-
-	JL_CHKB( PR_CloseDir(dd) == PR_SUCCESS, bad_throw);
-
+	
 	}
 
 	return true;

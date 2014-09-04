@@ -67,30 +67,35 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_ARGS;
 
 	HashPrivate *pv = NULL;
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString hashName;
 
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &hashName) );
+	{
 
-	int hashIndex;
-	hashIndex = find_hash(hashName);
-	JL_ASSERT( hashIndex != -1, E_STR("hash"), E_NAME(hashName), E_NOTFOUND );
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString hashName;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &hashName) );
 
-	pv = (HashPrivate*)jl_malloc(sizeof(HashPrivate));
-	JL_CHK( pv );
+		int hashIndex;
+		hashIndex = find_hash(hashName);
+		JL_ASSERT( hashIndex != -1, E_STR("hash"), E_NAME(hashName), E_NOTFOUND );
 
-	pv->descriptor = &hash_descriptor[hashIndex];
+		pv = (HashPrivate*)jl_malloc(sizeof(HashPrivate));
+		JL_CHK( pv );
 
-	JL_ASSERT( pv->descriptor->test() == CRYPT_OK, E_LIB, E_STR("libtomcrypt"), E_INTERNAL, E_SEP, E_STR(hashName), E_STR("test"), E_FAILURE );
+		pv->descriptor = &hash_descriptor[hashIndex];
 
-	int err;
-	err = pv->descriptor->init(&pv->state);
-	if ( err != CRYPT_OK )
-		return ThrowCryptError(cx, err);
+		JL_ASSERT( pv->descriptor->test() == CRYPT_OK, E_LIB, E_STR("libtomcrypt"), E_INTERNAL, E_SEP, E_STR(hashName), E_STR("test"), E_FAILURE );
+
+		int err;
+		err = pv->descriptor->init(&pv->state);
+		if ( err != CRYPT_OK )
+			return ThrowCryptError(cx, err);
+	
+	}
+
 	pv->inputLength = 0;
 	pv->isValid = true;
 
@@ -172,8 +177,6 @@ DEFINE_FUNCTION( write ) {
 
 	JL_DEFINE_ARGS;
 
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString in;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
@@ -183,6 +186,9 @@ DEFINE_FUNCTION( write ) {
 
 	if ( JL_ARG_ISDEF(1) ) {
 		
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString in;
+
 		JL_ASSERT_ARG_IS_STRING(1);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
 
@@ -373,20 +379,22 @@ DEFINE_FUNCTION( cipherHash ) {
 
 	JL_DEFINE_ARGS;
 
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString cipherName;
-
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &cipherName) );
-	int cipherIndex;
-	cipherIndex = find_cipher(cipherName);
-	JL_ASSERT( cipherIndex >= 0, E_STR("cipher"), E_NAME(cipherName), E_NOTFOUND );
+	{
 
-	int err;
-	if ((err = chc_register(cipherIndex)) != CRYPT_OK)
-		return ThrowCryptError(cx, err);
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString cipherName;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &cipherName) );
+		int cipherIndex;
+		cipherIndex = find_cipher(cipherName);
+		JL_ASSERT( cipherIndex >= 0, E_STR("cipher"), E_NAME(cipherName), E_NOTFOUND );
+
+		int err;
+		if ((err = chc_register(cipherIndex)) != CRYPT_OK)
+			return ThrowCryptError(cx, err);
+	}
 
 	JL_RVAL.setUndefined();
 	return true;

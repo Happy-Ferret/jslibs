@@ -92,7 +92,7 @@ JL_NewImageObjectOwner( IN JSContext *cx, IN uint8_t* buffer, IN T width, IN T h
 
 template <class T, class U>
 ALWAYS_INLINE jl::BufString FASTCALL
-JL_GetImageObject( IN JSContext *cx, IN JS::HandleValue val, OUT T *width, OUT T *height, OUT U *channels, OUT ImageDataType *dataType ) {
+JL_GetImageObject( IN JSContext *cx, IN JS::HandleValue val, OUT T *width, OUT T *height, OUT U *channels, OUT ImageDataType *dataType, const JS::AutoCheckCannotGC &nogc ) {
 
 	jl::BufString data;
 	JL_CHK( val.isObject() );

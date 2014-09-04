@@ -59,7 +59,6 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	ClassPrivate *pv = NULL;
-	jl::BufString name;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_CONSTRUCTING();
@@ -78,25 +77,32 @@ DEFINE_CONSTRUCTOR() {
 	else
 		mode = PR_IRUSR | PR_IWUSR; // read write permission for owner.
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
-	JL_ASSERT( name.length() < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
+	{
 
-	pv = (ClassPrivate*)JS_malloc(cx, sizeof(ClassPrivate));
-	JL_CHK( pv );
-	pv->semaphore = NULL;
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString name;
 
-	pv->owner = true;
-	pv->semaphore = PR_OpenSemaphore(name, PR_SEM_EXCL | PR_SEM_CREATE, mode, count); // fail if already exists
-	if ( pv->semaphore == NULL ) {
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
+		JL_ASSERT( name.length() < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
 
-		pv->semaphore = PR_OpenSemaphore(name, 0, 0, 0); // If PR_SEM_CREATE is not specified, the third and fourth arguments are ignored.
-		if ( pv->semaphore == NULL )
-			return ThrowIoError(cx);
-		pv->owner = false;
+		pv = (ClassPrivate*)JS_malloc(cx, sizeof(ClassPrivate));
+		JL_CHK( pv );
+		pv->semaphore = NULL;
+
+		pv->owner = true;
+		pv->semaphore = PR_OpenSemaphore(name, PR_SEM_EXCL | PR_SEM_CREATE, mode, count); // fail if already exists
+		if ( pv->semaphore == NULL ) {
+
+			pv->semaphore = PR_OpenSemaphore(name, 0, 0, 0); // If PR_SEM_CREATE is not specified, the third and fourth arguments are ignored.
+			if ( pv->semaphore == NULL )
+				return ThrowIoError(cx);
+			pv->owner = false;
+		}
+
+		jl::memcpy(pv->name, name.toData<const uint8_t*>(), name.length());
+		pv->name[name.length()] = '\0';
+	
 	}
-
-	jl::memcpy(pv->name, name.toData<const uint8_t*>(), name.length());
-	pv->name[name.length()] = '\0';
 
 	JL_SetPrivate(JL_OBJ, pv);
 	return true;

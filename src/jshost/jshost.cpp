@@ -474,8 +474,6 @@ _tmain( int argc, TCHAR* argv[] ) {
 		return EXIT_SUCCESS;
 	} else {
 
-		jl::BufString data;
-
 		//JL_setMonoCPU();
 		JL_enableLowFragmentationHeap();
 

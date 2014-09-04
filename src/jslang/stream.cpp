@@ -95,6 +95,7 @@ GetAvailable(JSContext *cx, JS::HandleObject obj, size_t *available) {
 		JL_CHK( jl::getValue(cx, val, &length) );
 	} else {
 
+		JS::AutoCheckCannotGC nogc;
 		jl::BufString data;
 		val = OBJECT_TO_JSVAL(srcObj);
 		JL_CHK( jl::getValue(cx, val, &data) );
@@ -111,6 +112,7 @@ GetAvailable(JSContext *cx, JS::HandleObject obj, size_t *available) {
 ALWAYS_INLINE bool
 StreamRead( JSContext *cx, JS::HandleObject streamObj, char *buf, size_t *amount ) {
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString data;
 	size_t position;
 	JS::RootedValue source(cx);

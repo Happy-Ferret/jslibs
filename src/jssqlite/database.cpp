@@ -167,6 +167,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( write ) {
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString data;
 
 	JL_DEFINE_ARGS;
@@ -307,7 +308,6 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	DatabasePrivate *pv = NULL;
-	jl::BufString fileName;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_CONSTRUCTING();
@@ -325,17 +325,24 @@ DEFINE_CONSTRUCTOR() {
 
 //	flags |= SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_SHAREDCACHE;
 
-	if ( JL_ARG_ISDEF(1) )
-		JL_CHK( jl::getValue(cx, JL_ARG(1), &fileName) );
-	else
-		fileName.get(":memory:"); // SQLITE_OPEN_MEMORY
+	{
 
-	pv = (DatabasePrivate*)JS_malloc(cx, sizeof(DatabasePrivate));
-	JL_CHK(pv);
-	pv->db = NULL;
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString fileName;
 
-	if ( sqlite3_open_v2(fileName, &pv->db, flags, NULL) != SQLITE_OK )
-		JL_CHK( SqliteThrowError(cx, pv->db) );
+		if ( JL_ARG_ISDEF(1) )
+			JL_CHK( jl::getValue(cx, JL_ARG(1), &fileName) );
+		else
+			fileName.get(":memory:"); // SQLITE_OPEN_MEMORY
+
+		pv = (DatabasePrivate*)JS_malloc(cx, sizeof(DatabasePrivate));
+		JL_CHK(pv);
+		pv->db = NULL;
+
+		if ( sqlite3_open_v2(fileName, &pv->db, flags, NULL) != SQLITE_OK )
+			JL_CHK( SqliteThrowError(cx, pv->db) );
+	
+	}
 
 	sqlite3_extended_result_codes(pv->db, true); // SQLite 3.3.8
 	sqlite3_limit(pv->db, SQLITE_LIMIT_FUNCTION_ARG, MAX_FUNCTION_ARG);
@@ -486,51 +493,57 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( openBlobStream ) {
 
-	jl::BufString tableName, columnName;
 	sqlite3_int64 rowid;
 	int flags;
 	BlobStream::Private *blobStreamPv = NULL;
 
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_RANGE(3, 4);
 
 	DatabasePrivate *pv;
 	pv = (DatabasePrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &tableName) );
-	JL_CHK( jl::getValue(cx, JL_ARG(2), &columnName) );
-	JL_CHK( jl::getValue(cx, JL_ARG(3), &rowid) );
+	{
 
-	// doc: If the flags parameter is non-zero, then the BLOB is opened for read and write access. If it is zero, the BLOB is opened for read access. 
-	if ( JL_ARG_ISDEF(4) )
-		JL_CHK( jl::getValue(cx, JL_ARG(4), &flags) );
-	else
-		flags = 1;
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString tableName;
+		jl::BufString columnName;
 
-	sqlite3_blob *pBlob;
-	if ( sqlite3_blob_open(pv->db, "main", tableName, columnName, rowid, flags, &pBlob) != SQLITE_OK ) // (TBD) handle "temp" tables also.
-		JL_CHK( SqliteThrowError(cx, pv->db) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &tableName) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &columnName) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &rowid) );
 
-	jl::StackPush(&pv->blobList, pBlob);
+		// doc: If the flags parameter is non-zero, then the BLOB is opened for read and write access. If it is zero, the BLOB is opened for read access. 
+		if ( JL_ARG_ISDEF(4) )
+			JL_CHK( jl::getValue(cx, JL_ARG(4), &flags) );
+		else
+			flags = 1;
 
+		sqlite3_blob *pBlob;
+		if ( sqlite3_blob_open(pv->db, "main", tableName, columnName, rowid, flags, &pBlob) != SQLITE_OK ) // (TBD) handle "temp" tables also.
+			JL_CHK( SqliteThrowError(cx, pv->db) );
 
-	blobStreamPv = (BlobStream::Private*)jl_malloc(sizeof(BlobStream::Private));
-	JL_ASSERT_ALLOC( blobStreamPv );
+		jl::StackPush(&pv->blobList, pBlob);
+		blobStreamPv = (BlobStream::Private*)jl_malloc(sizeof(BlobStream::Private));
+		JL_ASSERT_ALLOC( blobStreamPv );
 
-	blobStreamPv->pBlob = pBlob;
-	blobStreamPv->position = 0;
+		blobStreamPv->pBlob = pBlob;
+		blobStreamPv->position = 0;
+
+	}
+
 
 	{
 
-	JS::RootedObject blobStreamObj(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(BlobStream), JL_CLASS_PROTOTYPE(cx, BlobStream)));
-	JL_CHK( blobStreamObj );
+		JS::RootedObject blobStreamObj(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(BlobStream), JL_CLASS_PROTOTYPE(cx, BlobStream)));
+		JL_CHK( blobStreamObj );
 
-	JL_SetPrivate(blobStreamObj, blobStreamPv);
-	JL_CHK( JL_SetReservedSlot(blobStreamObj, BlobStream::SLOT_DATABASE, JL_OBJVAL) ); // link to avoid GC
+		JL_SetPrivate(blobStreamObj, blobStreamPv);
+		JL_CHK( JL_SetReservedSlot(blobStreamObj, BlobStream::SLOT_DATABASE, JL_OBJVAL) ); // link to avoid GC
 
-	JL_RVAL.setObject(*blobStreamObj);
+		JL_RVAL.setObject(*blobStreamObj);
 	
 	}
 
@@ -597,7 +610,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( query ) {
 
-	jl::BufString sql;
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN(1);
@@ -606,26 +618,34 @@ DEFINE_FUNCTION( query ) {
 	pv = (DatabasePrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &sql) );
-
-	const jschar *szTail;
 	sqlite3_stmt *pStmt;
 
-	// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
+	{
 
-	const jschar *sqlStr;
-	sqlStr = sql.toData<const jschar *>();
-	size_t sqlLen;
-	sqlLen = sql.length();
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString sql;
 
-	//if ( sqlite3_prepare16_v2(pv->db, sqlStr, sqlLen, &pStmt, &szTail) != SQLITE_OK )
-	if (sqlite3_prepare16_v2(pv->db, (const void*)sqlStr, sqlLen * sizeof(*sqlStr), &pStmt, (const void**)&szTail) != SQLITE_OK)
-		JL_CHK( SqliteThrowError(cx, pv->db) );
-	ASSERT( pStmt != NULL );
-	JL_ASSERT_WARN( szTail == sqlStr + sqlLen, E_STR("too many SQL statements") ); // (TBD) for the moment, do not support multiple statements
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &sql) );
 
-//	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
-//		JL_REPORT_ERROR( "Invalid SQL string." );
+		const jschar *szTail;
+
+		// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
+
+		const jschar *sqlStr;
+		sqlStr = sql.toData<const jschar *>();
+		size_t sqlLen;
+		sqlLen = sql.length();
+
+		//if ( sqlite3_prepare16_v2(pv->db, sqlStr, sqlLen, &pStmt, &szTail) != SQLITE_OK )
+		if (sqlite3_prepare16_v2(pv->db, (const void*)sqlStr, sqlLen * sizeof(*sqlStr), &pStmt, (const void**)&szTail) != SQLITE_OK)
+			JL_CHK( SqliteThrowError(cx, pv->db) );
+		ASSERT( pStmt != NULL );
+		JL_ASSERT_WARN( szTail == sqlStr + sqlLen, E_STR("too many SQL statements") ); // (TBD) for the moment, do not support multiple statements
+
+	//	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
+	//		JL_REPORT_ERROR( "Invalid SQL string." );
+
+	}
 
 	jl::StackPush(&pv->stmtList, pStmt);
 
@@ -674,8 +694,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( exec ) {
 
-	jl::BufString sql;
-
 	sqlite3_stmt *pStmt = NULL;
 	// see sqlite3_exec()
 	
@@ -686,25 +704,27 @@ DEFINE_FUNCTION( exec ) {
 	DatabasePrivate *pv;
 	pv = (DatabasePrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	
+	{
 
-//	const char *sqlQuery;
-//	J_JSVAL_TO_STRING( argv[0], sqlQuery );
-//	size_t sqlQueryLength;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(1), &sqlQuery, &sqlQueryLength) );
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &sql) );
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString sql;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &sql) );
 
-	const jschar *szTail;
-	// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
+		const jschar *szTail;
+		// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 
-	const jschar *sqlStr;
-	sqlStr = sql.toData<const jschar *>();
-	size_t sqlLen;
-	sqlLen = sql.length();
+		const jschar *sqlStr;
+		sqlStr = sql.toData<const jschar *>();
+		size_t sqlLen;
+		sqlLen = sql.length();
 
-	if (sqlite3_prepare16_v2(pv->db, (const void *)sqlStr, sqlLen * sizeof(*sqlStr), &pStmt, (const void **)&szTail) != SQLITE_OK)
-		JL_CHK( SqliteThrowError(cx, pv->db) );
-	ASSERT( pStmt != NULL );
-	JL_ASSERT_WARN(szTail == sqlStr + sqlLen, E_STR("too many SQL statements")); // for the moment, do not support multiple statements
+		if (sqlite3_prepare16_v2(pv->db, (const void *)sqlStr, sqlLen * sizeof(*sqlStr), &pStmt, (const void **)&szTail) != SQLITE_OK)
+			JL_CHK( SqliteThrowError(cx, pv->db) );
+		ASSERT( pStmt != NULL );
+		JL_ASSERT_WARN(szTail == sqlStr + sqlLen, E_STR("too many SQL statements")); // for the moment, do not support multiple statements
+	
+	}
 
 	//	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
 	//		JL_REPORT_ERROR( "Invalid SQL string." );
@@ -712,6 +732,7 @@ DEFINE_FUNCTION( exec ) {
 	// (TBD) support multiple statements
 
 	{
+
 		JS::RootedObject argObj(cx);
 		if (JL_ARGC >= 2) {
 
@@ -720,6 +741,7 @@ DEFINE_FUNCTION( exec ) {
 		}
 
 		JL_CHK(SqliteSetupBindings(cx, pStmt, argObj, JL_OBJ)); // "@" : the the argument passed to exec(), ":" nothing
+
 	}
 
 	pv->tmpcx = cx;
@@ -903,12 +925,17 @@ DEFINE_SET_PROPERTY() {
 //		int status = sqlite3_create_function(dbpv->db, fName, JS_GetFunctionArity(fun), SQLITE_ANY /*SQLITE_UTF8*/, (void*)fpv, sqlite_function_call, NULL, NULL);
 		// if ( sqlite3_create_function16(dbpv->db, JS_GetStringChars(JSID_TO_STRING(id)), JS_GetFunctionArity(JS_ValueToFunction(cx, *JL_RVAL)), SQLITE_UTF16, (void*)fpv, sqlite_function_call, NULL, NULL) != SQLITE_OK ) {
 
-		JS::RootedString str(cx, JSID_TO_STRING( id ));
-		jl::BufString fname(cx, str);
-		if ( sqlite3_create_function16( dbpv->db, (const jschar*)fname, JS_GetFunctionArity( JS_ValueToFunction( cx, JL_RVAL ) ), SQLITE_UTF16, (void*)fpv, sqlite_function_call, NULL, NULL ) != SQLITE_OK ) {
+		{
+
+			JS::AutoCheckCannotGC nogc;
+			JS::RootedString str(cx, JSID_TO_STRING( id ));
+			jl::BufString fname(cx, str, nogc);
+			if ( sqlite3_create_function16( dbpv->db, (const jschar*)fname, JS_GetFunctionArity( JS_ValueToFunction( cx, JL_RVAL ) ), SQLITE_UTF16, (void*)fpv, sqlite_function_call, NULL, NULL ) != SQLITE_OK ) {
 			
-			delete fpv;
-			JL_CHK( SqliteThrowError( cx, dbpv->db ) );
+				delete fpv;
+				JL_CHK( SqliteThrowError( cx, dbpv->db ) );
+			}
+		
 		}
 
 		jl::StackPush(&dbpv->fctpvList, fpv);

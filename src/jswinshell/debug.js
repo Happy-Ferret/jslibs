@@ -2,6 +2,8 @@ var loadModule = host.loadModule;
 // loadModule('jsstd');  loadModule('jsio');  var QA = { __noSuchMethod__:function(id, args) { print( id, ':', uneval(args), '\n' ) } };  exec( /[^/\\]+$/(currentDirectory)[0] + '_qa.js');  halt();
 
 
+host.interruptInterval = 500;
+host.onInterrupt = () => host.collectGarbage(true, 10);
 
 
 	loadModule('jsstd');
@@ -49,8 +51,6 @@ throw 0; //////////////////////////////////////////////////////////////////////
 throw 0;
 
 
-host.interruptInterval = 500;
-host.onInterrupt = () => host.collectGarbage(true, 10);
 
 loadModule('jsio');
 loadModule('jswinshell');

@@ -144,16 +144,21 @@ DEFINE_FINALIZE() {
 DEFINE_CONSTRUCTOR() {
 
 	jl::Unserializer *unser = NULL;
-	jl::BufString str;
 
 	JL_DEFINE_ARGS;
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_ASSERT_ARGC(1);
 	JL_ASSERT_ARG_IS_STRING(1);
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-	unser = new jl::Unserializer(cx, str.toData<char*>(), str.length(), JL_OBJ);
-	JL_ASSERT_ALLOC(unser);
+	{
+		
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString str;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
+		unser = new jl::Unserializer(cx, str.toData<char*>(), str.length(), JL_OBJ);
+		JL_ASSERT_ALLOC(unser);
+
+	}
 
 	JL_updateMallocCounter(cx, sizeof(jl::Unserializer));
 

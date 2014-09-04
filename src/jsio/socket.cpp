@@ -174,6 +174,7 @@ DEFINE_FUNCTION( bind ) {
 
 	if ( JL_ARG_ISDEF(2) ) { // if we have a second argument and this argument is not undefined
 
+		JS::AutoCheckCannotGC nogc;
 		jl::BufString host;
 		JL_CHK( jl::getValue(cx, JL_ARG(2), &host) );
 
@@ -323,8 +324,6 @@ $TOC_MEMBER $INAME
 //	descriptor writeable.
 DEFINE_FUNCTION( connect ) {
 
-	jl::BufString host;
-	
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(2);
@@ -333,31 +332,36 @@ DEFINE_FUNCTION( connect ) {
 	fd = (PRFileDesc*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( fd );
 
-	PRUint16 port;
-	JL_CHK( jl::getValue(cx, JL_ARG(2), &port) );
-
-//	const char *host;
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &host) );
-
 	PRNetAddr addr;
 
-	if ( PR_StringToNetAddr(host, &addr) == PR_SUCCESS ) {
+	{
 
-		if ( PR_InitializeNetAddr(PR_IpAddrNull, port, &addr) != PR_SUCCESS )
-			return ThrowIoError(cx);
-	} else {
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString host;
+		PRUint16 port;
 
-		char netdbBuf[PR_NETDB_BUF_SIZE];
-		PRHostEnt hostEntry;
-		PRIntn hostIndex;
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &port) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &host) );
 
-		if (PR_GetHostByName(host, netdbBuf, COUNTOF(netdbBuf), &hostEntry) != PR_SUCCESS)
-			return ThrowIoError(cx);
+		if ( PR_StringToNetAddr(host, &addr) == PR_SUCCESS ) {
 
-		hostIndex = 0;
-		hostIndex = PR_EnumerateHostEnt(hostIndex, &hostEntry, port, &addr); // data is valid until return is 0 or -1
-		if ( hostIndex == -1 )
-			return ThrowIoError(cx);
+			if ( PR_InitializeNetAddr(PR_IpAddrNull, port, &addr) != PR_SUCCESS )
+				return ThrowIoError(cx);
+		} else {
+
+			char netdbBuf[PR_NETDB_BUF_SIZE];
+			PRHostEnt hostEntry;
+			PRIntn hostIndex;
+
+			if (PR_GetHostByName(host, netdbBuf, COUNTOF(netdbBuf), &hostEntry) != PR_SUCCESS)
+				return ThrowIoError(cx);
+
+			hostIndex = 0;
+			hostIndex = PR_EnumerateHostEnt(hostIndex, &hostEntry, port, &addr); // data is valid until return is 0 or -1
+			if ( hostIndex == -1 )
+				return ThrowIoError(cx);
+		}
+
 	}
 
 	PRIntervalTime timeout;
@@ -394,8 +398,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( sendTo ) {
 
-	jl::BufString host, str;
-
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 3 );
@@ -412,89 +414,98 @@ DEFINE_FUNCTION( sendTo ) {
 			return ThrowIoError(cx);
 	}
 
-	PRUint16 port;
-	JL_CHK( jl::getValue(cx, JL_ARG(2), &port) );
-
-//	const char *host;
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &host) );
-
 	PRNetAddr addr;
 
-	if ( PR_StringToNetAddr(host, &addr) == PR_SUCCESS ) {
+	{
 
-		if ( PR_InitializeNetAddr(PR_IpAddrNull, port, &addr) != PR_SUCCESS )
-			return ThrowIoError(cx);
-	} else {
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString host;
 
-		char netdbBuf[PR_NETDB_BUF_SIZE];
-		PRHostEnt hostEntry;
-		PRIntn hostIndex;
-
-		if (PR_GetHostByName(host, netdbBuf, COUNTOF(netdbBuf), &hostEntry) != PR_SUCCESS)
-			return ThrowIoError(cx);
-
-		hostIndex = 0;
-		hostIndex = PR_EnumerateHostEnt(hostIndex, &hostEntry, port, &addr); // data is valid until return is 0 or -1
-		if ( hostIndex == -1 )
-			return ThrowIoError(cx);
-	}
-
-//	const char *str;
-//	size_t len;
-//	JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(3), &str, &len) );
-	JL_CHK( jl::getValue(cx, JL_ARG(3), &str) );
-	ASSERT( str.length() <= PR_INT32_MAX );
-
-	PRInt32 res;
-	res = PR_SendTo(fd, str.toData<const uint8_t*>(), (PRInt32)str.length(), 0, &addr, PR_INTERVAL_NO_TIMEOUT );
-
-	size_t sentAmount;
-	if ( res == -1 ) {
-
-		PRErrorCode errCode = PR_GetError();
-		if ( errCode != PR_WOULD_BLOCK_ERROR )
-			return ThrowIoError(cx);
-		sentAmount = 0;
-	} else
-		sentAmount = res;
+		PRUint16 port;
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &port) );
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &host) );
 
 
-	if ( sentAmount < str.length() ) { // return unsent data
+		if ( PR_StringToNetAddr(host, &addr) == PR_SUCCESS ) {
 
-		//JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.length() - sentAmount, JL_RVAL) );
-		//JL_CHK( BlobCreateCopy(cx, str.GetConstStr() + sentAmount, str.length() - sentAmount, JL_RVAL) );
-
-		//JLData data(str.GetConstStr() + sentAmount, str.length() - sentAmount);
-
-		if ( JL_ARG(3).isString() ) {
-			
-			JS::RootedString tmp(cx, JL_ARG(3).toString());
-			JL_RVAL.setString(JS_NewDependentString(cx, tmp, sentAmount, str.length() - sentAmount));
-		} else {
-			
-			size_t length = str.length() - sentAmount;
-			void *data = jl_malloc(length);
-			JL_ASSERT_ALLOC(data);
-			jl::memcpy(data, str.toData<const uint8_t*>() + sentAmount, length);
-			JL_RVAL.setObject(*JS_NewArrayBufferWithContents(cx, length, data));
-		}
-
-
-	} else if ( sentAmount == 0 ) { // nothing has been sent
-
-		if ( JL_ARG(3).isString() ) {
-			
-			JL_RVAL.set(JL_ARG(3));
+			if ( PR_InitializeNetAddr(PR_IpAddrNull, port, &addr) != PR_SUCCESS )
+				return ThrowIoError(cx);
 		} else {
 
-			JL_CHK( str.toArrayBuffer(cx, JL_RVAL) );
-		}
-	} else { // nothing remains
+			char netdbBuf[PR_NETDB_BUF_SIZE];
+			PRHostEnt hostEntry;
+			PRIntn hostIndex;
 
-		//JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
-		JL_CHK( BlobCreateEmpty(cx, JL_RVAL) );
+			if (PR_GetHostByName(host, netdbBuf, COUNTOF(netdbBuf), &hostEntry) != PR_SUCCESS)
+				return ThrowIoError(cx);
+
+			hostIndex = 0;
+			hostIndex = PR_EnumerateHostEnt(hostIndex, &hostEntry, port, &addr); // data is valid until return is 0 or -1
+			if ( hostIndex == -1 )
+				return ThrowIoError(cx);
+		}
+	
 	}
 
+
+	{
+
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString str;
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &str) );
+		ASSERT( str.length() <= PR_INT32_MAX );
+
+		PRInt32 res;
+		res = PR_SendTo(fd, str.toData<const uint8_t*>(), (PRInt32)str.length(), 0, &addr, PR_INTERVAL_NO_TIMEOUT );
+
+		size_t sentAmount;
+		if ( res == -1 ) {
+
+			PRErrorCode errCode = PR_GetError();
+			if ( errCode != PR_WOULD_BLOCK_ERROR )
+				return ThrowIoError(cx);
+			sentAmount = 0;
+		} else
+			sentAmount = res;
+
+
+		if ( sentAmount < str.length() ) { // return unsent data
+
+			//JL_CHK( JL_NewBufferCopyN(cx, str.GetConstStr() + sentAmount, str.length() - sentAmount, JL_RVAL) );
+			//JL_CHK( BlobCreateCopy(cx, str.GetConstStr() + sentAmount, str.length() - sentAmount, JL_RVAL) );
+
+			//JLData data(str.GetConstStr() + sentAmount, str.length() - sentAmount);
+
+			if ( JL_ARG(3).isString() ) {
+			
+				JS::RootedString tmp(cx, JL_ARG(3).toString());
+				JL_RVAL.setString(JS_NewDependentString(cx, tmp, sentAmount, str.length() - sentAmount));
+			} else {
+			
+				size_t length = str.length() - sentAmount;
+				void *data = jl_malloc(length);
+				JL_ASSERT_ALLOC(data);
+				jl::memcpy(data, str.toData<const uint8_t*>() + sentAmount, length);
+				JL_RVAL.setObject(*JS_NewArrayBufferWithContents(cx, length, data));
+			}
+
+
+		} else if ( sentAmount == 0 ) { // nothing has been sent
+
+			if ( JL_ARG(3).isString() ) {
+			
+				JL_RVAL.set(JL_ARG(3));
+			} else {
+
+				JL_CHK( str.toArrayBuffer(cx, JL_RVAL) );
+			}
+		} else { // nothing remains
+
+			//JL_CHK( JL_NewEmptyBuffer(cx, JL_RVAL) );
+			JL_CHK( BlobCreateEmpty(cx, JL_RVAL) );
+		}
+
+	}
 
 	if ( !jl::isClass(cx, JL_OBJ, JL_THIS_CLASS) )
 		PR_Close(fd);
@@ -617,7 +628,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( transmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
-	jl::BufString headers;
 	
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
@@ -658,26 +668,32 @@ DEFINE_FUNCTION( transmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 		connectTimeout = PR_INTERVAL_NO_TIMEOUT;
 */
 
-//	const char *headers;
-//	headers = NULL;
-//	size_t headerLength;
-	if ( JL_ARG_ISDEF(3) ) {
+	{
 
-//		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARG(3), &headers, &headerLength) );
-		JL_CHK( jl::getValue(cx, JL_ARG(3), &headers) );
-		ASSERT( headers.length() <= PR_INT32_MAX );
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString headers;
+
+	//	const char *headers;
+	//	headers = NULL;
+	//	size_t headerLength;
+		if ( JL_ARG_ISDEF(3) ) {
+
+			JL_CHK( jl::getValue(cx, JL_ARG(3), &headers) );
+			ASSERT( headers.length() <= PR_INT32_MAX );
+		}
+
+		PRIntervalTime timeout;
+		JL_CHK( GetTimeoutInterval(cx, JL_OBJ, &timeout) );
+
+		PRInt32 bytes;
+		bytes = PR_TransmitFile(socketFd, fileFd, headers.toDataOrNull<const uint8_t*>(), (PRInt32)headers.lengthOrZero(), flag, timeout);
+		if ( bytes == -1 )
+			return ThrowIoError(cx);
+
+		//JL_CHK( JL_NewNumberValue(cx, bytes, JL_RVAL) );
+		JL_CHK( jl::setValue(cx, JL_RVAL, bytes) );
+
 	}
-
-	PRIntervalTime timeout;
-	JL_CHK( GetTimeoutInterval(cx, JL_OBJ, &timeout) );
-
-	PRInt32 bytes;
-	bytes = PR_TransmitFile(socketFd, fileFd, headers.toDataOrNull<const uint8_t*>(), (PRInt32)headers.lengthOrZero(), flag, timeout);
-	if ( bytes == -1 )
-		return ThrowIoError(cx);
-
-	//JL_CHK( JL_NewNumberValue(cx, bytes, JL_RVAL) );
-	JL_CHK( jl::setValue(cx, JL_RVAL, bytes) );
 
 	return true;
 	JL_BAD;
@@ -1092,51 +1108,57 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getHostsByName ) {
 
-	jl::BufString host;
-	
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
 
-	char netdbBuf[PR_NETDB_BUF_SIZE];
-	PRHostEnt hostEntry;
-	PRNetAddr addr;
-
 	{
-	JS::RootedValue tmp(cx);
-	JS::RootedObject addrJsObj(cx);
-	addrJsObj = JS_NewArrayObject(cx, 0);
-	JL_CHK( addrJsObj );
-	JL_RVAL.setObject(*addrJsObj);
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &host) );
+		char netdbBuf[PR_NETDB_BUF_SIZE];
+		PRHostEnt hostEntry;
+		PRNetAddr addr;
 
-	if (PR_GetHostByName(host, netdbBuf, COUNTOF(netdbBuf), &hostEntry) != PR_SUCCESS) {
+		JS::RootedValue tmp(cx);
+		JS::RootedObject addrJsObj(cx);
+		addrJsObj = JS_NewArrayObject(cx, 0);
+		JL_CHK( addrJsObj );
+		JL_RVAL.setObject(*addrJsObj);
 
-		if ( PR_GetError() == PR_DIRECTORY_LOOKUP_ERROR )
-			return true;
-		goto bad_throw;
-	}
+		{
 
-	int index;
-	index = 0;
-	PRIntn hostIndex;
-	hostIndex = 0;
-	char addrStr[MAX_IP_STRING_LENGTH + 1];
+			JS::AutoCheckCannotGC nogc;
+			jl::BufString host;
+			JL_CHK( jl::getValue(cx, JL_ARG(1), &host) );
+
+			if (PR_GetHostByName(host, netdbBuf, COUNTOF(netdbBuf), &hostEntry) != PR_SUCCESS) {
+
+				if ( PR_GetError() == PR_DIRECTORY_LOOKUP_ERROR )
+					return true;
+				goto bad_throw;
+			}
+
+		}
+
+		int index;
+		index = 0;
+		PRIntn hostIndex;
+		hostIndex = 0;
+		char addrStr[MAX_IP_STRING_LENGTH + 1];
 	
-	for (;;) {
+		for (;;) {
 
-		hostIndex = PR_EnumerateHostEnt(hostIndex, &hostEntry, 0, &addr);
-		if ( hostIndex == 0 )
-			break;
-		JL_CHKB( hostIndex != -1, bad_throw );
-		JL_CHKB(PR_NetAddrToString(&addr, addrStr, COUNTOF(addrStr)) == PR_SUCCESS, bad_throw); // memory leak
+			hostIndex = PR_EnumerateHostEnt(hostIndex, &hostEntry, 0, &addr);
+			if ( hostIndex == 0 )
+				break;
+			JL_CHKB( hostIndex != -1, bad_throw );
+			JL_CHKB(PR_NetAddrToString(&addr, addrStr, COUNTOF(addrStr)) == PR_SUCCESS, bad_throw); // memory leak
 
-		JL_CHK( jl::setValue(cx, &tmp, addrStr) );
-		//JL_CHK( JS_DefineElement(cx, addrJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
-		JL_CHK( JL_SetElement(cx, addrJsObj, index++, tmp) );
+			JL_CHK( jl::setValue(cx, &tmp, addrStr) );
+			//JL_CHK( JS_DefineElement(cx, addrJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
+			JL_CHK( JL_SetElement(cx, addrJsObj, index++, tmp) );
+		}
+
 	}
 
-	}
 	return true;
 
 bad_throw:
@@ -1168,45 +1190,51 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( getHostsByAddr ) {
 
 	JS::RootedValue tmp(cx);
-	jl::BufString addr;
 	
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC( 1 );
 
-	//const char *addr; // MAX_IP_STRING_LENGTH
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &addr) );
-
-	PRNetAddr netaddr;
-	if ( PR_StringToNetAddr(addr, &netaddr) != PR_SUCCESS )
-		return ThrowIoError(cx);
-
-	char buffer[PR_NETDB_BUF_SIZE * 2];
-
 	PRHostEnt hostent;
-	if (PR_GetHostByAddr(&netaddr, buffer, COUNTOF(buffer), &hostent) != PR_SUCCESS)
-		return ThrowIoError(cx);
 
 	{
-	JS::RootedObject hostJsObj(cx, JS_NewArrayObject(cx, 0));
-	JL_CHK( hostJsObj );
-	JL_RVAL.setObject(*hostJsObj);
 
-	int index;
-	index = 0;
+		//const char *addr; // MAX_IP_STRING_LENGTH
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString addr;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &addr) );
 
-	JL_CHK( jl::setValue(cx, &tmp, hostent.h_name) );
-	//JL_CHK( JS_DefineElement(cx, hostJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
-	JL_CHK( JL_SetElement(cx, hostJsObj, index++, tmp) );
-	
-	if ( hostent.h_aliases == NULL )
-		return true;
+		PRNetAddr netaddr;
+		if ( PR_StringToNetAddr(addr, &netaddr) != PR_SUCCESS )
+			return ThrowIoError(cx);
 
-	for ( int i = 0; hostent.h_aliases[i]; ++i ) {
+		char buffer[PR_NETDB_BUF_SIZE * 2];
 
-		JL_CHK( jl::setValue(cx, &tmp, hostent.h_aliases[i]) );
+		if ( PR_GetHostByAddr(&netaddr, buffer, COUNTOF(buffer), &hostent) != PR_SUCCESS )
+			return ThrowIoError(cx);
+	}
+
+	{
+
+		JS::RootedObject hostJsObj(cx, JS_NewArrayObject(cx, 0));
+		JL_CHK( hostJsObj );
+		JL_RVAL.setObject(*hostJsObj);
+
+		int index;
+		index = 0;
+
+		JL_CHK( jl::setValue(cx, &tmp, hostent.h_name) );
 		//JL_CHK( JS_DefineElement(cx, hostJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
 		JL_CHK( JL_SetElement(cx, hostJsObj, index++, tmp) );
-	}
+	
+		if ( hostent.h_aliases == NULL )
+			return true;
+
+		for ( int i = 0; hostent.h_aliases[i]; ++i ) {
+
+			JL_CHK( jl::setValue(cx, &tmp, hostent.h_aliases[i]) );
+			//JL_CHK( JS_DefineElement(cx, hostJsObj, index++, tmp, NULL, NULL, JSPROP_ENUMERATE) );
+			JL_CHK( JL_SetElement(cx, hostJsObj, index++, tmp) );
+		}
 
 	}
 

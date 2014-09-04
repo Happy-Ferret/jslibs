@@ -186,6 +186,7 @@ jsvalToSqlite( JSContext *cx, T sqliteTarget, IN JS::HandleValue val ) {
 			sqliteStatus = sqliteTarget.setDouble( val.toDouble() );
 	} else if ( val.isString() ) {
 
+		JS::AutoCheckCannotGC nogc;
 		jl::BufString buf;
 		JL_CHK( jl::getValue( cx, val, &buf ) );
 		// beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
@@ -195,6 +196,7 @@ jsvalToSqlite( JSContext *cx, T sqliteTarget, IN JS::HandleValue val ) {
 			sqliteStatus = sqliteTarget.setText( buf.toData<const char*>(), buf.length(), SQLITE_STATIC );
 	} else if ( jl::isData( cx, val ) ) {
 
+		JS::AutoCheckCannotGC nogc;
 		jl::BufString buf;
 		JL_CHK( jl::getValue( cx, val, &buf ) );
 		// beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT

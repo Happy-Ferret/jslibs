@@ -179,8 +179,9 @@ DEFINE_FUNCTION( encode ) {
 
 	if ( !JL_SARG(1).isUndefined() ) {
 
+		JS::AutoCheckCannotGC nogc;
 		JL_ASSERT( JL_isAudioObject(cx, JL_ARG(1)) );
-		jl::BufString buffer = JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &channels, &frames, &rate);
+		jl::BufString buffer = JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &channels, &frames, &rate, nogc);
 		
 		ASSERT( pv->vi.rate == rate );
 		ASSERT( pv->vi.channels == channels );

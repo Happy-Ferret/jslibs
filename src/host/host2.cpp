@@ -1183,20 +1183,23 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( loadModule ) {
 
-	JS::AutoCheckCannotGC nogc;
 	jl::BufString str;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-
 	char libFileName[PATH_MAX];
-	//jl::strncpy( libFileName, str.toData<const char *>(), str.length() ); // (TBD) use copyTo()
-	str.copyTo(libFileName);
-	libFileName[str.length()] = '\0';
-	jl::strcat( libFileName, DLL_EXT );
-	// MAC OSX: 	'@executable_path' ??
+
+	{
+		JS::AutoCheckCannotGC nogc;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
+
+		//jl::strncpy( libFileName, str.toData<const char *>(), str.length() ); // (TBD) use copyTo()
+		str.copyTo(libFileName);
+		libFileName[str.length()] = '\0';
+		jl::strcat( libFileName, DLL_EXT );
+		// MAC OSX: 	'@executable_path' ??
+	}
 
 	JL_CHK( Host::getJLHost(cx).moduleManager().loadModule(libFileName, JL_OBJ, JL_RVAL) );
 	return true;

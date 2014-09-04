@@ -421,7 +421,7 @@ public:
 	}
 
 	void
-	get( JSContext *cx, JS::HandleString str, const JS::AutoCheckCannotGC &nogc /*= JS::AutoCheckCannotGC()*/ ) {
+	get( JSContext *cx, JS::HandleString str, const JS::AutoCheckCannotGC &nogc ) {
 
 		size_t len;
 		// doc: Flat strings and interned strings are always null-terminated so JS_FlattenString can be used to get a null-terminated string.

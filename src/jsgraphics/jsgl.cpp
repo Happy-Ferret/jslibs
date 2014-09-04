@@ -1787,8 +1787,6 @@ DEFINE_FUNCTION( texImage2D ) {
 		
 	JL_DEFINE_ARGS;
 
-	jl::BufString data;
-
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC_RANGE(8, 9);
@@ -1801,10 +1799,17 @@ DEFINE_FUNCTION( texImage2D ) {
 	JL_ASSERT_ARG_IS_INTEGER(7);
 	JL_ASSERT_ARG_IS_INTEGER(8);
 
-	if ( JL_ARG_ISDEF(9) && !JL_ARG(9).isNull() ) // same as !JSVAL_IS_PRIMITIVE
-		JL_CHK( jl::getValue(cx, JL_ARG(9), &data) );
+	{
 
-	glTexImage2D( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), JL_ARG(3).toInt32(), JL_ARG(4).toInt32(), JL_ARG(5).toInt32(), JL_ARG(6).toInt32(), JL_ARG(7).toInt32(), JL_ARG(8).toInt32(), (GLvoid*)data.toData<const uint8_t*>() );  OGL_ERR_CHK;
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString data;
+
+		if ( JL_ARG_ISDEF(9) && !JL_ARG(9).isNull() ) // same as !JSVAL_IS_PRIMITIVE
+			JL_CHK( jl::getValue(cx, JL_ARG(9), &data) );
+
+		glTexImage2D( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), JL_ARG(3).toInt32(), JL_ARG(4).toInt32(), JL_ARG(5).toInt32(), JL_ARG(6).toInt32(), JL_ARG(7).toInt32(), JL_ARG(8).toInt32(), (GLvoid*)data.toData<const uint8_t*>() );  OGL_ERR_CHK;
+	
+	}
 
 	JL_RVAL.setUndefined();
 	return true;
@@ -1873,8 +1878,6 @@ DEFINE_FUNCTION( texSubImage2D ) {
 		
 	JL_DEFINE_ARGS;
 
-	jl::BufString data;
-
 	OGL_CX_CHK;
 
 	JL_ASSERT_ARGC(9);
@@ -1887,18 +1890,24 @@ DEFINE_FUNCTION( texSubImage2D ) {
 	JL_ASSERT_ARG_IS_INTEGER(7);
 	JL_ASSERT_ARG_IS_INTEGER(8);
 
-	GLvoid *pixels;
+	{
 
-	if (JL_ARG(9).isInt32()) {
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString data;
+		GLvoid *pixels;
+
+		if (JL_ARG(9).isInt32()) {
 			
-		pixels = (GLvoid*)JL_ARG(9).toInt32();
-	} else {
+			pixels = (GLvoid*)JL_ARG(9).toInt32();
+		} else {
 
-		JL_CHK(jl::getValue(cx, JL_ARG(9), &data));
-		pixels = (GLvoid*)data.toData<const uint8_t*>();
+			JL_CHK(jl::getValue(cx, JL_ARG(9), &data));
+			pixels = (GLvoid*)data.toData<const uint8_t*>();
+		}
+
+		glTexSubImage2D(JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), JL_ARG(3).toInt32(), JL_ARG(4).toInt32(), JL_ARG(5).toInt32(), JL_ARG(6).toInt32(), JL_ARG(7).toInt32(), JL_ARG(8).toInt32(), pixels);
+
 	}
-
-	glTexSubImage2D(JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), JL_ARG(3).toInt32(), JL_ARG(4).toInt32(), JL_ARG(5).toInt32(), JL_ARG(6).toInt32(), JL_ARG(7).toInt32(), JL_ARG(8).toInt32(), pixels);
 
 	JL_RVAL.setUndefined();
 	return true;
@@ -3781,26 +3790,33 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( hasExtensionProc ) {
 
-	jl::BufString procName;
 	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT( glGetProcAddress != NULL, E_OS, E_INIT, E_STR("OpenGL"), E_COMMENT("extensions") );
 
-	void *procAddr;
-	for ( unsigned i = 0; i < JL_ARGC; ++i ) {
+	{
 
-		JL_CHK( jl::getValue(cx, JL_ARG(i+1), &procName) );
-		procAddr = glGetProcAddress(procName);
-		if ( procAddr == NULL ) {
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString procName;
 
-			JL_RVAL.setBoolean(false);
-			return true;
+		void *procAddr;
+		for ( unsigned i = 0; i < JL_ARGC; ++i ) {
+
+			JL_CHK( jl::getValue(cx, JL_ARG(i+1), &procName) );
+			procAddr = glGetProcAddress(procName);
+			if ( procAddr == NULL ) {
+
+				JL_RVAL.setBoolean(false);
+				return true;
+			}
 		}
+
+		JL_RVAL.setBoolean(true);
+	
 	}
 
-	JL_RVAL.setBoolean(true);
 	return true;
 	JL_BAD;
 }
@@ -3825,23 +3841,27 @@ DEFINE_FUNCTION( hasExtensionName ) {
 	const char *extensions = (const char *)glGetString(GL_EXTENSIONS);
 	ASSERT( extensions != NULL );
 
-	for ( unsigned i = 0; i < JL_ARGC; ++i ) {
+	{
 
-		jl::BufString name;
-//		const char *name;
-//		unsigned int nameLength;
-//		JL_CHK( JL_JsvalToStringAndLength(cx, &JL_ARGV[i], &name, &nameLength) );
-		JL_CHK( jl::getValue(cx, JL_ARG(i+1), &name) );
+		JS::AutoCheckCannotGC nogc;
 
-		const char *pos = strstr(extensions, name);
-		size_t nameLen = name.length();
-		if (pos == NULL || (pos[nameLen] != ' ' && pos[nameLen] != '\0')) {
+		for ( unsigned i = 0; i < JL_ARGC; ++i ) {
 
-			JL_RVAL.setBoolean(false);
-			return true;
+			jl::BufString name;
+			JL_CHK( jl::getValue(cx, JL_ARG(i+1), &name) );
+
+			const char *pos = strstr(extensions, name);
+			size_t nameLen = name.length();
+			if (pos == NULL || (pos[nameLen] != ' ' && pos[nameLen] != '\0')) {
+
+				JL_RVAL.setBoolean(false);
+				return true;
+			}
 		}
+		JL_RVAL.setBoolean(true);
+	
 	}
-	JL_RVAL.setBoolean(true);
+
 	return true;
 	JL_BAD;
 }
@@ -4540,7 +4560,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( shaderSource ) {
 
-	jl::BufString source;
 	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
@@ -4549,16 +4568,21 @@ DEFINE_FUNCTION( shaderSource ) {
 	JL_ASSERT_ARG_IS_INTEGER(1);
 	JL_ASSERT_ARG_IS_STRING(2);
 
-	GLhandleARB shaderHandle;
-	shaderHandle = JL_ARG(1).toInt32();
-	JL_CHK( jl::getValue(cx, JL_ARG(2), &source) );
+	{
 
-	const GLcharARB *buffer;
-	GLint length;
-	length = source.length();
-	buffer = source.toData<const char*>();
+		JS::AutoCheckCannotGC nogc;
+		GLhandleARB shaderHandle = JL_ARG(1).toInt32();
+		jl::BufString source;
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &source) );
 
-	glShaderSourceARB(shaderHandle, 1, &buffer, &length);  OGL_ERR_CHK;
+		const GLcharARB *buffer;
+		GLint length;
+		length = source.length();
+		buffer = source.toData<const char*>();
+
+		glShaderSourceARB(shaderHandle, 1, &buffer, &length);  OGL_ERR_CHK;
+	
+	}
 
 	JL_RVAL.setUndefined();
 	return true;
@@ -4766,8 +4790,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getUniformLocation ) {
 
-	jl::BufString name;
-
 	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
@@ -4776,16 +4798,22 @@ DEFINE_FUNCTION( getUniformLocation ) {
 	JL_ASSERT_ARGC(2);
 	//JL_ASSERT_ARG_IS_INTEGER(1);
 
-	GLhandleARB programHandle;
-	//programHandle = JL_ARG(1).toInt32();
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &programHandle) );
+	{
 
-	JL_CHK( jl::getValue(cx, JL_ARG(2), &name) );
-	GLint uniformLocation;
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString name;
+		GLhandleARB programHandle;
+		//programHandle = JL_ARG(1).toInt32();
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &programHandle) );
 
-	uniformLocation = glGetUniformLocationARB(programHandle, name);  OGL_ERR_CHK;
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &name) );
+		GLint uniformLocation;
 
-	JL_RVAL.setInt32(uniformLocation);
+		uniformLocation = glGetUniformLocationARB(programHandle, name);  OGL_ERR_CHK;
+
+		JL_RVAL.setInt32(uniformLocation);
+	
+	}
 
 	return true;
 	JL_BAD;
@@ -5340,7 +5368,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( bindAttribLocation ) {
 
-	jl::BufString name;
 	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
@@ -5349,9 +5376,15 @@ DEFINE_FUNCTION( bindAttribLocation ) {
 	JL_ASSERT_ARGC(3);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 	JL_ASSERT_ARG_IS_INTEGER(2);
+	
+	{
 
-	JL_CHK( jl::getValue(cx, JL_ARG(3), &name) );
-	glBindAttribLocationARB(JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), name);  OGL_ERR_CHK;
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString name;
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &name) );
+		glBindAttribLocationARB(JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), name);  OGL_ERR_CHK;
+
+	}
 
 	JL_RVAL.setUndefined();
 	return true;
@@ -5368,7 +5401,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( getAttribLocation ) {
 
-	jl::BufString name;
 	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
@@ -5377,10 +5409,16 @@ DEFINE_FUNCTION( getAttribLocation ) {
 	JL_ASSERT_ARGC(2);
 	JL_ASSERT_ARG_IS_INTEGER(1);
 
-	JL_CHK( jl::getValue(cx, JL_ARG(2), &name) );
-	int location;
-	location = glGetAttribLocationARB(JL_ARG(1).toInt32(), name);  OGL_ERR_CHK;
-	JL_RVAL.setInt32(location);
+	{
+	
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString name;
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &name) );
+		int location;
+		location = glGetAttribLocationARB(JL_ARG(1).toInt32(), name);  OGL_ERR_CHK;
+		JL_RVAL.setInt32(location);
+	
+	}
 
 	return true;
 	JL_BAD;
@@ -6015,6 +6053,7 @@ DEFINE_FUNCTION( drawImage ) {
 		else {
 
 			ImageDataType dataType;
+			JS::AutoCheckCannotGC nogc;
 			jl::BufString image(JL_GetImageObject(cx, JL_ARG(1), &width, &height, &channels, &dataType));
 			JL_ASSERT(image.hasData(), E_ARG, E_NUM(1), E_INVALID);
 			switch (dataType) {
@@ -6554,7 +6593,6 @@ $TOC_MEMBER $INAME
 // (TBD) manage compression: http://www.opengl.org/registry/specs/ARB/texture_compression.txt
 DEFINE_FUNCTION( defineTextureImage ) {
 
-	jl::BufString dataStr;
 	JL_DEFINE_ARGS;
 
 	OGL_CX_CHK;
@@ -6569,7 +6607,8 @@ DEFINE_FUNCTION( defineTextureImage ) {
 	const GLvoid *data;
 
 	{
-
+		JS::AutoCheckCannotGC nogc;
+	
 		JS::RootedObject tObj(cx, &JL_ARG(3).toObject());
 
 		if (JL_GetClass(tObj) == JL_TextureJSClass(cx)) {

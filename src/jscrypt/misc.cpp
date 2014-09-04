@@ -37,27 +37,30 @@ DEFINE_FUNCTION( base64Encode ) {
 
 	JL_DEFINE_ARGS;
 
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString in;
-	jl::BufBase out;
-
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
+	{
 
-	unsigned long outLength;
-	outLength = 4 * ((in.length() + 2) / 3) +1;
-	out.alloc(outLength);
-	JL_ASSERT_ALLOC( out );
+		JS::AutoCheckCannotGC nogc;
+		jl::BufBase out;
+		jl::BufString in;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
 
-	int err;
-	err = base64_encode( in.toData<const uint8_t *>(), in.length(), out.dataAs<uint8_t*>(), &outLength );
-	if (err != CRYPT_OK)
-		return ThrowCryptError(cx, err);
+		unsigned long outLength;
+		outLength = 4 * ((in.length() + 2) / 3) +1;
+		out.alloc(outLength);
+		JL_ASSERT_ALLOC( out );
 
-	out.setUsed(outLength);
-	JL_CHK( BlobCreate(cx, out, JL_RVAL) );
+		int err;
+		err = base64_encode( in.toData<const uint8_t *>(), in.length(), out.dataAs<uint8_t*>(), &outLength );
+		if (err != CRYPT_OK)
+			return ThrowCryptError(cx, err);
+	
+		out.setUsed(outLength);
+		JL_CHK( BlobCreate(cx, out, JL_RVAL) );
+	}
+
 	return true;
 	JL_BAD;
 }
@@ -70,29 +73,31 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( base64Decode ) {
 
 	JL_DEFINE_ARGS;
-
-	jl::BufBase buffer;
-	
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString in;
-
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
+	{
 
-	unsigned long outLength;
-	outLength = 3 * (in.length()-2) / 4 +1; // max outLength
-	buffer.alloc(outLength);
-	JL_ASSERT_ALLOC( buffer );
+		JS::AutoCheckCannotGC nogc;
+		jl::BufBase buffer;
+		jl::BufString in;
 
-	int err;
-	err = base64_decode( in.toData<const uint8_t *>(), in.length(), buffer.data(), &outLength );
-	if (err != CRYPT_OK)
-		return ThrowCryptError(cx, err);
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
 
-	buffer.setUsed(outLength);
-	JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
+		unsigned long outLength;
+		outLength = 3 * (in.length()-2) / 4 +1; // max outLength
+		buffer.alloc(outLength);
+		JL_ASSERT_ALLOC( buffer );
+
+		int err;
+		err = base64_decode( in.toData<const uint8_t *>(), in.length(), buffer.data(), &outLength );
+		if (err != CRYPT_OK)
+			return ThrowCryptError(cx, err);
+	
+		buffer.setUsed(outLength);
+		JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
+	}
+
 
 	return true;
 	JL_BAD;
@@ -109,35 +114,38 @@ DEFINE_FUNCTION( hexEncode ) {
 	static const char hex[] = "0123456789ABCDEF";
 
 	JL_DEFINE_ARGS;
-
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString data;
-	jl::BufBase out;
-
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
+	{
+
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString data;
+		jl::BufBase out;
+
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
 	
-	size_t outLength;
-	outLength = data.length() * 2;
-	out.alloc(outLength, true);
-	JL_ASSERT_ALLOC( out );
+		size_t outLength;
+		outLength = data.length() * 2;
+		out.alloc(outLength, true);
+		JL_ASSERT_ALLOC( out );
 
-	const uint8_t *inIt = data.toData<const uint8_t *>();
-	const uint8_t *inEnd = inIt + data.length();
-	uint8_t *outIt = out.data();
+		const uint8_t *inIt = data.toData<const uint8_t *>();
+		const uint8_t *inEnd = inIt + data.length();
+		uint8_t *outIt = out.data();
 
-	uint8_t c;
-	for ( ; inIt != inEnd; ++inIt, ++outIt ) {
+		uint8_t c;
+		for ( ; inIt != inEnd; ++inIt, ++outIt ) {
 		
-		c = *inIt;
-		*outIt = hex[ c >> 4 ];
-		++outIt;
-		*outIt = hex[ c & 0xF ];
-	}
+			c = *inIt;
+			*outIt = hex[ c >> 4 ];
+			++outIt;
+			*outIt = hex[ c & 0xF ];
+		}
 	
-	JL_CHK( BlobCreate(cx, out, JL_RVAL) );
+		JL_CHK( BlobCreate(cx, out, JL_RVAL) );
+	
+	}
 
 	return true;
 	JL_BAD;
@@ -162,35 +170,39 @@ DEFINE_FUNCTION( hexDecode ) {
 	};
 
 	JL_DEFINE_ARGS;
-
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString in;
-	jl::BufBase out;
-
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_ARG_IS_STRING(1);
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
+	{
 
-	size_t outLength;
-	outLength = in.length() / 2;
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString in;
+		jl::BufBase out;
+
+
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
+
+		size_t outLength;
+		outLength = in.length() / 2;
 	
-	out.alloc(outLength, true);
-	JL_ASSERT_ALLOC( out );
+		out.alloc(outLength, true);
+		JL_ASSERT_ALLOC( out );
 
-	const uint8_t *inIt = in.toData<const uint8_t*>();
-	const uint8_t *inEnd = inIt + in.length();
-	uint8_t *outIt = out.data();
+		const uint8_t *inIt = in.toData<const uint8_t*>();
+		const uint8_t *inEnd = inIt + in.length();
+		uint8_t *outIt = out.data();
 
-	uint8_t c;
-	for ( ; inIt != inEnd; ++inIt, ++outIt ) {
+		uint8_t c;
+		for ( ; inIt != inEnd; ++inIt, ++outIt ) {
 		
-		c = unhex[*inIt] << 4;
-		++inIt;
-		*outIt = c | unhex[*inIt];
-	}
+			c = unhex[*inIt] << 4;
+			++inIt;
+			*outIt = c | unhex[*inIt];
+		}
 
-	JL_CHK( BlobCreate(cx, out, JL_RVAL) );
+		JL_CHK( BlobCreate(cx, out, JL_RVAL) );
+	
+	}
 
 	return true;
 	JL_BAD;

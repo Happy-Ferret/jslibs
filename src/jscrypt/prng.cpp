@@ -50,36 +50,40 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_CONSTRUCTOR() {
 
-	JL_DEFINE_ARGS;
-
 	PrngPrivate *pv = NULL;
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString prngName;
 
+	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN( 1 );
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &prngName) );
+	{
 
-	int prngIndex;
-	prngIndex = find_prng(prngName);
-	JL_ASSERT( prngIndex != -1, E_STR("PRNG"), E_NAME(prngName), E_NOTFOUND );
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString prngName;
 
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &prngName) );
 
-	pv = (PrngPrivate*)jl_malloc(sizeof(PrngPrivate));
-	JL_CHK( pv );
+		int prngIndex;
+		prngIndex = find_prng(prngName);
+		JL_ASSERT( prngIndex != -1, E_STR("PRNG"), E_NAME(prngName), E_NOTFOUND );
 
-	pv->prng = prng_descriptor[prngIndex];
-	JL_ASSERT( pv->prng.test() == CRYPT_OK, E_LIB, E_STR("libtomcrypt"), E_INTERNAL, E_SEP, E_STR(prngName), E_STR("test"), E_FAILURE );
+		pv = (PrngPrivate*)jl_malloc(sizeof(PrngPrivate));
+		JL_CHK( pv );
 
-	int err;
-	err = pv->prng.start( &pv->state );
-	if (err != CRYPT_OK)
-		return ThrowCryptError(cx,err);
-	err = pv->prng.ready( &pv->state );
-	if (err != CRYPT_OK)
-		return ThrowCryptError(cx,err);
+		pv->prng = prng_descriptor[prngIndex];
+		JL_ASSERT( pv->prng.test() == CRYPT_OK, E_LIB, E_STR("libtomcrypt"), E_INTERNAL, E_SEP, E_STR(prngName), E_STR("test"), E_FAILURE );
+
+		int err;
+		err = pv->prng.start( &pv->state );
+		if (err != CRYPT_OK)
+			return ThrowCryptError(cx,err);
+
+		err = pv->prng.ready( &pv->state );
+		if (err != CRYPT_OK)
+			return ThrowCryptError(cx,err);
+	
+	}
 
 	JL_SetPrivate(JL_OBJ, pv);
 	return true;
@@ -156,26 +160,28 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( addEntropy ) {
 
 	JL_DEFINE_ARGS;
-
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString entropy;
-
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC_MIN( 1 );
 
 	PrngPrivate *pv;
 	pv = (PrngPrivate *)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
+	
+	{
 
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &entropy) );
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString entropy;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &entropy) );
 
-	int err;
-	err = pv->prng.add_entropy( entropy.toData<const uint8_t *>(), entropy.length(), &pv->state );
-	if ( err != CRYPT_OK )
-		return ThrowCryptError(cx, err);
-	err = pv->prng.ready(&pv->state);
-	if ( err != CRYPT_OK )
-		return ThrowCryptError(cx, err);
+		int err;
+		err = pv->prng.add_entropy( entropy.toData<const uint8_t *>(), entropy.length(), &pv->state );
+		if ( err != CRYPT_OK )
+			return ThrowCryptError(cx, err);
+
+		err = pv->prng.ready(&pv->state);
+		if ( err != CRYPT_OK )
+			return ThrowCryptError(cx, err);
+	}
 
 	JL_RVAL.setUndefined();
 	return true;
@@ -263,22 +269,27 @@ DEFINE_PROPERTY_GETTER( state ) {
 DEFINE_PROPERTY_SETTER( state ) {
 
 	JL_DEFINE_PROP_ARGS;
-
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString state;
-
 	JL_ASSERT_THIS_INSTANCE();
 
-	PrngPrivate *pv;
-	pv = (PrngPrivate *)JL_GetPrivate( obj );
-	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	JL_CHK( jl::getValue(cx, JL_RVAL, &state) );
-	JL_CHKM( state.length() == (size_t)pv->prng.export_size, E_VALUE, E_LENGTH, E_NUM(pv->prng.export_size) );
+	{
 
-	int err;
-	err = pv->prng.pimport( state.toData<const uint8_t *>(), state.length(), &pv->state );
-	if ( err != CRYPT_OK )
-		return ThrowCryptError(cx, err);
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString state;
+
+
+		PrngPrivate *pv;
+		pv = (PrngPrivate *)JL_GetPrivate( obj );
+		JL_ASSERT_THIS_OBJECT_STATE( pv );
+		JL_CHK( jl::getValue(cx, JL_RVAL, &state) );
+		JL_CHKM( state.length() == (size_t)pv->prng.export_size, E_VALUE, E_LENGTH, E_NUM(pv->prng.export_size) );
+
+		int err;
+		err = pv->prng.pimport( state.toData<const uint8_t *>(), state.length(), &pv->state );
+		if ( err != CRYPT_OK )
+			return ThrowCryptError(cx, err);
+	
+	}
+
 	return true;
 	JL_BAD;
 }

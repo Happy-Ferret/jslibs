@@ -82,19 +82,24 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( write ) {
 
-	jl::BufString str;
-
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
 
 	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	if ( hStdout == NULL )
 		return WinThrowError(cx, GetLastError());
-	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-	DWORD written;
-	BOOL status = ::WriteConsole(hStdout, str.toData<LPCTSTR>(), str.length(), &written, NULL);
-	if ( status == FALSE )
-		return WinThrowError(cx, GetLastError());
+
+	{
+
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString str;
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
+		DWORD written;
+		BOOL status = ::WriteConsole(hStdout, str.toData<LPCTSTR>(), str.length(), &written, NULL);
+		if ( status == FALSE )
+			return WinThrowError(cx, GetLastError());
+
+	}
 
 	JL_RVAL.setUndefined();
 	return true;
@@ -170,7 +175,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( writeConsoleOutput ) {
 
-	jl::BufString str;
 	BOOL res;
 
 	JL_DEFINE_ARGS;
@@ -183,14 +187,17 @@ DEFINE_FUNCTION( writeConsoleOutput ) {
 	if ( res == 0 )
 		return WinThrowError(cx, GetLastError());
 
-
-	JL_CHK( jl::getValue(cx, JL_ARG(3), &str) );
-	JL_ASSERT( str.lengthOrZero() == 1, E_ARGVALUE, E_NUM(1), E_LENGTH, E_NUM(1) );
 	CHAR_INFO charInfo;
-	
-	//charInfo.Char.UnicodeChar = str.toDataOrNull<const WCHAR*>.GetConstWStrOrNull()[0];
-	//charInfo.Char.UnicodeChar = str.getWideCharAt(0);
-	charInfo.Char.UnicodeChar = str.charAt<WCHAR>(0);
+
+	{
+
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString str;
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &str) );
+		JL_ASSERT( str.lengthOrZero() == 1, E_ARGVALUE, E_NUM(1), E_LENGTH, E_NUM(1) );
+		charInfo.Char.UnicodeChar = str.charAt<WCHAR>(0);
+
+	}
 
 	int color, backgroundColor;
 	
@@ -241,7 +248,6 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( fillConsoleOutput ) {
 
-	jl::BufString str;
 	BOOL res;
 
 	JL_DEFINE_ARGS;
@@ -252,6 +258,9 @@ DEFINE_FUNCTION( fillConsoleOutput ) {
 	JL_CHK( jl::getValue(cx, JL_ARG(4), &size.Y) );
 
 	if ( size.X > 0 && size.Y > 0 ) {
+
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString str;
 
 		HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
@@ -622,6 +631,7 @@ DEFINE_PROPERTY_SETTER( title ) {
 	
 	JL_IGNORE(strict, id, obj);
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString str;
 	JL_CHK( jl::getValue(cx, vp, &str) );
 	SetConsoleTitle(str);

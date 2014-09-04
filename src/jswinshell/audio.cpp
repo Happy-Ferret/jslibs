@@ -188,6 +188,7 @@ DEFINE_CONSTRUCTOR() {
 
 	if ( JL_ARG_ISDEF(1) ) {
 
+		JS::AutoCheckCannotGC nogc;
 		jl::BufString deviceName;
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &deviceName) );
 

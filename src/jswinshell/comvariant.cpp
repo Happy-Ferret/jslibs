@@ -145,6 +145,7 @@ private:
 
 bool BlobToVariant( JSContext *cx, JS::HandleValue val, VARIANT *variant ) {
 
+	JS::AutoCheckCannotGC nogc;
 	jl::BufString buf;
 	JL_CHK( jl::getValue(cx, val, &buf) );
 	variant->vt = VT_ARRAY | VT_UI1;
@@ -194,6 +195,7 @@ bool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *varia
 
 			// see also: Write and read binary data in VARIANT - http://www.ucosoft.com/write-and-read-binary-data-in-variant.html
 			
+			JS::AutoCheckCannotGC nogc;
 			jl::BufString buf;
 			JL_CHK( jl::getValue(cx, value, &buf) );
 			V_VT(variant) = VT_BSTR;

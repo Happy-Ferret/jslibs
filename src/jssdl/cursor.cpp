@@ -50,71 +50,77 @@ $TOC_MEMBER $INAME
 DEFINE_CONSTRUCTOR() {
 
 	SDL_Cursor *cursor = NULL;
-	jl::BufString data;
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC_MIN(1);
 	JL_ASSERT_ARG_IS_OBJECT(1);
 	JL_ASSERT_CONSTRUCTING();
 	JL_DEFINE_CONSTRUCTOR_OBJ;
+
+	{
+
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString data;
 	
-	int sWidth, sHeight, sChannels;
-	ImageDataType dataType;
-	data = JL_GetImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels, &dataType);
-	JL_ASSERT( data.hasData(), E_ARG, E_NUM(1), E_INVALID );
-	JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
-	const uint8_t *sBuffer = data.toData<const uint8_t *>();
+		int sWidth, sHeight, sChannels;
+		ImageDataType dataType;
+		data = JL_GetImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels, &dataType, nogc);
+		JL_ASSERT( data.hasData(), E_ARG, E_NUM(1), E_INVALID );
+		JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
+		const uint8_t *sBuffer = data.toData<const uint8_t *>();
 
-	JL_ASSERT( sWidth % 8 == 0, E_ARG, E_NUM(1), E_FORMAT ); // "The cursor width must be a multiple of 8."
-	JL_ASSERT( sChannels == 3 || sChannels == 4, E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(3, 4) );
+		JL_ASSERT( sWidth % 8 == 0, E_ARG, E_NUM(1), E_FORMAT ); // "The cursor width must be a multiple of 8."
+		JL_ASSERT( sChannels == 3 || sChannels == 4, E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(3, 4) );
 
-	int length = sWidth * sHeight;
+		int length = sWidth * sHeight;
 
-	int cursorDataLength = 2*sHeight*sWidth/8;
-	unsigned char *cursorImage = (unsigned char *)jl_calloc(cursorDataLength, 1); // data + mask
-	unsigned char *cursorMask = cursorImage + sHeight*sWidth/8;
-//	memset(cursorImage, 0, cursorDataLength); see calloc
+		int cursorDataLength = 2*sHeight*sWidth/8;
+		unsigned char *cursorImage = (unsigned char *)jl_calloc(cursorDataLength, 1); // data + mask
+		unsigned char *cursorMask = cursorImage + sHeight*sWidth/8;
+	//	memset(cursorImage, 0, cursorDataLength); see calloc
 
-	JL_updateMallocCounter(cx, cursorDataLength);
+		JL_updateMallocCounter(cx, cursorDataLength);
 	
-	// data  mask    resulting pixel on screen
-	//  0     1       White
-	//  1     1       Black
-	//  0     0       Transparent
-	//  1     0       Inverted color if possible, black if not.
+		// data  mask    resulting pixel on screen
+		//  0     1       White
+		//  1     1       Black
+		//  0     0       Transparent
+		//  1     0       Inverted color if possible, black if not.
 	
-	for ( int i = 0; i < length; i++ ) {
+		for ( int i = 0; i < length; i++ ) {
 	
-		unsigned char bit = 0x80 >> (i % 8);
-		if ( sBuffer[i*4 + 0] < 128 )
-			cursorImage[i/8] |= bit;
+			unsigned char bit = 0x80 >> (i % 8);
+			if ( sBuffer[i*4 + 0] < 128 )
+				cursorImage[i/8] |= bit;
 
-		// Transparent/Inverted if no alpha
-		if ( sChannels == 4 && sBuffer[i*4 + 3] == 0 )
-			cursorMask[i/8] |= bit;
-	}
+			// Transparent/Inverted if no alpha
+			if ( sChannels == 4 && sBuffer[i*4 + 3] == 0 )
+				cursorMask[i/8] |= bit;
+		}
 
-	int hotX, hotY;
+		int hotX, hotY;
 
-	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( jl::getValue(cx, JL_ARG(2), &hotX) );
-	else
-		hotX = 0;
+		if ( JL_ARG_ISDEF(2) )
+			JL_CHK( jl::getValue(cx, JL_ARG(2), &hotX) );
+		else
+			hotX = 0;
 	
-	if ( JL_ARG_ISDEF(3) )
-		JL_CHK( jl::getValue(cx, JL_ARG(3), &hotY) );
-	else
-		hotY = 0;
+		if ( JL_ARG_ISDEF(3) )
+			JL_CHK( jl::getValue(cx, JL_ARG(3), &hotY) );
+		else
+			hotY = 0;
 		
 
-	cursor = SDL_CreateCursor(cursorImage, cursorMask, sWidth, sHeight, hotX, hotY);
-	if ( cursor == NULL ) {
+		cursor = SDL_CreateCursor(cursorImage, cursorMask, sWidth, sHeight, hotX, hotY);
+		if ( cursor == NULL ) {
+
+			jl_free(cursorImage);
+			return ThrowSdlError(cx);
+		}
 
 		jl_free(cursorImage);
-		return ThrowSdlError(cx);
-	}
 
-	jl_free(cursorImage);
+	}
 
 	JL_SetPrivate(JL_OBJ, cursor);
 	return true;

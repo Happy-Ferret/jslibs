@@ -897,6 +897,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 			size_t length = ida.length();
 			for ( size_t j = 0; j < length; ++j ) {
 
+				JS::AutoCheckCannotGC nogc;
 				jl::BufString keyStr;
 				JS::RootedId itemId(cx, ida[j]);
 
@@ -988,8 +989,6 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 			JL_ERR( E_STR("menu item"), E_INVALID );
 		}
 
-
-		jl::BufString newItemStr;
 		LPCTSTR lpNewItem;
 		UINT_PTR uIDNewItem;
 
@@ -1009,6 +1008,8 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 
 			if ( !label.isUndefined() ) {
 
+				JS::AutoCheckCannotGC nogc;
+				jl::BufString newItemStr;
 				JL_CHK( jl::getValue(cx, label, &newItemStr) );
 				
 				lpNewItem = newItemStr.toStringZ<PCTSTR>();
@@ -1161,6 +1162,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 		JL_CHK( jl::getProperty(cx, infoObj, "infoTitle", JL_RVAL) );
 		if ( !JL_RVAL.isUndefined() ) {
 
+			JS::AutoCheckCannotGC nogc;
 			jl::BufString infoTitle;
 			JL_CHK( jl::getValue(cx, JL_RVAL, &infoTitle) );
 
@@ -1175,6 +1177,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 		JL_CHK( jl::getProperty(cx, infoObj, "info", JL_RVAL) );
 		if ( !JL_RVAL.isUndefined() ) {
 
+			JS::AutoCheckCannotGC nogc;
 			jl::BufString infoStr;
 			JL_CHK( jl::getValue(cx, JL_RVAL, &infoStr) );
 			//size_t len = jl::min(sizeof(pv->nid.szInfo)-1, infoStr.length());
@@ -1190,6 +1193,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 		JL_CHK( jl::getProperty(cx, infoObj, "icon", JL_RVAL) );
 		if ( !JL_RVAL.isUndefined() ) {
 
+			JS::AutoCheckCannotGC nogc;
 			jl::BufString iconNameStr;
 			JL_CHK( jl::getValue(cx, JL_RVAL, &iconNameStr) );
 			
@@ -1386,23 +1390,26 @@ $TOC_MEMBER $INAME
 DEFINE_PROPERTY_SETTER( text ) {
 
 	JL_DEFINE_PROP_ARGS;
-
-	jl::BufString tipText;
-
 	JL_ASSERT_THIS_INSTANCE();
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
-	JL_CHK( jl::getValue(cx, vp, &tipText) );
 
-	//size_t len = jl::min(sizeof(pv->nid.szTip)-1, tipText.length());
-	//jl::memcpy(pv->nid.szTip, tipText.GetConstStr(), tipText.length());
+	{
+
+		JS::AutoCheckCannotGC nogc;
+		jl::BufString tipText;
+		JL_CHK( jl::getValue(cx, vp, &tipText) );
+
+		//size_t len = jl::min(sizeof(pv->nid.szTip)-1, tipText.length());
+		//jl::memcpy(pv->nid.szTip, tipText.GetConstStr(), tipText.length());
 	
-	size_t copiedLength;
-	copiedLength = tipText.copyTo(pv->nid.szTip, sizeof(pv->nid.szTip)-1);
-	pv->nid.szTip[copiedLength] = 0;
+		size_t copiedLength;
+		copiedLength = tipText.copyTo(pv->nid.szTip, sizeof(pv->nid.szTip)-1);
+		pv->nid.szTip[copiedLength] = 0;
+		pv->nid.uFlags |= NIF_TIP;
 
-	pv->nid.uFlags |= NIF_TIP;
+	}
 
 	BOOL status = Shell_NotifyIconA_retry(NIM_MODIFY, &pv->nid);
 	JL_ASSERT( status == TRUE, E_THISOBJ, E_INTERNAL );
