@@ -1079,6 +1079,15 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	using namespace jl;
 
+	JS::RootedString jsstr(cx, JS_NewStringCopyZ(cx, "test"));
+
+	jl::Str str(cx, jsstr);
+
+
+
+return true;
+
+
 	//JS::AutoCheckCannotGC nogc;
 	stringToJsid(cx, L"test");
 

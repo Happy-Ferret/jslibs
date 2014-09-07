@@ -36,6 +36,73 @@ getStringChars(JSContext *cx, JSString *str) {
 }
 */
 
+
+class Str {
+	JSContext *_cx;
+	size_t _length;
+	JS::HandleString _jsstr;
+	const char *_charsCache;
+	bool _owner;
+
+public:
+
+	Str( JSContext *cx, JS::HandleString str ) :
+		_cx(cx),
+		_jsstr(str),
+		_owner(false),
+	}
+
+	~Str() {
+
+		if ( _owner )
+			js_free( const_cast<char*>(_charsCache) );
+	}
+
+	//JS_GetStringCharAt
+
+	const char *
+	toCStr() {
+
+		if ( _charsCache ) {
+
+			if ( _owner ) {
+			
+				return _charsCache;
+			} else {
+
+				if ( _gcNumber == JS::GetGCNumber() ) {
+
+					return _charsCache;
+				}
+			}
+		}
+
+
+		if ( JS_StringHasLatin1Chars(_jsstr) ) {
+
+			// doc: Flat strings and interned strings are always null-terminated. JS_FlattenString can be used to get a null-terminated string.
+			JSFlatString *str = JS_FlattenString(_cx, _jsstr);
+
+			JS::AutoCheckCannotGC nogc;
+			_gcNumber = JS::GetGCNumber();
+			_charsCache = reinterpret_cast<const char*>(JS_GetLatin1FlatStringChars(nogc, str));
+		} else {
+			
+			_charsCache = JS_EncodeString(_cx, _jsstr); // need to free
+			_owner = true;
+		}
+
+		return _charsCache;
+	}
+
+
+
+};
+
+
+
+
+
 namespace pv {
 
 template <class T>

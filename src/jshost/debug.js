@@ -12,8 +12,14 @@ var loadModule = host.loadModule;
 
 //loadModule('jssound');
 
+/*
 host.interruptInterval = 1;
 host.onInterrupt = () => { host.collectGarbage(true, 1) };
+*/
+
+
+	jslangTest();
+throw 0;
 
 
 ////
@@ -22,7 +28,7 @@ loadModule('jsstd');
 loadModule('jsz');
 
 
-	var g = new ZipFile('test.zip');
+	var g = new ZipFile('xtest.zip');
 	g.open(ZipFile.READ);
 //	g.password = 'aze';
 
