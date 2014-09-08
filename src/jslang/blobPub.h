@@ -18,6 +18,7 @@
 
 #define JL_BLOB_LENGTH 0
 
+/*
 INLINE
 bool
 BlobBufferGet( JSContext *cx, JS::HandleObject obj, jl::BufString *str ) {
@@ -43,7 +44,7 @@ BlobBufferGet( JSContext *cx, JS::HandleObject obj, jl::BufString *str ) {
 	return true;
 	JL_BAD;
 }
-
+*/
 
 ALWAYS_INLINE const JSClass*
 BlobJSClass( JSContext *cx ) {
@@ -78,7 +79,7 @@ BlobCreate( JSContext *cx, void *ownData, int32_t size, OUT JS::MutableHandleVal
 
 		JL_CHK( blobObj );
 
-		JL_CHK( setBufferGetInterface( cx, blobObj, BlobBufferGet ) );
+		//JL_CHK( setBufferGetInterface( cx, blobObj, BlobBufferGet ) );
 
 		rval.setObject( *blobObj );
 		JL_CHK( jl::setSlot( cx, blobObj, JL_BLOB_LENGTH, size ) );

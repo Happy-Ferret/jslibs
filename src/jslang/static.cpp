@@ -1081,7 +1081,11 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	JS::RootedString jsstr(cx, JS_NewStringCopyZ(cx, "test"));
 
-	jl::Str str(cx, jsstr);
+	jl::StrData str(cx);
+
+	str.set(jsstr);
+
+	::puts(str);
 
 
 

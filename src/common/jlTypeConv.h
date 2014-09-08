@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include "mozilla/Maybe.h"
+
 
 JL_BEGIN_NAMESPACE
 
@@ -37,66 +39,303 @@ getStringChars(JSContext *cx, JSString *str) {
 */
 
 
-class Str {
+/*
+	jl::Str str;
+	jl::getValue(cx, JL_ARG(1), &str);
+	puts(str);
+
+	// JS_GetArrayBufferViewData (untyped version of JS_GetInt8ArrayData)
+
+
+	- latin1 string
+		JS_GetLatin1FlatStringChars / JS_GetLatin1StringCharsAndLength
+
+	- twobytes string
+		JS_GetTwoByteFlatStringChars / JS_GetTwoByteStringCharsAndLength
+	
+	- int8
+		JS_GetArrayBufferViewData / JS_GetArrayBufferData(obj)
+
+	- Uint16
+*/
+
+
+
+class StrData {
 	JSContext *_cx;
+	JS::RootedString _str;
+	JS::RootedObject _obj;
+	void *_data;
 	size_t _length;
-	JS::HandleString _jsstr;
-	const char *_charsCache;
-	bool _owner;
+
+	enum {
+		none,
+		Latin1String,
+		TwoByteString,
+
+		ArrayBuffer,
+		ArrayBufferView,
+		Uint16ArrayBuffer,
+
+		ownStrZ,
+		ownWStrZ,
+		ownData
+	} _type;
+
+private:
+	template<class T>
+	char *setOwnStrZ(T* ptr) {
+
+		if ( !ptr )
+			return nullptr;
+		_type = ownStrZ;
+		char *tmp = static_cast<char*>(jl_malloc(_length + 1));
+		_data = tmp;
+		if ( sizeof(T) != sizeof(char) ) {
+			
+			for ( size_t i = 0; i < _length; ++i )
+				tmp[i] = static_cast<char>(ptr[i]);
+		} else {
+			
+			jl::memcpy(tmp, ptr, _length);
+		}
+		tmp[_length] = 0;
+		return tmp;
+	}
+
+	template<class T>
+	char16_t *setOwnWStrZ(T* ptr) {
+
+		if ( !ptr )
+			return nullptr;
+		_type = ownWStrZ;
+		char16_t *tmp = static_cast<char16_t*>(jl_malloc((_length + 1) * sizeof(char16_t)));
+		_data = tmp;
+		if ( sizeof(T) != sizeof(char16_t) ) {
+			
+			for ( size_t i = 0; i < _length; ++i )
+				tmp[i] = static_cast<char16_t>(ptr[i]);
+		} else {
+			
+			jl::memcpy(tmp, ptr, _length);
+		}
+		tmp[_length] = 0;
+		return tmp;
+	}
+
+	template<class T>
+	uint8_t *setOwnData(T* ptr) {
+
+		if ( !ptr )
+			return nullptr;
+		_type = ownData;
+		uint8_t *tmp = static_cast<uint8_t*>(jl_malloc(_length));
+		_data = tmp;
+		if ( sizeof(T) != sizeof(char) ) {
+			
+			for ( size_t i = 0; i < _length; ++i )
+				tmp[i] = static_cast<char>(ptr[i]);
+		} else {
+			
+			jl::memcpy(tmp, ptr, _length);
+		}
+		return tmp;
+	}
 
 public:
 
-	Str( JSContext *cx, JS::HandleString str ) :
-		_cx(cx),
-		_jsstr(str),
-		_owner(false),
+	~StrData() {
+
+		if ( _data ) {
+
+			js_free( _data );
+		}
 	}
 
-	~Str() {
-
-		if ( _owner )
-			js_free( const_cast<char*>(_charsCache) );
+	StrData( JSContext *cx ) : _cx(cx), _str(cx), _obj(cx), _data(nullptr), _type(StrData::none) {
 	}
 
-	//JS_GetStringCharAt
+	bool set( JS::HandleString str ) {
+	
+		ASSERT( !_data );
+		if ( str == nullptr )
+			return false;
+		_str.set(str);
+		
+		_length = JL_GetStringLength(str);
+		_type = JS_StringHasLatin1Chars(str) ? Latin1String : TwoByteString;
+		return true;
+	}
 
-	const char *
-	toCStr() {
+	bool set( JS::HandleObject obj ) {
+		
+		ASSERT( !_data );
+		_obj.set(obj);
 
-		if ( _charsCache ) {
+		if ( JS_IsArrayBufferObject(obj) ) {
 
-			if ( _owner ) {
+			_length = JS_GetArrayBufferByteLength(obj);
+			_type = ArrayBuffer;
+			return true;
+		} else
+		if ( JS_IsTypedArrayObject(obj) ) {
+
+			if ( JS_GetArrayBufferViewType(_obj) != js::Scalar::Uint16 ) {
 			
-				return _charsCache;
+				_length = JS_GetTypedArrayByteLength(obj);
+				_type = ArrayBufferView;
+				return true;
 			} else {
 
-				if ( _gcNumber == JS::GetGCNumber() ) {
-
-					return _charsCache;
-				}
+				_length = JS_GetTypedArrayLength(obj);
+				_type = Uint16ArrayBuffer;
+				return true;
 			}
 		}
+		return false;
+	}
 
+	bool set( JS::HandleValue val ) {
 
-		if ( JS_StringHasLatin1Chars(_jsstr) ) {
+		if (val.isObject() ) {
 
-			// doc: Flat strings and interned strings are always null-terminated. JS_FlattenString can be used to get a null-terminated string.
-			JSFlatString *str = JS_FlattenString(_cx, _jsstr);
-
-			JS::AutoCheckCannotGC nogc;
-			_gcNumber = JS::GetGCNumber();
-			_charsCache = reinterpret_cast<const char*>(JS_GetLatin1FlatStringChars(nogc, str));
-		} else {
-			
-			_charsCache = JS_EncodeString(_cx, _jsstr); // need to free
-			_owner = true;
+			_obj.set(val.toObjectOrNull());
+			return set(_obj);
 		}
+		_str.set(JS::ToString(_cx, val));
+		return set(_str);
+	}
 
-		return _charsCache;
+	size_t length() const {
+
+		return _length;
 	}
 
 
+	// to data
+	operator const uint8_t *() {
 
+		switch ( _type ) {
+			case ownData:
+			case ownStrZ:
+				return static_cast<uint8_t*>(_data);
+			case Latin1String: {
+
+				ASSERT( JS_StringHasLatin1Chars(_str) );
+				size_t unused;
+				JS::AutoCheckCannotGC nogc;
+				return static_cast<const uint8_t*>(JS_GetLatin1StringCharsAndLength(_cx, nogc, _str, &unused));
+			}
+			case TwoByteString: {
+
+				ASSERT( !JS_StringHasLatin1Chars(_str) );
+				size_t unused;
+				JS::AutoCheckCannotGC nogc;
+				return setOwnData(JS_GetTwoByteStringCharsAndLength(_cx, nogc, _str, &unused));
+			}
+			case ArrayBuffer: {
+
+				return JS_GetArrayBufferData(_obj);
+			}
+			case ArrayBufferView: {
+				
+				return reinterpret_cast<uint8_t*>(JS_GetArrayBufferViewData(_obj));
+			}
+			case Uint16ArrayBuffer:
+			default:
+				return nullptr;
+		}
+	}
+
+	// to string
+	operator const jschar *() {
+
+		switch ( _type ) {
+			case ownWStrZ:
+				return static_cast<char16_t*>(_data);
+			case TwoByteString: {
+
+				ASSERT( !JS_StringHasLatin1Chars(_str) );
+				// doc: Flat strings and interned strings are always null-terminated. JS_FlattenString can be used to get a null-terminated string.
+				JSFlatString *str;
+				if ( JS_StringIsFlat(_str) )
+					str = JS_ASSERT_STRING_IS_FLAT(_str);
+				else
+					str = JS_FlattenString(_cx, _str);
+				JS::AutoCheckCannotGC nogc;
+				return JS_GetTwoByteFlatStringChars(nogc, str);
+			}
+			case Latin1String: {
+
+				ASSERT( JS_StringHasLatin1Chars(_str) );
+				size_t unused;
+				JS::AutoCheckCannotGC nogc;
+				return setOwnWStrZ(JS_GetLatin1StringCharsAndLength(_cx, nogc, _str, &unused));
+			}
+			case ArrayBuffer: {
+
+				return setOwnWStrZ(JS_GetArrayBufferData(_obj));
+			}
+			case Uint16ArrayBuffer: {
+
+				return reinterpret_cast<const jschar*>(JS_GetUint16ArrayData(_obj));
+			}
+			case ArrayBufferView: {
+
+				return setOwnWStrZ(reinterpret_cast<int8_t*>(JS_GetArrayBufferViewData(_obj)));
+			}
+			default:
+				return nullptr;
+		}
+	}
+
+	operator const char *() {
+
+		switch ( _type ) {
+			case ownStrZ:
+				return static_cast<char*>(_data);
+			case Latin1String: {
+
+				ASSERT( JS_StringHasLatin1Chars(_str) );
+				// doc: Flat strings and interned strings are always null-terminated. JS_FlattenString can be used to get a null-terminated string.
+				JSFlatString *str;
+				if ( JS_StringIsFlat(_str) )
+					str = JS_ASSERT_STRING_IS_FLAT(_str);
+				else
+					str = JS_FlattenString(_cx, _str);
+				JS::AutoCheckCannotGC nogc;
+				return reinterpret_cast<const char*>(JS_GetLatin1FlatStringChars(nogc, str));
+			}
+			case TwoByteString: {
+
+				ASSERT( !JS_StringHasLatin1Chars(_str) );
+				size_t unused;
+				JS::AutoCheckCannotGC nogc;
+				const jschar *tmp = JS_GetTwoByteStringCharsAndLength(_cx, nogc, _str, &unused);
+				return setOwnStrZ(tmp);
+			}
+			case ArrayBuffer: {
+
+				uint8_t *tmp = JS_GetArrayBufferData(_obj);
+				if ( tmp[_length-1] == 0 )
+					return reinterpret_cast<const char*>(tmp);
+				return setOwnStrZ(tmp);
+			}
+			case Uint16ArrayBuffer: {
+
+				return setOwnStrZ(JS_GetUint16ArrayData(_obj));
+			}
+			case ArrayBufferView: {
+
+				int8_t *tmp = reinterpret_cast<int8_t*>(JS_GetArrayBufferViewData(_obj));
+				if ( tmp[_length-1] == 0 )
+					return reinterpret_cast<const char*>(tmp);
+				return setOwnStrZ(tmp);
+			}
+			default:
+				return nullptr;
+		}
+	}
 };
 
 
@@ -542,7 +781,13 @@ setValue( JSContext *cx, JS::MutableHandleValue rval, const JS::Heap<T> &h ) {
 namespace getValue_pv {
 
 	ALWAYS_INLINE bool FASTCALL
-	getValue( JSContext *cx, JS::HandleValue val, OUT jl::BufBase* str );
+	getValue( JSContext *cx, JS::HandleValue val, OUT jl::StrData* str ) {
+		
+		return str->set(val);
+	}
+
+	ALWAYS_INLINE bool FASTCALL
+	getValue( JSContext *cx, JS::HandleValue val, OUT jl::BufBase* str ); // not defined
 
 
 	ALWAYS_INLINE bool FASTCALL

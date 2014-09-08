@@ -60,12 +60,14 @@ DEFINE_PROPERTY_GETTER( arrayBuffer ) {
 
 		if ( size > 0 ) {
 
-			jl::BufBase( JL_GetPrivate( JL_OBJ ), size ).toArrayBuffer( cx, JL_RVAL );
+			//jl::BufBase( JL_GetPrivate( JL_OBJ ), size ).toArrayBuffer( cx, JL_RVAL );
+			JL_RVAL.setObjectOrNull( JS_NewArrayBufferWithContents(cx, size, JL_GetPrivate( JL_OBJ )) );
+
 		} else {
 
 			JL_RVAL.setObjectOrNull( JS_NewArrayBuffer( cx, 0 ) );
-			JL_ASSERT_ALLOC( !JL_RVAL.isNull() );
 		}
+		JL_ASSERT_ALLOC( !JL_RVAL.isNull() );
 
 		JL_CHK( invalidateBlob(cx, JL_OBJ) );
 		JL_CHK( JS_DefinePropertyById(cx, JL_OBJ, id, JL_RVAL, JSPROP_READONLY | JSPROP_PERMANENT) );
