@@ -83,9 +83,8 @@ DEFINE_CONSTRUCTOR() {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString tocode;
-		jl::BufString fromcode;
+		jl::StrData tocode(cx);
+		jl::StrData fromcode(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &tocode) );
 		JL_CHK( jl::getValue(cx, JL_ARG(2), &fromcode) );
 
@@ -154,8 +153,7 @@ DEFINE_FUNCTION( process ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString data;
+		jl::StrData data(cx);
 
 		size_t status;
 
@@ -186,10 +184,10 @@ DEFINE_FUNCTION( process ) {
 		if ( pv->wFrom ) {
 
 			inLen *= 2;
-			inBuf =  (char*)data.toData<const jschar*>();
+			inBuf =  (char*)data.toWStrZ(); // may be toWStr() without Z
 		} else {
 
-			inBuf = inBuf =  (char*)data.toData<const char*>();
+			inBuf = inBuf =  (char*)data.toBytes(); // may be toStr() without Z
 		}
 
 
@@ -362,12 +360,10 @@ DEFINE_PROPERTY_SETTER( invalidChar ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString chr;
+		jl::StrData chr(cx);
 		JL_CHK( jl::getValue(cx, vp, &chr) );
 		JL_ASSERT_WARN( chr.length() == 1, E_VALUE, E_LENGTH, E_NUM(1) );
-		pv->invalidChar = chr.charAt<char>(0);
-	
+		pv->invalidChar = chr.getCharAt(0);
 	}
 
 	return true;

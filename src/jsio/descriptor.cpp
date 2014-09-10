@@ -411,14 +411,13 @@ DEFINE_FUNCTION( write ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString str;
+		jl::StrData str(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 
 		ASSERT( str.length() <= PR_INT32_MAX );
 
 		PRInt32 res;
-		res = PR_Write( fd, str.toData<const uint8_t*>(), (PRInt32)str.length() );
+		res = PR_Write( fd, str.toBytes(), (PRInt32)str.length() );
 		if (unlikely( res == -1 )) {
 
 			switch ( PR_GetError() ) {
@@ -481,7 +480,7 @@ DEFINE_FUNCTION( write ) {
 			} else {
 
 				//JL_CHK( str.GetArrayBuffer(cx, JL_RVAL) );
-				JL_CHK( BlobCreate(cx, str.toData<uint8_t*>(), str.length(), JL_RVAL) );
+				JL_CHK( BlobCreate(cx, str.toOwnBytes(), str.length(), JL_RVAL) );
 			}
 		} else { // return unsent data
 
@@ -497,7 +496,7 @@ DEFINE_FUNCTION( write ) {
 				size_t length = str.length() - sentAmount;
 				void *data = jl_malloc(length);
 				JL_ASSERT_ALLOC(data);
-				jl::memcpy(data, str.toData<const uint8_t*>() + sentAmount, length);
+				jl::memcpy(data, str.toBytes() + sentAmount, length);
 				JL_RVAL.setObject(*JS_NewArrayBufferWithContents(cx, length, data));
 			}
 		}

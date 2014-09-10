@@ -706,7 +706,7 @@ DEFINE_FUNCTION( write ) {
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
 		ASSERT( !data.isEmpty() );
 
-		ZIP_CHK( zipWriteInFileInZip(pv->zf, data.toData<const uint8_t*>(), data.length()) );
+		ZIP_CHK( zipWriteInFileInZip(pv->zf, data.toBytes(), data.length()) );
 
 	}
 

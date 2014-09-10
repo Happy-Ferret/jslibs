@@ -148,10 +148,9 @@ DEFINE_FUNCTION( stringify ) {
 	// fallback:
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString str;
+		jl::StrData str(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-		JL_CHK( toArrayBuffer ? str.toArrayBuffer(cx, JL_RVAL) : str.toString(cx, JL_RVAL) );
+		JL_CHK( toArrayBuffer ? str.toArrayBuffer(cx, JL_RVAL) : str.toJSString(cx, JL_RVAL) );
 
 	}
 	return true;
@@ -304,9 +303,8 @@ DEFINE_FUNCTION( indexOf ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString srcStr;
-		jl::BufString patStr;
+		jl::StrData srcStr(cx);
+		jl::StrData patStr(cx);
 		uint32_t start;
 
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &srcStr) );
@@ -326,9 +324,9 @@ DEFINE_FUNCTION( indexOf ) {
 		}
 
 		if ( srcStr.isWide() )
-			JL_RVAL.setInt32( jl::Match(srcStr.toData<const jschar *>()+start, srcStr.length()-start, patStr.toData<const jschar *>(), patStr.length()) );
+			JL_RVAL.setInt32( jl::Match(srcStr.toWStrZ()+start, srcStr.length()-start, patStr.toWStrZ(), patStr.length()) );
 		else
-			JL_RVAL.setInt32( jl::Match(srcStr.toData<const char *>()+start, srcStr.length()-start, patStr.toData<const char *>(), patStr.length()) );
+			JL_RVAL.setInt32( jl::Match(srcStr.toStrZ()+start, srcStr.length()-start, patStr.toStrZ(), patStr.length()) );
 
 	}
 
@@ -1083,16 +1081,15 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	jl::StrData str(cx);
 
-	str.set(jsstr);
+	str.set(cx, jsstr);
 
-	::puts(str);
+	::puts(str.toStrZ());
 
 
 
 return true;
 
 
-	//JS::AutoCheckCannotGC nogc;
 	stringToJsid(cx, L"test");
 
 	JS::AutoValueVector av(cx);

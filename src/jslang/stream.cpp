@@ -87,7 +87,6 @@ GetAvailable(JSContext *cx, JS::HandleObject obj, size_t *available) {
 	bool found;
 	JL_CHK( JS_HasPropertyById(cx, obj, JLID(cx, length), &found) );
 
-
 	JL_CHK( JS_GetPropertyById(cx, obj, JLID(cx, length), &val) );
 
 	if ( !val.isUndefined() ) {
@@ -95,11 +94,9 @@ GetAvailable(JSContext *cx, JS::HandleObject obj, size_t *available) {
 		JL_CHK( jl::getValue(cx, val, &length) );
 	} else {
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString data;
-		val = OBJECT_TO_JSVAL(srcObj);
+		jl::StrData data(cx);
+		val.setObjectOrNull(srcObj);
 		JL_CHK( jl::getValue(cx, val, &data) );
-		JL_CHK( !data.isEmpty() );
 		length = data.length();
 	}
 
@@ -113,7 +110,7 @@ ALWAYS_INLINE bool
 StreamRead( JSContext *cx, JS::HandleObject streamObj, char *buf, size_t *amount ) {
 
 	JS::AutoCheckCannotGC nogc;
-	jl::BufString data;
+	jl::StrData data(cx);
 	size_t position;
 	JS::RootedValue source(cx);
 
@@ -133,7 +130,7 @@ StreamRead( JSContext *cx, JS::HandleObject streamObj, char *buf, size_t *amount
 	if ( position + *amount > length )
 		*amount = length - position;
 
-	jl::memcpy( buf, data.toData<const char *>() + position, *amount ); // (TBD) possible optimization. see JLData::CopyTo() ?
+	jl::memcpy( buf, data.toBytes() + position, *amount ); // (TBD) possible optimization. see JLData::CopyTo() ?
 	JL_CHK( SetPosition(cx, streamObj, position + *amount) );
 	return true;
 	JL_BAD;

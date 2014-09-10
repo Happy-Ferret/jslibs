@@ -14,7 +14,8 @@
 
 #pragma once
 
-#include "mozilla/Maybe.h"
+// #include "mozilla/Maybe.h"
+
 
 
 JL_BEGIN_NAMESPACE
@@ -38,30 +39,8 @@ getStringChars(JSContext *cx, JSString *str) {
 }
 */
 
-
-/*
-	jl::Str str;
-	jl::getValue(cx, JL_ARG(1), &str);
-	puts(str);
-
-	// JS_GetArrayBufferViewData (untyped version of JS_GetInt8ArrayData)
-
-
-	- latin1 string
-		JS_GetLatin1FlatStringChars / JS_GetLatin1StringCharsAndLength
-
-	- twobytes string
-		JS_GetTwoByteFlatStringChars / JS_GetTwoByteStringCharsAndLength
-	
-	- int8
-		JS_GetArrayBufferViewData / JS_GetArrayBufferData(obj)
-
-	- Uint16
-*/
-
-
-
-class StrData {
+class StrData : public StrDataSrc, public StrDataDst {
+	uint8_t _staticBuffer[128]; 
 	JSContext *_cx;
 	JS::RootedString _str;
 	JS::RootedObject _obj;
@@ -79,26 +58,39 @@ class StrData {
 
 		ownStrZ,
 		ownWStrZ,
-		ownData
+		ownBytes
 	} _type;
 
 private:
+
+	void freeData() {
+
+		if ( _data != _staticBuffer )
+			js_free( _data );
+		_data = nullptr;
+	}
+
+	template <class T>
+	T* allocData(size_t length) {
+		
+		size_t size = length * sizeof(T);
+		ASSERT( !_data );
+		if ( size <= sizeof(_staticBuffer) )
+			_data = _staticBuffer;
+		else
+			_data = jl_malloc(size);
+		return static_cast<T*>(_data);
+	}
+
 	template<class T>
 	char *setOwnStrZ(T* ptr) {
 
 		if ( !ptr )
 			return nullptr;
 		_type = ownStrZ;
-		char *tmp = static_cast<char*>(jl_malloc(_length + 1));
-		_data = tmp;
-		if ( sizeof(T) != sizeof(char) ) {
-			
-			for ( size_t i = 0; i < _length; ++i )
-				tmp[i] = static_cast<char>(ptr[i]);
-		} else {
-			
-			jl::memcpy(tmp, ptr, _length);
-		}
+		char *tmp = allocData<char>(_length + 1);
+		for ( size_t i = 0; i < _length; ++i )
+			tmp[i] = static_cast<char>(ptr[i]);
 		tmp[_length] = 0;
 		return tmp;
 	}
@@ -109,36 +101,22 @@ private:
 		if ( !ptr )
 			return nullptr;
 		_type = ownWStrZ;
-		char16_t *tmp = static_cast<char16_t*>(jl_malloc((_length + 1) * sizeof(char16_t)));
-		_data = tmp;
-		if ( sizeof(T) != sizeof(char16_t) ) {
-			
-			for ( size_t i = 0; i < _length; ++i )
-				tmp[i] = static_cast<char16_t>(ptr[i]);
-		} else {
-			
-			jl::memcpy(tmp, ptr, _length);
-		}
+		char16_t *tmp = allocData<char16_t>(_length + 1);
+		for ( size_t i = 0; i < _length; ++i )
+			tmp[i] = static_cast<char16_t>(ptr[i]);
 		tmp[_length] = 0;
 		return tmp;
 	}
 
 	template<class T>
-	uint8_t *setOwnData(T* ptr) {
+	uint8_t *setOwnBytes(T* ptr) {
 
 		if ( !ptr )
 			return nullptr;
-		_type = ownData;
-		uint8_t *tmp = static_cast<uint8_t*>(jl_malloc(_length));
-		_data = tmp;
-		if ( sizeof(T) != sizeof(char) ) {
-			
-			for ( size_t i = 0; i < _length; ++i )
-				tmp[i] = static_cast<char>(ptr[i]);
-		} else {
-			
-			jl::memcpy(tmp, ptr, _length);
-		}
+		_type = ownBytes;
+		uint8_t *tmp = allocData<uint8_t>(_length);
+		for ( size_t i = 0; i < _length; ++i )
+			tmp[i] = static_cast<uint8_t>(ptr[i]);
 		return tmp;
 	}
 
@@ -146,18 +124,18 @@ public:
 
 	~StrData() {
 
-		if ( _data ) {
-
-			js_free( _data );
-		}
+		if ( _data )
+			freeData();
 	}
 
-	StrData( JSContext *cx ) : _cx(cx), _str(cx), _obj(cx), _data(nullptr), _type(StrData::none) {
+	StrData( JSContext *cx ) : _cx(cx), _str(cx), _obj(cx), _data(nullptr), _length(0), _type(StrData::none) {
 	}
 
-	bool set( JS::HandleString str ) {
+	bool set( JSContext *cx, JS::HandleString str ) {
 	
-		ASSERT( !_data );
+		if ( _data )
+			freeData();
+
 		if ( str == nullptr )
 			return false;
 		_str.set(str);
@@ -167,9 +145,11 @@ public:
 		return true;
 	}
 
-	bool set( JS::HandleObject obj ) {
+	bool set( JSContext *, JS::HandleObject obj ) {
 		
-		ASSERT( !_data );
+		if ( _data )
+			freeData();
+
 		_obj.set(obj);
 
 		if ( JS_IsArrayBufferObject(obj) ) {
@@ -195,15 +175,25 @@ public:
 		return false;
 	}
 
-	bool set( JS::HandleValue val ) {
+	bool set( JSContext *cx, JS::HandleValue val ) {
 
-		if (val.isObject() ) {
+		if ( val.isObject() ) {
 
 			_obj.set(val.toObjectOrNull());
-			return set(_obj);
+			JL_CHK( set(cx, _obj) );
+		} else {
+
+			_str.set(JS::ToString(cx, val));
+			JL_CHK( _str != nullptr );
+			JL_CHK( set(cx, _str) );
 		}
-		_str.set(JS::ToString(_cx, val));
-		return set(_str);
+		return true;
+		JL_BAD;
+	}
+
+	bool isSet() const {
+
+		return _type != none;
 	}
 
 	size_t length() const {
@@ -211,27 +201,30 @@ public:
 		return _length;
 	}
 
+	bool isWide() const {
+
+		return _type == TwoByteString || _type == ownWStrZ || _type == Uint16ArrayBuffer;
+	}
 
 	// to data
-	operator const uint8_t *() {
+	const uint8_t *toBytes() {
 
 		switch ( _type ) {
-			case ownData:
+			case ownBytes:
 			case ownStrZ:
+
 				return static_cast<uint8_t*>(_data);
 			case Latin1String: {
 
 				ASSERT( JS_StringHasLatin1Chars(_str) );
 				size_t unused;
-				JS::AutoCheckCannotGC nogc;
-				return static_cast<const uint8_t*>(JS_GetLatin1StringCharsAndLength(_cx, nogc, _str, &unused));
+				return static_cast<const uint8_t *>(JS_GetLatin1StringCharsAndLength(_cx, JS::AutoCheckCannotGC(), _str, &unused));
 			}
 			case TwoByteString: {
 
 				ASSERT( !JS_StringHasLatin1Chars(_str) );
 				size_t unused;
-				JS::AutoCheckCannotGC nogc;
-				return setOwnData(JS_GetTwoByteStringCharsAndLength(_cx, nogc, _str, &unused));
+				return setOwnBytes(JS_GetTwoByteStringCharsAndLength(_cx, JS::AutoCheckCannotGC(), _str, &unused));
 			}
 			case ArrayBuffer: {
 
@@ -242,13 +235,14 @@ public:
 				return reinterpret_cast<uint8_t*>(JS_GetArrayBufferViewData(_obj));
 			}
 			case Uint16ArrayBuffer:
+				// not handled
 			default:
 				return nullptr;
 		}
 	}
 
-	// to string
-	operator const jschar *() {
+	// to c-string
+	const jschar *toWStrZ() {
 
 		switch ( _type ) {
 			case ownWStrZ:
@@ -262,15 +256,13 @@ public:
 					str = JS_ASSERT_STRING_IS_FLAT(_str);
 				else
 					str = JS_FlattenString(_cx, _str);
-				JS::AutoCheckCannotGC nogc;
-				return JS_GetTwoByteFlatStringChars(nogc, str);
+				return JS_GetTwoByteFlatStringChars(JS::AutoCheckCannotGC(), str);
 			}
 			case Latin1String: {
 
 				ASSERT( JS_StringHasLatin1Chars(_str) );
 				size_t unused;
-				JS::AutoCheckCannotGC nogc;
-				return setOwnWStrZ(JS_GetLatin1StringCharsAndLength(_cx, nogc, _str, &unused));
+				return setOwnWStrZ(JS_GetLatin1StringCharsAndLength(_cx, JS::AutoCheckCannotGC(), _str, &unused));
 			}
 			case ArrayBuffer: {
 
@@ -289,7 +281,8 @@ public:
 		}
 	}
 
-	operator const char *() {
+	// to wide c-string
+	const char *toStrZ() {
 
 		switch ( _type ) {
 			case ownStrZ:
@@ -303,16 +296,13 @@ public:
 					str = JS_ASSERT_STRING_IS_FLAT(_str);
 				else
 					str = JS_FlattenString(_cx, _str);
-				JS::AutoCheckCannotGC nogc;
-				return reinterpret_cast<const char*>(JS_GetLatin1FlatStringChars(nogc, str));
+				return reinterpret_cast<const char*>(JS_GetLatin1FlatStringChars(JS::AutoCheckCannotGC(), str));
 			}
 			case TwoByteString: {
 
 				ASSERT( !JS_StringHasLatin1Chars(_str) );
 				size_t unused;
-				JS::AutoCheckCannotGC nogc;
-				const jschar *tmp = JS_GetTwoByteStringCharsAndLength(_cx, nogc, _str, &unused);
-				return setOwnStrZ(tmp);
+				return setOwnStrZ(JS_GetTwoByteStringCharsAndLength(_cx, JS::AutoCheckCannotGC(), _str, &unused));
 			}
 			case ArrayBuffer: {
 
@@ -483,7 +473,7 @@ getStringValue_slow( JSContext *cx, JS::HandleValue val, jl::BufString* data, co
 	}
 
 	// fallback
-	JS::RootedString jsstr(cx, JS::ToString(cx, val));
+	JS::RootedString jsstr(cx, JS::ToString(cx, val)); // JS::ToString is incompatible with nogc
 	JL_CHKM( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
 	data->get(cx, jsstr, nogc);
 	return true;
@@ -781,9 +771,9 @@ setValue( JSContext *cx, JS::MutableHandleValue rval, const JS::Heap<T> &h ) {
 namespace getValue_pv {
 
 	ALWAYS_INLINE bool FASTCALL
-	getValue( JSContext *cx, JS::HandleValue val, OUT jl::StrData* str ) {
+	getValue( JSContext *cx, JS::HandleValue val, OUT jl::StrDataDst* str ) {
 		
-		return str->set(val);
+		return str->set(cx, val);
 	}
 
 	ALWAYS_INLINE bool FASTCALL

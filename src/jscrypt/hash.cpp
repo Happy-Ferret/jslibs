@@ -74,12 +74,11 @@ DEFINE_CONSTRUCTOR() {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString hashName;
+		jl::StrData hashName(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &hashName) );
 
 		int hashIndex;
-		hashIndex = find_hash(hashName);
+		hashIndex = find_hash(hashName.toStrZ());
 		JL_ASSERT( hashIndex != -1, E_STR("hash"), E_NAME(hashName), E_NOTFOUND );
 
 		pv = (HashPrivate*)jl_malloc(sizeof(HashPrivate));
@@ -186,8 +185,7 @@ DEFINE_FUNCTION( write ) {
 
 	if ( JL_ARG_ISDEF(1) ) {
 		
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString in;
+		jl::StrData in(cx);
 
 		JL_ASSERT_ARG_IS_STRING(1);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
@@ -195,7 +193,7 @@ DEFINE_FUNCTION( write ) {
 		unsigned long length = in.length();
 
 		int err;
-		err = pv->descriptor->process(&pv->state, in.toData<const uint8_t *>(), length); // Process a block of memory though the hash
+		err = pv->descriptor->process(&pv->state, in.toBytes(), length); // Process a block of memory though the hash
 		if ( err != CRYPT_OK )
 			return ThrowCryptError(cx, err);
 
@@ -384,11 +382,11 @@ DEFINE_FUNCTION( cipherHash ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString cipherName;
+		jl::StrData cipherName(cx);
+
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &cipherName) );
 		int cipherIndex;
-		cipherIndex = find_cipher(cipherName);
+		cipherIndex = find_cipher(cipherName.toStrZ());
 		JL_ASSERT( cipherIndex >= 0, E_STR("cipher"), E_NAME(cipherName), E_NOTFOUND );
 
 		int err;

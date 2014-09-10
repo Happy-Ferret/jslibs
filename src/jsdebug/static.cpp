@@ -282,8 +282,7 @@ DEFINE_FUNCTION( debugOutput ) {
 #if defined(_MSC_VER) && defined(DEBUG)
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString str;
+		jl::StrData str(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 		OutputDebugString(str); // (TBD) not thread-safe, use a critical section
 

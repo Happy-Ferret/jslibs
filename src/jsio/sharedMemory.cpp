@@ -262,7 +262,7 @@ DEFINE_FUNCTION( write ) {
 		mh = (MemHeader*)pv->mem;
 		if ( offset + data.length() > mh->currentDataLength )
 			mh->currentDataLength = offset + data.length();
-		memmove( (char *)pv->mem + sizeof(MemHeader) + offset, data.toData<const uint8_t*>(), data.length() ); // doc. Use memmove to handle overlapping regions.
+		memmove( (char *)pv->mem + sizeof(MemHeader) + offset, data.toBytes(), data.length() ); // doc. Use memmove to handle overlapping regions.
 	
 	}
 
@@ -412,7 +412,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 		MemHeader *mh = (MemHeader*)pv->mem;
 		if ( data.length() > mh->currentDataLength )
 			mh->currentDataLength = data.length();
-		memmove( (char *)pv->mem + sizeof(MemHeader), data.toData<const uint8_t*>(), data.length() ); // doc. Use memmove to handle overlapping regions.
+		memmove( (char *)pv->mem + sizeof(MemHeader), data.toBytes(), data.length() ); // doc. Use memmove to handle overlapping regions.
 
 		JL_CHK( Unlock(cx, pv) );
 	}

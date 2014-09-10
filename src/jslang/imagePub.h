@@ -91,55 +91,54 @@ JL_NewImageObjectOwner( IN JSContext *cx, IN uint8_t* buffer, IN T width, IN T h
 
 
 template <class T, class U>
-ALWAYS_INLINE jl::BufString FASTCALL
-JL_GetImageObject( IN JSContext *cx, IN JS::HandleValue val, OUT T *width, OUT T *height, OUT U *channels, OUT ImageDataType *dataType, const JS::AutoCheckCannotGC &nogc ) {
+ALWAYS_INLINE bool FASTCALL
+JL_GetImageObject( IN JSContext *cx, IN JS::HandleValue val, OUT T *width, OUT T *height, OUT U *channels, OUT ImageDataType *dataType, jl::StrDataDst &data ) {
 
-	jl::BufString data;
 	JL_CHK( val.isObject() );
 
 	{
 
-	JS::RootedObject imageObj(cx, &val.toObject());
-	JL_CHK( jl::getProperty(cx, imageObj, JLID(cx, data), &data) );
-	JL_CHK( jl::getProperty(cx, imageObj, JLID(cx, width), width) );
-	JL_CHK( jl::getProperty(cx, imageObj, JLID(cx, height), height) );
-	JL_CHK( jl::getProperty(cx, imageObj, JLID(cx, channels), channels) );
-	int tmp;
-	JL_CHK( jl::getProperty(cx, imageObj, JLID(cx, type), &tmp) );
-	S_ASSERT(sizeof(ImageDataType) == sizeof(int));
-	*dataType = (ImageDataType)tmp;
+		JS::RootedObject imageObj(cx, &val.toObject());
+		JL_CHK( jl::getProperty(cx, imageObj, JLID(cx, data), &data) );
+		JL_CHK( jl::getProperty(cx, imageObj, JLID(cx, width), width) );
+		JL_CHK( jl::getProperty(cx, imageObj, JLID(cx, height), height) );
+		JL_CHK( jl::getProperty(cx, imageObj, JLID(cx, channels), channels) );
+		int tmp;
+		JL_CHK( jl::getProperty(cx, imageObj, JLID(cx, type), &tmp) );
+		S_ASSERT(sizeof(ImageDataType) == sizeof(int));
+		*dataType = (ImageDataType)tmp;
 
-	int dataTypeSize;
-	switch ( *dataType ) {
-		case TYPE_INT8:
-		case TYPE_UINT8:
-			dataTypeSize = 1;
-			break;
-		case TYPE_INT16:
-		case TYPE_UINT16:
-			dataTypeSize = 2;
-			break;
-		case TYPE_INT32:
-		case TYPE_UINT32:
-		case TYPE_FLOAT32:
-			dataTypeSize = 4;
-			break;
-		case TYPE_FLOAT64:
-			dataTypeSize = 8;
-			break;
-		default:
-			JL_CHK(false);
+		int dataTypeSize;
+		switch ( *dataType ) {
+			case TYPE_INT8:
+			case TYPE_UINT8:
+				dataTypeSize = 1;
+				break;
+			case TYPE_INT16:
+			case TYPE_UINT16:
+				dataTypeSize = 2;
+				break;
+			case TYPE_INT32:
+			case TYPE_UINT32:
+			case TYPE_FLOAT32:
+				dataTypeSize = 4;
+				break;
+			case TYPE_FLOAT64:
+				dataTypeSize = 8;
+				break;
+			default:
+				JL_CHK(false);
+		}
+
+		JL_CHK( *width >= 0 && *height >= 0 && *channels > 0 );
+		JL_CHK( data.isSet() && jl::isInBounds<int>(data.length()) && (int)data.length() == (int)(*width * *height * *channels * dataTypeSize) );
+
+
+	//	JL_ASSERT( width >= 0 && height >= 0 && channels > 0, E_STR("image"), E_FORMAT );
+	//	JL_ASSERT( data.IsSet() && jl::SafeCast<int>(data.Length()) == (int)(*width * *height * *channels * 1), E_DATASIZE, E_INVALID );
+
 	}
 
-	JL_CHK( *width >= 0 && *height >= 0 && *channels > 0 );
-	JL_CHK( data && jl::isInBounds<int>(data.length()) && (int)data.length() == (int)(*width * *height * *channels * dataTypeSize) );
-//	JL_ASSERT( width >= 0 && height >= 0 && channels > 0, E_STR("image"), E_FORMAT );
-//	JL_ASSERT( data.IsSet() && jl::SafeCast<int>(data.Length()) == (int)(*width * *height * *channels * 1), E_DATASIZE, E_INVALID );
-
-	}
-
-	return data;
-
-bad:
-	return jl::BufString().setEmpty();
+	return true;
+	JL_BAD;
 }

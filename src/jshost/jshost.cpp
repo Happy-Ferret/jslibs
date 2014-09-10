@@ -180,16 +180,17 @@ public:
 	}
 
 	int
-	output( jl::BufString &buf ) {
+	output( jl::StrDataSrc &buf ) {
 		
 		if (unlikely( stdout_fileno == -1 )) {
 			stdout_fileno = fileno(stdout);
 		}
-		return write( stdout_fileno, buf.toData<const uint8_t*>(), buf.length() );
+		//return write( stdout_fileno, buf.toData<const uint8_t*>(), buf.length() );
+		return write( stdout_fileno, buf.toBytes(), buf.length() );
 	}
 
 	int
-	error( jl::BufString &buf ) {
+	error( jl::StrDataSrc &buf ) {
 		
 		if (unlikely(stderr_fileno == -1)) {
 
@@ -199,9 +200,20 @@ public:
 		
 //		_setmode( stderr_fileno, _O_U16TEXT );
 //		return write( stderr_fileno, buf.toData<const wchar_t*>(), buf.length() * 2 );
-		
-		_setmode( stderr_fileno, buf.isWide() ? _O_U16TEXT : _O_TEXT );
-		return write( stderr_fileno, buf.dataAs<const void*>(), buf.used() );
+
+		//_setmode( stderr_fileno, buf.isWide() ? _O_U16TEXT : _O_TEXT );
+		//return write( stderr_fileno, buf.dataAs<const void*>(), buf.used() );
+
+		if ( buf.isWide() ) {
+
+			_setmode( stderr_fileno, _O_U16TEXT );
+			return write( stderr_fileno, buf.toWStrZ(), buf.length() * 2 );
+		} else {
+
+			_setmode( stderr_fileno, _O_TEXT );
+			return write( stderr_fileno, buf.toStrZ(), buf.length() );
+		}
+	
 	}
 };
 

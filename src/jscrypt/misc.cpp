@@ -42,9 +42,9 @@ DEFINE_FUNCTION( base64Encode ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
 		jl::BufBase out;
-		jl::BufString in;
+		jl::StrData in(cx);
+
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
 
 		unsigned long outLength;
@@ -53,7 +53,7 @@ DEFINE_FUNCTION( base64Encode ) {
 		JL_ASSERT_ALLOC( out );
 
 		int err;
-		err = base64_encode( in.toData<const uint8_t *>(), in.length(), out.dataAs<uint8_t*>(), &outLength );
+		err = base64_encode( in.toBytes(), in.length(), out.dataAs<uint8_t*>(), &outLength );
 		if (err != CRYPT_OK)
 			return ThrowCryptError(cx, err);
 	
@@ -78,9 +78,8 @@ DEFINE_FUNCTION( base64Decode ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
 		jl::BufBase buffer;
-		jl::BufString in;
+		jl::StrData in(cx);
 
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
 
@@ -90,7 +89,7 @@ DEFINE_FUNCTION( base64Decode ) {
 		JL_ASSERT_ALLOC( buffer );
 
 		int err;
-		err = base64_decode( in.toData<const uint8_t *>(), in.length(), buffer.data(), &outLength );
+		err = base64_decode( in.toBytes(), in.length(), buffer.data(), &outLength );
 		if (err != CRYPT_OK)
 			return ThrowCryptError(cx, err);
 	
@@ -119,10 +118,9 @@ DEFINE_FUNCTION( hexEncode ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString data;
 		jl::BufBase out;
 
+		jl::StrData data(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
 	
 		size_t outLength;
@@ -130,7 +128,7 @@ DEFINE_FUNCTION( hexEncode ) {
 		out.alloc(outLength, true);
 		JL_ASSERT_ALLOC( out );
 
-		const uint8_t *inIt = data.toData<const uint8_t *>();
+		const uint8_t *inIt = data.toBytes();
 		const uint8_t *inEnd = inIt + data.length();
 		uint8_t *outIt = out.data();
 
@@ -175,11 +173,9 @@ DEFINE_FUNCTION( hexDecode ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString in;
 		jl::BufBase out;
 
-
+		jl::StrData in(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &in) );
 
 		size_t outLength;
@@ -188,7 +184,7 @@ DEFINE_FUNCTION( hexDecode ) {
 		out.alloc(outLength, true);
 		JL_ASSERT_ALLOC( out );
 
-		const uint8_t *inIt = in.toData<const uint8_t*>();
+		const uint8_t *inIt = in.toBytes();
 		const uint8_t *inEnd = inIt + in.length();
 		uint8_t *outIt = out.data();
 

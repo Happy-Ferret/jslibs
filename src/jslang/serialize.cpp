@@ -152,10 +152,9 @@ DEFINE_CONSTRUCTOR() {
 
 	{
 		
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString str;
+		jl::StrData str(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-		unser = new jl::Unserializer(cx, str.toData<char*>(), str.length(), JL_OBJ);
+		unser = new jl::Unserializer(cx, str.toOwnStrZ(), str.length(), JL_OBJ);
 		JL_ASSERT_ALLOC(unser);
 
 	}

@@ -456,7 +456,7 @@ DEFINE_FUNCTION( sendTo ) {
 		ASSERT( str.length() <= PR_INT32_MAX );
 
 		PRInt32 res;
-		res = PR_SendTo(fd, str.toData<const uint8_t*>(), (PRInt32)str.length(), 0, &addr, PR_INTERVAL_NO_TIMEOUT );
+		res = PR_SendTo(fd, str.toBytes(), (PRInt32)str.length(), 0, &addr, PR_INTERVAL_NO_TIMEOUT );
 
 		size_t sentAmount;
 		if ( res == -1 ) {
@@ -485,7 +485,7 @@ DEFINE_FUNCTION( sendTo ) {
 				size_t length = str.length() - sentAmount;
 				void *data = jl_malloc(length);
 				JL_ASSERT_ALLOC(data);
-				jl::memcpy(data, str.toData<const uint8_t*>() + sentAmount, length);
+				jl::memcpy(data, str.toBytes() + sentAmount, length);
 				JL_RVAL.setObject(*JS_NewArrayBufferWithContents(cx, length, data));
 			}
 

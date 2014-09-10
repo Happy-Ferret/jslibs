@@ -232,7 +232,7 @@ public:
 
 	bool Write( JSContext *cx, JS::HandleString str ) {
 
-		JS::AutoCheckCannotGC nogc;
+		JS::AutoCheckCannotGC nogc; // ok
 
 		size_t length;
 		if ( JS_StringHasLatin1Chars(str) ) {

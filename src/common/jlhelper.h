@@ -448,6 +448,7 @@ const JS::HandleId ZeroHandleId = JS::HandleId::fromMarkedLocation(&JSID_ZERO);
 
 ////
 
+class StrDataSrc;
 
 class BufString;
 	
@@ -651,7 +652,6 @@ newObjectWithoutProto( JSContext *cx ) {
 ALWAYS_INLINE jsid FASTCALL
 stringToJsid( JSContext *cx, JS::HandleString jsstr ) {
 	
-	JS::AutoCheckCannotGC nogc;
 	ASSERT( jsstr != NULL );
 	//JS::RootedString tmp(cx, JS_InternJSString(cx, jsstr)); // if ( !JS_StringHasBeenInterned(cx, jsstr) )
 	//ASSERT( tmp );
@@ -664,7 +664,6 @@ stringToJsid( JSContext *cx, JS::HandleString jsstr ) {
 ALWAYS_INLINE jsid FASTCALL
 stringToJsid( JSContext *cx, const jschar *wstr ) {
 
-	JS::AutoCheckCannotGC nogc;
 	ASSERT( wstr != NULL );
 	//JS::RootedString jsstr(cx, JS_InternUCString(cx, wstr));
 	//ASSERT( jsstr );
@@ -680,7 +679,6 @@ stringToJsid( JSContext *cx, const jschar *wstr ) {
 ALWAYS_INLINE jsid FASTCALL
 stringToJsid( JSContext *cx, const char *str ) {
 
-	JS::AutoCheckCannotGC nogc;
 	ASSERT( str != NULL );
 	//JS::RootedString jsstr(cx, JS_InternString(cx, str));
 	//ASSERT( jsstr );

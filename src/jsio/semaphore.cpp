@@ -99,7 +99,7 @@ DEFINE_CONSTRUCTOR() {
 			pv->owner = false;
 		}
 
-		jl::memcpy(pv->name, name.toData<const uint8_t*>(), name.length());
+		jl::memcpy(pv->name, name.toBytes(), name.length());
 		pv->name[name.length()] = '\0';
 	
 	}

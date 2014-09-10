@@ -59,13 +59,12 @@ DEFINE_CONSTRUCTOR() {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString prngName;
+		jl::StrData prngName(cx);
 
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &prngName) );
 
 		int prngIndex;
-		prngIndex = find_prng(prngName);
+		prngIndex = find_prng(prngName.toStrZ());
 		JL_ASSERT( prngIndex != -1, E_STR("PRNG"), E_NAME(prngName), E_NOTFOUND );
 
 		pv = (PrngPrivate*)jl_malloc(sizeof(PrngPrivate));
@@ -169,12 +168,11 @@ DEFINE_FUNCTION( addEntropy ) {
 	
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString entropy;
+		jl::StrData entropy(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &entropy) );
 
 		int err;
-		err = pv->prng.add_entropy( entropy.toData<const uint8_t *>(), entropy.length(), &pv->state );
+		err = pv->prng.add_entropy( entropy.toBytes(), entropy.length(), &pv->state );
 		if ( err != CRYPT_OK )
 			return ThrowCryptError(cx, err);
 
@@ -271,20 +269,18 @@ DEFINE_PROPERTY_SETTER( state ) {
 	JL_DEFINE_PROP_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
 
+	PrngPrivate *pv;
+	pv = (PrngPrivate *)JL_GetPrivate( obj );
+	JL_ASSERT_THIS_OBJECT_STATE( pv );
+
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString state;
-
-
-		PrngPrivate *pv;
-		pv = (PrngPrivate *)JL_GetPrivate( obj );
-		JL_ASSERT_THIS_OBJECT_STATE( pv );
+		jl::StrData state(cx);
 		JL_CHK( jl::getValue(cx, JL_RVAL, &state) );
 		JL_CHKM( state.length() == (size_t)pv->prng.export_size, E_VALUE, E_LENGTH, E_NUM(pv->prng.export_size) );
 
 		int err;
-		err = pv->prng.pimport( state.toData<const uint8_t *>(), state.length(), &pv->state );
+		err = pv->prng.pimport( state.toBytes(), state.length(), &pv->state );
 		if ( err != CRYPT_OK )
 			return ThrowCryptError(cx, err);
 	

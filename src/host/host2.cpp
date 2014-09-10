@@ -843,16 +843,16 @@ ErrorManager::errorCallback(void *userRef, const unsigned errorNumber) {
 
 // ErrArg
 
-ErrorManager::ErrArg::ErrArg( jl::BufString & val ) {
+ErrorManager::ErrArg::ErrArg( jl::StrDataSrc & val ) {
 			
 	if ( val.isWide() ) {
 
 		_type = ErrArg::WSTRING;
-		_wstring = val.toStringZ<const wchar_t*>();
+		_wstring = val.toWStrZ();
 	} else {
 
 		_type = ErrArg::STRING;
-		_string = val.toStringZ<const char*>();
+		_string = val.toStrZ();
 	}
 }
 
@@ -1093,13 +1093,12 @@ DEFINE_FUNCTION( stdout ) {
 
 	JL_DEFINE_ARGS;
 	JL_RVAL.setUndefined();
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString str;
+	jl::StrData str(cx);
 	Host &host = Host::getJLHost( cx );
 	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( jl::getValue( cx, JL_ARGV[i], &str ) );
-		int status = host.stdIO().output( str );
+		int status = host.stdIO().output(str);
 		JL_ASSERT_WARN( status >= 0, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdout"), E_WRITE );
 	}
 	return true;
@@ -1115,13 +1114,12 @@ DEFINE_FUNCTION( stderr ) {
 
 	JL_DEFINE_ARGS;
 	JL_RVAL.setUndefined();
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString str;
+	jl::StrData str(cx);
 	Host &host = Host::getJLHost( cx );
 	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( jl::getValue( cx, JL_ARGV[i], &str ) );
-		int status = host.stdIO().error( str );
+		int status = host.stdIO().error(str);
 		JL_ASSERT_WARN( status >= 0, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stderr"), E_WRITE );
 	}
 	return true;
@@ -1183,7 +1181,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( loadModule ) {
 
-	jl::BufString str;
+	jl::StrData str(cx);
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_ARGC(1);
@@ -1191,11 +1189,10 @@ DEFINE_FUNCTION( loadModule ) {
 	char libFileName[PATH_MAX];
 
 	{
-		JS::AutoCheckCannotGC nogc;
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 
 		//jl::strncpy( libFileName, str.toData<const char *>(), str.length() ); // (TBD) use copyTo()
-		str.copyTo(libFileName);
+		str.copyTo( libFileName );
 		libFileName[str.length()] = '\0';
 		jl::strcat( libFileName, DLL_EXT );
 		// MAC OSX: 	'@executable_path' ??

@@ -17,6 +17,196 @@
 
 JL_BEGIN_NAMESPACE
 
+/*
+typedef char * StrZ;
+typedef char16_t * WStrZ;
+typedef uint8_t * Bytes;
+*/
+
+
+class StrDataSrc {
+public:
+	virtual bool isSet() const = 0; // the object has been set with data (may be empty).
+	virtual size_t length() const = 0; // number on elements ( an element may be 1 or 2-bytes length), use ( length() * isWide() ? 2 : 1 ) to compute byteLength
+	virtual bool isWide() const = 0; // the underlying data has 2-bytes per element.
+	
+	virtual const char * toStrZ() = 0; // c-string with string terminator ('\0')
+	virtual const char16_t * toWStrZ() = 0; // unicode string with string terminator ('\0')
+
+
+
+	virtual const char * toStr() { // c-string without terminator
+		
+		return toStrZ(); // Str is included in StrZ
+	}
+
+	virtual const char16_t * toWStr() { // unicode string without terminator
+
+		return toWStrZ(); // WStr is included in WStrZ
+	}
+
+	virtual const uint8_t * toBytes() { // raw data
+		
+		return reinterpret_cast<const uint8_t *>(toStrZ()); // Bytes is included in StrZ
+	}
+
+
+	operator const char *() {
+
+		return toStrZ();
+	}
+
+	operator const char16_t *() {
+
+		return toWStrZ();
+	}
+
+	operator const uint8_t *() {
+
+		return toBytes();
+	}
+
+	operator const void *() {
+
+		return toBytes();
+	}
+
+
+	virtual char * toOwnStrZ() {
+
+		size_t size = sizeof(char) * (length() + 1);
+		char *tmp = static_cast<char*>(jl_malloc(size));
+		if ( tmp )
+			jl::memcpy(tmp, toStrZ(), size);
+		return tmp;
+	}
+	
+	virtual char * toOwnStr() {
+
+		size_t size = sizeof(char) * length();
+		char *tmp = static_cast<char*>(jl_malloc(size));
+		if ( tmp )
+			jl::memcpy(tmp, toStr(), size);
+		return tmp;
+	}
+	
+
+	virtual char16_t * toOwnWStrZ() {
+
+		size_t size = sizeof(char16_t) * (length() + 1);
+		char16_t *tmp = static_cast<char16_t*>(jl_malloc(size));
+		if ( tmp )
+			jl::memcpy(tmp, toWStrZ(), size);
+		return tmp;
+	}
+
+	virtual char16_t * toOwnWStr() {
+
+		size_t size = sizeof(char16_t) * length();
+		char16_t *tmp = static_cast<char16_t*>(jl_malloc(size));
+		if ( tmp )
+			jl::memcpy(tmp, toWStr(), size);
+		return tmp;
+	}
+
+
+	virtual uint8_t * toOwnBytes() {
+
+		size_t size = sizeof(uint8_t) * length();
+		uint8_t *tmp = static_cast<uint8_t*>(jl_malloc(size));
+		if ( tmp )
+			jl::memcpy(tmp, toBytes(), size);
+		return tmp;
+	}
+
+
+	virtual bool toArrayBuffer( JSContext *cx, JS::MutableHandleValue rval ) {
+		
+		size_t len = length();
+		rval.setObjectOrNull( len > 0 ? JS_NewArrayBufferWithContents(cx, len, toOwnBytes()) : JS_NewArrayBuffer(cx, 0));
+		JL_CHK( !rval.isNull() );
+		return true;
+		JL_BAD;
+	}
+
+	virtual bool toJSString( JSContext *cx, JS::MutableHandleValue rval ) {
+		
+		size_t len = length();
+		if ( len > 0 ) {
+
+			rval.setString( isWide() ? JL_NewUCString(cx, toOwnWStr(), len) : JL_NewString(cx, toOwnStr(), len));
+			JL_CHK( !rval.isNull() );
+		} else {
+
+			rval.set(JL_GetEmptyStringValue(cx));
+		}
+		return true;
+		JL_BAD;
+	}
+
+	virtual char getCharAt(size_t offset) {
+
+		ASSERT( offset < length() ); // out of string range
+		return toStr()[offset];
+	}
+
+	virtual char16_t getWCharAt(size_t offset) {
+
+		ASSERT( offset < length() ); // out of string range
+		return toWStr()[offset];
+	}
+
+	virtual uint8_t getByteAt(size_t offset) {
+
+		ASSERT( offset < length() ); // out of string range
+		return toBytes()[offset];
+	}
+
+	virtual void copyTo( char *dst ) {
+
+		jl::memcpy(dst, toStrZ(), length() * sizeof(*dst));
+	}
+
+	virtual void copyTo( char16_t *dst ) {
+
+		jl::memcpy(dst, toWStrZ(), length() * sizeof(*dst));
+	}
+
+	virtual void copyTo( uint8_t *dst ) {
+
+		jl::memcpy(dst, toBytes(), length() * sizeof(*dst));
+	}
+
+
+	virtual bool equals( const char *src ) {
+
+		return jl::strcmp(toStrZ(), src) == 0;
+	}
+
+	virtual bool equals( const char16_t *src ) {
+
+		return jl::strcmp(toWStrZ(), src) == 0;
+	}
+
+	virtual bool equals( const uint8_t *src ) {
+
+		return jl::MemCompare(toBytes(), src, length()) == 0;
+	}
+};
+
+
+
+class StrDataDst {
+public:
+	virtual bool isSet() const = 0; // the object has been set with data (may be empty).
+	virtual size_t length() const = 0; // number on elements
+
+	virtual bool set( JSContext *cx, JS::HandleValue val ) = 0;
+//	virtual bool setOwnerOf( char *strZ ) = 0;
+	// ...
+};
+
+
 
 class BufBase : public jl::CppAllocators {
 public:
@@ -332,8 +522,8 @@ S_ASSERT( sizeof(jschar) != sizeof(char) );
 S_ASSERT( sizeof(jschar) == sizeof(wchar_t) );
 
 
-class BufString : public BufBase {
-	typedef jschar WideChar;
+class BufString : public BufBase, public jl::StrDataSrc {
+	typedef char16_t WideChar;
 	typedef char NarrowChar;
 
 	uint8_t _charSize;
@@ -393,6 +583,12 @@ public:
 	isEmpty() const {
 
 		return !hasData() || used() == 0 || used() == size_t(_terminatorLength * charSize());
+	}
+
+	bool
+	isSet() const {
+
+		return hasData();
 	}
 
 	template <class T>
@@ -766,6 +962,46 @@ public:
 		return hasData() ? toStringZ<T>() : nullptr;
 	}
 
+	// part to the StrDataSrc interface
+	ALWAYS_INLINE
+	const char * toStrZ() {
+
+		return toStringZOrNull<const NarrowChar*>();
+	}
+
+	ALWAYS_INLINE
+	char * toOwnStrZ() {
+
+		return toStringZOrNull<NarrowChar*>();
+	}
+
+	ALWAYS_INLINE
+	const WideChar * toWStrZ() {
+
+		return toStringZOrNull<const WideChar*>();
+	}
+
+	ALWAYS_INLINE
+	char16_t * toOwnWStrZ() {
+
+		return toStringZOrNull<WideChar*>();
+	}
+
+	ALWAYS_INLINE
+	const uint8_t * toBytes() {
+
+		return toDataOrNull<const uint8_t*>();
+	}
+
+	ALWAYS_INLINE
+	uint8_t * toOwnBytes() {
+
+		return toDataOrNull<uint8_t*>();
+	}
+
+	//
+
+
 	ALWAYS_INLINE
 	operator const NarrowChar *() {
 
@@ -776,6 +1012,12 @@ public:
 	operator const WideChar *() {
 
 		return toStringZOrNull<const WideChar*>();
+	}
+
+	ALWAYS_INLINE
+	operator const uint8_t *() {
+
+		return toDataOrNull<const uint8_t*>();
 	}
 
 	bool

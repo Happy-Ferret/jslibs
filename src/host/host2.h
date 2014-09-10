@@ -107,11 +107,11 @@ public:
 
 		return 0;
 	}
-	virtual int	output( jl::BufString & ) {
+	virtual int	output( jl::StrDataSrc & ) {
 
 		return 0;
 	}
-	virtual int	error( jl::BufString & ) {
+	virtual int	error( jl::StrDataSrc & ) {
 		
 		return 0;
 	}
@@ -890,7 +890,7 @@ public:
 		: _type(ErrArg::WSTRING), _wstring(val) {
 		}
 
-		ErrArg( jl::BufString & val );
+		ErrArg( jl::StrDataSrc & val );
 
 		ErrArgType
 		type() const {

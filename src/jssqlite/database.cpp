@@ -183,7 +183,7 @@ DEFINE_FUNCTION( write ) {
 	// doc: Use the UPDATE SQL command to change the size of a blob.
 	// see sqlite3_bind_zeroblob() and sqlite3_result_zeroblob()
 
-	int st = sqlite3_blob_write(pv->pBlob, data.toData<const uint8_t*>(), data.length(), pv->position);
+	int st = sqlite3_blob_write(pv->pBlob, data.toBytes(), data.length(), pv->position);
 	if ( st != SQLITE_OK )
 		JL_CHK( SqliteThrowErrorStatus(cx, st) );
 

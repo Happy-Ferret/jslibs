@@ -204,7 +204,7 @@ jsvalToSqlite( JSContext *cx, T sqliteTarget, IN JS::HandleValue val ) {
 		if ( len == 0 )
 			sqliteStatus = sqliteTarget.setZeroblob( 0 );
 		else
-			sqliteStatus = sqliteTarget.setBlob( buf.toData<const uint8_t*>(), len, SQLITE_STATIC );
+			sqliteStatus = sqliteTarget.setBlob( buf.toBytes(), len, SQLITE_STATIC );
 	} else {
 
 		//jl::getPrimitive( cx, val, val );

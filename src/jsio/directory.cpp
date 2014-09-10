@@ -83,8 +83,7 @@ DEFINE_FUNCTION( open ) {
 	
 	{	
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString directoryName;
+		jl::StrData directoryName(cx);
 
 		JS::RootedValue jsvalDirectoryName(cx);
 		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName) );
@@ -192,8 +191,7 @@ DEFINE_FUNCTION( make ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString directoryName;
+		jl::StrData directoryName(cx);
 	
 		JS::RootedValue jsvalDirectoryName(cx);
 		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName) );
@@ -226,8 +224,7 @@ DEFINE_FUNCTION( remove ) {
 
 	{
 	
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString directoryName;
+		jl::StrData directoryName(cx);
 
 		JS::RootedValue jsvalDirectoryName(cx);
 		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName) );
@@ -272,8 +269,7 @@ DEFINE_PROPERTY_GETTER( exist ) {
 	
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString directoryName;
+		jl::StrData directoryName(cx);
 
 		JS::RootedValue jsvalDirectoryName(cx);
 		JL_CHK( JL_GetReservedSlot(  obj, SLOT_JSIO_DIR_NAME, &jsvalDirectoryName ) );
@@ -369,8 +365,7 @@ DEFINE_FUNCTION( list ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString directoryName;
+		jl::StrData directoryName(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &directoryName) );
 		JL_ASSERT( directoryName.length() < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
 
@@ -426,7 +421,7 @@ DEFINE_FUNCTION( list ) {
 					directoryName.copyTo(tmp);
 					tmp += directoryName.length();
 
-					char lastDirNameChar = directoryName.charAt<char>(directoryName.length()-1);
+					char lastDirNameChar = directoryName.getCharAt(directoryName.length()-1);
 					if ( lastDirNameChar != '/' && lastDirNameChar != dirSepChar ) {
 
 						*tmp = dirSepChar;

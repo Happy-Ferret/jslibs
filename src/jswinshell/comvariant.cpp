@@ -159,7 +159,7 @@ bool BlobToVariant( JSContext *cx, JS::HandleValue val, VARIANT *variant ) {
 	HRESULT hr = SafeArrayAccessData(variant->parray, &pArrayData);
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
-	jl::memcpy(pArrayData, buf.toData<const uint8_t*>(), buf.length());
+	jl::memcpy(pArrayData, buf.toBytes(), buf.length());
 	SafeArrayUnaccessData(variant->parray);
 
 	return true;

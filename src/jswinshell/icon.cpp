@@ -82,7 +82,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 
 		//unsigned char *imageData = (unsigned char*)data.GetConstStr();
-		const uint8_t *imageData = data.toData<const uint8_t*>();
+		const uint8_t *imageData = data.toBytes();
 
 		// http://groups.google.com/group/microsoft.public.win32.programmer.gdi/browse_frm/thread/adaf38d715cef81/3825af9edde28cdc?lnk=st&q=RGB+CreateIcon&rnum=9&hl=en#3825af9edde28cdc
 		HDC screenDC = GetDC(NULL); // doc: If this value is NULL, GetDC retrieves the DC for the entire screen.
