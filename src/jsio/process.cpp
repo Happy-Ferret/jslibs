@@ -69,11 +69,20 @@ DEFINE_CONSTRUCTOR() {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString path;
-		jl::BufString currentDir;
+		jl::StrData path(cx);
+		jl::StrData currentDir(cx);
 
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &path) );
+
+		if ( JL_ARG_ISDEF(3) )
+			JL_CHK( jl::getValue(cx, JL_ARG(3), &currentDir) );
+
+		bool stdioRedirect;
+		if ( JL_ARG_ISDEF(4) )
+			JL_CHK( jl::getValue(cx, JL_ARG(4), &stdioRedirect) );
+		else
+			stdioRedirect = true;
+
 
 		uint32_t processArgc;
 		const char **processArgv;
@@ -85,17 +94,11 @@ DEFINE_CONSTRUCTOR() {
 			processArgv = (const char**)alloca(sizeof(char**) * (processArgc +1)); // +1 because the NULL list terminator.
 			JL_ASSERT_ALLOC( processArgv );
 
-			JS::AutoCheckCannotGC nogc;
+			jl::StrData tmp(cx);
 			for ( uint32_t i = 1; i < processArgc; ++i ) {
 
-				jl::BufString tmp;
-
-				//JL_CHK( JL_GetElement(cx, argObj, i -1, &propVal) ); // -1 because 0 is reserved to argv[0]
-				//JL_CHK( jl::getValue(cx, propVal, &tmp) ); // warning: GC on the returned buffer !
-
 				jl::getElement(cx, argObj, i - 1, &tmp);
-
-				processArgv[i] = tmp.toStringZ<char*>();
+				processArgv[i] = tmp.toOwnStrZ();
 			}
 		} else {
 
@@ -104,49 +107,46 @@ DEFINE_CONSTRUCTOR() {
 			JL_ASSERT_ALLOC( processArgv );
 		}
 
-		processArgv[0] = path.toStringZ<const char *>();
-		processArgv[processArgc] = NULL;
-
-		if ( JL_ARG_ISDEF(3) )
-			JL_CHK( jl::getValue(cx, JL_ARG(3), &currentDir) );
-
-		bool stdioRedirect;
-		if ( JL_ARG_ISDEF(4) )
-			JL_CHK( jl::getValue(cx, JL_ARG(4), &stdioRedirect) );
-		else
-			stdioRedirect = true;
-
 		PRFileDesc *stdin_child, *stdout_child, *stderr_child;
 		PRFileDesc *stdin_parent, *stdout_parent, *stderr_parent;
 		IFDEBUG( stdin_child = stdout_child = stderr_child = stdin_parent = stdout_parent = stderr_parent = NULL ); // avoid "potentially uninitialized local variable" warning
 
-		if ( stdioRedirect || currentDir ) {
+		{
 
-			psattr = PR_NewProcessAttr();
-			JL_CHKB( psattr, bad_throw );
+			JS::AutoCheckCannotGC nogc; // ok
 
-			if ( currentDir ) {
+			processArgv[0] = path.toStrZ();
+			processArgv[processArgc] = NULL;
+
+			if ( stdioRedirect || currentDir.isSet() ) {
+
+				psattr = PR_NewProcessAttr();
+				JL_CHKB( psattr, bad_throw );
+
+				if ( currentDir.isSet() ) {
 			
-				JL_CHKB( PR_ProcessAttrSetCurrentDirectory(psattr, currentDir) == PR_SUCCESS, bad_throw );
+					JL_CHKB( PR_ProcessAttrSetCurrentDirectory(psattr, currentDir) == PR_SUCCESS, bad_throw );
+				}
+
+				if ( stdioRedirect ) {
+
+					JL_CHKB( PR_CreatePipe(&stdin_parent, &stdin_child) == PR_SUCCESS, bad_throw );
+					JL_CHKB( PR_CreatePipe(&stdout_parent, &stdout_child) == PR_SUCCESS, bad_throw );
+					JL_CHKB( PR_CreatePipe(&stderr_parent, &stderr_child) == PR_SUCCESS, bad_throw );
+					PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardInput, stdin_child);
+					PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardOutput, stdout_child);
+					PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardError, stderr_child);
+				}
 			}
 
-			if ( stdioRedirect ) {
+			//	JL_CHKB( PR_ProcessAttrSetCurrentDirectory(psattr, buf) == PR_SUCCESS, bad_throw );
+			// PR_ProcessAttrSetInheritableFD
 
-				JL_CHKB( PR_CreatePipe(&stdin_parent, &stdin_child) == PR_SUCCESS, bad_throw );
-				JL_CHKB( PR_CreatePipe(&stdout_parent, &stdout_child) == PR_SUCCESS, bad_throw );
-				JL_CHKB( PR_CreatePipe(&stderr_parent, &stderr_child) == PR_SUCCESS, bad_throw );
-				PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardInput, stdin_child);
-				PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardOutput, stdout_child);
-				PR_ProcessAttrSetStdioRedirect(psattr, PR_StandardError, stderr_child);
-			}
+			// cf. bug 113095 -  PR_CreateProcess reports success even when it fails to create the process. (https://bugzilla.mozilla.org/show_bug.cgi?id=113095)
+			// workaround: check the rights and execution flag before runiong the file
+			process = PR_CreateProcess(processArgv[0], (char *const *)processArgv, NULL, psattr);
+		
 		}
-
-		//	JL_CHKB( PR_ProcessAttrSetCurrentDirectory(psattr, buf) == PR_SUCCESS, bad_throw );
-		// PR_ProcessAttrSetInheritableFD
-
-		// cf. bug 113095 -  PR_CreateProcess reports success even when it fails to create the process. (https://bugzilla.mozilla.org/show_bug.cgi?id=113095)
-		// workaround: check the rights and execution flag before runiong the file
-		process = PR_CreateProcess(processArgv[0], (char *const *)processArgv, NULL, psattr);
 
 		//printf("***[%p - %s - %d]\n", processArgv[0], processArgv[0], processArgv[0][0]);
 

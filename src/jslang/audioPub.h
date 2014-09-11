@@ -116,7 +116,7 @@ JL_NewByteAudioObjectOwner( JSContext *cx, jl::BufBase &buffer, T bits, U channe
 
 template <class T, class U, class V, class W>
 ALWAYS_INLINE bool FASTCALL
-JL_GetByteAudioObject( IN JSContext *cx, IN JS::HandleValue val, T *bits, U *channels, V *frames, W *rate, js::StrDataDst &data ) {
+JL_GetByteAudioObject( IN JSContext *cx, IN JS::HandleValue val, T *bits, U *channels, V *frames, W *rate, jl::StrDataDst &data ) {
 
 	//JL_ASSERT_IS_OBJECT(val, "audio");
 	JL_CHK( val.isObject() );
@@ -134,7 +134,7 @@ JL_GetByteAudioObject( IN JSContext *cx, IN JS::HandleValue val, T *bits, U *cha
 		//JL_ASSERT( *bits > 0 && (*bits % 8) == 0 && *rate > 0 && *channels > 0 && *frames >= 0, E_STR("audio"), E_FORMAT );
 		//JL_ASSERT( data.IsSet() && data.Length() == (size_t)( (*bits/8) * *channels * *frames ), E_DATASIZE, E_INVALID );
 		JL_CHK( *bits > 0 && (*bits % 8) == 0 && *rate > 0 && *channels > 0 && *frames >= 0 );
-		JL_CHK( data && data.length() == (size_t)( (*bits/8) * *channels * *frames ) );
+		JL_CHK( data.isSet() && data.length() == (size_t)( (*bits/8) * *channels * *frames ) );
 	}
 
 	return true;

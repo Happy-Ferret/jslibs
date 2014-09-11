@@ -59,15 +59,13 @@ DEFINE_CONSTRUCTOR() {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString data;
+		jl::StrData data(cx);
 	
 		int sWidth, sHeight, sChannels;
 		ImageDataType dataType;
-		data = JL_GetImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels, &dataType, nogc);
-		JL_ASSERT( data.hasData(), E_ARG, E_NUM(1), E_INVALID );
+		JL_CHK( JL_GetImageObject(cx, JL_ARG(1), &sWidth, &sHeight, &sChannels, &dataType, data) );
+		JL_ASSERT( data.isSet(), E_ARG, E_NUM(1), E_INVALID );
 		JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
-		const uint8_t *sBuffer = data.toData<const uint8_t *>();
 
 		JL_ASSERT( sWidth % 8 == 0, E_ARG, E_NUM(1), E_FORMAT ); // "The cursor width must be a multiple of 8."
 		JL_ASSERT( sChannels == 3 || sChannels == 4, E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(3, 4) );
@@ -86,7 +84,8 @@ DEFINE_CONSTRUCTOR() {
 		//  1     1       Black
 		//  0     0       Transparent
 		//  1     0       Inverted color if possible, black if not.
-	
+
+		const uint8_t *sBuffer = data.toBytes();
 		for ( int i = 0; i < length; i++ ) {
 	
 			unsigned char bit = 0x80 >> (i % 8);

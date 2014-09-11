@@ -97,15 +97,14 @@ bool PrepareReadCurrentFile( JSContext *cx, JS::HandleObject obj ) {
 
 	if ( pfile_info.flag & 1 ) { // has password
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString password;
+		jl::StrData password(cx);
 		JS::RootedValue tmp(cx);
 
 		JL_CHK( JL_GetReservedSlot( obj, SLOT_CURRENTPASSWORD, &tmp) );
 		if ( !tmp.isUndefined() )
 			JL_CHK( jl::getValue(cx, tmp, &password) );
 
-		if ( password.isEmpty() )
+		if ( password.length() == 0 )
 			return ThrowZipFileError(cx, JLERR_PASSWORDREQUIRED);
 		UNZ_CHK( unzOpenCurrentFilePassword(pv->uf, password) );
 	} else {
@@ -255,8 +254,7 @@ DEFINE_FUNCTION( open ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString filename;
+		jl::StrData filename(cx);
 		JL_CHK( jl::getSlot(cx, JL_OBJ, SLOT_FILENAME, &filename) );
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &mode) );
 
@@ -265,7 +263,7 @@ DEFINE_FUNCTION( open ) {
 	#ifdef UNICODE
 			zlib_filefunc64_def ffunc;
 			fill_win32_filefunc64W(&ffunc);
-			pv->uf = unzOpen2_64(filename.toStringZ<const wchar_t*>(), &ffunc);
+			pv->uf = unzOpen2_64(filename.toWStrZ(), &ffunc);
 	#else
 			pv->uf = unzOpen(filename);
 	#endif
@@ -278,7 +276,7 @@ DEFINE_FUNCTION( open ) {
 	#ifdef UNICODE
 			zlib_filefunc64_def ffunc;
 			fill_win32_filefunc64W(&ffunc);
-			pv->uf = zipOpen2_64(filename.toStringZ<const wchar_t*>(), mode, NULL, &ffunc);
+			pv->uf = zipOpen2_64(filename.toWStrZ(), mode, NULL, &ffunc);
 	#else
 			//pv->zf = zipOpen(filename, mode);
 	#endif
@@ -322,8 +320,8 @@ DEFINE_FUNCTION( close ) {
 	if ( pv->zf ) {
 
 		ASSERT( !pv->uf );
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString comment;
+
+		jl::StrData comment(cx);
 		JS::RootedValue tmp(cx);
 		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_GLOBALCOMMENT, &tmp) );
 		if ( !tmp.isUndefined() )
@@ -379,8 +377,7 @@ DEFINE_FUNCTION( select ) {
 
 	if ( pv->uf ) {
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString inZipFilename;
+		jl::StrData inZipFilename(cx);
 
 		if ( pv->inZipOpened ) {
 
@@ -669,9 +666,8 @@ DEFINE_FUNCTION( write ) {
 
 		{
 
-			JS::AutoCheckCannotGC nogc;
-			jl::BufString inZipFilename;
-			jl::BufString currentExtraField;
+			jl::StrData inZipFilename(cx);
+			jl::StrData currentExtraField(cx);
 
 			JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_CURRENTEXTRAFIELD, &tmp) );
 			if ( !tmp.isUndefined() )
@@ -691,7 +687,7 @@ DEFINE_FUNCTION( write ) {
 				level = Z_DEFAULT_COMPRESSION;
 			}
 
-			ZIP_CHK( zipOpenNewFileInZip(pv->zf, inZipFilename, &zipfi, currentExtraField.toStringZOrNull<const char*>(), currentExtraField.lengthOrZero(), NULL, NULL, NULL, level == 0 ? 0 : Z_DEFLATED, level) );
+			ZIP_CHK( zipOpenNewFileInZip(pv->zf, inZipFilename, &zipfi, currentExtraField.toStrZ(), currentExtraField.length(), NULL, NULL, NULL, level == 0 ? 0 : Z_DEFLATED, level) );
 			pv->inZipOpened = true;
 
 		}
@@ -700,11 +696,10 @@ DEFINE_FUNCTION( write ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString data;
+		jl::StrData data(cx);
 
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
-		ASSERT( !data.isEmpty() );
+		ASSERT( data.length() > 0 );
 
 		ZIP_CHK( zipWriteInFileInZip(pv->zf, data.toBytes(), data.length()) );
 

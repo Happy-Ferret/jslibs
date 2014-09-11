@@ -150,8 +150,7 @@ DEFINE_CONSTRUCTOR() {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString name;
+		jl::StrData name(cx);
 
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
 
@@ -250,8 +249,7 @@ DEFINE_FUNCTION( write ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString data;
+		jl::StrData data(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
 
 		JL_ASSERT( sizeof(MemHeader) + offset + data.length() <= pv->size, E_DATASIZE, E_MAX, E_NUM(pv->size - sizeof(MemHeader) - offset) ); // JL_ASSERT( sizeof(MemHeader) + offset + data.length() <= pv->size, "SharedMemory too small to hold the given data." );
@@ -401,8 +399,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 		JL_CHK( Unlock(cx, pv) );
 	} else {
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString data;
+		jl::StrData data(cx);
 		JL_CHK( jl::getValue(cx, vp, &data) );
 
 		JL_ASSERT( sizeof(MemHeader) + data.length() <= pv->size, E_DATASIZE, E_MAX, E_NUM(pv->size - sizeof(MemHeader)) ); //JL_ASSERT( sizeof(MemHeader) + data.length() <= pv->size, "SharedMemory too small to hold the given data." );

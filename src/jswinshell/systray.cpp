@@ -897,8 +897,7 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 			size_t length = ida.length();
 			for ( size_t j = 0; j < length; ++j ) {
 
-				JS::AutoCheckCannotGC nogc;
-				jl::BufString keyStr;
+				jl::StrData keyStr(cx);
 				JS::RootedId itemId(cx, ida[j]);
 
 				JL_CHK( JS_IdToValue(cx, itemId, &key) );
@@ -1008,11 +1007,10 @@ bool FillMenu( JSContext *cx, JS::HandleObject systrayObj, JS::HandleObject menu
 
 			if ( !label.isUndefined() ) {
 
-				JS::AutoCheckCannotGC nogc;
-				jl::BufString newItemStr;
+				jl::StrData newItemStr(cx);
 				JL_CHK( jl::getValue(cx, label, &newItemStr) );
 				
-				lpNewItem = newItemStr.toStringZ<PCTSTR>();
+				lpNewItem = newItemStr;
 				uFlags |= MF_STRING;
 			} else {
 
@@ -1162,8 +1160,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 		JL_CHK( jl::getProperty(cx, infoObj, "infoTitle", JL_RVAL) );
 		if ( !JL_RVAL.isUndefined() ) {
 
-			JS::AutoCheckCannotGC nogc;
-			jl::BufString infoTitle;
+			jl::StrData infoTitle(cx);
 			JL_CHK( jl::getValue(cx, JL_RVAL, &infoTitle) );
 
 			//size_t len = jl::min(sizeof(pv->nid.szInfo)-1, infoTitle.length());
@@ -1177,8 +1174,7 @@ DEFINE_FUNCTION( popupBalloon ) {
 		JL_CHK( jl::getProperty(cx, infoObj, "info", JL_RVAL) );
 		if ( !JL_RVAL.isUndefined() ) {
 
-			JS::AutoCheckCannotGC nogc;
-			jl::BufString infoStr;
+			jl::StrData infoStr(cx);
 			JL_CHK( jl::getValue(cx, JL_RVAL, &infoStr) );
 			//size_t len = jl::min(sizeof(pv->nid.szInfo)-1, infoStr.length());
 			//JL_IGNORE(len);
@@ -1193,17 +1189,16 @@ DEFINE_FUNCTION( popupBalloon ) {
 		JL_CHK( jl::getProperty(cx, infoObj, "icon", JL_RVAL) );
 		if ( !JL_RVAL.isUndefined() ) {
 
-			JS::AutoCheckCannotGC nogc;
-			jl::BufString iconNameStr;
+			jl::StrData iconNameStr(cx);
 			JL_CHK( jl::getValue(cx, JL_RVAL, &iconNameStr) );
 			
-			if ( strcmp(iconNameStr, TEXT("info") ) == 0 )
+			if ( iconNameStr.equals(TEXT("info")) == 0 )
 				pv->nid.dwInfoFlags |= NIIF_INFO;
 			else
-			if ( strcmp( iconNameStr, TEXT( "warning") ) == 0 )
+			if ( iconNameStr.equals(TEXT("warning")) == 0 )
 				pv->nid.dwInfoFlags |= NIIF_WARNING;
 			else
-			if ( strcmp( iconNameStr, TEXT( "error") ) == 0 )
+			if ( iconNameStr.equals(TEXT("error")) == 0 )
 				pv->nid.dwInfoFlags |= NIIF_ERROR;
 		}
 
@@ -1397,8 +1392,7 @@ DEFINE_PROPERTY_SETTER( text ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString tipText;
+		jl::StrData tipText(cx);
 		JL_CHK( jl::getValue(cx, vp, &tipText) );
 
 		//size_t len = jl::min(sizeof(pv->nid.szTip)-1, tipText.length());

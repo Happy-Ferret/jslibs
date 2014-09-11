@@ -145,8 +145,7 @@ private:
 
 bool BlobToVariant( JSContext *cx, JS::HandleValue val, VARIANT *variant ) {
 
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString buf;
+	jl::StrData buf(cx);
 	JL_CHK( jl::getValue(cx, val, &buf) );
 	variant->vt = VT_ARRAY | VT_UI1;
 	SAFEARRAYBOUND rgsabound[1];
@@ -195,11 +194,10 @@ bool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *varia
 
 			// see also: Write and read binary data in VARIANT - http://www.ucosoft.com/write-and-read-binary-data-in-variant.html
 			
-			JS::AutoCheckCannotGC nogc;
-			jl::BufString buf;
+			jl::StrData buf(cx);
 			JL_CHK( jl::getValue(cx, value, &buf) );
 			V_VT(variant) = VT_BSTR;
-			V_BSTR(variant) = SysAllocStringByteLen(buf, buf.length());
+			V_BSTR(variant) = SysAllocStringByteLen(buf.toStr(), buf.length());
 			return true;
 		}
 
@@ -255,12 +253,11 @@ bool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *varia
 
 	if ( value.isString() ) {
 		
-		JS::AutoCheckCannotGC nogc;
-		JSString *jsstr = value.toString();
+		JS::AutoCheckCannotGC nogc; // ok
 		V_VT(variant) = VT_BSTR;
 		size_t srclen;
 		const jschar *src;
-		src = JS_GetTwoByteStringCharsAndLength(cx, nogc, jsstr, &srclen);
+		src = JS_GetTwoByteStringCharsAndLength(cx, nogc, value.toString(), &srclen);
 		V_BSTR(variant) = SysAllocStringLen( (OLECHAR*)src, srclen);
 		return true;
 	}
@@ -319,16 +316,14 @@ bool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *varia
 	// last resort
 	{
 
-		JS::AutoCheckCannotGC nogc;
+		JS::AutoCheckCannotGC nogc; // ok
 
-		JSString *jsstr = JS::ToString(cx, value); // see JS_ConvertValue
-		JL_ASSERT( jsstr, E_VALUE, E_CONVERT, E_TY_STRING );
-
+		JS::RootedString str(cx, JS::ToString(cx, value)); // see JS_ConvertValue
+		JL_ASSERT( str, E_VALUE, E_CONVERT, E_TY_STRING );
 		V_VT(variant) = VT_BSTR;
-
 		size_t srclen;
 		const jschar *src;
-		src = JS_GetTwoByteStringCharsAndLength(cx, nogc, jsstr, &srclen);
+		src = JS_GetTwoByteStringCharsAndLength(cx, nogc, str, &srclen);
 		V_BSTR(variant) = SysAllocStringLen( (OLECHAR*)src, srclen );
 	
 	}

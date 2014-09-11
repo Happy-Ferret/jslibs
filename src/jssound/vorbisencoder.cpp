@@ -174,22 +174,19 @@ DEFINE_FUNCTION( encode ) {
 
 	Private *pv = static_cast<Private*>(JL_GetPrivate(JL_OBJ));
 
-	int16_t *data;
+	// int16_t *data;
+	jl::StrData data(cx);
 	jl::ChunkedBuffer<uint8_t> dstBuf;
 
 	if ( !JL_SARG(1).isUndefined() ) {
 
-		JS::AutoCheckCannotGC nogc;
 		JL_ASSERT( JL_isAudioObject(cx, JL_ARG(1)) );
-		jl::BufString buffer = JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &channels, &frames, &rate, nogc);
+		JL_CHK( JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &channels, &frames, &rate, data) );
 		
 		ASSERT( pv->vi.rate == rate );
 		ASSERT( pv->vi.channels == channels );
-		data = buffer.dataAs<int16_t*>();
-
 	} else {
 
-		data = nullptr;
 		frames = 0;
 	}
 
@@ -223,7 +220,7 @@ DEFINE_FUNCTION( encode ) {
 		float **buffers = vorbis_analysis_buffer(&pv->vds, frameCount);
 		ASSERT( buffers );
 
-		int16_t *frameData = data + frameOffset * 2; // 2 channels
+		const int16_t *frameData = reinterpret_cast<const int16_t*>(data.toBytes()) + frameOffset * 2; // 2 channels
 
 		for ( int i = 0; i < frameCount; ++i ) {
 

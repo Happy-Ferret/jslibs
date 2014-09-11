@@ -186,25 +186,23 @@ jsvalToSqlite( JSContext *cx, T sqliteTarget, IN JS::HandleValue val ) {
 			sqliteStatus = sqliteTarget.setDouble( val.toDouble() );
 	} else if ( val.isString() ) {
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString buf;
+		jl::StrData buf(cx);
 		JL_CHK( jl::getValue( cx, val, &buf ) );
 		// beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 		if ( buf.isWide() )
-			sqliteStatus = sqliteTarget.setText16( buf.toData<const jschar*>(), buf.length() * buf.charSize(), SQLITE_STATIC );
+			sqliteStatus = sqliteTarget.setText16( buf.toWStr(), buf.length() * 2, SQLITE_STATIC );
 		else
-			sqliteStatus = sqliteTarget.setText( buf.toData<const char*>(), buf.length(), SQLITE_STATIC );
+			sqliteStatus = sqliteTarget.setText( buf.toStr(), buf.length(), SQLITE_STATIC );
 	} else if ( jl::isData( cx, val ) ) {
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString buf;
+		jl::StrData buf(cx);
 		JL_CHK( jl::getValue( cx, val, &buf ) );
 		// beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 		size_t len = buf.length();
-		if ( len == 0 )
-			sqliteStatus = sqliteTarget.setZeroblob( 0 );
-		else
+		if ( len != 0 )
 			sqliteStatus = sqliteTarget.setBlob( buf.toBytes(), len, SQLITE_STATIC );
+		else
+			sqliteStatus = sqliteTarget.setZeroblob( 0 );
 	} else {
 
 		//jl::getPrimitive( cx, val, val );

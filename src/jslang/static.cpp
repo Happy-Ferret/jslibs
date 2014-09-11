@@ -1083,8 +1083,11 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	str.set(cx, jsstr);
 
-	::puts(str.toStrZ());
+	str.equals("test");
 
+
+
+	::puts(str.toStrZ());
 
 
 return true;

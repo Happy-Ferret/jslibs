@@ -56,8 +56,7 @@ DEFINE_FUNCTION( extractIcon ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString fileName;
+		jl::StrData fileName(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &fileName) );
 		hIcon = ExtractIcon( hInst, fileName, iconIndex ); // see SHGetFileInfo(
 		if ( hIcon == NULL ) {
@@ -146,9 +145,8 @@ DEFINE_FUNCTION( messageBox ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString caption;
-		jl::BufString text;
+		jl::StrData caption(cx);
+		jl::StrData text(cx);
 
 		if ( argc >= 2 && !JL_ARG(2).isUndefined() )
 			JL_CHK( jl::getValue(cx, JL_ARG(2), &caption) );
@@ -188,11 +186,10 @@ DEFINE_FUNCTION( createProcess ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString applicationName;
-		jl::BufString commandLine;
-		jl::BufString environment;
-		jl::BufString currentDirectory;
+		jl::StrData applicationName(cx);
+		jl::StrData commandLine(cx);
+		jl::StrData environment(cx);
+		jl::StrData currentDirectory(cx);
 
 		if ( JL_ARG_ISDEF(1) )
 			JL_CHK( jl::getValue(cx, JL_ARG(1), &applicationName) ); // warning: GC on the returned buffer !
@@ -213,11 +210,11 @@ DEFINE_FUNCTION( createProcess ) {
 		PROCESS_INFORMATION pi;
 
 		// doc. commandLine parameter: The Unicode version of CreateProcess function, CreateProcessW, may modify the contents of this string !
-		TCHAR *tmpCommandLine = commandLine.toStringZOrNull<TCHAR*>(); // The Unicode version, CreateProcessW, can modify the contents of this string.
+		TCHAR *tmpCommandLine = commandLine.toOwnWStrZ(); // The Unicode version, CreateProcessW, can modify the contents of this string.
 		DWORD creationFlags = sizeof( TCHAR ) == sizeof( WCHAR ) ? CREATE_UNICODE_ENVIRONMENT : 0;
 
 		// doc: http://msdn2.microsoft.com/en-us/library/ms682425.aspx
-		BOOL st = ::CreateProcess( applicationName, tmpCommandLine, NULL, NULL, FALSE, creationFlags, (LPVOID)environment.toStringZOrNull<const TCHAR*>(), currentDirectory, &si, &pi );
+		BOOL st = ::CreateProcess( applicationName, tmpCommandLine, NULL, NULL, FALSE, creationFlags, (LPVOID)environment.toWStrZ(), currentDirectory, &si, &pi );
 		jl_free( tmpCommandLine );
 
 		if ( st == FALSE )
@@ -253,8 +250,7 @@ DEFINE_FUNCTION( fileOpenDialog ) {
 
 	if ( argc >= 1 && !JL_ARG(1).isUndefined() ) {
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString str;
+		jl::StrData str(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 		jl::strcpy( filter, str );
 		for ( TCHAR *tmp = filter; (tmp = jl::strchr(tmp, '|')) != 0; tmp++ )
@@ -265,8 +261,7 @@ DEFINE_FUNCTION( fileOpenDialog ) {
 
 	if ( argc >= 2 && !JL_ARG(2).isUndefined() ) {
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString tmp;
+		jl::StrData tmp(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(2), &tmp) );
 		jl::strcpy( fileName, tmp );
 	} else {
@@ -303,8 +298,7 @@ DEFINE_FUNCTION( expandEnvironmentStrings ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString src;
+		jl::StrData src(cx);
 
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &src) );
 		TCHAR dst[PATH_MAX];
@@ -396,11 +390,10 @@ DEFINE_FUNCTION( createComObject ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString name;
+		jl::StrData name(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
 
-		hr = name.charAt<wchar_t>(0) == L('{') ? CLSIDFromString(name, &clsid) : CLSIDFromProgID(name, &clsid);
+		hr = name.getWCharAt(0) == L('{') ? CLSIDFromString(name, &clsid) : CLSIDFromProgID(name, &clsid);
 		if ( FAILED(hr) )
 			JL_CHK( WinThrowError(cx, hr) );
 	
@@ -506,12 +499,11 @@ DEFINE_FUNCTION( registrySet ) {
 	{
 
 		JS::RootedValue value(cx);
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString subKeyStr;
+		jl::StrData subKeyStr(cx);
 		const TCHAR *subKey;
 
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &subKeyStr) );
-		subKey = subKeyStr.toStringZ<const TCHAR*>();
+		subKey = subKeyStr;
 
 		size_t length;
 		HKEY rootHKey = ParseRootKey(subKey, &length);
@@ -539,8 +531,7 @@ DEFINE_FUNCTION( registrySet ) {
 			if ( st != ERROR_SUCCESS )
 				return WinThrowError(cx, st);
 		
-			JS::AutoCheckCannotGC nogc;
-			jl::BufString valueNameStr;
+			jl::StrData valueNameStr(cx);
 
 			JL_CHK( jl::getValue(cx, JL_ARG(2), &valueNameStr) );
 
@@ -566,18 +557,16 @@ DEFINE_FUNCTION( registrySet ) {
 			} else
 			if ( value.isString() ) {
 
-				JS::AutoCheckCannotGC nogc;
-				jl::BufString tmp;
+				jl::StrData tmp(cx);
 				JL_CHK( jl::getValue(cx, value, &tmp) );
 				// doc: When writing a string to the registry, you must specify the length of the string, including the terminating null character (\0).
-				st = RegSetValueEx(hKey, valueNameStr, 0, REG_SZ, (LPBYTE)tmp.toStringZ<const char*>(), tmp.length() + 1);
+				st = RegSetValueEx(hKey, valueNameStr, 0, REG_SZ, reinterpret_cast<const BYTE *>(tmp.toStrZ()), tmp.length() + 1);
 			} else
 			if ( jl::isData(cx, value) ) {
 
-				JS::AutoCheckCannotGC nogc;
 				jl::BufString tmp;
 				JL_CHK( jl::getValue(cx, value, &tmp) );
-				st = RegSetValueEx(hKey, valueNameStr, 0, REG_BINARY, tmp.toStringZ<const uint8_t*>(), tmp.length());
+				st = RegSetValueEx(hKey, valueNameStr, 0, REG_BINARY, tmp.toBytes(), tmp.length());
 			}
 
 			if ( st != ERROR_SUCCESS )
@@ -625,14 +614,14 @@ DEFINE_FUNCTION( registryGet ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
 		jl::BufBase buffer;
-		jl::BufString pathStr;
-		jl::BufString valueName;
+
+		jl::StrData pathStr(cx);
+		jl::StrData valueName(cx);
 
 		const TCHAR *path;
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &pathStr) );
-		path = pathStr.toStringZ<const TCHAR *>();
+		path = pathStr;
 
 		size_t length;
 		HKEY rootHKey = ParseRootKey(path, &length);
@@ -820,8 +809,7 @@ DEFINE_FUNCTION( directoryChangesInit ) {
 	
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString pathName;
+		jl::StrData pathName(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &pathName) );
 
 		dc->hDirectory = CreateFile(pathName, FILE_LIST_DIRECTORY, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
@@ -1050,14 +1038,13 @@ DEFINE_FUNCTION( guidToString ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString str;
+		jl::StrData str(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 
 		JL_ASSERT( str.length() == sizeof(GUID), E_ARG, E_NUM(1), E_LENGTH, E_NUM(sizeof(GUID)) );
 
 		GUID guid;
-		CopyMemory(&guid, str.toData<const char*>(), sizeof(GUID));
+		CopyMemory(&guid, str.toStr(), sizeof(GUID));
 		WCHAR szGuid[39];
 		int len = StringFromGUID2(guid, szGuid, COUNTOF(szGuid));
 		ASSERT( len == COUNTOF(szGuid) );
@@ -1125,8 +1112,7 @@ DEFINE_PROPERTY_SETTER( clipboard ) {
 
 	if ( !vp.isNullOrUndefined() ) {
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString str;
+		jl::StrData str(cx);
 
 		res = OpenClipboard(NULL);
 		if ( res == 0 )
@@ -1137,7 +1123,7 @@ DEFINE_PROPERTY_SETTER( clipboard ) {
 		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
 		if ( lptstrCopy == NULL )
 			return jl::throwOSError(cx);
-		jl::memcpy(lptstrCopy, str.toData<const char*>(), str.length() + 1);
+		jl::memcpy(lptstrCopy, str.toStr(), str.length() + 1);
 		lptstrCopy[str.length()] = 0;
 		GlobalUnlock(hglbCopy);
 		HANDLE h = SetClipboardData(CF_TEXT, hglbCopy);

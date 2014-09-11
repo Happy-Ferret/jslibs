@@ -272,8 +272,7 @@ DEFINE_FUNCTION( delete ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString str;
+		jl::StrData str(cx);
 		JL_CHK( jl::getValue(cx, jsvalFileName, &str) );
 		if ( PR_Delete(str) != PR_SUCCESS )
 			return ThrowIoError(cx);
@@ -700,8 +699,7 @@ DEFINE_PROPERTY_GETTER( info ) {
 	PRFileDesc *fd = (PRFileDesc *)JL_GetPrivate( obj );
 	if ( fd == NULL ) {
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString fileName;
+		jl::StrData fileName(cx);
 		JS::RootedValue jsvalFileName(cx);
 		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 		JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );

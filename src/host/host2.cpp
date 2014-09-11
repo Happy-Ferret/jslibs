@@ -1192,8 +1192,8 @@ DEFINE_FUNCTION( loadModule ) {
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 
 		//jl::strncpy( libFileName, str.toData<const char *>(), str.length() ); // (TBD) use copyTo()
-		str.copyTo( libFileName );
-		libFileName[str.length()] = '\0';
+		size_t count = str.copyTo( libFileName, COUNTOF(libFileName)-1 );
+		libFileName[count] = '\0';
 		jl::strcat( libFileName, DLL_EXT );
 		// MAC OSX: 	'@executable_path' ??
 	}

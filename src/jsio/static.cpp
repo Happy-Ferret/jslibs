@@ -281,8 +281,7 @@ DEFINE_FUNCTION( getEnv ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString name;
+		jl::StrData name(cx);
 	
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
 		char* value;
@@ -420,8 +419,7 @@ DEFINE_FUNCTION( waitSemaphore ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString name;
+		jl::StrData name(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
 
 		bool isCreation;
@@ -474,9 +472,8 @@ DEFINE_FUNCTION( postSemaphore ) {
 	PRSem *semaphore;
 
 	{
-	
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString name;
+
+		jl::StrData name(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
 		semaphore = PR_OpenSemaphore(name, 0, 0, 0);
 
@@ -637,8 +634,7 @@ DEFINE_FUNCTION( availableSpace ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString path;
+		jl::StrData path(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &path) );
 
 		double available;
@@ -1005,8 +1001,7 @@ DEFINE_PROPERTY_SETTER( currentDirectory ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString dir;
+	jl::StrData dir(cx);
 	JL_CHK( jl::getValue(cx, vp, &dir ) );
 #ifdef WIN
 //	_chdir(dir);

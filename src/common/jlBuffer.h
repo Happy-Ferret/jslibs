@@ -71,7 +71,6 @@ public:
 		return toBytes();
 	}
 
-
 	virtual char * toOwnStrZ() {
 
 		size_t size = sizeof(char) * (length() + 1);
@@ -144,39 +143,53 @@ public:
 		JL_BAD;
 	}
 
-	virtual char getCharAt(size_t offset) {
 
-		ASSERT( offset < length() ); // out of string range
-		return toStr()[offset];
+	// getCharAt
+
+	virtual char getCharAt(size_t index) {
+
+		ASSERT( index < length() ); // out of string range
+		return toStr()[index];
 	}
 
-	virtual char16_t getWCharAt(size_t offset) {
+	virtual char16_t getWCharAt(size_t index) {
 
-		ASSERT( offset < length() ); // out of string range
-		return toWStr()[offset];
+		ASSERT( index < length() ); // out of string range
+		return toWStr()[index];
 	}
 
-	virtual uint8_t getByteAt(size_t offset) {
+	virtual uint8_t getByteAt(size_t index) {
 
-		ASSERT( offset < length() ); // out of string range
-		return toBytes()[offset];
+		ASSERT( index < length() ); // out of string range
+		return toBytes()[index];
 	}
 
-	virtual void copyTo( char *dst ) {
 
-		jl::memcpy(dst, toStrZ(), length() * sizeof(*dst));
+	// copyTo
+
+	virtual size_t copyTo( char *dst, size_t maxLength ) {
+
+		size_t len = jl::min(length(), maxLength);
+		jl::memcpy(dst, toStrZ(), len * sizeof(*dst));
+		return len;
 	}
 
-	virtual void copyTo( char16_t *dst ) {
+	virtual size_t copyTo( char16_t *dst, size_t maxLength ) {
 
-		jl::memcpy(dst, toWStrZ(), length() * sizeof(*dst));
+		size_t len = jl::min(length(), maxLength);
+		jl::memcpy(dst, toWStrZ(), len * sizeof(*dst));
+		return len;
 	}
 
-	virtual void copyTo( uint8_t *dst ) {
-
-		jl::memcpy(dst, toBytes(), length() * sizeof(*dst));
+	virtual size_t copyTo( uint8_t *dst, size_t maxLength ) {
+		
+		size_t len = jl::min(length(), maxLength);
+		jl::memcpy(dst, toBytes(), len * sizeof(*dst));
+		return len;
 	}
 
+
+	// equals
 
 	virtual bool equals( const char *src ) {
 

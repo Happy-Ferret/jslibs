@@ -366,14 +366,11 @@ DEFINE_FUNCTION( warning ) {
 
 	JL_DEFINE_ARGS;
 
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString str;
+	jl::StrData str(cx);
 	JL_ASSERT_ARGC(1);
 
-//	const char *message;
-
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-	JL_CHK( JS_ReportWarning(cx, "%s", str.toStringZ<const char *>()) );
+	JL_CHK( JS_ReportWarning(cx, "%s", str.toStrZ()) );
 	
 	JL_RVAL.setUndefined();
 	return true;
@@ -410,14 +407,13 @@ DEFINE_FUNCTION( assert ) {
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &assert) );
 	if ( !assert ) {
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString str;
+		jl::StrData str(cx);
 		if ( JL_ARG_ISDEF(2) )
 			JL_CHK( jl::getValue(cx, JL_ARG(2), &str) );
 		else
 			str.get("Assertion failed.");
 		
-		JS_ReportError( cx, "%s", str.toStringZ<const char *>());
+		JS_ReportError( cx, "%s", str.toStrZ());
 		return false;
 	}
 
@@ -671,8 +667,7 @@ DEFINE_FUNCTION( exec ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString fileName;
+		jl::StrData fileName(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &fileName) );
 
 		JS::RootedScript script(cx);
@@ -967,12 +962,12 @@ DEFINE_FUNCTION( sandboxEval ) {
 
 			if ( JS_StringHasLatin1Chars(srcStr) ) {
 
-				JS::AutoCheckCannotGC nogc;
+				JS::AutoCheckCannotGC nogc; // ok
 				const char *src = (const char *)JS_GetLatin1StringCharsAndLength(cx, nogc, srcStr, &srcLen);
 				ok = JS::Evaluate(cx, globalObj, compileOpt, src, srcLen, args.rval());
 			} else {
 
-				JS::AutoCheckCannotGC nogc;
+				JS::AutoCheckCannotGC nogc; // ok
 				const jschar *src = JS_GetTwoByteStringCharsAndLength(cx, nogc, srcStr, &srcLen);
 				ok = JS::Evaluate(cx, globalObj, compileOpt, src, srcLen, args.rval());
 			}
@@ -1044,10 +1039,9 @@ DEFINE_FUNCTION( isStatementValid ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString str;
+		jl::StrData str(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-		JL_CHK( jl::setValue(cx, JL_RVAL, JS_BufferIsCompilableUnit(cx, JL_OBJ, str, str.length())) );
+		JL_CHK( jl::setValue(cx, JL_RVAL, JS_BufferIsCompilableUnit(cx, JL_OBJ, str.toStr(), str.length())) );
 
 	}
 

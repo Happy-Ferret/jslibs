@@ -109,7 +109,6 @@ GetAvailable(JSContext *cx, JS::HandleObject obj, size_t *available) {
 ALWAYS_INLINE bool
 StreamRead( JSContext *cx, JS::HandleObject streamObj, char *buf, size_t *amount ) {
 
-	JS::AutoCheckCannotGC nogc;
 	jl::StrData data(cx);
 	size_t position;
 	JS::RootedValue source(cx);

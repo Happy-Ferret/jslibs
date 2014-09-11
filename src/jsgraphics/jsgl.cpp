@@ -4566,15 +4566,14 @@ DEFINE_FUNCTION( shaderSource ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
 		GLhandleARB shaderHandle = JL_ARG(1).toInt32();
-		jl::BufString source;
+		jl::StrData source(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(2), &source) );
 
 		const GLcharARB *buffer;
 		GLint length;
 		length = source.length();
-		buffer = source.toData<const char*>();
+		buffer = source.toStr();
 
 		glShaderSourceARB(shaderHandle, 1, &buffer, &length);  OGL_ERR_CHK;
 	
@@ -6659,7 +6658,7 @@ DEFINE_FUNCTION( defineTextureImage ) {
 			JL_CHK(jl::getValue(cx, JL_ARG(5), &height));
 			JL_CHK(jl::getValue(cx, JL_ARG(6), &channels));
 
-			JS::AutoCheckCannotGC nogc;
+			JS::AutoCheckCannotGC nogc; // ok
 
 			switch (JS_GetArrayBufferViewType(tObj)) {
 			case js::Scalar::Int8:

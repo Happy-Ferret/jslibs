@@ -91,11 +91,10 @@ DEFINE_FUNCTION( write ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString str;
+		jl::StrData str(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 		DWORD written;
-		BOOL status = ::WriteConsole(hStdout, str.toData<LPCTSTR>(), str.length(), &written, NULL);
+		BOOL status = ::WriteConsole(hStdout, str.toWStr(), str.length(), &written, NULL);
 		if ( status == FALSE )
 			return WinThrowError(cx, GetLastError());
 
@@ -191,11 +190,10 @@ DEFINE_FUNCTION( writeConsoleOutput ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString str;
+		jl::StrData str(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(3), &str) );
-		JL_ASSERT( str.lengthOrZero() == 1, E_ARGVALUE, E_NUM(1), E_LENGTH, E_NUM(1) );
-		charInfo.Char.UnicodeChar = str.charAt<WCHAR>(0);
+		JL_ASSERT( str.length() == 1, E_ARGVALUE, E_NUM(1), E_LENGTH, E_NUM(1) );
+		charInfo.Char.UnicodeChar = str.getWCharAt(0);
 
 	}
 
@@ -259,14 +257,13 @@ DEFINE_FUNCTION( fillConsoleOutput ) {
 
 	if ( size.X > 0 && size.Y > 0 ) {
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString str;
+		jl::StrData str(cx);
 
 		HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
 		JL_CHK( jl::getValue(cx, JL_ARG(5), &str) );
-		JL_ASSERT( str.lengthOrZero() == 1, E_ARGVALUE, E_NUM(1), E_LENGTH, E_NUM(1) );
-		WCHAR unicodeChar = str.charAt<WCHAR>(0); //.GetConstWStrOrNull()[0];
+		JL_ASSERT( str.length() == 1, E_ARGVALUE, E_NUM(1), E_LENGTH, E_NUM(1) );
+		WCHAR unicodeChar = str.getWCharAt(0); //.GetConstWStrOrNull()[0];
 
 		WORD attributes;
 		JL_CHK( jl::getValue(cx, JL_ARG(6), &attributes) );
@@ -631,8 +628,7 @@ DEFINE_PROPERTY_SETTER( title ) {
 	
 	JL_IGNORE(strict, id, obj);
 
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString str;
+	jl::StrData str(cx);
 	JL_CHK( jl::getValue(cx, vp, &str) );
 	SetConsoleTitle(str);
 	return true;

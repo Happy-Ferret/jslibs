@@ -174,8 +174,7 @@ DEFINE_FUNCTION( bind ) {
 
 	if ( JL_ARG_ISDEF(2) ) { // if we have a second argument and this argument is not undefined
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString host;
+		jl::StrData host(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(2), &host) );
 
 		if ( PR_StringToNetAddr(host, &addr) != PR_SUCCESS )
@@ -336,12 +335,11 @@ DEFINE_FUNCTION( connect ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString host;
 		PRUint16 port;
+		jl::StrData host(cx);
 
-		JL_CHK( jl::getValue(cx, JL_ARG(2), &port) );
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &host) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &port) );
 
 		if ( PR_StringToNetAddr(host, &addr) == PR_SUCCESS ) {
 
@@ -418,12 +416,11 @@ DEFINE_FUNCTION( sendTo ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString host;
-
 		PRUint16 port;
-		JL_CHK( jl::getValue(cx, JL_ARG(2), &port) );
+		jl::StrData host(cx);
+
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &host) );
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &port) );
 
 
 		if ( PR_StringToNetAddr(host, &addr) == PR_SUCCESS ) {
@@ -450,8 +447,7 @@ DEFINE_FUNCTION( sendTo ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString str;
+		jl::StrData str(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(3), &str) );
 		ASSERT( str.length() <= PR_INT32_MAX );
 
@@ -670,8 +666,7 @@ DEFINE_FUNCTION( transmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString headers;
+		jl::StrData headers(cx);
 
 	//	const char *headers;
 	//	headers = NULL;
@@ -686,7 +681,7 @@ DEFINE_FUNCTION( transmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 		JL_CHK( GetTimeoutInterval(cx, JL_OBJ, &timeout) );
 
 		PRInt32 bytes;
-		bytes = PR_TransmitFile(socketFd, fileFd, headers.toDataOrNull<const uint8_t*>(), (PRInt32)headers.lengthOrZero(), flag, timeout);
+		bytes = PR_TransmitFile(socketFd, fileFd, headers.toBytes(), (PRInt32)headers.length(), flag, timeout);
 		if ( bytes == -1 )
 			return ThrowIoError(cx);
 
@@ -1125,8 +1120,7 @@ DEFINE_FUNCTION( getHostsByName ) {
 
 		{
 
-			JS::AutoCheckCannotGC nogc;
-			jl::BufString host;
+			jl::StrData host(cx);
 			JL_CHK( jl::getValue(cx, JL_ARG(1), &host) );
 
 			if (PR_GetHostByName(host, netdbBuf, COUNTOF(netdbBuf), &hostEntry) != PR_SUCCESS) {
@@ -1199,8 +1193,7 @@ DEFINE_FUNCTION( getHostsByAddr ) {
 	{
 
 		//const char *addr; // MAX_IP_STRING_LENGTH
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString addr;
+		jl::StrData addr(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &addr) );
 
 		PRNetAddr netaddr;

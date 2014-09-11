@@ -15,6 +15,7 @@
 #pragma once
 
 // #include "mozilla/Maybe.h"
+#include "mozilla/Range.h"
 
 
 
@@ -131,13 +132,14 @@ public:
 	StrData( JSContext *cx ) : _cx(cx), _str(cx), _obj(cx), _data(nullptr), _length(0), _type(StrData::none) {
 	}
 
-	bool set( JSContext *cx, JS::HandleString str ) {
+	bool set( JSContext *, JS::HandleString str ) {
 	
 		if ( _data )
 			freeData();
 
 		if ( str == nullptr )
 			return false;
+		
 		_str.set(str);
 		
 		_length = JL_GetStringLength(str);
@@ -156,23 +158,23 @@ public:
 
 			_length = JS_GetArrayBufferByteLength(obj);
 			_type = ArrayBuffer;
-			return true;
 		} else
 		if ( JS_IsTypedArrayObject(obj) ) {
 
-			if ( JS_GetArrayBufferViewType(_obj) != js::Scalar::Uint16 ) {
+			_length = JS_GetTypedArrayByteLength(obj);
+			if ( JS_GetArrayBufferViewType(obj) != js::Scalar::Uint16 ) {
 			
-				_length = JS_GetTypedArrayByteLength(obj);
 				_type = ArrayBufferView;
-				return true;
 			} else {
 
-				_length = JS_GetTypedArrayLength(obj);
+				_length /= 2;
 				_type = Uint16ArrayBuffer;
-				return true;
 			}
+		} else {
+		
+			return false;
 		}
-		return false;
+		return true;
 	}
 
 	bool set( JSContext *cx, JS::HandleValue val ) {
@@ -184,7 +186,7 @@ public:
 		} else {
 
 			_str.set(JS::ToString(cx, val));
-			JL_CHK( _str != nullptr );
+			JL_CHKM( _str != nullptr, E_CONVERT, E_TY_STRING );
 			JL_CHK( set(cx, _str) );
 		}
 		return true;
@@ -214,6 +216,10 @@ public:
 			case ownStrZ:
 
 				return static_cast<uint8_t*>(_data);
+			case ownWStrZ: {
+
+				return setOwnBytes(static_cast<char16_t*>(_data));
+			}
 			case Latin1String: {
 
 				ASSERT( JS_StringHasLatin1Chars(_str) );
@@ -241,45 +247,6 @@ public:
 		}
 	}
 
-	// to c-string
-	const jschar *toWStrZ() {
-
-		switch ( _type ) {
-			case ownWStrZ:
-				return static_cast<char16_t*>(_data);
-			case TwoByteString: {
-
-				ASSERT( !JS_StringHasLatin1Chars(_str) );
-				// doc: Flat strings and interned strings are always null-terminated. JS_FlattenString can be used to get a null-terminated string.
-				JSFlatString *str;
-				if ( JS_StringIsFlat(_str) )
-					str = JS_ASSERT_STRING_IS_FLAT(_str);
-				else
-					str = JS_FlattenString(_cx, _str);
-				return JS_GetTwoByteFlatStringChars(JS::AutoCheckCannotGC(), str);
-			}
-			case Latin1String: {
-
-				ASSERT( JS_StringHasLatin1Chars(_str) );
-				size_t unused;
-				return setOwnWStrZ(JS_GetLatin1StringCharsAndLength(_cx, JS::AutoCheckCannotGC(), _str, &unused));
-			}
-			case ArrayBuffer: {
-
-				return setOwnWStrZ(JS_GetArrayBufferData(_obj));
-			}
-			case Uint16ArrayBuffer: {
-
-				return reinterpret_cast<const jschar*>(JS_GetUint16ArrayData(_obj));
-			}
-			case ArrayBufferView: {
-
-				return setOwnWStrZ(reinterpret_cast<int8_t*>(JS_GetArrayBufferViewData(_obj)));
-			}
-			default:
-				return nullptr;
-		}
-	}
 
 	// to wide c-string
 	const char *toStrZ() {
@@ -326,6 +293,126 @@ public:
 				return nullptr;
 		}
 	}
+
+
+	// to c-string
+	const jschar *toWStrZ() {
+
+		switch ( _type ) {
+			case ownWStrZ:
+				return static_cast<char16_t*>(_data);
+			case TwoByteString: {
+
+				ASSERT( !JS_StringHasLatin1Chars(_str) );
+				// doc: Flat strings and interned strings are always null-terminated. JS_FlattenString can be used to get a null-terminated string.
+				JSFlatString *str;
+				if ( JS_StringIsFlat(_str) )
+					str = JS_ASSERT_STRING_IS_FLAT(_str);
+				else
+					str = JS_FlattenString(_cx, _str);
+				return JS_GetTwoByteFlatStringChars(JS::AutoCheckCannotGC(), str);
+			}
+			case Latin1String: {
+
+				ASSERT( JS_StringHasLatin1Chars(_str) );
+				size_t unused;
+				return setOwnWStrZ(JS_GetLatin1StringCharsAndLength(_cx, JS::AutoCheckCannotGC(), _str, &unused));
+			}
+			case ArrayBuffer: {
+
+				return setOwnWStrZ(JS_GetArrayBufferData(_obj));
+			}
+			case Uint16ArrayBuffer: {
+
+				return reinterpret_cast<const jschar*>(JS_GetUint16ArrayData(_obj));
+			}
+			case ArrayBufferView: {
+
+				return setOwnWStrZ(reinterpret_cast<int8_t*>(JS_GetArrayBufferViewData(_obj)));
+			}
+			default:
+				return nullptr;
+		}
+	}
+
+
+	char16_t getWCharAt(size_t index) {
+
+		switch ( _type ) {
+			case ownBytes:
+			case ownStrZ:
+
+				return static_cast<char16_t>( static_cast<char*>(_data)[index] );
+			case ownWStrZ:
+
+				return static_cast<char16_t*>(_data)[index];
+			case Latin1String:
+			case TwoByteString: {
+				
+				jschar res;
+				ASSERT( JS_GetStringCharAt(_cx, _str, index, &res) );
+				return res;
+			}
+			case ArrayBuffer:
+
+				return static_cast<char16_t>( reinterpret_cast<char*>(JS_GetArrayBufferData(_obj))[index] );
+			case Uint16ArrayBuffer:
+
+				return reinterpret_cast<const jschar*>(JS_GetUint16ArrayData(_obj))[index];
+			case ArrayBufferView:
+
+				return static_cast<char16_t>( reinterpret_cast<char*>(JS_GetArrayBufferViewData(_obj))[index] );
+			default:
+				return 0;
+		}
+	}
+
+	char getCharAt(size_t index) {
+
+		return static_cast<char>( getWCharAt(index) );
+	}
+
+	uint8_t getByteAt(size_t index) {
+
+		return static_cast<uint8_t>( getWCharAt(index) );
+	}
+
+
+	using StrDataSrc::equals; // bring back equals() into this scope
+
+	bool equals( const char *src ) {
+
+		switch ( _type ) {
+			case Latin1String:
+			case TwoByteString: {
+
+				bool match;
+				bool res = JS_StringEqualsAscii(_cx, _str, src, &match);
+				ASSERT( res );
+				return match;
+			}
+			default:
+				return StrDataSrc::equals(src);
+		}
+	}
+
+	using StrDataSrc::copyTo; // bring back copyTo() into this scope
+
+	size_t copyTo( char16_t *dst, size_t maxLength ) {
+
+		switch ( _type ) {
+			case TwoByteString: {
+
+				bool res = JS_CopyStringChars(_cx, mozilla::Range<jschar>(dst, maxLength), _str);
+				ASSERT( res );
+				return jl::min(length(), maxLength);
+			}
+			default:
+				return StrDataSrc::copyTo(dst, maxLength);
+		}
+	}
+
+
 };
 
 

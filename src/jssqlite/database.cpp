@@ -167,8 +167,7 @@ $TOC_MEMBER $INAME
 **/
 DEFINE_FUNCTION( write ) {
 
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString data;
+	jl::StrData data(cx);
 
 	JL_DEFINE_ARGS;
 	JL_ASSERT_THIS_INSTANCE();
@@ -327,19 +326,15 @@ DEFINE_CONSTRUCTOR() {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString fileName;
-
+		jl::StrData fileName(cx);
 		if ( JL_ARG_ISDEF(1) )
 			JL_CHK( jl::getValue(cx, JL_ARG(1), &fileName) );
-		else
-			fileName.get(":memory:"); // SQLITE_OPEN_MEMORY
 
 		pv = (DatabasePrivate*)JS_malloc(cx, sizeof(DatabasePrivate));
 		JL_CHK(pv);
 		pv->db = NULL;
 
-		if ( sqlite3_open_v2(fileName, &pv->db, flags, NULL) != SQLITE_OK )
+		if ( sqlite3_open_v2(fileName.isSet() ? fileName.toStrZ() : ":memory:", &pv->db, flags, NULL) != SQLITE_OK )
 			JL_CHK( SqliteThrowError(cx, pv->db) );
 	
 	}
@@ -507,9 +502,8 @@ DEFINE_FUNCTION( openBlobStream ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString tableName;
-		jl::BufString columnName;
+		jl::StrData tableName(cx);
+		jl::StrData columnName(cx);
 
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &tableName) );
 		JL_CHK( jl::getValue(cx, JL_ARG(2), &columnName) );
@@ -622,8 +616,7 @@ DEFINE_FUNCTION( query ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString sql;
+		jl::StrData sql(cx);
 
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &sql) );
 
@@ -632,7 +625,7 @@ DEFINE_FUNCTION( query ) {
 		// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 
 		const jschar *sqlStr;
-		sqlStr = sql.toData<const jschar *>();
+		sqlStr = sql.toWStr();
 		size_t sqlLen;
 		sqlLen = sql.length();
 
@@ -707,15 +700,14 @@ DEFINE_FUNCTION( exec ) {
 	
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString sql;
+		jl::StrData sql(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &sql) );
 
 		const jschar *szTail;
 		// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 
 		const jschar *sqlStr;
-		sqlStr = sql.toData<const jschar *>();
+		sqlStr = sql.toWStr();
 		size_t sqlLen;
 		sqlLen = sql.length();
 
@@ -927,10 +919,10 @@ DEFINE_SET_PROPERTY() {
 
 		{
 
-			JS::AutoCheckCannotGC nogc;
 			JS::RootedString str(cx, JSID_TO_STRING( id ));
-			jl::BufString fname(cx, str, nogc);
-			if ( sqlite3_create_function16( dbpv->db, (const jschar*)fname, JS_GetFunctionArity( JS_ValueToFunction( cx, JL_RVAL ) ), SQLITE_UTF16, (void*)fpv, sqlite_function_call, NULL, NULL ) != SQLITE_OK ) {
+			jl::StrData fname(cx);
+			fname.set(cx, str);
+			if ( sqlite3_create_function16( dbpv->db, fname.toWStrZ(), JS_GetFunctionArity( JS_ValueToFunction( cx, JL_RVAL ) ), SQLITE_UTF16, (void*)fpv, sqlite_function_call, NULL, NULL ) != SQLITE_OK ) {
 			
 				delete fpv;
 				JL_CHK( SqliteThrowError( cx, dbpv->db ) );

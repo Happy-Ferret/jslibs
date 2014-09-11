@@ -386,16 +386,12 @@ DEFINE_FUNCTION( splitChannels ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-
 		int bits, rate, channels, frames;
-		jl::BufString data( JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &channels, &frames, &rate, nogc) );
+		jl::StrData data(cx); 
+		JL_CHK( JL_GetByteAudioObject(cx, JL_ARG(1), &bits, &channels, &frames, &rate, data) );
 
 		JL_ASSERT( bits == 8 || bits == 16, E_ARG, E_NUM(1), E_FORMAT, E_COMMENT_BEGIN, E_NUM(bits), E_STR("bit"), E_COMMENT_END );
-		JL_ASSERT( data, E_INVALID, E_DATA );
-
-		const char *srcBuf;
-		srcBuf = data.toData<const char*>();
+		JL_ASSERT( data.isSet(), E_INVALID, E_DATA );
 
 		JS::RootedObject destArray(cx, JS_NewArrayObject(cx, 0));
 		JL_RVAL.setObject(*destArray);
@@ -411,12 +407,12 @@ DEFINE_FUNCTION( splitChannels ) {
 			if ( bits == 16 ) {
 
 				for ( int frame = 0; frame < frames; frame++ )
-					((int16_t*)buf)[frame] = ((int16_t*)srcBuf)[frame*channels+c];
+					((int16_t*)buf)[frame] = ((int16_t*)data.toBytes())[frame*channels+c];
 			} else
 			if ( bits == 8 ) {
 
 				for ( int frame = 0; frame < frames; frame++ )
-					((int8_t*)buf)[frame] = ((int8_t*)srcBuf)[frame*channels+c];
+					((int8_t*)buf)[frame] = ((int8_t*)data.toBytes())[frame*channels+c];
 			}
 		}
 

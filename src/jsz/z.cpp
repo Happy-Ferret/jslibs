@@ -182,8 +182,7 @@ DEFINE_FUNCTION( process ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString inputData;
+		jl::StrData inputData(cx);
 
 		// force finish
 		bool forceFinish;
@@ -213,10 +212,10 @@ DEFINE_FUNCTION( process ) {
 				JL_CHK( ThrowZError(cx, status, pv->stream.msg) );
 		}
 
-		ASSERT( inputData.lengthOrZero() <= UINT_MAX );
+		ASSERT( inputData.length() <= UINT_MAX );
 
-		pv->stream.avail_in = (uInt)inputData.lengthOrZero();
-		pv->stream.next_in = (Bytef*)inputData.toDataOrNull<const Bytef*>();
+		pv->stream.avail_in = (uInt)inputData.length();
+		pv->stream.next_in = (Bytef*)inputData.toBytes();
 
 		// first length is a guess.
 		size_t length;

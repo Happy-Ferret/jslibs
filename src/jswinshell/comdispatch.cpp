@@ -164,8 +164,7 @@ DEFINE_GET_PROPERTY() {
 	DISPID dispid;
 
 	{
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString name;
+		jl::StrData name(cx);
 		JS::RootedValue nameStr(cx);
 		nameStr.setString(JSID_TO_STRING(id));
 		JL_CHK( jl::getValue(cx, nameStr, &name) );
@@ -243,12 +242,12 @@ DEFINE_SET_PROPERTY() {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
 		JS::RootedValue nameStr(cx, JS::StringValue(JSID_TO_STRING(id)));
 		jl::BufString name;
 		JL_CHK( jl::getValue(cx, nameStr, &name) );
-
-		hr = disp->GetIDsOfNames(IID_NULL, (OLECHAR**)&name, 1, LOCALE_SYSTEM_DEFAULT, &dispid);
+		
+		LPOLESTR names[] = { const_cast<LPOLESTR>(name.toWStrZ()) };
+		hr = disp->GetIDsOfNames(IID_NULL, names, 1, LOCALE_SYSTEM_DEFAULT, &dispid);
 		if ( FAILED(hr) ) // dispid == DISPID_UNKNOWN
 			JL_CHK( WinThrowError(cx, hr) );
 
@@ -292,9 +291,8 @@ DEFINE_SET_PROPERTY() {
 		switch ( hr ) {
 			case DISP_E_BADPARAMCOUNT: { // doc. An error return value that indicates that the number of elements provided to the method is different from the number of arguments accepted by the method.
 
-				JS::AutoCheckCannotGC nogc;
 				JS::RootedValue nameStr(cx, JS::StringValue(JSID_TO_STRING(id)));
-				jl::BufString name;
+				jl::StrData name(cx);
 				JL_CHK( jl::getValue(cx, nameStr, &name) );
 				
 				JL_ERR( E_NAME(name), E_WRITE ); //JL_REPORT_ERROR_NUM( JLSMSG_LOGIC_ERROR, "read-only property"); // (TBD) be more specific

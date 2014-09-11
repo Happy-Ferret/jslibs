@@ -76,9 +76,10 @@ DEFINE_CONSTRUCTOR() {
 
 		int width, height, channels;
 		ImageDataType dataType;
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString data(JL_GetImageObject(cx, iconVal, &width, &height, &channels, &dataType, nogc)); // source
-		JL_ASSERT( !data.isEmpty(), E_ARG, E_NUM(1), E_INVALID );
+
+		jl::StrData data(cx);
+		JL_CHK( JL_GetImageObject(cx, iconVal, &width, &height, &channels, &dataType, data) ); // source
+		JL_ASSERT( data.length() > 0, E_ARG, E_NUM(1), E_INVALID );
 		JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 
 		//unsigned char *imageData = (unsigned char*)data.GetConstStr();

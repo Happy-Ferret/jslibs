@@ -568,13 +568,12 @@ DEFINE_PROPERTY_SETTER( icon ) {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString data;
+		jl::StrData data(cx);
 		int sWidth, sHeight, sChannels;
 		ImageDataType dataType;
-		data = JL_GetImageObject(cx, JL_RVAL, &sWidth, &sHeight, &sChannels, &dataType, nogc);
+		JL_CHK( JL_GetImageObject(cx, JL_RVAL, &sWidth, &sHeight, &sChannels, &dataType, data) );
 
-		JL_ASSERT( data.hasData(), E_ARG, E_INVALID );
+		JL_ASSERT( data.isSet(), E_ARG, E_INVALID );
 
 		JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_DATATYPE, E_INVALID );
 		JL_ASSERT( sChannels == 3 || sChannels == 4, E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(3, 4) );
@@ -593,7 +592,7 @@ DEFINE_PROPERTY_SETTER( icon ) {
 			 amask = 0xff000000;
 		#endif
 
-		SDL_Surface *surface = SDL_CreateRGBSurfaceFrom((void*)data.toData<const uint8_t *>(), sWidth, sHeight, 8 * sChannels, sWidth * sChannels, rmask, gmask, bmask, amask);
+		SDL_Surface *surface = SDL_CreateRGBSurfaceFrom((void*)data.toBytes(), sWidth, sHeight, 8 * sChannels, sWidth * sChannels, rmask, gmask, bmask, amask);
 
 		if ( surface == NULL )
 			return ThrowSdlError(cx);
@@ -787,8 +786,7 @@ DEFINE_PROPERTY_SETTER( caption ) {
 	
 	JL_DEFINE_PROP_ARGS;
 	
-	JS::AutoCheckCannotGC nogc;
-	jl::BufString title;
+	jl::StrData title(cx);
 	JL_CHK( jl::getValue(cx, JL_RVAL, &title) );
 	SDL_WM_SetCaption(title, NULL);
 	return true;

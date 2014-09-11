@@ -79,8 +79,7 @@ DEFINE_CONSTRUCTOR() {
 
 	{
 
-		JS::AutoCheckCannotGC nogc;
-		jl::BufString name;
+		jl::StrData name(cx);
 
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &name) );
 		JL_ASSERT( name.length() < PATH_MAX, E_ARG, E_NUM(1), E_MAX, E_NUM(PATH_MAX) );
