@@ -78,7 +78,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &hashName) );
 
 		int hashIndex;
-		hashIndex = find_hash(hashName.toStrZ());
+		hashIndex = find_hash(hashName);
 		JL_ASSERT( hashIndex != -1, E_STR("hash"), E_NAME(hashName), E_NOTFOUND );
 
 		pv = (HashPrivate*)jl_malloc(sizeof(HashPrivate));
@@ -193,7 +193,7 @@ DEFINE_FUNCTION( write ) {
 		unsigned long length = in.length();
 
 		int err;
-		err = pv->descriptor->process(&pv->state, in.toBytes(), length); // Process a block of memory though the hash
+		err = pv->descriptor->process(&pv->state, in, length); // Process a block of memory though the hash
 		if ( err != CRYPT_OK )
 			return ThrowCryptError(cx, err);
 
@@ -386,7 +386,7 @@ DEFINE_FUNCTION( cipherHash ) {
 
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &cipherName) );
 		int cipherIndex;
-		cipherIndex = find_cipher(cipherName.toStrZ());
+		cipherIndex = find_cipher(cipherName);
 		JL_ASSERT( cipherIndex >= 0, E_STR("cipher"), E_NAME(cipherName), E_NOTFOUND );
 
 		int err;

@@ -370,7 +370,7 @@ DEFINE_FUNCTION( warning ) {
 	JL_ASSERT_ARGC(1);
 
 	JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-	JL_CHK( JS_ReportWarning(cx, "%s", str.toStrZ()) );
+	JL_CHK( JS_ReportWarning(cx, "%s", str) );
 	
 	JL_RVAL.setUndefined();
 	return true;
@@ -410,10 +410,8 @@ DEFINE_FUNCTION( assert ) {
 		jl::StrData str(cx);
 		if ( JL_ARG_ISDEF(2) )
 			JL_CHK( jl::getValue(cx, JL_ARG(2), &str) );
-		else
-			str.get("Assertion failed.");
 		
-		JS_ReportError( cx, "%s", str.toStrZ());
+		JS_ReportError( cx, "%s", str.isSet() ? str : "Assertion failed.");
 		return false;
 	}
 
@@ -1041,7 +1039,7 @@ DEFINE_FUNCTION( isStatementValid ) {
 
 		jl::StrData str(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
-		JL_CHK( jl::setValue(cx, JL_RVAL, JS_BufferIsCompilableUnit(cx, JL_OBJ, str.toStr(), str.length())) );
+		JL_CHK( jl::setValue(cx, JL_RVAL, JS_BufferIsCompilableUnit(cx, JL_OBJ, str, str.length())) );
 
 	}
 

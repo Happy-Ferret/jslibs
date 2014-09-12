@@ -417,7 +417,7 @@ DEFINE_FUNCTION( write ) {
 		ASSERT( str.length() <= PR_INT32_MAX );
 
 		PRInt32 res;
-		res = PR_Write( fd, str.toBytes(), (PRInt32)str.length() );
+		res = PR_Write( fd, str, (PRInt32)str.length() );
 		if (unlikely( res == -1 )) {
 
 			switch ( PR_GetError() ) {
@@ -496,7 +496,7 @@ DEFINE_FUNCTION( write ) {
 				size_t length = str.length() - sentAmount;
 				void *data = jl_malloc(length);
 				JL_ASSERT_ALLOC(data);
-				jl::memcpy(data, str.toBytes() + sentAmount, length);
+				jl::memcpy(data, (const uint8_t*)str + sentAmount, length);
 				JL_RVAL.setObject(*JS_NewArrayBufferWithContents(cx, length, data));
 			}
 		}

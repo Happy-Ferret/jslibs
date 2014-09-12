@@ -323,10 +323,11 @@ DEFINE_FUNCTION( indexOf ) {
 			start = 0;
 		}
 
+		JS::AutoCheckCannotGC nogc;
 		if ( srcStr.isWide() )
-			JL_RVAL.setInt32( jl::Match(srcStr.toWStrZ()+start, srcStr.length()-start, patStr.toWStrZ(), patStr.length()) );
+			JL_RVAL.setInt32( jl::Match(srcStr.toWStrZ(nogc)+start, srcStr.length()-start, patStr.toWStrZ(nogc), patStr.length()) );
 		else
-			JL_RVAL.setInt32( jl::Match(srcStr.toStrZ()+start, srcStr.length()-start, patStr.toStrZ(), patStr.length()) );
+			JL_RVAL.setInt32( jl::Match(srcStr.toStrZ(nogc)+start, srcStr.length()-start, patStr.toStrZ(nogc), patStr.length()) );
 
 	}
 
@@ -1085,9 +1086,11 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	str.equals("test");
 
-
-
-	::puts(str.toStrZ());
+	JS::AutoCheckCannotGC nogc;
+	jl::puts(str.toWStrZ(nogc));
+	jl::puts(str.toStrZ(nogc));
+	jl::puts(str.toWStrZ(nogc));
+	jl::puts(str.toStrZ(nogc));
 
 
 return true;

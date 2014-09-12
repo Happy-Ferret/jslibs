@@ -182,11 +182,12 @@ public:
 	int
 	output( jl::StrDataSrc &buf ) {
 		
+		JS::AutoCheckCannotGC nogc;
 		if (unlikely( stdout_fileno == -1 )) {
 			stdout_fileno = fileno(stdout);
 		}
 		//return write( stdout_fileno, buf.toData<const uint8_t*>(), buf.length() );
-		return write( stdout_fileno, buf.toBytes(), buf.length() );
+		return write( stdout_fileno, buf.toBytes(nogc), buf.length() );
 	}
 
 	int
@@ -204,14 +205,15 @@ public:
 		//_setmode( stderr_fileno, buf.isWide() ? _O_U16TEXT : _O_TEXT );
 		//return write( stderr_fileno, buf.dataAs<const void*>(), buf.used() );
 
+		JS::AutoCheckCannotGC nogc;
 		if ( buf.isWide() ) {
 
 			_setmode( stderr_fileno, _O_U16TEXT );
-			return write( stderr_fileno, buf.toWStrZ(), buf.length() * 2 );
+			return write( stderr_fileno, buf.toWStrZ(nogc), buf.length() * 2 );
 		} else {
 
 			_setmode( stderr_fileno, _O_TEXT );
-			return write( stderr_fileno, buf.toStrZ(), buf.length() );
+			return write( stderr_fileno, buf.toStrZ(nogc), buf.length() );
 		}
 	
 	}

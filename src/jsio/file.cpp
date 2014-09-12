@@ -25,7 +25,7 @@
 PRIntn FileOpenFlagsFromString( jl::StrDataSrc &str ) {
 
 	size_t length = str.length();
-	const char *strFlags = str.toStr();
+	const char *strFlags = str;
 
 	if ( length == 0 || length > 2 )
 		return 0;
@@ -62,7 +62,7 @@ PRIntn FileOpenFlagsFromString( jl::StrDataSrc &str ) {
 
 PRIntn FileOpenModeFromString( jl::StrDataSrc &str ) {
 	
-	PRIntn mode = jl::atoi(str.toStrZ(), 8);
+	PRIntn mode = jl::atoi((const char *)str, 8);
 	ASSERT( mode < (PR_IRWXU | PR_IRWXG | PR_IRWXO) );
 	return mode;
 }
@@ -336,9 +336,9 @@ DEFINE_FUNCTION( move ) {
 
 		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 		JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
-		JL_CHK( jl::getValue(cx, jsvalFileName, &fileName) ); // warning: GC on the returned buffer !
+		JL_CHK( jl::getValue(cx, jsvalFileName, &fileName) );
 
-		JL_CHK( jl::getValue(cx, JL_ARG(1), &destDirName) ); // warning: GC on the returned buffer !
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &destDirName) );
 
 		const char *fileNameOnly;
 		fileNameOnly = strrchr(fileName, '/');
@@ -546,7 +546,7 @@ DEFINE_PROPERTY_SETTER( content ) {
 	PRInt32 bytesSent;
 
 	ASSERT( buf.length() <= PR_INT32_MAX );
-	bytesSent = PR_Write(fd, buf.toBytes(), (PRInt32)buf.length());
+	bytesSent = PR_Write(fd, buf, (PRInt32)buf.length());
 	if ( bytesSent == -1 ) {
 		
 		PR_Close(fd);
@@ -597,8 +597,8 @@ DEFINE_PROPERTY_SETTER( name ) {
 		JL_CHK( JL_GetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, &jsvalFileName) );
 		JL_ASSERT_THIS_OBJECT_STATE( !jsvalFileName.isUndefined() );
 
-		JL_CHK( jl::getValue(cx, jsvalFileName, &fromFileName) ); // warning: GC on the returned buffer !
-		JL_CHK( jl::getValue(cx, vp, &toFileName) ); // warning: GC on the returned buffer !
+		JL_CHK( jl::getValue(cx, jsvalFileName, &fromFileName) );
+		JL_CHK( jl::getValue(cx, vp, &toFileName) );
 		if ( PR_Rename(fromFileName, toFileName) != PR_SUCCESS ) // if status == PR_FILE_EXISTS_ERROR ...
 			return ThrowIoError(cx);
 		JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_JSIO_FILE_NAME, vp) );

@@ -452,7 +452,7 @@ DEFINE_FUNCTION( sendTo ) {
 		ASSERT( str.length() <= PR_INT32_MAX );
 
 		PRInt32 res;
-		res = PR_SendTo(fd, str.toBytes(), (PRInt32)str.length(), 0, &addr, PR_INTERVAL_NO_TIMEOUT );
+		res = PR_SendTo(fd, str, (PRInt32)str.length(), 0, &addr, PR_INTERVAL_NO_TIMEOUT );
 
 		size_t sentAmount;
 		if ( res == -1 ) {
@@ -481,7 +481,7 @@ DEFINE_FUNCTION( sendTo ) {
 				size_t length = str.length() - sentAmount;
 				void *data = jl_malloc(length);
 				JL_ASSERT_ALLOC(data);
-				jl::memcpy(data, str.toBytes() + sentAmount, length);
+				jl::memcpy(data, (const uint8_t*)str + sentAmount, length);
 				JL_RVAL.setObject(*JS_NewArrayBufferWithContents(cx, length, data));
 			}
 
@@ -681,7 +681,7 @@ DEFINE_FUNCTION( transmitFile ) { // WORKS ONLY ON BLOCKING SOCKET !!!
 		JL_CHK( GetTimeoutInterval(cx, JL_OBJ, &timeout) );
 
 		PRInt32 bytes;
-		bytes = PR_TransmitFile(socketFd, fileFd, headers.toBytes(), (PRInt32)headers.length(), flag, timeout);
+		bytes = PR_TransmitFile(socketFd, fileFd, headers, (PRInt32)headers.length(), flag, timeout);
 		if ( bytes == -1 )
 			return ThrowIoError(cx);
 

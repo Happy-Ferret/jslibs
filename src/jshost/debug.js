@@ -18,9 +18,6 @@ host.onInterrupt = () => { host.collectGarbage(true, 1) };
 */
 
 
-	jslangTest();
-throw 0;
-
 
 ////
 
@@ -28,12 +25,12 @@ loadModule('jsstd');
 loadModule('jsz');
 
 
-	var g = new ZipFile('xtest.zip');
+	var g = new ZipFile('test.zip');
 	g.open(ZipFile.READ);
 //	g.password = 'aze';
 
 	g.goFirst();
-	g.select('xxx');
+	//g.select('xxx');
 	print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.read(), '\n' );
 	
 

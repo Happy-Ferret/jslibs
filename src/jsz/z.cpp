@@ -192,7 +192,7 @@ DEFINE_FUNCTION( process ) {
 			forceFinish = false;
 
 		if ( JL_ARG_ISDEF(1) )
-			JL_CHK( jl::getValue(cx, JL_ARG(1), &inputData) ); // warning: GC on the returned buffer !
+			JL_CHK( jl::getValue(cx, JL_ARG(1), &inputData) );
 		else
 			forceFinish = true;
 
@@ -213,9 +213,10 @@ DEFINE_FUNCTION( process ) {
 		}
 
 		ASSERT( inputData.length() <= UINT_MAX );
-
+		
+		JS::AutoCheckCannotGC nogc;
 		pv->stream.avail_in = (uInt)inputData.length();
-		pv->stream.next_in = (Bytef*)inputData.toBytes();
+		pv->stream.next_in = (Bytef*)inputData.toBytes(nogc);
 
 		// first length is a guess.
 		size_t length;

@@ -64,7 +64,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &prngName) );
 
 		int prngIndex;
-		prngIndex = find_prng(prngName.toStrZ());
+		prngIndex = find_prng(prngName);
 		JL_ASSERT( prngIndex != -1, E_STR("PRNG"), E_NAME(prngName), E_NOTFOUND );
 
 		pv = (PrngPrivate*)jl_malloc(sizeof(PrngPrivate));
@@ -172,7 +172,7 @@ DEFINE_FUNCTION( addEntropy ) {
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &entropy) );
 
 		int err;
-		err = pv->prng.add_entropy( entropy.toBytes(), entropy.length(), &pv->state );
+		err = pv->prng.add_entropy( entropy, entropy.length(), &pv->state );
 		if ( err != CRYPT_OK )
 			return ThrowCryptError(cx, err);
 
@@ -280,7 +280,7 @@ DEFINE_PROPERTY_SETTER( state ) {
 		JL_CHKM( state.length() == (size_t)pv->prng.export_size, E_VALUE, E_LENGTH, E_NUM(pv->prng.export_size) );
 
 		int err;
-		err = pv->prng.pimport( state.toBytes(), state.length(), &pv->state );
+		err = pv->prng.pimport( state, state.length(), &pv->state );
 		if ( err != CRYPT_OK )
 			return ThrowCryptError(cx, err);
 	

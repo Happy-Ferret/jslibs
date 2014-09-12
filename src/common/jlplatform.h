@@ -1263,20 +1263,20 @@ memset(void *dst, size_t len, uint8_t val) {
 
 template<class D, class S>
 ALWAYS_INLINE void
-reinterpretBuffer(void* d, void* s, size_t length) {
+reinterpretBuffer(void* d, const void* s, size_t length) {
 
 	D *dst = reinterpret_cast<D*>(d);
-	S *src = reinterpret_cast<S*>(s);
+	const S *src = reinterpret_cast<const S*>(s);
 
 	DISABLE_SMALLER_TYPE_CHECK;
 	if ( sizeof(D) < sizeof(S) ) {
 
-		S* end = src + length;
+		const S* end = src + length;
 		while ( src != end )
 			*(dst++) = *(src++);
 	} else {
 
-		S* end = src;
+		const S* end = src;
 		dst += length;
 		src += length;
 		while ( src != end )

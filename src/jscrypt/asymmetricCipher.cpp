@@ -179,7 +179,7 @@ DEFINE_CONSTRUCTOR() { // ( cipherName [, hashName] [, prngObject] [, PKCSVersio
 		
 		jl::StrData hashName(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(2), &hashName) );
-		pv->hashIndex = find_hash(hashName.toStrZ());
+		pv->hashIndex = find_hash(hashName);
 	} else {
 
 		pv->hashIndex = -1;
@@ -398,16 +398,16 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 				if ( argc >= 2 && !JL_ARG(2).isUndefined() )
 					JL_CHK( jl::getValue(cx, JL_ARG(2), &lparam) );
 				// doc. When performing v1.5 encryption, the hash and lparam parameters are totally ignored and can be set to NULL or zero (respectively).
-				err = rsa_encrypt_key_ex( in.toBytes(), in.length(), out.data(), &outLength, lparam.toBytes(), lparam.length(), prngState, prngIndex, pv->hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
+				err = rsa_encrypt_key_ex( in, in.length(), out.data(), &outLength, lparam, lparam.length(), prngState, prngIndex, pv->hashIndex, pv->padding, &pv->key.rsaKey ); // ltc_mp.rsa_me()
 				break;
 			}
 			case ecc: {
-				err = ecc_encrypt_key( in.toBytes(), in.length(), out.data(), &outLength, prngState, prngIndex, pv->hashIndex, &pv->key.eccKey );
+				err = ecc_encrypt_key( in, in.length(), out.data(), &outLength, prngState, prngIndex, pv->hashIndex, &pv->key.eccKey );
 				break;
 			}
 			case dsa: {
 				// if inlen > hash_descriptor[hash].hashsize => ERROR
-				err = dsa_encrypt_key( in.toBytes(), in.length(), out.data(), &outLength, prngState, prngIndex, pv->hashIndex, &pv->key.dsaKey );
+				err = dsa_encrypt_key( in, in.length(), out.data(), &outLength, prngState, prngIndex, pv->hashIndex, &pv->key.dsaKey );
 				break;
 			}
 	#ifdef MKAT
@@ -415,7 +415,7 @@ DEFINE_FUNCTION( encrypt ) { // ( data [, lparam] )
 				jl::StrData lparam(cx);
 				if ( argc >= 2 && !JL_ARG(2).isUndefined() )
 					JL_CHK( jl::getValue(cx, JL_ARG(2), &lparam) );
-				err = katja_encrypt_key( in.toBytes(), in.length(), out.data(), &outLength, lparam.toBytes(), lparam.length(), prngState, prngIndex, pv->hashIndex, &pv->key.katjaKey );
+				err = katja_encrypt_key( in, in.length(), out.data(), &outLength, lparam, lparam.length(), prngState, prngIndex, pv->hashIndex, &pv->key.katjaKey );
 				break;
 			}
 	#endif
@@ -493,7 +493,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 					JL_CHK( jl::getValue(cx, JL_ARG(2), &lparam) );
 
 				int stat = 0; // default: failed
-				err = rsa_decrypt_key_ex( in.toBytes(), in.length(), out.data(), &outLength, lparam.toBytes(), lparam.length(), pv->hashIndex, pv->padding, &stat, &pv->key.rsaKey );
+				err = rsa_decrypt_key_ex( in, in.length(), out.data(), &outLength, lparam, lparam.length(), pv->hashIndex, pv->padding, &stat, &pv->key.rsaKey );
 				// doc: if all went well pt == pt2, l2 == 16, res == 1
 				if ( err == CRYPT_OK && stat != 1 ) {
 
@@ -503,11 +503,11 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 				break;
 			}
 			case ecc: {
-				err = ecc_decrypt_key( in.toBytes(), in.length(), out.data(), &outLength, &pv->key.eccKey );
+				err = ecc_decrypt_key( in, in.length(), out.data(), &outLength, &pv->key.eccKey );
 				break;
 			}
 			case dsa: {
-				err = dsa_decrypt_key( in.toBytes(), in.length(), out.data(), &outLength, &pv->key.dsaKey );
+				err = dsa_decrypt_key( in, in.length(), out.data(), &outLength, &pv->key.dsaKey );
 				break;
 			}
 	#ifdef MKAT
@@ -518,7 +518,7 @@ DEFINE_FUNCTION( decrypt ) { // ( encryptedData [, lparam] )
 					JL_CHK( jl::getValue(cx, JL_ARG(2), &lparam) );
 
 				int stat = 0; // default: failed
-				err = katja_decrypt_key( in.toBytes(), in.length(), out.data(), &outLength, lparam.toBytes(), lparam.length(), pv->hashIndex, &stat, &pv->key.katjaKey );
+				err = katja_decrypt_key( in, in.length(), out.data(), &outLength, lparam, lparam.length(), pv->hashIndex, &stat, &pv->key.katjaKey );
 				// doc: if all went well pt == pt2, l2 == 16, res == 1
 				if ( err == CRYPT_OK && stat != 1 ) {
 
@@ -594,15 +594,15 @@ DEFINE_FUNCTION( sign ) { // ( data [, saltLength] )
 				if ( argc >= 2 && !JL_ARG(2).isUndefined() )
 					JL_CHK( jl::getValue(cx, JL_ARG(2), &saltLength) );
 
-				err = rsa_sign_hash_ex( in.toBytes(), in.length(), out.data(), &outLength, LTC_LTC_PKCS_1_PSS, prngState, prngIndex, pv->hashIndex, saltLength, &pv->key.rsaKey );
+				err = rsa_sign_hash_ex( in, in.length(), out.data(), &outLength, LTC_LTC_PKCS_1_PSS, prngState, prngIndex, pv->hashIndex, saltLength, &pv->key.rsaKey );
 				break;
 			}
 			case ecc: {
-				err = ecc_sign_hash( in.toBytes(), in.length(), out.data(), &outLength, prngState, prngIndex, &pv->key.eccKey );
+				err = ecc_sign_hash( in, in.length(), out.data(), &outLength, prngState, prngIndex, &pv->key.eccKey );
 				break;
 			}
 			case dsa: {
-				err = dsa_sign_hash( in.toBytes(), in.length(), out.data(), &outLength, prngState, prngIndex, &pv->key.dsaKey );
+				err = dsa_sign_hash( in, in.length(), out.data(), &outLength, prngState, prngIndex, &pv->key.dsaKey );
 				break;
 			}
 	#ifdef MKAT
@@ -665,15 +665,15 @@ DEFINE_FUNCTION( verifySignature ) { // ( data, signature [, saltLength] )
 				if ( argc >= 3 && !JL_ARG(3).isUndefined() )
 					JL_CHK( jl::getValue(cx, JL_ARG(3), &saltLength) );
 
-				rsa_verify_hash_ex( sign.toBytes(), sign.length(), data.toBytes(), data.length(), LTC_LTC_PKCS_1_PSS, pv->hashIndex, saltLength, &stat, &pv->key.rsaKey );
+				rsa_verify_hash_ex( sign, sign.length(), data, data.length(), LTC_LTC_PKCS_1_PSS, pv->hashIndex, saltLength, &stat, &pv->key.rsaKey );
 				break;
 			}
 			case ecc: {
-				ecc_verify_hash( sign.toBytes(), sign.length(), data.toBytes(), data.length(), &stat, &pv->key.eccKey );
+				ecc_verify_hash( sign, sign.length(), data, data.length(), &stat, &pv->key.eccKey );
 				break;
 			}
 			case dsa: {
-				dsa_verify_hash( sign.toBytes(), sign.length(), data.toBytes(), data.length(), &stat, &pv->key.dsaKey );
+				dsa_verify_hash( sign, sign.length(), data, data.length(), &stat, &pv->key.dsaKey );
 				break;
 			}
 	#ifdef MKAT
@@ -829,15 +829,15 @@ DEFINE_PROPERTY_SETTER( key ) {
 		err = -1; // default
 		switch ( pv->cipher ) {
 			case rsa:
-				err = rsa_import( key.toBytes(), key.length(), &pv->key.rsaKey );
+				err = rsa_import( key, key.length(), &pv->key.rsaKey );
 				JL_ASSERT( pv->key.rsaKey.type == type, E_VALUE, E_TYPE, E_NAME("RSA key") );
 				break;
 			case ecc:
-				err = ecc_import( key.toBytes(), key.length(), &pv->key.eccKey );
+				err = ecc_import( key, key.length(), &pv->key.eccKey );
 				JL_ASSERT( pv->key.eccKey.type == type, E_VALUE, E_TYPE, E_NAME("ECC key") );
 				break;
 			case dsa:
-				err = dsa_import( key.toBytes(), key.length(), &pv->key.dsaKey );
+				err = dsa_import( key, key.length(), &pv->key.dsaKey );
 				JL_ASSERT( pv->key.dsaKey.type == type, E_VALUE, E_TYPE, E_NAME("DSA key") );
 				//int stat = 0;
 				//dsa_verify_key(&pv->key.dsaKey, &stat);
@@ -846,7 +846,7 @@ DEFINE_PROPERTY_SETTER( key ) {
 				break;
 	#ifdef MKAT
 			case katja:
-				err = katja_import( key.toBytes(), key.length(), &pv->key.katjaKey );
+				err = katja_import( key, key.length(), &pv->key.katjaKey );
 				JL_ASSERT( pv->key.katjaKey.type == type, E_VALUE, E_TYPE, E_NAME("KATJA key") );
 				break;
 	#endif

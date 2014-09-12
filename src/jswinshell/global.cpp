@@ -192,16 +192,16 @@ DEFINE_FUNCTION( createProcess ) {
 		jl::StrData currentDirectory(cx);
 
 		if ( JL_ARG_ISDEF(1) )
-			JL_CHK( jl::getValue(cx, JL_ARG(1), &applicationName) ); // warning: GC on the returned buffer !
+			JL_CHK( jl::getValue(cx, JL_ARG(1), &applicationName) );
 
 		if ( JL_ARG_ISDEF(2) )
-			JL_CHK( jl::getValue(cx, JL_ARG(2), &commandLine) ); // warning: GC on the returned buffer !
+			JL_CHK( jl::getValue(cx, JL_ARG(2), &commandLine) );
 
 		if ( JL_ARG_ISDEF(3) )
-			JL_CHK( jl::getValue(cx, JL_ARG(3), &environment) ); // warning: GC on the returned buffer !
+			JL_CHK( jl::getValue(cx, JL_ARG(3), &environment) );
 
 		if ( JL_ARG_ISDEF(4) )
-			JL_CHK( jl::getValue(cx, JL_ARG(4), &currentDirectory) ); // warning: GC on the returned buffer !
+			JL_CHK( jl::getValue(cx, JL_ARG(4), &currentDirectory) );
 
 		STARTUPINFO si;
 		ZeroMemory(&si, sizeof(STARTUPINFO));

@@ -53,7 +53,7 @@ DEFINE_FUNCTION( base64Encode ) {
 		JL_ASSERT_ALLOC( out );
 
 		int err;
-		err = base64_encode( in.toBytes(), in.length(), out.dataAs<uint8_t*>(), &outLength );
+		err = base64_encode( in, in.length(), out.dataAs<uint8_t*>(), &outLength );
 		if (err != CRYPT_OK)
 			return ThrowCryptError(cx, err);
 	
@@ -89,7 +89,7 @@ DEFINE_FUNCTION( base64Decode ) {
 		JL_ASSERT_ALLOC( buffer );
 
 		int err;
-		err = base64_decode( in.toBytes(), in.length(), buffer.data(), &outLength );
+		err = base64_decode( in, in.length(), buffer.data(), &outLength );
 		if (err != CRYPT_OK)
 			return ThrowCryptError(cx, err);
 	
@@ -128,7 +128,7 @@ DEFINE_FUNCTION( hexEncode ) {
 		out.alloc(outLength, true);
 		JL_ASSERT_ALLOC( out );
 
-		const uint8_t *inIt = data.toBytes();
+		const uint8_t *inIt = data;
 		const uint8_t *inEnd = inIt + data.length();
 		uint8_t *outIt = out.data();
 
@@ -184,7 +184,7 @@ DEFINE_FUNCTION( hexDecode ) {
 		out.alloc(outLength, true);
 		JL_ASSERT_ALLOC( out );
 
-		const uint8_t *inIt = in.toBytes();
+		const uint8_t *inIt = in;
 		const uint8_t *inEnd = inIt + in.length();
 		uint8_t *outIt = out.data();
 

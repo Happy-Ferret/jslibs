@@ -845,14 +845,15 @@ ErrorManager::errorCallback(void *userRef, const unsigned errorNumber) {
 
 ErrorManager::ErrArg::ErrArg( jl::StrDataSrc & val ) {
 			
+	JS::AutoCheckCannotGC nogc;
 	if ( val.isWide() ) {
 
 		_type = ErrArg::WSTRING;
-		_wstring = val.toWStrZ();
+		_wstring = val.toWStrZ(nogc);
 	} else {
 
 		_type = ErrArg::STRING;
-		_string = val.toStrZ();
+		_string = val.toStrZ(nogc);
 	}
 }
 

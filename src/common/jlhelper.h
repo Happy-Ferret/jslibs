@@ -160,6 +160,13 @@ JL_GetStringLength( JSString *jsstr ) {
 	return js::GetStringLength(jsstr); // jsfriendapi.h
 }
 
+ALWAYS_INLINE bool FASTCALL
+JL_StringHasLatin1Chars( JSString *jsstr ) {
+
+	return js::StringHasLatin1Chars(jsstr); // jsfriendapi.h
+}
+
+
 ALWAYS_INLINE JS::Value FASTCALL
 JL_GetEmptyStringValue( JSContext *cx ) {
 

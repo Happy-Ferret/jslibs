@@ -263,7 +263,7 @@ DEFINE_FUNCTION( open ) {
 	#ifdef UNICODE
 			zlib_filefunc64_def ffunc;
 			fill_win32_filefunc64W(&ffunc);
-			pv->uf = unzOpen2_64(filename.toWStrZ(), &ffunc);
+			pv->uf = unzOpen2_64(filename.toWStrZ(JS::AutoCheckCannotGC()), &ffunc);
 	#else
 			pv->uf = unzOpen(filename);
 	#endif
@@ -276,7 +276,7 @@ DEFINE_FUNCTION( open ) {
 	#ifdef UNICODE
 			zlib_filefunc64_def ffunc;
 			fill_win32_filefunc64W(&ffunc);
-			pv->uf = zipOpen2_64(filename.toWStrZ(), mode, NULL, &ffunc);
+			pv->uf = zipOpen2_64(filename.toWStrZ(JS::AutoCheckCannotGC()), mode, NULL, &ffunc);
 	#else
 			//pv->zf = zipOpen(filename, mode);
 	#endif
@@ -687,7 +687,7 @@ DEFINE_FUNCTION( write ) {
 				level = Z_DEFAULT_COMPRESSION;
 			}
 
-			ZIP_CHK( zipOpenNewFileInZip(pv->zf, inZipFilename, &zipfi, currentExtraField.toStrZ(), currentExtraField.length(), NULL, NULL, NULL, level == 0 ? 0 : Z_DEFLATED, level) );
+			ZIP_CHK( zipOpenNewFileInZip(pv->zf, inZipFilename, &zipfi, currentExtraField, currentExtraField.length(), NULL, NULL, NULL, level == 0 ? 0 : Z_DEFLATED, level) );
 			pv->inZipOpened = true;
 
 		}
@@ -701,7 +701,7 @@ DEFINE_FUNCTION( write ) {
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
 		ASSERT( data.length() > 0 );
 
-		ZIP_CHK( zipWriteInFileInZip(pv->zf, data.toBytes(), data.length()) );
+		ZIP_CHK( zipWriteInFileInZip(pv->zf, data, data.length()) );
 
 	}
 

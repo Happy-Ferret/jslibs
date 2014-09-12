@@ -98,7 +98,7 @@ DEFINE_CONSTRUCTOR() {
 			pv->owner = false;
 		}
 
-		jl::memcpy(pv->name, name.toBytes(), name.length());
+		jl::memcpy(pv->name, name, name.length());
 		pv->name[name.length()] = '\0';
 	
 	}

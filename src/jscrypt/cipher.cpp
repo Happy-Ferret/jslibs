@@ -169,7 +169,7 @@ DEFINE_CONSTRUCTOR() {
 		jl::StrData IV(cx);
 		jl::StrData optarg(cx);
 
-		JL_CHK( jl::getValue(cx, JL_ARG(1), &modeName) ); // warning: GC on the returned buffer !
+		JL_CHK( jl::getValue(cx, JL_ARG(1), &modeName) );
 
 		CryptMode mode;
 		if ( modeName.equals("ECB") )
@@ -197,14 +197,14 @@ DEFINE_CONSTRUCTOR() {
 
 
 
-		JL_CHK( jl::getValue(cx, JL_ARG(2), &cipherName) ); // warning: GC on the returned buffer !
-		JL_CHK( jl::getValue(cx, JL_ARG(3), &key) ); // warning: GC on the returned buffer !
+		JL_CHK( jl::getValue(cx, JL_ARG(2), &cipherName) );
+		JL_CHK( jl::getValue(cx, JL_ARG(3), &key) );
 
 		if ( argc >= 4 && !JL_ARG(4).isUndefined() )
-			JL_CHK( jl::getValue(cx, JL_ARG(4), &IV) ); // warning: GC on the returned buffer !
+			JL_CHK( jl::getValue(cx, JL_ARG(4), &IV) );
 
 		if ( argc >= 5 && !JL_ARG(5).isUndefined() )
-			JL_CHK( jl::getValue(cx, JL_ARG(5), &optarg) ); // warning: GC on the returned buffer !
+			JL_CHK( jl::getValue(cx, JL_ARG(5), &optarg) );
 
 	   int numRounds;
 	   numRounds = 0; // default value, us a default number of rounds.
@@ -218,7 +218,7 @@ DEFINE_CONSTRUCTOR() {
 		pv->mode = mode;
 
 		int cipherIndex;
-		cipherIndex = find_cipher(cipherName.toStrZ());
+		cipherIndex = find_cipher(cipherName);
 		JL_ASSERT( cipherIndex != -1, E_STR("cipher"), E_NAME(cipherName), E_NOTFOUND );
 
 		ltc_cipher_descriptor *cipher;
@@ -235,7 +235,7 @@ DEFINE_CONSTRUCTOR() {
 				JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 	//			JL_ASSERT( IV == NULL, "Initialization vector is invalid for this mode." );
 				JL_ASSERT_WARN( !optarg.isSet(), E_ARG, E_NUM(5), E_IGNORED );
-				err = ecb_start( cipherIndex, key.toBytes(), (int)key.length(), numRounds, (symmetric_ECB *)pv->symmetric_XXX );
+				err = ecb_start( cipherIndex, key, (int)key.length(), numRounds, (symmetric_ECB *)pv->symmetric_XXX );
 				break;
 			}
 			case mode_cfb: {
@@ -244,7 +244,7 @@ DEFINE_CONSTRUCTOR() {
 				JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 	//			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 				JL_ASSERT_WARN( !optarg.isSet(), E_ARG, E_NUM(5), E_IGNORED );
-				err = cfb_start( cipherIndex, IV.toBytes(), key.toBytes(), (int)key.length(), numRounds, (symmetric_CFB *)pv->symmetric_XXX );
+				err = cfb_start( cipherIndex, IV, key, (int)key.length(), numRounds, (symmetric_CFB *)pv->symmetric_XXX );
 				break;
 			}
 			case mode_ofb: {
@@ -253,7 +253,7 @@ DEFINE_CONSTRUCTOR() {
 				JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 	//			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 				JL_ASSERT_WARN( !optarg.isSet(), E_ARG, E_NUM(5), E_IGNORED );
-				err = ofb_start( cipherIndex, IV.toBytes(), key.toBytes(), (int)key.length(), numRounds, (symmetric_OFB *)pv->symmetric_XXX );
+				err = ofb_start( cipherIndex, IV, key, (int)key.length(), numRounds, (symmetric_OFB *)pv->symmetric_XXX );
 				break;
 			}
 			case mode_cbc: {
@@ -262,7 +262,7 @@ DEFINE_CONSTRUCTOR() {
 				JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 	//			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 				JL_ASSERT_WARN( !optarg.isSet(), E_ARG, E_NUM(5), E_IGNORED );
-				err = cbc_start( cipherIndex, IV.toBytes(), key.toBytes(), (int)key.length(), numRounds, (symmetric_CBC *)pv->symmetric_XXX );
+				err = cbc_start( cipherIndex, IV, key, (int)key.length(), numRounds, (symmetric_CBC *)pv->symmetric_XXX );
 				break;
 			}
 			case mode_ctr: {
@@ -271,7 +271,7 @@ DEFINE_CONSTRUCTOR() {
 				JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 	//			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 				JL_ASSERT_WARN( !optarg.isSet(), E_ARG, E_NUM(5), E_IGNORED );
-				err = ctr_start( cipherIndex, IV.toBytes(), key.toBytes(), (int)key.length(), numRounds, CTR_COUNTER_LITTLE_ENDIAN, (symmetric_CTR *)pv->symmetric_XXX );
+				err = ctr_start( cipherIndex, IV, key, (int)key.length(), numRounds, CTR_COUNTER_LITTLE_ENDIAN, (symmetric_CTR *)pv->symmetric_XXX );
 				break;
 			}
 			case mode_lrw: {
@@ -280,7 +280,7 @@ DEFINE_CONSTRUCTOR() {
 				JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 	//			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 				JL_ASSERT( optarg.isSet() && optarg.length() == key.length(), E_ARG, E_NUM(5), E_SEP, E_STR("tweak"), E_LENGTH, E_NUM((int)key.length()) );
-				err = lrw_start( cipherIndex, IV.toBytes(), key.toBytes(), (int)key.length(), optarg.toBytes(), numRounds, (symmetric_LRW *)pv->symmetric_XXX );
+				err = lrw_start( cipherIndex, IV, key, (int)key.length(), optarg, numRounds, (symmetric_LRW *)pv->symmetric_XXX );
 				break;
 			}
 			case mode_f8: {
@@ -289,7 +289,7 @@ DEFINE_CONSTRUCTOR() {
 				JL_ASSERT_RANGE( (int)key.length(), cipher->min_key_length, cipher->max_key_length, "key.length" );
 	//			JL_ASSERT( IVLength == cipher->block_length, "This cipher require a IV length of %d", cipher->block_length );
 				JL_ASSERT( optarg.length(), E_ARG, E_NUM(5), E_COMMENT("salt"), E_REQUIRED );
-				err = f8_start( cipherIndex, IV.toBytes(), key.toBytes(), (int)key.length(), optarg.toBytes(), (int)optarg.length(), numRounds, (symmetric_F8 *)pv->symmetric_XXX );
+				err = f8_start( cipherIndex, IV, key, (int)key.length(), optarg, (int)optarg.length(), numRounds, (symmetric_F8 *)pv->symmetric_XXX );
 				break;
 			}
 			default:
@@ -370,27 +370,27 @@ DEFINE_FUNCTION( encrypt ) {
 		switch ( pv->mode ) {
 			case mode_ecb:
 				JL_ASSERT( buffer.allocSize() == (size_t)pv->descriptor->block_length, E_DATA, E_LENGTH, E_NUM(pv->descriptor->block_length) );
-				err = ecb_encrypt( pt.toBytes(), buffer.data(), buffer.allocSize(), (symmetric_ECB *)pv->symmetric_XXX );
+				err = ecb_encrypt( pt, buffer.data(), buffer.allocSize(), (symmetric_ECB *)pv->symmetric_XXX );
 				break;
 			case mode_cfb:
-				err = cfb_encrypt( pt.toBytes(), buffer.data(), buffer.allocSize(), (symmetric_CFB *)pv->symmetric_XXX );
+				err = cfb_encrypt( pt, buffer.data(), buffer.allocSize(), (symmetric_CFB *)pv->symmetric_XXX );
 				break;
 			case mode_ofb:
-				err = ofb_encrypt( pt.toBytes(), buffer.data(), buffer.allocSize(), (symmetric_OFB *)pv->symmetric_XXX );
+				err = ofb_encrypt( pt, buffer.data(), buffer.allocSize(), (symmetric_OFB *)pv->symmetric_XXX );
 				break;
 			case mode_cbc:
 				JL_ASSERT( buffer.allocSize() == (size_t)pv->descriptor->block_length, E_DATA, E_LENGTH, E_NUM(pv->descriptor->block_length) );
-				err = cbc_encrypt( pt.toBytes(), buffer.data(), buffer.allocSize(), (symmetric_CBC *)pv->symmetric_XXX );
+				err = cbc_encrypt( pt, buffer.data(), buffer.allocSize(), (symmetric_CBC *)pv->symmetric_XXX );
 				break;
 			case mode_ctr:
-				err = ctr_encrypt( pt.toBytes(), buffer.data(), buffer.allocSize(), (symmetric_CTR *)pv->symmetric_XXX );
+				err = ctr_encrypt( pt, buffer.data(), buffer.allocSize(), (symmetric_CTR *)pv->symmetric_XXX );
 				break;
 			case mode_lrw:
 				JL_ASSERT( buffer.allocSize() == (size_t)pv->descriptor->block_length, E_DATA, E_LENGTH, E_NUM(pv->descriptor->block_length) );
-				err = lrw_encrypt( pt.toBytes(), buffer.data(), buffer.allocSize(), (symmetric_LRW *)pv->symmetric_XXX );
+				err = lrw_encrypt( pt, buffer.data(), buffer.allocSize(), (symmetric_LRW *)pv->symmetric_XXX );
 				break;
 			case mode_f8:
-				err = f8_encrypt( pt.toBytes(), buffer.data(), buffer.allocSize(), (symmetric_F8 *)pv->symmetric_XXX );
+				err = f8_encrypt( pt, buffer.data(), buffer.allocSize(), (symmetric_F8 *)pv->symmetric_XXX );
 				break;
 			default:
 				IFDEBUG( err = 0 );
@@ -437,25 +437,25 @@ DEFINE_FUNCTION( decrypt ) {
 		int err;
 		switch ( pv->mode ) {
 			case mode_ecb:
-				err = ecb_decrypt( ct.toBytes(), buffer.data(), ct.length(), (symmetric_ECB *)pv->symmetric_XXX );
+				err = ecb_decrypt( ct, buffer.data(), ct.length(), (symmetric_ECB *)pv->symmetric_XXX );
 				break;
 			case mode_cfb:
-				err = cfb_decrypt( ct.toBytes(), buffer.data(), ct.length(), (symmetric_CFB *)pv->symmetric_XXX );
+				err = cfb_decrypt( ct, buffer.data(), ct.length(), (symmetric_CFB *)pv->symmetric_XXX );
 				break;
 			case mode_ofb:
-				err = ofb_decrypt( ct.toBytes(), buffer.data(), ct.length(), (symmetric_OFB *)pv->symmetric_XXX );
+				err = ofb_decrypt( ct, buffer.data(), ct.length(), (symmetric_OFB *)pv->symmetric_XXX );
 				break;
 			case mode_cbc:
-				err = cbc_decrypt( ct.toBytes(), buffer.data(), ct.length(), (symmetric_CBC *)pv->symmetric_XXX );
+				err = cbc_decrypt( ct, buffer.data(), ct.length(), (symmetric_CBC *)pv->symmetric_XXX );
 				break;
 			case mode_ctr:
-				err = ctr_decrypt( ct.toBytes(), buffer.data(), ct.length(), (symmetric_CTR *)pv->symmetric_XXX );
+				err = ctr_decrypt( ct, buffer.data(), ct.length(), (symmetric_CTR *)pv->symmetric_XXX );
 				break;
 			case mode_lrw:
-				err = lrw_decrypt( ct.toBytes(), buffer.data(), ct.length(), (symmetric_LRW *)pv->symmetric_XXX );
+				err = lrw_decrypt( ct, buffer.data(), ct.length(), (symmetric_LRW *)pv->symmetric_XXX );
 				break;
 			case mode_f8:
-				err = f8_decrypt( ct.toBytes(), buffer.data(), ct.length(), (symmetric_F8 *)pv->symmetric_XXX );
+				err = f8_decrypt( ct, buffer.data(), ct.length(), (symmetric_F8 *)pv->symmetric_XXX );
 				break;
 			default:
 				IFDEBUG( err = 0 );
@@ -566,37 +566,37 @@ DEFINE_PROPERTY_SETTER( IV ) {
 			case mode_cfb: {
 				symmetric_CFB *tmp = (symmetric_CFB *)pv->symmetric_XXX;
 				JL_ASSERT( IV.length() == (size_t)tmp->blocklen, E_STR("IV"), E_LENGTH, E_NUM(tmp->blocklen) );
-				err = cfb_setiv( IV.toBytes(), IV.length(), tmp );
+				err = cfb_setiv( IV, IV.length(), tmp );
 				break;
 			}
 			case mode_ofb: {
 				symmetric_OFB *tmp = (symmetric_OFB *)pv->symmetric_XXX;
 				JL_ASSERT( IV.length() == (size_t)tmp->blocklen, E_STR("IV"), E_LENGTH, E_NUM(tmp->blocklen) );
-				err = ofb_setiv( IV.toBytes(), IV.length(), tmp );
+				err = ofb_setiv( IV, IV.length(), tmp );
 				break;
 			}
 			case mode_cbc: {
 				symmetric_CBC *tmp = (symmetric_CBC *)pv->symmetric_XXX;
 				JL_ASSERT( IV.length() == (size_t)tmp->blocklen, E_STR("IV"), E_LENGTH, E_NUM(tmp->blocklen) );
-				err = cbc_setiv( IV.toBytes(), IV.length(), tmp );
+				err = cbc_setiv( IV, IV.length(), tmp );
 				break;
 			}
 			case mode_ctr: {
 				symmetric_CTR *tmp = (symmetric_CTR *)pv->symmetric_XXX;
 				JL_ASSERT( IV.length() == (size_t)tmp->blocklen, E_STR("IV"), E_LENGTH, E_NUM(tmp->blocklen) );
-				err = ctr_setiv( IV.toBytes(), IV.length(), tmp );
+				err = ctr_setiv( IV, IV.length(), tmp );
 				break;
 			}
 			case mode_lrw: {
 				symmetric_LRW *tmp = (symmetric_LRW *)pv->symmetric_XXX;
 				JL_ASSERT( IV.length() == 16, E_STR("IV"), E_LENGTH, E_NUM(16) ); // (TBD) 16 == tmp->blocklen ???
-				err = lrw_setiv( IV.toBytes(), IV.length(), tmp );
+				err = lrw_setiv( IV, IV.length(), tmp );
 				break;
 			}
 			case mode_f8: {
 				symmetric_F8 *tmp = (symmetric_F8 *)pv->symmetric_XXX;
 				JL_ASSERT( IV.length() == (size_t)tmp->blocklen, E_STR("IV"), E_LENGTH, E_NUM(tmp->blocklen) );
-				err = f8_setiv( IV.toBytes(), IV.length(), tmp );
+				err = f8_setiv( IV, IV.length(), tmp );
 				break;
 			}
 			default:

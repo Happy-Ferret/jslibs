@@ -129,7 +129,7 @@ StreamRead( JSContext *cx, JS::HandleObject streamObj, char *buf, size_t *amount
 	if ( position + *amount > length )
 		*amount = length - position;
 
-	jl::memcpy( buf, data.toBytes() + position, *amount ); // (TBD) possible optimization. see JLData::CopyTo() ?
+	jl::memcpy( buf, data.toBytes(JS::AutoCheckCannotGC()) + position, *amount ); // (TBD) possible optimization. see JLData::CopyTo() ?
 	JL_CHK( SetPosition(cx, streamObj, position + *amount) );
 	return true;
 	JL_BAD;

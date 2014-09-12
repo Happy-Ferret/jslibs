@@ -418,7 +418,7 @@ DEFINE_FUNCTION( list ) {
 					// add dir separator if not present
 					char fileName[PATH_MAX];
 					char *tmp = fileName;
-					directoryName.copyTo(tmp);
+					directoryName.copyTo(tmp, COUNTOF(fileName));
 					tmp += directoryName.length();
 
 					char lastDirNameChar = directoryName.getCharAt(directoryName.length()-1);

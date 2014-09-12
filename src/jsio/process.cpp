@@ -115,7 +115,7 @@ DEFINE_CONSTRUCTOR() {
 
 			JS::AutoCheckCannotGC nogc; // ok
 
-			processArgv[0] = path.toStrZ();
+			processArgv[0] = path.toStrZ(nogc);
 			processArgv[processArgc] = NULL;
 
 			if ( stdioRedirect || currentDir.isSet() ) {
