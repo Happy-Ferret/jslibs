@@ -177,48 +177,14 @@ public:
 
 		JS::AutoCheckCannotGC nogc;
 		size_t len = length();
-		if ( isWide() ) {
-/*
-			const char16_t *it = toWStr(nogc);
-			const char16_t *end = it + len;
-			while ( *src && it != end ) {
-
-				if ( *src != *it )
-					return false;
-				++it;
-				++src;
-			}
-			return true;
-*/
-			return jl::tstrncmpUnsigned(src, toWStr(nogc), len) == 0;
-		} else {
-
-			return jl::strncmp(src, toStr(nogc), len) == 0;
-		}
+		return ( isWide() ? jl::tstrncmpUnsigned(src, toWStr(nogc), len) : jl::strncmp(src, toStr(nogc), len) ) == 0;
 	}
 
 	virtual bool equals( const char16_t *src ) {
 
 		JS::AutoCheckCannotGC nogc;
 		size_t len = length();
-		if ( !isWide() ) {
-/*
-			const char *it = toStr(nogc);
-			const char *end = it + len;
-			while ( *src && it != end ) {
-
-				if ( *src != *it )
-					return false;
-				++it;
-				++src;
-			}
-			return true;
-*/
-			return jl::tstrncmpUnsigned(src, toStr(nogc), len) == 0;
-		} else {
-
-			return jl::strncmp(src, toWStr(nogc), len) == 0;
-		}
+		return ( isWide() ? jl::strncmp(src, toWStr(nogc), len) : jl::tstrncmpUnsigned(src, toStr(nogc), len) ) == 0;
 	}
 
 	virtual bool equals( const uint8_t *src ) {
@@ -258,12 +224,19 @@ public:
 
 class StrDataDst {
 public:
+	static const size_t UnknownLength = size_t(~0);
+	enum Ownership {
+		TransferOwnership
+	};
 	virtual bool isSet() const = 0; // the object has been set with data (may be empty).
 	virtual size_t length() const = 0; // number on elements
-
 	virtual bool set( JSContext *cx, JS::HandleValue val ) = 0;
-//	virtual bool setOwnerOf( char *strZ ) = 0;
-	// ...
+	
+	virtual bool set( const char *strZ, size_t len = UnknownLength ) = 0;
+	virtual bool set( const char16_t *wStrZ, size_t len = UnknownLength ) = 0;
+	
+	virtual bool set( char *strZ, Ownership, size_t len = UnknownLength ) = 0;
+	virtual bool set( char16_t *wStrZ, Ownership, size_t len = UnknownLength ) = 0;
 };
 
 
@@ -277,24 +250,26 @@ class StrData : public StrDataSrc, public StrDataDst {
 	JS::RootedString _str;
 	JS::RootedObject _obj;
 	void *_data;
-	size_t _length;
+	mutable size_t _length;
 
 	enum {
-		none,
+		None,
 		Latin1String,
 		TwoByteString,
 		ArrayBuffer,
 		ArrayBufferView,
 		Uint16ArrayBuffer,
-		ownStrZ,
-		ownWStrZ
+		StrZ,
+		WStrZ,
+		OwnStrZ,
+		OwnWStrZ,
 	} _type;
 
 private:
 
 	void freeData() {
 
-		if ( _data != _staticBuffer )
+		if ( ( _type == OwnStrZ || _type == OwnWStrZ ) && _data != _staticBuffer )
 			js_free( _data );
 		_data = nullptr;
 	}
@@ -304,11 +279,14 @@ private:
 
 		if ( !src )
 			return nullptr;
-			
-		D *dst;
-		size_t dstSize = (_length + 1) * sizeof(D);
+		
+		size_t len = length();
+		ASSERT( len != UnknownLength );
 
-		if ( src == _data && _data != _staticBuffer ) {
+		D *dst;
+		size_t dstSize = (len + 1) * sizeof(D);
+
+		if ( src == _data && ( _type == OwnStrZ || _type == OwnWStrZ ) && _data != _staticBuffer ) {
 				
 			if ( sizeof(D) > sizeof(S) )
 				dst = reinterpret_cast<D*>(jl_realloc(_data, dstSize));
@@ -318,23 +296,21 @@ private:
 		else if ( dstSize <= sizeof(_staticBuffer) ) {
 
 			dst = reinterpret_cast<D*>(_staticBuffer);
-			ASSERT( src != _data );
-			if ( _data )
-				freeData();
+			freeData();
 		} else {
 
 			ASSERT( _data == nullptr );
 			dst = reinterpret_cast<D*>(jl_malloc(dstSize));
 		}
 
-		jl::reinterpretBuffer<D, S>(dst, src, _length);
-		dst[_length] = 0;
+		jl::reinterpretBuffer<D, S>(dst, src, len);
+		dst[len] = 0;
 
-		if ( src == _data && _data != _staticBuffer && sizeof(D) < sizeof(S) )
+		if ( src == _data && sizeof(D) < sizeof(S) && ( _type == OwnStrZ || _type == OwnWStrZ ) && _data != _staticBuffer )
 			dst = reinterpret_cast<D*>(jl_realloc(_data, dstSize));
 
 		ASSERT( sizeof(D) == 1 || sizeof(D) == 2 );
-		_type = sizeof(D) == 2 ? ownWStrZ : ownStrZ;
+		_type = sizeof(D) == 2 ? OwnWStrZ : OwnStrZ;
 		_data = dst;
 		return dst;
 	}
@@ -344,11 +320,10 @@ public:
 
 	~StrData() {
 
-		if ( _data )
-			freeData();
+		freeData();
 	}
 
-	StrData( JSContext *cx ) : _cx(cx), _str(cx), _obj(cx), _data(nullptr), _length(0), _type(StrData::none) {
+	StrData( JSContext *cx ) : _cx(cx), _str(cx), _obj(cx), _data(nullptr), _length(UnknownLength), _type(StrData::None) {
 	}
 
 	// transfer semantic
@@ -363,86 +338,81 @@ public:
 		
 		if ( _data == strData._staticBuffer ) {
 
+			ASSERT( _length != UnknownLength );
 			jl::memcpy(_staticBuffer, strData._staticBuffer, _length + 1);
 			_data = _staticBuffer;
-		}
-		strData._data = nullptr; // ownership is lost
+		} else
+		if ( strData._type == OwnStrZ )
+			strData._type = StrZ; // ownership is lost
+		else
+		if ( strData._type == OwnWStrZ )
+			strData._type = WStrZ; // ownership is lost
 	}
 
-
-	bool set( char *str, bool transferOwnership = false ) {
-
-		if ( !transferOwnership ) {
-
-			makeOwnCopy<char>(str);
-		} else {
-
-			if ( _data )
-				freeData();
-			_data = str;
-			_type = ownStrZ;
-		}
+	bool set( const char *strZ, size_t len = UnknownLength ) {
+		
+		freeData();
+		_data = const_cast<char*>(strZ);
+		_type = StrZ;
+		_length = len;
 		return true;
 	}
 
-	bool set( char16_t *str, bool transferOwnership = false ) {
+	bool set( char *strZ, Ownership, size_t len = UnknownLength ) {
 
-		if ( !transferOwnership ) {
+		freeData();
+		_data = strZ;
+		_type = OwnStrZ;
+		_length = len;
+		return true;
+	}
 
-			makeOwnCopy<char16_t>(str);
-		} else {
+	bool set( const char16_t *wStrZ, size_t len = UnknownLength ) {
 
-			if ( _data )
-				freeData();
-			_data = str;
-			_type = ownWStrZ;
-		}
+		freeData();
+		_data = const_cast<char16_t*>(wStrZ);
+		_type = WStrZ;
+		_length = len;
+		return true;
+	}
+
+	bool set( char16_t *wStrZ, Ownership, size_t len = UnknownLength ) {
+
+		freeData();
+		_data = wStrZ;
+		_type = OwnWStrZ;
+		_length = len;
 		return true;
 	}
 
 	bool set( JSContext *, JS::HandleString str ) {
 	
-		if ( _data )
-			freeData();
-
+		freeData();
 		_str.set(str);
-		
-		_length = JL_GetStringLength(str);
 		_type = JL_StringHasLatin1Chars(str) ? Latin1String : TwoByteString;
+		_length = UnknownLength;
 		return true;
 	}
 
 	bool set( JSContext *cx, JS::HandleObject obj ) {
 		
-		if ( _data )
-			freeData();
-
+		freeData();
 		_obj.set(obj);
-
 		if ( JS_IsArrayBufferObject(obj) ) {
 
-			_length = JS_GetArrayBufferByteLength(obj);
 			_type = ArrayBuffer;
 		} else
 		if ( JS_IsTypedArrayObject(obj) ) {
 
-			_length = JS_GetTypedArrayByteLength(obj);
-			if ( JS_GetArrayBufferViewType(obj) != js::Scalar::Uint16 ) {
-			
-				_type = ArrayBufferView;
-			} else {
-
-				_length /= 2;
-				_type = Uint16ArrayBuffer;
-			}
+			_type = JS_GetArrayBufferViewType(obj) != js::Scalar::Uint16 ? ArrayBufferView : Uint16ArrayBuffer;
 		} else {
 
 			JS::RootedValue val(cx, JS::ObjectValue(*obj));
 			_str.set(JS::ToString(cx, val));
 			JL_CHK( _str != nullptr );
-			_length = JL_GetStringLength(_str);
 			_type = JL_StringHasLatin1Chars(_str) ? Latin1String : TwoByteString;
 		}
+		_length = UnknownLength;
 		return true;
 		JL_BAD;
 	}
@@ -465,17 +435,83 @@ public:
 
 	bool isSet() const {
 
-		return _type != none;
+		return _type != None;
 	}
 
 	size_t length() const {
 
+		if ( _length == UnknownLength ) {
+
+			switch ( _type ) {
+				case None:
+					_length = 0;
+					break;
+				case Latin1String:
+				case TwoByteString:
+					_length = js::GetStringLength(_str);
+					break;
+				case ArrayBuffer:
+					_length = JS_GetArrayBufferByteLength(_obj);
+					break;
+				case ArrayBufferView:
+					_length = JS_GetTypedArrayByteLength(_obj);
+					break;
+				case Uint16ArrayBuffer:
+					_length = JS_GetTypedArrayByteLength(_obj) / 2;
+					break;
+				case OwnStrZ:
+				case StrZ:
+					_length = jl::tstrlen(static_cast<char*>(_data));
+					break;
+				case OwnWStrZ:
+				case WStrZ:
+					_length = jl::tstrlen(static_cast<char16_t*>(_data));
+					break;
+			}
+		}
+		ASSERT( _length != UnknownLength );
 		return _length;
 	}
 
 	bool isWide() const {
 
-		return _type == TwoByteString || _type == ownWStrZ || _type == Uint16ArrayBuffer;
+		return _type == TwoByteString || _type == OwnWStrZ || _type == Uint16ArrayBuffer || _type == WStrZ;
+	}
+
+
+	char16_t * toOwnWStrZ() {
+
+		if ( _type == OwnWStrZ && _data != _staticBuffer ) {
+			
+			_type = WStrZ;
+			return static_cast<char16_t*>(_data);
+		}
+		return StrDataSrc::toOwnWStrZ();
+	}
+
+	char16_t * toOwnWStr() {
+	
+		return toOwnWStrZ();
+	}
+
+	char * toOwnStrZ() {
+		
+		if ( _type == OwnStrZ && _data != _staticBuffer ) {
+			
+			_type = StrZ;
+			return static_cast<char*>(_data);
+		}
+		return StrDataSrc::toOwnStrZ();
+	}
+
+	char * toOwnStr() {
+		
+		return toOwnStrZ();
+	}
+
+	uint8_t * toOwnBytes() {
+		
+		return reinterpret_cast<uint8_t*>(toOwnStr());
 	}
 
 
@@ -500,12 +536,12 @@ public:
 				return makeOwnCopy<char16_t>(reinterpret_cast<int8_t*>(JS_GetArrayBufferViewData(_obj)));
 			case Uint16ArrayBuffer:
 				return reinterpret_cast<const jschar*>(JS_GetUint16ArrayData(_obj));
-			case ownStrZ:
+			case OwnStrZ:
+			case StrZ:
 				return makeOwnCopy<char16_t>(static_cast<char*>(_data));
-			case ownWStrZ:
+			case OwnWStrZ:
+			case WStrZ:
 				return static_cast<char16_t*>(_data);
-			default:
-				return nullptr;
 		}
 		JL_BADVAL(nullptr);
 	}
@@ -531,12 +567,12 @@ public:
 				return makeOwnCopy<char>(reinterpret_cast<uint8_t*>(JS_GetArrayBufferViewData(_obj)));
 			case Uint16ArrayBuffer:
 				return makeOwnCopy<char>(JS_GetUint16ArrayData(_obj));
-			case ownStrZ:
+			case OwnStrZ:
+			case StrZ:
 				return static_cast<char*>(_data);
-			case ownWStrZ:
+			case OwnWStrZ:
+			case WStrZ:
 				return makeOwnCopy<char>(static_cast<char16_t*>(_data));
-			default:
-				return nullptr;
 		}
 		JL_BADVAL(nullptr);
 	}
@@ -560,23 +596,26 @@ public:
 				return reinterpret_cast<const char*>(JS_GetArrayBufferViewData(_obj));
 			case Uint16ArrayBuffer:
 				return makeOwnCopy<char>(JS_GetUint16ArrayData(_obj));
-			case ownStrZ:
+			case OwnStrZ:
+			case StrZ:
 				return static_cast<const char*>(_data);
-			case ownWStrZ:
+			case OwnWStrZ:
+			case WStrZ:
 				return makeOwnCopy<char>(static_cast<char16_t*>(_data));
-			default:
-				return toStrZ(nogc);
 		}
 		JL_BADVAL(nullptr);
 	}
+
 
 	char16_t getWCharAt(size_t index) {
 
 		jschar chr;
 		switch ( _type ) {
-			case ownStrZ:
+			case OwnStrZ:
+			case StrZ:
 				return static_cast<char16_t>( static_cast<char*>(_data)[index] );
-			case ownWStrZ:
+			case OwnWStrZ:
+			case WStrZ:
 				return static_cast<char16_t*>(_data)[index];
 			case Latin1String:
 			case TwoByteString: {
@@ -617,9 +656,11 @@ public:
 
 	virtual bool toArrayBuffer( JSContext *cx, JS::MutableHandleValue rval ) {
 		
-		if ( _type == ownStrZ ) {
+		/*
+		if ( _data != _staticBuffer && _type == OwnStrZ ) {
 
-			_obj.set( _length > 0 ? JS_NewArrayBufferWithContents(cx, _length, _data) : JS_NewArrayBuffer(cx, 0) );
+			size_t len = length();
+			_obj.set( len > 0 ? JS_NewArrayBufferWithContents(cx, len, _data) : JS_NewArrayBuffer(cx, 0) );
 			_data = nullptr;
 			JL_CHK( _obj != nullptr );
 			_type = ArrayBuffer;
@@ -629,16 +670,25 @@ public:
 
 			return StrDataSrc::toArrayBuffer(cx, rval);
 		}
+		*/
+
+		size_t len = length();
+		_obj.set( len > 0 ? JS_NewArrayBufferWithContents(cx, len, toOwnBytes()) : JS_NewArrayBuffer(cx, 0) );
+		JL_CHK( _obj != nullptr );
+		rval.setObject( *_obj );
+		freeData();
+		return true;
 		JL_BAD;
 	}
 
 	virtual bool toJSString( JSContext *cx, JS::MutableHandleValue rval ) {
 		
-		if ( _type == ownStrZ )
-			_str.set( JL_NewString(cx, reinterpret_cast<char*>(_data), _length) );
+		/*
+		if ( _data != _staticBuffer && _type == OwnStrZ )
+			_str.set( JL_NewString(cx, reinterpret_cast<char*>(_data), length()) );
 		else
-		if ( _type == ownWStrZ )
-			_str.set( JL_NewUCString(cx, reinterpret_cast<char16_t*>(_data), _length) );
+		if ( _data != _staticBuffer && _type == OwnWStrZ )
+			_str.set( JL_NewUCString(cx, reinterpret_cast<char16_t*>(_data), length()) );
 		else
 			return StrDataSrc::toJSString(cx, rval);
 
@@ -646,6 +696,17 @@ public:
 		JL_CHK( _str != nullptr );
 		_type = JL_StringHasLatin1Chars(_str) ? Latin1String : TwoByteString;
 		rval.setString( _str );
+		return true;
+		JL_BAD;
+		*/
+
+		size_t len = length();
+		JSString *str = isWide() ? JL_NewUCString(cx, toOwnWStr(), len) : JL_NewString(cx, toOwnStr(), len);
+		JL_CHK( str );
+		rval.setString( str );
+		_str.set(str);
+		_type = JL_StringHasLatin1Chars(str) ? Latin1String : TwoByteString;
+		freeData();
 		return true;
 		JL_BAD;
 	}

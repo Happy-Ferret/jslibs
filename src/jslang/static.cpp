@@ -1078,19 +1078,29 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	using namespace jl;
 
+
 	JS::RootedString jsstr(cx, JS_NewStringCopyZ(cx, "test"));
 
 	jl::StrData str(cx);
 
-	str.set(cx, jsstr);
+	//str.set(cx, jsstr);
+	str.set("test");
 
-	str.equals("test");
+	str.equals(L"test");
 
+	{
 	JS::AutoCheckCannotGC nogc;
 	jl::puts(str.toWStrZ(nogc));
 	jl::puts(str.toStrZ(nogc));
 	jl::puts(str.toWStrZ(nogc));
 	jl::puts(str.toStrZ(nogc));
+	}
+
+	str.toJSString(cx, JL_RVAL);
+	str.toArrayBuffer(cx, JL_RVAL);
+	str.toJSString(cx, JL_RVAL);
+
+	jl::puts((const char16_t*)str);
 
 
 return true;

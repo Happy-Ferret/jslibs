@@ -17,7 +17,8 @@ host.interruptInterval = 1;
 host.onInterrupt = () => { host.collectGarbage(true, 1) };
 */
 
-
+	jslangTest();
+throw 0;
 
 ////
 
