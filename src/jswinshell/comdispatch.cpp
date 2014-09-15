@@ -246,7 +246,8 @@ DEFINE_SET_PROPERTY() {
 		jl::BufString name;
 		JL_CHK( jl::getValue(cx, nameStr, &name) );
 		
-		LPOLESTR names[] = { const_cast<LPOLESTR>(name.toWStrZ()) };
+		JS::AutoCheckCannotGC nogc;
+		LPOLESTR names[] = { const_cast<LPOLESTR>(name.toWStrZ(nogc)) };
 		hr = disp->GetIDsOfNames(IID_NULL, names, 1, LOCALE_SYSTEM_DEFAULT, &dispid);
 		if ( FAILED(hr) ) // dispid == DISPID_UNKNOWN
 			JL_CHK( WinThrowError(cx, hr) );

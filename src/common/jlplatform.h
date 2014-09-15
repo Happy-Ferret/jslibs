@@ -2189,21 +2189,21 @@ template <typename T>
 INLINE NEVER_INLINE char* FASTCALL
 itoa10(T val, char *buf) {
 
-	char *tmp = buf + (::std::numeric_limits<T>::is_signed ? 1 : 0) + 1 + ::std::numeric_limits<T>::digits10 + 1;
+	char *tmp = buf + IToA10MaxDigits(T);
 	*--tmp = '\0';
 	if ( ::std::numeric_limits<T>::is_signed && val < 0 ) {
-
-		do {
-			*--tmp = '0' + val % 10;
-			val /= 10;
-		} while ( val );
-	} else {
 
 		do {
 			*--tmp = '0' - val % 10;
 			val /= 10;
 		} while ( val );
 		*--tmp = '-';
+	} else {
+
+		do {
+			*--tmp = '0' + val % 10;
+			val /= 10;
+		} while ( val );
 	}
 	return tmp;
 }
@@ -2217,16 +2217,16 @@ itoa10( T val, wchar_t *buf ) {
 	if ( ::std::numeric_limits<T>::is_signed && val < 0 ) {
 
 		do {
-			*--tmp = L'0' + val % 10;
-			val /= 10;
-		} while ( val );
-	} else {
-
-		do {
 			*--tmp = L'0' - val % 10;
 			val /= 10;
 		} while ( val );
 		*--tmp = '-';
+	} else {
+
+		do {
+			*--tmp = L'0' + val % 10;
+			val /= 10;
+		} while ( val );
 	}
 	return tmp;
 }

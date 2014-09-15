@@ -180,125 +180,133 @@ DEFINE_FUNCTION( process ) {
 
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &data) );
 
-		inLen = data.length();
-		if ( pv->wFrom ) {
-
-			inLen *= 2;
-			inBuf =  (char*)data.toWStrZ(); // may be toWStr() without Z
-		} else {
-
-			inBuf = inBuf =  (char*)data.toBytes(); // may be toStr() without Z
-		}
-
-
 		JL_ICONV_PROTO_ARG char *inPtr;
-		inPtr = inBuf;
 		size_t inLeft;
-		inLeft = inLen;
 
 		size_t outLen;
-
-
-		outLen = inLen + MB_LEN_MAX + 512; // (we use + MB_LEN_MAX to avoid "remainderLen section" to failed with E2BIG)
-		outBuf = (char*)JS_malloc(cx, outLen +2);
-		JL_CHK( outBuf );
-
 		char *outPtr;
-		outPtr = outBuf;
 		size_t outLeft;
-		outLeft = outLen;
 
-		if ( pv->remainderLen ) { // have to process a previous incomplete multibyte sequence ?
+		{
 
-			JL_ICONV_PROTO_ARG char *tmpPtr;
-			size_t tmpLeft;
-			do {
+			JS::AutoCheckCannotGC nogc;
 
-				pv->remainderBuf[pv->remainderLen++] = *inPtr; // complete the sequence with incomming data
-				inPtr++;
-				inLeft--;
+			inLen = data.length();
+			if ( pv->wFrom ) {
 
-				tmpPtr = pv->remainderBuf;
-				tmpLeft = pv->remainderLen;
+				inLen *= 2;
+				inBuf = (char*)data.toWStr(nogc);
+			} else {
 
-				// iconv() proto in jslibs/libs/libiconv: extern size_t iconv (iconv_t cd, const char* * inbuf, size_t *inbytesleft, char* * outbuf, size_t *outbytesleft);
-				status = iconv(pv->cd, &tmpPtr, &tmpLeft, &outPtr, &outLeft);
+				inBuf = (char*)data.toStr(nogc);
+			}
 
-				if ( status != (size_t)(-1) )
-					break;
-			
-				// E2BIG will never happens
-				ASSERT( status != E2BIG );
 
-				// (TBD) manage EILSEQ like this ??? :
-				if ( errno == EILSEQ ) { // An invalid multibyte sequence has been encountered in the input.
-				
-					*outPtr = pv->invalidChar; // space should be available to acheive this.
-					outPtr++;
-					outLeft--;
+			inPtr = inBuf;
+			inLeft = inLen;
 
-					inPtr--; // rewind by 1
-					inLeft++;
-					break;
-				}
+			outLen = inLen + MB_LEN_MAX + 512; // (we use + MB_LEN_MAX to avoid "remainderLen section" to failed with E2BIG)
+			outBuf = (char*)JS_malloc(cx, outLen +2);
+			JL_CHK( outBuf );
 
-			} while ( errno == EINVAL && pv->remainderLen < sizeof(pv->remainderBuf) );
+			outPtr = outBuf;
+			outLeft = outLen;
 
-			iconv(pv->cd, NULL, NULL, NULL, NULL); // reset
-			pv->remainderLen = 0;
-		}
+			if ( pv->remainderLen ) { // have to process a previous incomplete multibyte sequence ?
 
-		do {
+				JL_ICONV_PROTO_ARG char *tmpPtr;
+				size_t tmpLeft;
+				do {
 
-			// iconv() proto in jslibs/libs/libiconv: extern size_t iconv (iconv_t cd, const char* * inbuf, size_t *inbytesleft, char* * outbuf, size_t *outbytesleft);
-			status = iconv(pv->cd, &inPtr, &inLeft, &outPtr, &outLeft); // doc: http://www.manpagez.com/man/4/iconv/
+					pv->remainderBuf[pv->remainderLen++] = *inPtr; // complete the sequence with incomming data
+					inPtr++;
+					inLeft--;
 
-			if ( status == (size_t)(-1) )
-				switch ( errno ) {
+					tmpPtr = pv->remainderBuf;
+					tmpLeft = pv->remainderLen;
 
-					case E2BIG: { // There is not sufficient room at *outbuf.
+					// iconv() proto in jslibs/libs/libiconv: extern size_t iconv (iconv_t cd, const char* * inbuf, size_t *inbytesleft, char* * outbuf, size_t *outbytesleft);
+					status = iconv(pv->cd, &tmpPtr, &tmpLeft, &outPtr, &outLeft);
 
-							int processedOut = outPtr - outBuf;
-							outLen = inLen * processedOut / (inPtr - inBuf) + 512; // try to guess a better outLen based on the current in/out ratio.
-							outBuf = (char*)JS_realloc(cx, outBuf, outLen +2);
-							JL_CHK(outBuf);
-							outPtr = outBuf + processedOut;
-							outLeft = outLen - processedOut;
-						}
+					if ( status != (size_t)(-1) )
 						break;
+			
+					// E2BIG will never happens
+					ASSERT( status != E2BIG );
 
-					case EILSEQ: // An invalid multibyte sequence has been encountered in the input. *inPtr is left pointing to the beginning of the invalid multibyte sequence.
-
-						if ( outLeft < MB_LEN_MAX +1 ) {
-						
-							int processedOut = outPtr - outBuf;
-							outLen = inLen * processedOut / (inPtr - inBuf) + 512; // try to guess a better outLen based on the current in/out ratio.
-							outBuf = (char*)JS_realloc(cx, outBuf, outLen +2);
-							JL_CHK(outBuf);
-							outPtr = outBuf + processedOut;
-							outLeft = outLen - processedOut;
-						}
-
-						status = iconv(pv->cd, NULL, NULL, &outPtr, &outLeft); // to set cd's conversion state to the initial state and store a corresponding shift sequence at *outbuf.
-						*outPtr = pv->invalidChar;
+					// (TBD) manage EILSEQ like this ??? :
+					if ( errno == EILSEQ ) { // An invalid multibyte sequence has been encountered in the input.
+				
+						*outPtr = pv->invalidChar; // space should be available to acheive this.
 						outPtr++;
 						outLeft--;
-						inPtr++;
-						inLeft--;
-						break;
 
-					case EINVAL: { // An incomplete multibyte sequence has been encountered in the input.
-
-						JL_CHKM( inLeft < sizeof(pv->remainderBuf), E_LIB, E_STR("iconv"), E_OPERATION, E_COMMENT("incomplete multibyte sequence"));
-						jl::memcpy(pv->remainderBuf + pv->remainderLen, inPtr, inLeft); // save
-						pv->remainderLen = inLeft;
-						inPtr += inLeft;
-						inLeft = 0;
+						inPtr--; // rewind by 1
+						inLeft++;
 						break;
 					}
-				}
 
-		} while ( inLeft );
+				} while ( errno == EINVAL && pv->remainderLen < sizeof(pv->remainderBuf) );
+
+				iconv(pv->cd, NULL, NULL, NULL, NULL); // reset
+				pv->remainderLen = 0;
+			}
+
+			do {
+
+				// iconv() proto in jslibs/libs/libiconv: extern size_t iconv (iconv_t cd, const char* * inbuf, size_t *inbytesleft, char* * outbuf, size_t *outbytesleft);
+				status = iconv(pv->cd, &inPtr, &inLeft, &outPtr, &outLeft); // doc: http://www.manpagez.com/man/4/iconv/
+
+				if ( status == (size_t)(-1) )
+					switch ( errno ) {
+
+						case E2BIG: { // There is not sufficient room at *outbuf.
+
+								int processedOut = outPtr - outBuf;
+								outLen = inLen * processedOut / (inPtr - inBuf) + 512; // try to guess a better outLen based on the current in/out ratio.
+								outBuf = (char*)JS_realloc(cx, outBuf, outLen +2);
+								JL_CHK(outBuf);
+								outPtr = outBuf + processedOut;
+								outLeft = outLen - processedOut;
+							}
+							break;
+
+						case EILSEQ: // An invalid multibyte sequence has been encountered in the input. *inPtr is left pointing to the beginning of the invalid multibyte sequence.
+
+							if ( outLeft < MB_LEN_MAX +1 ) {
+						
+								int processedOut = outPtr - outBuf;
+								outLen = inLen * processedOut / (inPtr - inBuf) + 512; // try to guess a better outLen based on the current in/out ratio.
+								outBuf = (char*)JS_realloc(cx, outBuf, outLen +2);
+								JL_CHK(outBuf);
+								outPtr = outBuf + processedOut;
+								outLeft = outLen - processedOut;
+							}
+
+							status = iconv(pv->cd, NULL, NULL, &outPtr, &outLeft); // to set cd's conversion state to the initial state and store a corresponding shift sequence at *outbuf.
+							*outPtr = pv->invalidChar;
+							outPtr++;
+							outLeft--;
+							inPtr++;
+							inLeft--;
+							break;
+
+						case EINVAL: { // An incomplete multibyte sequence has been encountered in the input.
+
+							JL_CHKM( inLeft < sizeof(pv->remainderBuf), E_LIB, E_STR("iconv"), E_OPERATION, E_COMMENT("incomplete multibyte sequence"));
+							jl::memcpy(pv->remainderBuf + pv->remainderLen, inPtr, inLeft); // save
+							pv->remainderLen = inLeft;
+							inPtr += inLeft;
+							inLeft = 0;
+							break;
+						}
+					}
+
+			} while ( inLeft );
+
+
+		} // scope
+
 
 		size_t length;
 		length = outPtr - outBuf;
@@ -448,8 +456,8 @@ DEFINE_PROPERTY_GETTER( list ) {
 DEFINE_PROPERTY_GETTER( version ) {
 
 #ifdef _LIBICONV_VERSION
-	char versionStr[16];
-	char tmp[IToA10MaxDigits(uint8_t) + 1];
+	char versionStr[8];
+	char tmp[32];
 	strcpy( versionStr, jl::itoa10(_LIBICONV_VERSION >> 8, tmp) );
 	strcat( versionStr, ".");
 	strcat( versionStr, jl::itoa10(_LIBICONV_VERSION & 0xFF, tmp) );
@@ -457,8 +465,10 @@ DEFINE_PROPERTY_GETTER( version ) {
 	char versionStr[7];
 	strcpy( versionStr, "system");
 #endif
-	return jl::setValue(cx, vp, versionStr);
-	return jl::StoreProperty(cx, obj, id, vp, true);  // create and store store the value once for all.
+	JL_CHK( jl::setValue(cx, vp, versionStr) );
+	JL_CHK( jl::StoreProperty(cx, obj, id, vp, true) );  // create and store store the value once for all.
+	return true;
+	JL_BAD;
 }
 
 
@@ -475,7 +485,8 @@ DEFINE_PROPERTY_GETTER( jsUC ) {
 			vp.setUndefined();
 			break;
 	}
-	return jl::StoreProperty(cx, obj, id, vp, true);
+	JL_CHK( jl::StoreProperty(cx, obj, id, vp, true) );
+	return true;
 	JL_BAD;
 }
 

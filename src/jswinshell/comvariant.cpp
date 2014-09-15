@@ -158,7 +158,8 @@ bool BlobToVariant( JSContext *cx, JS::HandleValue val, VARIANT *variant ) {
 	HRESULT hr = SafeArrayAccessData(variant->parray, &pArrayData);
 	if ( FAILED(hr) )
 		JL_CHK( WinThrowError(cx, hr) );
-	jl::memcpy(pArrayData, buf.toBytes(), buf.length());
+
+	jl::memcpy(pArrayData, buf.toBytes(JS::AutoCheckCannotGC()), buf.length());
 	SafeArrayUnaccessData(variant->parray);
 
 	return true;
@@ -197,7 +198,7 @@ bool JsvalToVariant( JSContext *cx, IN JS::HandleValue value, OUT VARIANT *varia
 			jl::StrData buf(cx);
 			JL_CHK( jl::getValue(cx, value, &buf) );
 			V_VT(variant) = VT_BSTR;
-			V_BSTR(variant) = SysAllocStringByteLen(buf.toStr(), buf.length());
+			V_BSTR(variant) = SysAllocStringByteLen(buf, buf.length());
 			return true;
 		}
 

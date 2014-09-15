@@ -182,9 +182,10 @@ namespace setValue_pv {
 
 
 	ALWAYS_INLINE bool FASTCALL
-	setValue( JSContext *cx, JS::MutableHandleValue rval, IN jl::BufString &data, bool toArrayBuffer = true ) {
+	setValue( JSContext *cx, JS::MutableHandleValue rval, IN jl::StrDataSrc &data, bool toArrayBuffer = true ) {
 
-		return toArrayBuffer ? data.toString(cx, rval) : data.toArrayBuffer(cx, rval);
+		//return toArrayBuffer ? data.toJSString(cx, rval) : data.toArrayBuffer(cx, rval);
+		data.toJSValue(cx, rval);
 	}
 
 	ALWAYS_INLINE bool FASTCALL

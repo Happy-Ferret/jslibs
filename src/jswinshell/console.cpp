@@ -94,7 +94,8 @@ DEFINE_FUNCTION( write ) {
 		jl::StrData str(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &str) );
 		DWORD written;
-		BOOL status = ::WriteConsole(hStdout, str.toWStr(), str.length(), &written, NULL);
+		JS::AutoCheckCannotGC nogc;
+		BOOL status = ::WriteConsole(hStdout, str.toWStr(nogc), str.length(), &written, NULL);
 		if ( status == FALSE )
 			return WinThrowError(cx, GetLastError());
 

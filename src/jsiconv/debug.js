@@ -10,18 +10,6 @@ var loadModule = host.loadModule;
 loadModule('jsstd'); 
 loadModule('jsiconv'); 
 
-print(Iconv.list)
-
-throw 0;
-
-
-	var conv = new Iconv('UTF-8', 'ISO-8859-1', true, false); // source is not wide, dest is wide
-	var res = conv.process('été');
-	//QA.ASSERT( res.length, 3, 'UC string length' );
-	print( res.length, '\n' );
-
-
-throw 0;
 
 
 
@@ -37,10 +25,28 @@ loadModule('jswinshell');
 	var conv = new Iconv(consoleCodepage, Iconv.jsUC, false, true);
 	print( consoleCodepage )
 
+	print( 'été' );
+	print( conv.process('été') );
+
 
 	
-halt(); //////////////////////////////////////////
+throw 0;
 	
+
+	print(Iconv.version)
+
+throw 0;
+
+
+	var conv = new Iconv('UTF-8', 'ISO-8859-1', true, false); // source is not wide, dest is wide
+	var res = conv.process('été');
+	//QA.ASSERT( res.length, 3, 'UC string length' );
+	print( res.length, '\n' );
+
+
+throw 0;
+
+
 
 	var conv = new Iconv('UTF-8', 'UCS-2-INTERNAL', false, true);
 	print( conv.invalidChar, '?', 'default invalidChar' );

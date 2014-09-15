@@ -214,7 +214,7 @@ DEFINE_FUNCTION( createProcess ) {
 		DWORD creationFlags = sizeof( TCHAR ) == sizeof( WCHAR ) ? CREATE_UNICODE_ENVIRONMENT : 0;
 
 		// doc: http://msdn2.microsoft.com/en-us/library/ms682425.aspx
-		BOOL st = ::CreateProcess( applicationName, tmpCommandLine, NULL, NULL, FALSE, creationFlags, (LPVOID)environment.toWStrZ(), currentDirectory, &si, &pi );
+		BOOL st = ::CreateProcess( applicationName, tmpCommandLine, NULL, NULL, FALSE, creationFlags, (LPVOID)environment.toWStrZ(JS::AutoCheckCannotGC()), currentDirectory, &si, &pi );
 		jl_free( tmpCommandLine );
 
 		if ( st == FALSE )
@@ -560,7 +560,7 @@ DEFINE_FUNCTION( registrySet ) {
 				jl::StrData tmp(cx);
 				JL_CHK( jl::getValue(cx, value, &tmp) );
 				// doc: When writing a string to the registry, you must specify the length of the string, including the terminating null character (\0).
-				st = RegSetValueEx(hKey, valueNameStr, 0, REG_SZ, reinterpret_cast<const BYTE *>(tmp.toStrZ()), tmp.length() + 1);
+				st = RegSetValueEx(hKey, valueNameStr, 0, REG_SZ, tmp, tmp.length() + 1);
 			} else
 			if ( jl::isData(cx, value) ) {
 
@@ -1044,7 +1044,7 @@ DEFINE_FUNCTION( guidToString ) {
 		JL_ASSERT( str.length() == sizeof(GUID), E_ARG, E_NUM(1), E_LENGTH, E_NUM(sizeof(GUID)) );
 
 		GUID guid;
-		CopyMemory(&guid, str.toStr(), sizeof(GUID));
+		CopyMemory(&guid, static_cast<const uint8_t*>(str), sizeof(GUID));
 		WCHAR szGuid[39];
 		int len = StringFromGUID2(guid, szGuid, COUNTOF(szGuid));
 		ASSERT( len == COUNTOF(szGuid) );
@@ -1123,7 +1123,7 @@ DEFINE_PROPERTY_SETTER( clipboard ) {
 		LPTSTR lptstrCopy = (LPTSTR)GlobalLock(hglbCopy);
 		if ( lptstrCopy == NULL )
 			return jl::throwOSError(cx);
-		jl::memcpy(lptstrCopy, str.toStr(), str.length() + 1);
+		jl::memcpy(lptstrCopy, static_cast<const char*>(str), str.length() + 1);
 		lptstrCopy[str.length()] = 0;
 		GlobalUnlock(hglbCopy);
 		HANDLE h = SetClipboardData(CF_TEXT, hglbCopy);

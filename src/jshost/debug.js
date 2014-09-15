@@ -8,8 +8,6 @@ var loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('serial'); throw 0; // -inlineOnly
 //jslangTest();
 
-//	loadModule('jsstd');
-
 //loadModule('jssound');
 
 /*
@@ -18,6 +16,19 @@ host.onInterrupt = () => { host.collectGarbage(true, 1) };
 */
 
 	jslangTest();
+
+throw 0;
+
+
+	loadModule('jsstd');
+
+	host.stdout( isStatementValid('var i = 1') );
+
+	var iconv = {};
+	loadModule.call(iconv, 'jsiconv');
+	host.stdout( iconv.Iconv.version );
+
+
 throw 0;
 
 ////

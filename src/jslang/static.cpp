@@ -1077,8 +1077,7 @@ DEFINE_FUNCTION( jslangTest ) {
 	JL_DEFINE_ARGS;
 
 	using namespace jl;
-
-
+	
 	JS::RootedString jsstr(cx, JS_NewStringCopyZ(cx, "test"));
 
 	jl::StrData str(cx);
@@ -1096,12 +1095,20 @@ DEFINE_FUNCTION( jslangTest ) {
 	jl::puts(str.toStrZ(nogc));
 	}
 
+	void *tmp = str.toOwnStrZ();
+
 	str.toJSString(cx, JL_RVAL);
 	str.toArrayBuffer(cx, JL_RVAL);
 	str.toJSString(cx, JL_RVAL);
 
-	jl::puts((const char16_t*)str);
+	str.toJSValue(cx, JL_RVAL);
 
+	jl::puts((const char16_t*)str);
+	jl::puts((const char*)str);
+	jl::puts((const char16_t*)str);
+	jl::puts((const char*)str);
+
+	jl_free(tmp);
 
 return true;
 
