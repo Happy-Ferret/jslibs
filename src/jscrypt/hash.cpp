@@ -35,7 +35,7 @@ DEFINE_FINALIZE() {
 	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 	HashPrivate *pv = (HashPrivate *)JL_GetPrivateFromFinalize(obj);
-	jl_free(pv); // NULL is supported but is quite rare.
+	JS_freeop(fop, pv); // NULL is supported but is quite rare.
 }
 
 /**doc
@@ -420,6 +420,7 @@ DEFINE_PROPERTY_GETTER( list ) {
 
 	JS::RootedObject list(cx, JL_NewObj(cx));
 	JS::RootedValue value(cx);
+	JL_ASSERT_ALLOC( list );
 	int i;
 	LTC_MUTEX_LOCK(&ltc_hash_mutex);
 	for ( i=0; hash_is_valid(i) == CRYPT_OK; i++ ) {

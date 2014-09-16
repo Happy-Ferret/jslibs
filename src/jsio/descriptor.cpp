@@ -490,14 +490,17 @@ DEFINE_FUNCTION( write ) {
 			if ( JL_ARG(1).isString() ) {
 			
 				JS::RootedString tmp(cx, JL_ARG(3).toString());
-				JL_RVAL.setString(JS_NewDependentString(cx, tmp, sentAmount, str.length() - sentAmount));
+				JS::RootedString str(cx, JS_NewDependentString(cx, tmp, sentAmount, str.length() - sentAmount));
+				JL_CHK( str );
+				JL_RVAL.setString(str);
 			} else {
 			
 				size_t length = str.length() - sentAmount;
 				void *data = jl_malloc(length);
 				JL_ASSERT_ALLOC(data);
 				jl::memcpy(data, (const uint8_t*)str + sentAmount, length);
-				JL_RVAL.setObject(*JS_NewArrayBufferWithContents(cx, length, data));
+				JL_RVAL.setObjectOrNull(JS_NewArrayBufferWithContents(cx, length, data));
+				JL_CHK( !JL_RVAL.isNull() );
 			}
 		}
 
@@ -690,7 +693,7 @@ DEFINE_FUNCTION( import ) {
 	if ( fd == NULL )
 		return ThrowIoError(cx);
 
-	JL_CHK( descriptorObject );
+	JL_ASSERT_ALLOC( descriptorObject );
 	JL_SetPrivate( descriptorObject, (void*)fd);
 
 	JL_CHK( JL_SetReservedSlot(descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JL_TRUE) );

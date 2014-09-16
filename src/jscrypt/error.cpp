@@ -182,12 +182,16 @@ ThrowCryptError( JSContext *cx, int errorCode ) {
 
 //	JS_ReportWarning( cx, "CryptError exception" );
 	JS::RootedObject error(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(CryptError), JL_CLASS_PROTOTYPE(cx, CryptError)));
-	JS::RootedValue errorVal(cx);
-	errorVal.setObject(*error);
-	JL_CHK( jl::setSlot(cx, error, 0, errorCode) );
-	JL_SAFE( jl::addScriptLocation(cx, &error) );
+	JL_ASSERT_ALLOC( error );
 
-	JS_SetPendingException(cx, errorVal);
+	{
+
+		JS::RootedValue errorVal(cx, JS::ObjectValue(*error));
+		JL_CHK( jl::setSlot(cx, error, 0, errorCode) );
+		JL_SAFE( jl::addScriptLocation(cx, &error) );
+		JS_SetPendingException(cx, errorVal);
+
+	}
 
 	//	JL_SetReservedSlot(  error, 1, errorMessage != NULL ? STRING_TO_JSVAL(JS_NewStringCopyZ( cx, errorMessage )) : JSVAL_VOID );
 	JL_BAD;

@@ -218,7 +218,8 @@ DEFINE_FUNCTION( load ) {
 
 		JL_ERR( E_ARGC, E_EQUALS, E_NUM(16) );
 	}
-	
+
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
@@ -240,6 +241,8 @@ DEFINE_FUNCTION( clear ) {
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	Matrix44Identity(pv->mat);
 	pv->isIdentity = true;
+	
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
@@ -259,6 +262,8 @@ DEFINE_FUNCTION( clearRotation ) {
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	Matrix44ClearRotation(pv->mat);
+	
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
@@ -278,6 +283,8 @@ DEFINE_FUNCTION( clearTranslation ) {
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
 	Matrix44ClearTranslation(pv->mat);
+	
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
@@ -319,6 +326,7 @@ DEFINE_FUNCTION( loadRotation ) {
 
 	pv->isIdentity = false; // (TBD) detect identity
 
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
@@ -352,6 +360,7 @@ DEFINE_FUNCTION( loadTranslation ) {
 
 	pv->isIdentity = false; // (TBD) detect identity
 
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
@@ -394,6 +403,7 @@ DEFINE_FUNCTION( translate ) {
 		Matrix44Mult(pv->mat, pv->mat, &t);
 	}
 
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
@@ -444,6 +454,7 @@ DEFINE_FUNCTION( scale ) {
 		Matrix44Mult(pv->mat, pv->mat, &t);
 	}
 
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
@@ -502,6 +513,7 @@ DEFINE_FUNCTION( rotationFromQuaternion ) {
 
 	pv->isIdentity = false;
 
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
@@ -560,6 +572,8 @@ DEFINE_FUNCTION( rotate ) {
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
 
 	float angle;
@@ -607,6 +621,8 @@ DEFINE_FUNCTION( rotateX ) {
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
 
 	float angle;
@@ -647,6 +663,8 @@ DEFINE_FUNCTION( rotateY ) {
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
 
 	float angle;
@@ -687,6 +705,8 @@ DEFINE_FUNCTION( rotateZ ) {
 
 	TransformationPrivate *pv = (TransformationPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE(pv);
+	
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
 
 	float angle;
@@ -781,6 +801,7 @@ DEFINE_FUNCTION( lookAt ) {
 
 	pv->isIdentity = false;
 
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
@@ -826,8 +847,8 @@ DEFINE_FUNCTION( rotateToVector ) {
 		Matrix44Mult(pv->mat, pv->mat, &r);
 	}
 
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
-
 	return true;
 	JL_BAD;
 }
@@ -850,6 +871,7 @@ DEFINE_FUNCTION( invert ) {
 	if ( !pv->isIdentity )
 		Matrix44Invert(pv->mat);
 
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;
@@ -892,6 +914,7 @@ DEFINE_FUNCTION( product ) {
 
 	pv->isIdentity = false;
 
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
 	return true;
 	JL_BAD;

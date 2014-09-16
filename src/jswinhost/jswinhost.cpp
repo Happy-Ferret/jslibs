@@ -121,6 +121,9 @@ int CALLBACK WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 //	#endif // USE_NEDMALLOC
 
 	HostRuntime::setJSEngineAllocators(allocators); // need to be done before AutoJSEngineInit ?
+
+	ThreadedAllocator alloc(allocators);
+
 	AutoJSEngineInit ase;
 
 	{

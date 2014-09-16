@@ -74,6 +74,7 @@ DEFINE_FUNCTION( extractIcon ) {
 
 		JS::RootedObject icon(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(Icon), JL_CLASS_PROTOTYPE(cx, Icon)));
 		HICON *phIcon = (HICON*)jl_malloc(sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
+		JL_ASSERT_ALLOC( icon );
 		JL_ASSERT_ALLOC( phIcon );
 		*phIcon = hIcon;
 		JL_SetPrivate(icon, phIcon);
@@ -641,7 +642,7 @@ DEFINE_FUNCTION( registryGet ) {
 		if ( (argc == 1) || (argc >= 2 && JL_ARG(2).isUndefined()) ) {
 
 			JS::RootedObject arrObj(cx, JS_NewArrayObject(cx, 0));
-			JL_CHK( arrObj );
+			JL_ASSERT_ALLOC( arrObj );
 			JL_RVAL.setObject(*arrObj);
 
 			TCHAR name[16384]; // http://msdn.microsoft.com/en-us/library/ms724872%28VS.85%29.aspx
@@ -865,9 +866,8 @@ DEFINE_FUNCTION( directoryChangesLookup ) {
 
 		if ( res != WAIT_OBJECT_0 ) { // non signaled
 
-			JSObject *arrObj = JS_NewArrayObject(cx, 0);
-			JL_CHK( arrObj );
-			JL_RVAL.setObject(*arrObj);
+			JL_RVAL.setObjectOrNull(JS_NewArrayObject(cx, 0));
+			JL_ASSERT_ALLOC( !JL_RVAL.isNull() );
 			return true;
 		}
 	}
@@ -887,7 +887,7 @@ DEFINE_FUNCTION( directoryChangesLookup ) {
 	{
 
 		JS::RootedObject arrObj(cx, JS_NewArrayObject(cx, 0));
-		JL_CHK( arrObj );
+		JL_ASSERT_ALLOC( arrObj );
 		JL_RVAL.setObject(*arrObj);
 
 		int index = 0;

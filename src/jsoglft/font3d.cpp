@@ -93,8 +93,8 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 		if ( colorTess != NULL )
 			delete colorTess;
 	}
-	delete pv->face;
-	jl_free(pv);
+	delete pv->face; // see FreeOp::get(fop)->delete_()
+	JS_freeop(fop, pv);
 }
 
 /**doc

@@ -6,6 +6,13 @@ host.interruptInterval = 500;
 host.onInterrupt = () => host.collectGarbage(true, 10);
 
 
+	
+	loadModule('jsstd');
+	exec('..\\..\\tests\\WirelessHeadset.js', false);
+throw 0;
+
+
+
 	loadModule('jsstd');
 	loadModule('jswinshell');
 

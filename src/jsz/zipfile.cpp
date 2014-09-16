@@ -154,8 +154,6 @@ bool NativeInterfaceStreamRead( JSContext *cx, JS::HandleObject obj, char *buf, 
 
 DEFINE_FINALIZE() {
 
-	JL_IGNORE( fop );
-
 	Private *pv = (Private*)JL_GetPrivateFromFinalize(obj);
 	if ( pv ) {
 
@@ -168,7 +166,7 @@ DEFINE_FINALIZE() {
 			ASSERT( !pv->zf );
 			unzClose(pv->uf);
 		}
-		jl_free(pv);
+		JS_freeop(fop, pv);
 	}
 }
 

@@ -183,16 +183,19 @@ DEFINE_CONSTRUCTOR() {
 			JS::RootedValue tmp(cx);
 
 			JS::RootedObject fdInObj(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe)));
+			JL_ASSERT_ALLOC( fdInObj );
 			tmp.setObject(*fdInObj);
 			JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_PROCESS_STDIN, tmp) );
 			JL_SetPrivate(  fdInObj, stdin_parent );
 
 			JS::RootedObject fdOutObj(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe)));
+			JL_ASSERT_ALLOC( fdOutObj );
 			tmp.setObject(*fdOutObj);
 			JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_PROCESS_STDOUT, tmp) );
 			JL_SetPrivate(  fdOutObj, stdout_parent );
 
 			JS::RootedObject fdErrObj(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(Pipe), JL_CLASS_PROTOTYPE(cx, Pipe)));
+			JL_ASSERT_ALLOC( fdErrObj );
 			tmp.setObject(*fdErrObj);
 			JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_PROCESS_STDERR, tmp) );
 			JL_SetPrivate(  fdErrObj, stderr_parent );

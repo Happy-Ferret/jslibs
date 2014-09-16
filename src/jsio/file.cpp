@@ -196,6 +196,7 @@ DEFINE_FUNCTION( open ) {
 
 	JL_CHK( jl::setStreamReadInterface(cx, JL_OBJ, NativeInterfaceStreamRead) );
 
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ); // allows to write f.Open(...).Read()
 	return true;
 	JL_BAD;
@@ -722,7 +723,7 @@ DEFINE_PROPERTY_GETTER( info ) {
 	} else {
 
 		fileInfoObj = JL_NewObj(cx);
-		JL_ASSERT(fileInfoObj);
+		JL_ASSERT_ALLOC(fileInfoObj);
 		vp.setObject( *fileInfoObj );
 	}
 
@@ -806,6 +807,7 @@ DEFINE_PROPERTY_GETTER( standard ) {
 		//JS::ToInt32( cx, id, &i );
 		i = JSID_TO_INT(id);
 		JS::RootedObject obj(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(File), JL_CLASS_PROTOTYPE(cx, File))); // no need to use classDescriptor as proto.
+		JL_ASSERT_ALLOC( obj );
 		vp.setObject( *obj );
 
 		PRFileDesc *fd = PR_GetSpecialFD((PRSpecialFD)i); // beware: cast !

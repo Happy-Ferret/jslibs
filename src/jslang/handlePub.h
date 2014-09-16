@@ -150,7 +150,7 @@ HandleCreate( JSContext *cx, T *data, OUT JS::MutableHandleValue handleVal ) {
 
 	{
 		JS::RootedObject handleObj(cx, jl::newObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto));
-		JL_CHK( handleObj );
+		JL_ASSERT_ALLOC( handleObj );
 		handleVal.setObject(*handleObj);
 		HandlePrivate *pv = data;
 		JL_SetPrivate(handleObj, pv);

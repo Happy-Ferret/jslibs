@@ -326,24 +326,22 @@ DEFINE_FUNCTION( process ) {
 
 		outBuf[length] = '\0'; // (TBD) manage \0 for wide char
 
-		JSString *jsEncStr;
+		JS::RootedString jsEncStr(cx);
 		if ( pv->wTo ) { // destination is wide.
 	
 	//		if ( length % 2 != 0 )
 	//			JL_REPORT_WARNING_NUM( JLSMSG_LOGIC_ERROR, "invalid string length"); // (TBD) or report an error ?
 			JL_ASSERT_WARN( length % 2 == 0, E_STR("invalid string length") );
-
 			((jschar*)outBuf)[length / 2] = 0;
-			jsEncStr = JL_NewUCString(cx, (jschar*)outBuf, length / 2);
-			JL_CHK( jsEncStr );
-			JL_RVAL.setString(jsEncStr);
+			jsEncStr.set( JL_NewUCString(cx, (jschar*)outBuf, length / 2) );
 		} else {
 
 			//jsEncStr = JL_NewString(cx, outBuf, length); // loose outBuf ownership	// JL_CHK( StringAndLengthToJsval(cx, JL_RVAL, outBuf, length) );
 			//JL_CHK( jl::BufString(outBuf, length, true).toString(cx, JL_RVAL) );
-			JL_RVAL.setString( JL_NewString(cx, outBuf, length) );
+			jsEncStr.set( JL_NewString(cx, outBuf, length) );
 		}
-		
+		JL_CHK( jsEncStr );
+		JL_RVAL.setString(jsEncStr);
 	}
 
 	return true;
@@ -438,7 +436,7 @@ bad:
 DEFINE_PROPERTY_GETTER( list ) {
 
 	JS::RootedObject list(cx, JS_NewArrayObject(cx, 0));
-	JL_CHK( list );
+	JL_ASSERT_ALLOC( list );
 	vp.setObject(*list);
 	{
 		IteratorPrivate ipv(cx);

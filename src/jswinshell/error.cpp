@@ -189,6 +189,7 @@ WinNewError( JSContext *cx, DWORD errorCode, JS::MutableHandleValue rval ) {
 
 	// (TBD) understand why it must have a constructor to be throwed in an exception
 	JS::RootedObject error(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(WinError), JL_CLASS_PROTOTYPE(cx, WinError) ));
+	JL_ASSERT_ALLOC( error );
 	rval.setObject(*error);
 	JL_CHK( jl::setSlot(cx, error, SLOT_WIN_ERROR_CODE_HI, HIWORD(errorCode)) );
 	JL_CHK( jl::setSlot(cx, error, SLOT_WIN_ERROR_CODE_LO, LOWORD(errorCode)) );

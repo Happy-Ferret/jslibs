@@ -250,7 +250,7 @@ class DLLAPI ThreadedAllocator {
 	static volatile bool _skipCleanup;
 
 	// block-to-free chain
-	static void *_head;
+	static volatile void *_head;
 
 	// thread stats
 	static volatile int32_t _headLength;
@@ -268,7 +268,7 @@ class DLLAPI ThreadedAllocator {
 	static volatile MemThreadAction _threadAction;
 	static JLSemaphoreHandler _memoryFreeThreadSem;
 
-	static bool _canTriggerFreeThread;
+	static volatile bool _canTriggerFreeThread;
 
 	static ThreadedAllocator *_owner;
 

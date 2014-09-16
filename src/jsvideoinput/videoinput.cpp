@@ -46,7 +46,7 @@ DEFINE_FINALIZE() {
 	if ( pv != NULL ) {
 
 		pv->vi->stopDevice( pv->deviceID );
-		delete pv;
+		delete pv; // see FreeOp::get(fop)->delete_()
 	}
 bad:
 	return;
@@ -404,6 +404,7 @@ DEFINE_PROPERTY_GETTER( list ) {
 
 	int numDevices = videoInput::listDevices(true);
 	JS::RootedObject list( cx, JS_NewArrayObject( cx, numDevices ) );
+	JL_ASSERT_ALLOC( list );
 	for ( int i = 0; i < numDevices; i++ ) {
 
 		jl::setElement( cx, list, i, videoInput::getDeviceName( i ) );

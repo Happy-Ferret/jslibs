@@ -383,6 +383,7 @@ DEFINE_FUNCTION( row ) {
 
 	{
 	JS::RootedObject row(cx, namedRows ? JL_NewObj(cx) : JS_NewArrayObject(cx, columnCount)); // If length is 0, JS_NewArrayObject creates an array object of length 0 and ignores vector.
+	JL_ASSERT_ALLOC( row );
 	JL_RVAL.setObject(*row); // now, row is protectef fom GC ??
 
 	JS::RootedValue colJsValue(cx);
@@ -426,6 +427,7 @@ DEFINE_FUNCTION( next ) { // for details, see Row() function thet is the base of
 		return JS_ThrowStopIteration(cx);
 
 	JS::RootedObject row(cx, JL_NewObj(cx));
+	JL_ASSERT_ALLOC( row );
 	JL_RVAL.setObject(*row);
 	int columnCount;
 	columnCount = sqlite3_data_count(pStmt);
@@ -520,6 +522,7 @@ DEFINE_PROPERTY_GETTER( columnNames ) {
 	{
 
 		JS::RootedObject columnNames(cx, JS_NewArrayObject(cx, 0));
+		JL_ASSERT_ALLOC( columnNames );
 		vp.setObject( *columnNames );
 		int columnCount;
 		columnCount = sqlite3_column_count( pStmt ); // sqlite3_column_count AND NOT sqlite3_data_count because this function can be called before sqlite3_step
@@ -563,6 +566,7 @@ DEFINE_PROPERTY_GETTER( columnIndexes ) {
 	{
 
 	JS::RootedObject columnIndexes(cx, JL_NewObj(cx));
+	JL_ASSERT_ALLOC( columnIndexes );
 	vp.setObject(*columnIndexes);
 	int columnCount;
 	columnCount = sqlite3_column_count( pStmt );
@@ -659,35 +663,36 @@ DEFINE_FUNCTION( stdIteratorNext ) {
 
 	{
 
-	JS::RootedObject item(cx, JL_NewObj(cx));
-	JS::RootedObject resultObj(cx, &result.toObject());
-	JS::RootedValue row(cx);
-	if ( !jl::call(cx, resultObj, JLID(cx, next), &row) ) {
+		JS::RootedObject item(cx, JL_NewObj(cx));
+		JS::RootedObject resultObj(cx, &result.toObject());
+		JS::RootedValue row(cx);
+		JL_ASSERT_ALLOC( item );
+		if ( !jl::call(cx, resultObj, JLID(cx, next), &row) ) {
 
-		JS::RootedValue ex(cx);
-		JL_CHK( JS_GetPendingException(cx, &ex) );
-		if ( JS_IsStopIteration(ex) ) { 
+			JS::RootedValue ex(cx);
+			JL_CHK( JS_GetPendingException(cx, &ex) );
+			if ( JS_IsStopIteration(ex) ) { 
 			
-			JS_ClearPendingException(cx);
-			done = true;
+				JS_ClearPendingException(cx);
+				done = true;
+			} else {
+
+				goto bad;
+			}
 		} else {
-
-			goto bad;
-		}
-	} else {
 		
-		done = false;
-	}
+			done = false;
+		}
 
-	ASSERT( row.isUndefined() == done );
+		ASSERT( row.isUndefined() == done );
 
-	//JL_CHK( JS_DefinePropertyById(cx, item, JLID(cx, done), JS::BooleanValue(done), NULL, NULL, 0) );
-	//JL_CHK( JS_DefinePropertyById(cx, item, JLID(cx, value), row, NULL, NULL, 0) );
+		//JL_CHK( JS_DefinePropertyById(cx, item, JLID(cx, done), JS::BooleanValue(done), NULL, NULL, 0) );
+		//JL_CHK( JS_DefinePropertyById(cx, item, JLID(cx, value), row, NULL, NULL, 0) );
 
-	JL_CHK( jl::setProperty( cx, item, JLID( cx, done ), done ) );
-	JL_CHK( jl::setProperty( cx, item, JLID( cx, value ), row ) );
+		JL_CHK( jl::setProperty( cx, item, JLID( cx, done ), done ) );
+		JL_CHK( jl::setProperty( cx, item, JLID( cx, value ), row ) );
 
-	JL_RVAL.setObject(*item);
+		JL_RVAL.setObject(*item);
 
 	}
 
@@ -706,6 +711,7 @@ DEFINE_STD_ITERATOR() {
 	JL_DEFINE_ARGS;
 
 	JS::RootedObject itObj(cx, JL_NewObj(cx));
+	JL_ASSERT_ALLOC( itObj );
 	JL_CHK( JS_DefineFunctionById(cx, itObj, JLID(cx, next), _stdIteratorNext, 0, 0) );
 	JL_CHK( JS_DefinePropertyById(cx, itObj, JLID(cx, source), JL_OBJVAL, NULL, NULL, 0) );
 	JL_RVAL.setObject(*itObj);

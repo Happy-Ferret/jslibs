@@ -94,14 +94,14 @@ public:
 
 		//ASSERT( isConstructing() );
 		_thisObj.set( jl::newObjectWithGivenProto(_cx, clasp, proto) ); // JS_NewObjectForConstructor() use the callee to determine parentage and [[Prototype]].
-		rval().setObject(*_thisObj);
+		rval().setObjectOrNull(_thisObj);
 		_jsargs.setThis(rval());
 	}
 
 	void
 	computeThis() {
 
-		JS::Value tmp = _jsargs.thisv();
+		JS::RootedValue tmp(_cx, _jsargs.thisv());
 		if ( tmp.isObject() ) {
 
 			_thisObj.set( &tmp.toObject() );

@@ -207,80 +207,80 @@ DEFINE_FUNCTION( join ) {
 
 	{
 
-	JS::RootedObject argObj(cx, &JL_ARG(1).toObject());
+		JS::RootedObject argObj(cx, &JL_ARG(1).toObject());
 
-	if ( jl::isArrayLike(cx, argObj) ) {
+		if ( jl::isArrayLike(cx, argObj) ) {
 
-		uint32_t arrayLen;
-		JL_CHK( JS_GetArrayLength(cx, argObj, &arrayLen) );
-		for ( unsigned i = 0; i < arrayLen; ++i ) {
+			uint32_t arrayLen;
+			JL_CHK( JS_GetArrayLength(cx, argObj, &arrayLen) );
+			for ( unsigned i = 0; i < arrayLen; ++i ) {
 
-			JL_CHK( JL_GetElement(cx, argObj, i, &val) );
-			JL_CHK( jl::getValue(cx, val, &*++strList) );
-			length += strList->length();
-			avr.append(val);
+				JL_CHK( JL_GetElement(cx, argObj, i, &val) );
+				JL_CHK( jl::getValue(cx, val, &*++strList) );
+				length += strList->length();
+				avr.append(val);
+			}
+		} else {
+
+			JS::RootedValue nextFct(cx);
+			JL_CHK( JS_GetPropertyById(cx, argObj, JLID(cx, next), &nextFct) );
+			JL_ASSERT_IS_CALLABLE(nextFct, "iterator");
+			while ( JS_CallFunctionValue(cx, argObj, nextFct, JS::HandleValueArray::empty(), &val) != false ) { // loop until StopIteration or error
+
+				JL_CHK( jl::getValue(cx, val, &*++strList) );
+				length += strList->length();
+				avr.append(val);
+			}
+			JL_CHK( jl::isStopIterationExceptionPending(cx) );
+			JS_ClearPendingException(cx);
 		}
-	} else {
 
-		JS::RootedValue nextFct(cx);
-		JL_CHK( JS_GetPropertyById(cx, argObj, JLID(cx, next), &nextFct) );
-		JL_ASSERT_IS_CALLABLE(nextFct, "iterator");
-		while ( JS_CallFunctionValue(cx, argObj, nextFct, JS::HandleValueArray::empty(), &val) != false ) { // loop until StopIteration or error
+		bool toArrayBuffer;
+		if ( JL_ARG_ISDEF(2) )
+			JL_CHK( jl::getValue(cx, JL_ARG(2), &toArrayBuffer) );
+		else
+			toArrayBuffer = false;
 
-			JL_CHK( jl::getValue(cx, val, &*++strList) );
-			length += strList->length();
-			avr.append(val);
-		}
-		JL_CHK( jl::isStopIterationExceptionPending(cx) );
-		JS_ClearPendingException(cx);
-	}
+		if ( toArrayBuffer ) {
 
-	bool toArrayBuffer;
-	if ( JL_ARG_ISDEF(2) )
-		JL_CHK( jl::getValue(cx, JL_ARG(2), &toArrayBuffer) );
-	else
-		toArrayBuffer = false;
-
-	if ( toArrayBuffer ) {
-
-		jl::BufBase buffer;
+			jl::BufBase buffer;
 		
-		//uint8_t *buf = JL_NewBuffer(cx, length, JL_RVAL);
-		//JL_CHK( buf );
+			//uint8_t *buf = JL_NewBuffer(cx, length, JL_RVAL);
+			//JL_CHK( buf );
 
-		buffer.alloc(length, true);
-		JL_ASSERT_ALLOC(buffer);
+			buffer.alloc(length, true);
+			JL_ASSERT_ALLOC(buffer);
 		
-		//buf += length;
-		uint8_t *buf;
-		buf = buffer.data() + length;
+			//buf += length;
+			uint8_t *buf;
+			buf = buffer.data() + length;
 
-		while ( strList ) {
+			while ( strList ) {
 
-			buf -= strList->length();
-			strList->copyTo(buf);
-			--strList;
+				buf -= strList->length();
+				strList->copyTo(buf);
+				--strList;
+			}
+
+			JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
+
+		} else {
+
+			jschar *buf = (jschar*)JS_malloc(cx, (length +1) * sizeof(jschar));
+			buf += length;
+			*buf = 0; // required by JL_NewUCString
+
+			while ( strList ) {
+
+				buf -= strList->length();
+				strList->copyTo(buf);
+				--strList;
+			}
+
+			JS::RootedString jsstr(cx, JL_NewUCString(cx, buf, length));
+			JL_ASSERT( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
+			JL_RVAL.setString(jsstr);
 		}
-
-		JL_CHK( BlobCreate(cx, buffer, JL_RVAL) );
-
-	} else {
-
-		jschar *buf = (jschar*)JS_malloc(cx, (length +1) * sizeof(jschar));
-		buf += length;
-		*buf = 0; // required by JL_NewUCString
-
-		while ( strList ) {
-
-			buf -= strList->length();
-			strList->copyTo(buf);
-			--strList;
-		}
-
-		JSString *jsstr = JL_NewUCString(cx, buf, length);
-		JL_ASSERT( jsstr != NULL, E_VALUE, E_CONVERT, E_TY_STRING );
-		JL_RVAL.setString(jsstr);
-	}
 
 	}
 
@@ -1083,9 +1083,10 @@ DEFINE_FUNCTION( jslangTest ) {
 	jl::StrData str(cx);
 
 	//str.set(cx, jsstr);
-	str.set("test");
+	ASSERT( str.set("test") );
 
-	str.equals(L"test");
+	ASSERT( str.equals(L"test") );
+	ASSERT( !str.equals(L"test123") );
 
 	{
 	JS::AutoCheckCannotGC nogc;
@@ -1519,6 +1520,7 @@ return true;
 
 	JS::RootedFunction fct(cx, JS_NewFunction(cx, X::fct, 1, 0, JS::NullPtr(), "fct"));
 	JS::RootedObject obj(cx, JS_GetFunctionObject(fct));
+	JL_CHK( obj );
 	JS::RootedValue val(cx);
 	val.setObject(*obj);
 	JS::RootedString str(cx, JS_NewStringCopyZ(cx, "test"));

@@ -373,10 +373,8 @@ bool VariantToJsval( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rva
 			INT st = VariantTimeToSystemTime(isRef ? *V_DATEREF(variant) : V_DATE(variant), &time);
 			if ( st != TRUE )
 				JL_CHK( WinThrowError(cx, GetLastError()) );
-			JSObject *tmpObj;
-			tmpObj = JS_NewDateObject(cx, time.wYear, time.wMonth-1, time.wDay, time.wHour, time.wMinute, time.wSecond); // see bug 625870
-			JL_CHK( tmpObj );
-			rval.setObject(*tmpObj);
+			rval.setObjectOrNull( JS_NewDateObject(cx, time.wYear, time.wMonth-1, time.wDay, time.wHour, time.wMinute, time.wSecond) ); // see bug 625870
+			JL_CHK( !rval.isNull() );
 			}
 			break;
 		case VT_BSTR: {
@@ -412,7 +410,7 @@ bool VariantToJsval( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rva
 			SafeArrayAccessData(psa, (void**)&varray);
 
 			JS::RootedObject jsArr(cx, JS_NewArrayObject(cx, size));
-			JL_CHK( jsArr );
+			JL_ASSERT_ALLOC( jsArr );
 			rval.setObject( *jsArr );
 
 			for ( long i = 0; i < size; ++i ) {
@@ -699,7 +697,7 @@ END_CLASS
 bool NewComVariant( JSContext *cx, VARIANT *variant, JS::MutableHandleValue rval ) {
 
 	JS::RootedObject varObj(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(ComVariant), JL_CLASS_PROTOTYPE(cx, ComVariant)));
-	JL_CHK( varObj );
+	JL_ASSERT_ALLOC( varObj );
 	rval.setObject(*varObj);
 	JL_SetPrivate(varObj, variant);
 	return true;

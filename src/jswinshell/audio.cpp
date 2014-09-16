@@ -166,7 +166,7 @@ DEFINE_FINALIZE() {
 	while ( pv->bufferList )
 		pv->bufferList.Pop().free();
 
-	delete pv;
+	delete pv; // see FreeOp::get(fop)->delete_()
 }
 
 
@@ -346,6 +346,7 @@ DEFINE_PROPERTY_GETTER( inputDeviceList ) {
 	JL_DEFINE_PROP_ARGS;
 
 	JS::RootedObject list(cx, jl::newArray(cx));
+	JL_ASSERT_ALLOC( list );
 	JL_RVAL.setObject(*list);
 
 	UINT uDeviceID;
@@ -361,6 +362,7 @@ DEFINE_PROPERTY_GETTER( inputDeviceList ) {
 	}
 
 	return true;
+	JL_BAD;
 }
 
 

@@ -476,7 +476,6 @@ public:
 
 						serializerWrapper = JL_NewJslibsObject(cx, "Serializer");
 						JL_ASSERT_ALLOC( serializerWrapper );
-
 						arg.setObject(*serializerWrapper);
 						JL_SetPrivate(serializerWrapper, this);
 					} else {
@@ -762,6 +761,7 @@ public:
 
 				JS::RootedString jsstr(cx);
 				JL_CHK( Read(cx, &jsstr) );
+				JL_CHK( jsstr );
 				val.setString(jsstr);
 				break;
 			}
@@ -822,7 +822,7 @@ public:
 			case JLSTObject: {
 
 				JS::RootedObject obj(cx, JL_NewObj(cx));
-				JL_CHK( obj );
+				JL_ASSERT_ALLOC( obj );
 				val.setObject(*obj);
 				SerializerObjectOwnProperties sop(cx, obj);
 				JL_CHK( Read(cx, sop) );
@@ -831,7 +831,7 @@ public:
 			case JLSTProtolessObject: {
 
 				JS::RootedObject obj(cx, jl::newObjectWithoutProto(cx));
-				JL_CHK( obj );
+				JL_ASSERT_ALLOC( obj );
 				val.setObject(*obj);
 				SerializerObjectOwnProperties sop(cx, obj);
 				JL_CHK( Read(cx, sop) );
@@ -859,7 +859,7 @@ public:
 				JS::RootedObject propObj(cx, &prop.toObject());
 				JS::RootedObject newObj(cx, JS_New(cx, propObj, ava));
 
-				JL_CHK( newObj );
+				JL_ASSERT_ALLOC( newObj );
 				val.setObject(*newObj);
 				break;
 			}
@@ -876,12 +876,12 @@ public:
 
 				JL_CHKM( cpc != NULL, E_CLASS, E_NAME(className), E_NOTFOUND );
 				JS::RootedObject newObj(cx, jl::newObjectWithGivenProto(cx, cpc->clasp, cpc->proto));
-				JL_CHK( newObj );
+				JL_ASSERT_ALLOC( newObj );
 
 				JS::RootedValue arg(cx);
 
 				JS::RootedObject unserializerWrapper(cx);
-				if ( !_unserializerObj.get() ) {
+				if ( !_unserializerObj ) {
 
 					// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
 					unserializerWrapper = JL_NewJslibsObject(cx, "Unserializer");
@@ -912,7 +912,7 @@ public:
 				JS::RootedValue arg_1(cx);
 				JS::RootedObject unserializerWrapper(cx);
 
-				if ( !_unserializerObj.get() ) {
+				if ( !_unserializerObj ) {
 
 					// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
 					unserializerWrapper = JL_NewJslibsObject(cx, "Unserializer");
@@ -947,7 +947,8 @@ public:
 				//JL_CHK( jl::Buffer((jl::Buffer::DataType)data.Data(), data.Length()).toArrayBufferObject(cx, val) );  need to copy !!!
 				void *arrayBufferContents = jl_malloc(data.Length());
 				jl::memcpy(arrayBufferContents, data.Data(), data.Length());
-				val.setObject(*JS_NewArrayBufferWithContents(cx, data.Length(), arrayBufferContents));
+				val.setObjectOrNull(JS_NewArrayBufferWithContents(cx, data.Length(), arrayBufferContents));
+				JL_ASSERT_ALLOC( !val.isNull() );
 				break;
 			}
 			case JLSTTypedArray: {
@@ -1029,7 +1030,7 @@ public:
 
 				JS::RootedObject errorObj(cx, JS_New(cx, constructorObj, constructorArgs));
 
-				JL_CHK( errorObj );
+				JL_ASSERT_ALLOC( errorObj );
 				val.setObject(*errorObj);
 
 				JL_CHK( JS_SetPropertyById(cx, errorObj, JLID(cx, stack), stack) );

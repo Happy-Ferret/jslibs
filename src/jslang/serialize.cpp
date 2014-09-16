@@ -30,7 +30,7 @@ DEFINE_FINALIZE() {
 	ser = static_cast<jl::Serializer*>(JL_GetPrivateFromFinalize(obj));
 	if ( !ser )
 		return;
-	delete ser;
+	delete ser; // see FreeOp::get(fop)->delete_()
 }
 
 DEFINE_CONSTRUCTOR() {
@@ -67,6 +67,7 @@ DEFINE_FUNCTION( write ) {
 	JL_ASSERT_THIS_INSTANCE();
 	JL_ASSERT_ARGC(1);
 
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
 	jl::Serializer *ser;
 	ser = static_cast<jl::Serializer*>(JL_GetPrivate(JL_OBJ));
@@ -138,7 +139,7 @@ DEFINE_FINALIZE() {
 	unser = static_cast<jl::Unserializer*>(JL_GetPrivateFromFinalize(obj));
 	if ( !unser )
 		return;
-	delete unser;
+	delete unser; // see FreeOp::get(fop)->delete_()
 }
 
 DEFINE_CONSTRUCTOR() {

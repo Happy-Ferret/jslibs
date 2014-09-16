@@ -387,7 +387,7 @@ namespace setValue_pv {
 	ALWAYS_INLINE bool FASTCALL
 	setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::HandleObject obj) {
 
-		rval.setObject(*obj);
+		rval.setObjectOrNull(obj);
 		return true;
 	}
 
@@ -401,8 +401,10 @@ namespace setValue_pv {
 	ALWAYS_INLINE bool FASTCALL
 	setValue(JSContext *cx, JS::MutableHandleValue rval, const JS::HandleString str) {
 
+		JL_CHK( str );
 		rval.setString(str);
 		return true;
+		JL_BAD;
 	}
 
 	ALWAYS_INLINE bool FASTCALL
@@ -1588,6 +1590,7 @@ ALWAYS_INLINE JSObject* FASTCALL
 newArray( JSContext *cx ) {
 
 	return JS_NewArrayObject(cx, 0);
+	JL_BADVAL(nullptr);
 }
 
 template <typename T1>

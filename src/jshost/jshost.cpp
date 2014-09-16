@@ -359,7 +359,7 @@ struct EndSignalProcessEvent : public ProcessEvent2 {
 
 
 bool
-EndSignalEvents( JSContext *cx, unsigned argc, jsval *vp ) {
+EndSignalEvents( JSContext *cx, unsigned argc, JS::Value *vp ) {
 
 	JL_DEFINE_ARGS;
 
@@ -499,7 +499,7 @@ _tmain( int argc, TCHAR* argv[] ) {
 //		#endif // USE_NEDMALLOC
 
 
-//		ThreadedAllocator alloc(allocators);
+		ThreadedAllocator alloc(allocators);
 		
 		IFDEBUG( CountedAlloc countAlloc(allocators) );
 

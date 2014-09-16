@@ -29,7 +29,7 @@ DEFINE_FINALIZE() { // see HandleClose()
 
 	void *pv = JL_GetPrivateFromFinalize(obj);
 	if ( pv && !jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
-		jl_free(pv);
+		JS_freeop(fop, pv);
 }
 
 DEFINE_PROPERTY_GETTER( length ) {
@@ -93,7 +93,8 @@ DEFINE_PROPERTY_GETTER( string ) {
 
 			// wait for Bug 1045830 - restore JS_NewString function for latin1 strings
 			//jl::BufString(static_cast<char*>(JL_GetPrivate(JL_OBJ)), size, false).toString(cx, JL_RVAL);
-			JL_RVAL.setString( JL_NewString(cx, static_cast<char*>(JL_GetPrivate(JL_OBJ)), size) );
+			JS::RootedString str(cx, JL_NewString(cx, static_cast<char*>(JL_GetPrivate(JL_OBJ)), size));
+			JL_RVAL.setString( str );
 		} else {
 
 			JL_RVAL.set(JL_GetEmptyStringValue(cx));

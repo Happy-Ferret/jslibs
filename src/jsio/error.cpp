@@ -273,6 +273,7 @@ ThrowIoErrorArg( JSContext *cx, PRErrorCode errorCode, PRInt32 osError ) {
 
 	JS::RootedObject error(cx, jl::newObjectWithGivenProto( cx, JL_CLASS(IoError), JL_CLASS_PROTOTYPE(cx, IoError)));
 	JS::RootedValue tmp(cx);
+	JL_ASSERT_ALLOC( error );
 	tmp.setObject(*error);
 	JS_SetPendingException( cx, tmp );
 

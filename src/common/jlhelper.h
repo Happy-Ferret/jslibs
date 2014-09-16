@@ -154,14 +154,14 @@ JL_GetClassName( IN JS::HandleObject obj ) {
 }
 
 ALWAYS_INLINE size_t FASTCALL
-JL_GetStringLength( JSString *jsstr ) {
+JL_GetStringLength( JS::HandleString jsstr ) {
 
 	//return JS_GetStringLength(jsstr);
 	return js::GetStringLength(jsstr); // jsfriendapi.h
 }
 
 ALWAYS_INLINE bool FASTCALL
-JL_StringHasLatin1Chars( JSString *jsstr ) {
+JL_StringHasLatin1Chars( JS::HandleString jsstr ) {
 
 	return js::StringHasLatin1Chars(jsstr); // jsfriendapi.h
 }
@@ -304,7 +304,7 @@ JL_SetReservedSlot(JS::HandleObject obj, unsigned slot, IN JS::HandleValue v) {
 	return true;
 }
 
-ALWAYS_INLINE JSString* FASTCALL
+ALWAYS_INLINE JSString * FASTCALL
 JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 
 //if spidermonkey et jslibs allocators are not the same:
@@ -321,7 +321,7 @@ JL_NewUCString(JSContext *cx, jschar *chars, size_t length) {
 
 
 // wait for Bug 1045830 - restore JS_NewString function for latin1 strings
-ALWAYS_INLINE JSString* FASTCALL
+ALWAYS_INLINE JSString * FASTCALL
 JL_NewString(JSContext *cx, char *chars, size_t length) {
 	
 	JSString *str = JS_NewStringCopyN(cx, chars, length);
@@ -636,6 +636,7 @@ newObject(JSContext *cx) {
 ALWAYS_INLINE JSObject* FASTCALL
 newObjectWithGivenProto( JSContext *cx, const JSClass *clasp, IN JS::HandleObject proto, IN JS::HandleObject parent = JS::NullPtr() ) {
 
+	ASSERT( clasp );
 	ASSERT_IF( proto != NULL, JL_GetParent(cx, proto) != NULL );
 	// Doc. JS_NewObject, jl::newObjectWithGivenProto behaves exactly the same, except that if proto is NULL, it creates an object with no prototype.
 	JS::RootedObject obj(cx, JS_NewObjectWithGivenProto(cx, clasp, proto, parent));  // (TBD) test if parent is ok (see bug 688510)

@@ -48,7 +48,7 @@ Allocators ThreadedAllocator::_base;
 volatile bool ThreadedAllocator::_skipCleanup;
 
 // block-to-free chain
-void *ThreadedAllocator::_head;
+volatile void *ThreadedAllocator::_head;
 
 // thread stats
 volatile int32_t ThreadedAllocator::_headLength;
@@ -60,7 +60,7 @@ JLThreadHandler ThreadedAllocator::_memoryFreeThread;
 volatile ThreadedAllocator::MemThreadAction ThreadedAllocator::_threadAction;
 JLSemaphoreHandler ThreadedAllocator::_memoryFreeThreadSem;
 
-bool ThreadedAllocator::_canTriggerFreeThread;
+volatile bool ThreadedAllocator::_canTriggerFreeThread;
 
 
 ALWAYS_INLINE void FASTCALL
@@ -68,15 +68,15 @@ ThreadedAllocator::freeHead() {
 
 	_headLength = 0;
 
-	void *next = _head;
-	void *it = *(void**)next;
+	volatile void *next = _head;
+	volatile void *it = *(void**)next;
 	*(void**)next = nullptr;
 
 	while ( it ) {
 
 		ASSERT( it != *(void**)it );
 		next = *(void**)it;
-		_base.free(it);
+		_base.free((void*)it);
 		it = next;
 	}
 }
@@ -89,6 +89,7 @@ ThreadedAllocator::memoryFreeThreadProc( void* ) {
 
 		_canTriggerFreeThread = true;
 		if ( JLSemaphoreAcquire(_memoryFreeThreadSem) == JLOK ) {
+
 			switch ( _threadAction ) {
 				case memThreadExit:
 					goto end;
@@ -165,7 +166,7 @@ ThreadedAllocator::_free( void *ptr ) {
 		return;
 	}
 
-	*(void**)ptr = _head;
+	*(volatile void**)ptr = _head;
 	_head = ptr;
 	JLAtomicIncrement(&_headLength);
 
@@ -191,7 +192,7 @@ ThreadedAllocator::~ThreadedAllocator() {
 	if ( !_skipCleanup ) {
 
 		freeHead();
-		_base.free(_head);
+		_base.free((void*)_head);
 	}
 
 	_current = _base;
@@ -614,6 +615,8 @@ bool
 ModuleManager::loadModule(const char *libFileName, JS::HandleObject obj, JS::MutableHandleValue rval) {
 
 	JSContext *cx = _hostRuntime.context();
+
+	ASSERT( obj );
 
 	JLLibraryHandler moduleHandle = JLDynamicLibraryNullHandler;
 	JL_ASSERT( libFileName != nullptr && *libFileName != '\0', E_ARG, E_NUM(1), E_DEFINED );

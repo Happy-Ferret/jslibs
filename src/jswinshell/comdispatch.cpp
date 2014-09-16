@@ -30,10 +30,10 @@ DEFINE_FINALIZE() {
 }
 
 
-bool FunctionInvoke(JSContext *cx, unsigned argc, jsval *vp) {
+bool FunctionInvoke( JSContext *cx, unsigned argc, JS::Value *vp ) {
 
 	JL_DEFINE_ARGS;
-		JL_ASSERT_THIS_INSTANCE();
+	JL_ASSERT_THIS_INSTANCE();
 
 /*
 #ifdef DEBUG
@@ -166,6 +166,7 @@ DEFINE_GET_PROPERTY() {
 	{
 		jl::StrData name(cx);
 		JS::RootedValue nameStr(cx);
+		ASSERT( JSID_TO_STRING(id) );
 		nameStr.setString(JSID_TO_STRING(id));
 		JL_CHK( jl::getValue(cx, nameStr, &name) );
 		hr = disp->GetIDsOfNames(IID_NULL, (OLECHAR**)&name, 1, LOCALE_SYSTEM_DEFAULT, &dispid);
@@ -323,8 +324,8 @@ DEFINE_FUNCTION( functionList ) {
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(JL_ARG(1));
 	JL_ASSERT_OBJECT_STATE( disp, JL_THIS_CLASS_NAME );
 
-	JL_RVAL.setObject(*JL_NewObj(cx));
-	JL_CHK( !JL_RVAL.isNull() );
+	JL_RVAL.setObjectOrNull(JL_NewObj(cx));
+	JL_ASSERT_ALLOC( !JL_RVAL.isNull() );
 
 	HRESULT hr;
 
@@ -477,7 +478,7 @@ END_CLASS
 bool NewComDispatch( JSContext *cx, IDispatch *pdisp, OUT JS::MutableHandleValue rval ) {
 
 	JS::RootedObject varObj(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(ComDispatch), JL_CLASS_PROTOTYPE(cx, ComDispatch)));
-	JL_CHK(varObj);
+	JL_ASSERT_ALLOC( varObj );
 	rval.setObject( *varObj );
 	JL_SetPrivate( varObj, pdisp);
 	pdisp->AddRef();

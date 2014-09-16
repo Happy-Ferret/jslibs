@@ -84,7 +84,7 @@ END_CLASS
 bool NewComEnum( JSContext *cx, IEnumVARIANT *ienumv, OUT JS::MutableHandleValue rval ) {
 
 	JS::RootedObject varObj(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(ComEnum), JL_CLASS_PROTOTYPE(cx, ComEnum)));
-	JL_CHK( varObj );
+	JL_ASSERT_ALLOC( varObj );
 	rval.setObject(*varObj);
 	JL_SetPrivate(varObj, ienumv);
 	ienumv->AddRef();

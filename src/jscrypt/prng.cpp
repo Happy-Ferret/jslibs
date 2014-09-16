@@ -33,7 +33,7 @@ DEFINE_FINALIZE() {
 		return;
 
 	pv->prng.done(&pv->state);
-	jl_free(pv);
+	JS_freeop(fop, pv);
 }
 
 /**doc
@@ -320,8 +320,8 @@ DEFINE_PROPERTY_GETTER( list ) {
 	JL_DEFINE_PROP_ARGS;
 
 	JS::RootedObject listObj(cx, JL_NewObj(cx));
-	
 	JS::RootedValue value(cx);
+	JL_ASSERT_ALLOC( listObj );
 	int i;
 	LTC_MUTEX_LOCK(&ltc_prng_mutex);
 	for ( i=0; prng_is_valid(i) == CRYPT_OK; i++ ) {

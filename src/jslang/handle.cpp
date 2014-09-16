@@ -30,7 +30,7 @@ DEFINE_FINALIZE() { // see HandleClose()
 		if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 			pv->HandlePrivate::~HandlePrivate();
 		else
-			delete pv;
+			delete pv; // see FreeOp::get(fop)->delete_()
 	}
 }
 

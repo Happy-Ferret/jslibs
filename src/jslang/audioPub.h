@@ -51,7 +51,7 @@ JL_NewByteAudioObject( JSContext *cx, T bits, U channels, V frames, W rate, OUT 
 
 	JS::RootedObject audioObj(cx, JL_NewObj(cx));
 	JS::RootedValue dataVal(cx);
-	JL_CHK( audioObj );
+	JL_ASSERT_ALLOC( audioObj );
 	vp.setObject(*audioObj);
 	//data = JL_NewBuffer(cx, (bits/8) * channels * frames, &dataVal);
 	buffer.alloc((bits/8) * channels * frames, true);
@@ -79,7 +79,7 @@ JL_NewByteAudioObjectOwner( JSContext *cx, uint8_t* buffer, T bits, U channels, 
 
 	JS::RootedObject audioObj(cx, JL_NewObj(cx));
 	JS::RootedValue dataVal(cx);
-	JL_CHK( audioObj );
+	JL_ASSERT_ALLOC( audioObj );
 	vp.setObject(*audioObj);
 	//JL_CHK( JL_NewBufferGetOwnership(cx, buffer, (bits/8) * channels * frames, &dataVal) );
 	JL_CHK( BlobCreate(cx, buffer, (bits/8) * channels * frames, &dataVal) );
@@ -101,7 +101,7 @@ JL_NewByteAudioObjectOwner( JSContext *cx, jl::BufBase &buffer, T bits, U channe
 	JS::RootedObject audioObj(cx, JL_NewObj(cx));
 	JS::RootedValue dataVal(cx);
 	JL_CHK( buffer.toArrayBuffer(cx, &dataVal) );
-	JL_CHK( audioObj );
+	JL_ASSERT_ALLOC( audioObj );
 	vp.setObject(*audioObj);
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, data), dataVal) );
 	JL_CHK( jl::setProperty(cx, audioObj, JLID(cx, bits), bits) );

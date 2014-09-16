@@ -394,6 +394,7 @@ DEFINE_FUNCTION( splitChannels ) {
 		JL_ASSERT( data.isSet(), E_INVALID, E_DATA );
 
 		JS::RootedObject destArray(cx, JS_NewArrayObject(cx, 0));
+		JL_ASSERT_ALLOC( destArray );
 		JL_RVAL.setObject(*destArray);
 
 		JS::RootedValue tmpVal(cx);
@@ -404,15 +405,16 @@ DEFINE_FUNCTION( splitChannels ) {
 			JL_CHK( buf );
 			JL_CHK( JL_SetElement(cx, destArray, c, tmpVal) );
 
+			JS::AutoCheckCannotGC nogc;
 			if ( bits == 16 ) {
 
 				for ( int frame = 0; frame < frames; frame++ )
-					((int16_t*)buf)[frame] = ((int16_t*)data.toBytes())[frame*channels+c];
+					((int16_t*)buf)[frame] = ((int16_t*)data.toBytes(nogc))[frame*channels+c];
 			} else
 			if ( bits == 8 ) {
 
 				for ( int frame = 0; frame < frames; frame++ )
-					((int8_t*)buf)[frame] = ((int8_t*)data.toBytes())[frame*channels+c];
+					((int8_t*)buf)[frame] = ((int8_t*)data.toBytes(nogc))[frame*channels+c];
 			}
 		}
 

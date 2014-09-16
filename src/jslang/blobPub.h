@@ -77,7 +77,7 @@ BlobCreate( JSContext *cx, void *ownData, int32_t size, OUT JS::MutableHandleVal
 		JS::RootedObject blobObj( cx, jl::newObjectWithGivenProto( cx, classProtoCache->clasp, classProtoCache->proto ) );
 		//JS::RootedObject blobObj(cx, jl::construct(cx, classProtoCache->proto));
 
-		JL_CHK( blobObj );
+		JL_ASSERT_ALLOC( blobObj );
 
 		//JL_CHK( setBufferGetInterface( cx, blobObj, BlobBufferGet ) );
 

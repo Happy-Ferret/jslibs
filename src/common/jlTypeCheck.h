@@ -274,7 +274,7 @@ isString( JSContext *cx, JS::HandleValue val ) {
 
 
 ALWAYS_INLINE bool FASTCALL
-hasLatin1Chars( JSContext *cx, JSString *str ) {
+hasLatin1Chars( JSContext *cx, JS::HandleString str ) {
 	
 	return js::StringHasLatin1Chars(str); // jsfriendapi.h
 }
@@ -373,7 +373,7 @@ ALWAYS_INLINE bool FASTCALL
 isStopIteration( JSContext *cx, JS::HandleObject obj ) {
 
 	JS::RootedValue val(cx);
-	val.setObject(*obj);
+	val.setObjectOrNull(obj);
 	return JS_IsStopIteration(val);
 /*
 	JS::RootedObject proto(cx);

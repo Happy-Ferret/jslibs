@@ -17,6 +17,8 @@
 
 #include "../jslang/handlePub.h"
 
+/*
+
 struct MemBuffer;
 
 typedef bool (*MemBufferFree_t)(MemBuffer *mb); // it is up to the callee to update mem and size and pv.
@@ -56,6 +58,8 @@ MemoryBufferObjectCreate( JSContext *cx, jsval *memBufferVal, void *pv, void* me
 	return true;
 	JL_BAD;
 }
+
+*/
 
 
 INLINE bool

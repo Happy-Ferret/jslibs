@@ -33,7 +33,6 @@ BEGIN_CLASS( Socket )
 
 DEFINE_FINALIZE() {
 
-//	JS::RootedObject rootedObj(fop->runtime(), obj);
 	FinalizeDescriptor(fop, obj); // defined in descriptor.cpp
 }
 
@@ -284,14 +283,17 @@ DEFINE_FUNCTION( accept ) {
 		return ThrowIoError(cx);
 
 	{
-	JS::RootedObject object(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(Socket), JL_CLASS_PROTOTYPE(cx, Socket)));
-	JL_SetPrivate(object, newFd);
-//	JL_CHK( JL_SetReservedSlot( descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_FALSE) );
 
-	// JL_CHK( ReserveStreamReadInterface(cx, object) );
-	JL_CHK( jl::setStreamReadInterface(cx, object, NativeInterfaceStreamRead) );
+		JS::RootedObject object(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(Socket), JL_CLASS_PROTOTYPE(cx, Socket)));
+		JL_ASSERT_ALLOC( object );
+		JL_SetPrivate(object, newFd);
+	//	JL_CHK( JL_SetReservedSlot( descriptorObject, SLOT_JSIO_DESCRIPTOR_IMPORTED, JSVAL_FALSE) );
 
-	JL_RVAL.setObject(*object);
+		// JL_CHK( ReserveStreamReadInterface(cx, object) );
+		JL_CHK( jl::setStreamReadInterface(cx, object, NativeInterfaceStreamRead) );
+
+
+		JL_RVAL.setObject(*object);
 	}
 
 	return true;
@@ -475,14 +477,17 @@ DEFINE_FUNCTION( sendTo ) {
 			if ( JL_ARG(3).isString() ) {
 			
 				JS::RootedString tmp(cx, JL_ARG(3).toString());
-				JL_RVAL.setString(JS_NewDependentString(cx, tmp, sentAmount, str.length() - sentAmount));
+				JS::RootedString str(cx, JS_NewDependentString(cx, tmp, sentAmount, str.length() - sentAmount));
+				JL_CHK( str );
+				JL_RVAL.setString(str);
 			} else {
 			
 				size_t length = str.length() - sentAmount;
 				void *data = jl_malloc(length);
 				JL_ASSERT_ALLOC(data);
 				jl::memcpy(data, (const uint8_t*)str + sentAmount, length);
-				JL_RVAL.setObject(*JS_NewArrayBufferWithContents(cx, length, data));
+				JL_RVAL.setObjectOrNull( JS_NewArrayBufferWithContents(cx, length, data) );
+				JL_CHK( !JL_RVAL.isNull() );
 			}
 
 
@@ -563,7 +568,7 @@ DEFINE_FUNCTION( recvFrom ) {
 	{
 	JS::RootedValue tmp(cx);
 	JS::RootedObject arrayObject(cx, JS_NewArrayObject(cx, 3));
-	JL_CHK( arrayObject );
+	JL_ASSERT_ALLOC( arrayObject );
 	JL_RVAL.setObject( *arrayObject );
 
 	JL_CHKB(PR_NetAddrToString(&addr, peerName, COUNTOF(peerName)) == PR_SUCCESS, bad_ex); // Converts a character string to a network address.
@@ -1113,9 +1118,8 @@ DEFINE_FUNCTION( getHostsByName ) {
 		PRNetAddr addr;
 
 		JS::RootedValue tmp(cx);
-		JS::RootedObject addrJsObj(cx);
-		addrJsObj = JS_NewArrayObject(cx, 0);
-		JL_CHK( addrJsObj );
+		JS::RootedObject addrJsObj(cx, JS_NewArrayObject(cx, 0));
+		JL_ASSERT_ALLOC( addrJsObj );
 		JL_RVAL.setObject(*addrJsObj);
 
 		{
@@ -1209,7 +1213,7 @@ DEFINE_FUNCTION( getHostsByAddr ) {
 	{
 
 		JS::RootedObject hostJsObj(cx, JS_NewArrayObject(cx, 0));
-		JL_CHK( hostJsObj );
+		JL_ASSERT_ALLOC( hostJsObj );
 		JL_RVAL.setObject(*hostJsObj);
 
 		int index;

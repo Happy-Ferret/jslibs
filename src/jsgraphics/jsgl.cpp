@@ -676,9 +676,8 @@ DEFINE_FUNCTION( get ) {
 			JL_RVAL.setObject( JS_NewArrayObject(cx, COUNTOF(jsparams), jsparams) );
 			JL_CHK( JL_RVAL );
 			*/
-			JS::RootedObject arrayObj(cx, jl::newArray(cx, params[0], params[1]));
-			JL_CHK(arrayObj);
-			JL_RVAL.setObject(*arrayObj);
+			JL_RVAL.setObjectOrNull(jl::newArray(cx, params[0], params[1]));
+			JL_CHK( !JL_RVAL.isNull() );
 			return true;
 		}
 
@@ -698,10 +697,8 @@ DEFINE_FUNCTION( get ) {
 			JL_CHK( JL_RVAL );
 			*/
 
-			JS::RootedObject arrayObj(cx, jl::newArray(cx, params[0], params[1], params[2], params[3]));
-			JL_CHK(arrayObj);
-			JL_RVAL.setObject(*arrayObj);
-
+			JL_RVAL.setObjectOrNull(jl::newArray(cx, params[0], params[1], params[2], params[3]));
+			JL_CHK(!JL_RVAL.isNull());
 			return true;
 		}
 
@@ -895,7 +892,7 @@ DEFINE_FUNCTION( getInteger ) {
 
 			count = JL_ARG(2).toInt32();
 			arrayObj = JS_NewArrayObject(cx, count);
-			JL_CHK( arrayObj );
+			JL_ASSERT_ALLOC( arrayObj );
 		} else {
 
 			JL_ASSERT_ARG_IS_ARRAY(2);
@@ -968,7 +965,7 @@ DEFINE_FUNCTION( getDouble ) {
 
 			count = JL_ARG(2).toInt32();
 			arrayObj = JS_NewArrayObject(cx, count);
-			JL_CHK( arrayObj );
+			JL_ASSERT_ALLOC( arrayObj );
 		} else {
 
 			JL_ASSERT_ARG_IS_ARRAY(2);
@@ -1806,7 +1803,7 @@ DEFINE_FUNCTION( texImage2D ) {
 		if ( JL_ARG_ISDEF(9) && !JL_ARG(9).isNull() ) // same as !JSVAL_IS_PRIMITIVE
 			JL_CHK( jl::getValue(cx, JL_ARG(9), &data) );
 
-		glTexImage2D( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), JL_ARG(3).toInt32(), JL_ARG(4).toInt32(), JL_ARG(5).toInt32(), JL_ARG(6).toInt32(), JL_ARG(7).toInt32(), JL_ARG(8).toInt32(), (GLvoid*)data.toBytes() );  OGL_ERR_CHK;
+		glTexImage2D( JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), JL_ARG(3).toInt32(), JL_ARG(4).toInt32(), JL_ARG(5).toInt32(), JL_ARG(6).toInt32(), JL_ARG(7).toInt32(), JL_ARG(8).toInt32(), data );  OGL_ERR_CHK;
 	
 	}
 
@@ -1892,15 +1889,17 @@ DEFINE_FUNCTION( texSubImage2D ) {
 	{
 
 		jl::StrData data(cx);
-		GLvoid *pixels;
+		const GLvoid *pixels;
+
+		JS::AutoCheckCannotGC nogc;
 
 		if (JL_ARG(9).isInt32()) {
 			
-			pixels = (GLvoid*)JL_ARG(9).toInt32();
+			pixels = reinterpret_cast<const GLvoid*>(JL_ARG(9).toInt32());
 		} else {
 
 			JL_CHK(jl::getValue(cx, JL_ARG(9), &data));
-			pixels = (GLvoid*)data.toBytes();
+			pixels = static_cast<const GLvoid*>(data.toBytes(nogc));
 		}
 
 		glTexSubImage2D(JL_ARG(1).toInt32(), JL_ARG(2).toInt32(), JL_ARG(3).toInt32(), JL_ARG(4).toInt32(), JL_ARG(5).toInt32(), JL_ARG(6).toInt32(), JL_ARG(7).toInt32(), JL_ARG(8).toInt32(), pixels);
@@ -4573,7 +4572,7 @@ DEFINE_FUNCTION( shaderSource ) {
 		const GLcharARB *buffer;
 		GLint length;
 		length = source.length();
-		buffer = source.toStr();
+		buffer = source;
 
 		glShaderSourceARB(shaderHandle, 1, &buffer, &length);  OGL_ERR_CHK;
 	
@@ -4728,7 +4727,7 @@ DEFINE_FUNCTION( getUniformInfo ) {
 
 	{
 		JS::RootedObject info(cx, JL_NewObj(cx));
-		JL_CHK( info );
+		JL_ASSERT_ALLOC( info );
 		JL_RVAL.setObject(*info);
 
 		GLcharARB name[256];
@@ -4754,8 +4753,7 @@ DEFINE_FUNCTION( getUniformInfo ) {
 				continue;
 
 			JS::RootedObject obj(cx, JL_NewObj(cx));
-			JL_CHK( obj );
-
+			JL_ASSERT_ALLOC( obj );
 			tmp.setObject(*obj);
 			JL_CHK( JS_SetProperty(cx, info, name, tmp) );
 
@@ -5338,7 +5336,7 @@ DEFINE_FUNCTION( getObjectParameter ) {
 		count = jl::min(count, (int)COUNTOF(params));
 
 		JS::RootedObject arrayObj(cx, JS_NewArrayObject(cx, count));
-		JL_CHK( arrayObj );
+		JL_ASSERT_ALLOC( arrayObj );
 		JL_RVAL.setObject(*arrayObj);
 
 		while (count--)
@@ -6024,42 +6022,11 @@ DEFINE_FUNCTION( drawImage ) {
 
 	{
 
-		GLenum format;
-		int channels;
-
-		if (JL_ARG_ISDEF(2)) {
-
-			JL_ASSERT_ARG_IS_INTEGER(2);
-			format = JL_ARG(2).toInt32();
-		}
-		else { // guess
-
-			//ASSERT( format == GL_LUMINANCE || format == GL_LUMINANCE_ALPHA || format == GL_RGB || format == GL_RGBA );
-
-			switch (channels) {
-			case 1:
-				format = GL_LUMINANCE;
-				break;
-			case 2:
-				format = GL_LUMINANCE_ALPHA;
-				break;
-			case 3:
-				format = GL_RGB;
-				break;
-			case 4:
-				format = GL_RGBA;
-				break;
-			default:
-				JL_ERR(E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(1, 4));
-			}
-		}
-
-
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);  OGL_ERR_CHK;
-
-
 		GLsizei width, height;
 		GLenum type;
+		GLenum format;
+		int channels;
+		const GLvoid *pixels;
 
 		JS::RootedObject tObj(cx, &JL_ARG(1).toObject());
 
@@ -6068,12 +6035,11 @@ DEFINE_FUNCTION( drawImage ) {
 			TextureStruct *tex = (TextureStruct*)JL_GetPrivate(tObj);
 			JL_ASSERT_OBJECT_STATE(tex, JL_GetClassName(tObj));
 
+			pixels = tex->cbuffer;
 			width = tex->width;
 			height = tex->height;
 			channels = tex->channels;
 			type = GL_FLOAT;
-
-			glDrawPixels(width, height, format, type, tex->cbuffer);  OGL_ERR_CHK;
 		}
 		else {
 
@@ -6111,8 +6077,39 @@ DEFINE_FUNCTION( drawImage ) {
 				JL_ERR(E_ARG, E_NUM(1), E_FORMAT);
 			}
 
-			glDrawPixels(width, height, format, type, image.toBytes());  OGL_ERR_CHK;
+			pixels = image;
 		}
+
+
+		if (JL_ARG_ISDEF(2)) {
+
+			JL_ASSERT_ARG_IS_INTEGER(2);
+			format = JL_ARG(2).toInt32();
+		}
+		else { // guess
+
+			//ASSERT( format == GL_LUMINANCE || format == GL_LUMINANCE_ALPHA || format == GL_RGB || format == GL_RGBA );
+
+			switch ( channels ) {
+			case 1:
+				format = GL_LUMINANCE;
+				break;
+			case 2:
+				format = GL_LUMINANCE_ALPHA;
+				break;
+			case 3:
+				format = GL_RGB;
+				break;
+			case 4:
+				format = GL_RGBA;
+				break;
+			default:
+				JL_ERR(E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(1, 4));
+			}
+		}
+
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);  OGL_ERR_CHK;
+		glDrawPixels(width, height, format, type, pixels);  OGL_ERR_CHK;
 
 		JL_RVAL.setUndefined();
 	}
@@ -6601,54 +6598,22 @@ DEFINE_FUNCTION( defineTextureImage ) {
 	GLsizei width, height;
 	GLenum format, type;
 	int channels;
-	const GLvoid *data;
+	const GLvoid *pixels;
 
 	{
 
-		if (JL_ARG_ISDEF(2)) {
-
-			JL_ASSERT_ARG_IS_INTEGER(2);
-			format = JL_ARG(2).toInt32();
-		}
-		else { // guess
-
-			switch (channels) {
-			case 1:
-				format = GL_LUMINANCE;
-				break;
-			case 2:
-				format = GL_LUMINANCE_ALPHA;
-				break;
-			case 3:
-				format = GL_RGB;
-				break;
-			case 4:
-				format = GL_RGBA;
-				break;
-			default:
-				JL_ERR(E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(1, 4));
-				// JL_REPORT_ERROR("Invalid texture format."); // miss GL_COLOR_INDEX, GL_STENCIL_INDEX, GL_DEPTH_COMPONENT, GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA
-			}
-		}
-
-
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);  OGL_ERR_CHK;
-
 		JS::RootedObject tObj(cx, &JL_ARG(3).toObject());
-
+		JS::AutoCheckCannotGC nogc;
 		if (JL_GetClass(tObj) == JL_TextureJSClass(cx)) {
 
 			TextureStruct *tex = (TextureStruct*)JL_GetPrivate(tObj);
 			JL_ASSERT_OBJECT_STATE(tex, JL_GetClassName(tObj));
 
-			data = tex->cbuffer;
+			pixels = tex->cbuffer;
 			width = tex->width;
 			height = tex->height;
 			channels = tex->channels;
 			type = GL_FLOAT;
-
-			glTexImage2D(JL_ARG(1).toInt32(), 0, format, width, height, 0, format, type, data);  OGL_ERR_CHK;
-
 		}
 		else if (JS_IsTypedArrayObject(tObj)) {
 
@@ -6658,49 +6623,44 @@ DEFINE_FUNCTION( defineTextureImage ) {
 			JL_CHK(jl::getValue(cx, JL_ARG(5), &height));
 			JL_CHK(jl::getValue(cx, JL_ARG(6), &channels));
 
-			JS::AutoCheckCannotGC nogc; // ok
-
 			switch (JS_GetArrayBufferViewType(tObj)) {
 			case js::Scalar::Int8:
 				type = GL_BYTE;
-				data = JS_GetInt8ArrayData(tObj);
+				pixels = JS_GetInt8ArrayData(tObj);
 				break;
 			case js::Scalar::Uint8:
 				type = GL_UNSIGNED_BYTE;
-				data = JS_GetUint8ArrayData(tObj);
+				pixels = JS_GetUint8ArrayData(tObj);
 				break;
 			case js::Scalar::Int16:
 				type = GL_SHORT;
-				data = JS_GetInt16ArrayData(tObj);
+				pixels = JS_GetInt16ArrayData(tObj);
 				break;
 			case js::Scalar::Uint16:
 				type = GL_UNSIGNED_SHORT;
-				data = JS_GetUint16ArrayData(tObj);
+				pixels = JS_GetUint16ArrayData(tObj);
 				break;
 			case js::Scalar::Int32:
 				type = GL_INT;
-				data = JS_GetInt32ArrayData(tObj);
+				pixels = JS_GetInt32ArrayData(tObj);
 				break;
 			case js::Scalar::Uint32:
 				type = GL_UNSIGNED_INT;
-				data = JS_GetUint32ArrayData(tObj);
+				pixels = JS_GetUint32ArrayData(tObj);
 				break;
 			case js::Scalar::Float32:
 				type = GL_FLOAT;
-				data = JS_GetFloat32ArrayData(tObj);
+				pixels = JS_GetFloat32ArrayData(tObj);
 				break;
 			case js::Scalar::Float64:
 				type = GL_DOUBLE;
-				data = JS_GetFloat64ArrayData(tObj);
+				pixels = JS_GetFloat64ArrayData(tObj);
 				break;
 			default:
 				JL_ERR(E_ARG, E_NUM(3), E_NOTSUPPORTED, E_COMMENT("ArrayBufferView.type"));
 			}
 
 			JL_ASSERT(width * height * channels == (int)JS_GetTypedArrayByteLength(tObj), E_DATASIZE, E_INVALID);
-
-			glTexImage2D(JL_ARG(1).toInt32(), 0, format, width, height, 0, format, type, data);  OGL_ERR_CHK;
-
 		}
 		else {
 
@@ -6736,13 +6696,40 @@ DEFINE_FUNCTION( defineTextureImage ) {
 			default:
 				JL_ERR(E_ARG, E_NUM(3), E_FORMAT);
 			}
-
-			glTexImage2D(JL_ARG(1).toInt32(), 0, format, width, height, 0, format, type, jlImage.toBytes());  OGL_ERR_CHK;
-
+			pixels = jlImage.toBytes(nogc);
 		}
 
-		JL_RVAL.setUndefined();
 
+		if (JL_ARG_ISDEF(2)) {
+
+			JL_ASSERT_ARG_IS_INTEGER(2);
+			format = JL_ARG(2).toInt32();
+		}
+		else { // guess
+
+			switch (channels) {
+			case 1:
+				format = GL_LUMINANCE;
+				break;
+			case 2:
+				format = GL_LUMINANCE_ALPHA;
+				break;
+			case 3:
+				format = GL_RGB;
+				break;
+			case 4:
+				format = GL_RGBA;
+				break;
+			default:
+				JL_ERR(E_PARAM, E_STR("channels"), E_RANGE, E_INTERVAL_NUM(1, 4));
+				// JL_REPORT_ERROR("Invalid texture format."); // miss GL_COLOR_INDEX, GL_STENCIL_INDEX, GL_DEPTH_COMPONENT, GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA
+			}
+		}
+
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);  OGL_ERR_CHK;
+		glTexImage2D(JL_ARG(1).toInt32(), 0, format, width, height, 0, format, type, pixels);  OGL_ERR_CHK;
+
+		JL_RVAL.setUndefined();
 	}
 
 	return true;

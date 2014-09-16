@@ -282,12 +282,15 @@ DEFINE_FUNCTION( getVideoModeList ) {
 	{
 
 		JS::RootedObject tmp(cx);
-		JS::RootedObject modesArray(cx);
+		JS::RootedObject modesArray(cx, jl::newArray(cx));
+		JL_ASSERT_ALLOC( modesArray );
 		JL_RVAL.setObject(*modesArray);
 		for (uint32_t i = 0; modes[i] != NULL; i++) {
 
 			modesArray.set(jl::newArray(cx));
+			JL_ASSERT_ALLOC( modesArray );
 			tmp.set(jl::newArray(cx, modes[i]->w, modes[i]->h));
+			JL_ASSERT_ALLOC( tmp );
 			JL_CHK(jl::setElement(cx, modesArray, i, tmp));
 		}
 
@@ -592,7 +595,8 @@ DEFINE_PROPERTY_SETTER( icon ) {
 			 amask = 0xff000000;
 		#endif
 
-		SDL_Surface *surface = SDL_CreateRGBSurfaceFrom((void*)data.toBytes(), sWidth, sHeight, 8 * sChannels, sWidth * sChannels, rmask, gmask, bmask, amask);
+		JS::AutoCheckCannotGC nogc;
+		SDL_Surface *surface = SDL_CreateRGBSurfaceFrom((void*)data.toBytes(nogc), sWidth, sHeight, 8 * sChannels, sWidth * sChannels, rmask, gmask, bmask, amask);
 
 		if ( surface == NULL )
 			return ThrowSdlError(cx);
@@ -1507,9 +1511,6 @@ $TOC_MEMBER $INAME
 struct SdlEventsProcessEvent : public ProcessEvent2 {
 
 	bool cancel;
-
-	JSObject *thisObj;
-	JSObject *listenersObj;
 
 	bool prepareWait(JSContext *cx, JS::HandleObject obj) {
 

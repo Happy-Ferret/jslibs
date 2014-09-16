@@ -172,25 +172,40 @@ public:
 
 
 	// equals
-
 	virtual bool equals( const char *src ) {
 
 		JS::AutoCheckCannotGC nogc;
 		size_t len = length();
-		return ( isWide() ? jl::tstrncmpUnsigned(src, toWStr(nogc), len) : jl::strncmp(src, toStr(nogc), len) ) == 0;
+		return ( isWide() ? jl::tstrcmpUnsigned(toWStr(nogc), src, len) : jl::tstrcmpUnsigned(toStr(nogc), src, len) ) == 0;
 	}
 
 	virtual bool equals( const char16_t *src ) {
 
 		JS::AutoCheckCannotGC nogc;
 		size_t len = length();
-		return ( isWide() ? jl::strncmp(src, toWStr(nogc), len) : jl::tstrncmpUnsigned(src, toStr(nogc), len) ) == 0;
+		return ( isWide() ? jl::tstrcmpUnsigned(toWStr(nogc), src, len) : jl::tstrcmpUnsigned(toStr(nogc), src, len) ) == 0;
 	}
 
 	virtual bool equals( const uint8_t *src ) {
 
 		JS::AutoCheckCannotGC nogc;
 		return jl::MemCompare(toBytes(nogc), src, length()) == 0;
+	}
+
+	// operator ==
+	bool operator ==( const char *src ) {
+	
+		return equals(src);
+	}
+
+	bool operator ==( const char16_t *src ) {
+	
+		return equals(src);
+	}
+
+	bool operator ==( const uint8_t *src ) {
+	
+		return equals(src);
 	}
 
 
@@ -210,7 +225,9 @@ public:
 		size_t len = length();
 		if ( len > 0 ) {
 
-			rval.setString( isWide() ? JL_NewUCString(cx, toOwnWStr(), len) : JL_NewString(cx, toOwnStr(), len));
+			JS::RootedString str( cx, isWide() ? JL_NewUCString(cx, toOwnWStr(), len) : JL_NewString(cx, toOwnStr(), len) );
+			JL_CHK( str );
+			rval.setString( str );
 			JL_CHK( !rval.isNull() );
 		} else {
 
@@ -417,13 +434,14 @@ public:
 	bool set( JSContext *cx, JS::HandleObject obj ) {
 		
 		freeData();
-		_obj.set(obj);
 		if ( JS_IsArrayBufferObject(obj) ) {
 
+			_obj.set(obj);
 			_type = ArrayBuffer;
 		} else
 		if ( JS_IsTypedArrayObject(obj) ) {
 
+			_obj.set(obj);
 			_type = JS_GetArrayBufferViewType(obj) != js::Scalar::Uint16 ? ArrayBufferView : Uint16ArrayBuffer;
 		} else {
 
@@ -545,6 +563,8 @@ public:
 		JSFlatString *fstr;
 		JSLinearString *lstr;
 		switch ( _type ) {
+			case None:
+				return nullptr;	
 			case Latin1String:
 				lstr = js::StringToLinearString(_cx, _str);
 				JL_CHK( lstr );
@@ -576,6 +596,8 @@ public:
 		JSFlatString *fstr;
 		JSLinearString *lstr;
 		switch ( _type ) {
+			case None:
+				return nullptr;	
 			case Latin1String:
 				// doc: Flat strings and interned strings are always null-terminated. JS_FlattenString can be used to get a null-terminated string.
 				fstr = JS_StringIsFlat(_str) ? JS_ASSERT_STRING_IS_FLAT(_str) : JS_FlattenString(_cx, _str);
@@ -606,6 +628,8 @@ public:
 
 		JSLinearString *lstr;
 		switch ( _type ) {
+			case None:
+				return nullptr;	
 			case Latin1String:
 				lstr = js::StringToLinearString(_cx, _str);
 				JL_CHK( lstr );
@@ -1564,12 +1588,10 @@ public:
 
 			rval.set(JL_GetEmptyStringValue(cx));
 		} else {
-
-			if ( isWide() )
-				rval.setString(JL_NewUCString(cx, toData<WideChar*>(), len));
-			else
-				rval.setString(JL_NewString(cx, toData<NarrowChar*>(), len));
-			JL_CHK( !rval.isNull() );
+			
+			JS::RootedString str( cx, isWide() ? JL_NewUCString(cx, toData<WideChar*>(), len) : JL_NewString(cx, toData<NarrowChar*>(), len) );
+			JL_ASSERT_ALLOC( str );
+			rval.setString(str);
 		}
 		return true;
 		JL_BAD;

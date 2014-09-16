@@ -726,6 +726,7 @@ DEFINE_PROPERTY_GETTER( list ) {
 	JL_DEFINE_PROP_ARGS;
 
 	JS::RootedObject list(cx, JL_NewObj(cx));
+	JL_ASSERT_ALLOC( list );
 	int i;
 	LTC_MUTEX_LOCK(&ltc_cipher_mutex);
 	for ( i = 0; cipher_is_valid(i) == CRYPT_OK; ++i ) {

@@ -65,8 +65,9 @@ bool SharedMemoryBufferGet( JSContext *cx, JS::HandleObject obj, jl::BufString *
 	JL_BAD;
 }
 
-
-bool CloseSharedMemory( JSObject *obj ) {
+template <js::AllowGC allowGC>
+bool
+CloseSharedMemory( typename js::MaybeRooted<JSObject*, allowGC>::HandleType obj ) {
 
 	ClassPrivate *pv = (ClassPrivate*)JL_GetPrivateFromFinalize(obj);
 
@@ -113,7 +114,7 @@ DEFINE_FINALIZE() {
 	JL_IGNORE( fop );
 
 	if ( JL_GetPrivateFromFinalize(obj) )
-		CloseSharedMemory(obj);
+		CloseSharedMemory<js::NoGC>(obj);
 }
 
 // doc.
@@ -364,7 +365,7 @@ DEFINE_FUNCTION( close ) {
 	ClassPrivate *pv;
 	pv = (ClassPrivate*)JL_GetPrivate(JL_OBJ);
 	JL_ASSERT_THIS_OBJECT_STATE( pv );
-	if ( !CloseSharedMemory(JL_OBJ) )
+	if ( !CloseSharedMemory<js::CanGC>(JL_OBJ) )
 		return ThrowIoError(cx);
 	JL_SetPrivate( JL_OBJ, NULL);
 

@@ -44,7 +44,7 @@ JL_NewImageObject( IN JSContext *cx, IN T width, IN T height, IN U channels, IN 
 	JS::RootedValue dataVal(cx);
 	JS::RootedObject imageObj(cx, JL_NewObj(cx));
 
-	JL_CHK( imageObj );
+	JL_ASSERT_ALLOC( imageObj );
 	vp.setObject(*imageObj);
 	//data = JL_NewBuffer(cx, width * height* channels, dataVal);
 	buffer.alloc(width * height * channels, true);
@@ -74,7 +74,7 @@ JL_NewImageObjectOwner( IN JSContext *cx, IN uint8_t* buffer, IN T width, IN T h
 	JS::RootedValue dataVal(cx);
 	JS::RootedObject imageObj(cx, JL_NewObj(cx));
 
-	JL_CHK( imageObj );
+	JL_ASSERT_ALLOC( imageObj );
 	vp.setObject(*imageObj);
 	//JL_CHK( JL_NewBufferGetOwnership(cx, buffer, width * height * channels, &dataVal) );
 	JL_CHK( BlobCreate(cx, buffer, width * height * channels, &dataVal) );

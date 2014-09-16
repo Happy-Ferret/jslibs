@@ -55,8 +55,8 @@ DEFINE_FINALIZE() {
 		
 		ogg_stream_clear(&pv->oss);
 
-		//JS_freeop(fop, pv);
-		js_free(pv);
+		JS_freeop(fop, pv);
+		//js_free(pv);
 	}
 }
 
@@ -219,8 +219,9 @@ DEFINE_FUNCTION( encode ) {
 
 		float **buffers = vorbis_analysis_buffer(&pv->vds, frameCount);
 		ASSERT( buffers );
+		JS::AutoCheckCannotGC nogc;
 
-		const int16_t *frameData = reinterpret_cast<const int16_t*>(data.toBytes()) + frameOffset * 2; // 2 channels
+		const int16_t *frameData = reinterpret_cast<const int16_t*>(data.toBytes(nogc)) + frameOffset * 2; // 2 channels
 
 		for ( int i = 0; i < frameCount; ++i ) {
 

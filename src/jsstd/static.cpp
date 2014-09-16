@@ -942,7 +942,7 @@ DEFINE_FUNCTION( sandboxEval ) {
 			JSObject *unwrapped = js::UncheckedUnwrap(globalObj, true, &flags);
 			if (flags & js::Wrapper::CROSS_COMPARTMENT) {
             
-				globalObj = unwrapped;
+				globalObj.set( unwrapped );
 				ac.construct(cx, globalObj);
 			}
 

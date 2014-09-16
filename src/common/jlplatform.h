@@ -2047,7 +2047,7 @@ tstrlen(const T* s) {
     return (size_t)(t - s);
 }
 
-
+/*
 template <typename T, typename U>
 int32_t
 tstrcmp( const T *lhs, const U *rhs ) {
@@ -2069,29 +2069,35 @@ tstrcmpUnsigned( const T *lhs, const U *rhs ) {
 
 	return tstrcmp( reinterpret_cast<const MakeUnsigned( T )*>(lhs), reinterpret_cast<const MakeUnsigned( U )*>(rhs) );
 }
+*/
 
+template <typename L, typename R, bool hasLLength, bool hasRLength>
+bool
+tstreq(const L *lhs, const R *rhs, size_t lmax = 0, size_t rmax = 0 ) {
 
-template <typename T, typename U>
-int32_t
-tstrncmp(const T *lhs, const U *rhs, size_t max ) {
+	const L *llimit = lhs + lmax; tbd
+	const R *rlimit = rhs + rmax;
 
-	const T *limit = lhs + max;
-	while ( lhs < limit ) {
+	for (;;) {
+
+		if ( hasLLength && lhs == llimit || hasRLength && rhs == rlimit )
+			return true;
 		
-		if ( *lhs != static_cast<T>(*rhs) )
-			return static_cast<int32_t>(*lhs) - static_cast<int32_t>(*rhs);
-		if ( *lhs == 0 )
-			return 0;
+		if ( *lhs != static_cast<L>(*rhs) )
+			return false;
+
+		if ( !hasLLength && *lhs == 0 || !hasRLength *lhs == 0 )
+
 		++lhs, ++rhs;
 	}
-	return 0;
+	
 }
 
 template <typename T, typename U>
 int32_t
-tstrncmpUnsigned( const T *lhs, const U *rhs, size_t max ) {
+tstreqUnsigned( const T *lhs, const U *rhs, size_t lmax = size_t(-1), size_t rmax = size_t(-1) ) {
 
-	return tstrncmp( reinterpret_cast<const MakeUnsigned( T )*>(lhs), reinterpret_cast<const MakeUnsigned( U )*>(rhs), max );
+	return tstreq( reinterpret_cast<const MakeUnsigned( T )*>(lhs), reinterpret_cast<const MakeUnsigned( U )*>(rhs), lmax, rmax );
 }
 
 

@@ -470,7 +470,8 @@ DEFINE_CONSTRUCTOR() {
 	//	jl::QueueInitialize(&pv->popupMenuRoots);
 
 		JS::RootedValue menuItemsVal(cx);
-		menuItemsVal.setObject( *jl::newArray(cx) );
+		menuItemsVal.setObjectOrNull( jl::newArray(cx) );
+		JL_ASSERT_ALLOC( !menuItemsVal.isNull() );
 		jl::setSlot(cx, JL_OBJ, SLOT_MENUITEMS, menuItemsVal);
 
 		pv->mouseIn = false;

@@ -46,7 +46,8 @@ DEFINE_FINALIZE() {
 	if ( pv != NULL ) {
 		
 //		sqlite3_blob_close(pv->pBlob); // closed
-		jl_free(pv);
+		//jl_free(pv);
+		JS_freeop(fop, pv);
 	}
 }
 
@@ -182,7 +183,7 @@ DEFINE_FUNCTION( write ) {
 	// doc: Use the UPDATE SQL command to change the size of a blob.
 	// see sqlite3_bind_zeroblob() and sqlite3_result_zeroblob()
 
-	int st = sqlite3_blob_write(pv->pBlob, data.toBytes(), data.length(), pv->position);
+	int st = sqlite3_blob_write(pv->pBlob, data, data.length(), pv->position);
 	if ( st != SQLITE_OK )
 		JL_CHK( SqliteThrowErrorStatus(cx, st) );
 
@@ -334,7 +335,7 @@ DEFINE_CONSTRUCTOR() {
 		JL_CHK(pv);
 		pv->db = NULL;
 
-		if ( sqlite3_open_v2(fileName.isSet() ? fileName.toStrZ() : ":memory:", &pv->db, flags, NULL) != SQLITE_OK )
+		if ( sqlite3_open_v2(fileName.isSet() ? fileName : ":memory:", &pv->db, flags, NULL) != SQLITE_OK )
 			JL_CHK( SqliteThrowError(cx, pv->db) );
 	
 	}
@@ -532,7 +533,7 @@ DEFINE_FUNCTION( openBlobStream ) {
 	{
 
 		JS::RootedObject blobStreamObj(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(BlobStream), JL_CLASS_PROTOTYPE(cx, BlobStream)));
-		JL_CHK( blobStreamObj );
+		JL_ASSERT_ALLOC( blobStreamObj );
 
 		JL_SetPrivate(blobStreamObj, blobStreamPv);
 		JL_CHK( JL_SetReservedSlot(blobStreamObj, BlobStream::SLOT_DATABASE, JL_OBJVAL) ); // link to avoid GC
@@ -624,8 +625,11 @@ DEFINE_FUNCTION( query ) {
 
 		// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 
+		
+		JS::AutoCheckCannotGC nogc;
+
 		const jschar *sqlStr;
-		sqlStr = sql.toWStr();
+		sqlStr = sql.toWStr(nogc);
 		size_t sqlLen;
 		sqlLen = sql.length();
 
@@ -646,7 +650,7 @@ DEFINE_FUNCTION( query ) {
 
 		// create the Result (statement) object
 		JS::RootedObject dbStatement(cx, jl::newObjectWithGivenProto(cx, JL_CLASS(Result), JL_CLASS_PROTOTYPE(cx, Result)));
-		JL_CHK( dbStatement );
+		JL_ASSERT_ALLOC( dbStatement );
 		JL_SetPrivate(dbStatement, pStmt);
 		JL_CHK( JL_SetReservedSlot( dbStatement, SLOT_RESULT_DATABASE, JL_OBJVAL) ); // link to avoid GC
 		// (TBD) enhance
@@ -706,8 +710,9 @@ DEFINE_FUNCTION( exec ) {
 		const jschar *szTail;
 		// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 
+		JS::AutoCheckCannotGC nogc;
 		const jschar *sqlStr;
-		sqlStr = sql.toWStr();
+		sqlStr = sql.toWStr(nogc);
 		size_t sqlLen;
 		sqlLen = sql.length();
 
@@ -922,7 +927,7 @@ DEFINE_SET_PROPERTY() {
 			JS::RootedString str(cx, JSID_TO_STRING( id ));
 			jl::StrData fname(cx);
 			fname.set(cx, str);
-			if ( sqlite3_create_function16( dbpv->db, fname.toWStrZ(), JS_GetFunctionArity( JS_ValueToFunction( cx, JL_RVAL ) ), SQLITE_UTF16, (void*)fpv, sqlite_function_call, NULL, NULL ) != SQLITE_OK ) {
+			if ( sqlite3_create_function16( dbpv->db, fname.toWStrZ(JS::AutoCheckCannotGC()), JS_GetFunctionArity( JS_ValueToFunction( cx, JL_RVAL ) ), SQLITE_UTF16, (void*)fpv, sqlite_function_call, NULL, NULL ) != SQLITE_OK ) {
 			
 				delete fpv;
 				JL_CHK( SqliteThrowError( cx, dbpv->db ) );

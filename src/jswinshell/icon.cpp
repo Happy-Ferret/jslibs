@@ -45,96 +45,96 @@ DEFINE_CONSTRUCTOR() {
 
 	{
 
-	JS::RootedValue iconVal(cx, JL_ARG(1));
+		JS::RootedValue iconVal(cx, JL_ARG(1));
 
-	HICON hIcon = NULL;
+		HICON hIcon = NULL;
 
-	if ( iconVal.isInt32() ) {
+		if ( iconVal.isInt32() ) {
 
-		switch ( iconVal.toInt32() ) {
-			case 0:
-				hIcon = LoadIcon(NULL,MAKEINTRESOURCE(IDI_APPLICATION));
-				break;
-			case 1:
-				hIcon = LoadIcon(NULL,MAKEINTRESOURCE(IDI_QUESTION));
-				break;
-			case 2:
-				hIcon = LoadIcon(NULL,MAKEINTRESOURCE(IDI_INFORMATION));
-				break;
-			case 3:
-				hIcon = LoadIcon(NULL,MAKEINTRESOURCE(IDI_WARNING));
-				break;
-			case 4:
-				hIcon = LoadIcon(NULL,MAKEINTRESOURCE(IDI_ERROR));
-				break;
-		}
-	} else
-	if ( iconVal.isObject() ) {
+			switch ( iconVal.toInt32() ) {
+				case 0:
+					hIcon = LoadIcon(NULL,MAKEINTRESOURCE(IDI_APPLICATION));
+					break;
+				case 1:
+					hIcon = LoadIcon(NULL,MAKEINTRESOURCE(IDI_QUESTION));
+					break;
+				case 2:
+					hIcon = LoadIcon(NULL,MAKEINTRESOURCE(IDI_INFORMATION));
+					break;
+				case 3:
+					hIcon = LoadIcon(NULL,MAKEINTRESOURCE(IDI_WARNING));
+					break;
+				case 4:
+					hIcon = LoadIcon(NULL,MAKEINTRESOURCE(IDI_ERROR));
+					break;
+			}
+		} else
+		if ( iconVal.isObject() ) {
 
-		HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
-		JL_IGNORE(hInst);
+			HINSTANCE hInst = (HINSTANCE)GetModuleHandle(NULL);
+			JL_IGNORE(hInst);
 
-		int width, height, channels;
-		ImageDataType dataType;
+			int width, height, channels;
+			ImageDataType dataType;
 
-		jl::StrData data(cx);
-		JL_CHK( JL_GetImageObject(cx, iconVal, &width, &height, &channels, &dataType, data) ); // source
-		JL_ASSERT( data.length() > 0, E_ARG, E_NUM(1), E_INVALID );
-		JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
+			jl::StrData data(cx);
+			JL_CHK( JL_GetImageObject(cx, iconVal, &width, &height, &channels, &dataType, data) ); // source
+			JL_ASSERT( data.length() > 0, E_ARG, E_NUM(1), E_INVALID );
+			JL_ASSERT( dataType == TYPE_UINT8, E_ARG, E_NUM(1), E_DATATYPE, E_INVALID );
 
 
 
-		// http://groups.google.com/group/microsoft.public.win32.programmer.gdi/browse_frm/thread/adaf38d715cef81/3825af9edde28cdc?lnk=st&q=RGB+CreateIcon&rnum=9&hl=en#3825af9edde28cdc
-		HDC screenDC = GetDC(NULL); // doc: If this value is NULL, GetDC retrieves the DC for the entire screen.
-		HDC colorDC = CreateCompatibleDC(screenDC);
-		HDC maskDC = CreateCompatibleDC(screenDC);
-		HBITMAP colorBMP = CreateCompatibleBitmap(screenDC, width, height);
-		HBITMAP maskBMP = CreateCompatibleBitmap(screenDC, width, height);
-		HBITMAP oldColorBMP = (HBITMAP)SelectObject(colorDC, colorBMP);
-		HBITMAP oldMaskBMP = (HBITMAP)SelectObject(maskDC, maskBMP);
+			// http://groups.google.com/group/microsoft.public.win32.programmer.gdi/browse_frm/thread/adaf38d715cef81/3825af9edde28cdc?lnk=st&q=RGB+CreateIcon&rnum=9&hl=en#3825af9edde28cdc
+			HDC screenDC = GetDC(NULL); // doc: If this value is NULL, GetDC retrieves the DC for the entire screen.
+			HDC colorDC = CreateCompatibleDC(screenDC);
+			HDC maskDC = CreateCompatibleDC(screenDC);
+			HBITMAP colorBMP = CreateCompatibleBitmap(screenDC, width, height);
+			HBITMAP maskBMP = CreateCompatibleBitmap(screenDC, width, height);
+			HBITMAP oldColorBMP = (HBITMAP)SelectObject(colorDC, colorBMP);
+			HBITMAP oldMaskBMP = (HBITMAP)SelectObject(maskDC, maskBMP);
 
-		{
+			{
 
-			//unsigned char *imageData = (unsigned char*)data.GetConstStr();
-			JS::AutoCheckCannotGC nogc;
-			const uint8_t *imageData = data.toBytes(nogc);
+				//unsigned char *imageData = (unsigned char*)data.GetConstStr();
+				JS::AutoCheckCannotGC nogc;
+				const uint8_t *imageData = data.toBytes(nogc);
 
-			int x, y;
-			for ( x = 0; x < width; x++ ) {
+				int x, y;
+				for ( x = 0; x < width; x++ ) {
 
-				for ( y = 0; y < width; y++ ) {
+					for ( y = 0; y < width; y++ ) {
 
-					const uint8_t *offset = imageData + channels*(x + y * width);
-					SetPixel(colorDC, x,y, RGB(offset[0],offset[1],offset[2]) );
-					if ( channels == 4 ) // image has alpha channel ?
-						SetPixel(maskDC, x,y, RGB( 255-offset[3], 255-offset[3], 255-offset[3] ) );
-					else
-						SetPixel(maskDC, x,y, RGB(0,0,0) );
+						const uint8_t *offset = imageData + channels*(x + y * width);
+						SetPixel(colorDC, x,y, RGB(offset[0],offset[1],offset[2]) );
+						if ( channels == 4 ) // image has alpha channel ?
+							SetPixel(maskDC, x,y, RGB( 255-offset[3], 255-offset[3], 255-offset[3] ) );
+						else
+							SetPixel(maskDC, x,y, RGB(0,0,0) );
+					}
 				}
+
 			}
 
+			SelectObject(colorDC, oldColorBMP); 
+			SelectObject(maskDC, oldMaskBMP);
+			DeleteDC(colorDC);
+			DeleteDC(maskDC);
+			ReleaseDC(NULL, screenDC);
+
+			ICONINFO ii = { TRUE, 0, 0, maskBMP, colorBMP };
+			hIcon = CreateIconIndirect( &ii );
+			DeleteObject(colorBMP);
+			DeleteObject(maskBMP); 
+			JL_ASSERT( hIcon != NULL, E_STR("icon"), E_CREATE );
 		}
-
-		SelectObject(colorDC, oldColorBMP); 
-		SelectObject(maskDC, oldMaskBMP);
-		DeleteDC(colorDC);
-		DeleteDC(maskDC);
-		ReleaseDC(NULL, screenDC);
-
-		ICONINFO ii = { TRUE, 0, 0, maskBMP, colorBMP };
-		hIcon = CreateIconIndirect( &ii );
-		DeleteObject(colorBMP);
-		DeleteObject(maskBMP); 
-		JL_ASSERT( hIcon != NULL, E_STR("icon"), E_CREATE );
-	}
 	
-	// FYI. How do I get the dimensions of a cursor or icon? (http://blogs.msdn.com/b/oldnewthing/archive/2010/10/20/10078140.aspx)
+		// FYI. How do I get the dimensions of a cursor or icon? (http://blogs.msdn.com/b/oldnewthing/archive/2010/10/20/10078140.aspx)
 
-	phIcon = (HICON*)JS_malloc(cx, sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
-	JL_CHK( phIcon );
-	*phIcon = hIcon;
+		phIcon = (HICON*)JS_malloc(cx, sizeof(HICON)); // this is needed because JL_SetPrivate stores ONLY alligned values
+		JL_CHK( phIcon );
+		*phIcon = hIcon;
 
-	JL_SetPrivate(JL_OBJ, phIcon);
+		JL_SetPrivate(JL_OBJ, phIcon);
 
 	}
 
@@ -159,7 +159,7 @@ DEFINE_FINALIZE() {
 
 	if ( *phIcon != NULL )
 		DestroyIcon(*phIcon);
-
+	
 	JS_freeop(fop, phIcon);
 }
 

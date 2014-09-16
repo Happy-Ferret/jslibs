@@ -85,7 +85,7 @@ DEFINE_CONSTRUCTOR() {
 		//  0     0       Transparent
 		//  1     0       Inverted color if possible, black if not.
 
-		const uint8_t *sBuffer = data.toBytes();
+		const uint8_t *sBuffer = data;
 		for ( int i = 0; i < length; i++ ) {
 	
 			unsigned char bit = 0x80 >> (i % 8);

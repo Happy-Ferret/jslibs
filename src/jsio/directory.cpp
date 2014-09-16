@@ -98,6 +98,7 @@ DEFINE_FUNCTION( open ) {
 		JL_SetPrivate(JL_OBJ, dd);
 	}
 
+	ASSERT( JL_OBJ );
 	JL_RVAL.setObject(*JL_OBJ);
 
 	return true;
@@ -385,7 +386,7 @@ DEFINE_FUNCTION( list ) {
 		{
 
 			JS::RootedObject addrJsObj(cx, JS_NewArrayObject(cx, 0));
-			JL_CHK( addrJsObj );
+			JL_ASSERT_ALLOC( addrJsObj );
 			JL_RVAL.setObject(*addrJsObj);
 
 			char dirSepChar;
