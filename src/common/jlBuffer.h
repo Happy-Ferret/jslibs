@@ -53,6 +53,12 @@ public:
 	}
 
 
+	// cast operators
+
+private:
+	operator bool();
+public:
+
 	operator const char *() {
 
 		return toStrZ(JS::AutoCheckCannotGC());
@@ -176,14 +182,14 @@ public:
 
 		JS::AutoCheckCannotGC nogc;
 		size_t len = length();
-		return ( isWide() ? jl::tstrcmpUnsigned(toWStr(nogc), src, len) : jl::tstrcmpUnsigned(toStr(nogc), src, len) ) == 0;
+		return isWide() ? jl::tstreqUnsigned(toWStr(nogc), len, src, -1) : jl::tstreqUnsigned(toStr(nogc), len, src, -1);
 	}
 
 	virtual bool equals( const char16_t *src ) {
 
 		JS::AutoCheckCannotGC nogc;
 		size_t len = length();
-		return ( isWide() ? jl::tstrcmpUnsigned(toWStr(nogc), src, len) : jl::tstrcmpUnsigned(toStr(nogc), src, len) ) == 0;
+		return isWide() ? jl::tstreqUnsigned(toWStr(nogc), len, src, -1) : jl::tstreqUnsigned(toStr(nogc), len, src, -1);
 	}
 
 	virtual bool equals( const uint8_t *src ) {
@@ -434,6 +440,12 @@ public:
 	bool set( JSContext *cx, JS::HandleObject obj ) {
 		
 		freeData();
+/*
+		NIBufferGet fct = bufferGetNativeInterface(cx, obj);
+		if ( fct ) {
+
+		} else
+*/
 		if ( JS_IsArrayBufferObject(obj) ) {
 
 			_obj.set(obj);
@@ -1297,14 +1309,15 @@ public:
 			return false;
 
 		size_t len = length();
-		if ( len == str.length() ) {
+		size_t strLen = str.length();
+		if ( len == strLen ) {
 
 			if ( isWide() ) {
 			
-				return str.isWide() ? jl::tstrncmp(dataAs<WideChar*>(), str.dataAs<WideChar*>(), len) == 0 : jl::tstrncmpUnsigned(dataAs<WideChar*>(), str.dataAs<NarrowChar*>(), len) == 0;
+				return str.isWide() ? jl::tstreq(dataAs<WideChar*>(), len, str.dataAs<WideChar*>(), strLen) : jl::tstreqUnsigned(dataAs<WideChar*>(), len, str.dataAs<NarrowChar*>(), strLen);
 			} else {
 
-				return str.isWide() ? jl::tstrncmp( dataAs<NarrowChar*>(), str.dataAs<WideChar*>(), len ) == 0 : jl::tstrncmpUnsigned( dataAs<NarrowChar*>(), str.dataAs<NarrowChar*>(), len) == 0;
+				return str.isWide() ? jl::tstreq( dataAs<NarrowChar*>(), len, str.dataAs<WideChar*>(), strLen) : jl::tstreqUnsigned( dataAs<NarrowChar*>(), len, str.dataAs<NarrowChar*>(), strLen);
 			}
 		} else {
 
@@ -1323,19 +1336,19 @@ public:
 	bool
 	operator ==( const T *str ) const {
 	
-		if ( str == nullptr && isEmpty() )
+		if ( ( str == nullptr || *str == 0 ) && isEmpty() )
 			return true;
 
-		if ( (str != nullptr) == isEmpty() )
+		if ( (str != nullptr && *str != 0 ) == isEmpty() )
 			return false;
 
 		if ( isNt() ) {
 
-			return dataAs<T*>() == str || (isWide() ? jl::tstrcmpUnsigned( dataAs<WideChar*>(), str ) == 0 : jl::tstrcmpUnsigned( dataAs<NarrowChar*>(), str ) == 0);
+			return dataAs<T*>() == str || ( isWide() ? jl::tstreqUnsigned( dataAs<WideChar*>(), -1, str, -1 ) : jl::tstreqUnsigned( dataAs<NarrowChar*>(), -1, str, -1 ) );
 		} else {
 
 			size_t len = length();
-			return jl::strlen( str ) == len && (isWide() ? jl::tstrncmpUnsigned( dataAs<WideChar*>(), str, len ) == 0 : jl::tstrncmpUnsigned( dataAs<NarrowChar*>(), str, len ) == 0);
+			return jl::strlen( str ) == len && ( isWide() ? jl::tstreqUnsigned( dataAs<WideChar*>(), len, str, -1 ) : jl::tstreqUnsigned( dataAs<NarrowChar*>(), len, str, -1 ) );
 		}
 	}
 

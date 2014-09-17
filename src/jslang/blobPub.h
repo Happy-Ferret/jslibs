@@ -46,6 +46,7 @@ BlobBufferGet( JSContext *cx, JS::HandleObject obj, jl::BufString *str ) {
 }
 */
 
+/*
 ALWAYS_INLINE const JSClass*
 BlobJSClass( JSContext *cx ) {
 
@@ -55,8 +56,18 @@ BlobJSClass( JSContext *cx ) {
 		clasp = jl::Host::getJLHost(cx).getCachedClasp("Blob");
 	return clasp;
 }
+*/
 
 
+/*
+rules:
+	length > 0 && private != NULL => blob
+	length == 0 => empty blob
+	length == 0 && data == NULL => empty blob
+	length == undefined => invalidated blob
+	length > 0 && private == NULL => invalid case
+	length == undefined && data != NULL => invalid case
+*/
 INLINE bool
 BlobCreate( JSContext *cx, void *ownData, int32_t size, OUT JS::MutableHandleValue rval ) {
 
@@ -64,13 +75,6 @@ BlobCreate( JSContext *cx, void *ownData, int32_t size, OUT JS::MutableHandleVal
 	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME( "Blob" ), E_NOTFOUND );
 
 	{
-		// rules:
-		// length > 0 && private != NULL => blob
-		// length == 0 => empty blob
-		// length == 0 && data == NULL => empty blob
-		// length == undefined => invalidated blob
-		// length > 0 && private == NULL => invalid case
-		// length == undefined && data != NULL => invalid case
 
 		ASSERT_IF( ownData == nullptr, size == 0 );
 

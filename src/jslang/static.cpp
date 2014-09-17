@@ -1071,112 +1071,166 @@ struct is_const
 };
 */
 
+// the following assert in DBG and OPT
+#define XASSERT(expr) \
+    ( ((expr) ? (void)0 : JL_ASSERT_FAILURE(#expr, JL_CODE_LOCATION)) )
+//	( ((expr) ? (void)0 : JL_ASSERT_FAILURE(#expr, JL_CODE_LOCATION)), ((!JL_IsExceptionPending(cx)) ? (void)0 : JL_ASSERT_FAILURE("Exception Is Pending !", JL_CODE_LOCATION)) )
+
+
 
 DEFINE_FUNCTION( jslangTest ) {
+	using namespace jl;
 
 	JL_DEFINE_ARGS;
 
-	using namespace jl;
-	
-	JS::RootedString jsstr(cx, JS_NewStringCopyZ(cx, "test"));
 
-	jl::StrData str(cx);
 
-	//str.set(cx, jsstr);
-	ASSERT( str.set("test") );
 
-	ASSERT( str.equals(L"test") );
-	ASSERT( !str.equals(L"test123") );
+
+
+	XASSERT( tstreq("abc", -1, "abc", -1) );
+	XASSERT( tstreq("abc", 3, "abc", -1) );
+	XASSERT( tstreq("abc", -1, "abc", 3) );
+	XASSERT( tstreq("abc", 3, "abc", 3) );
+
+	XASSERT( ! tstreq("abc", -1, "ab", -1) );
+	XASSERT( ! tstreq("abc", 3, "ab", -1) );
+	XASSERT( ! tstreq("abc", -1, "ab", 2) );
+	XASSERT( ! tstreq("abc", 3, "ab", 2) );
+
+
+	XASSERT( tstreq(L"abc", -1, "abc", -1) );
+	XASSERT( tstreq(L"abc", 3, "abc", -1) );
+	XASSERT( tstreq(L"abc", -1, "abc", 3) );
+	XASSERT( tstreq(L"abc", 3, "abc", 3) );
+
+	XASSERT( ! tstreq(L"abc", -1, "ab", -1) );
+	XASSERT( ! tstreq(L"abc", 3, "ab", -1) );
+	XASSERT( ! tstreq(L"abc", -1, "ab", 2) );
+	XASSERT( ! tstreq(L"abc", 3, "ab", 2) );
+
+	XASSERT( tstreq("abc", -1, L"abc", -1) );
+	XASSERT( tstreq("abc", 3, L"abc", -1) );
+	XASSERT( tstreq("abc", -1, L"abc", 3) );
+	XASSERT( tstreq("abc", 3, L"abc", 3) );
+
+	XASSERT( ! tstreq("abc", -1, L"ab", -1) );
+	XASSERT( ! tstreq("abc", 3, L"ab", -1) );
+	XASSERT( ! tstreq("abc", -1, L"ab", 2) );
+	XASSERT( ! tstreq("abc", 3, L"ab", 2) );
+
+
+	XASSERT( tstreq(L"abc", -1, L"abc", -1) );
+	XASSERT( tstreq(L"abc", 3, L"abc", -1) );
+	XASSERT( tstreq(L"abc", -1, L"abc", 3) );
+	XASSERT( tstreq(L"abc", 3, L"abc", 3) );
+
+	XASSERT( ! tstreq(L"abc", 3, L"ab", -1) );
+	XASSERT( ! tstreq(L"abc", -1, L"ab", 2) );
+	XASSERT( ! tstreq(L"abc", -1, L"ab", -1) );
+	XASSERT( ! tstreq(L"abc", 3, L"ab", 2) );
 
 	{
-	JS::AutoCheckCannotGC nogc;
-	jl::puts(str.toWStrZ(nogc));
-	jl::puts(str.toStrZ(nogc));
-	jl::puts(str.toWStrZ(nogc));
-	jl::puts(str.toStrZ(nogc));
+	
+		JS::RootedString jsstr(cx, JS_NewStringCopyZ(cx, "test"));
+
+		jl::StrData str(cx);
+
+		//str.set(cx, jsstr);
+		XASSERT( str.set("test") );
+
+		XASSERT( str.equals(L"test") );
+		XASSERT( !str.equals(L"test123") );
+
+		{
+			JS::AutoCheckCannotGC nogc;
+			XASSERT( jl::strcmp(str.toWStrZ(nogc), L("test")) == 0 );
+			XASSERT( jl::strcmp(str.toStrZ(nogc), "test") == 0 );
+			XASSERT( jl::strcmp(str.toWStrZ(nogc), L("test")) == 0 );
+			XASSERT( jl::strcmp(str.toStrZ(nogc), "test") == 0 );
+		}
+
+		void *tmp = str.toOwnStrZ();
+
+		str.toJSString(cx, JL_RVAL);
+		str.toArrayBuffer(cx, JL_RVAL);
+		str.toJSString(cx, JL_RVAL);
+
+		str.toJSValue(cx, JL_RVAL);
+
+		XASSERT( jl::strcmp((const char16_t*)str, L("test")) == 0 );
+		XASSERT( jl::strcmp((const char*)str, "test") == 0 );
+		XASSERT( jl::strcmp((const char16_t*)str, L("test")) == 0 );
+		XASSERT( jl::strcmp((const char*)str, "test") == 0 );
+
+		jl_free(tmp);
+
 	}
-
-	void *tmp = str.toOwnStrZ();
-
-	str.toJSString(cx, JL_RVAL);
-	str.toArrayBuffer(cx, JL_RVAL);
-	str.toJSString(cx, JL_RVAL);
-
-	str.toJSValue(cx, JL_RVAL);
-
-	jl::puts((const char16_t*)str);
-	jl::puts((const char*)str);
-	jl::puts((const char16_t*)str);
-	jl::puts((const char*)str);
-
-	jl_free(tmp);
-
-return true;
-
 
 	stringToJsid(cx, L"test");
 
 	JS::AutoValueVector av(cx);
 	av.append(JS::ObjectValue(*jl::newArray(cx)));
 
-return true;
 
+	{
 
-	typedef const char *ConstStr;
+		typedef const char *ConstStr;
 
-	JS::CallArgs jsargs( JS::CallArgsFromVp(argc, vp) );
+		JS::CallArgs jsargs( JS::CallArgsFromVp(argc, vp) );
 
-	JS::Heap<JS::Value> hp;
-	hp.set(jsargs.rval());
+		JS::Heap<JS::Value> hp;
+		hp.set(jsargs.rval());
 
-	JS::RootedValue rv(cx, JS::ObjectValue(*jl::newArray(cx)));
-	const JS::RootedValue crv(cx, JS::ObjectValue(*jl::newArray(cx)));
-	JS::MutableHandleValue mhv(&rv);
-	const JS::MutableHandleValue cmhv(&rv);
-	JS::HandleValue hv(rv);
-	int i = 5;
-	bool b = true;
+		JS::RootedValue rv(cx, JS::ObjectValue(*jl::newArray(cx)));
+		const JS::RootedValue crv(cx, JS::ObjectValue(*jl::newArray(cx)));
+		JS::MutableHandleValue mhv(&rv);
+		const JS::MutableHandleValue cmhv(&rv);
+		JS::HandleValue hv(rv);
+		int i = 5;
+		bool b = true;
 
-	ConstStr str1 = "test1";
-	const ConstStr &str2 = str1;
+		ConstStr str1 = "test1";
+		const ConstStr &str2 = str1;
 
-	JS::RootedObject rto(cx, jl::newArray(cx));
-	const JS::RootedObject &crto(rto);
+		JS::RootedObject rto(cx, jl::newArray(cx));
+		const JS::RootedObject &crto(rto);
 
-	setValue(cx, mhv, rto);
-	setValue(cx, mhv, crto);
-	setValue(cx, mhv, i);
-	setValue(cx, mhv, i);
-	setValue(cx, mhv, b);
-	setValue(cx, mhv, str1); // ptr !
-	setValue(cx, mhv, str2); // ptr !
-	setValue(cx, mhv, "test"); // ptr !
-	setValue(cx, mhv, rv);
-	setValue(cx, mhv, crv);
-	setValue(cx, mhv, &rv); // ptr !
-	setValue(cx, mhv, &crv); // ptr !
-	setValue(cx, mhv, hv);
-	setValue(cx, mhv, mhv);
-	setValue(cx, mhv, cmhv);
-	setValue(cx, mhv, jsargs.thisv()); // HandleValue
-	setValue(cx, mhv, jsargs.rval()); // MutableHandleValue
-	setValue(cx, mhv, JS::NullHandleValue); // HandleValue
-	setValue(cx, mhv, JS::HandleValue(mhv)); // HandleValue
-	setValue(cx, mhv, JS::MutableHandleValue(&rv)); // HandleValue
-	setValue(cx, mhv, hp);
-	setValue(cx, mhv, JS::Heap<JS::Value>(jsargs.rval()));
+		XASSERT( setValue(cx, mhv, rto) );
+		XASSERT( setValue(cx, mhv, crto) );
+		XASSERT( setValue(cx, mhv, i) );
+		XASSERT( setValue(cx, mhv, i) );
+		XASSERT( setValue(cx, mhv, b) );
+		XASSERT( setValue(cx, mhv, str1) ); // ptr !
+		XASSERT( setValue(cx, mhv, str2) ); // ptr !
+		XASSERT( setValue(cx, mhv, "test") ); // ptr !
+		XASSERT( setValue(cx, mhv, rv) );
+		XASSERT( setValue(cx, mhv, crv) );
+		XASSERT( setValue(cx, mhv, &rv) ); // ptr !
+		XASSERT( setValue(cx, mhv, &crv) ); // ptr !
+		XASSERT( setValue(cx, mhv, hv) );
+		XASSERT( setValue(cx, mhv, mhv) );
+		XASSERT( setValue(cx, mhv, cmhv) );
+		XASSERT( setValue(cx, mhv, jsargs.thisv()) ); // HandleValue
+		XASSERT( setValue(cx, mhv, jsargs.rval()) ); // MutableHandleValue
+		XASSERT( setValue(cx, mhv, JS::NullHandleValue) ); // HandleValue
+		XASSERT( setValue(cx, mhv, JS::HandleValue(mhv)) ); // HandleValue
+		XASSERT( setValue(cx, mhv, JS::MutableHandleValue(&rv)) ); // HandleValue
+		XASSERT( setValue(cx, mhv, hp) );
+		XASSERT( setValue(cx, mhv, JS::Heap<JS::Value>(jsargs.rval())) );
 
-	getValue(cx, rv, &i);
-	getValue(cx, hv, &i);
-	getValue(cx, hv, &b);
-	getValue(cx, hv, &rv);
-	getValue(cx, hv, rv);
-	getValue(cx, hv, &mhv);
-	getValue(cx, hv, mhv);
-	getValue(cx, hv, jsargs.rval());
-	getValue(cx, hv, &hp);
-	getValue(cx, hv, hp);
-
+		XASSERT( ! getValue(cx, rv, &i) );	JS_ClearPendingException(cx);
+		XASSERT( ! getValue(cx, hv, &i) );	JS_ClearPendingException(cx);
+		XASSERT( getValue(cx, hv, &b) );
+		XASSERT( getValue(cx, hv, &rv) );
+		XASSERT( getValue(cx, hv, rv) );
+		XASSERT( getValue(cx, hv, &mhv) );
+		XASSERT( getValue(cx, hv, mhv) );
+		XASSERT( getValue(cx, hv, jsargs.rval()) );
+		XASSERT( getValue(cx, hv, &hp) );
+		XASSERT( getValue(cx, hv, hp) );
+	
+	}
 
 
 
@@ -1191,19 +1245,10 @@ return true;
 	return BlobCreate(cx, test, JL_RVAL);
 */
 
-	
-
-
-	{
-		jl::BufString test((const jschar*)"a\0b\0c\0d\0\0", 10, true);
-		test.toStringZ<const char*>();
-		ASSERT( test == "abcd" );
-	}
-
 	{
 		jl::BufString test("abcd", 4, true);
 		test.toStringZ<const char*>();
-		ASSERT( test == "abcd" );
+		XASSERT( test == "abcd" );
 	}
 
 	{
@@ -1211,15 +1256,16 @@ return true;
 		b.setData(nullptr);
 	}
 
+
 	{
 		jl::BufBase b;
-		ASSERT( b.isEmpty() );
+		XASSERT( b.isEmpty() );
 	}
 
 	{
 		jl::BufBase b("123", 3);
 		b.setEmpty();
-		ASSERT( b.isEmpty() );
+		XASSERT( b.isEmpty() );
 	}
 
 	{
@@ -1229,67 +1275,69 @@ return true;
 
 	{
 		jl::BufBase b;
-		ASSERT( !b );
+		XASSERT( !b );
 		b.alloc(100);
-		ASSERT( b );
-		ASSERT( b.owner() );
+		XASSERT( b );
+		XASSERT( b.owner() );
 		b.free();
-		ASSERT( !b );
+		XASSERT( ! b );
 	}
 
 	{
 		jl::BufString a( "test" );
-		ASSERT( a == "test" );
+		XASSERT( a == "test" );
 	}
 
 	{
 		jl::BufString a( "test", 4, false );
-		a.toStringZ<char *>();
-		ASSERT( a == "test" );
+		char *tmp = a.toStringZ<char *>();
+		XASSERT( a == "test" );
+		jl_free(tmp);
 	}
 
 	{
-		ASSERT( jl::BufString( "test" ) == jl::BufString( "test" ) );
-		ASSERT( jl::BufString( "test" ) == jl::BufString( L("test") ) );
-		ASSERT( jl::BufString( L("test") ) == jl::BufString( "test" ) );
-		ASSERT( jl::BufString( L("test") ) == jl::BufString( L("test") ) );
+		XASSERT( jl::BufString( "test" ) == jl::BufString( "test" ) );
+		XASSERT( jl::BufString( "test" ) == jl::BufString( L("test") ) );
 
-		ASSERT( jl::BufString( "test" ) != jl::BufString( "test1" ) );
-		ASSERT( jl::BufString( "test" ) != jl::BufString( L("test1") ) );
-		ASSERT( jl::BufString( L("test") ) != jl::BufString( "test1" ) );
-		ASSERT( jl::BufString( L("test") ) != jl::BufString( L("test1") ) );
+		XASSERT( jl::BufString( L("test") ) == jl::BufString( "test" ) );
+		XASSERT( jl::BufString( L("test") ) == jl::BufString( L("test") ) );
+
+		XASSERT( jl::BufString( "test" ) != jl::BufString( "test1" ) );
+		XASSERT( jl::BufString( "test" ) != jl::BufString( L("test1") ) );
+		XASSERT( jl::BufString( L("test") ) != jl::BufString( "test1" ) );
+		XASSERT( jl::BufString( L("test") ) != jl::BufString( L("test1") ) );
 
 		jl::BufString str("abc");
-		ASSERT( str == "abc" );
-		ASSERT( str == L("abc") );
+		XASSERT( str == "abc" );
+		XASSERT( str == L("abc") );
 
 		jl::BufString str1(L("abc"));
-		ASSERT( str1 == "abc" );
-		ASSERT( str1 == L("abc") );
+		XASSERT( str1 == "abc" );
+		XASSERT( str1 == L("abc") );
 
 		jl::BufString str2(L("abc"));
-		ASSERT( !(str2 == "abcd") );
-		ASSERT( !(str2 == L("abcd")) );
+		XASSERT( !(str2 == "abcd") );
+		XASSERT( !(str2 == L("abcd")) );
 
 		jl::BufString str4("abc");
-		ASSERT( !(str4 == "abcd") );
-		ASSERT( !(str4 == L("abcd")) );
+		XASSERT( !(str4 == "abcd") );
+		XASSERT( !(str4 == L("abcd")) );
 
 		jl::BufString str3(L("abcd"));
-		ASSERT( !(str3 == "abc") );
-		ASSERT( !(str3 == L("abc")) );
+		XASSERT( !(str3 == "abc") );
+		XASSERT( !(str3 == L("abc")) );
 
 		jl::BufString str5("abcd");
-		ASSERT( !(str5 == "abc") );
-		ASSERT( !(str5 == L("abc")) );
+		XASSERT( !(str5 == "abc") );
+		XASSERT( !(str5 == L("abc")) );
 
 		jl::BufString str6("abc", 3, false);
-		ASSERT( !(str6 == "abcd") );
-		ASSERT( !(str6 == L("abcd")) );
+		XASSERT( !(str6 == "abcd") );
+		XASSERT( !(str6 == L("abcd")) );
 
 		jl::BufString str7("abc", 3, false);
-		ASSERT( str7 == "abc" );
-		ASSERT( str7 == L("abc") );
+		XASSERT( str7 == "abc" );
+		XASSERT( str7 == L("abc") );
 	}
 
 	{
@@ -1308,31 +1356,33 @@ return true;
 	{
 		jl::BufString str;
 		str.setEmpty();
-		ASSERT(str == "");
-		ASSERT(str.isEmpty());
+		XASSERT(str == "");
+		XASSERT(str.isEmpty());
 	}
+
 
 	{
 		jl::BufString str;
-		ASSERT(str != "");
-		ASSERT(str.isEmpty());
+		XASSERT( !(str != "") );
+		XASSERT(str.isEmpty());
 	}
+	
 
 	{
 		jl::BufString str( jl::BufString().setEmpty() );
-		ASSERT( str.isEmpty() );
+		XASSERT( str.isEmpty() );
 
 		jl::BufString str1 = jl::BufString();
-		ASSERT( str1.isEmpty() );
+		XASSERT( str1.isEmpty() );
 
 		jl::BufString str3 = jl::BufBase();
-		ASSERT( str3.isEmpty() );
+		XASSERT( str3.isEmpty() );
 
 		jl::BufString str2( jl::BufBase().setEmpty() );
-		ASSERT( str2.isEmpty() );
+		XASSERT( str2.isEmpty() );
 
 		jl::BufBase str4;
-		ASSERT( str4.isEmpty() );
+		XASSERT( str4.isEmpty() );
 	}
 
 	{
@@ -1346,16 +1396,16 @@ return true;
 		void *tmp1, *tmp2;
 
 		jl::BufString str("test");
-		ASSERT( str.length() == 4 );
+		XASSERT( str.length() == 4 );
 		
 		str.to<const jschar *, false>();
-		ASSERT( str.length() == 4 );
+		XASSERT( str.length() == 4 );
 		
 		str.to<const char *, true>();
-		ASSERT( str.length() == 4 );
+		XASSERT( str.length() == 4 );
 		
 		tmp1 = str.to<jschar *, true>();
-		ASSERT( str.length() == 4 );
+		XASSERT( str.length() == 4 );
 
 		str.to<const jschar *, true>();
 		str.to<const char *, true>();
@@ -1382,7 +1432,7 @@ return true;
 		const jl::BufString str("test");
 
 		bool test = IsConst(const jl::BufString);
-		ASSERT(test);
+		XASSERT(test);
 	}
 
 	{
@@ -1431,79 +1481,43 @@ return true;
 
 	{
 		jl::BufString test("abcd");
-		JL_CHK( BlobCreate(cx, test, JL_RVAL) );
+		XASSERT( BlobCreate(cx, test, JL_RVAL) );
 
-		JL_CHK( jl::getProperty(cx, JL_RVAL, "string", JL_RVAL) );
+		XASSERT( jl::getProperty(cx, JL_RVAL, "string", JL_RVAL) );
 		JS::RootedString str(cx, JL_RVAL.toString());
 
 		JS::AutoCheckCannotGC nogc;
 		jl::BufString test2(cx, str, nogc);
-		ASSERT( test2 == "abcd" );
+		XASSERT( test2 == "abcd" );
 	}
 
 	{
 
-
 		jl::BufString test("\xff\xfe\xfd");
-		JL_CHK( BlobCreate(cx, test, JL_RVAL) );
+		XASSERT( BlobCreate(cx, test, JL_RVAL) );
 		
-		JL_CHK( jl::getProperty(cx, JL_RVAL, "string", JL_RVAL) );
+		XASSERT( jl::getProperty(cx, JL_RVAL, "string", JL_RVAL) );
 		JS::RootedString str(cx, JL_RVAL.toString());
 
 		JS::AutoCheckCannotGC nogc;
 		jl::BufString test2(cx, str, nogc);
-		ASSERT( test2 == jl::BufString("\xff\xfe\xfd") );
-		ASSERT( test2 == "\xff\xfe\xfd" );
+		XASSERT( test2 == jl::BufString("\xff\xfe\xfd") );
+		XASSERT( test2 == "\xff\xfe\xfd" );
 	}
 
 	{
 
 		jl::BufString test("my string");
-		JL_CHK( BlobCreate(cx, test, JL_RVAL) );
+		XASSERT( BlobCreate(cx, test, JL_RVAL) );
 
 	}
-
-return true;
-
-
-
-/*
+	
 	{
-		jl::Buffer ab;
-		ab.alloc(2);
-		((uint8_t*)ab.data())[0] = 100;
-		((uint8_t*)ab.data())[1] = 101;
-		ab.toExternalString(cx, JL_RVAL);
-		bool match;
-		ASSERT( JS_StringEqualsAscii(cx, JL_RVAL, "de", &match) );
-		ASSERT( match );
+		jl::BufString test((const jschar*)"a\0b\0c\0d\0\0\0", 5, true);
+		test.toStringZ<const char*>();
+		XASSERT( test == "abcd" );
 	}
-*/ 
 
-
-	ASSERT( jl::tstrcmp( ("abc"), L("abc")) == 0 );
-	ASSERT( jl::tstrcmp(L("abc"),  ("abc")) == 0 );
-
-	ASSERT( jl::tstrcmp( ("abc"), L("abd")) == -1 );
-	ASSERT( jl::tstrcmp(L("abc"),  ("abd")) == -1 );
-
-	ASSERT( jl::tstrncmp(  ("abcd"), L("abce"), 3) == 0 );
-	ASSERT( jl::tstrncmp( L("abcd"),  ("abce"), 3) == 0 );
-
-	ASSERT( jl::tstrncmp( ("abcd"), L("abde"), 3) == -1 );
-	ASSERT( jl::tstrncmp(L("abcd"),  ("abde"), 3) == -1 );
-
-	ASSERT( jl::tstrncmp( ("ab"), L("abcd"), 3) != 0 );
-	ASSERT( jl::tstrncmp(L("ab"),  ("abcd"), 3) != 0 );
-
-	ASSERT( jl::tstrncmp( ("abcd"), L("ab"), 3) != 0 );
-	ASSERT( jl::tstrncmp(L("abcd"),  ("ab"), 3) != 0 );
-
-	ASSERT( jl::tstrncmp( ("abcd"), L("abc"), 3) == 0 );
-	ASSERT( jl::tstrncmp(L("abcd"),  ("abc"), 3) == 0 );
-
-	ASSERT( jl::tstrncmp( ("abc"), L("abcd"), 3) == 0 );
-	ASSERT( jl::tstrncmp(L("abc"),  ("abcd"), 3) == 0 );
 
 	{
 
@@ -1511,7 +1525,8 @@ return true;
 	public:
 		static bool fct(JSContext *cx, unsigned argc, JS::Value *vp) {
 
-			printf("C ");
+			//printf("C ");
+			vp->setUndefined();
 			return true;
 		}
 	};
@@ -1520,7 +1535,7 @@ return true;
 
 	JS::RootedFunction fct(cx, JS_NewFunction(cx, X::fct, 1, 0, JS::NullPtr(), "fct"));
 	JS::RootedObject obj(cx, JS_GetFunctionObject(fct));
-	JL_CHK( obj );
+	XASSERT( obj );
 	JS::RootedValue val(cx);
 	val.setObject(*obj);
 	JS::RootedString str(cx, JS_NewStringCopyZ(cx, "test"));
@@ -1528,7 +1543,7 @@ return true;
 	tmp.setString(str);
 	jl::setProperty(cx, obj, "test", val);
 	JS::RootedId id(cx);
-	JL_CHK( JS_ValueToId(cx, tmp, &id) );
+	XASSERT( JS_ValueToId(cx, tmp, &id) );
 
 
 	{
@@ -1555,228 +1570,228 @@ return true;
 
 	JL_IGNORE(uint8, int8, uint16, int16, uint32, int32, uint64, int64, dbl, flt);
 
-
 /*
-	ASSERT( jl::fitDoubleTo(double(127), int8) );
-	ASSERT( !jl::fitDoubleTo(double(128), int8) );
-	ASSERT( jl::fitDoubleTo(double(0), int8) );
-	ASSERT( jl::fitDoubleTo(double(-1), int8) );
-	ASSERT( jl::fitDoubleTo(double(255), uint8) );
-	ASSERT( !jl::fitDoubleTo(double(-1), uint8) );
-	ASSERT( jl::fitDoubleTo(int32_t(-1), int32) );
-	ASSERT( !jl::fitDoubleTo(int32_t(-1), uint32) );
-	ASSERT( jl::fitDoubleTo(int32_t(0), int32) );
-	ASSERT( jl::fitDoubleTo(int32_t(0), uint32) );
-	ASSERT( jl::fitDoubleTo(int32_t(127), int8) );
-	ASSERT( !jl::fitDoubleTo(int32_t(128), int8) );
-	ASSERT( jl::fitDoubleTo(int32_t(127), int64) );
-	ASSERT( jl::fitDoubleTo(int32_t(128), int64) );
-	ASSERT( jl::fitDoubleTo(int32_t(128), uint64) );
-	ASSERT( !jl::fitDoubleTo(int32_t(-128), uint64) );
+	XASSERT( jl::fitDoubleTo(double(127), int8) );
+	XASSERT( !jl::fitDoubleTo(double(128), int8) );
+	XASSERT( jl::fitDoubleTo(double(0), int8) );
+	XASSERT( jl::fitDoubleTo(double(-1), int8) );
+	XASSERT( jl::fitDoubleTo(double(255), uint8) );
+	XASSERT( !jl::fitDoubleTo(double(-1), uint8) );
+	XASSERT( jl::fitDoubleTo(int32_t(-1), int32) );
+	XASSERT( !jl::fitDoubleTo(int32_t(-1), uint32) );
+	XASSERT( jl::fitDoubleTo(int32_t(0), int32) );
+	XASSERT( jl::fitDoubleTo(int32_t(0), uint32) );
+	XASSERT( jl::fitDoubleTo(int32_t(127), int8) );
+	XASSERT( !jl::fitDoubleTo(int32_t(128), int8) );
+	XASSERT( jl::fitDoubleTo(int32_t(127), int64) );
+	XASSERT( jl::fitDoubleTo(int32_t(128), int64) );
+	XASSERT( jl::fitDoubleTo(int32_t(128), uint64) );
+	XASSERT( !jl::fitDoubleTo(int32_t(-128), uint64) );
 
-	ASSERT( jl::fitInt32To(int32_t(0), flt) );
-	ASSERT( jl::fitInt32To(int32_t(INT32_MAX), flt) );
-	ASSERT( jl::fitInt32To(int32_t(INT32_MIN), flt) );
+	XASSERT( jl::fitInt32To(int32_t(0), flt) );
+	XASSERT( jl::fitInt32To(int32_t(INT32_MAX), flt) );
+	XASSERT( jl::fitInt32To(int32_t(INT32_MIN), flt) );
 
 
-	ASSERT( !jl::fitInt32To(int32_t(-1), uint32) );
-	ASSERT( jl::fitInt32To(int32_t(0), uint32) );
-	ASSERT( jl::fitInt32To(int32_t(1), uint32) );
-	ASSERT( jl::fitInt32To(int32_t(INT32_MAX), uint32) );
+	XASSERT( !jl::fitInt32To(int32_t(-1), uint32) );
+	XASSERT( jl::fitInt32To(int32_t(0), uint32) );
+	XASSERT( jl::fitInt32To(int32_t(1), uint32) );
+	XASSERT( jl::fitInt32To(int32_t(INT32_MAX), uint32) );
 
-	ASSERT( jl::fitInt32To(int32_t(0), uint64) );
-	ASSERT( jl::fitInt32To(int32_t(INT32_MAX), uint64) );
-	ASSERT( !jl::fitInt32To(int32_t(INT32_MIN), uint64) );
+	XASSERT( jl::fitInt32To(int32_t(0), uint64) );
+	XASSERT( jl::fitInt32To(int32_t(INT32_MAX), uint64) );
+	XASSERT( !jl::fitInt32To(int32_t(INT32_MIN), uint64) );
 	
-	ASSERT( !jl::isIntegral(dbl) );
-	ASSERT( jl::isIntegral(int8) );
-*/
-/*
+	XASSERT( !jl::isIntegral(dbl) );
+	XASSERT( jl::isIntegral(int8) );
 
-	ASSERT((jl::JLIsInBounds<int16_t, int16_t>(int16_t(0))));
-	ASSERT((jl::JLIsInBounds<int16_t, int16_t>(int16_t(INT16_MIN))));
-	ASSERT((jl::JLIsInBounds<int16_t, int16_t>(int16_t(INT16_MAX))));
-	ASSERT((jl::JLIsInBounds<uint16_t, uint16_t>(uint16_t(UINT16_MAX))));
-	ASSERT((jl::JLIsInBounds<uint16_t, int16_t>(uint16_t(0))));
-	ASSERT((!jl::JLIsInBounds<uint16_t, int16_t>(uint16_t(-1))));
-	ASSERT((!jl::JLIsInBounds<int16_t, uint16_t>(int16_t(-1))));
-	ASSERT((jl::JLIsInBounds<int16_t, uint16_t>(int16_t(INT16_MAX))));
-	ASSERT((!jl::JLIsInBounds<int16_t, uint16_t>(int16_t(INT16_MIN))));
-	ASSERT((jl::JLIsInBounds<int32_t, uint32_t>(int32_t(INT32_MAX))));
-	ASSERT((!jl::JLIsInBounds<int32_t, uint32_t>(int32_t(INT32_MIN))));
+
+	XASSERT((jl::JLIsInBounds<int16_t, int16_t>(int16_t(0))));
+	XASSERT((jl::JLIsInBounds<int16_t, int16_t>(int16_t(INT16_MIN))));
+	XASSERT((jl::JLIsInBounds<int16_t, int16_t>(int16_t(INT16_MAX))));
+	XASSERT((jl::JLIsInBounds<uint16_t, uint16_t>(uint16_t(UINT16_MAX))));
+	XASSERT((jl::JLIsInBounds<uint16_t, int16_t>(uint16_t(0))));
+	XASSERT((!jl::JLIsInBounds<uint16_t, int16_t>(uint16_t(-1))));
+	XASSERT((!jl::JLIsInBounds<int16_t, uint16_t>(int16_t(-1))));
+	XASSERT((jl::JLIsInBounds<int16_t, uint16_t>(int16_t(INT16_MAX))));
+	XASSERT((!jl::JLIsInBounds<int16_t, uint16_t>(int16_t(INT16_MIN))));
+	XASSERT((jl::JLIsInBounds<int32_t, uint32_t>(int32_t(INT32_MAX))));
+	XASSERT((!jl::JLIsInBounds<int32_t, uint32_t>(int32_t(INT32_MIN))));
  
-	ASSERT((jl::JLIsInBounds<int16_t, int32_t>(int16_t(0))));
-	ASSERT((jl::JLIsInBounds<int16_t, int32_t>(int16_t(INT16_MIN))));
-	ASSERT((jl::JLIsInBounds<int16_t, int32_t>(int16_t(INT16_MAX))));
-	ASSERT((jl::JLIsInBounds<uint16_t, uint32_t>(uint16_t(UINT16_MAX))));
-	ASSERT((jl::JLIsInBounds<uint16_t, int32_t>(uint16_t(0))));
-	ASSERT((jl::JLIsInBounds<uint16_t, int32_t>(uint16_t(-1))));
-	ASSERT((!jl::JLIsInBounds<int16_t, uint32_t>(int16_t(-1))));
-	ASSERT((jl::JLIsInBounds<int16_t, uint32_t>(int16_t(INT16_MAX))));
-	ASSERT((!jl::JLIsInBounds<int16_t, uint32_t>(int16_t(INT16_MIN))));
-	ASSERT((jl::JLIsInBounds<int32_t, uint64_t>(int32_t(INT32_MAX))));
-	ASSERT((!jl::JLIsInBounds<int32_t, uint64_t>(int32_t(INT32_MIN))));
+	XASSERT((jl::JLIsInBounds<int16_t, int32_t>(int16_t(0))));
+	XASSERT((jl::JLIsInBounds<int16_t, int32_t>(int16_t(INT16_MIN))));
+	XASSERT((jl::JLIsInBounds<int16_t, int32_t>(int16_t(INT16_MAX))));
+	XASSERT((jl::JLIsInBounds<uint16_t, uint32_t>(uint16_t(UINT16_MAX))));
+	XASSERT((jl::JLIsInBounds<uint16_t, int32_t>(uint16_t(0))));
+	XASSERT((jl::JLIsInBounds<uint16_t, int32_t>(uint16_t(-1))));
+	XASSERT((!jl::JLIsInBounds<int16_t, uint32_t>(int16_t(-1))));
+	XASSERT((jl::JLIsInBounds<int16_t, uint32_t>(int16_t(INT16_MAX))));
+	XASSERT((!jl::JLIsInBounds<int16_t, uint32_t>(int16_t(INT16_MIN))));
+	XASSERT((jl::JLIsInBounds<int32_t, uint64_t>(int32_t(INT32_MAX))));
+	XASSERT((!jl::JLIsInBounds<int32_t, uint64_t>(int32_t(INT32_MIN))));
 
-	ASSERT((jl::JLIsInBounds<int16_t, int8_t>(int16_t(0))));
-	ASSERT((!jl::JLIsInBounds<int16_t, int8_t>(int16_t(INT16_MIN))));
-	ASSERT((!jl::JLIsInBounds<int16_t, int8_t>(int16_t(INT16_MAX))));
-	ASSERT((!jl::JLIsInBounds<uint16_t, uint8_t>(uint16_t(UINT16_MAX))));
-	ASSERT((jl::JLIsInBounds<uint16_t, int8_t>(uint16_t(0))));
-	ASSERT((!jl::JLIsInBounds<uint16_t, int8_t>(uint16_t(-1))));
-	ASSERT((!jl::JLIsInBounds<int16_t, uint8_t>(int16_t(-1))));
-	ASSERT((!jl::JLIsInBounds<int16_t, uint8_t>(int16_t(INT16_MAX))));
-	ASSERT((!jl::JLIsInBounds<int16_t, uint8_t>(int16_t(INT16_MIN))));
-	ASSERT((!jl::JLIsInBounds<int32_t, uint16_t>(int32_t(INT32_MAX))));
-	ASSERT((!jl::JLIsInBounds<int32_t, uint16_t>(int32_t(INT32_MIN))));
+	XASSERT((jl::JLIsInBounds<int16_t, int8_t>(int16_t(0))));
+	XASSERT((!jl::JLIsInBounds<int16_t, int8_t>(int16_t(INT16_MIN))));
+	XASSERT((!jl::JLIsInBounds<int16_t, int8_t>(int16_t(INT16_MAX))));
+	XASSERT((!jl::JLIsInBounds<uint16_t, uint8_t>(uint16_t(UINT16_MAX))));
+	XASSERT((jl::JLIsInBounds<uint16_t, int8_t>(uint16_t(0))));
+	XASSERT((!jl::JLIsInBounds<uint16_t, int8_t>(uint16_t(-1))));
+	XASSERT((!jl::JLIsInBounds<int16_t, uint8_t>(int16_t(-1))));
+	XASSERT((!jl::JLIsInBounds<int16_t, uint8_t>(int16_t(INT16_MAX))));
+	XASSERT((!jl::JLIsInBounds<int16_t, uint8_t>(int16_t(INT16_MIN))));
+	XASSERT((!jl::JLIsInBounds<int32_t, uint16_t>(int32_t(INT32_MAX))));
+	XASSERT((!jl::JLIsInBounds<int32_t, uint16_t>(int32_t(INT32_MIN))));
 
-	ASSERT((!jl::JLIsInBounds<int64_t, int32_t>(int64_t(INT32_MIN) - 1)));
-	ASSERT((jl::JLIsInBounds<int64_t, int32_t>(int64_t(INT32_MIN))));
-	ASSERT((jl::JLIsInBounds<int64_t, int32_t>(int64_t(INT32_MIN) + 1)));
-	ASSERT((jl::JLIsInBounds<int64_t, int32_t>(int64_t(INT32_MAX) - 1)));
-	ASSERT((jl::JLIsInBounds<int64_t, int32_t>(int64_t(INT32_MAX))));
-	ASSERT((!jl::JLIsInBounds<int64_t, int32_t>(int64_t(INT32_MAX) + 1)));
+	XASSERT((!jl::JLIsInBounds<int64_t, int32_t>(int64_t(INT32_MIN) - 1)));
+	XASSERT((jl::JLIsInBounds<int64_t, int32_t>(int64_t(INT32_MIN))));
+	XASSERT((jl::JLIsInBounds<int64_t, int32_t>(int64_t(INT32_MIN) + 1)));
+	XASSERT((jl::JLIsInBounds<int64_t, int32_t>(int64_t(INT32_MAX) - 1)));
+	XASSERT((jl::JLIsInBounds<int64_t, int32_t>(int64_t(INT32_MAX))));
+	XASSERT((!jl::JLIsInBounds<int64_t, int32_t>(int64_t(INT32_MAX) + 1)));
 
-	ASSERT((!jl::JLIsInBounds<int64_t, uint32_t>(int64_t(-1))));
-	ASSERT((jl::JLIsInBounds<int64_t, uint32_t>(int64_t(0))));
-	ASSERT((jl::JLIsInBounds<int64_t, uint32_t>(int64_t(1))));
-	ASSERT((jl::JLIsInBounds<int64_t, uint32_t>(int64_t(UINT32_MAX) - 1)));
-	ASSERT((jl::JLIsInBounds<int64_t, uint32_t>(int64_t(UINT32_MAX))));
-	ASSERT((!jl::JLIsInBounds<int64_t, uint32_t>(int64_t(UINT32_MAX) + 1)));
+	XASSERT((!jl::JLIsInBounds<int64_t, uint32_t>(int64_t(-1))));
+	XASSERT((jl::JLIsInBounds<int64_t, uint32_t>(int64_t(0))));
+	XASSERT((jl::JLIsInBounds<int64_t, uint32_t>(int64_t(1))));
+	XASSERT((jl::JLIsInBounds<int64_t, uint32_t>(int64_t(UINT32_MAX) - 1)));
+	XASSERT((jl::JLIsInBounds<int64_t, uint32_t>(int64_t(UINT32_MAX))));
+	XASSERT((!jl::JLIsInBounds<int64_t, uint32_t>(int64_t(UINT32_MAX) + 1)));
 
 
-	ASSERT( jl::fitsIn(double(255), uint8) );
-	ASSERT( !jl::fitsIn(double(255), int8) );
-	ASSERT( jl::fitsIn(double(255), uint16) );
+	XASSERT( jl::fitsIn(double(255), uint8) );
+	XASSERT( !jl::fitsIn(double(255), int8) );
+	XASSERT( jl::fitsIn(double(255), uint16) );
 
-	ASSERT( !jl::fitsIn(float(FLT_MAX), int64) );
-	ASSERT( !jl::fitsIn(double(DBL_MAX), int64) );
+	XASSERT( !jl::fitsIn(float(FLT_MAX), int64) );
+	XASSERT( !jl::fitsIn(double(DBL_MAX), int64) );
 
-	ASSERT( jl::fitsIn(double(255), uint8) );
-	ASSERT( !jl::fitsIn(double(256), uint8) );
-	ASSERT( jl::fitsIn(double(1), flt) );
+	XASSERT( jl::fitsIn(double(255), uint8) );
+	XASSERT( !jl::fitsIn(double(256), uint8) );
+	XASSERT( jl::fitsIn(double(1), flt) );
 
-	ASSERT( jl::fitsIn(double(FLT_MAX), flt) );
-	ASSERT( !jl::fitsIn(double(DBL_MAX), flt) );
+	XASSERT( jl::fitsIn(double(FLT_MAX), flt) );
+	XASSERT( !jl::fitsIn(double(DBL_MAX), flt) );
 
-	ASSERT( jl::fitsIn(int64_t(INT64_MAX), flt) );
-	ASSERT( jl::fitsIn(int64_t(INT64_MAX), flt) );
+	XASSERT( jl::fitsIn(int64_t(INT64_MAX), flt) );
+	XASSERT( jl::fitsIn(int64_t(INT64_MAX), flt) );
 
-	ASSERT( jl::fitsIn(int64_t(INT32_MAX), int32) );
-	ASSERT( jl::fitsIn(int64_t(UINT32_MAX), uint32) );
+	XASSERT( jl::fitsIn(int64_t(INT32_MAX), int32) );
+	XASSERT( jl::fitsIn(int64_t(UINT32_MAX), uint32) );
 
-	ASSERT( jl::fitsIn(double(INT32_MIN), int32) );
-	ASSERT( jl::fitsIn(float(INT32_MIN), int32) );
-	ASSERT( jl::fitsIn(int64_t(INT32_MIN), int32) );
-	ASSERT( jl::fitsIn(int8_t(INT8_MIN), dbl) );
-	ASSERT( jl::fitsIn(int32_t(INT32_MIN), int32) );
+	XASSERT( jl::fitsIn(double(INT32_MIN), int32) );
+	XASSERT( jl::fitsIn(float(INT32_MIN), int32) );
+	XASSERT( jl::fitsIn(int64_t(INT32_MIN), int32) );
+	XASSERT( jl::fitsIn(int8_t(INT8_MIN), dbl) );
+	XASSERT( jl::fitsIn(int32_t(INT32_MIN), int32) );
 
-	ASSERT( jl::fitsIn(int32, uint32) );
-	ASSERT( jl::fitsIn(int32, dbl) );
+	XASSERT( jl::fitsIn(int32, uint32) );
+	XASSERT( jl::fitsIn(int32, dbl) );
 */
 
 
-	ASSERT( jl::isTypeFloat64(dbl) );
-	ASSERT( !jl::isTypeFloat64(flt) );
-	ASSERT( jl::isTypeFloat32(flt) );
-	ASSERT( !jl::isTypeFloat32(dbl) );
+	XASSERT( jl::isTypeFloat64(dbl) );
+	XASSERT( !jl::isTypeFloat64(flt) );
+	XASSERT( jl::isTypeFloat32(flt) );
+	XASSERT( !jl::isTypeFloat32(dbl) );
 
 
-	JL_CHK( jl::call(cx, obj, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_ASSERT( jl::call(cx, obj, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_ASSERT( jl::call(cx, obj, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_ASSERT( jl::call(cx, obj, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_ASSERT( jl::call(cx, obj, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, obj, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, obj, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, obj, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, obj, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, obj, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
 	
-	JL_ASSERT( jl::call(cx, hObj, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_ASSERT( jl::call(cx, hObj, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_ASSERT( jl::call(cx, hObj, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_ASSERT( jl::call(cx, hObj, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_ASSERT( jl::call(cx, hObj, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, hObj, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, hObj, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, hObj, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, hObj, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, hObj, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
 	
-	JL_ASSERT( jl::call(cx, val, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_ASSERT( jl::call(cx, val, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_ASSERT( jl::call(cx, val, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_ASSERT( jl::call(cx, val, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_ASSERT( jl::call(cx, val, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, val, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, val, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, val, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, val, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, val, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
 	
-	JL_ASSERT( jl::call(cx, hVal, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_ASSERT( jl::call(cx, hVal, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_ASSERT( jl::call(cx, hVal, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_ASSERT( jl::call(cx, hVal, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
-	JL_ASSERT( jl::call(cx, hVal, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, hVal, val, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, hVal, id, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, hVal, fct, &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, hVal, "test", &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
+	XASSERT( jl::call(cx, hVal, L("test"), &rval, 1, obj, id, val, str, "foo", jl::strSpec( L("bar"), 3)) );
 
-	JL_ASSERT( jl::setElement(cx, hVal, 0, "test") );
+	XASSERT( jl::setElement(cx, hVal, 0, "test") );
 
-	JL_ASSERT( jl::setProperty(cx, obj, "TEST", 1) );
-	JL_ASSERT( jl::setProperty(cx, obj, L("TEST"), 1) );
-	JL_ASSERT( jl::setProperty(cx, obj, jl::strSpec("TEST", 4), 1) );
-	JL_ASSERT( jl::setProperty(cx, obj, jl::strSpec(L("TEST"), 4), 1) );
+	XASSERT( jl::setProperty(cx, obj, "TEST", 1) );
+	XASSERT( jl::setProperty(cx, obj, L("TEST"), 1) );
+	XASSERT( jl::setProperty(cx, obj, jl::strSpec("TEST", 4), 1) );
+	XASSERT( jl::setProperty(cx, obj, jl::strSpec(L("TEST"), 4), 1) );
 
-	JL_ASSERT( jl::setProperty(cx, obj, "TEST", val) );
-	JL_ASSERT( jl::setProperty(cx, obj, L("TEST"), val) );
-	JL_ASSERT( jl::setProperty(cx, obj, jl::strSpec("TEST", 4), val) );
-	JL_ASSERT( jl::setProperty(cx, obj, jl::strSpec(L("TEST"), 4), val) );
+	XASSERT( jl::setProperty(cx, obj, "TEST", val) );
+	XASSERT( jl::setProperty(cx, obj, L("TEST"), val) );
+	XASSERT( jl::setProperty(cx, obj, jl::strSpec("TEST", 4), val) );
+	XASSERT( jl::setProperty(cx, obj, jl::strSpec(L("TEST"), 4), val) );
 
-	JL_ASSERT( jl::setProperty(cx, val, "TEST", val) );
-	JL_ASSERT( jl::setProperty(cx, val, L("TEST"), val) );
-	JL_ASSERT( jl::setProperty(cx, val, jl::strSpec("TEST", 4), val) );
-	JL_ASSERT( jl::setProperty(cx, val, jl::strSpec(L("TEST"), 4), val) );
+	XASSERT( jl::setProperty(cx, val, "TEST", val) );
+	XASSERT( jl::setProperty(cx, val, L("TEST"), val) );
+	XASSERT( jl::setProperty(cx, val, jl::strSpec("TEST", 4), val) );
+	XASSERT( jl::setProperty(cx, val, jl::strSpec(L("TEST"), 4), val) );
 
-	JL_ASSERT( jl::setProperty(cx, val, "TEST", 1) );
-	JL_ASSERT( jl::setProperty(cx, val, L("TEST"), 1) );
-	JL_ASSERT( jl::setProperty(cx, val, jl::strSpec("TEST", 4), 1) );
-	JL_ASSERT( jl::setProperty(cx, val, jl::strSpec(L("TEST"), 4), 1) );
+	XASSERT( jl::setProperty(cx, val, "TEST", 1) );
+	XASSERT( jl::setProperty(cx, val, L("TEST"), 1) );
+	XASSERT( jl::setProperty(cx, val, jl::strSpec("TEST", 4), 1) );
+	XASSERT( jl::setProperty(cx, val, jl::strSpec(L("TEST"), 4), 1) );
+
+
 
 	{
 
-	JL_ASSERT( jl::getProperty(cx, obj, "TEST", mhVal) );
+	XASSERT( jl::getProperty(cx, obj, "TEST", mhVal) );
 
-	JL_ASSERT( jl::getProperty(cx, obj, "TEST", &int32) );
+	XASSERT( jl::getProperty(cx, obj, "TEST", &int32) );
 
-	JL_ASSERT( jl::getProperty(cx, obj, "TEST", &val) );
-	JL_ASSERT( jl::getProperty(cx, obj, L("TEST"), &val) );
-	JL_ASSERT( jl::getProperty(cx, obj, jl::strSpec("TEST", 4), &val) );
-	JL_ASSERT( jl::getProperty(cx, obj, jl::strSpec(L("TEST"), 4), &val) );
-	JL_ASSERT( jl::getProperty(cx, obj, id, &val) );
-	JL_ASSERT( jl::getProperty(cx, obj, hId, &val) );
+	XASSERT( jl::getProperty(cx, obj, "TEST", &val) );
+	XASSERT( jl::getProperty(cx, obj, L("TEST"), &val) );
+	XASSERT( jl::getProperty(cx, obj, jl::strSpec("TEST", 4), &val) );
+	XASSERT( jl::getProperty(cx, obj, jl::strSpec(L("TEST"), 4), &val) );
+	XASSERT( jl::getProperty(cx, obj, id, &val) );
+	XASSERT( jl::getProperty(cx, obj, hId, &val) );
 
-	JL_ASSERT( jl::getProperty(cx, obj, "TEST", mhVal) );
-	JL_ASSERT( jl::getProperty(cx, obj, L("TEST"), mhVal) );
-	JL_ASSERT( jl::getProperty(cx, obj, jl::strSpec("TEST", 4), mhVal) );
-	JL_ASSERT( jl::getProperty(cx, obj, jl::strSpec(L("TEST"), 4), mhVal) );
-	JL_ASSERT( jl::getProperty(cx, obj, id, mhVal) );
-	JL_ASSERT( jl::getProperty(cx, obj, hId, mhVal) );
-
-
-
-	JL_ASSERT( jl::setElement(cx, obj, 0, val) );
-	JL_ASSERT( jl::setElement(cx, obj, 0, hVal) );
-	JL_ASSERT( jl::setElement(cx, obj, 0, mhVal) );
+	XASSERT( jl::getProperty(cx, obj, "TEST", mhVal) );
+	XASSERT( jl::getProperty(cx, obj, L("TEST"), mhVal) );
+	XASSERT( jl::getProperty(cx, obj, jl::strSpec("TEST", 4), mhVal) );
+	XASSERT( jl::getProperty(cx, obj, jl::strSpec(L("TEST"), 4), mhVal) );
+	XASSERT( jl::getProperty(cx, obj, id, mhVal) );
+	XASSERT( jl::getProperty(cx, obj, hId, mhVal) );
 
 
-	JL_ASSERT( jl::getElement(cx, obj, 0, &val) );
-	JL_ASSERT( jl::getElement(cx, obj, 0, mhVal) );
-	JL_ASSERT( !jl::getElement(cx, obj, 0, &int32) );
+
+	XASSERT( jl::setElement(cx, obj, 0, val) );
+	XASSERT( jl::setElement(cx, obj, 0, hVal) );
+	XASSERT( jl::setElement(cx, obj, 0, mhVal) );
+
+
+	XASSERT( jl::getElement(cx, obj, 0, &val) );
+	XASSERT( jl::getElement(cx, obj, 0, mhVal) );
+	XASSERT( !jl::getElement(cx, obj, 0, &int32) );
 
 
 	}
 
-//	ASSERT( !JS_IsExceptionPending(cx) );
+//	XASSERT( !JS_IsExceptionPending(cx) );
 	
 
-	JL_ASSERT( jl::hasProperty(cx, obj, "TEST") );
-	JL_ASSERT( jl::hasProperty(cx, obj, L("TEST")) );
-	JL_ASSERT( jl::hasProperty(cx, obj, jl::strSpec("TEST", 4)) );
-	JL_ASSERT( jl::hasProperty(cx, obj, jl::strSpec(L("TEST"), 4)) );
+	XASSERT( jl::hasProperty(cx, obj, "TEST") );
+	XASSERT( jl::hasProperty(cx, obj, L("TEST")) );
+	XASSERT( jl::hasProperty(cx, obj, jl::strSpec("TEST", 4)) );
+	XASSERT( jl::hasProperty(cx, obj, jl::strSpec(L("TEST"), 4)) );
 
-	JL_ASSERT( jl::hasProperty(cx, val, "TEST") );
-	JL_ASSERT( jl::hasProperty(cx, val, L("TEST")) );
-	JL_ASSERT( jl::hasProperty(cx, val, jl::strSpec("TEST", 4)) );
-	JL_ASSERT( jl::hasProperty(cx, val, jl::strSpec(L("TEST"), 4)) );
+	XASSERT( jl::hasProperty(cx, val, "TEST") );
+	XASSERT( jl::hasProperty(cx, val, L("TEST")) );
+	XASSERT( jl::hasProperty(cx, val, jl::strSpec("TEST", 4)) );
+	XASSERT( jl::hasProperty(cx, val, jl::strSpec(L("TEST"), 4)) );
 
 
-	JL_ASSERT( jl::construct(cx, hObj) );
-	JL_ASSERT( jl::construct(cx, hObj, 1) );
+	XASSERT( jl::construct(cx, hObj) );
+	XASSERT( jl::construct(cx, hObj, 1) );
 
 
 	jl::setVector(cx, &val, &uint8, 1);
@@ -1784,40 +1799,40 @@ return true;
 	jl::getVector(cx, val, &uint8, 1, &act);
 
 
-	JL_ASSERT( jl::getValue(cx, numval, mhVal) );
+	XASSERT( jl::getValue(cx, numval, mhVal) );
 
 
 	jl::setValue(cx, &numval, "123");
-	ASSERT( numval.isString() );
-	JL_ASSERT( jl::getValue(cx, numval, &uint8) );
-	JL_ASSERT( jl::getValue(cx, numval, &int16) );
-	JL_ASSERT( jl::getValue(cx, numval, &flt) );
-	JL_ASSERT( jl::getValue(cx, numval, &dbl) );
+	XASSERT( numval.isString() );
+	XASSERT( jl::getValue(cx, numval, &uint8) );
+	XASSERT( jl::getValue(cx, numval, &int16) );
+	XASSERT( jl::getValue(cx, numval, &flt) );
+	XASSERT( jl::getValue(cx, numval, &dbl) );
 
 	jl::setValue(cx, &numval, "255.1");
-	JL_ASSERT( !jl::getValue(cx, numval, &uint8) );
+	XASSERT( !jl::getValue(cx, numval, &uint8) );
 
 	jl::setValue(cx, &numval, ::std::numeric_limits<double>::max());
-	JL_ASSERT( !jl::getValue(cx, numval, &flt) );
+	XASSERT( !jl::getValue(cx, numval, &flt) );
 
 	numval.setDouble(1.5);
-	JL_ASSERT( jl::getValue(cx, numval, &uint8) );
-	JL_ASSERT( jl::getValue(cx, numval, &int16) );
-	JL_ASSERT( jl::getValue(cx, numval, &flt) );
-	JL_ASSERT( jl::getValue(cx, numval, &dbl) );
+	XASSERT( jl::getValue(cx, numval, &uint8) );
+	XASSERT( jl::getValue(cx, numval, &int16) );
+	XASSERT( jl::getValue(cx, numval, &flt) );
+	XASSERT( jl::getValue(cx, numval, &dbl) );
 	
 	numval.setInt32(256);
-	JL_ASSERT( jl::getValue(cx, numval, &flt) );
-	JL_ASSERT( jl::getValue(cx, numval, &dbl) );
-	JL_ASSERT( jl::getValue(cx, numval, &int16) );
-	JL_ASSERT( !jl::getValue(cx, numval, &uint8) );
+	XASSERT( jl::getValue(cx, numval, &flt) );
+	XASSERT( jl::getValue(cx, numval, &dbl) );
+	XASSERT( jl::getValue(cx, numval, &int16) );
+	XASSERT( !jl::getValue(cx, numval, &uint8) );
 	JS_ClearPendingException(cx);
 
 	unsigned long num = 123;
-	JL_ASSERT( jl::setValue(cx, &val, num) );
+	XASSERT( jl::setValue(cx, &val, num) );
 
 	char txt[] = "sdfgsdfg";
-	JL_ASSERT( jl::setValue(cx, &val, txt) );
+	XASSERT( jl::setValue(cx, &val, txt) );
 
 	}
 
@@ -1826,10 +1841,25 @@ return true;
 
 	{
 
-	JL_ASSERT( test1() );
-	JL_ASSERT( test2() );
+	XASSERT( test1() );
+	XASSERT( test2() );
 
 	}
+
+
+
+/*
+	{
+		jl::Buffer ab;
+		ab.alloc(2);
+		((uint8_t*)ab.data())[0] = 100;
+		((uint8_t*)ab.data())[1] = 101;
+		ab.toExternalString(cx, JL_RVAL);
+		bool match;
+		XASSERT( JS_StringEqualsAscii(cx, JL_RVAL, "de", &match) );
+		XASSERT( match );
+	}
+*/
 
 
 /*

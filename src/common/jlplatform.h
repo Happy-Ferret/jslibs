@@ -2071,33 +2071,44 @@ tstrcmpUnsigned( const T *lhs, const U *rhs ) {
 }
 */
 
-template <typename L, typename R, bool hasLLength, bool hasRLength>
-bool
-tstreq(const L *lhs, const R *rhs, size_t lmax = 0, size_t rmax = 0 ) {
+// "abc"
+// "abcd"
 
-	const L *llimit = lhs + lmax; tbd
-	const R *rlimit = rhs + rmax;
+
+template <typename L, typename R>
+bool
+tstreq( const L *lhs, int llength, const R *rhs, int rlength ) {
+	
+	const bool hasLLength = llength >= 0;
+	const bool hasRLength = rlength >= 0;
+
+	if ( hasLLength && hasRLength && llength == rlength )
+		return true;
+
+	const L *lEnd = lhs + llength;
+	const R *rEnd = rhs + rlength;
 
 	for (;;) {
 
-		if ( hasLLength && lhs == llimit || hasRLength && rhs == rlimit )
-			return true;
-		
-		if ( *lhs != static_cast<L>(*rhs) )
-			return false;
+		bool leftAtEnd = hasLLength && lhs == lEnd || !hasLLength && *lhs == 0;
+		bool rightAtEnd = hasRLength && rhs == rEnd || !hasRLength && *rhs == 0;
 
-		if ( !hasLLength && *lhs == 0 || !hasRLength *lhs == 0 )
+		if ( leftAtEnd && rightAtEnd )
+			 return true;
+
+		if ( leftAtEnd || rightAtEnd || *lhs != static_cast<L>(*rhs) )
+			return false;
 
 		++lhs, ++rhs;
 	}
-	
 }
 
-template <typename T, typename U>
-int32_t
-tstreqUnsigned( const T *lhs, const U *rhs, size_t lmax = size_t(-1), size_t rmax = size_t(-1) ) {
 
-	return tstreq( reinterpret_cast<const MakeUnsigned( T )*>(lhs), reinterpret_cast<const MakeUnsigned( U )*>(rhs), lmax, rmax );
+template <typename L, typename R>
+bool
+tstreqUnsigned( const L *lhs, int llength, const R *rhs, int rlength ) {
+
+	return tstreq( reinterpret_cast<const MakeUnsigned(L)*>(lhs), llength, reinterpret_cast<const MakeUnsigned(R)*>(rhs), rlength );
 }
 
 

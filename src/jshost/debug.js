@@ -10,226 +10,39 @@ var loadModule = host.loadModule;
 
 //loadModule('jssound');
 
-/*
+
+//jslangTest(); throw 0;
+
+
 host.interruptInterval = 1;
 host.onInterrupt = () => { host.collectGarbage(true, 1) };
-*/
-
-	jslangTest();
-
-throw 0;
-
-
-	loadModule('jsstd');
-
-	host.stdout( isStatementValid('var i = 1') );
-
-	var iconv = {};
-	loadModule.call(iconv, 'jsiconv');
-	host.stdout( iconv.Iconv.version );
-
-
-throw 0;
-
-////
-
-loadModule('jsstd');
-loadModule('jsz');
-
-
-	var g = new ZipFile('test.zip');
-	g.open(ZipFile.READ);
-//	g.password = 'aze';
-
-	g.goFirst();
-	//g.select('xxx');
-	print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.read(), '\n' );
-	
-
-	/*
-	for ( g.goFirst(); !g.eol; g.goNext() ) {
-
-		print( '"'+g.filename+'"', '\n' );
-	}
-	*/
-
-	g.close();
-
-
-throw 0;
 
 
 
+var handler = {
 
-	var myobj = (function() {
-
-		function JsClass() {
-	
-			this._serialize = function(ser) {
-				
-				ser.write(JsClass);
-			}
-
-			this._unserialize = function(unser) {
-
-				var _JsClass = unser.read();
-
-				return new _JsClass;
-			}
-		}
-
-		return new JsClass;
-	})();
-
-	var s = new Unserializer(new Serializer().write(myobj).done());
-	s.read();
-
-throw 0;
-
-
-
-	var myobj = (function() {
-
-		function JsClass() {
-	
-			this._serialize = function(ser) {
-			}
-
-			this._unserialize = function(unser) {
-
-				return new this.constructor();
-			}
-		}
-
-		return new JsClass;
-	})();
-
-	var s = new Unserializer(new Serializer().write(myobj).done());
-	s.read();
-
-throw 0;
-
-
-
-	var obj1 = (function() {var a = 123;return function() {	return a;};})();
-	var obj2 = new Unserializer(new Serializer().write(obj1).done()).read();
-	host.stdout( obj2() );
-
-throw 0;
-
-
-
-	(function() {
-
-		function JsClass() {
-	
-			this.a = 5;
-		}
-
-		JsClass.prototype._serialize = function(ser) {
+    get: function(target, name) {
 		
-			ser.write(this.a);
-		}
+		return function(){ host.stdout('name='+name); };
+    }
+};
 
-		JsClass.prototype._unserialize = function(unser) {
-			
-			var o = new this.constructor();
-			o.a = unser.read();
-			return o;
-		}
+var p = new Proxy({}, handler);
+p.a();
+p.b();
 
 
-		var ob = new JsClass();
-		ob.a = 7;
-
-		var myobj = [ ob ];
-
-		var s = new Serializer();
-		s.write(myobj);
-		var s = new Unserializer(s.done());
-		host.stdout( uneval(myobj), '\n' );
-		host.stdout( uneval(s.read() ), '\n' );
-	})();
-
-throw 0;
-
-
-
-
-	host.interruptInterval = 1;
-	host.onInterrupt = () => { host.collectGarbage(true, 1) };
-
-	host.stdout('press ctrl-c to exit\n');
-	while ( !host.endSignal ) {
-
-		jslangTest();
-	}
 
 
 
 throw 0;
 
 
-	try {
-	} catch(ex) {
-		print(ex.valueOf());
-	}
 
-	var s = new Socket();
-	s.close();
-	s.write(1);
-
-
-throw 0;
-
-	var ev = timeoutEvents.call([], 10, function(){});
-	host.collectGarbage();
-	processEvents(ev);
-
-	
-throw 0;
-
-
-
-	loadModule('jsio');
-	var io = Descriptor.events([new Socket]);
-	processEvents(io,io, timeoutEvents(10));
-
-throw 0;
-
-
-	loadModule('jsstd');
-
-	host.interruptInterval = 100;
-
-	host.onInterrupt = () => {
-
-		var interruptInterval = host.interruptInterval;
-		var completed = host.collectGarbage(true, 50, "test");
-		if ( completed ) {
-		
-			if ( interruptInterval < 500 )
-				 host.interruptInterval = interruptInterval + 1;
-		} else {
-			
-			if ( interruptInterval > 1 )
-				 host.interruptInterval = interruptInterval - 1;
-		}
-	}
-
-
-	var mem;
-	while ( !host.endSignal ) {
-		
-		for ( var i = 0; i < 1000; ++i )
-			void new Serializer();
-		
-		var cmu = currentMemoryUsage;
-		print(host.interruptInterval, '  ', cmu/1024/1024, ' ('+Math.floor((cmu-mem)/1024/1024), ')\n');
-		mem = cmu;
-
-		processEvents(timeoutEvents(100));
-	}
+	var k = Symbol();
+	var obj = ({ [k]:123, foo:456 });
+	host.stdout( Object.keys(obj).length, '\n' );
+	host.stdout( k in obj, '\n' );
 
 throw 0;
 
@@ -292,12 +105,8 @@ throw 0;
 	];
 
 	var s = new Serializer();
-
-
 	s.write(myobj);
 	var s = new Unserializer(s.done());
-
-
 	var str = uneval(myobj);
 	var str1 = uneval(s.read());
 	
@@ -305,6 +114,218 @@ throw 0;
 
 
 throw 0;
+
+
+
+	(function() {
+
+		function JsClass() {
+	
+			this.a = 5;
+		}
+
+		JsClass.prototype._serialize = function(ser) {
+		
+			ser.write(this.a);
+		}
+
+		JsClass.prototype._unserialize = function(unser) {
+			
+			var o = new this.constructor();
+			o.a = unser.read();
+			return o;
+		}
+
+
+		var ob = new JsClass();
+		ob.a = 7;
+
+		var myobj = [ ob ];
+
+		var s = new Serializer();
+		s.write(myobj);
+		var s = new Unserializer(s.done());
+		host.stdout( uneval(myobj), '\n' );
+		host.stdout( uneval(s.read() ), '\n' );
+	})();
+
+throw 0;
+
+
+
+	var myobj = (function() {
+
+		function JsClass() {
+	
+			this._serialize = function(ser) {
+				
+				ser.write(JsClass);
+			}
+
+			this._unserialize = function(unser) {
+
+				var _JsClass = unser.read();
+
+				return new _JsClass;
+			}
+		}
+
+		return new JsClass;
+	})();
+
+	var s = new Unserializer(new Serializer().write(myobj).done());
+	s.read();
+
+throw 0;
+
+
+
+
+	loadModule('jsstd');
+	loadModule('jsz');
+
+	var g = new ZipFile('test.zip');
+	g.open(ZipFile.READ);
+	// g.password = 'aze';
+
+	g.goFirst();
+	// g.select('xxx');
+	print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.read(), '\n' );
+	
+	for ( g.goFirst(); !g.eol; g.goNext() ) {
+
+		print( g.filename.quote(), '\n' );
+	}
+
+	g.close();
+
+throw 0;
+
+
+
+	loadModule('jsstd');
+
+	host.stdout( isStatementValid('var i = 1') );
+
+	var iconv = {};
+	loadModule.call(iconv, 'jsiconv');
+	host.stdout( iconv.Iconv.version );
+
+throw 0;
+
+
+
+
+
+	var myobj = (function() {
+
+		function JsClass() {
+	
+			this._serialize = function(ser) {
+			}
+
+			this._unserialize = function(unser) {
+
+				return new this.constructor();
+			}
+		}
+
+		return new JsClass;
+	})();
+
+	var s = new Unserializer(new Serializer().write(myobj).done());
+	s.read();
+
+throw 0;
+
+
+
+	var obj1 = (function() {var a = 123;return function() {	return a;};})();
+	var obj2 = new Unserializer(new Serializer().write(obj1).done()).read();
+	host.stdout( obj2() );
+
+throw 0;
+
+
+
+
+
+	host.interruptInterval = 1;
+	host.onInterrupt = () => { host.collectGarbage(true, 1) };
+
+	host.stdout('press ctrl-c to exit\n');
+	while ( !host.endSignal ) {
+
+		jslangTest();
+	}
+
+throw 0;
+
+
+
+	try {
+	} catch(ex) {
+		print(ex.valueOf());
+	}
+
+	var s = new Socket();
+	s.close();
+	s.write(1);
+
+throw 0;
+
+
+
+	var ev = timeoutEvents.call([], 10, function(){});
+	host.collectGarbage();
+	processEvents(ev);
+	
+throw 0;
+
+
+
+	loadModule('jsio');
+	var io = Descriptor.events([new Socket]);
+	processEvents(io,io, timeoutEvents(10));
+
+throw 0;
+
+
+	loadModule('jsstd');
+
+	host.interruptInterval = 100;
+
+	host.onInterrupt = () => {
+
+		var interruptInterval = host.interruptInterval;
+		var completed = host.collectGarbage(true, 50, "test");
+		if ( completed ) {
+		
+			if ( interruptInterval < 500 )
+				 host.interruptInterval = interruptInterval + 1;
+		} else {
+			
+			if ( interruptInterval > 1 )
+				 host.interruptInterval = interruptInterval - 1;
+		}
+	}
+
+
+	var mem;
+	while ( !host.endSignal ) {
+		
+		for ( var i = 0; i < 1000; ++i )
+			void new Serializer();
+		
+		var cmu = currentMemoryUsage;
+		print(host.interruptInterval, '  ', cmu/1024/1024, ' ('+Math.floor((cmu-mem)/1024/1024), ')\n');
+		mem = cmu;
+
+		processEvents(timeoutEvents(100));
+	}
+
+throw 0;
+
 
 
 	loadModule('jsstd');

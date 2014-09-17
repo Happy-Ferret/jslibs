@@ -621,23 +621,29 @@ DEFINE_FUNCTION( query ) {
 
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &sql) );
 
-		const jschar *szTail;
 
 		// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 
-		
-		JS::AutoCheckCannotGC nogc;
-
-		const jschar *sqlStr;
-		sqlStr = sql.toWStr(nogc);
+		size_t precessedCount;
 		size_t sqlLen;
-		sqlLen = sql.length();
+		int res;
+		{
 
-		//if ( sqlite3_prepare16_v2(pv->db, sqlStr, sqlLen, &pStmt, &szTail) != SQLITE_OK )
-		if (sqlite3_prepare16_v2(pv->db, (const void*)sqlStr, sqlLen * sizeof(*sqlStr), &pStmt, (const void**)&szTail) != SQLITE_OK)
+			JS::AutoCheckCannotGC nogc;
+			const jschar *sqlStr;
+			sqlStr = sql.toWStr(nogc);
+			sqlLen = sql.length();
+			//if ( sqlite3_prepare16_v2(pv->db, sqlStr, sqlLen, &pStmt, &szTail) != SQLITE_OK )
+			const jschar *szTail;
+			res = sqlite3_prepare16_v2(pv->db, (const void*)sqlStr, sqlLen * sizeof(*sqlStr), &pStmt, (const void**)&szTail);
+			precessedCount = szTail - sqlStr;
+
+		}
+
+		if (res != SQLITE_OK)
 			JL_CHK( SqliteThrowError(cx, pv->db) );
 		ASSERT( pStmt != NULL );
-		JL_ASSERT_WARN( szTail == sqlStr + sqlLen, E_STR("too many SQL statements") ); // (TBD) for the moment, do not support multiple statements
+		JL_ASSERT_WARN( precessedCount == sqlLen, E_STR("too many SQL statements") ); // (TBD) for the moment, do not support multiple statements
 
 	//	if ( pStmt == NULL ) // if there is an error, *ppStmt may be set to NULL. If the input text contained no SQL (if the input is and empty string or a comment) then *ppStmt is set to NULL.
 	//		JL_REPORT_ERROR( "Invalid SQL string." );
@@ -707,19 +713,28 @@ DEFINE_FUNCTION( exec ) {
 		jl::StrData sql(cx);
 		JL_CHK( jl::getValue(cx, JL_ARG(1), &sql) );
 
-		const jschar *szTail;
 		// If the next argument, "nBytes", is less than zero, then zSql is read up to the first nul terminator.
 
-		JS::AutoCheckCannotGC nogc;
-		const jschar *sqlStr;
-		sqlStr = sql.toWStr(nogc);
+		size_t precessedCount;
 		size_t sqlLen;
-		sqlLen = sql.length();
+		int res;
+		{
 
-		if (sqlite3_prepare16_v2(pv->db, (const void *)sqlStr, sqlLen * sizeof(*sqlStr), &pStmt, (const void **)&szTail) != SQLITE_OK)
+			JS::AutoCheckCannotGC nogc;
+			const jschar *sqlStr;
+
+			sqlStr = sql.toWStr(nogc);
+			sqlLen = sql.length();
+			const jschar *szTail;
+			res = sqlite3_prepare16_v2(pv->db, (const void *)sqlStr, sqlLen * sizeof(*sqlStr), &pStmt, (const void **)&szTail);
+			precessedCount = szTail - sqlStr;
+
+		}
+
+		if ( res != SQLITE_OK)
 			JL_CHK( SqliteThrowError(cx, pv->db) );
 		ASSERT( pStmt != NULL );
-		JL_ASSERT_WARN(szTail == sqlStr + sqlLen, E_STR("too many SQL statements")); // for the moment, do not support multiple statements
+		JL_ASSERT_WARN(precessedCount == sqlLen, E_STR("too many SQL statements")); // for the moment, do not support multiple statements
 	
 	}
 

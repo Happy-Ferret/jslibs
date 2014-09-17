@@ -1,11 +1,11 @@
 var loadModule = host.loadModule;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('jssqlite'); throw 0;
 
+host.interruptInterval = 1;
+host.onInterrupt = () => { host.collectGarbage(true, 1) };
 
 loadModule('jsstd');
 loadModule('jssqlite');
-
-
 
 	var db = new Database();
 	db.myTest = function(val) {
@@ -23,7 +23,15 @@ loadModule('jssqlite');
 	} catch(ex) {}
 
 	print( db.exec('select myTest(1.5)'), '\n' );
-	//print( db.exec('select myTest()'), '\n' );
+	print( db.exec('select myTest("myString")'), '\n' );
+	
+	try {
+
+		db.exec('select myTest()');
+	} catch(ex) {
+		
+		print( 'EXCEPTION: ', ex, '\n' );
+	}
 
 	print( db.exec('select ?+?', [1,2]), '\n' );
 	print( db.exec('select @a+@b', {a:1, b:2}), '\n' );
@@ -127,27 +135,27 @@ throw 0;
 throw 0;
 
 
-//try {
+	//try {
 
-var db = new Database(); // in-memory database
+	var db = new Database(); // in-memory database
 
-db.exec('create table t1 (data);');
-db.exec('insert into t1 (data) values (zeroblob(1000))');
+	db.exec('create table t1 (data);');
+	db.exec('insert into t1 (data) values (zeroblob(1000))');
 
-var stream = db.openBlobStream('t1', 'data', 1);
+	var stream = db.openBlobStream('t1', 'data', 1);
 
-print( stream.available, '\n' );
+	print( stream.available, '\n' );
 
-stream.write('xxx');
-stream.position = 0;
-print( stream.read() );
+	stream.write('xxx');
+	stream.position = 0;
+	print( stream.read() );
 
 
-//var res = db.query('SELECT data from t1');
+	//var res = db.query('SELECT data from t1');
 
-//print(res.row());
+	//print(res.row());
 
-//} catch(ex) { print( ex.const, '\n' ); }
+	//} catch(ex) { print( ex.const, '\n' ); }
 
 throw 0;
 
@@ -181,10 +189,10 @@ throw 0;
 
 
 /*
-loadModule('jsstd');
-loadModule('jssqlite');
+	loadModule('jsstd');
+	loadModule('jssqlite');
 
-for ( var i = 0; i < 30; i++ ) {
+	for ( var i = 0; i < 30; i++ ) {
 
 		var db = new Database(); // in-memory database
 		db.exec('create table t1 (name,value);');
@@ -193,9 +201,9 @@ for ( var i = 0; i < 30; i++ ) {
 		db.exec('insert into t1 (name,value) values ("blue","#00F")');
 
 		var res = [ color.name+'='+color.value for each ( color in db.query('SELECT * from t1') ) ].join(',');
-}
+	}
 
-throw 0;
+	throw 0;
 */
 
 //loadModule('jsstd'); exec('../common/tools.js');

@@ -636,7 +636,6 @@ newObject(JSContext *cx) {
 ALWAYS_INLINE JSObject* FASTCALL
 newObjectWithGivenProto( JSContext *cx, const JSClass *clasp, IN JS::HandleObject proto, IN JS::HandleObject parent = JS::NullPtr() ) {
 
-	ASSERT( clasp );
 	ASSERT_IF( proto != NULL, JL_GetParent(cx, proto) != NULL );
 	// Doc. JS_NewObject, jl::newObjectWithGivenProto behaves exactly the same, except that if proto is NULL, it creates an object with no prototype.
 	JS::RootedObject obj(cx, JS_NewObjectWithGivenProto(cx, clasp, proto, parent));  // (TBD) test if parent is ok (see bug 688510)

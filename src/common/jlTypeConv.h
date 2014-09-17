@@ -1305,6 +1305,7 @@ call(JSContext *cx, JS::HandleValue thisVal, JS::HandleValue fctVal, const JS::H
 
 namespace pv {
 
+/*
 	// last resort
 	template <class FCT>
 	ALWAYS_INLINE bool FASTCALL
@@ -1316,10 +1317,44 @@ namespace pv {
 		return true;
 		JL_BAD;
 	}
+*/
+
+	ALWAYS_INLINE bool FASTCALL
+	call(JSContext *cx, JS::HandleValue thisVal, const JS::HandleValue &fct, const JS::HandleValueArray &args, JS::MutableHandleValue rval) {
+
+		JS::RootedValue fctVal(cx);
+		JL_CHK( jl::setValue(cx, &fctVal, fct) );
+		JL_CHK( JS::Call(cx, thisVal, fctVal, args, rval) );
+		return true;
+		JL_BAD;
+	}
+
+	ALWAYS_INLINE bool FASTCALL
+	call(JSContext *cx, JS::HandleValue thisVal, const JS::HandleObject &fct, const JS::HandleValueArray &args, JS::MutableHandleValue rval) {
+
+		JS::RootedValue fctVal(cx);
+		JL_CHK( jl::setValue(cx, &fctVal, fct) );
+		JL_CHK( JS::Call(cx, thisVal, fctVal, args, rval) );
+		return true;
+		JL_BAD;
+	}
+
+	ALWAYS_INLINE bool FASTCALL
+	call(JSContext *cx, JS::HandleValue thisVal, const JS::HandleFunction &fct, const JS::HandleValueArray &args, JS::MutableHandleValue rval) {
+
+		JS::RootedValue fctVal(cx);
+		JL_CHK( jl::setValue(cx, &fctVal, fct) );
+		JL_CHK( JS::Call(cx, thisVal, fctVal, args, rval) );
+		return true;
+		JL_BAD;
+	}
+
+
+
 
 	// fun is a name (obj.funId)
 	ALWAYS_INLINE bool FASTCALL
-	call(JSContext *cx, JS::HandleValue thisVal, JS::HandleId funId, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
+	call(JSContext *cx, JS::HandleValue thisVal, const JS::HandleId funId, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
 
 		JS::RootedObject thisObj(cx, &thisVal.toObject());
 		JS::RootedValue funVal(cx);

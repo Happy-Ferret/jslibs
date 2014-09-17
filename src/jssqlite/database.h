@@ -166,6 +166,8 @@ template <class T>
 ALWAYS_INLINE bool
 jsvalToSqlite( JSContext *cx, T sqliteTarget, IN JS::HandleValue val ) {
 
+	JS::AutoCheckCannotGC nogc;
+
 	int sqliteStatus;
 
 	if ( val.isNullOrUndefined() ) {
@@ -188,21 +190,30 @@ jsvalToSqlite( JSContext *cx, T sqliteTarget, IN JS::HandleValue val ) {
 
 		jl::StrData buf(cx);
 		JL_CHK( jl::getValue( cx, val, &buf ) );
-		JS::AutoCheckCannotGC nogc;
+
+
+		// SQLITE_STATIC tells SQLite that you promise that the pointer you pass to the string will be valid until after the query is executed.
+		// Use this when your buffer is, um, static, or at least has dynamic scope that exceeds that of the binding.
+
+		
+		// With SQLITE_STATIC, the string has to be valid during all subsequent calls to sqlite3_step() on the statement handle.
+		// Or until you bind a different value to the same parameter. 
+
+
 		// beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 		if ( buf.isWide() )
-			sqliteStatus = sqliteTarget.setText16( buf.toWStr(nogc), buf.length() * 2, SQLITE_STATIC );
+			sqliteStatus = sqliteTarget.setText16( buf.toWStr(nogc), buf.length() * 2, /*SQLITE_STATIC*/ SQLITE_TRANSIENT );
 		else
-			sqliteStatus = sqliteTarget.setText( buf.toStr(nogc), buf.length(), SQLITE_STATIC );
+			sqliteStatus = sqliteTarget.setText( buf.toStr(nogc), buf.length(), /*SQLITE_STATIC*/ SQLITE_TRANSIENT );
 	} else if ( jl::isData( cx, val ) ) {
 
 		jl::StrData buf(cx);
 		JL_CHK( jl::getValue( cx, val, &buf ) );
-		JS::AutoCheckCannotGC nogc;
+
 		// beware: assume that the string is not GC while SQLite is using it. else use SQLITE_TRANSIENT
 		size_t len = buf.length();
 		if ( len != 0 )
-			sqliteStatus = sqliteTarget.setBlob( buf.toBytes(nogc), len, SQLITE_STATIC );
+			sqliteStatus = sqliteTarget.setBlob( buf.toBytes(nogc), len, /*SQLITE_STATIC*/ SQLITE_TRANSIENT );
 		else
 			sqliteStatus = sqliteTarget.setZeroblob( 0 );
 	} else {
