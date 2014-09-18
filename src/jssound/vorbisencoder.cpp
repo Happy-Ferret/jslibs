@@ -55,7 +55,7 @@ DEFINE_FINALIZE() {
 		
 		ogg_stream_clear(&pv->oss);
 
-		JS_freeop(fop, pv);
+		JL_freeop(fop, pv);
 		//js_free(pv);
 	}
 }

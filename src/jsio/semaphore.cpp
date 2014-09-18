@@ -43,7 +43,7 @@ DEFINE_FINALIZE() {
 	if ( pv->owner )
 		status = PR_DeleteSemaphore(pv->name);
 
-	JS_freeop(fop, pv);
+	JL_freeop(fop, pv);
 }
 
 

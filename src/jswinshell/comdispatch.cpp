@@ -164,11 +164,9 @@ DEFINE_GET_PROPERTY() {
 	DISPID dispid;
 
 	{
+		JS::RootedString propName(cx, JL_PROP_NAME);
 		jl::StrData name(cx);
-		JS::RootedValue nameStr(cx);
-		ASSERT( JSID_TO_STRING(id) );
-		nameStr.setString(JSID_TO_STRING(id));
-		JL_CHK( jl::getValue(cx, nameStr, &name) );
+		name.set(cx, propName);
 		hr = disp->GetIDsOfNames(IID_NULL, (OLECHAR**)&name, 1, LOCALE_SYSTEM_DEFAULT, &dispid);
 		if ( FAILED(hr) ) // dispid == DISPID_UNKNOWN
 			JL_CHK( WinThrowError(cx, hr) );

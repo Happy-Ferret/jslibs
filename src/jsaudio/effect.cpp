@@ -38,7 +38,7 @@ DEFINE_FINALIZE() {
 	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 
-	JS_freeop(fop, pv);
+	JL_freeop(fop, pv);
 }
 
 

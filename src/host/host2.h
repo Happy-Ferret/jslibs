@@ -463,10 +463,7 @@ public: // static
 	static HostRuntime&
 	HostRuntime::getJLRuntime( JSContext *cx ) {
 
-		//return static_cast<Host*>(JL_GetRuntimePrivate(JL_GetRuntime(cx)))->hostRuntime();
-		void *runtimePrivate = JL_GetRuntimePrivate(JL_GetRuntime(cx));
-		ASSERT( runtimePrivate );
-		return *static_cast<HostRuntime*>(runtimePrivate);
+		return getJLRuntime(JL_GetRuntime(cx));
 	}
 
 	HostRuntime();
@@ -1298,6 +1295,12 @@ public:
 		return getHost(JL_GetRuntime(cx));
 	}
 */
+
+	static ALWAYS_INLINE bool
+	hasJLHost( JSContext *cx ) {
+	
+		return JS_GetCompartmentPrivate(js::GetContextCompartment(cx)) != nullptr;
+	}
 
 	static ALWAYS_INLINE Host&
 	getJLHost( JS::HandleObject obj ) {

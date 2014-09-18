@@ -164,7 +164,7 @@ DEFINE_FUNCTION( registerDumpHeap ) {
 $TOC_MEMBER $INAME
  $INAME $READONLY
   see: https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey/JS_Debugger_API_Reference/Debugger
-**/
+** /
 DEFINE_PROPERTY_GETTER( Debugger ) {
 
 	JL_DEFINE_PROP_ARGS;
@@ -187,7 +187,50 @@ DEFINE_PROPERTY_GETTER( Debugger ) {
 	return true;
 	JL_BAD;
 }
+*/
 
+DEFINE_FUNCTION(registerDebugger) {
+
+	JL_DEFINE_ARGS;
+
+	JS::RootedObject global(cx, JL_GetGlobal(cx));
+	JS::CompartmentOptions compartmentOptions( CompartmentOptionsRef(global) );
+	compartmentOptions.setInvisibleToDebugger(true);
+	JS::RootedObject dbgGlobal(cx, JS_NewGlobalObject(cx, JL_GetClass(global), nullptr, JS::DontFireOnNewGlobalHook, compartmentOptions));
+
+	{
+
+		JSAutoCompartment ac(cx, dbgGlobal);
+		JL_CHK( JS_DefineDebuggerObject(cx, dbgGlobal) ); // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
+		JS_FireOnNewGlobalObject(cx, dbgGlobal);
+
+		//JSCompartment *currentCompartment = js::GetContextCompartment(cx);
+		//JL_CHK( JS_SetDebugModeForCompartment(cx, currentCompartment, false) );
+		//JL_CHK( JS_WrapObject(cx, &dbgGlobal) );
+
+
+
+	
+//		JS::RootedObject dbgTr(cx, JS_TransplantObject(cx, dbgFctObj, dbgGlobal));
+
+		JS::RootedValue dbgFct(cx, JL_ARG(1));
+		JS::RootedObject dbgFctObj(cx, dbgFct.toObjectOrNull());
+
+//		JL_CHK( JS_WrapObject(cx, &dbgFctObj) );
+		JL_CHK( JS_WrapObject(cx, &dbgGlobal) );
+
+		dbgFctObj.set( JS_CloneFunctionObject(cx, dbgFctObj, JS::NullPtr()) );
+		JL_CHK( dbgFctObj );
+
+		JL_CHK( JS_WrapObject(cx, &dbgFctObj) );
+		JL_CHK( jl::callNoRval(cx, dbgGlobal, dbgFct) );
+	}
+
+	return true;
+	JL_BAD;
+
+
+}
 
 
 /**doc
@@ -495,6 +538,7 @@ CONFIGURE_STATIC
 		FUNCTION( debugBreak )
 //		FUNCTION( crashGuard )
 		FUNCTION( setPerfTestMode )
+		FUNCTION_ARGC( registerDebugger, 1 )
 
 	#ifdef VALGRIND
 		FUNCTION( createLeak )
@@ -514,7 +558,7 @@ CONFIGURE_STATIC
 
 	BEGIN_STATIC_PROPERTY_SPEC
 
-		PROPERTY_GETTER( Debugger )
+//		PROPERTY_GETTER( Debugger )
 
 		PROPERTY_SETTER( gcZeal )
 

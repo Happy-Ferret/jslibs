@@ -614,7 +614,9 @@ _tmain( int argc, TCHAR* argv[] ) {
 
 					JS::RootedValue ex(cx);
 					JS_GetPendingException(cx, &ex);
+					JS_ClearPendingException(cx);
 					JL_CHK( jl::getPrimitive(cx, ex, &ex) );
+					JS_SetPendingException(cx, ex);
 					if ( ex.isInt32() ) {
 
 						exitValue = ex.toInt32();

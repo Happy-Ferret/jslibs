@@ -330,6 +330,13 @@ JL_NewString(JSContext *cx, char *chars, size_t length) {
 }
 
 
+ALWAYS_INLINE void FASTCALL
+JL_freeop(JSFreeOp *, void *p) {
+	
+	jl_free(p);
+}
+
+
 
 /*
 JL_BEGIN_NAMESPACE

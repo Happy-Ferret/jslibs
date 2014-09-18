@@ -47,18 +47,18 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 		return;
 
 	if ( pv->vertex )
-		JS_freeop(fop, pv->vertex);
+		JL_freeop(fop, pv->vertex);
 	if ( pv->normal )
-		JS_freeop(fop, pv->normal);
+		JL_freeop(fop, pv->normal);
 	if ( pv->textureCoordinate )
-		JS_freeop(fop, pv->textureCoordinate);
+		JL_freeop(fop, pv->textureCoordinate);
 	if ( pv->color )
-		JS_freeop(fop, pv->color);
+		JL_freeop(fop, pv->color);
 
 	if ( pv->index )
-		JS_freeop(fop, pv->index);
+		JL_freeop(fop, pv->index);
 
-	JS_freeop(fop, pv);
+	JL_freeop(fop, pv);
 }
 
 DEFINE_CONSTRUCTOR() {

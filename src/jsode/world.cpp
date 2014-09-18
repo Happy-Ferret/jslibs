@@ -270,7 +270,7 @@ DEFINE_FINALIZE() {
 	ode::dSpaceDestroy(pv->spaceId);
 
 	ode::dWorldDestroy(pv->worldId);
-	JS_freeop(fop, pv);
+	JL_freeop(fop, pv);
 }
 
 

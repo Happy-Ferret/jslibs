@@ -166,7 +166,7 @@ DEFINE_FINALIZE() {
 			ASSERT( !pv->zf );
 			unzClose(pv->uf);
 		}
-		JS_freeop(fop, pv);
+		JL_freeop(fop, pv);
 	}
 }
 

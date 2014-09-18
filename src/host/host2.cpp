@@ -1445,7 +1445,15 @@ Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 	#undef fflush
 
 	jl::BufString tmpErrTxt(jl::constPtr(buffer), buf - buffer -1, true);
-	Host::getJLHost( cx ).hostStderrWrite( tmpErrTxt, tmpErrTxt.length() );
+
+	if ( Host::hasJLHost(cx) ) {
+	
+		Host::getJLHost( cx ).hostStderrWrite( tmpErrTxt, tmpErrTxt.length() );
+	} else {
+		
+		jl::fputs(tmpErrTxt.toWStrZ(JS::AutoCheckCannotGC()), stderr);
+	}
+
 }
 
 

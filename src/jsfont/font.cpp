@@ -51,7 +51,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 		return;
 	FT_Done_Face(pv->face);
 //	JL_SetPrivate( obj, NULL);
-	JS_freeop(fop, pv);
+	JL_freeop(fop, pv);
 }
 
 /**doc

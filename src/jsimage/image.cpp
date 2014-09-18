@@ -25,7 +25,7 @@ DEFINE_FINALIZE() {
 
 	void *data = JL_GetPrivate(obj);
 	if ( data != NULL )
-		JS_freeop(fop, data); // jl_free(NULL) is legal
+		JL_freeop(fop, data); // jl_free(NULL) is legal
 }
 
 DEFINE_FUNCTION( alloc ) {

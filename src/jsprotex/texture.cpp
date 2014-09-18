@@ -456,7 +456,7 @@ DEFINE_FINALIZE() {
 		return;
 
 	TextureFreeBuffers(tex);
-	JS_freeop(fop, tex);
+	JL_freeop(fop, tex);
 }
 
 

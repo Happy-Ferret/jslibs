@@ -529,7 +529,7 @@ DEFINE_FINALIZE() {
 	JL_IGNORE(hr); // (TBD) error check
 	// (TBD) send to log !
 
-	JS_freeop(fop, variant);
+	JL_freeop(fop, variant);
 }
 
 

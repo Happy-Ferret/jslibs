@@ -51,7 +51,7 @@ DEFINE_FINALIZE() {
 
 	PR_MemUnmap(pv->addr, pv->size);
 	PR_CloseFileMap(pv->fmap);
-	JS_freeop(fop, pv);
+	JL_freeop(fop, pv);
 }
 
 /**doc

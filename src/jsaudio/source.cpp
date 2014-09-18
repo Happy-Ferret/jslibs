@@ -132,7 +132,7 @@ DEFINE_FINALIZE() {
 	while ( !QueueIsEmpty(pv->queue) ) {
 
 		jsval *pItem = (jsval*)QueuePop(pv->queue);
-		JS_freeop(fop, pItem);
+		JL_freeop(fop, pItem);
 	}
 	jl::QueueDestruct(pv->queue);
 }

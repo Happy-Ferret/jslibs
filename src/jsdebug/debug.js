@@ -2,8 +2,49 @@ var loadModule = host.loadModule;
 
 loadModule('jsdebug');
 loadModule('jsstd');
-
 //registerDumpHeap();
+
+
+registerDebugger(function dbg() {
+
+	var debug = new this.Debugger();
+
+	debug.addDebuggee(global);
+
+	debug.onDebuggerStatement = (frame) => {
+	
+		host.stdout('onDebuggerStatement!\n');
+	}
+
+	debug.onEnterFrame = function(frame) {
+		
+//		stepHandler(frame);
+		host.stdout('onEnterFrame: ', frame.script.getOffsetLine(frame.offset), '\n');
+	}
+
+});
+
+
+
+
+
+/*
+	function stepHandler(frame) {
+
+		host.stdout('stepHandler: ', frame.script.getOffsetLine(frame.offset), '\n');
+
+		frame.onStep = () => {
+
+			host.stdout('onStep: ', frame.script.getOffsetLine(frame.offset), '\n');
+		}
+
+		frame.onPop = () => {
+
+			host.stdout('onPop: ', frame.script.getOffsetLine(frame.offset), '\n');
+		}
+
+	}
+
 
 	var debug = new Debugger;
 
@@ -12,21 +53,30 @@ loadModule('jsstd');
 	debug.onDebuggerStatement = function(frame) {
 	
 		host.stdout('onDebuggerStatement!\n');
-	
-		var line = frame.script.getOffsetLine(frame.offset);
 
-		host.stdout(frame.script.source.text.split('\n')[line-1], '\n');
+		stepHandler(frame);
+			
+		//var line = frame.script.getOffsetLine(frame.offset);
+		//host.stdout(frame.script.source.text.split('\n')[line-1], '\n');
+	}
+
+*/
+
+
+	function foo() {
+		
+		host.stdout('foo\n');
 	}
 
 	function test() {
 
-		debugger;	
+		debugger;
 		[];
+		foo();
 	}
 
-
-	
 	test();
+	host.stdout('end!\n');
 
 //	debug.memory.trackingAllocationSites = true;
 //	print( JSON.stringify(debug.memory.takeCensus(), undefined, 2) );

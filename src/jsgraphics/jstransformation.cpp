@@ -95,7 +95,7 @@ DEFINE_FINALIZE() {
 		Matrix44Free(pv->mat);
 	}
 
-	JS_freeop(fop, pv);
+	JL_freeop(fop, pv);
 }
 
 

@@ -46,7 +46,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 	if ( !pv )
 		return;
 	int status = iconv_close(pv->cd); // if ( status == -1 ) error is in errno.
-	JS_freeop(fop, pv);
+	JL_freeop(fop, pv);
 	
 	// JL_ASSERT_WARN( status != -1, E_LIB, E_STR("iconv"), E_FIN, E_ERRNO(errno) ); // (TBD) send to log !
 

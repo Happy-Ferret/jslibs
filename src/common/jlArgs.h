@@ -15,7 +15,6 @@
 
 #pragma once
 
-
 JL_BEGIN_NAMESPACE
 
 
@@ -227,6 +226,15 @@ public:
 	bad:
 		return false;
 	}
+
+	JSString*
+	propName() const {
+
+		JS::RootedString name(_cx, JSID_TO_STRING(_id));
+		ASSERT( name );
+		return name;
+	}
+
 };
 
 JL_END_NAMESPACE
@@ -255,6 +263,8 @@ JL_END_NAMESPACE
 
 // is the current obj (this) as a JS::Value. if this method returns null, an error has occurred and must be propagated or caught.
 #define JL_OBJVAL (args.thisObjVal())
+
+#define JL_PROP_NAME (args.propName())
 
 
 #define JL_DEFINE_ARGS \

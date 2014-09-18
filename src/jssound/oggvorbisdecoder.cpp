@@ -154,7 +154,7 @@ DEFINE_FINALIZE() {
 	if ( pv != NULL ) {
 
 		ov_clear(&pv->ofDescriptor); // beware: info must be valid
-		JS_freeop(fop, pv);
+		JL_freeop(fop, pv);
 	}
 }
 

@@ -242,7 +242,7 @@ DEFINE_FINALIZE() {
 	// see FreeOp::get(fop)->delete_()
 	delete pv->client;
 	delete pv->handlers;
-	JS_freeop(fop, pv);
+	JL_freeop(fop, pv);
 }
 
 

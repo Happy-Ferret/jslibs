@@ -160,7 +160,7 @@ DEFINE_FINALIZE() {
 	if ( *phIcon != NULL )
 		DestroyIcon(*phIcon);
 	
-	JS_freeop(fop, phIcon);
+	JL_freeop(fop, phIcon);
 }
 
 

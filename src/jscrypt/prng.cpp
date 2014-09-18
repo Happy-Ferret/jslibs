@@ -33,7 +33,7 @@ DEFINE_FINALIZE() {
 		return;
 
 	pv->prng.done(&pv->state);
-	JS_freeop(fop, pv);
+	JL_freeop(fop, pv);
 }
 
 /**doc

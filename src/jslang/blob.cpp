@@ -29,7 +29,7 @@ DEFINE_FINALIZE() { // see HandleClose()
 
 	void *pv = JL_GetPrivateFromFinalize(obj);
 	if ( pv && !jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
-		JS_freeop(fop, pv);
+		JL_freeop(fop, pv);
 }
 
 DEFINE_PROPERTY_GETTER( length ) {

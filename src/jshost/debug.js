@@ -11,7 +11,7 @@ var loadModule = host.loadModule;
 //loadModule('jssound');
 
 
-//jslangTest(); throw 0;
+jslangTest(); throw 0;
 
 
 host.interruptInterval = 1;

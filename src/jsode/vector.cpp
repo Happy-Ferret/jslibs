@@ -26,7 +26,7 @@ DEFINE_FINALIZE() {
 	VectorPrivate *pv = (VectorPrivate*)JL_GetPrivate(obj);
 	if ( !pv )
 		return;
-	JS_freeop(fop, pv);
+	JL_freeop(fop, pv);
 }
 
 DEFINE_PROPERTY( xSetter ) {

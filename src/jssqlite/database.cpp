@@ -47,7 +47,7 @@ DEFINE_FINALIZE() {
 		
 //		sqlite3_blob_close(pv->pBlob); // closed
 		//jl_free(pv);
-		JS_freeop(fop, pv);
+		JL_freeop(fop, pv);
 	}
 }
 
@@ -415,7 +415,7 @@ DEFINE_FINALIZE() {
 //	JL_SetPrivate(  obj, NULL );
 
 bad:
-	JS_freeop(fop, pv);
+	JL_freeop(fop, pv);
 	return;
 }
 

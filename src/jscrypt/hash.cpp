@@ -35,7 +35,7 @@ DEFINE_FINALIZE() {
 	if ( jl::HostRuntime::getJLRuntime( fop->runtime() ).skipCleanup() )
 		return;
 	HashPrivate *pv = (HashPrivate *)JL_GetPrivateFromFinalize(obj);
-	JS_freeop(fop, pv); // NULL is supported but is quite rare.
+	JL_freeop(fop, pv); // NULL is supported but is quite rare.
 }
 
 /**doc

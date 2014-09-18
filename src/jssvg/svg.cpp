@@ -95,7 +95,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 		return;
 
 	g_object_unref(pv->handle);
-	JS_freeop(fop, pv);
+	JL_freeop(fop, pv);
 }
 
 

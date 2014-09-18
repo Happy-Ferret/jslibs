@@ -32,7 +32,7 @@ DEFINE_FINALIZE() {
 		return;
 	if ( alcGetCurrentContext() )
 		alDeleteAuxiliaryEffectSlots(1, &pv->effectSlot);
-	JS_freeop(fop, pv);
+	JL_freeop(fop, pv);
 }
 
 

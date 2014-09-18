@@ -171,7 +171,7 @@ DEFINE_FINALIZE() {
 		return;
 
 	sf_close(pv->sfDescriptor);
-	JS_freeop(fop, pv);
+	JL_freeop(fop, pv);
 }
 
 /**doc

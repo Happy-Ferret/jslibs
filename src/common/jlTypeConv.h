@@ -1324,6 +1324,7 @@ namespace pv {
 
 		JS::RootedValue fctVal(cx);
 		JL_CHK( jl::setValue(cx, &fctVal, fct) );
+		ASSERT( !JS_IsExceptionPending(cx) );
 		JL_CHK( JS::Call(cx, thisVal, fctVal, args, rval) );
 		return true;
 		JL_BAD;
@@ -1334,6 +1335,7 @@ namespace pv {
 
 		JS::RootedValue fctVal(cx);
 		JL_CHK( jl::setValue(cx, &fctVal, fct) );
+		ASSERT( !JS_IsExceptionPending(cx) );
 		JL_CHK( JS::Call(cx, thisVal, fctVal, args, rval) );
 		return true;
 		JL_BAD;
@@ -1344,6 +1346,7 @@ namespace pv {
 
 		JS::RootedValue fctVal(cx);
 		JL_CHK( jl::setValue(cx, &fctVal, fct) );
+		ASSERT( !JS_IsExceptionPending(cx) );
 		JL_CHK( JS::Call(cx, thisVal, fctVal, args, rval) );
 		return true;
 		JL_BAD;
@@ -1360,6 +1363,7 @@ namespace pv {
 		JS::RootedValue funVal(cx);
 	
 		JL_CHK( JS_GetPropertyById(cx, thisObj, funId, &funVal) );
+		ASSERT( !JS_IsExceptionPending(cx) );
 		return JS::Call(cx, thisVal, funVal, args, rval);
 		JL_BAD;
 	}
@@ -1371,6 +1375,7 @@ namespace pv {
 		JS::RootedObject thisObj(cx, &thisVal.toObject());
 		JS::RootedValue funVal(cx);
 		JL_CHK( JS_GetUCProperty(cx, thisObj, name.str(), name.len(), &funVal) );
+		ASSERT( !JS_IsExceptionPending(cx) );
 		return JS::Call(cx, thisVal, funVal, args, rval);
 		JL_BAD;
 	}
@@ -1380,6 +1385,7 @@ namespace pv {
 	call(JSContext *cx, JS::HandleValue thisVal, const CStrSpec name, const JS::HandleValueArray& args, JS::MutableHandleValue rval) {
 
 		JS::RootedObject thisObj(cx, &thisVal.toObject());
+		ASSERT( !JS_IsExceptionPending(cx) );
 		return JS::Call(cx, thisObj, name.str(), args, rval);
 	}
 }

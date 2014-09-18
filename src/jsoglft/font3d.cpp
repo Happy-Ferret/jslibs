@@ -94,7 +94,7 @@ DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are
 			delete colorTess;
 	}
 	delete pv->face; // see FreeOp::get(fop)->delete_()
-	JS_freeop(fop, pv);
+	JL_freeop(fop, pv);
 }
 
 /**doc
