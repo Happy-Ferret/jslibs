@@ -521,6 +521,11 @@ void MemoryPoolFinalize() {
 template <class T, const size_t ITEM_COUNT>
 class StaticArray {
 	uint8_t data[ITEM_COUNT * sizeof(T)];
+
+private:
+	StaticArray( const StaticArray& );
+	const StaticArray& operator =( const StaticArray& );
+
 public:
 	enum {
 		length = ITEM_COUNT

@@ -16,6 +16,7 @@
 #include <jslibsModule.h>
 
 #include <js/OldDebugAPI.h> // JS_DefineDebuggerObject
+#include <jswrapper.h>
 
 
 /*
@@ -152,6 +153,17 @@ DEFINE_FUNCTION( registerDumpHeap ) {
 }
 
 
+DEFINE_FUNCTION( compartmentID ) {
+
+	JL_DEFINE_ARGS;
+	JL_ASSERT_ARG_IS_OBJECT(1);
+	JL_RVAL.setInt32((int32_t)js::GetObjectCompartment(js::CheckedUnwrap(JL_ARG(1).toObjectOrNull())));
+	return true;
+	JL_BAD;
+}
+
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**doc
@@ -189,6 +201,8 @@ DEFINE_PROPERTY_GETTER( Debugger ) {
 }
 */
 
+
+/*
 DEFINE_FUNCTION(registerDebugger) {
 
 	JL_DEFINE_ARGS;
@@ -208,8 +222,6 @@ DEFINE_FUNCTION(registerDebugger) {
 		//JL_CHK( JS_SetDebugModeForCompartment(cx, currentCompartment, false) );
 		//JL_CHK( JS_WrapObject(cx, &dbgGlobal) );
 
-
-
 	
 //		JS::RootedObject dbgTr(cx, JS_TransplantObject(cx, dbgFctObj, dbgGlobal));
 
@@ -223,14 +235,16 @@ DEFINE_FUNCTION(registerDebugger) {
 		JL_CHK( dbgFctObj );
 
 		JL_CHK( JS_WrapObject(cx, &dbgFctObj) );
-		JL_CHK( jl::callNoRval(cx, dbgGlobal, dbgFct) );
+		JL_CHK( JS_WrapObject(cx, &global) );
+
+		JL_CHK( jl::callNoRval(cx, dbgGlobal, dbgFctObj, global) );
 	}
 
 	return true;
 	JL_BAD;
-
-
 }
+*/
+
 
 
 /**doc
@@ -538,7 +552,9 @@ CONFIGURE_STATIC
 		FUNCTION( debugBreak )
 //		FUNCTION( crashGuard )
 		FUNCTION( setPerfTestMode )
-		FUNCTION_ARGC( registerDebugger, 1 )
+//		FUNCTION_ARGC( registerDebugger, 1 )
+
+		FUNCTION_ARGC( compartmentID, 1 )
 
 	#ifdef VALGRIND
 		FUNCTION( createLeak )

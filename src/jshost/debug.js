@@ -10,8 +10,30 @@ var loadModule = host.loadModule;
 
 //loadModule('jssound');
 
+	loadModule('jsstd');
 
-jslangTest(); throw 0;
+	var arg = [];
+
+	host.withNewHost(function(arg) {
+		
+		var loadModule = host.loadModule;
+		loadModule('jsstd');
+		print('inside withNewHost: ',arg,'\n');
+		loadModule('jsdebug');
+		var debug = new Debugger;
+		arg.push(debug);
+
+	}, arg);
+
+	print(arg[0]);
+
+throw 0;
+
+
+
+	jslangTest();
+
+throw 0;
 
 
 host.interruptInterval = 1;

@@ -1104,21 +1104,19 @@ class DLLAPI Host : public Valid, public jl::CppAllocators {
 	bool
 	hostStderrWrite( const TCHAR *message, size_t length );
 
-	static INLINE NEVER_INLINE void FASTCALL
-	getPrivateJsidSlow( JSContext *cx, JS::PersistentRootedId &id, const jschar *name ) {
+	INLINE NEVER_INLINE void FASTCALL
+	fillPrivateJsidSlow( JS::PersistentRootedId &id, const jschar *name ) {
 
-		id.set(stringToJsid(cx, name));
+		id.set(stringToJsid(_hostRuntime.context(), name));
 	}
 
 public:
 	~Host();
+
 	Host( Global &glob, StdIO &hostStdIO, bool unsafeMode = false );
 
 	// init the host for jslibs usage (modules, errors, ...)
 	
-	void
-	free(bool skipCleanup = false);
-
 	ALWAYS_INLINE bool
 	unsafeMode() const {
 
@@ -1152,15 +1150,16 @@ public:
 	bool
 	setHostName( const TCHAR *hostName );
 
-	void
-	setHostObject(JS::HandleObject hostObj);
 
 	JS::HandleObject
-	hostObject();
+	Host::hostObject() const {
+
+		return JS::HandleObject::fromMarkedLocation(_hostObject.address());
+	}
 
 
 	ALWAYS_INLINE JSObject *
-	newObject() {
+	newObject() const {
 
 		return jl::newObjectWithGivenProto(_hostRuntime.context(), _objectClasp, _objectProto); // JL_GetGlobal(cx)
 	}
@@ -1238,7 +1237,7 @@ public:
 	}
 
 	ALWAYS_INLINE bool
-	hasCachedClassProto(IN const char *className) {
+	hasCachedClassProto(IN const char *className) const {
 
 		return _classProtoCache.get(className) != NULL;
 	}
@@ -1257,7 +1256,7 @@ public:
 		ASSERT( !JSID_IS_ZERO(id) );
 		if ( JSID_IS_VOID(id) ) {
 
-			getPrivateJsidSlow(_hostRuntime.context(), id, name);
+			fillPrivateJsidSlow(id, name);
 		}
 		return JS::HandleId::fromMarkedLocation(&id.get());
 	}

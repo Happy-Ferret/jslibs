@@ -14,6 +14,7 @@
 
 #include "stdafx.h"
 #include <jslibsModule.h>
+#include <js/OldDebugAPI.h> // JS_DefineDebuggerObject
 
 
 DECLARE_STATIC()
@@ -31,6 +32,8 @@ $MODULE_FOOTER
 
 bool
 ModuleInit(JSContext *cx, JS::HandleObject obj) {
+
+	JL_CHK( JS_DefineDebuggerObject(cx, obj) ); // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
 
 	JLDisableThreadNotifications();
 

@@ -1260,13 +1260,55 @@ DEFINE_FUNCTION( collectGarbage ) {
 }
 
 
-DEFINE_INIT() {
 
-	JL_IGNORE( proto, cs );
 
-	Host::getJLHost(cx).setHostObject(obj);
+/*
+withNewHost(function(arg1) {
+
+	loadModule('jsdebug');
+	loadModule('jsstd');
+}, arg1);
+*/
+
+
+DEFINE_FUNCTION( withNewHost ) {
+
+	JL_DEFINE_ARGS;
+	JL_ASSERT_ARGC_RANGE(1, 2);
+	JL_ASSERT_ARG_IS_CALLABLE(1);
+	
+	{
+
+		jl::Global global(jl::HostRuntime::getJLRuntime(cx));
+		JL_CHK( global );
+
+		{
+
+			jl::Host host(global, jl::Host::getJLHost(cx).stdIO());
+			JL_CHK( host );
+
+			{
+				JS::RootedObject globalObject(cx, global.globalObject());
+				JSAutoCompartment ac(cx, globalObject);
+
+				JS::RootedObject hostMainFctObj(cx, JL_ARG(1).toObjectOrNull());
+				hostMainFctObj.set( JS_CloneFunctionObject(cx, hostMainFctObj, JS::NullPtr()) );
+				JL_CHK( hostMainFctObj );
+
+				JL_CHK( JS_WrapObject(cx, &hostMainFctObj) );
+
+				JS::RootedValue arg(cx, JL_SARG(2));
+				JL_CHK( JS_WrapValue(cx, &arg) );
+				JL_CHK( jl::callNoRval(cx, globalObject, hostMainFctObj, arg) );
+
+			}
+
+		}
+	
+	}
 
 	return true;
+	JL_BAD;
 }
 
 
@@ -1279,8 +1321,6 @@ CONFIGURE_CLASS
 
 	REVISION(jl::SvnRevToInt("$Revision$"))
 
-	HAS_INIT
-
 	BEGIN_STATIC_FUNCTION_SPEC
 		FUNCTION_ARGC(loadModule, 1)
 
@@ -1290,6 +1330,7 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC(stdout, 1)
 		FUNCTION_ARGC(stderr, 1)
 		FUNCTION_ARGC(collectGarbage, 3)
+		FUNCTION_ARGC(withNewHost, 1)
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
@@ -1525,6 +1566,7 @@ _interruptHandler(nullptr) {
 	JS_SetCompartmentPrivate(js::GetObjectCompartment(glob.globalObject()), this);
 
 	JSContext *cx = _hostRuntime.context();
+	ASSERT(cx);
 
 	JS::RuntimeOptionsRef(cx)
 		.setExtraWarnings(!_unsafeMode)
@@ -1538,23 +1580,22 @@ _interruptHandler(nullptr) {
 	
 	{
 
-		JS::RootedObject obj(cx, _global.globalObject());
-		JSAutoCompartment ac(cx, obj);
+		JS::RootedObject globalObj(cx, _global.globalObject());
+		JSAutoCompartment ac(cx, globalObj);
 
-		JL_ASSERT( obj != nullptr, E_GLOBAL, E_NOTFOUND ); // "Global object not found."
+		JL_ASSERT( globalObj, E_GLOBAL, E_NOTFOUND ); // "Global object not found."
 
-		_objectProto.set(JS_GetObjectPrototype(cx, obj));
+		_objectProto.set( JS_GetObjectPrototype(cx, globalObj) );
+		ASSERT( _objectProto );
+
 		_objectClasp = JL_GetClass(_objectProto);
+		ASSERT( _objectClasp );
 	
 		// global functions & properties
-		JL_CHKM( JS_DefinePropertyById(cx, obj, JLID(cx, global), obj, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
+		JL_CHKM( JS_DefinePropertyById(cx, globalObj, JLID(cx, global), globalObj, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
 
-		ASSERT(cx);
-		ASSERT(obj);
-		
-		INIT_CLASS( host );
-
-		ASSERT( _objectProto );
+		_hostObject.set( jl::InitClass(cx, globalObj, host::classSpec ) );
+		JL_CHK( _hostObject );
 
 		// init static modules (jslang)
 		ModuleManager::Module &module = moduleManager().moduleSlot(jslangModuleId);
@@ -1562,8 +1603,9 @@ _interruptHandler(nullptr) {
 		module.moduleHandle = JLDynamicLibraryNullHandler;
 		module.moduleId = jslangModuleId;
 		ASSERT( jslangModuleInit != (ModuleInitFunction)nullptr);
-		JL_CHKM( jslangModuleInit(cx, obj), E_MODULE, E_NAME("jslang"), E_INIT );
-//		ASSERT( JS::IsIncrementalGCEnabled( _hostRuntime.runtime() ) );
+		JL_CHKM( jslangModuleInit(cx, globalObj), E_MODULE, E_NAME("jslang"), E_INIT );
+	
+		ASSERT( JS::IsIncrementalGCEnabled( _hostRuntime.runtime() ) );
 		ASSERT( JS::IsGenerationalGCEnabled( _hostRuntime.runtime() ) );
 	}
 
@@ -1629,18 +1671,6 @@ Host::setHostName( const TCHAR *hostName ) {
 	JL_BAD;
 }
 
-void
-Host::setHostObject( JS::HandleObject hostObj ) {
-	
-	_hostObject.set(hostObj);
-}
-
-
-JS::HandleObject
-Host::hostObject() {
-
-	return JS::HandleObject::fromMarkedLocation(_hostObject.address());
-}
 
 JL_END_NAMESPACE
 

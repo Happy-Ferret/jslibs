@@ -5,21 +5,86 @@ loadModule('jsstd');
 //registerDumpHeap();
 
 
-registerDebugger(function dbg() {
+	loadModule('jsio');
+	loadModule('jsstd');
 
-	var debug = new this.Debugger();
+
+	host.withNewHost(function(parentGlobal) {
+		
+		var loadModule = host.loadModule;
+		loadModule('jsstd');
+
+		loadModule('jsio');
+
+		loadModule('jsdebug');
+		var debug = new Debugger;
+
+		debug.addDebuggee(parentGlobal);
+		debug.onEnterFrame = function(frame) {
+		
+			global.host.stdout('onEnterFrame: ', frame.script.getOffsetLine(frame.offset), '\n');
+		}
+
+
+	}, global);
+
+
+
+	function fooa() {
+		
+		host.stdout('foo\n');
+	}
+
+	function testa() {
+
+		debugger;
+		[];
+		fooa();
+	}
+
+	testa();
+	host.stdout('end!\n');
+
+throw 0;
+
+
+
+
+registerDebugger(function(global) {
+
+	global.host.stdout(	global.compartmentID(global), '\n' );
+	global.host.stdout(	global.compartmentID(this), '\n' );
+
+	function stepHandler(frame) {
+
+		global.host.stdout('stepHandler: ', frame.script.getOffsetLine(frame.offset), '\n');
+
+		frame.onStep = () => {
+
+			global.host.stdout('onStep: ', frame.script.getOffsetLine(frame.offset), '\n');
+		}
+
+		frame.onPop = () => {
+
+			global.host.stdout('onPop: ', frame.script.getOffsetLine(frame.offset), '\n');
+		}
+
+	}
+
+	var debug = new Debugger();
 
 	debug.addDebuggee(global);
 
 	debug.onDebuggerStatement = (frame) => {
 	
-		host.stdout('onDebuggerStatement!\n');
+		global.host.stdout('onDebuggerStatement!\n');
 	}
 
 	debug.onEnterFrame = function(frame) {
 		
-//		stepHandler(frame);
-		host.stdout('onEnterFrame: ', frame.script.getOffsetLine(frame.offset), '\n');
+		stepHandler(frame);
+		global.host.stdout('onEnterFrame: ', frame.script.getOffsetLine(frame.offset), '\n');
+		
 	}
 
 });
@@ -29,21 +94,6 @@ registerDebugger(function dbg() {
 
 
 /*
-	function stepHandler(frame) {
-
-		host.stdout('stepHandler: ', frame.script.getOffsetLine(frame.offset), '\n');
-
-		frame.onStep = () => {
-
-			host.stdout('onStep: ', frame.script.getOffsetLine(frame.offset), '\n');
-		}
-
-		frame.onPop = () => {
-
-			host.stdout('onPop: ', frame.script.getOffsetLine(frame.offset), '\n');
-		}
-
-	}
 
 
 	var debug = new Debugger;
