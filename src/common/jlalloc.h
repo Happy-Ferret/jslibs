@@ -520,8 +520,8 @@ void MemoryPoolFinalize() {
 
 template <class T, const size_t ITEM_COUNT>
 class StaticArray {
-	uint8_t data[ITEM_COUNT * sizeof(T)];
-
+	uint8_t _data[ITEM_COUNT * sizeof(T)];
+	
 private:
 	StaticArray( const StaticArray& );
 	const StaticArray& operator =( const StaticArray& );
@@ -561,14 +561,14 @@ public:
 	get(size_t slotIndex) {
 
 		ASSERT( slotIndex < length );
-		return reinterpret_cast<T*>(data)[slotIndex];
+		return reinterpret_cast<T*>(_data)[slotIndex];
 	}
 
 	const T&
 	getConst(size_t slotIndex) const {
 
 		ASSERT( slotIndex < length );
-		return reinterpret_cast<const T*>(data)[slotIndex];
+		return reinterpret_cast<const T*>(_data)[slotIndex];
 	}
 
 	T&

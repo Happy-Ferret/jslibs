@@ -488,10 +488,14 @@ bad:
 		JS_DestroyContext(cx);
 		JS_DestroyRuntime(rt);
 	}
+	
+	IFDEBUG( invalidate() );
 }
 
-HostRuntime::HostRuntime( Allocators allocators, uint32_t maxbytes, size_t nativeStackQuota )
-: _allocators(allocators), rt(nullptr), cx(nullptr), _isEnding(false), _skipCleanup(false), _watchDog(*MOZ_THIS_IN_INITIALIZER_LIST()) {
+HostRuntime::HostRuntime( Allocators allocators, bool unsafeMode, uint32_t maxbytes, size_t nativeStackQuota )
+: _allocators(allocators), rt(nullptr), cx(nullptr), _unsafeMode(unsafeMode), _isEnding(false), _skipCleanup(false), _watchDog(*MOZ_THIS_IN_INITIALIZER_LIST()) {
+
+	::_unsafeMode = unsafeMode;
 
 	rt = JS_NewRuntime(maxbytes);
 	JL_CHK( rt );
@@ -564,8 +568,11 @@ HostRuntime::HostRuntime( Allocators allocators, uint32_t maxbytes, size_t nativ
 	}
 */
 
-	ASSERT( JL_GetRuntimePrivate(rt) == nullptr );
 
+	ASSERT( JS::IsIncrementalGCEnabled( rt ) );
+	ASSERT( JS::IsGenerationalGCEnabled( rt ) );
+
+	ASSERT( JL_GetRuntimePrivate(rt) == nullptr );
 	JL_SetRuntimePrivate(rt, this);
 
 	return;
@@ -717,7 +724,7 @@ Global::_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::
 
 const JSClass Global::_globalClass_lazy = {
 	NAME_GLOBAL_CLASS,
-	JSCLASS_GLOBAL_FLAGS | JSCLASS_NEW_RESOLVE,
+	/* JSCLASS_HAS_PRIVATE | */ JSCLASS_GLOBAL_FLAGS_WITH_SLOTS(0) | JSCLASS_NEW_RESOLVE,
 	JS_PropertyStub, JS_DeletePropertyStub,
 	JS_PropertyStub, JS_StrictPropertyStub,
 	Global::_lazy_enumerate, (JSResolveOp)Global::_lazy_resolve,
@@ -728,7 +735,7 @@ const JSClass Global::_globalClass_lazy = {
 
 const JSClass Global::_globalClass = {
 	NAME_GLOBAL_CLASS,
-	JSCLASS_GLOBAL_FLAGS,
+	/* JSCLASS_HAS_PRIVATE | */ JSCLASS_GLOBAL_FLAGS_WITH_SLOTS(0),
 	JS_PropertyStub, JS_DeletePropertyStub,
 	JS_PropertyStub, JS_StrictPropertyStub,
 	JS_EnumerateStub, JS_ResolveStub,
@@ -745,10 +752,7 @@ _globalObject( hr.context() ) {
 	JSContext *cx = _hostRuntime.context();
 
 	JS::CompartmentOptions compartmentOptions;
-	compartmentOptions
-		.setVersion(JSVERSION_LATEST)
-		.setInvisibleToDebugger(false)
-	;
+	compartmentOptions.setVersion(JSVERSION_LATEST);
 
 	_globalObject.set( JS_NewGlobalObject(cx, lazyStandardClasses ? &_globalClass_lazy : &_globalClass, nullptr, JS::DontFireOnNewGlobalHook, compartmentOptions) );
 	JL_CHK( _globalObject ); // "unable to create the global object." );
@@ -768,6 +772,7 @@ _globalObject( hr.context() ) {
 	}
 
 	return;
+
 bad:
 	invalidate();
 }
@@ -991,7 +996,7 @@ DEFINE_PROPERTY_GETTER( unsafeMode ) {
 
 	JL_IGNORE( id, obj );
 
-	JL_CHK( jl::setValue(cx, vp, Host::getJLHost(cx).unsafeMode()) );
+	JL_CHK( jl::setValue(cx, vp, Host::getJLHost(cx).hostRuntime().unsafeMode()) );
 	return true;
 	JL_BAD;
 }
@@ -1277,35 +1282,33 @@ DEFINE_FUNCTION( withNewHost ) {
 	JL_ASSERT_ARGC_RANGE(1, 2);
 	JL_ASSERT_ARG_IS_CALLABLE(1);
 	
+	//jl::Global global(jl::HostRuntime::getJLRuntime(cx));
+	jl::Global &global = *new jl::Global(jl::HostRuntime::getJLRuntime(cx));
+	JL_CHK( global );
+
+	//jl::Host host(global, jl::Host::getJLHost(cx).stdIO());
+	jl::Host &host = *new jl::Host(global, jl::Host::getJLHost(cx).stdIO());
+	JL_CHK( host );
+
 	{
 
-		jl::Global global(jl::HostRuntime::getJLRuntime(cx));
-		JL_CHK( global );
+		JS::RootedObject globalObject(cx, global.globalObject());
+		JSAutoCompartment ac(cx, globalObject);
 
-		{
+		JS::RootedObject hostMainFctObj(cx, JL_ARG(1).toObjectOrNull());
+		hostMainFctObj.set( JS_CloneFunctionObject(cx, hostMainFctObj, JS::NullPtr()) );
+		JL_CHK( hostMainFctObj );
 
-			jl::Host host(global, jl::Host::getJLHost(cx).stdIO());
-			JL_CHK( host );
+		JL_CHK( JS_WrapObject(cx, &hostMainFctObj) );
 
-			{
-				JS::RootedObject globalObject(cx, global.globalObject());
-				JSAutoCompartment ac(cx, globalObject);
+		JS::RootedValue arg(cx, JL_SARG(2));
+		JL_CHK( JS_WrapValue(cx, &arg) );
+		JL_CHK( jl::callNoRval(cx, globalObject, hostMainFctObj, arg) );
 
-				JS::RootedObject hostMainFctObj(cx, JL_ARG(1).toObjectOrNull());
-				hostMainFctObj.set( JS_CloneFunctionObject(cx, hostMainFctObj, JS::NullPtr()) );
-				JL_CHK( hostMainFctObj );
-
-				JL_CHK( JS_WrapObject(cx, &hostMainFctObj) );
-
-				JS::RootedValue arg(cx, JL_SARG(2));
-				JL_CHK( JS_WrapValue(cx, &arg) );
-				JL_CHK( jl::callNoRval(cx, globalObject, hostMainFctObj, arg) );
-
-			}
-
-		}
-	
 	}
+
+	delete &host;
+	delete &global;
 
 	return true;
 	JL_BAD;
@@ -1334,7 +1337,7 @@ CONFIGURE_CLASS
 	END_STATIC_FUNCTION_SPEC
 
 	BEGIN_STATIC_PROPERTY_SPEC
-		PROPERTY_GETTER( unsafeMode )
+		PROPERTY_GETTER(unsafeMode)
 		PROPERTY_GETTER(jsVersion)
 		PROPERTY_GETTER(lang)
 		PROPERTY(errorMessages)
@@ -1534,23 +1537,22 @@ Host::~Host() {
 	if ( _interruptHandler )
 		hostRuntime().removeListener(_interruptHandler);
 	_ids.destructAll();
+	IFDEBUG( invalidate() );
 }
 
 
-Host::Host( Global &glob, StdIO &hostStdIO, bool unsafeMode ) :
+Host::Host( Global &glob, StdIO &hostStdIO ) :
 _global(glob),
 _hostRuntime(glob.hostRuntime()),
 _moduleManager(glob.hostRuntime()),
 _errorManager(glob.hostRuntime()),
 _compatId(JL_HOST_VERSIONID),
-_unsafeMode(unsafeMode),
 _hostStdIO(hostStdIO),
 _objectProto(glob.hostRuntime().runtime()),
 _hostObject(glob.hostRuntime().runtime()),
 _ids(),
 _interruptHandler(nullptr) {
 
-	::_unsafeMode = unsafeMode;
 	Host::setHostAllocators(_hostRuntime.allocators()); 
 
 //	JL_CHKM(_global, E_GLOBAL, E_INVALID);
@@ -1563,19 +1565,16 @@ _interruptHandler(nullptr) {
 	ASSERT( !JSID_IS_ZERO(_ids.get(0)) );
 	ASSERT( !JSID_IS_ZERO(_ids.get(LAST_JSID-1)) );
 
-	JS_SetCompartmentPrivate(js::GetObjectCompartment(glob.globalObject()), this);
+	ASSERT( JS_GetCompartmentPrivate( js::GetObjectCompartment(glob.globalObject())) == nullptr );
+	JS_SetCompartmentPrivate( js::GetObjectCompartment(glob.globalObject()), this );
 
 	JSContext *cx = _hostRuntime.context();
 	ASSERT(cx);
 
 	JS::RuntimeOptionsRef(cx)
-		.setExtraWarnings(!_unsafeMode)
+		.setExtraWarnings(!_hostRuntime.unsafeMode())
 	;
 
-	JS::ContextOptionsRef(cx)
-	;
-	
-	
 	JS_SetErrorReporter(cx, errorReporter);
 	
 	{
@@ -1591,6 +1590,8 @@ _interruptHandler(nullptr) {
 		_objectClasp = JL_GetClass(_objectProto);
 		ASSERT( _objectClasp );
 	
+		IFDEBUG( bool found; ASSERT( JS_HasPropertyById(cx, globalObj, JLID(cx, global), &found) && !found ) );
+
 		// global functions & properties
 		JL_CHKM( JS_DefinePropertyById(cx, globalObj, JLID(cx, global), globalObj, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
 
@@ -1604,9 +1605,6 @@ _interruptHandler(nullptr) {
 		module.moduleId = jslangModuleId;
 		ASSERT( jslangModuleInit != (ModuleInitFunction)nullptr);
 		JL_CHKM( jslangModuleInit(cx, globalObj), E_MODULE, E_NAME("jslang"), E_INIT );
-	
-		ASSERT( JS::IsIncrementalGCEnabled( _hostRuntime.runtime() ) );
-		ASSERT( JS::IsGenerationalGCEnabled( _hostRuntime.runtime() ) );
 	}
 
 
@@ -1673,10 +1671,3 @@ Host::setHostName( const TCHAR *hostName ) {
 
 
 JL_END_NAMESPACE
-
-
-/*
-runtime/context -> runtimePrivate
- > global/compartment
-    > host -> compartmentPrivate
-*/

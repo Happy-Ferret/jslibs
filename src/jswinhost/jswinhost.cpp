@@ -128,7 +128,7 @@ int CALLBACK WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
 	{
 
-		HostRuntime hostRuntime(allocators); // HOST_STACK_SIZE / 2
+		HostRuntime hostRuntime(allocators, true); // HOST_STACK_SIZE / 2
 		JSContext *cx = hostRuntime.context();
 
 		jl::Global global(hostRuntime);

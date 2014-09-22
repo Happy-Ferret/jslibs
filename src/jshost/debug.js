@@ -7,8 +7,61 @@ var loadModule = host.loadModule;
  //loadModule('jsstd'); exec('../common/tools.js'); global.QA = fakeQAApi;
 //loadModule('jsstd'); exec('../common/tools.js'); runQATests('serial'); throw 0; // -inlineOnly
 //jslangTest();
-
 //loadModule('jssound');
+
+
+var loadModule = host.loadModule;
+
+loadModule('jsdebug');
+loadModule('jsstd');
+//registerDumpHeap();
+
+
+	var dbgHost = new Host(function(parentGlobal) {
+
+	});
+
+throw 0;
+
+	
+/*
+host.interruptInterval = 1;
+host.onInterrupt = () => { host.collectGarbage(true, 1) };
+*/
+
+	loadModule('jsio');
+	loadModule('jsstd');
+
+
+	host.withNewHost(function(parentGlobal) {
+		
+		global.host.stdout('withNewHost\n'); 
+
+		var loadModule = host.loadModule;
+		loadModule('jsstd');
+
+		loadModule('jsio');
+
+		loadModule('jsdebug');
+		var debug = new Debugger;
+
+		debug.addDebuggee(parentGlobal);
+		debug.onEnterFrame = function(frame) {
+		
+			global.host.stdout('onEnterFrame: ', frame.script.getOffsetLine(frame.offset), '\n');
+		}
+	}, global);
+
+	function testa() {}
+	testa();
+	host.stdout('end!\n');
+
+
+throw 0;
+
+host.interruptInterval = 1;
+host.onInterrupt = () => { host.collectGarbage(true, 1) };
+
 
 	loadModule('jsstd');
 
@@ -36,8 +89,6 @@ throw 0;
 throw 0;
 
 
-host.interruptInterval = 1;
-host.onInterrupt = () => { host.collectGarbage(true, 1) };
 
 
 

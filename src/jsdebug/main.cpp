@@ -35,6 +35,8 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	JL_CHK( JS_DefineDebuggerObject(cx, obj) ); // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
 
+	//	JS::CompartmentOptionsRef(cx).setInvisibleToDebugger(true);
+
 	JLDisableThreadNotifications();
 
 	JL_ASSERT(jl::Host::getJLHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );

@@ -14,6 +14,26 @@
 
 #pragma once
 
+/*
+      runtime/context -- runtimePrivate <- HostRuntime
+             |                               ^    ^
+             |                               |    |
+             |                             Global |
+             |                                 ^  |
+             |                                 |  |
+  compartment/global -- compartmentPrivate <- JLHost
+
+
+
+
+  JS_SetRuntimePrivate
+  JS_SetContextPrivate
+  JS_GetSecondContextPrivate
+  JS_SetCompartmentPrivate
+  JS_SetPrivate
+ */
+
+
 typedef ptrdiff_t moduleId_t;
 
 static const moduleId_t FREE_MODULE_SLOT = 0;
@@ -442,6 +462,7 @@ class DLLAPI HostRuntime : public Valid, public Events, public jl::CppAllocators
 
 	bool _isEnding;
 	bool _skipCleanup;
+	bool _unsafeMode;
 
 public: // static
 
@@ -455,9 +476,10 @@ public: // static
 	HostRuntime::getJLRuntime( JSRuntime *rt ) {
 
 		//return static_cast<Host*>(JL_GetRuntimePrivate(rt))->hostRuntime();
-		void *runtimePrivate = JL_GetRuntimePrivate(rt);
-		ASSERT( runtimePrivate );
-		return *static_cast<HostRuntime*>(runtimePrivate);
+		HostRuntime* hostRuntime = static_cast<HostRuntime*>(JL_GetRuntimePrivate(rt));
+		ASSERT( hostRuntime );
+		ASSERT( *hostRuntime );
+		return *hostRuntime;
 	}
 
 	static HostRuntime&
@@ -471,17 +493,19 @@ public:
 
 	~HostRuntime();
 
-	HostRuntime(Allocators allocators/* = StdAllocators()*/, uint32_t maxbytes = JS::DefaultHeapMaxBytes, size_t nativeStackQuota = defaultNativeStackQuota);
+	HostRuntime(Allocators allocators/* = StdAllocators()*/, bool unsafeMode = false, uint32_t maxbytes = JS::DefaultHeapMaxBytes, size_t nativeStackQuota = defaultNativeStackQuota);
 
 	JSRuntime *&
 	runtime() {
-
+		
+		ASSERT( *this );
 		return rt;
 	}
 	
 	JSContext *&
 	context() {
 
+		ASSERT( *this );
 		return cx;
 	}
 
@@ -507,6 +531,12 @@ public:
 	isEnding() const {
 
 		return _isEnding;
+	}
+
+	ALWAYS_INLINE bool
+	unsafeMode() const {
+
+		return _unsafeMode;
 	}
 
 	uint32_t
@@ -606,6 +636,13 @@ public:
 				hashIndex = 0;
 		}
 		return _moduleList[hashIndex];
+	}
+
+	ALWAYS_INLINE bool FASTCALL
+	hasModulePrivate( const moduleId_t moduleId ) {
+
+		ASSERT( moduleId != FREE_MODULE_SLOT );
+		return moduleSlot(moduleId).privateData != nullptr;
 	}
 
 	ALWAYS_INLINE void* & FASTCALL
@@ -1058,19 +1095,28 @@ class DLLAPI Global : public Valid, public jl::CppAllocators {
 
 	JS::PersistentRootedObject _globalObject;
 
+private:
+	Global( const Global & );
+	Global & operator ==( const Global & );
 public:
 
 	Global( HostRuntime &hr, bool lazyStandardClasses = true );
+	~ Global() {
+		
+		IFDEBUG( invalidate() );
+	}
 
 	HostRuntime &
 	hostRuntime() {
-
+		
+		ASSERT( *this );
 		return _hostRuntime;
 	}
 
 	JSObject *
 	globalObject() {
 
+		ASSERT( *this );
 		return _globalObject;		
 	}
 
@@ -1087,7 +1133,6 @@ class DLLAPI Host : public Valid, public jl::CppAllocators {
 	JS::PersistentRootedObject _hostObject;
 	StdIO &_hostStdIO;
 	const uint32_t _compatId; // used to ensure compatibility between host and modules. see JL_HOST_VERSIONID macro.
-	bool _unsafeMode;
 	JS::PersistentRootedObject _objectProto;
 	const JSClass *_objectClasp;
 	ProtoCache _classProtoCache;
@@ -1110,19 +1155,16 @@ class DLLAPI Host : public Valid, public jl::CppAllocators {
 		id.set(stringToJsid(_hostRuntime.context(), name));
 	}
 
+private:
+	Host( const Host & );
+	Host & operator ==( const Host & );
 public:
 	~Host();
 
-	Host( Global &glob, StdIO &hostStdIO, bool unsafeMode = false );
+	Host( Global &glob, StdIO &hostStdIO );
 
 	// init the host for jslibs usage (modules, errors, ...)
 	
-	ALWAYS_INLINE bool
-	unsafeMode() const {
-
-		return _unsafeMode;
-	}
-
 	ALWAYS_INLINE bool
 	checkCompatId(uint32_t compatId) const {
 
@@ -1133,6 +1175,12 @@ public:
 	hostRuntime() const {
 			
 		return _hostRuntime;
+	}
+
+	ALWAYS_INLINE Global &
+	global() const {
+			
+		return _global;
 	}
 
 	ALWAYS_INLINE StdIO &
@@ -1308,6 +1356,7 @@ public:
 		ASSERT( objectCompartment );
 		Host* pHost = static_cast<Host*>(JS_GetCompartmentPrivate(objectCompartment));
 		ASSERT( pHost );
+		ASSERT( *pHost );
 		return *pHost;
 	}
 
@@ -1318,6 +1367,7 @@ public:
 		ASSERT( currentCompartment );
 		Host* pHost = static_cast<Host*>(JS_GetCompartmentPrivate(currentCompartment));
 		ASSERT( pHost );
+		ASSERT( *pHost );
 		return *pHost;
 	}
 };

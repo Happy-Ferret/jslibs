@@ -4,6 +4,10 @@ loadModule('jsdebug');
 loadModule('jsstd');
 //registerDumpHeap();
 
+/*
+host.interruptInterval = 1;
+host.onInterrupt = () => { host.collectGarbage(true, 1) };
+*/
 
 	loadModule('jsio');
 	loadModule('jsstd');

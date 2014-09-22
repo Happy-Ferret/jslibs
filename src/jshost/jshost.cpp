@@ -220,7 +220,7 @@ public:
 };
 
 
-
+// Interrupt
 
 static volatile int32_t gEndSignalState = 0;
 static JLCondHandler gEndSignalCond;
@@ -424,8 +424,8 @@ freeInterrupt() {
 	JL_BAD;
 }
 
-//////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef USE_NEDMALLOC
@@ -511,7 +511,7 @@ _tmain( int argc, TCHAR* argv[] ) {
 		//alloc.setSkipCleanup(true);
 		//nedAlloc.setSkipCleanup(true);
 		
-		HostRuntime hostRuntime(allocators, args.maxBytes);
+		HostRuntime hostRuntime(allocators, args.unsafeMode ,args.maxBytes);
 
 		JL_CHK( hostRuntime );
 		JSContext *cx = hostRuntime.context();
@@ -520,6 +520,7 @@ _tmain( int argc, TCHAR* argv[] ) {
 		JS::RuntimeOptionsRef(cx)
 			.setWerror(args.warningsToErrors)
 		;
+
 
 		jl::Global global(hostRuntime);
 		JL_CHK( global );
@@ -532,7 +533,7 @@ _tmain( int argc, TCHAR* argv[] ) {
 
 		{
 			JS::RootedObject globalObject(cx, global.globalObject());
-			JSAutoCompartment ac(global.hostRuntime().context(), globalObject);
+			JSAutoCompartment ac(cx, globalObject);
 			JS::RootedValue rval(cx);
 
 			// https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
