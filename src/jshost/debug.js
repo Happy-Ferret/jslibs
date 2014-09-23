@@ -10,32 +10,18 @@ var loadModule = host.loadModule;
 //loadModule('jssound');
 
 
-var loadModule = host.loadModule;
-
-loadModule('jsdebug');
+//loadModule('jsdebug');
 loadModule('jsstd');
-//registerDumpHeap();
 
 
-	var dbgHost = new Host(function(parentGlobal) {
-
-	});
-
-throw 0;
-
-	
-/*
-host.interruptInterval = 1;
+host.interruptInterval = 2;
 host.onInterrupt = () => { host.collectGarbage(true, 1) };
-*/
 
-	loadModule('jsio');
-	loadModule('jsstd');
+{
 
+	let h = new Host(function(parentGlobal) {
 
-	host.withNewHost(function(parentGlobal) {
-		
-		global.host.stdout('withNewHost\n'); 
+		global.host.stdout('withNewHost\n');
 
 		var loadModule = host.loadModule;
 		loadModule('jsstd');
@@ -47,17 +33,43 @@ host.onInterrupt = () => { host.collectGarbage(true, 1) };
 
 		debug.addDebuggee(parentGlobal);
 		debug.onEnterFrame = function(frame) {
-		
+
 			global.host.stdout('onEnterFrame: ', frame.script.getOffsetLine(frame.offset), '\n');
 		}
 	}, global);
 
-	function testa() {}
+}
+
+	function testb() {}
+	function testa() {
+
+		testb()
+	}
 	testa();
 	host.stdout('end!\n');
 
 
 throw 0;
+
+
+//registerDumpHeap();
+
+/*
+	var dbgHost = new Host(function(parentGlobal) {
+
+	});
+*/
+
+throw 0;
+
+
+/*
+*/
+
+	loadModule('jsio');
+	loadModule('jsstd');
+
+
 
 host.interruptInterval = 1;
 host.onInterrupt = () => { host.collectGarbage(true, 1) };
@@ -68,7 +80,7 @@ host.onInterrupt = () => { host.collectGarbage(true, 1) };
 	var arg = [];
 
 	host.withNewHost(function(arg) {
-		
+
 		var loadModule = host.loadModule;
 		loadModule('jsstd');
 		print('inside withNewHost: ',arg,'\n');
@@ -95,7 +107,7 @@ throw 0;
 var handler = {
 
     get: function(target, name) {
-		
+
 		return function(){ host.stdout('name='+name); };
     }
 };
@@ -122,7 +134,7 @@ throw 0;
 
 
 	function genReferenceError() {
-		
+
 		try {
 			dgsdfgfvf6z5ef4sdfg();
 		} catch(ex) {
@@ -130,7 +142,7 @@ throw 0;
 		}
 		return undefined;
 	}
-	
+
 	var typedArray = new Uint32Array(10);
 	for ( var i = 0; i < 10 + 5; ++i )
 		typedArray[i] = i*100;
@@ -141,27 +153,27 @@ throw 0;
 		emptyTypedArray,
 		typedArray,
 		genReferenceError(),
-		new Error('error test'), 
+		new Error('error test'),
 		function() [,1,{__proto__:null}],
 		'',
-		'string', 
-		{__proto__:null, a:2}, 
-		[], 
+		'string',
+		{__proto__:null, a:2},
+		[],
 		[,,,,,],
 		,
-		[,undefined,'arrayelt'], 
-		true, 
+		[,undefined,'arrayelt'],
+		true,
 		false,
-		(void 0), 
-		null, 
-		0, 
-		0.0, 
-		-0.0, 
-		1,234, 
-		NaN, 
-		-Infinity, 
-		+Infinity, 
-		{a:1, b:2, c:{d:3}}, 
+		(void 0),
+		null,
+		0,
+		0.0,
+		-0.0,
+		1,234,
+		NaN,
+		-Infinity,
+		+Infinity,
+		{a:1, b:2, c:{d:3}},
 		{},
 		,
 		new Date(),
@@ -169,7 +181,7 @@ throw 0;
 		new String(123),
 		-2147483647-1,
 		0xffffffff,
-		'a', 
+		'a',
 		String(),
 		new Error(),
 		new SyntaxError(),
@@ -182,7 +194,7 @@ throw 0;
 	var s = new Unserializer(s.done());
 	var str = uneval(myobj);
 	var str1 = uneval(s.read());
-	
+
 	host.stdout( str == str1 );
 
 
@@ -193,17 +205,17 @@ throw 0;
 	(function() {
 
 		function JsClass() {
-	
+
 			this.a = 5;
 		}
 
 		JsClass.prototype._serialize = function(ser) {
-		
+
 			ser.write(this.a);
 		}
 
 		JsClass.prototype._unserialize = function(unser) {
-			
+
 			var o = new this.constructor();
 			o.a = unser.read();
 			return o;
@@ -229,9 +241,9 @@ throw 0;
 	var myobj = (function() {
 
 		function JsClass() {
-	
+
 			this._serialize = function(ser) {
-				
+
 				ser.write(JsClass);
 			}
 
@@ -264,7 +276,7 @@ throw 0;
 	g.goFirst();
 	// g.select('xxx');
 	print( g.filename, ' / ', g.date, ' / ', g.comment, ' / ', g.read(), '\n' );
-	
+
 	for ( g.goFirst(); !g.eol; g.goNext() ) {
 
 		print( g.filename.quote(), '\n' );
@@ -293,7 +305,7 @@ throw 0;
 	var myobj = (function() {
 
 		function JsClass() {
-	
+
 			this._serialize = function(ser) {
 			}
 
@@ -352,7 +364,7 @@ throw 0;
 	var ev = timeoutEvents.call([], 10, function(){});
 	host.collectGarbage();
 	processEvents(ev);
-	
+
 throw 0;
 
 
@@ -373,11 +385,11 @@ throw 0;
 		var interruptInterval = host.interruptInterval;
 		var completed = host.collectGarbage(true, 50, "test");
 		if ( completed ) {
-		
+
 			if ( interruptInterval < 500 )
 				 host.interruptInterval = interruptInterval + 1;
 		} else {
-			
+
 			if ( interruptInterval > 1 )
 				 host.interruptInterval = interruptInterval - 1;
 		}
@@ -386,10 +398,10 @@ throw 0;
 
 	var mem;
 	while ( !host.endSignal ) {
-		
+
 		for ( var i = 0; i < 1000; ++i )
 			void new Serializer();
-		
+
 		var cmu = currentMemoryUsage;
 		print(host.interruptInterval, '  ', cmu/1024/1024, ' ('+Math.floor((cmu-mem)/1024/1024), ')\n');
 		mem = cmu;
@@ -492,7 +504,7 @@ throw 0;
 	var u = new Unserializer(s.done());
 	host.stdout(uneval(u.read()));
 	host.stdout('\n');
-	
+
 throw 0;
 
 
@@ -584,18 +596,18 @@ try {
 	var rsa = new AsymmetricCipher('rsa', 'md5', rnd );
 	rsa.createKeys( 1024 );
 	var rsaPubKey = rsa.publicKey;
-	var rsa1 = new AsymmetricCipher('rsa', 'md5', rnd); 
+	var rsa1 = new AsymmetricCipher('rsa', 'md5', rnd);
 	rsa1.publicKey = rsaPubKey;
 	var rsaEncryptedData = rsa1.encrypt( plainText ).string;
 
-	
+
 	print(rsaEncryptedData.length+' '+rsaEncryptedData.substr(0,5).quote(), '\n');
 
 	var res = rsa.decrypt( rsaEncryptedData ).string;
 	print ( res == plainText )
 
 } catch(ex) {
-	
+
 	print( ex.const, '\n' );
 	print( ex.lineNumber, '\n' );
 }
@@ -652,7 +664,7 @@ audio.start();
 for (;;) {
 
 	processEvents(host.endSignalEvents(function() { throw 0 }), audio.events(function() {
-	
+
 		var s;
 		while ( (s = this.read()) ) {
 
@@ -660,7 +672,7 @@ for (;;) {
 			var sum = 0;
 			for ( var len = arr.length, i = 0; i < len; ++i )
 				sum += arr[i];
-			
+
 			stringRepeat('-', -1 )
 
 			//print(stringRepeat('-', Math.floor(sum/len)), stringRepeat(' ', 50), '\r');
@@ -719,9 +731,9 @@ loadModule('jssqlite');
 
 	var e;
 	try {
-		
+
 		new Database().exec('123');
-		
+
 	} catch(e) {
 
 		ex = e;
@@ -850,7 +862,7 @@ while ( !host.endSignal ) {
 
 	processEvents( host.endSignalEvents(), h );
 	!function() {
-		
+
 		new ArrayBuffer(1000000);
 		collectGarbage();
 	}();
@@ -928,14 +940,14 @@ throw 0;
 
 try {
 
-	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', 'host.stdin', 'setPerfTestMode' , 'jslangTest' ]; // 
+	var excludeList = ['done', 'Object.__proto__.__proto__', 'Iterator', 'host.stdin', 'setPerfTestMode' , 'jslangTest' ]; //
 
 //	loadModule('jswinshell'); excludeList.push('fileOpenDialog', 'Console.close');
 	loadModule('jssdl'); excludeList.push('setVideoMode', 'iconify');
 //	loadModule('jsstd'); excludeList.push('halt');
 	loadModule('jsdebug'); excludeList.push('debugBreak');
 
-	
+
 	var count = 0;
 	var done = {__proto__:null};
 	for ( var item of excludeList ) {
@@ -944,12 +956,12 @@ try {
 			done[objectGCId(ob)] = ob;
 		} catch(ex){}
 	}
-	
+
 	var fct = function(obj, left) {
 
 		if ( host.endSignal )
 			halt();
-			
+
 		if ( isPrimitive(obj) )
 			return;
 
@@ -968,7 +980,7 @@ host.stdout( left+'.'+name+'\n' );
 			} catch(ex) {
 				continue;
 			}
-			
+
 			if ( done[objectGCId(nextObj)] )
 				continue;
 
@@ -1026,9 +1038,9 @@ throw 0;
 	var s = new Serializer();
 	s.write(data);
 	var s = new Unserializer(s.done());
-	
+
 	var unser = s.read();
-	
+
 	print( uneval(unser), '\n' );
 
 
@@ -1128,12 +1140,12 @@ halt();
 
 /*
 function camelify(str) {
-	
+
 	return str[0].toLowerCase() + str.substr(1);
 }
 
 function recursiveDir(path, callback) {
-	
+
 	(function(path) {
 
 		var dir = new Directory(path);
@@ -1273,7 +1285,7 @@ recursiveDir(jslibsRoot, function(f) {
 
 		var content = f.content.toString();
 		( content.match(/BEGIN_CLASS\( ?\w+ ?\)/g) || [] ).forEach(function(item) {
-			
+
 			classList[ /BEGIN_CLASS\( ?(\w+) ?\)/.exec(item)[1] ] = true;
 		});
 	}
@@ -1287,7 +1299,7 @@ recursiveDir(jslibsRoot, function(f) {
 
 		var content = f.content.toString();
 		( content.match(/\Wnew \w+/g) || [] ).forEach(function(item) {
-			
+
 			classList[/\Wnew (\w+)/.exec(item)[1] ] = true;
 		});
 
@@ -1296,28 +1308,28 @@ recursiveDir(jslibsRoot, function(f) {
 
 
 var changes = '';
- 
+
 var i = 0;
 recursiveDir(jslibsRoot, function(f) {
-	
+
 	if ( /\.js$/.test(f.name) ) {
-		
+
 		print( f.name, '...\n' );
 
 		var content = f.content.toString();
-		
+
 		var newContent = content.replace(/([^\w'"])([A-Z][a-z0-9]\w*)/g, function(all, p1, token, offset, str) {
-			
+
 			if ( !classList[token] && !global[token] ) {
-		
-				var before = str.substring( str.lastIndexOf('\n', offset)+1, offset );				
+
+				var before = str.substring( str.lastIndexOf('\n', offset)+1, offset );
 				if ( before.indexOf('//') == -1 )
 					token = camelify(token);
 			}
-			
+
 			return p1 + token;
 		});
-		
+
 		f.content = newContent;
 	}
 });

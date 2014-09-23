@@ -104,7 +104,7 @@ ThreadedAllocator::memoryFreeThreadProc( void* ) {
 			for ( _load = 1; _headLength; ++_load )
 				freeHead();
 	}
-	
+
 end:
 	_canTriggerFreeThread = false;
 	JLThreadExit(0);
@@ -121,7 +121,7 @@ ThreadedAllocator::_malloc( size_t size ) {
 	return _base.malloc(sizeof(void*));
 }
 
-RESTRICT_DECL void* 
+RESTRICT_DECL void*
 ThreadedAllocator::_calloc( size_t num, size_t size ) {
 
 	size *= num;
@@ -130,7 +130,7 @@ ThreadedAllocator::_calloc( size_t num, size_t size ) {
 	return _base.calloc(sizeof(void*), 1);
 }
 
-RESTRICT_DECL void* 
+RESTRICT_DECL void*
 ThreadedAllocator::_memalign( size_t alignment, size_t size ) {
 
 	if (likely( size >= sizeof(void*) ))
@@ -146,7 +146,7 @@ ThreadedAllocator::_realloc( void *ptr, size_t size ) {
 	return _base.realloc(ptr, sizeof(void*));
 }
 
-size_t 
+size_t
 ThreadedAllocator::_msize( void *ptr ) {
 
 	return _base.msize(ptr);
@@ -154,7 +154,7 @@ ThreadedAllocator::_msize( void *ptr ) {
 
 void
 ThreadedAllocator::_free( void *ptr ) {
-	
+
 	if (unlikely( ptr == nullptr ))
 		return;
 
@@ -171,7 +171,7 @@ ThreadedAllocator::_free( void *ptr ) {
 	JLAtomicIncrement(&_headLength);
 
 	if ( _canTriggerFreeThread ) {
-		
+
 		_canTriggerFreeThread = false;
 		_threadAction = memThreadProcess;
 		ASSERT( JLSemaphoreOk(_memoryFreeThreadSem) );
@@ -181,7 +181,7 @@ ThreadedAllocator::_free( void *ptr ) {
 
 
 ThreadedAllocator::~ThreadedAllocator() {
-		
+
 	_threadAction = memThreadExit;
 	JLSemaphoreRelease(_memoryFreeThreadSem);
 	// beware: Never use JLThreadCancel on a thread that call free().
@@ -201,13 +201,13 @@ ThreadedAllocator::~ThreadedAllocator() {
 
 ThreadedAllocator::ThreadedAllocator(Allocators &allocators)
 : _current(allocators) {
-		
+
 	ASSERT( _owner == nullptr );
 	_owner = this;
 
 	_base = allocators;
 	allocators = Allocators(_malloc, _calloc, _memalign, _realloc, _msize, _free);
-		
+
 	_skipCleanup = false;
 	_load = 0;
 	_headLength = 0;
@@ -234,7 +234,7 @@ Allocators CountedAlloc::_base;
 
 RESTRICT_DECL void*
 CountedAlloc::_malloc( size_t size ) {
-	
+
 	JLAtomicIncrement(&CountedAlloc::_allocCount);
 	void *mem = _base.malloc(size);
 	ASSERT( mem );
@@ -244,7 +244,7 @@ CountedAlloc::_malloc( size_t size ) {
 
 RESTRICT_DECL void*
 CountedAlloc::_calloc( size_t num, size_t size ) {
-	
+
 	JLAtomicIncrement(&CountedAlloc::_allocCount);
 	void *mem = _base.calloc(num, size);
 	ASSERT( mem );
@@ -254,7 +254,7 @@ CountedAlloc::_calloc( size_t num, size_t size ) {
 
 RESTRICT_DECL void*
 CountedAlloc::_memalign( size_t alignment, size_t size ) {
-	
+
 	JLAtomicIncrement(&CountedAlloc::_allocCount);
 	void *mem = _base.memalign(alignment, size);
 	ASSERT( mem );
@@ -308,7 +308,7 @@ CountedAlloc::_free( void *ptr ) {
 
 CountedAlloc::CountedAlloc(Allocators &current)
 : _current(current) {
-	
+
 	ASSERT( _owner == nullptr );
 	_owner = this;
 
@@ -316,7 +316,7 @@ CountedAlloc::CountedAlloc(Allocators &current)
 	_allocAmount = 0;
 	_freeCount = 0;
 	_freeAmount = 0;
-		
+
 	_base = _current;
 	_current = Allocators(_malloc, _calloc, _memalign, _realloc, _msize, _free);
 }
@@ -325,7 +325,7 @@ CountedAlloc::~CountedAlloc() {
 
 	// see HostStdIO on failure (wideshare issue)
 	fprintf(stderr, "\n{alloc:%d (%dB), leaks:%d (%dB)}\n", _allocCount, _allocAmount, _allocCount - _freeCount, _allocAmount - _freeAmount);
-		
+
 	_current = _base;
 	_owner = nullptr;
 }
@@ -352,7 +352,7 @@ WatchDog::watchDogThreadProc(void *threadArg) {
 		if ( JLSemaphoreAcquire(watchDog._watchDogSemEnd, watchDog._interruptInterval) != JLTIMEOUT )
 			break;
 		JSRuntime *rt = watchDog._hostRuntime.runtime();
-		
+
 		ASSERT( rt );
 		ASSERT( JS_GetInterruptCallback(rt) );
 		JS_RequestInterruptCallback(rt);
@@ -367,7 +367,7 @@ WatchDog::WatchDog(HostRuntime &hostRuntime) :
 	_interruptInterval(0),
 	_watchDogThread(JLThreadInvalidHandler) {
 }
-	
+
 
 void
 WatchDog::start() {
@@ -407,16 +407,6 @@ WatchDog::stop() {
 
 //////////////////////////////////////////////////////////////////////////////
 // HostRuntime
-
-
-void
-HostRuntime::setJSEngineAllocators(Allocators allocators) {
-
-	js_jl_malloc = allocators.malloc;
-	js_jl_calloc = allocators.calloc;
-	js_jl_realloc = allocators.realloc;
-	js_jl_free = allocators.free;
-}
 
 
 void
@@ -461,7 +451,7 @@ HostRuntime::~HostRuntime() {
 	//  - Is the only side effect of JS_DestroyContextNoGC that any finalizers I may have specified in custom objects will not get called ?
 	//  - Not if you destroy all contexts (whether by NoGC or not), destroy all runtimes, and call JS_ShutDown before exiting or hibernating.
 	//    The last JS_DestroyContext* API call will run a GC, no matter which API of that form you call on the last context in the runtime. /be
-		
+
 	// see create()
 
 	JL_CHKM( fireEvent(EventId::BEFORE_DESTROY_RUNTIME), E_HOST, E_INTERNAL, E_NAME("BEFORE_DESTROY_RUNTIME") );
@@ -488,7 +478,7 @@ bad:
 		JS_DestroyContext(cx);
 		JS_DestroyRuntime(rt);
 	}
-	
+
 	IFDEBUG( invalidate() );
 }
 
@@ -536,7 +526,7 @@ HostRuntime::HostRuntime( Allocators allocators, bool unsafeMode, uint32_t maxby
 	//JS_SetNativeStackQuota(cx, DEFAULT_MAX_STACK_SIZE); // see https://developer.mozilla.org/En/SpiderMonkey/JSAPI_User_Guide
 
 
-	// JSOPTION_ANONFUNFIX: https://bugzilla.mozilla.org/show_bug.cgi?id=376052 
+	// JSOPTION_ANONFUNFIX: https://bugzilla.mozilla.org/show_bug.cgi?id=376052
 	// JS_SetOptions doc: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_SetOptions
 
 	// beware: avoid using JSOPTION_COMPILE_N_GO here.
@@ -588,7 +578,7 @@ bad:
 ModuleManager::~ModuleManager() {
 
 	struct FreeDynamicLibraryHandle : Events::Callback {
-		
+
 		JLLibraryHandler _libraryHandler;
 
 		FreeDynamicLibraryHandle(JLLibraryHandler libraryHandler) : _libraryHandler(libraryHandler) {
@@ -605,7 +595,7 @@ ModuleManager::~ModuleManager() {
 	};
 
 	for ( uint16_t i = 0; i < MAX_MODULES; ++i ) {
-		
+
 		ModuleManager::Module &module = _moduleList[i];
 		if ( module.moduleId != FREE_MODULE_SLOT )
 			_hostRuntime.addListener(jl::EventId::DESTRUCT_HOSTRUNTIME, new FreeDynamicLibraryHandle(module.moduleHandle));
@@ -662,9 +652,9 @@ ModuleManager::loadModule(const char *libFileName, JS::HandleObject obj, JS::Mut
 	moduleId = reinterpret_cast<moduleId_t>(moduleInit); // JLDynamicLibraryId(module); // module unique ID
 
 	Module &module = moduleSlot(moduleId);
-	
+
 	if ( !isSlotFree(module) ) {  // already loaded ?
-		
+
 		ASSERT( module.moduleHandle == moduleHandle );
 		JLDynamicLibraryClose(&moduleHandle);
 		rval.setNull();
@@ -685,10 +675,10 @@ ModuleManager::loadModule(const char *libFileName, JS::HandleObject obj, JS::Mut
 		JLDynamicLibraryName((void*)moduleInit, filename, COUNTOF(filename));
 		JL_ERR( E_MODULE, E_NAME(filename), E_INIT );
 	}
-	
+
 	//JL_CHK( JL_NewNumberValue(cx, uid, JL_RVAL) ); // really needed ? yes, UnloadModule will need this ID, ... but UnloadModule is too complicated to implement and will never exist.
 	rval.setObject(*obj);
-	
+
 	++_moduleCount;
 	return true;
 
@@ -717,7 +707,7 @@ Global::_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::
 		return false;
 	if (resolved)
 		objp.set(obj);
-	else 
+	else
 		objp.set(nullptr);
     return true;
 }
@@ -756,7 +746,6 @@ _globalObject( hr.context() ) {
 
 	_globalObject.set( JS_NewGlobalObject(cx, lazyStandardClasses ? &_globalClass_lazy : &_globalClass, nullptr, JS::DontFireOnNewGlobalHook, compartmentOptions) );
 	JL_CHK( _globalObject ); // "unable to create the global object." );
-
 
 	{
 		// set globalObject as current global object.
@@ -852,7 +841,7 @@ ErrorManager::errorCallback(void *userRef, const unsigned errorNumber) {
 // ErrArg
 
 ErrorManager::ErrArg::ErrArg( jl::StrDataSrc & val ) {
-			
+
 	JS::AutoCheckCannotGC nogc;
 	if ( val.isWide() ) {
 
@@ -966,9 +955,9 @@ ErrorManager::report( bool isWarning, size_t argc, const ErrArg *args ) const {
 	}
 
 	buf.cat( L( "." ) );
-	
+
 	JL_CHK( args == argsEnd || ( args->is<ErrArg::INTEGER>() && args->asInteger() == E__END) );
-	
+
 	{
 		JSErrorFormatString format = { "{0}", 1, (int16_t)exn };
 		return JS_ReportErrorFlagsAndNumberUC( _hostRuntime.context(), isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, errorCallback, &format, 0, static_cast<const wchar_t *>(buf) );
@@ -985,8 +974,73 @@ bad:
 //////////////////////////////////////////////////////////////////////////////
 // Host
 
+namespace pv {
 
-BEGIN_CLASS( host )
+BEGIN_CLASS( Host )
+
+DEFINE_FINALIZE() {
+
+	void *pv = JL_GetPrivateFromFinalize(obj);
+	if ( pv ) {
+
+		jl::Host &host = *static_cast<jl::Host*>(pv);
+		ASSERT( host );
+
+		jl::Global &global = host.global();
+		ASSERT( global );
+
+		delete &host;
+		delete &global;
+	}
+}
+
+
+DEFINE_CONSTRUCTOR() {
+
+	JL_DEFINE_ARGS;
+	JL_DEFINE_CONSTRUCTOR_OBJ;
+
+	if ( JL_ARGC == 0 )
+		return true;
+
+	JL_ASSERT_ARGC_RANGE(1, 2);
+	JL_ASSERT_ARG_IS_CALLABLE(1);
+
+	jl::Global &global = *new jl::Global(jl::HostRuntime::getJLRuntime(cx));
+	JL_CHK( global );
+
+	jl::Host &host = *new jl::Host(global, jl::Host::getJLHost(cx).stdIO());
+	JL_CHK( host );
+
+	{
+
+		JS::RootedObject globalObject(cx, global.globalObject());
+		JSAutoCompartment ac(cx, globalObject);
+
+		JS::RootedObject hostMainFctObj(cx, JL_ARG(1).toObjectOrNull());
+
+		uint32_t length;
+		void *scriptData = JS_EncodeInterpretedFunction(cx, hostMainFctObj, &length);
+		JL_CHK( scriptData );
+		JL_CHK( length );
+		hostMainFctObj.set( JS_DecodeInterpretedFunction(cx, scriptData, length, nullptr) );
+		js_free(scriptData);
+		JL_CHK( hostMainFctObj );
+
+		hostMainFctObj.set( JS_CloneFunctionObject(cx, hostMainFctObj, globalObject) );
+		JL_CHK( hostMainFctObj );
+
+		JS::RootedValue arg(cx, JL_SARG(2));
+		JL_CHK( JS_WrapValue(cx, &arg) );
+		JL_CHK( jl::callNoRval(cx, globalObject, hostMainFctObj, arg) );
+	}
+
+	JL_SetPrivate(JL_OBJ, &host);
+
+	return true;
+	JL_BAD;
+}
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -996,7 +1050,7 @@ DEFINE_PROPERTY_GETTER( unsafeMode ) {
 
 	JL_IGNORE( id, obj );
 
-	JL_CHK( jl::setValue(cx, vp, Host::getJLHost(cx).hostRuntime().unsafeMode()) );
+	JL_CHK( jl::setValue(cx, vp, jl::Host::getJLHost(cx).hostRuntime().unsafeMode()) );
 	return true;
 	JL_BAD;
 }
@@ -1039,7 +1093,7 @@ DEFINE_PROPERTY_GETTER( errorMessages ) {
 
 	JL_DEFINE_PROP_ARGS;
 	JS::RootedObject messagesObj(cx);
-	JL_CHK( Host::getJLHost( cx ).errorManager().exportMessages( cx, &messagesObj ) );
+	JL_CHK( jl::Host::getJLHost( cx ).errorManager().exportMessages( cx, &messagesObj ) );
 	JL_RVAL.setObject(*messagesObj);
 	return true;
 	JL_BAD;
@@ -1056,7 +1110,7 @@ DEFINE_PROPERTY_SETTER( errorMessages ) {
 	JL_ASSERT_IS_OBJECT_OR_NULL(JL_RVAL, "error messages");
 	{
 		JS::RootedObject messagesObj(cx, JL_RVAL.toObjectOrNull());
-		JL_CHK( Host::getJLHost( cx ).errorManager().importMessages( cx, messagesObj ) );
+		JL_CHK( jl::Host::getJLHost( cx ).errorManager().importMessages( cx, messagesObj ) );
 	}
 	JL_CHK( jl::StoreProperty(cx, obj, id, vp, false) );
 	return true;
@@ -1103,7 +1157,7 @@ DEFINE_FUNCTION( stdout ) {
 	JL_DEFINE_ARGS;
 	JL_RVAL.setUndefined();
 	jl::StrData str(cx);
-	Host &host = Host::getJLHost( cx );
+	jl::Host &host = jl::Host::getJLHost( cx );
 	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( jl::getValue( cx, JL_ARGV[i], &str ) );
@@ -1124,7 +1178,7 @@ DEFINE_FUNCTION( stderr ) {
 	JL_DEFINE_ARGS;
 	JL_RVAL.setUndefined();
 	jl::StrData str(cx);
-	Host &host = Host::getJLHost( cx );
+	jl::Host &host = jl::Host::getJLHost( cx );
 	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( jl::getValue( cx, JL_ARGV[i], &str ) );
@@ -1142,7 +1196,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( stdin ) {
 
 	JL_DEFINE_ARGS;
-	Host &host = Host::getJLHost( cx );
+	jl::Host &host = jl::Host::getJLHost( cx );
 
 /*
 	char buffer[8192];
@@ -1207,7 +1261,7 @@ DEFINE_FUNCTION( loadModule ) {
 		// MAC OSX: 	'@executable_path' ??
 	}
 
-	JL_CHK( Host::getJLHost(cx).moduleManager().loadModule(libFileName, JL_OBJ, JL_RVAL) );
+	JL_CHK( jl::Host::getJLHost(cx).moduleManager().loadModule(libFileName, JL_OBJ, JL_RVAL) );
 	return true;
 	JL_BAD;
 }
@@ -1233,7 +1287,7 @@ DEFINE_FUNCTION( collectGarbage ) {
 	bool incrementalGCInProgress = JS::IsIncrementalGCInProgress( rt );
 
 	if ( !incrementalGCInProgress && !requestIncrementalGC ) {
-		
+
 		JS_GC(rt);
 		JL_RVAL.setBoolean(true);
 		return true;
@@ -1244,7 +1298,7 @@ DEFINE_FUNCTION( collectGarbage ) {
 		JS::PrepareForIncrementalGC(rt); // select previously selected zones
 
 		if ( !requestIncrementalGC ) {
-		
+
 			JS::FinishIncrementalGC( rt, JS::gcreason::API );
 			JL_RVAL.setBoolean(true);
 			return true;
@@ -1265,56 +1319,6 @@ DEFINE_FUNCTION( collectGarbage ) {
 }
 
 
-
-
-/*
-withNewHost(function(arg1) {
-
-	loadModule('jsdebug');
-	loadModule('jsstd');
-}, arg1);
-*/
-
-
-DEFINE_FUNCTION( withNewHost ) {
-
-	JL_DEFINE_ARGS;
-	JL_ASSERT_ARGC_RANGE(1, 2);
-	JL_ASSERT_ARG_IS_CALLABLE(1);
-	
-	//jl::Global global(jl::HostRuntime::getJLRuntime(cx));
-	jl::Global &global = *new jl::Global(jl::HostRuntime::getJLRuntime(cx));
-	JL_CHK( global );
-
-	//jl::Host host(global, jl::Host::getJLHost(cx).stdIO());
-	jl::Host &host = *new jl::Host(global, jl::Host::getJLHost(cx).stdIO());
-	JL_CHK( host );
-
-	{
-
-		JS::RootedObject globalObject(cx, global.globalObject());
-		JSAutoCompartment ac(cx, globalObject);
-
-		JS::RootedObject hostMainFctObj(cx, JL_ARG(1).toObjectOrNull());
-		hostMainFctObj.set( JS_CloneFunctionObject(cx, hostMainFctObj, JS::NullPtr()) );
-		JL_CHK( hostMainFctObj );
-
-		JL_CHK( JS_WrapObject(cx, &hostMainFctObj) );
-
-		JS::RootedValue arg(cx, JL_SARG(2));
-		JL_CHK( JS_WrapValue(cx, &arg) );
-		JL_CHK( jl::callNoRval(cx, globalObject, hostMainFctObj, arg) );
-
-	}
-
-	delete &host;
-	delete &global;
-
-	return true;
-	JL_BAD;
-}
-
-
 /**qa
 	QA.ASSERTOP(global, 'has', 'host');
 	QA.ASSERTOP(host, 'has', 'stdout');
@@ -1322,9 +1326,13 @@ DEFINE_FUNCTION( withNewHost ) {
 **/
 CONFIGURE_CLASS
 
+	HAS_PRIVATE
+	HAS_CONSTRUCTOR
+	HAS_FINALIZE
+
 	REVISION(jl::SvnRevToInt("$Revision$"))
 
-	BEGIN_STATIC_FUNCTION_SPEC
+	BEGIN_FUNCTION_SPEC
 		FUNCTION_ARGC(loadModule, 1)
 
 		// note: we have to support: var prevStderr = host.stderr; host.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
@@ -1333,20 +1341,19 @@ CONFIGURE_CLASS
 		FUNCTION_ARGC(stdout, 1)
 		FUNCTION_ARGC(stderr, 1)
 		FUNCTION_ARGC(collectGarbage, 3)
-		FUNCTION_ARGC(withNewHost, 1)
-	END_STATIC_FUNCTION_SPEC
+	END_FUNCTION_SPEC
 
-	BEGIN_STATIC_PROPERTY_SPEC
+	BEGIN_PROPERTY_SPEC
 		PROPERTY_GETTER(unsafeMode)
 		PROPERTY_GETTER(jsVersion)
 		PROPERTY_GETTER(lang)
 		PROPERTY(errorMessages)
 		PROPERTY(interruptInterval)
-	END_STATIC_PROPERTY_SPEC
+	END_PROPERTY_SPEC
 
 END_CLASS
 
-
+} // namespace pv
 
 //////////////////////////////////////////////////////////////////////////////
 // Host
@@ -1357,7 +1364,7 @@ Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
 	// trap JSMSG_OUT_OF_MEMORY error to avoid calling ErrorReporter_stdErrRouter() that may allocate memory that will lead to nested call.
 	if (unlikely( report && report->errorNumber == JSMSG_OUT_OF_MEMORY )) {
-		
+
 		HostRuntime::errorReporterBasic( cx, message, report );
 		return;
 	}
@@ -1491,10 +1498,10 @@ Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 	jl::BufString tmpErrTxt(jl::constPtr(buffer), buf - buffer -1, true);
 
 	if ( Host::hasJLHost(cx) ) {
-	
+
 		Host::getJLHost( cx ).hostStderrWrite( tmpErrTxt, tmpErrTxt.length() );
 	} else {
-		
+
 		jl::fputs(tmpErrTxt.toWStrZ(JS::AutoCheckCannotGC()), stderr);
 	}
 
@@ -1511,7 +1518,7 @@ Host::hostStderrWrite(const TCHAR *message, size_t length) {
 
 	JS::RootedObject globalObject(cx, JL_GetGlobal(cx));
 	ASSERT( globalObject );
-		
+
 	JS::RootedValue fct(cx);
 	JS::RootedObject hostObj(cx, _hostObject);
 
@@ -1533,7 +1540,7 @@ bad:
 
 
 Host::~Host() {
-	
+
 	if ( _interruptHandler )
 		hostRuntime().removeListener(_interruptHandler);
 	_ids.destructAll();
@@ -1553,15 +1560,10 @@ _hostObject(glob.hostRuntime().runtime()),
 _ids(),
 _interruptHandler(nullptr) {
 
-	Host::setHostAllocators(_hostRuntime.allocators()); 
-
 //	JL_CHKM(_global, E_GLOBAL, E_INVALID);
 
-	IFDEBUG( jl_free(js_malloc(256)) );
-	IFDEBUG( js_free(jl_malloc(256)) );
-
 	_ids.constructAll(_hostRuntime.runtime());
-	
+
 	ASSERT( !JSID_IS_ZERO(_ids.get(0)) );
 	ASSERT( !JSID_IS_ZERO(_ids.get(LAST_JSID-1)) );
 
@@ -1576,7 +1578,7 @@ _interruptHandler(nullptr) {
 	;
 
 	JS_SetErrorReporter(cx, errorReporter);
-	
+
 	{
 
 		JS::RootedObject globalObj(cx, _global.globalObject());
@@ -1589,14 +1591,20 @@ _interruptHandler(nullptr) {
 
 		_objectClasp = JL_GetClass(_objectProto);
 		ASSERT( _objectClasp );
-	
+
 		IFDEBUG( bool found; ASSERT( JS_HasPropertyById(cx, globalObj, JLID(cx, global), &found) && !found ) );
 
 		// global functions & properties
 		JL_CHKM( JS_DefinePropertyById(cx, globalObj, JLID(cx, global), globalObj, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
 
-		_hostObject.set( jl::InitClass(cx, globalObj, host::classSpec ) );
+
+		// var host = new Host();
+		JS::RootedObject hostConstructor(cx, jl::InitClass(cx, globalObj, pv::Host::classSpec ));
+		_hostObject.set( JS_New(cx, hostConstructor, JS::HandleValueArray::empty()) );
 		JL_CHK( _hostObject );
+		//JL_CHK( jl::setProperty(cx, globalObj, JLID(cx, host), _hostObject) );
+		JL_CHK( JS_DefinePropertyById(cx, globalObj, JLID(cx, host), _hostObject, JSPROP_READONLY | JSPROP_PERMANENT) );
+
 
 		// init static modules (jslang)
 		ModuleManager::Module &module = moduleManager().moduleSlot(jslangModuleId);

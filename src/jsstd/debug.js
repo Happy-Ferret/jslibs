@@ -4,6 +4,11 @@ var loadModule = host.loadModule;
 
 loadModule('jsstd');
 
+	print( 123 );
+throw 0;
+
+
+
 	var prevStderr;
 	[prevStderr, host.stderr] = [host.stderr, undefined];
 

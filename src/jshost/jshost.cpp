@@ -505,6 +505,11 @@ _tmain( int argc, TCHAR* argv[] ) {
 
 		// js engine and jslibs allocators must the same
 		HostRuntime::setJSEngineAllocators(allocators); // need to be done before AutoJSEngineInit ?
+		HostRuntime::setHostAllocators(allocators);
+
+		IFDEBUG( jl_free(js_malloc(256)) );
+		IFDEBUG( js_free(jl_malloc(256)) );
+
 
 		AutoJSEngineInit ase;
 

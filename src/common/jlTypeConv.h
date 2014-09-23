@@ -456,6 +456,13 @@ setValue( JSContext *cx, JS::MutableHandleValue rval, const JS::Heap<T> &h ) {
 }
 
 
+template<class T>
+ALWAYS_INLINE bool FASTCALL
+setValue( JSContext *cx, JS::MutableHandleValue rval, const JS::PersistentRooted<T> &p ) {
+		
+	return setValue_pv::setValue( cx, rval, JS::Handle<T>(p) );
+}
+
 
 ////////
 

@@ -30,6 +30,26 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
+/*
+struct ReleaseModule : jl::Events::Callback {
+	jl::HostRuntime &_hostRuntime;
+	
+	ReleaseModule(jl::HostRuntime &hostRuntime) :
+		_hostRuntime(hostRuntime) {
+	}
+
+	bool operator()() {
+		
+		ASSERT( _hostRuntime );
+
+		bool st = JS_SetDebugModeForAllCompartments(_hostRuntime.context(), false);
+		ASSERT( st );
+		return true;
+	}
+};
+*/
+
+
 bool
 ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
@@ -42,6 +62,9 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	JL_ASSERT(jl::Host::getJLHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 
 	INIT_STATIC();
+
+//	jl::HostRuntime &hostRuntime = jl::HostRuntime::getJLRuntime(cx);
+//	hostRuntime.addListener(jl::EventId::AFTER_DESTROY_RUNTIME, new ReleaseModule(hostRuntime)); // frees mpv after rt and cx has been destroyed
 
 	return true;
 	JL_BAD;

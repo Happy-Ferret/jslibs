@@ -56,6 +56,7 @@ extern DLLAPI bool _unsafeMode;
 #define JLID_SPEC(name) JLID_##name
 enum {
 	JLID_SPEC( global ),
+	JLID_SPEC( host ),
 	JLID_SPEC( get ),
 	JLID_SPEC( read ),
 	JLID_SPEC( getMatrix44 ),
@@ -467,13 +468,30 @@ class DLLAPI HostRuntime : public Valid, public Events, public jl::CppAllocators
 public: // static
 
 	static void
-	setJSEngineAllocators(Allocators allocators);
+	setJSEngineAllocators(const Allocators &allocators) {
+
+		::js_jl_malloc = allocators.malloc;
+		::js_jl_calloc = allocators.calloc;
+		::js_jl_realloc = allocators.realloc;
+		::js_jl_free = allocators.free;
+	}
+
+	static void
+	setHostAllocators(const Allocators &allocators) {
+
+		::jl_malloc = allocators.malloc;
+		::jl_calloc = allocators.calloc;
+		::jl_memalign = allocators.memalign;
+		::jl_realloc = allocators.realloc;
+		::jl_msize = allocators.msize;
+		::jl_free = allocators.free;
+	}
 
 	static void
 	errorReporterBasic(JSContext *cx, const char *message, JSErrorReport *report);
 
 	static HostRuntime&
-	HostRuntime::getJLRuntime( JSRuntime *rt ) {
+	getJLRuntime( JSRuntime *rt ) {
 
 		//return static_cast<Host*>(JL_GetRuntimePrivate(rt))->hostRuntime();
 		HostRuntime* hostRuntime = static_cast<HostRuntime*>(JL_GetRuntimePrivate(rt));
@@ -483,12 +501,11 @@ public: // static
 	}
 
 	static HostRuntime&
-	HostRuntime::getJLRuntime( JSContext *cx ) {
+	getJLRuntime( JSContext *cx ) {
 
 		return getJLRuntime(JL_GetRuntime(cx));
 	}
 
-	HostRuntime();
 public:
 
 	~HostRuntime();
@@ -1200,7 +1217,7 @@ public:
 
 
 	JS::HandleObject
-	Host::hostObject() const {
+	hostObject() const {
 
 		return JS::HandleObject::fromMarkedLocation(_hostObject.address());
 	}
@@ -1312,19 +1329,6 @@ public:
 
 // static
 
-private:
-
-	static void
-	setHostAllocators(Allocators allocators) {
-
-		::jl_malloc = allocators.malloc;
-		::jl_calloc = allocators.calloc;
-		::jl_memalign = allocators.memalign;
-		::jl_realloc = allocators.realloc;
-		::jl_msize = allocators.msize;
-		::jl_free = allocators.free;
-	}
-
 public:
 
 /*
@@ -1346,12 +1350,14 @@ public:
 	static ALWAYS_INLINE bool
 	hasJLHost( JSContext *cx ) {
 	
+		ASSERT( cx );
 		return JS_GetCompartmentPrivate(js::GetContextCompartment(cx)) != nullptr;
 	}
 
 	static ALWAYS_INLINE Host&
 	getJLHost( JS::HandleObject obj ) {
 
+		ASSERT( obj );
 		JSCompartment *objectCompartment = js::GetObjectCompartment(obj);
 		ASSERT( objectCompartment );
 		Host* pHost = static_cast<Host*>(JS_GetCompartmentPrivate(objectCompartment));
@@ -1363,6 +1369,7 @@ public:
 	static ALWAYS_INLINE Host&
 	getJLHost( JSContext *cx ) {
 
+		ASSERT( cx );
 		JSCompartment *currentCompartment = js::GetContextCompartment(cx);
 		ASSERT( currentCompartment );
 		Host* pHost = static_cast<Host*>(JS_GetCompartmentPrivate(currentCompartment));

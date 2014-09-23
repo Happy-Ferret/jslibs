@@ -112,10 +112,17 @@ DefineConstValues(JSContext *cx, JS::HandleObject obj, ConstValueSpec *cs) {
 	JL_BAD;
 }
 
-INLINE bool FASTCALL
+INLINE JSObject* FASTCALL
 InitStatic( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 
-	JL_CHK( obj );
+	ASSERT( obj );
+
+	// not suitable for static classes
+	ASSERT( !cs->parentProtoName );
+	ASSERT( !cs->constructor );
+	ASSERT( !cs->stdIterator );
+	ASSERT( !cs->fs );
+	ASSERT( !cs->ps );
 
 	if ( cs->static_fs != NULL )
 		JL_CHK( DefineFunctions(cx, obj, cs->static_fs) );
@@ -134,90 +141,78 @@ InitStatic( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 		JL_CHK( JS_DefinePropertyById(cx, obj, JLID(cx, _buildDate), cs->buildDate, JSPROP_READONLY | JSPROP_PERMANENT) );
 	}
 
-	ASSERT( !cs->stdIterator ); // not suitable for static classes
-
 	if ( cs->init )
 		JL_CHK( cs->init(cx, cs, JS::NullPtr(), obj) );
 
-	return true;
-	JL_BAD;
+	return obj;
+bad:
+	return nullptr;
 }
 
 INLINE JSObject* FASTCALL
 InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 
-	JL_CHK( obj );
-
 	ASSERT( cs->clasp.name && cs->clasp.name[0] ); // Invalid class name.
 	jl::Host &host = jl::Host::getJLHost(cx);
 
-	{
+	JS::RootedObject parentProto(cx);
+	JS::RootedObject ctor(cx);
+	JS::RootedObject proto(cx);
 
-		JS::RootedObject parentProto(cx);
-		JS::RootedObject ctor(cx);
+	if ( cs->parentProtoName ) {
 
-		if ( cs->parentProtoName != NULL ) {
+		ASSERT( cs->parentProtoName[0] );
+		parentProto.set( host.getCachedProto(cs->parentProtoName) );
+		JL_CHKM( parentProto != nullptr, E_STR(cs->parentProtoName), E_STR("prototype"), E_NOTFOUND );
+	}
 
-			parentProto.set( host.getCachedProto(cs->parentProtoName) );
-			JL_CHKM( parentProto != NULL, E_STR(cs->parentProtoName), E_STR("prototype"), E_NOTFOUND );
-		}
+	// doc: object that is the prototype for the newly initialized class.
+	ASSERT( obj );
+	proto.set(JS_InitClass(cx, obj, parentProto, &cs->clasp, cs->constructor, cs->ctorNArgs, NULL, NULL, NULL, NULL));
 
+	JL_ASSERT( proto, E_CLASS, E_NAME(cs->clasp.name), E_CREATE ); //RTE
+	ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(proto) == NULL );
 
-		// doc: object that is the prototype for the newly initialized class.
-		JS::RootedObject proto(cx, JS_InitClass(cx, obj, parentProto, &cs->clasp, cs->constructor, cs->ctorNArgs, NULL, NULL, NULL, NULL));
+	JL_CHKM( host.addCachedClassProto(cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 
-		JL_ASSERT( proto != NULL, E_CLASS, E_NAME(cs->clasp.name), E_CREATE ); //RTE
-		ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(proto) == NULL );
+	ctor.set( cs->constructor ? JL_GetConstructor(cx, proto) : proto );
 
-		JL_CHKM( host.addCachedClassProto(cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
-		//JL_CHKM( JL_CacheClassProto(cx, hpv, cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
-
-		if ( cs->constructor )
-			ctor = JL_GetConstructor(cx, proto);
-		else
-			ctor = proto;
-
-		// functions
-		if ( cs->fs )
-			JL_CHK( DefineFunctions(cx, proto, cs->fs) );
+	// functions
+	if ( cs->fs )
+		JL_CHK( DefineFunctions(cx, proto, cs->fs) );
 	
-		if ( cs->static_fs )
-			JL_CHK( DefineFunctions(cx, ctor, cs->static_fs) );
+	if ( cs->static_fs )
+		JL_CHK( DefineFunctions(cx, ctor, cs->static_fs) );
 
-		// properties
-		if ( cs->ps != NULL )
-			JL_CHK( DefineClassProperties(cx, proto, cs->ps) );
+	// properties
+	if ( cs->ps != NULL )
+		JL_CHK( DefineClassProperties(cx, proto, cs->ps) );
 
-		if ( cs->static_ps != NULL )
-			JL_CHK( DefineClassProperties(cx, ctor, cs->static_ps) );
+	if ( cs->static_ps != NULL )
+		JL_CHK( DefineClassProperties(cx, ctor, cs->static_ps) );
 
-		if ( cs->static_const != NULL )
-			JL_CHK( DefineConstValues(cx, ctor, cs->static_const) );
+	if ( cs->static_const != NULL )
+		JL_CHK( DefineConstValues(cx, ctor, cs->static_const) );
 
-		if ( cs->stdIterator ) {
-
-			JL_CHK( JS_DefineFunction(cx, ctor, "@@iterator", cs->stdIterator, 0, 0) );
-		}
-
-		// info
-		bool isExtensible;
-		JL_CHK( JS_IsExtensible(cx, ctor, &isExtensible) );
-		if ( isExtensible ) {
+	if ( cs->stdIterator )
+		JL_CHK( JS_DefineFunction(cx, ctor, "@@iterator", cs->stdIterator, 0, 0) );
+	
+	// info
+	bool isExtensible;
+	JL_CHK( JS_IsExtensible(cx, ctor, &isExtensible) );
+	if ( isExtensible ) {
 		
-			JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _sourceId), cs->sourceId, JSPROP_READONLY | JSPROP_PERMANENT) );
-			JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _buildDate), cs->buildDate, JSPROP_READONLY | JSPROP_PERMANENT) );
-		}
+		JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _sourceId), cs->sourceId, JSPROP_READONLY | JSPROP_PERMANENT) );
+		JL_CHK( JS_DefinePropertyById(cx, ctor, JLID(cx, _buildDate), cs->buildDate, JSPROP_READONLY | JSPROP_PERMANENT) );
+	}
 
-		if ( cs->init )
-			JL_CHK( cs->init(cx, cs, proto, ctor) );
+	if ( cs->init )
+		JL_CHK( cs->init(cx, cs, proto, ctor) );
 
-		ASSERT( host.getCachedClasp(cs->clasp.name) == &cs->clasp );
-		ASSERT( host.getCachedProto(cs->clasp.name) == proto );
+	ASSERT( host.getCachedClasp(cs->clasp.name) == &cs->clasp );
+	ASSERT( host.getCachedProto(cs->clasp.name) == proto );
 	
-		return ctor;
-
-	} // scope
-
+	return ctor;
 bad:
 	return nullptr;
 }
