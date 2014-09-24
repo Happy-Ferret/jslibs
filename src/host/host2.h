@@ -13,17 +13,15 @@
  * ***** END LICENSE BLOCK ***** */
 
 #pragma once
-
+  
 /*
       runtime/context -- runtimePrivate <- HostRuntime
              |                               ^    ^
              |                               |    |
-             |                             Global |
+  compartment/global <-------------------- Global |
              |                                 ^  |
              |                                 |  |
-  compartment/global -- compartmentPrivate <- JLHost
-
-
+             +--------- compartmentPrivate <- JLHost
 
 
   JS_SetRuntimePrivate
@@ -33,8 +31,6 @@
   JS_SetPrivate
  */
 
-
-typedef ptrdiff_t moduleId_t;
 
 static const moduleId_t FREE_MODULE_SLOT = 0;
 
@@ -149,7 +145,7 @@ public:
 	_valid(true) {
 	}
 
-	operator bool() {
+	operator bool() const {
 		
 		return _valid;
 	}
@@ -165,24 +161,17 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 // Event system
 
-enum EventId {
-	BEFORE_DESTROY_RUNTIME,
-	AFTER_DESTROY_RUNTIME,
-	DESTRUCT_HOSTRUNTIME,
-	INTERRUPT,
+class Callback : public jl::CppAllocators {
+public:
+	virtual bool operator()() = 0;
 };
 
+template <class EVENT_ENUM>
+class Events {
 
-class DLLAPI Events {
-public:
-	struct Callback : public jl::CppAllocators {
-		virtual bool operator()() = 0;
-	};
-
-private:
 	struct Listener {
 
-		EventId id;
+		EVENT_ENUM id;
 		Callback *cb;
 		~Listener() {
 			
@@ -197,8 +186,8 @@ private:
 	List _list;
 
 public:
-	List::Item *
-	addListener( EventId id, Callback *cb ) {
+	typename List::Item *
+	addListener( EVENT_ENUM id, Callback *cb ) {
 
 		_list.AddEnd();
 		_list.Last()->data.id = id;
@@ -207,16 +196,16 @@ public:
 	}
 
 	void
-	removeListener( List::Item *item ) {
+	removeListener( typename List::Item *item ) {
 
 		_list.Remove(item);
 	}
 
 	// returns false on the first listener that returns false (error)
 	bool 
-	fireEvent( EventId id ) const {
+	fireEvent( EVENT_ENUM id ) const {
 
-		for ( List::Item *it = _list.First(); it; it = it->next )
+		for ( typename List::Item *it = _list.First(); it; it = it->next )
 			if ( it->data.id == id )
 				if ( !(*it->data.cb)() )
 					return false;
@@ -452,7 +441,16 @@ static const size_t defaultNativeStackQuota = 2 * 128 * sizeof(size_t) * 1024;
 static const size_t defaultNativeStackQuota = 128 * sizeof(size_t) * 1024; // 512KB
 #endif
 
-class DLLAPI HostRuntime : public Valid, public Events, public jl::CppAllocators {
+
+enum HostRuntimeEvents {
+	BEFORE_DESTROY_RUNTIME,
+	AFTER_DESTROY_RUNTIME,
+	DESTRUCT_HOSTRUNTIME,
+	DESTROY_COMPARTMENT,
+	INTERRUPT,
+};
+
+class DLLAPI HostRuntime : public Valid, public Events<HostRuntimeEvents>, public jl::CppAllocators {
 
 	JSRuntime *rt;
 	JSContext *cx;
@@ -489,6 +487,12 @@ public: // static
 
 	static void
 	errorReporterBasic(JSContext *cx, const char *message, JSErrorReport *report);
+
+	static void
+	HostRuntime::destroyCompartmentCallback(JSFreeOp *fop, JSCompartment *compartment);
+
+	static void
+	HostRuntime::destroyZoneCallback(JS::Zone *zone);
 
 	static HostRuntime&
 	getJLRuntime( JSRuntime *rt ) {
@@ -556,6 +560,8 @@ public:
 		return _unsafeMode;
 	}
 
+
+
 	uint32_t
 	interruptInterval() const {
 
@@ -582,16 +588,24 @@ class DLLAPI ModuleManager {
 	struct Module {
 		moduleId_t moduleId;
 		JLLibraryHandler moduleHandle; // JLDynamicLibraryNullHandler if uninitialized
-		void *privateData; // user data
+		void *privateData; // each module has its user data
 
 		Module() :
 			moduleId(FREE_MODULE_SLOT),
 			moduleHandle(JLDynamicLibraryNullHandler),
 			privateData(nullptr) {
 		}
+
+/* unused
+		Module(moduleId_t moduleId, JLLibraryHandler moduleHandle, void *privateData) :
+			moduleId(moduleId),
+			moduleHandle(moduleHandle),
+			privateData(privateData) {
+		}
+*/
 	};
 
-	friend class Host;
+//	friend class Host;
 
 	HostRuntime &_hostRuntime;
 	Module _moduleList[MAX_MODULES];
@@ -608,8 +622,6 @@ class DLLAPI ModuleManager {
 		// return (a ^ a >> 8) & 0xFF;
 	}
 
-
-
 public:
 
 	~ModuleManager();
@@ -619,8 +631,10 @@ public:
 	bool
 	loadModule(const char *libFileName, JS::HandleObject obj, JS::MutableHandleValue rval);
 
+	bool
+	addLocalModule(const char *moduleName, ModuleInitFunction initFunction, JS::HandleObject obj);
 
-/*
+/* unused
 	ALWAYS_INLINE Module &
 	getFreeModuleSlot( const moduleId_t moduleId ) {
 
@@ -1108,9 +1122,9 @@ class DLLAPI Global : public Valid, public jl::CppAllocators {
 	static const JSClass _globalClass;
 	static const JSClass _globalClass_lazy;
 
-	HostRuntime &_hostRuntime;
-
 	JS::PersistentRootedObject _globalObject;
+
+	HostRuntime &_hostRuntime;
 
 private:
 	Global( const Global & );
@@ -1118,30 +1132,41 @@ private:
 public:
 
 	Global( HostRuntime &hr, bool lazyStandardClasses = true );
-	~ Global() {
+
+	~Global() {
 		
 		IFDEBUG( invalidate() );
+		IFDEBUG( _globalObject.set(nullptr); );
 	}
 
 	HostRuntime &
-	hostRuntime() {
+	hostRuntime() const {
 		
 		ASSERT( *this );
 		return _hostRuntime;
 	}
 
 	JSObject *
-	globalObject() {
+	globalObject() const {
 
 		ASSERT( *this );
 		return _globalObject;		
 	}
 
+	JSCompartment *
+	compartment() const {
+
+		 return js::GetObjectCompartment(globalObject());
+	}
+
+};
+
+enum HostEvents {
+	HOST_DESTROY
 };
 
 
-
-class DLLAPI Host : public Valid, public jl::CppAllocators {
+class DLLAPI Host : public Valid, public Events<HostEvents>, public jl::CppAllocators {
 
 	HostRuntime &_hostRuntime;
 	Global &_global;
@@ -1155,7 +1180,7 @@ class DLLAPI Host : public Valid, public jl::CppAllocators {
 	ProtoCache _classProtoCache;
 	StaticArray< JS::PersistentRootedId, LAST_JSID > _ids;
 	ErrorManager _errorManager;
-	Events::List::Item *_interruptHandler;
+	Events<HostRuntimeEvents>::List::Item *_interruptHandler;
 
 //	static void
 //	errorReporterBasic( JSContext *cx, const char *message, JSErrorReport *report );

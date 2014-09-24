@@ -16,18 +16,10 @@
 
 struct JSContext;
 
-#define SYM_MODULE_INIT ModuleInit
-
-#define NAME_MODULE_INIT JL_TOSTRING(SYM_MODULE_INIT)
-
-typedef bool (*ModuleInitFunction)(JSContext *, JS::HandleObject);
-
 // jlModuleInit ?
 EXTERN_C DLLEXPORT bool ModuleInit(JSContext *cx, JS::HandleObject obj); // JSContext *cx, JS::HandleObject obj, ModuleReleaseFunction *moduleReleaseFct, ModuleFreeFunction *moduleFreeFct)
 
 bool ModuleInit(JSContext *cx, JS::HandleObject obj);
-
-//typedef ptrdiff_t moduleId_t;
 
 // call from inside a module
 ALWAYS_INLINE const moduleId_t

@@ -9,13 +9,11 @@ var loadModule = host.loadModule;
 //jslangTest();
 //loadModule('jssound');
 
-
-//loadModule('jsdebug');
 loadModule('jsstd');
-
 
 host.interruptInterval = 2;
 host.onInterrupt = () => { host.collectGarbage(true, 1) };
+
 
 {
 
@@ -39,6 +37,11 @@ host.onInterrupt = () => { host.collectGarbage(true, 1) };
 	}, global);
 
 }
+	
+	host.stdout('quit debugger scope!\n');
+
+
+	collectGarbage();
 
 	function testb() {}
 	function testa() {
@@ -50,6 +53,34 @@ host.onInterrupt = () => { host.collectGarbage(true, 1) };
 
 
 throw 0;
+
+
+	/// compartment destroy callback test
+	!function() {	
+
+
+	host.stdout(1+'\n');
+
+	!function() {	
+	
+		new Host(function() { host.stdout(1.5+'\n') });
+	}();
+	
+
+	host.stdout(2+'\n');
+
+	collectGarbage();
+	
+	host.stdout(3+'\n');
+
+	}();
+
+	collectGarbage();
+
+	host.stdout(4+'\n');
+
+throw 0;
+
 
 
 //registerDumpHeap();

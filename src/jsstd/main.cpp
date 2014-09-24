@@ -28,7 +28,7 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-struct ReleaseModule : jl::Events::Callback {
+struct ReleaseModule : jl::Callback {
 	jl::HostRuntime &_hostRuntime;
 	ModulePrivate *_mpv;
 	
@@ -59,7 +59,7 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	jl::Host::getJLHost(cx).moduleManager().modulePrivate(moduleId()) = mpv;
 
 	jl::HostRuntime &hostRuntime = jl::HostRuntime::getJLRuntime(cx);
-	hostRuntime.addListener(jl::EventId::AFTER_DESTROY_RUNTIME, new ReleaseModule(hostRuntime, mpv)); // frees mpv after rt and cx has been destroyed
+	hostRuntime.addListener(jl::HostRuntimeEvents::AFTER_DESTROY_RUNTIME, new ReleaseModule(hostRuntime, mpv)); // frees mpv after rt and cx has been destroyed
 
 	INIT_STATIC();
 

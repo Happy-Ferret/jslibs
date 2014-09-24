@@ -147,7 +147,7 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	INIT_CLASS( SurfaceParameters );
 
 
-	struct ReleaseModule : jl::Events::Callback {
+	struct ReleaseModule : jl::Callback {
 		bool operator()() {
 		
 			ode::dCloseODE();

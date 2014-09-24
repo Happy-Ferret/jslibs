@@ -337,7 +337,18 @@ CountedAlloc::~CountedAlloc() {
 bool
 WatchDog::interruptCallback(JSContext *cx) {
 
-	return jl::HostRuntime::getJLRuntime(cx).fireEvent(EventId::INTERRUPT);
+	JSRuntime *rt = JL_GetRuntime(cx);
+
+	// disable the interrupt callback
+	JSInterruptCallback interruptCallback = JS_GetInterruptCallback(rt);
+	JS_SetInterruptCallback(rt, nullptr);
+
+	jl::HostRuntime &runtime = jl::HostRuntime::getJLRuntime(rt);
+	return runtime.fireEvent(HostRuntimeEvents::INTERRUPT);
+
+	// enable the interrupt callback
+	Dbg<JSInterruptCallback> tmp = JS_SetInterruptCallback(rt, interruptCallback);
+	ASSERT( tmp == nullptr );
 }
 
 
@@ -354,8 +365,9 @@ WatchDog::watchDogThreadProc(void *threadArg) {
 		JSRuntime *rt = watchDog._hostRuntime.runtime();
 
 		ASSERT( rt );
-		ASSERT( JS_GetInterruptCallback(rt) );
-		JS_RequestInterruptCallback(rt);
+		//ASSERT( JS_GetInterruptCallback(rt) );
+		if ( JS_GetInterruptCallback(rt) )
+			JS_RequestInterruptCallback(rt);
 	}
 	JLThreadExit(0);
 	return 0;
@@ -400,14 +412,13 @@ WatchDog::stop() {
 	JLSemaphoreFree(&_watchDogSemEnd);
 
 	Dbg<JSInterruptCallback> prev_interruptCallback = JS_SetInterruptCallback(_hostRuntime.runtime(), nullptr);
-	ASSERT( prev_interruptCallback == interruptCallback );
+	//ASSERT( prev_interruptCallback == interruptCallback );
 }
 
 
 
 //////////////////////////////////////////////////////////////////////////////
 // HostRuntime
-
 
 void
 HostRuntime::errorReporterBasic( JSContext *cx, const char *message, JSErrorReport *report ) {
@@ -427,6 +438,17 @@ HostRuntime::errorReporterBasic( JSContext *cx, const char *message, JSErrorRepo
 
 	jl::BufString tmpErrTxt( buf.toString(), buf.length() );
 	Host::getJLHost( cx ).stdIO().error( tmpErrTxt );
+}
+
+void
+HostRuntime::destroyCompartmentCallback(JSFreeOp *fop, JSCompartment *compartment) {
+
+//	Dbg<bool> st = getJLRuntime(fop->runtime()).fireEvent(DESTROY_COMPARTMENT);
+//	ASSERT( st );
+}
+
+void
+HostRuntime::destroyZoneCallback(JS::Zone *zone) {
 }
 
 
@@ -454,7 +476,7 @@ HostRuntime::~HostRuntime() {
 
 	// see create()
 
-	JL_CHKM( fireEvent(EventId::BEFORE_DESTROY_RUNTIME), E_HOST, E_INTERNAL, E_NAME("BEFORE_DESTROY_RUNTIME") );
+	JL_CHKM( fireEvent(HostRuntimeEvents::BEFORE_DESTROY_RUNTIME), E_HOST, E_INTERNAL, E_NAME("BEFORE_DESTROY_RUNTIME") );
 
 	if ( JS_IsInRequest(rt) )
 		JS_EndRequest(cx);
@@ -467,9 +489,9 @@ HostRuntime::~HostRuntime() {
 		JS_DestroyRuntime(rt);
 	rt = nullptr;
 
-	JL_CHKM( fireEvent(EventId::AFTER_DESTROY_RUNTIME), E_HOST, E_INTERNAL, E_NAME("AFTER_DESTROY_RUNTIME") );
+	JL_CHKM( fireEvent(HostRuntimeEvents::AFTER_DESTROY_RUNTIME), E_HOST, E_INTERNAL, E_NAME("AFTER_DESTROY_RUNTIME") );
 
-	JL_CHKM( fireEvent(EventId::DESTRUCT_HOSTRUNTIME), E_HOST, E_INTERNAL, E_NAME("DESTRUCT_HOSTRUNTIME") );
+	JL_CHKM( fireEvent(HostRuntimeEvents::DESTRUCT_HOSTRUNTIME), E_HOST, E_INTERNAL, E_NAME("DESTRUCT_HOSTRUNTIME") );
 
 bad:
 	// on error, do the minimum.
@@ -512,6 +534,8 @@ HostRuntime::HostRuntime( Allocators allocators, bool unsafeMode, uint32_t maxby
 	cx = JS_NewContext(rt, 8192); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 	JL_CHK( cx ); //, "unable to create the context." );
 
+	JS_BeginRequest(cx);
+
 	// Info: Increasing JSContext stack size slows down my scripts:
 	//   http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 
@@ -520,50 +544,19 @@ HostRuntime::HostRuntime( Allocators allocators, bool unsafeMode, uint32_t maxby
     JS_SetGCParameterForThread(cx, JSGC_MAX_CODE_CACHE_BYTES, 16 * 1024 * 1024);
 
 	//JS::ContextOptionsRef(cx);
-
-	JS_BeginRequest(cx);
-
 	//JS_SetNativeStackQuota(cx, DEFAULT_MAX_STACK_SIZE); // see https://developer.mozilla.org/En/SpiderMonkey/JSAPI_User_Guide
-
-
 	// JSOPTION_ANONFUNFIX: https://bugzilla.mozilla.org/show_bug.cgi?id=376052
 	// JS_SetOptions doc: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_SetOptions
-
 	// beware: avoid using JSOPTION_COMPILE_N_GO here.
-
-/*
-	{
-
-		JS::CompartmentOptions options;
-		options
-			.setVersion(JSVERSION_LATEST)
-			.setInvisibleToDebugger(false)
-			.setMergeable(false)
-		;
-
-		JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, lazyStandardClasses ? &_globalClass_lazy : &_globalClass, nullptr, JS::DontFireOnNewGlobalHook, options));
-		JL_CHK( globalObject ); // "unable to create the global object." );
-
-		// set globalObject as current global object.
-		JL_CHK( JS_EnterCompartment(cx, globalObject) == nullptr );
-
-		JL_CHK( JS_InitStandardClasses(cx, globalObject) );
-//		JL_CHK( JS_DefineDebuggerObject(cx, globalObject) ); // doc: https://developer.mozilla.org/en/SpiderMonkey/JS_Debugger_API_Guide
-		JL_CHK( JS_InitReflect(cx, globalObject) );
-		#ifdef JS_HAS_CTYPES
-		JL_CHK( JS_InitCTypesClass(cx, globalObject) );
-		#endif
-
-		JS_FireOnNewGlobalObject(cx, globalObject);
-	}
-*/
-
 
 	ASSERT( JS::IsIncrementalGCEnabled( rt ) );
 	ASSERT( JS::IsGenerationalGCEnabled( rt ) );
 
 	ASSERT( JL_GetRuntimePrivate(rt) == nullptr );
 	JL_SetRuntimePrivate(rt, this);
+
+	JS_SetDestroyCompartmentCallback(rt, destroyCompartmentCallback);
+	JS_SetDestroyZoneCallback(rt, destroyZoneCallback);
 
 	return;
 bad:
@@ -577,7 +570,7 @@ bad:
 
 ModuleManager::~ModuleManager() {
 
-	struct FreeDynamicLibraryHandle : Events::Callback {
+	struct FreeDynamicLibraryHandle : Callback {
 
 		JLLibraryHandler _libraryHandler;
 
@@ -598,7 +591,7 @@ ModuleManager::~ModuleManager() {
 
 		ModuleManager::Module &module = _moduleList[i];
 		if ( module.moduleId != FREE_MODULE_SLOT )
-			_hostRuntime.addListener(jl::EventId::DESTRUCT_HOSTRUNTIME, new FreeDynamicLibraryHandle(module.moduleHandle));
+			_hostRuntime.addListener(jl::HostRuntimeEvents::DESTRUCT_HOSTRUNTIME, new FreeDynamicLibraryHandle(module.moduleHandle));
 	}
 }
 
@@ -690,6 +683,25 @@ bad:
 
 
 
+bool
+ModuleManager::addLocalModule(const char *moduleName, ModuleInitFunction initFunction, JS::HandleObject obj) {
+
+	JSContext *cx = _hostRuntime.context();
+	ASSERT( obj );
+	ASSERT( initFunction != nullptr );
+	moduleId_t moduleId = localModuleId(initFunction);
+	ModuleManager::Module &module = moduleSlot(moduleId);
+	ASSERT( isSlotFree(module) ); // free slot
+	module.moduleHandle = JLDynamicLibraryNullHandler;
+	module.moduleId = moduleId;
+	JL_CHKM( initFunction(_hostRuntime.context(), obj), E_MODULE, E_NAME(moduleName), E_INIT );
+	
+	return true;
+	JL_BAD;
+}
+
+
+
 //////////////////////////////////////////////////////////////////////////////
 // Global
 
@@ -742,10 +754,13 @@ _globalObject( hr.context() ) {
 	JSContext *cx = _hostRuntime.context();
 
 	JS::CompartmentOptions compartmentOptions;
-	compartmentOptions.setVersion(JSVERSION_LATEST);
+	compartmentOptions
+			.setVersion(JSVERSION_LATEST)
+	;
 
 	_globalObject.set( JS_NewGlobalObject(cx, lazyStandardClasses ? &_globalClass_lazy : &_globalClass, nullptr, JS::DontFireOnNewGlobalHook, compartmentOptions) );
 	JL_CHK( _globalObject ); // "unable to create the global object." );
+	ASSERT( JS_IsGlobalObject(_globalObject) );
 
 	{
 		// set globalObject as current global object.
@@ -758,6 +773,7 @@ _globalObject( hr.context() ) {
 		#endif
 
 		JS_FireOnNewGlobalObject(cx, _globalObject);
+
 	}
 
 	return;
@@ -990,6 +1006,9 @@ DEFINE_FINALIZE() {
 		ASSERT( global );
 
 		delete &host;
+
+		???
+
 		delete &global;
 	}
 }
@@ -1541,6 +1560,11 @@ bad:
 
 Host::~Host() {
 
+	fireEvent(HostEvents::HOST_DESTROY);
+
+	ASSERT( JS_GetCompartmentPrivate( _global.compartment() ) == this );
+	JS_SetCompartmentPrivate( _global.compartment(), nullptr );
+
 	if ( _interruptHandler )
 		hostRuntime().removeListener(_interruptHandler);
 	_ids.destructAll();
@@ -1567,8 +1591,8 @@ _interruptHandler(nullptr) {
 	ASSERT( !JSID_IS_ZERO(_ids.get(0)) );
 	ASSERT( !JSID_IS_ZERO(_ids.get(LAST_JSID-1)) );
 
-	ASSERT( JS_GetCompartmentPrivate( js::GetObjectCompartment(glob.globalObject())) == nullptr );
-	JS_SetCompartmentPrivate( js::GetObjectCompartment(glob.globalObject()), this );
+	ASSERT( JS_GetCompartmentPrivate( glob.compartment() ) == nullptr );
+	JS_SetCompartmentPrivate( glob.compartment(), this );
 
 	JSContext *cx = _hostRuntime.context();
 	ASSERT(cx);
@@ -1605,18 +1629,11 @@ _interruptHandler(nullptr) {
 		//JL_CHK( jl::setProperty(cx, globalObj, JLID(cx, host), _hostObject) );
 		JL_CHK( JS_DefinePropertyById(cx, globalObj, JLID(cx, host), _hostObject, JSPROP_READONLY | JSPROP_PERMANENT) );
 
-
-		// init static modules (jslang)
-		ModuleManager::Module &module = moduleManager().moduleSlot(jslangModuleId);
-		ASSERT( moduleManager().isSlotFree(module) ); // free slot
-		module.moduleHandle = JLDynamicLibraryNullHandler;
-		module.moduleId = jslangModuleId;
-		ASSERT( jslangModuleInit != (ModuleInitFunction)nullptr);
-		JL_CHKM( jslangModuleInit(cx, globalObj), E_MODULE, E_NAME("jslang"), E_INIT );
+		JL_CHK( moduleManager().addLocalModule("jslang", jslangModuleInit, globalObj) );
 	}
 
 
-	struct OnInterupt : jl::Events::Callback {
+	struct OnInterupt : Callback {
 		Host &_host;
 		OnInterupt(Host &host) : _host(host) {}
 		bool operator()() {
@@ -1639,7 +1656,7 @@ _interruptHandler(nullptr) {
 		}
 	};
 
-	_interruptHandler = hostRuntime().addListener(EventId::INTERRUPT, new OnInterupt(*this));
+	_interruptHandler = hostRuntime().addListener(HostRuntimeEvents::INTERRUPT, new OnInterupt(*this));
 
 	return;
 bad:

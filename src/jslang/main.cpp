@@ -36,7 +36,7 @@ $MODULE_FOOTER
 **/
 
 
-struct ReleaseModule : jl::Events::Callback {
+struct ReleaseModule : jl::Callback {
 	jl::HostRuntime &_hostRuntime;
 	ModulePrivate *_mpv;
 	
@@ -78,11 +78,11 @@ bool
 jslangModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	ModulePrivate *mpv = (ModulePrivate*)jl_calloc(sizeof(ModulePrivate), 1);
-	jl::Host::getJLHost(cx).moduleManager().modulePrivate(jslangModuleId) = mpv;
+	jl::Host::getJLHost(cx).moduleManager().modulePrivate(localModuleId(jslangModuleInit)) = mpv;
 	mpv->processEventSignalEventSem = JLSemaphoreCreate(0);
 
 	jl::HostRuntime &hostRuntime = jl::HostRuntime::getJLRuntime(cx);
-	hostRuntime.addListener(jl::EventId::AFTER_DESTROY_RUNTIME, new ReleaseModule(hostRuntime, mpv)); // frees mpv after rt and cx has been destroyed
+	hostRuntime.addListener(jl::HostRuntimeEvents::AFTER_DESTROY_RUNTIME, new ReleaseModule(hostRuntime, mpv)); // frees mpv after rt and cx has been destroyed
 
 	INIT_CLASS( Handle );
 	INIT_CLASS( Blob );

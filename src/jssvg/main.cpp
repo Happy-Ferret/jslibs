@@ -32,7 +32,7 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	JL_CHK( InitJslibsModule(cx, id)  );
 	rsvg_init();
 
-	struct ReleaseModule : jl::Events::Callback {
+	struct ReleaseModule : jl::Callback {
 		bool operator()() {
 		
 			rsvg_term();

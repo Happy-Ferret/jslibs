@@ -30,24 +30,24 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-/*
-struct ReleaseModule : jl::Events::Callback {
-	jl::HostRuntime &_hostRuntime;
+
+struct OnHostDestroyed : public jl::Callback {
+	jl::Host &_host;
 	
-	ReleaseModule(jl::HostRuntime &hostRuntime) :
-		_hostRuntime(hostRuntime) {
+	OnHostDestroyed(jl::Host &host) :
+		_host(host) {
 	}
 
 	bool operator()() {
 		
-		ASSERT( _hostRuntime );
+		ASSERT( _host );
 
-		bool st = JS_SetDebugModeForAllCompartments(_hostRuntime.context(), false);
-		ASSERT( st );
+		//bool st = JS_SetDebugModeForAllCompartments(_host.hostRuntime().context(), false);
+		JS_SetRuntimeDebugMode(_host.hostRuntime().runtime(), false);
 		return true;
 	}
 };
-*/
+
 
 
 bool
@@ -59,12 +59,13 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	JLDisableThreadNotifications();
 
-	JL_ASSERT(jl::Host::getJLHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
+	jl::Host &host = jl::Host::getJLHost(cx);
+
+	JL_ASSERT(host.checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 
 	INIT_STATIC();
 
-//	jl::HostRuntime &hostRuntime = jl::HostRuntime::getJLRuntime(cx);
-//	hostRuntime.addListener(jl::EventId::AFTER_DESTROY_RUNTIME, new ReleaseModule(hostRuntime)); // frees mpv after rt and cx has been destroyed
+	host.addListener(jl::HostEvents::HOST_DESTROY, new OnHostDestroyed(host)); // frees mpv after rt and cx has been destroyed
 
 	return true;
 	JL_BAD;

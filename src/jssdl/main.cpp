@@ -501,7 +501,7 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	StartVideo();
 
 
-	struct ReleaseModule : jl::Events::Callback {
+	struct ReleaseModule : jl::Callback {
 		bool operator()() {
 		
 			EndVideo();
@@ -510,7 +510,7 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 		}
 	};
 
-	jl::HostRuntime::getJLRuntime(cx).addListener(jl::EventId::AFTER_DESTROY_RUNTIME, new ReleaseModule()); // frees mpv after rt and cx has been destroyed
+	jl::HostRuntime::getJLRuntime(cx).addListener(jl::HostRuntimeEvents::AFTER_DESTROY_RUNTIME, new ReleaseModule()); // frees mpv after rt and cx has been destroyed
 
 
 

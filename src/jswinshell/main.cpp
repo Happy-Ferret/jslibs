@@ -53,7 +53,7 @@ bool ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	JL_ASSERT( SUCCEEDED(hr), E_NAME("COM"), E_INIT );
 
 
-	struct ReleaseModule : jl::Events::Callback {
+	struct ReleaseModule : jl::Callback {
 		bool operator()() {
 		
 			// Closes the COM library on the current thread, unloads all DLLs loaded by the thread, frees any other resources that the thread maintains, and forces all RPC connections on the thread to close.

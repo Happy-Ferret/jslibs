@@ -130,7 +130,7 @@ bool GCCallTrace(JSContext *cx, JSGCStatus status) {
 
 DEFINE_FUNCTION( registerDumpHeap ) {
 
-	struct DumpHeap : jl::Events::Callback {
+	struct DumpHeap : jl::Callback {
 
 		jl::HostRuntime &_hostRuntime;
 		DumpHeap( jl::HostRuntime &hostRuntime )
@@ -147,7 +147,7 @@ DEFINE_FUNCTION( registerDumpHeap ) {
 
 	jl::HostRuntime &hostRuntime = jl::HostRuntime::getJLRuntime(cx);
 
-	hostRuntime.addListener(jl::EventId::BEFORE_DESTROY_RUNTIME, new DumpHeap(hostRuntime) );
+	hostRuntime.addListener(jl::HostRuntimeEvents::BEFORE_DESTROY_RUNTIME, new DumpHeap(hostRuntime) );
 
 	return true;
 }

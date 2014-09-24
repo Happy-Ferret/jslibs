@@ -37,5 +37,4 @@ bool jslangModuleInit(JSContext *cx, JS::HandleObject obj);
 
 //static const uint32_t jslangModuleId = jl::CastCStrToUint32("lang");
 
-#define jslangModuleId (reinterpret_cast<moduleId_t>(jslangModuleInit))
-
+//#define jslangModuleId (reinterpret_cast<moduleId_t>(jslangModuleInit))

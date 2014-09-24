@@ -37,7 +37,7 @@ ModuleInit( JSContext *cx, JS::HandleObject obj ) {
 	jl::Host::getJLHost( cx ).moduleManager().modulePrivateT<videoInput*>( moduleId() ) = vi;
 
 		
-	struct ReleaseModule : jl::Events::Callback {
+	struct ReleaseModule : jl::Callback {
 		jl::HostRuntime &_hostRuntime;
 		videoInput *_vi;
 	

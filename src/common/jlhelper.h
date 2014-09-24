@@ -93,6 +93,23 @@ public:
 };
 */
 
+///////////////////////////////////////////////////////////////////////////////
+// modules
+
+typedef ptrdiff_t moduleId_t;
+
+#define SYM_MODULE_INIT ModuleInit
+
+#define NAME_MODULE_INIT JL_TOSTRING(SYM_MODULE_INIT)
+
+typedef bool (*ModuleInitFunction)(JSContext *, JS::HandleObject);
+
+ALWAYS_INLINE moduleId_t FASTCALL
+localModuleId(ModuleInitFunction initFunction) {
+
+	return reinterpret_cast<moduleId_t>(initFunction);
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // helper macros and inline functions to avoid a function call to the jsapi

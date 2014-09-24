@@ -400,7 +400,7 @@ DEFINE_FUNCTION( processEvents ) {
 
 	int st;
 
-	ModulePrivate *mpv = (ModulePrivate*)jl::Host::getJLHost(cx).moduleManager().modulePrivate(jslangModuleId);
+	ModulePrivate *mpv = (ModulePrivate*)jl::Host::getJLHost(cx).moduleManager().modulePrivate(localModuleId(jslangModuleInit));
 
 	ASSERT( JLSemaphoreOk(mpv->processEventSignalEventSem) );
 

@@ -33,7 +33,7 @@ namespace OGLFT {
 
 
 
-struct ReleaseModule : jl::Events::Callback {
+struct ReleaseModule : jl::Callback {
 	jl::HostRuntime &_hostRuntime;
 	ModulePrivate *_mpv;
 	
