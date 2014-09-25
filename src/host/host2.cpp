@@ -344,11 +344,15 @@ WatchDog::interruptCallback(JSContext *cx) {
 	JS_SetInterruptCallback(rt, nullptr);
 
 	jl::HostRuntime &runtime = jl::HostRuntime::getJLRuntime(rt);
-	return runtime.fireEvent(HostRuntimeEvents::INTERRUPT);
-
+	jl::EventInterrupt ev(cx);
+	JL_CHK( runtime.notify(ev) );
+	
 	// enable the interrupt callback
-	Dbg<JSInterruptCallback> tmp = JS_SetInterruptCallback(rt, interruptCallback);
+	JSInterruptCallback tmp = JS_SetInterruptCallback(rt, interruptCallback);
 	ASSERT( tmp == nullptr );
+	
+	return true;
+	JL_BAD;
 }
 
 
@@ -476,22 +480,39 @@ HostRuntime::~HostRuntime() {
 
 	// see create()
 
-	JL_CHKM( fireEvent(HostRuntimeEvents::BEFORE_DESTROY_RUNTIME), E_HOST, E_INTERNAL, E_NAME("BEFORE_DESTROY_RUNTIME") );
+	bool st;
 
-	if ( JS_IsInRequest(rt) )
+	EventBeforeDestroyRuntime ev;
+	st = notify(ev), E_HOST, E_INTERNAL, E_NAME("BEFORE_DESTROY_RUNTIME");
+	ASSERT( st );
+
+	JSContext *cx;
+	JSContext *iter = nullptr;
+	while ((cx = JS_ContextIterator(rt, &iter)) != nullptr) {
+	
+		//if ( JS_IsInRequest(rt) )
+
 		JS_EndRequest(cx);
-
-	if ( cx != nullptr )
 		JS_DestroyContext(cx);
-	cx = nullptr;
+
+		//if (JS_IsRunning(cx)) {
+	}
 
 	if ( rt != nullptr )
 		JS_DestroyRuntime(rt);
 	rt = nullptr;
 
-	JL_CHKM( fireEvent(HostRuntimeEvents::AFTER_DESTROY_RUNTIME), E_HOST, E_INTERNAL, E_NAME("AFTER_DESTROY_RUNTIME") );
+	{
+	EventAfterDestroyRuntime ev;
+	st = notify(ev), E_HOST, E_INTERNAL, E_NAME("AFTER_DESTROY_RUNTIME");
+	ASSERT( st );
+	}
 
-	JL_CHKM( fireEvent(HostRuntimeEvents::DESTRUCT_HOSTRUNTIME), E_HOST, E_INTERNAL, E_NAME("DESTRUCT_HOSTRUNTIME") );
+	{
+	EventDestroyHostRuntime ev;
+	st = notify(ev), E_HOST, E_INTERNAL, E_NAME("DESTRUCT_HOSTRUNTIME");
+	ASSERT( st );
+	}
 
 bad:
 	// on error, do the minimum.
@@ -505,7 +526,7 @@ bad:
 }
 
 HostRuntime::HostRuntime( Allocators allocators, bool unsafeMode, uint32_t maxbytes, size_t nativeStackQuota )
-: _allocators(allocators), rt(nullptr), cx(nullptr), _unsafeMode(unsafeMode), _isEnding(false), _skipCleanup(false), _watchDog(*MOZ_THIS_IN_INITIALIZER_LIST()) {
+: _allocators(allocators), rt(nullptr), _unsafeMode(unsafeMode), _isEnding(false), _skipCleanup(false), _watchDog(*MOZ_THIS_IN_INITIALIZER_LIST()) {
 
 	::_unsafeMode = unsafeMode;
 
@@ -531,7 +552,25 @@ HostRuntime::HostRuntime( Allocators allocators, bool unsafeMode, uint32_t maxby
 		.setNativeRegExp(true)
 	;
 
-	cx = JS_NewContext(rt, 8192); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
+	ASSERT( JS::IsIncrementalGCEnabled( rt ) );
+	ASSERT( JS::IsGenerationalGCEnabled( rt ) );
+
+	ASSERT( JL_GetRuntimePrivate(rt) == nullptr );
+	JL_SetRuntimePrivate(rt, this);
+
+	JS_SetDestroyCompartmentCallback(rt, destroyCompartmentCallback);
+	JS_SetDestroyZoneCallback(rt, destroyZoneCallback);
+	
+	return;
+bad:
+	invalidate();
+}
+
+
+JSContext *
+HostRuntime::createContext() {
+
+	JSContext *cx = JS_NewContext(rt, 8192); // set the chunk size of the stack pool to 8192. see http://groups.google.com/group/mozilla.dev.tech.js-engine/browse_thread/thread/be9f404b623acf39/9efdfca81be99ca3
 	JL_CHK( cx ); //, "unable to create the context." );
 
 	JS_BeginRequest(cx);
@@ -549,18 +588,8 @@ HostRuntime::HostRuntime( Allocators allocators, bool unsafeMode, uint32_t maxby
 	// JS_SetOptions doc: https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_SetOptions
 	// beware: avoid using JSOPTION_COMPILE_N_GO here.
 
-	ASSERT( JS::IsIncrementalGCEnabled( rt ) );
-	ASSERT( JS::IsGenerationalGCEnabled( rt ) );
-
-	ASSERT( JL_GetRuntimePrivate(rt) == nullptr );
-	JL_SetRuntimePrivate(rt, this);
-
-	JS_SetDestroyCompartmentCallback(rt, destroyCompartmentCallback);
-	JS_SetDestroyZoneCallback(rt, destroyZoneCallback);
-
-	return;
-bad:
-	invalidate();
+	return cx;
+	JL_BADVAL(nullptr);
 }
 
 
@@ -570,6 +599,7 @@ bad:
 
 ModuleManager::~ModuleManager() {
 
+/*
 	struct FreeDynamicLibraryHandle : Callback {
 
 		JLLibraryHandler _libraryHandler;
@@ -587,24 +617,26 @@ ModuleManager::~ModuleManager() {
 		}
 	};
 
+
 	for ( uint16_t i = 0; i < MAX_MODULES; ++i ) {
 
 		ModuleManager::Module &module = _moduleList[i];
-		if ( module.moduleId != FREE_MODULE_SLOT )
+		if ( module.moduleId != FREE_MODULE_SLOT ) {
+
 			_hostRuntime.addListener(jl::HostRuntimeEvents::DESTRUCT_HOSTRUNTIME, new FreeDynamicLibraryHandle(module.moduleHandle));
+		}
 	}
+*/
 }
 
 
-ModuleManager::ModuleManager(HostRuntime &hostRuntime)
-: _hostRuntime(hostRuntime), _moduleCount(0) {
+ModuleManager::ModuleManager()
+:  _moduleCount(0) {
 }
 
 
 bool
-ModuleManager::loadModule(const char *libFileName, JS::HandleObject obj, JS::MutableHandleValue rval) {
-
-	JSContext *cx = _hostRuntime.context();
+ModuleManager::loadModule(JSContext *cx, const char *libFileName, JS::HandleObject obj, JS::MutableHandleValue rval) {
 
 	ASSERT( obj );
 
@@ -669,6 +701,28 @@ ModuleManager::loadModule(const char *libFileName, JS::HandleObject obj, JS::Mut
 		JL_ERR( E_MODULE, E_NAME(filename), E_INIT );
 	}
 
+
+	struct FreeDynamicLibraryHandle : Observer<EventDestroyHostRuntime>  {
+
+		JLLibraryHandler _libraryHandler;
+
+		FreeDynamicLibraryHandle(JLLibraryHandler libraryHandler) : _libraryHandler(libraryHandler) {
+		}
+
+		bool operator()(EventDestroyHostRuntime &ev) {
+
+			//#ifndef DEBUG // else the memory block was allocated in a DLL that was unloaded prior to the _CrtMemDumpAllObjectsSince() call.
+			if ( JLDynamicLibraryOk(_libraryHandler) )
+				JLDynamicLibraryClose(&_libraryHandler);
+			//#endif
+			return true;
+		}
+	};
+
+
+	jl::HostRuntime::getJLRuntime(cx).addObserver(new FreeDynamicLibraryHandle(module.moduleHandle));
+
+
 	//JL_CHK( JL_NewNumberValue(cx, uid, JL_RVAL) ); // really needed ? yes, UnloadModule will need this ID, ... but UnloadModule is too complicated to implement and will never exist.
 	rval.setObject(*obj);
 
@@ -684,9 +738,8 @@ bad:
 
 
 bool
-ModuleManager::addLocalModule(const char *moduleName, ModuleInitFunction initFunction, JS::HandleObject obj) {
+ModuleManager::addLocalModule(JSContext *cx, const char *moduleName, ModuleInitFunction initFunction, JS::HandleObject obj) {
 
-	JSContext *cx = _hostRuntime.context();
 	ASSERT( obj );
 	ASSERT( initFunction != nullptr );
 	moduleId_t moduleId = localModuleId(initFunction);
@@ -694,7 +747,7 @@ ModuleManager::addLocalModule(const char *moduleName, ModuleInitFunction initFun
 	ASSERT( isSlotFree(module) ); // free slot
 	module.moduleHandle = JLDynamicLibraryNullHandler;
 	module.moduleId = moduleId;
-	JL_CHKM( initFunction(_hostRuntime.context(), obj), E_MODULE, E_NAME(moduleName), E_INIT );
+	JL_CHKM( initFunction(cx, obj), E_MODULE, E_NAME(moduleName), E_INIT );
 	
 	return true;
 	JL_BAD;
@@ -747,11 +800,8 @@ const JSClass Global::_globalClass = {
 };
 
 
-Global::Global( HostRuntime &hr, bool lazyStandardClasses ) :
-_hostRuntime(hr),
-_globalObject( hr.context() ) {
-
-	JSContext *cx = _hostRuntime.context();
+Global::Global( JSContext *cx, bool lazyStandardClasses ) :
+_globalObject( cx ) {
 
 	JS::CompartmentOptions compartmentOptions;
 	compartmentOptions
@@ -872,7 +922,7 @@ ErrorManager::ErrArg::ErrArg( jl::StrDataSrc & val ) {
 
 
 bool
-ErrorManager::report( bool isWarning, size_t argc, const ErrArg *args ) const {
+ErrorManager::report( JSContext *cx, bool isWarning, size_t argc, const ErrArg *args ) const {
 
 	const ErrArg *argsEnd = args + argc;
 
@@ -976,13 +1026,13 @@ ErrorManager::report( bool isWarning, size_t argc, const ErrArg *args ) const {
 
 	{
 		JSErrorFormatString format = { "{0}", 1, (int16_t)exn };
-		return JS_ReportErrorFlagsAndNumberUC( _hostRuntime.context(), isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, errorCallback, &format, 0, static_cast<const wchar_t *>(buf) );
+		return JS_ReportErrorFlagsAndNumberUC( cx, isWarning ? JSREPORT_WARNING : JSREPORT_ERROR, errorCallback, &format, 0, static_cast<const wchar_t *>(buf) );
 	}
 
 bad:
 	{
 		JSErrorFormatString format = { "Invalid error message.", 0, JSEXN_INTERNALERR };
-		return JS_ReportErrorFlagsAndNumberUC( _hostRuntime.context(), JSREPORT_ERROR, errorCallback, &format, 0 );
+		return JS_ReportErrorFlagsAndNumberUC( cx, JSREPORT_ERROR, errorCallback, &format, 0 );
 	}
 }
 
@@ -1007,7 +1057,7 @@ DEFINE_FINALIZE() {
 
 		delete &host;
 
-		???
+
 
 		delete &global;
 	}
@@ -1025,10 +1075,10 @@ DEFINE_CONSTRUCTOR() {
 	JL_ASSERT_ARGC_RANGE(1, 2);
 	JL_ASSERT_ARG_IS_CALLABLE(1);
 
-	jl::Global &global = *new jl::Global(jl::HostRuntime::getJLRuntime(cx));
+	jl::Global &global = *new jl::Global(cx);
 	JL_CHK( global );
 
-	jl::Host &host = *new jl::Host(global, jl::Host::getJLHost(cx).stdIO());
+	jl::Host &host = *new jl::Host(cx, global, jl::Host::getJLHost(cx).stdIO());
 	JL_CHK( host );
 
 	{
@@ -1069,7 +1119,7 @@ DEFINE_PROPERTY_GETTER( unsafeMode ) {
 
 	JL_IGNORE( id, obj );
 
-	JL_CHK( jl::setValue(cx, vp, jl::Host::getJLHost(cx).hostRuntime().unsafeMode()) );
+	JL_CHK( jl::setValue(cx, vp, jl::HostRuntime::getJLRuntime(cx).unsafeMode()) );
 	return true;
 	JL_BAD;
 }
@@ -1280,7 +1330,7 @@ DEFINE_FUNCTION( loadModule ) {
 		// MAC OSX: 	'@executable_path' ??
 	}
 
-	JL_CHK( jl::Host::getJLHost(cx).moduleManager().loadModule(libFileName, JL_OBJ, JL_RVAL) );
+	JL_CHK( jl::Host::getJLHost(cx).moduleManager().loadModule(cx, libFileName, JL_OBJ, JL_RVAL) );
 	return true;
 	JL_BAD;
 }
@@ -1518,7 +1568,7 @@ Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
 	if ( Host::hasJLHost(cx) ) {
 
-		Host::getJLHost( cx ).hostStderrWrite( tmpErrTxt, tmpErrTxt.length() );
+		Host::getJLHost( cx ).hostStderrWrite( cx, tmpErrTxt, tmpErrTxt.length() );
 	} else {
 
 		jl::fputs(tmpErrTxt.toWStrZ(JS::AutoCheckCannotGC()), stderr);
@@ -1528,9 +1578,8 @@ Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
 
 bool
-Host::hostStderrWrite(const TCHAR *message, size_t length) {
+Host::hostStderrWrite(JSContext *cx, const TCHAR *message, size_t length) {
 
-	JSContext *cx = _hostRuntime.context();
 	AutoRestoreExceptionState ares( cx );
 	// avoid reentrancy if stderr function rise an error.
 	AutoRestoreErrorReporter arer( cx, JL_IS_SAFE ? HostRuntime::errorReporterBasic : nullptr );
@@ -1560,33 +1609,35 @@ bad:
 
 Host::~Host() {
 
-	fireEvent(HostEvents::HOST_DESTROY);
+	EventHostDestroy ev;
+	notify(ev);
 
 	ASSERT( JS_GetCompartmentPrivate( _global.compartment() ) == this );
 	JS_SetCompartmentPrivate( _global.compartment(), nullptr );
 
 	if ( _interruptHandler )
-		hostRuntime().removeListener(_interruptHandler);
+		_hostRuntime.removeObserver(_interruptHandler);
+
 	_ids.destructAll();
 	IFDEBUG( invalidate() );
 }
 
 
-Host::Host( Global &glob, StdIO &hostStdIO ) :
+Host::Host( JSContext *cx, Global &glob, StdIO &hostStdIO ) :
+_hostRuntime(HostRuntime::getJLRuntime(cx)),
 _global(glob),
-_hostRuntime(glob.hostRuntime()),
-_moduleManager(glob.hostRuntime()),
-_errorManager(glob.hostRuntime()),
+_moduleManager(),
+_errorManager(),
 _compatId(JL_HOST_VERSIONID),
 _hostStdIO(hostStdIO),
-_objectProto(glob.hostRuntime().runtime()),
-_hostObject(glob.hostRuntime().runtime()),
+_objectProto(cx),
+_hostObject(cx),
 _ids(),
 _interruptHandler(nullptr) {
 
 //	JL_CHKM(_global, E_GLOBAL, E_INVALID);
 
-	_ids.constructAll(_hostRuntime.runtime());
+	_ids.constructAll(cx);
 
 	ASSERT( !JSID_IS_ZERO(_ids.get(0)) );
 	ASSERT( !JSID_IS_ZERO(_ids.get(LAST_JSID-1)) );
@@ -1594,11 +1645,10 @@ _interruptHandler(nullptr) {
 	ASSERT( JS_GetCompartmentPrivate( glob.compartment() ) == nullptr );
 	JS_SetCompartmentPrivate( glob.compartment(), this );
 
-	JSContext *cx = _hostRuntime.context();
 	ASSERT(cx);
 
 	JS::RuntimeOptionsRef(cx)
-		.setExtraWarnings(!_hostRuntime.unsafeMode())
+		.setExtraWarnings(!HostRuntime::getJLRuntime(cx).unsafeMode())
 	;
 
 	JS_SetErrorReporter(cx, errorReporter);
@@ -1629,16 +1679,16 @@ _interruptHandler(nullptr) {
 		//JL_CHK( jl::setProperty(cx, globalObj, JLID(cx, host), _hostObject) );
 		JL_CHK( JS_DefinePropertyById(cx, globalObj, JLID(cx, host), _hostObject, JSPROP_READONLY | JSPROP_PERMANENT) );
 
-		JL_CHK( moduleManager().addLocalModule("jslang", jslangModuleInit, globalObj) );
+		JL_CHK( moduleManager().addLocalModule(cx, "jslang", jslangModuleInit, globalObj) );
 	}
+	
 
-
-	struct OnInterupt : Callback {
+	struct OnInterupt : Observer<EventInterrupt> {
 		Host &_host;
 		OnInterupt(Host &host) : _host(host) {}
-		bool operator()() {
+		bool operator()(EventInterrupt &ev) {
 
-			JSContext *cx = _host.hostRuntime().context();
+			JSContext *cx = ev.cx;
 			JS::AutoSaveExceptionState ase(cx);
 			JSAutoCompartment ac(cx, _host.hostObject());
 			JS::RootedValue fctVal(cx);
@@ -1656,7 +1706,7 @@ _interruptHandler(nullptr) {
 		}
 	};
 
-	_interruptHandler = hostRuntime().addListener(HostRuntimeEvents::INTERRUPT, new OnInterupt(*this));
+	_interruptHandler = _hostRuntime.addObserver(new OnInterupt(*this));
 
 	return;
 bad:
@@ -1665,9 +1715,8 @@ bad:
 
 
 bool
-Host::setHostArguments( TCHAR **hostArgv, size_t hostArgc ) {
+Host::setHostArguments( JSContext *cx, TCHAR **hostArgv, size_t hostArgc ) {
 
-	JSContext *cx = _hostRuntime.context();
 	JS::RootedValue argumentsVal(_hostRuntime.runtime());
 
 	JL_CHK( jl::setVector(cx, &argumentsVal, hostArgv, hostArgc) );
@@ -1677,18 +1726,16 @@ Host::setHostArguments( TCHAR **hostArgv, size_t hostArgc ) {
 }
 
 bool
-Host::setHostPath( const TCHAR *hostPath) {
+Host::setHostPath( JSContext *cx, const TCHAR *hostPath) {
 
-	JSContext *cx = _hostRuntime.context();
 	JL_CHK( jl::setProperty(cx, _hostObject, JLID(cx, path), hostPath) );
 	return true;
 	JL_BAD;
 }
 
 bool
-Host::setHostName( const TCHAR *hostName ) {
+Host::setHostName( JSContext *cx, const TCHAR *hostName ) {
 
-	JSContext *cx = _hostRuntime.context();
 	JL_CHK( jl::setProperty(cx, _hostObject, JLID(cx, name), hostName) );
 	return true;
 	JL_BAD;

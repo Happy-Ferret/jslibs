@@ -173,7 +173,7 @@ InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 	JL_ASSERT( proto, E_CLASS, E_NAME(cs->clasp.name), E_CREATE ); //RTE
 	ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(proto) == NULL );
 
-	JL_CHKM( host.addCachedClassProto(cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
+	JL_CHKM( host.addCachedClassProto(cx, cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 
 	ctor.set( cs->constructor ? JL_GetConstructor(cx, proto) : proto );
 

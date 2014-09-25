@@ -519,7 +519,7 @@ _tmain( int argc, TCHAR* argv[] ) {
 		HostRuntime hostRuntime(allocators, args.unsafeMode ,args.maxBytes);
 
 		JL_CHK( hostRuntime );
-		JSContext *cx = hostRuntime.context();
+		JSContext *cx = hostRuntime.createContext();
 		ASSERT( &hostRuntime == &jl::HostRuntime::getJLRuntime(cx) );
 
 		JS::RuntimeOptionsRef(cx)
@@ -527,11 +527,11 @@ _tmain( int argc, TCHAR* argv[] ) {
 		;
 
 
-		jl::Global global(hostRuntime);
+		jl::Global global(cx);
 		JL_CHK( global );
 
 		HostStdIO hostIO;
-		jl::Host host(global, hostIO);
+		jl::Host host(cx, global, hostIO);
 		JL_CHK( host );
 
 		JL_CHKM( initInterrupt(), E_HOST, E_INTERNAL );
@@ -559,12 +559,12 @@ _tmain( int argc, TCHAR* argv[] ) {
 			jl::strncpy(hostPath, hostFullPath, hostPathLength);
 			hostPath[hostPathLength] = TEXT('\0');
 
-			JL_CHK( host.setHostPath(hostPath) );
-			JL_CHK( host.setHostName(hostName) );
+			JL_CHK( host.setHostPath(cx, hostPath) );
+			JL_CHK( host.setHostName(cx, hostName) );
 		
 			ASSERT( !JS_IsExceptionPending(cx) );
 
-			JL_CHK( host.setHostArguments(args.jsArgv, args.jsArgc) );
+			JL_CHK( host.setHostArguments(cx, args.jsArgv, args.jsArgc) );
 
 			JL_ASSERT_WARN(!(!args.inlineScript && args.jsArgc == 0 && !args.useFileBootstrapScript && COUNTOF(embeddedBootstrapScript) - 1 == 0), E_SCRIPT, E_NOTSPECIFIED);
 

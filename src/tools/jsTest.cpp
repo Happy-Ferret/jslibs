@@ -968,7 +968,9 @@ int main_run(JSContext *cx) {
 
 	char *scriptText = "(function() { return 123 })";
 	JS::CompileOptions compileOptions(cx, JSVERSION_LATEST);
-	JS::RootedScript script(cx, JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), compileOptions));
+	JS::RootedScript script(cx);
+	
+	JS_CompileScript(cx, globalObject, scriptText, strlen(scriptText), compileOptions, &script);
 
 	//test(&rval);
 
@@ -994,7 +996,7 @@ int main_run(JSContext *cx) {
 int main_min(int argc, char* argv[]) {
 
 	JS_Init();
-    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L, JS_NO_HELPER_THREADS);
+    JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
 	JSContext *cx = JS_NewContext(rt, 8192L);
 
 	main_run(cx);
@@ -1102,12 +1104,6 @@ cleanHighBits(T value, size_t n) {
 //#pragma runtime_checks( "c", off )
 
 #include <rtcapi.h>
-
-#define DISABLE_SMALLER_TYPE_CHECK \
-	int _prev_rtc_cvrt_loss_info = _RTC_SetErrorType(_RTC_CVRT_LOSS_INFO, _RTC_ERRTYPE_IGNORE)
-
-#define RESTORE_SMALLER_TYPE_CHECK \
-	_RTC_SetErrorType(_RTC_CVRT_LOSS_INFO, _prev_rtc_cvrt_loss_info)
 
 
 template<class D, class S>

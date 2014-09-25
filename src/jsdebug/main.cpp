@@ -43,7 +43,7 @@ struct OnHostDestroyed : public jl::Callback {
 		ASSERT( _host );
 
 		//bool st = JS_SetDebugModeForAllCompartments(_host.hostRuntime().context(), false);
-		JS_SetRuntimeDebugMode(_host.hostRuntime().runtime(), false);
+//		JS_SetRuntimeDebugMode(_host.hostRuntime().runtime(), false);
 		return true;
 	}
 };
