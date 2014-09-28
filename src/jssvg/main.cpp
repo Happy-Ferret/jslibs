@@ -33,7 +33,7 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 	rsvg_init();
 
 	struct ReleaseModule : jl::Callback {
-		bool operator()() {
+		bool operator()( EventType &ev ) {
 		
 			rsvg_term();
 			return true;

@@ -31,19 +31,10 @@ $MODULE_FOOTER
 **/
 
 
-struct OnHostDestroyed : public jl::Callback {
-	jl::Host &_host;
+struct OnHostDestroyed : public jl::Observer<jl::EventHostDestroy> {
 	
-	OnHostDestroyed(jl::Host &host) :
-		_host(host) {
-	}
-
-	bool operator()() {
+	bool operator()( EventType &ev ) {
 		
-		ASSERT( _host );
-
-		//bool st = JS_SetDebugModeForAllCompartments(_host.hostRuntime().context(), false);
-//		JS_SetRuntimeDebugMode(_host.hostRuntime().runtime(), false);
 		return true;
 	}
 };
@@ -65,7 +56,7 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	INIT_STATIC();
 
-	host.addListener(jl::HostEvents::HOST_DESTROY, new OnHostDestroyed(host)); // frees mpv after rt and cx has been destroyed
+	host.addObserver(new OnHostDestroyed); // frees mpv after rt and cx has been destroyed
 
 	return true;
 	JL_BAD;

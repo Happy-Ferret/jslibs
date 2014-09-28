@@ -148,7 +148,7 @@ ModuleInit(JSContext *cx, JSObject *obj, uint32_t id) {
 
 
 	struct ReleaseModule : jl::Callback {
-		bool operator()() {
+		bool operator()( EventType &ev ) {
 		
 			ode::dCloseODE();
 

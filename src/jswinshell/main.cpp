@@ -54,7 +54,7 @@ bool ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 
 	struct ReleaseModule : jl::Callback {
-		bool operator()() {
+		bool operator()( EventType &ev ) {
 		
 			// Closes the COM library on the current thread, unloads all DLLs loaded by the thread, frees any other resources that the thread maintains, and forces all RPC connections on the thread to close.
 			CoUninitialize();

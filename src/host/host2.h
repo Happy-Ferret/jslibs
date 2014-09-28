@@ -15,7 +15,7 @@
 #pragma once
   
 /*
-      runtime/context -- runtimePrivate <- HostRuntime
+      runtime        -- runtimePrivate <- HostRuntime
              |                               ^    ^
              |                               |    |
   compartment/global <-------------------- Global |
@@ -164,6 +164,8 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 // Event system
 
+/*
+
 template <class EVENT>
 class Observer {
 public:
@@ -175,13 +177,23 @@ template <class EVENT>
 class Observable {
 	std::list<Observer<EVENT>*> _observers;
 public:
+	typedef typename std::list<Observer<EVENT>*>::iterator It;
+
 	Observable() {}
 	virtual ~Observable() {}
 	void addObserver(Observer<EVENT> *observer) {
 
 		_observers.push_back(observer);
+
+		_observers.back();
+
+
 	}
 	void removeObserver(Observer<EVENT> *observer) {
+
+
+		_observers.
+
 
 		_observers.remove(observer);
 	}
@@ -196,55 +208,50 @@ public:
 	}
 };
 
+*/
 
-/*
 
-template <class T>
-class Callback {
+
+
+template <class EVENT>
+class Observer {
 public:
-	typedef T EventType;
-	virtual bool operator()( const T& ev ) = 0;
+	typedef EVENT EventType;
+	virtual ~Observer() {}
+	virtual bool operator ()(EVENT &ev) = 0;
 };
 
-template <class T>
-class Events {
-
+template <class EVENT>
+class Observable {
+	typedef jl::Queue1< Observer<EVENT>* > List;
+	List _list;
 public:
-
-	typedef jl::Queue1<Callback<T>*> List;
 	typedef typename List::Item ListItem;
 
+	ListItem *
+	addObserver( Observer<EVENT>* observer ) {
 
-private:
-	List _list;
-
-public:
-	typename ListItem *
-	addListener( Callback<T>* cb ) {
-
-		_list.AddEnd();
-		_list.Last() = cb;
-		return _list.Last();
+		return _list.AddEnd(observer);
 	}
 
 	void
-	removeListener( ListItem *item ) {
+	removeObserver( ListItem *item ) {
 
-		_list.Remove(item);
+		delete item->data;
+		_list.RemoveItem(item);
 	}
 
-	// returns false on the first listener that returns false (error)
-	bool 
-	fireEvent( const T& ev ) const {
+	// returns false on the first observer that returns false (error)
+	bool
+	notify( EVENT &ev ) const {
 
 		for ( ListItem *it = _list.First(); it; it = it->next )
-			if ( !(*it->data.cb)(ev) )
+			if ( !(*it->data)(ev) )
 				return false;
 		return true;
 	}
 };
 
-*/
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -533,7 +540,6 @@ public:
 private:
 
 	JSRuntime *rt;
-//	JSContext *cx;
 
 	Allocators _allocators;
 
@@ -543,8 +549,22 @@ private:
 	bool _skipCleanup;
 	bool _unsafeMode;
 
-public: // static
+// static
 
+	static void
+	destroyAllContext( JSRuntime *rt, JSContext *iter = nullptr ) {
+
+		if ( !JS_ContextIterator(rt, &iter) )
+			return;
+		destroyAllContext(rt, iter);
+		
+		if ( JS_IsInRequest(rt) )
+			JS_EndRequest(iter);
+		JS_DestroyContext(iter);
+		//if (JS_IsRunning(cx))
+	}
+
+public:
 	static void
 	setJSEngineAllocators(const Allocators &allocators) {
 
@@ -1236,8 +1256,12 @@ public:
 
 };
 
+struct Host;
 
-class EventHostDestroy {
+struct EventHostDestroy {
+	HostRuntime &hostRuntime;
+	Host &host;
+	EventHostDestroy(HostRuntime &hostRuntime, Host &host) : hostRuntime(hostRuntime), host(host) {}
 };
 
 
@@ -1259,7 +1283,8 @@ class DLLAPI Host :
 	ProtoCache _classProtoCache;
 	StaticArray< JS::PersistentRootedId, LAST_JSID > _ids;
 	ErrorManager _errorManager;
-//	Events<EventHostDestroy>::List::Item *_interruptHandler;
+	Observable<EventInterrupt>::ListItem *_interruptObserverItem;
+
 
 //	static void
 //	errorReporterBasic( JSContext *cx, const char *message, JSErrorReport *report );

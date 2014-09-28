@@ -28,15 +28,15 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-struct ReleaseModule : jl::Callback {
+class ReleaseModule : public jl::Observer<jl::EventAfterDestroyRuntime> {
 	jl::HostRuntime &_hostRuntime;
 	ModulePrivate *_mpv;
-	
+public:
 	ReleaseModule(jl::HostRuntime &hostRuntime, ModulePrivate *mpv)
 	: _hostRuntime(hostRuntime), _mpv(mpv) {
 	}
 
-	bool operator()() {
+	bool operator()( EventType &ev ) {
 		
 		ASSERT( _hostRuntime );
 		if ( !_hostRuntime.skipCleanup() )
@@ -59,7 +59,8 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	jl::Host::getJLHost(cx).moduleManager().modulePrivate(moduleId()) = mpv;
 
 	jl::HostRuntime &hostRuntime = jl::HostRuntime::getJLRuntime(cx);
-	hostRuntime.addListener(jl::HostRuntimeEvents::AFTER_DESTROY_RUNTIME, new ReleaseModule(hostRuntime, mpv)); // frees mpv after rt and cx has been destroyed
+
+	hostRuntime.addObserver(new ReleaseModule(hostRuntime, mpv)); // frees mpv after rt and cx has been destroyed
 
 	INIT_STATIC();
 

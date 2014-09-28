@@ -41,7 +41,7 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
-struct ReleaseModule : jl::Callback {
+struct ReleaseModule : jl::Observer<jl::EventAfterDestroyRuntime> {
 	jl::HostRuntime &_hostRuntime;
 	JsioPrivate *_mpv;
 	
@@ -50,7 +50,7 @@ struct ReleaseModule : jl::Callback {
 		_mpv(mpv) {
 	}
 
-	bool operator()() {
+	bool operator()( EventType &ev ) {
 		
 		ASSERT( _hostRuntime );
 
@@ -101,7 +101,7 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	jl::Host::getJLHost(cx).moduleManager().modulePrivate(moduleId()) = mpv;
 
 	jl::HostRuntime &hostRuntime = jl::HostRuntime::getJLRuntime(cx);
-	hostRuntime.addListener(jl::HostRuntimeEvents::AFTER_DESTROY_RUNTIME, new ReleaseModule(hostRuntime, mpv)); // frees mpv after rt and cx has been destroyed
+	hostRuntime.addObserver(new ReleaseModule(hostRuntime, mpv)); // frees mpv after rt and cx has been destroyed
 
 	INIT_CLASS( IoError );
 	INIT_CLASS( Descriptor );

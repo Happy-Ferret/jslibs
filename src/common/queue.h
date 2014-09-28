@@ -257,6 +257,7 @@ public:
 		Item *prev;
 		Item *next;
 		T data;
+		Item(const T &d) : data(d) {}
 	};
 
 private:
@@ -299,9 +300,9 @@ public:
 		return _last;
 	}
 
-	ALWAYS_INLINE void AddEnd() {
+	ALWAYS_INLINE Item* AddEnd( const T &data = T() ) {
 
-		Item *newItem = ::new(allocator.Alloc()) Item;
+		Item *newItem = ::new(allocator.Alloc()) Item(data);
 		ASSERT(newItem);
 		if ( _last != NULL ) {
 
@@ -316,6 +317,7 @@ public:
 			_first = newItem;
 			_last = newItem;
 		}
+		return newItem;
 	}
 
 	ALWAYS_INLINE void RemoveEnd() {
@@ -334,7 +336,7 @@ public:
 		allocator.Free(oldItem);
 	}
 
-	ALWAYS_INLINE void AddBegin() {
+	ALWAYS_INLINE Item* AddBegin( const T &data = T() ) {
 
 		Item *newItem = ::new(allocator.Alloc()) Item;
 		if ( _first != NULL ) {
@@ -350,6 +352,7 @@ public:
 			_first = newItem;
 			_last = newItem;
 		}
+		return newItem;
 	}
 
 	ALWAYS_INLINE void RemoveBegin() {
@@ -368,7 +371,7 @@ public:
 		allocator.Free(oldItem);
 	}
 
-	ALWAYS_INLINE void Remove( Item *item ) {
+	ALWAYS_INLINE void RemoveItem( Item *item ) {
 
 		if ( item == _first )
 			return RemoveBegin();
@@ -380,7 +383,7 @@ public:
 		allocator.Free(item);
 	}
 
-	ALWAYS_INLINE void Insert( Item *nextItem, const T &data ) {
+	ALWAYS_INLINE Item* Insert( Item *nextItem, const T &data = T() ) {
 
 		if ( nextItem == First() ) {
 
@@ -394,6 +397,7 @@ public:
 		newItem->prev = nextItem->prev;
 		nextItem->prev->next = newItem;
 		nextItem->prev = newItem;
+		return newItem;
 	}
 
 
@@ -406,7 +410,7 @@ public:
 	}
 
 
-	ALWAYS_INLINE void Push( const T &item ) {
+	ALWAYS_INLINE void Push( const T &item = T() ) {
 
 		AddEnd();
 		Last()->data = item;
@@ -425,7 +429,7 @@ public:
 		return item;
 	}
 
-	ALWAYS_INLINE void Unshift( const T &item ) {
+	ALWAYS_INLINE void Unshift( const T &item = T() ) {
 		
 		AddBegin();
 		First()->data = item;

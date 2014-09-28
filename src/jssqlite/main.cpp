@@ -89,15 +89,15 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	JL_CHKM( sqlite3_enable_shared_cache(true) == SQLITE_OK, E_MODULE, E_INIT ); // "Unable to enable shared cache."
 	JL_CHKM( sqlite3_initialize() == SQLITE_OK, E_MODULE, E_INIT ); // "Unable to initialize sqlite."
 
-	struct ReleaseModule : jl::Callback {
-		bool operator()() {
+	struct ReleaseModule : jl::Observer<jl::EventAfterDestroyRuntime> {
+		bool operator()( EventType &ev ) {
 		
 			sqlite3_shutdown();
 			return true;
 		}
 	};
 
-	jl::HostRuntime::getJLRuntime(cx).addListener(jl::AFTER_DESTROY_RUNTIME, new ReleaseModule()); // frees mpv after rt and cx has been destroyed
+	jl::HostRuntime::getJLRuntime(cx).addObserver(new ReleaseModule); // frees mpv after rt and cx has been destroyed
 
 
 	INIT_CLASS( SqliteError );

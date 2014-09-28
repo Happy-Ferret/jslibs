@@ -88,13 +88,18 @@ public:
 		return _jsargs.isConstructing();
 	}
 
+	void setThis(JS::HandleObject thisObject) {
+
+		rval().setObjectOrNull(thisObject);
+		_jsargs.setThis(rval());
+	}
+
 	void
 	constructThis(JSClass *clasp, JS::HandleObject proto) {
 
 		//ASSERT( isConstructing() );
 		_thisObj.set( jl::newObjectWithGivenProto(_cx, clasp, proto) ); // JS_NewObjectForConstructor() use the callee to determine parentage and [[Prototype]].
-		rval().setObjectOrNull(_thisObj);
-		_jsargs.setThis(rval());
+		setThis(_thisObj);
 	}
 
 	void

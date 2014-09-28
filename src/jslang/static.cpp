@@ -2103,7 +2103,7 @@ CLASS_END
 
 ////
 
-
+/*
 DEFINE_INIT() {
 
 
@@ -2117,6 +2117,8 @@ DEFINE_INIT() {
 	return true;
 	JL_BAD;
 }
+*/
+
 
 
 /**qa

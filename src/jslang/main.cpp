@@ -44,7 +44,7 @@ public:
 	: _mpv(mpv) {
 	}
 
-	bool operator()( jl::EventAfterDestroyRuntime &ev ) {
+	bool operator()( EventType &ev ) {
 		
 		ASSERT( _mpv );
 

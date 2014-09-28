@@ -14,11 +14,14 @@ loadModule('jsstd');
 host.interruptInterval = 2;
 host.onInterrupt = () => { host.collectGarbage(true, 1) };
 
+new Host(function() {});
 
-{
+throw 0;
+
+!function() {
 
 	let h = new Host(function(parentGlobal) {
-
+	
 		global.host.stdout('withNewHost\n');
 
 		var loadModule = host.loadModule;
@@ -34,10 +37,16 @@ host.onInterrupt = () => { host.collectGarbage(true, 1) };
 
 			global.host.stdout('onEnterFrame: ', frame.script.getOffsetLine(frame.offset), '\n');
 		}
+
+		parentGlobal.test = host;
+
 	}, global);
 
-}
+}();
+
 	
+	host.stdout(global.test+'!\n');
+
 	host.stdout('quit debugger scope!\n');
 
 

@@ -41,7 +41,7 @@ struct ReleaseModule : jl::Callback {
 	: _hostRuntime(hostRuntime), _mpv(mpv) {
 	}
 
-	bool operator()() {
+	bool operator()( EventType &ev ) {
 		
 		ASSERT( _hostRuntime );
 		if ( !_hostRuntime.skipCleanup() )

@@ -45,7 +45,7 @@ ModuleInit( JSContext *cx, JS::HandleObject obj ) {
 		: _hostRuntime(hostRuntime), _vi(vi) {
 		}
 
-		bool operator()() {
+		bool operator()( EventType &ev ) {
 		
 			ASSERT( _hostRuntime );
 			if ( _hostRuntime.skipCleanup() )

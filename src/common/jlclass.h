@@ -464,6 +464,12 @@ JL_END_NAMESPACE
 #define HAS_STD_ITERATOR cs.stdIterator = StdIterator;
 #define DEFINE_STD_ITERATOR() static bool StdIterator(JSContext *cx, unsigned argc, JS::Value *vp)
 
+#define HAS_OUTER_OBJECT const_cast<js::Class*>(js::Valueify(&cs.clasp))->ext.outerObject = OuterObject;
+#define OUTER_OBJECT() static JSObject *OuterObject(JSContext *cx, JS::HandleObject obj)
+
+#define HAS_INNER_OBJECT const_cast<js::Class*>(js::Valueify(&cs.clasp))->ext.innerObject = InnerObject;
+#define INNER_OBJECT() static JSObject *InnerObject(JSObject *obj)
+
 
 // ops
 

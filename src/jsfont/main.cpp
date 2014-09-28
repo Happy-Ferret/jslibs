@@ -71,7 +71,7 @@ void* JsfontRealloc( FT_Memory, long, long new_size, void* block ) {
 
 
 struct ReleaseModule : jl::Events::callbacks {
-	bool operator()() {
+	bool operator()( EventType &ev ) {
 		
 		JsfontModulePrivate *mpv = (JsfontModulePrivate*)ModulePrivateGet();
 

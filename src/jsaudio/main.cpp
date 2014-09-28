@@ -95,7 +95,7 @@ ModuleInit( JSContext *cx, JS::HandleObject obj ) {
 
 
 	struct ReleaseModule : jl::Events::callbacks {
-		bool operator()() {
+		bool operator()( EventType &ev ) {
 
 			ALCcontext *context = alcGetCurrentContext();
 			if ( context == NULL )

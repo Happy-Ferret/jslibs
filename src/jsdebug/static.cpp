@@ -130,13 +130,13 @@ bool GCCallTrace(JSContext *cx, JSGCStatus status) {
 
 DEFINE_FUNCTION( registerDumpHeap ) {
 
-	struct DumpHeap : jl::Callback {
+	struct DumpHeap : jl::Observer<jl::EventBeforeDestroyRuntime> {
 
 		jl::HostRuntime &_hostRuntime;
 		DumpHeap( jl::HostRuntime &hostRuntime )
 		: _hostRuntime(hostRuntime) {
 		}
-		bool operator()() {
+		bool operator()( EventType &ev ) {
 
 			FILE *file = fopen("dump.txt", "w");
 			IFDEBUG( JS_DumpHeap(_hostRuntime.runtime(), file, nullptr, JSTRACE_OBJECT, nullptr, 1, nullptr) );
@@ -147,7 +147,7 @@ DEFINE_FUNCTION( registerDumpHeap ) {
 
 	jl::HostRuntime &hostRuntime = jl::HostRuntime::getJLRuntime(cx);
 
-	hostRuntime.addListener(jl::HostRuntimeEvents::BEFORE_DESTROY_RUNTIME, new DumpHeap(hostRuntime) );
+	hostRuntime.addObserver( new DumpHeap(hostRuntime) );
 
 	return true;
 }

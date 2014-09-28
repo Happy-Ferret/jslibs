@@ -17,6 +17,7 @@
 #include "js/GCAPI.h"
 
 #include <jsprf.h> // JS_smprintf in ErrorReporter
+#include <jswrapper.h> // unwrap
 
 #include <jslibsModule.h>
 
@@ -458,6 +459,7 @@ HostRuntime::destroyZoneCallback(JS::Zone *zone) {
 
 HostRuntime::~HostRuntime() {
 
+	ASSERT( rt );
 	ASSERT( _isEnding == false );
 	_isEnding = true;
 
@@ -486,20 +488,9 @@ HostRuntime::~HostRuntime() {
 	st = notify(ev), E_HOST, E_INTERNAL, E_NAME("BEFORE_DESTROY_RUNTIME");
 	ASSERT( st );
 
-	JSContext *cx;
-	JSContext *iter = nullptr;
-	while ((cx = JS_ContextIterator(rt, &iter)) != nullptr) {
-	
-		//if ( JS_IsInRequest(rt) )
+	destroyAllContext(rt);
 
-		JS_EndRequest(cx);
-		JS_DestroyContext(cx);
-
-		//if (JS_IsRunning(cx)) {
-	}
-
-	if ( rt != nullptr )
-		JS_DestroyRuntime(rt);
+	JS_DestroyRuntime(rt);
 	rt = nullptr;
 
 	{
@@ -516,9 +507,9 @@ HostRuntime::~HostRuntime() {
 
 bad:
 	// on error, do the minimum.
-	if ( cx ) {
+	if ( rt ) {
 
-		JS_DestroyContext(cx);
+		destroyAllContext(rt);
 		JS_DestroyRuntime(rt);
 	}
 
@@ -709,7 +700,7 @@ ModuleManager::loadModule(JSContext *cx, const char *libFileName, JS::HandleObje
 		FreeDynamicLibraryHandle(JLLibraryHandler libraryHandler) : _libraryHandler(libraryHandler) {
 		}
 
-		bool operator()(EventDestroyHostRuntime &ev) {
+		bool operator()( EventType &ev ) {
 
 			//#ifndef DEBUG // else the memory block was allocated in a DLL that was unloaded prior to the _CrtMemDumpAllObjectsSince() call.
 			if ( JLDynamicLibraryOk(_libraryHandler) )
@@ -805,7 +796,7 @@ _globalObject( cx ) {
 
 	JS::CompartmentOptions compartmentOptions;
 	compartmentOptions
-			.setVersion(JSVERSION_LATEST)
+		.setVersion(JSVERSION_LATEST)
 	;
 
 	_globalObject.set( JS_NewGlobalObject(cx, lazyStandardClasses ? &_globalClass_lazy : &_globalClass, nullptr, JS::DontFireOnNewGlobalHook, compartmentOptions) );
@@ -1046,7 +1037,11 @@ BEGIN_CLASS( Host )
 
 DEFINE_FINALIZE() {
 
-	void *pv = JL_GetPrivateFromFinalize(obj);
+	//void *pv = JL_GetPrivateFromFinalize(obj);
+
+	obj = js::UncheckedUnwrap(obj);
+
+	void *pv = JS_GetPrivate(obj);
 	if ( pv ) {
 
 		jl::Host &host = *static_cast<jl::Host*>(pv);
@@ -1067,10 +1062,12 @@ DEFINE_FINALIZE() {
 DEFINE_CONSTRUCTOR() {
 
 	JL_DEFINE_ARGS;
-	JL_DEFINE_CONSTRUCTOR_OBJ;
+	
+	if ( JL_ARGC == 0 ) {
 
-	if ( JL_ARGC == 0 )
+		JL_DEFINE_CONSTRUCTOR_OBJ;
 		return true;
+	}
 
 	JL_ASSERT_ARGC_RANGE(1, 2);
 	JL_ASSERT_ARG_IS_CALLABLE(1);
@@ -1080,6 +1077,8 @@ DEFINE_CONSTRUCTOR() {
 
 	jl::Host &host = *new jl::Host(cx, global, jl::Host::getJLHost(cx).stdIO());
 	JL_CHK( host );
+
+	JL_SetPrivate(host.hostObject(), &host); // Host object is hold by the JS Host instance
 
 	{
 
@@ -1102,13 +1101,30 @@ DEFINE_CONSTRUCTOR() {
 		JS::RootedValue arg(cx, JL_SARG(2));
 		JL_CHK( JS_WrapValue(cx, &arg) );
 		JL_CHK( jl::callNoRval(cx, globalObject, hostMainFctObj, arg) );
+
 	}
 
-	JL_SetPrivate(JL_OBJ, &host);
+
+	
+	{
+
+		JS::RootedObject newHostObject(cx, host.hostObject());
+		JS_WrapObject(cx, &newHostObject);
+		args.setThis(newHostObject);
+
+		
+		ASSERT( JS_GetPrivate(js::UncheckedUnwrap(newHostObject)) == &host );
+
+		//jl::setProperty(cx, global.globalObject(), "xxx", newHostObject);
+
+		//JS_ObjectToInnerObject
+
+	}
 
 	return true;
 	JL_BAD;
 }
+
 
 
 /**doc
@@ -1609,16 +1625,19 @@ bad:
 
 Host::~Host() {
 
-	EventHostDestroy ev;
+	EventHostDestroy ev(_hostRuntime, *this);
 	notify(ev);
 
 	ASSERT( JS_GetCompartmentPrivate( _global.compartment() ) == this );
 	JS_SetCompartmentPrivate( _global.compartment(), nullptr );
 
-	if ( _interruptHandler )
-		_hostRuntime.removeObserver(_interruptHandler);
+	if ( _interruptObserverItem )
+		_hostRuntime.removeObserver(_interruptObserverItem);
 
 	_ids.destructAll();
+
+//	JL_SetPrivate(hostObject(), nullptr);
+
 	IFDEBUG( invalidate() );
 }
 
@@ -1633,9 +1652,11 @@ _hostStdIO(hostStdIO),
 _objectProto(cx),
 _hostObject(cx),
 _ids(),
-_interruptHandler(nullptr) {
+_interruptObserverItem(nullptr) {
 
 //	JL_CHKM(_global, E_GLOBAL, E_INVALID);
+
+	ASSERT(cx);
 
 	_ids.constructAll(cx);
 
@@ -1645,7 +1666,6 @@ _interruptHandler(nullptr) {
 	ASSERT( JS_GetCompartmentPrivate( glob.compartment() ) == nullptr );
 	JS_SetCompartmentPrivate( glob.compartment(), this );
 
-	ASSERT(cx);
 
 	JS::RuntimeOptionsRef(cx)
 		.setExtraWarnings(!HostRuntime::getJLRuntime(cx).unsafeMode())
@@ -1675,18 +1695,23 @@ _interruptHandler(nullptr) {
 		// var host = new Host();
 		JS::RootedObject hostConstructor(cx, jl::InitClass(cx, globalObj, pv::Host::classSpec ));
 		_hostObject.set( JS_New(cx, hostConstructor, JS::HandleValueArray::empty()) );
+
 		JL_CHK( _hostObject );
+
+		// JL_SetPrivate( _hostObject, this ); <- Host object is hold by the caller, do not store it
+
 		//JL_CHK( jl::setProperty(cx, globalObj, JLID(cx, host), _hostObject) );
 		JL_CHK( JS_DefinePropertyById(cx, globalObj, JLID(cx, host), _hostObject, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 		JL_CHK( moduleManager().addLocalModule(cx, "jslang", jslangModuleInit, globalObj) );
+
 	}
 	
 
 	struct OnInterupt : Observer<EventInterrupt> {
 		Host &_host;
 		OnInterupt(Host &host) : _host(host) {}
-		bool operator()(EventInterrupt &ev) {
+		bool operator()( EventType &ev ) {
 
 			JSContext *cx = ev.cx;
 			JS::AutoSaveExceptionState ase(cx);
@@ -1706,7 +1731,7 @@ _interruptHandler(nullptr) {
 		}
 	};
 
-	_interruptHandler = _hostRuntime.addObserver(new OnInterupt(*this));
+	_interruptObserverItem = _hostRuntime.addObserver(new OnInterupt(*this));
 
 	return;
 bad:
