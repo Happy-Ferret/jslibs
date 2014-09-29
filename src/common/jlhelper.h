@@ -353,7 +353,22 @@ JL_freeop(JSFreeOp *, void *p) {
 	jl_free(p);
 }
 
+ALWAYS_INLINE bool FASTCALL
+JL_TranscodeFunction( JSContext *cx, JS::MutableHandleObject fctObj, JS::HandleObject parent, JSPrincipals *originPrincipals = nullptr ) { 
 
+	uint32_t length;
+	void *scriptData = JS_EncodeInterpretedFunction(cx, fctObj, &length);
+	if ( !scriptData || !length )
+		return false;
+	fctObj.set( JS_DecodeInterpretedFunction(cx, scriptData, length, originPrincipals) );
+	js_free(scriptData);
+	if ( !fctObj )
+		return false;
+	fctObj.set( JS_CloneFunctionObject(cx, fctObj, parent) );
+	if ( !fctObj )
+		return false;
+	return true;
+}
 
 /*
 JL_BEGIN_NAMESPACE

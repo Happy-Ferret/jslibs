@@ -15,7 +15,7 @@
 #pragma once
   
 /*
-      runtime        -- runtimePrivate <- HostRuntime
+          runtime ----- runtimePrivate <- HostRuntime
              |                               ^    ^
              |                               |    |
   compartment/global <-------------------- Global |
@@ -218,18 +218,20 @@ class Observer {
 public:
 	typedef EVENT EventType;
 	virtual ~Observer() {}
-	virtual bool operator ()(EVENT &ev) = 0;
+	virtual bool operator ()(EventType &ev) = 0;
 };
+
 
 template <class EVENT>
 class Observable {
-	typedef jl::Queue1< Observer<EVENT>* > List;
+	typedef EVENT EventType;
+	typedef jl::Queue1< Observer<EventType>* > List;
 	List _list;
 public:
 	typedef typename List::Item ListItem;
 
 	ListItem *
-	addObserver( Observer<EVENT>* observer ) {
+	addObserver( Observer<EventType>* observer ) {
 
 		return _list.AddEnd(observer);
 	}
@@ -243,7 +245,7 @@ public:
 
 	// returns false on the first observer that returns false (error)
 	bool
-	notify( EVENT &ev ) const {
+	notify( EventType &ev ) const {
 
 		for ( ListItem *it = _list.First(); it; it = it->next )
 			if ( !(*it->data)(ev) )
@@ -558,10 +560,10 @@ private:
 			return;
 		destroyAllContext(rt, iter);
 		
+		ASSERT( !JS_IsRunning(iter) );
 		if ( JS_IsInRequest(rt) )
 			JS_EndRequest(iter);
 		JS_DestroyContext(iter);
-		//if (JS_IsRunning(cx))
 	}
 
 public:
@@ -904,7 +906,7 @@ public:
 	}
 
 
-	bool
+	const ProtoCache::Item *
 	add( JSContext *cx, const char *className, const JSClass * const clasp, IN JS::HandleObject proto ) {
 
 		ASSERT( removedSlotClasp() != NULL );
@@ -927,16 +929,16 @@ public:
 			if ( slot.clasp == NULL ) {
 
 				items.construct(slotIndex, cx, clasp, proto);
-				return true;
+				return &slot;
 			}
 
 			if ( slot.clasp == clasp ) // already cached
-				return false;
+				return nullptr;
 
 			slotIndex = (slotIndex + 1) % (1<<JL_MAX_CLASS_PROTO_CACHE_BIT);
 
 			if ( slotIndex == first ) // no more free slot
-				return false;
+				return nullptr;
 		}
 	}
 
@@ -1221,12 +1223,16 @@ class DLLAPI Global : public Valid, public jl::CppAllocators {
 	_lazy_enumerate(JSContext *cx, JS::HandleObject obj);
 
 	static bool
-	Global::_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleObject objp);
+	_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleObject objp);
 
-	static const JSClass _globalClass;
-	static const JSClass _globalClass_lazy;
+	static JSObject *
+	outerObject(JSContext *cx, JS::HandleObject obj);
+
+	static const js::Class _globalClass;
+	static const js::Class _globalClass_lazy;
 
 	JS::PersistentRootedObject _globalObject;
+	JS::PersistentRootedObject _outerObject;
 
 private:
 	Global( const Global & );
@@ -1237,6 +1243,8 @@ public:
 
 	~Global() {
 		
+		JL_SetPrivate(_globalObject, nullptr);
+
 		IFDEBUG( invalidate() );
 		IFDEBUG( _globalObject.set(nullptr); );
 	}
@@ -1247,6 +1255,21 @@ public:
 		ASSERT( *this );
 		return _globalObject;		
 	}
+
+	JSObject *
+	outerObject() const {
+
+		ASSERT( *this );
+		return _outerObject;
+	}
+
+	void
+	setOuterObject( JS::HandleObject outerObj ) {
+
+		ASSERT( *this );
+		_outerObject.set(outerObj);
+	}
+
 
 	JSCompartment *
 	compartment() const {
@@ -1396,13 +1419,13 @@ public:
 
 	// CachedClassProto
 
-	bool
+	const ProtoCache::Item *
 	addCachedClassProto( JSContext *cx, const char *className, const JSClass * const clasp, IN JS::HandleObject proto ) {
 
 		return _classProtoCache.add(cx, className, clasp, proto);
 	}
 
-	ALWAYS_INLINE const ProtoCache::Item*
+	ALWAYS_INLINE const ProtoCache::Item *
 	getCachedClassProto( IN const char *className ) const {
 
 		return _classProtoCache.get(className);

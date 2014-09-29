@@ -149,7 +149,7 @@ bad:
 	return nullptr;
 }
 
-INLINE JSObject* FASTCALL
+INLINE const ProtoCache::Item * FASTCALL
 InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 
 	ASSERT( cs->clasp.name && cs->clasp.name[0] ); // Invalid class name.
@@ -173,7 +173,9 @@ InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 	JL_ASSERT( proto, E_CLASS, E_NAME(cs->clasp.name), E_CREATE ); //RTE
 	ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(proto) == NULL );
 
-	JL_CHKM( host.addCachedClassProto(cx, cs->clasp.name, &cs->clasp, proto), E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
+
+	const ProtoCache::Item *item = host.addCachedClassProto(cx, cs->clasp.name, &cs->clasp, proto);
+	JL_CHKM( item, E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 
 	ctor.set( cs->constructor ? JL_GetConstructor(cx, proto) : proto );
 
@@ -212,7 +214,7 @@ InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 	ASSERT( host.getCachedClasp(cs->clasp.name) == &cs->clasp );
 	ASSERT( host.getCachedProto(cs->clasp.name) == proto );
 	
-	return ctor;
+	return item;
 bad:
 	return nullptr;
 }
@@ -417,10 +419,10 @@ JL_END_NAMESPACE
 #define DEFINE_CONVERT() static bool Convert(JSContext *cx, JS::HandleObject obj, JSType type, JS::Value *vp)
 
 #define HAS_RESOLVE cs.clasp.resolve = Resolve;
-#define DEFINE_RESOLVE() static bool Resolve(JSContext *cx, JS::HandleObject obj, jsid id)
+#define DEFINE_RESOLVE() static bool Resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id)
 
-#define HAS_NEW_RESOLVE cs.clasp.flags |= JSCLASS_NEW_RESOLVE; JSNewResolveOp tmp = NewResolve; cs.clasp.resolve = (JSResolveOp)tmp;
-#define DEFINE_NEW_RESOLVE() static bool NewResolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, unsigned flags, JS::MutableHandleObject objp)
+#define HAS_NEW_RESOLVE cs.clasp.flags |= JSCLASS_NEW_RESOLVE; JSNewResolveOp tmp = NewResolve; cs.clasp.resolve = reinterpret_cast<JSResolveOp>(tmp);
+#define DEFINE_NEW_RESOLVE() static bool NewResolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleObject objp)
 
 #define HAS_ENUMERATE cs.clasp.enumerate = Enumerate;
 #define DEFINE_ENUMERATE() static bool Enumerate(JSContext *cx, JS::HandleObject obj, JSIterateOp enum_op, JS::MutableHandleValue statep, JS::MutableHandleId idp)

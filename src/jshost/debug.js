@@ -14,9 +14,26 @@ loadModule('jsstd');
 host.interruptInterval = 2;
 host.onInterrupt = () => { host.collectGarbage(true, 1) };
 
-new Host(function() {});
+{
+
+	let hout = host.spawn(function() {
+
+		this.foo = 789;
+	
+		host.loadModule('jsstd');
+		host.print(456, '\n' );
+	});
+
+	hout.host.print(123, '\n' );
+
+}
+
+	collectGarbage();
+
+	print('ok', '\n' );
 
 throw 0;
+
 
 !function() {
 

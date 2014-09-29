@@ -483,6 +483,12 @@ public:
 		JL_BAD;
 	}
 
+	bool set( JSContext *cx, JS::HandleId id ) {
+		
+		JS::RootedValue tmp(cx);
+		return JS_IdToValue(cx, id, &tmp) && set(cx, tmp);
+	}
+
 	bool isSet() const {
 
 		return _type != None;
