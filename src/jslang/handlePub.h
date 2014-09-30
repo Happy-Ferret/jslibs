@@ -145,7 +145,7 @@ template <class T>
 INLINE bool
 HandleCreate( JSContext *cx, T *data, OUT JS::MutableHandleValue handleVal ) {
 
-	const jl::ProtoCache::Item *classProtoCache = jl::Host::getJLHost(cx).getCachedClassProto("Handle");
+	const jl::ClassInfo *classProtoCache = jl::Host::getJLHost(cx).getCachedClassInfo("Handle");
 	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME("Handle"), E_NOTFOUND );
 
 	{

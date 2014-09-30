@@ -52,6 +52,7 @@ extern DLLAPI bool _unsafeMode;
 #include <jlalloc.h>
 #include <queue.h>
 
+
 #define JLID_SPEC(name) JLID_##name
 enum {
 	JLID_SPEC( global ),
@@ -119,6 +120,22 @@ enum {
 
 
 JL_BEGIN_NAMESPACE
+
+
+class ClassInfo {
+public:
+	const JSClass *clasp;
+	JS::PersistentRootedObject proto;
+
+	ClassInfo(JSContext *cx)
+	: clasp(NULL), proto(cx) {
+	}
+
+	ClassInfo(JSContext *cx, const JSClass *c, JS::HandleObject p)
+	: clasp(c), proto(cx, p) {
+	}
+};
+
 
 
 class StdIO {
@@ -817,21 +834,7 @@ class DLLAPI ProtoCache {
 
 public:
 
-	class Item {
-	public:
-		const JSClass *clasp;
-		JS::PersistentRootedObject proto;
-
-		Item(JSContext *cx)
-		: clasp(NULL), proto(cx) {
-		}
-
-		Item(JSContext *cx, const JSClass *c, JS::HandleObject p)
-		: clasp(c), proto(cx, p) {
-		}
-	};
-
-	StaticArray< Item, 1<<JL_MAX_CLASS_PROTO_CACHE_BIT > items;
+	StaticArray< ClassInfo, 1<<JL_MAX_CLASS_PROTO_CACHE_BIT > items;
 
 	void removeAll() {
 
@@ -906,7 +909,7 @@ public:
 	}
 
 
-	const ProtoCache::Item *
+	const ClassInfo *
 	add( JSContext *cx, const char *className, const JSClass * const clasp, IN JS::HandleObject proto ) {
 
 		ASSERT( removedSlotClasp() != NULL );
@@ -924,7 +927,7 @@ public:
 
 		for (;;) {
 
-			const ProtoCache::Item &slot = items.getConst(slotIndex);
+			const ClassInfo &slot = items.getConst(slotIndex);
 
 			if ( slot.clasp == NULL ) {
 
@@ -943,7 +946,7 @@ public:
 	}
 
 
-	ALWAYS_INLINE const Item*
+	ALWAYS_INLINE const ClassInfo *
 	get( const char *className ) const {
 
 		size_t slotIndex = slotHash(className);
@@ -957,7 +960,7 @@ public:
 			//   slot->clasp == NULL -> empty
 			//   slot->clasp == removedSlotClasp() -> slot removed, but maybe next slot will match !
 
-			const ProtoCache::Item &slot = items.getConst(slotIndex);
+			const ClassInfo &slot = items.getConst(slotIndex);
 
 			if ( slot.clasp == NULL ) // not found
 				return NULL;
@@ -985,7 +988,7 @@ public:
 
 		for (;;) {
 
-			ProtoCache::Item &slot = items.get(slotIndex);
+			ClassInfo &slot = items.get(slotIndex);
 
 			if ( slot.clasp == NULL || ( slot.clasp != removedSlotClasp() && ( slot.clasp->name == className || strcmp(slot.clasp->name, className) == 0 ) ) ) {
 			
@@ -1213,31 +1216,45 @@ public:
 };
 
 
-class DLLAPI Global : public Valid, public jl::CppAllocators {
+class DLLAPI Global :
+	public Valid,
+	public jl::CppAllocators
+{
 
 	// global object
 	// doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
 	// note: global_class is a global variable, but this is not an issue even if several runtimes share the same JSClass.
 
 	static bool
-	_lazy_enumerate(JSContext *cx, JS::HandleObject obj);
+	_lazyEnumerate(JSContext *cx, JS::HandleObject obj);
 
 	static bool
-	_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleObject objp);
+	_lazyResolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleObject objp);
 
 	static JSObject *
-	outerObject(JSContext *cx, JS::HandleObject obj);
+	_outerObject(JSContext *cx, JS::HandleObject obj);
 
 	static const js::Class _globalClass;
 	static const js::Class _globalClass_lazy;
 
 	JS::PersistentRootedObject _globalObject;
-	JS::PersistentRootedObject _outerObject;
+
+	JS::PersistentRootedObject _objectProto;
+	const JSClass *_objectClasp;
+
 
 private:
 	Global( const Global & );
 	Global & operator ==( const Global & );
 public:
+
+	static Global *
+	getGlobal( JSContext *cx ) {
+
+		JSObject *currentGlobal = JS::CurrentGlobalOrNull(cx);
+		ASSERT( currentGlobal );
+		return static_cast<Global*>(js::GetObjectPrivate(currentGlobal));
+	}
 
 	Global( JSContext *cx, bool lazyStandardClasses = true );
 
@@ -1256,18 +1273,25 @@ public:
 		return _globalObject;		
 	}
 
+
 	JSObject *
-	outerObject() const {
+	outerObject( JSContext *cx ) const {
 
 		ASSERT( *this );
-		return _outerObject;
+		JS::AutoCheckCannotGC nogc;
+		
+		//JS::RootedValue tmp(cx, js::GetReservedSlot(globalObject(), 0));
+		//return tmp.isObject() ? &tmp.toObject() : nullptr;
+		const JS::Value &val = js::GetReservedSlot(globalObject(), 0);
+		return val.isObject() ? &val.toObject() : nullptr;
 	}
 
 	void
 	setOuterObject( JS::HandleObject outerObj ) {
 
 		ASSERT( *this );
-		_outerObject.set(outerObj);
+		ASSERT( outerObj );
+		js::SetReservedSlot(globalObject(), 0, JS::ObjectValue(*outerObj));
 	}
 
 
@@ -1277,7 +1301,14 @@ public:
 		 return js::GetObjectCompartment(globalObject());
 	}
 
+	ALWAYS_INLINE JSObject *
+	newObject(JSContext *cx) const {
+
+		return jl::newObjectWithGivenProto(cx, _objectClasp, _objectProto); // JL_GetGlobal(cx)
+	}
+
 };
+
 
 struct Host;
 
@@ -1295,14 +1326,12 @@ class DLLAPI Host :
 {
 
 	HostRuntime &_hostRuntime;
-	Global &_global;
+	Global *_global;
 	ModuleManager _moduleManager;
 
 	JS::PersistentRootedObject _hostObject;
 	StdIO &_hostStdIO;
 	const uint32_t _compatId; // used to ensure compatibility between host and modules. see JL_HOST_VERSIONID macro.
-	JS::PersistentRootedObject _objectProto;
-	const JSClass *_objectClasp;
 	ProtoCache _classProtoCache;
 	StaticArray< JS::PersistentRootedId, LAST_JSID > _ids;
 	ErrorManager _errorManager;
@@ -1330,7 +1359,7 @@ private:
 public:
 	~Host();
 
-	Host( JSContext *cx, Global &glob, StdIO &hostStdIO );
+	Host( JSContext *cx, Global *global, StdIO &hostStdIO );
 
 	// init the host for jslibs usage (modules, errors, ...)
 	
@@ -1343,7 +1372,7 @@ public:
 	ALWAYS_INLINE Global &
 	global() const {
 			
-		return _global;
+		return *_global;
 	}
 
 	ALWAYS_INLINE StdIO &
@@ -1370,16 +1399,9 @@ public:
 
 
 	ALWAYS_INLINE JSObject *
-	newObject(JSContext *cx) const {
-
-		return jl::newObjectWithGivenProto(cx, _objectClasp, _objectProto); // JL_GetGlobal(cx)
-	}
-
-
-	ALWAYS_INLINE JSObject *
 	newJLObject( JSContext *cx, const char *className ) const {
 
-		const ProtoCache::Item *cpc = _classProtoCache.get(className);
+		const ClassInfo *cpc = _classProtoCache.get(className);
 		if ( cpc != NULL )
 			return jl::newObjectWithGivenProto(cx, cpc->clasp, cpc->proto);
 		else
@@ -1419,14 +1441,14 @@ public:
 
 	// CachedClassProto
 
-	const ProtoCache::Item *
-	addCachedClassProto( JSContext *cx, const char *className, const JSClass * const clasp, IN JS::HandleObject proto ) {
+	const ClassInfo *
+	addCachedClassInfo( JSContext *cx, const char *className, const JSClass * const clasp, IN JS::HandleObject proto ) {
 
 		return _classProtoCache.add(cx, className, clasp, proto);
 	}
 
-	ALWAYS_INLINE const ProtoCache::Item *
-	getCachedClassProto( IN const char *className ) const {
+	ALWAYS_INLINE const ClassInfo *
+	getCachedClassInfo( IN const char *className ) const {
 
 		return _classProtoCache.get(className);
 	}
@@ -1434,7 +1456,7 @@ public:
 	ALWAYS_INLINE const JS::HandleObject
 	getCachedProto( IN const char *className ) const {
 
-		const ProtoCache::Item * cpc = getCachedClassProto(className);
+		const ClassInfo * cpc = getCachedClassInfo(className);
 		if ( cpc )
 			return JS::HandleObject::fromMarkedLocation(cpc->proto.address());
 		else
@@ -1444,17 +1466,17 @@ public:
 	ALWAYS_INLINE const JSClass*
 	getCachedClasp( IN const char *className ) const {
 
-		return getCachedClassProto(className)->clasp;
+		return getCachedClassInfo(className)->clasp;
 	}
 
 	ALWAYS_INLINE bool
-	hasCachedClassProto(IN const char *className) const {
+	hasCachedClassInfo(IN const char *className) const {
 
 		return _classProtoCache.get(className) != NULL;
 	}
 
 	ALWAYS_INLINE void
-	removeCachedClassProto(IN const char *className) {
+	removeCachedClassInfo(IN const char *className) {
 		
 		_classProtoCache.remove(className);
 	}
@@ -1541,8 +1563,10 @@ JL_END_NAMESPACE
 
 #ifdef DEBUG
 #define JLID_NAME(cx, name) (JL_IGNORE(cx), JL_IGNORE(JLID_##name), L(#name))
+#define JLID_NAME_CSTR(cx, name) (JL_IGNORE(cx), JL_IGNORE(JLID_##name), #name)
 #else
-#define JLID_NAME(cx, name) (#name)
+#define JLID_NAME(cx, name) (L(#name))
+#define JLID_NAME_CSTR(cx, name) (#name)
 #endif // DEBUG
 
 #define JLID(cx, name) (jl::Host::getJLHost(cx).getId(cx, JLID_##name, L(#name)))
@@ -1558,7 +1582,7 @@ JL_END_NAMESPACE
 ALWAYS_INLINE JSObject* FASTCALL
 JL_NewObj( JSContext *cx ) {
 
-	return jl::Host::getJLHost(cx).newObject(cx);
+	return jl::Global::getGlobal(cx)->newObject(cx);
 }
 
 

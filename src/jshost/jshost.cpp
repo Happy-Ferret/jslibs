@@ -14,7 +14,9 @@
 
 #include "stdafx.h"
 
-//#define TESTMODE
+
+// #define TESTMODE
+
 
 #define HOST_STACK_SIZE 4194304 // = 4 * 1024 * 1024
 
@@ -531,7 +533,7 @@ _tmain( int argc, TCHAR* argv[] ) {
 		JL_CHK( global );
 
 		HostStdIO hostIO;
-		jl::Host host(cx, global, hostIO);
+		jl::Host host(cx, &global, hostIO);
 		JL_CHK( host );
 
 		JL_CHKM( initInterrupt(), E_HOST, E_INTERNAL );
@@ -618,14 +620,16 @@ _tmain( int argc, TCHAR* argv[] ) {
 
 				if ( JL_IsExceptionPending(cx) ) { // see JSOPTION_DONT_REPORT_UNCAUGHT option.
 
+					JS::RootedValue pex(cx);
+					// save the exception because jl::getPrimitive may throw
 					JS::RootedValue ex(cx);
 					JS_GetPendingException(cx, &ex);
 					JS_ClearPendingException(cx);
-					JL_CHK( jl::getPrimitive(cx, ex, &ex) );
+					JL_CHK( jl::getPrimitive(cx, ex, &pex) );
 					JS_SetPendingException(cx, ex);
-					if ( ex.isInt32() ) {
+					if ( pex.isInt32() ) {
 
-						exitValue = ex.toInt32();
+						exitValue = pex.toInt32();
 					} else {
 
 						JS_ReportPendingException(cx);
@@ -696,16 +700,63 @@ _tmain( int argc, TCHAR* argv[] ) {
 
 	JSRuntime *rt = JS_NewRuntime(32L * 1024L * 1024L);
 	JSContext *cx = JS_NewContext(rt, 8192);
+
+	struct tmp {
+		static void errorReporter( JSContext *cx, const char *message, JSErrorReport *report ) {
+
+			printf( "%s:%d %s\n", report->filename, report->lineno, message);
+		}
+	};
+
+	JS_SetErrorReporter(cx, tmp::errorReporter);
 	JS_BeginRequest(cx);
 
 	{
+
+/* test 3: check FileAndLine after JL_TranscodeFunction */
+
 		JS::RootedObject globalObject(cx, JS_NewGlobalObject(cx, &global_class, nullptr, JS::FireOnNewGlobalHook));
 		JSAutoCompartment ac(cx, globalObject);
 		JS_InitStandardClasses(cx, globalObject);
 
+
+		const char *script = "\
+			(function foo() { \
+				bar()   	  \
+			} )   			  \
+		";
+
+		JS::RootedValue rval(cx);
+		JS::CompileOptions compOpt(cx);
+		compOpt
+			.setCompileAndGo(false)
+			.setCanLazilyParse(false)
+			.setSourceIsLazy(false)
+			.setFileAndLine("inline", 1)
+		;
+		JS::RootedScript s(cx);
+		ASSERT( JS_CompileScript(cx, globalObject, script, ::strlen(script), compOpt, &s) );
+		ASSERT( JS_ExecuteScript(cx, globalObject, s, &rval) );
+		
+		JS::RootedObject rvalObj(cx, rval.toObjectOrNull());
+		ASSERT( JS_ObjectIsFunction(cx, rvalObj) );
+
+
+		ASSERT( JL_TranscodeFunction(cx, &rvalObj, globalObject) );
+
+
+		ASSERT( rvalObj );
+
+		JS::RootedValue fctVal(cx, JS::ObjectValue(*rvalObj));
+		JS::Call(cx, globalObject, fctVal, JS::HandleValueArray::empty(), &rval);
+
+
+
+/* test 2: ability for JS_EncodeInterpretedFunction/JS_DecodeInterpretedFunction + JS_CloneFunctionObject to preserve parent scope: no
 		JS::RuntimeOptionsRef(cx).setVarObjFix(true);
-		JS::ContextOptionsRef(cx).setNoScriptRval(false);
+		JS::ContextOptionsRef(cx);
 		JS::CompartmentOptionsRef(cx).setVersion(JSVERSION_LATEST);
+		JS::CompileOptions(cx, JSVERSION_LATEST).setNoScriptRval(false);
 
 		const char *script = "		  \
 			(function() {			  \
@@ -728,6 +779,7 @@ _tmain( int argc, TCHAR* argv[] ) {
 				.setCompileAndGo(false)
 				.setCanLazilyParse(false)
 				.setSourceIsLazy(false)
+				.setFileAndLine("inline", 1)
 			;
 			JS::RootedScript s(cx);
 			ASSERT( JS_CompileScript(cx, globalObject, script, ::strlen(script), compOpt, &s) );
@@ -740,12 +792,11 @@ _tmain( int argc, TCHAR* argv[] ) {
 		{ // decode
 			JS::RootedValue rval(cx);
 			JS::RootedObject fctObj(cx, JS_DecodeInterpretedFunction(cx, encBuf, encLen, nullptr));
-			//fctObj.set( JS_CloneFunctionObject(cx, fctObj, globalObject) );
+			fctObj.set( JS_CloneFunctionObject(cx, fctObj, globalObject) );
 			JS::RootedValue fctVal(cx, JS::ObjectValue(*fctObj));
 			JS::Call(cx, globalObject, fctVal, JS::HandleValueArray::empty(), &rval);
 		}
-
-
+*/
 
 /*
 		JS::AutoValueVector avv(cx);

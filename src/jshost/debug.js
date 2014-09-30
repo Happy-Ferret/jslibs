@@ -11,34 +11,16 @@ var loadModule = host.loadModule;
 
 loadModule('jsstd');
 
-host.interruptInterval = 2;
+host.interruptInterval = 1;
 host.onInterrupt = () => { host.collectGarbage(true, 1) };
+
 
 {
 
-	let hout = host.spawn(function() {
-
-		this.foo = 789;
+	let h = new SubHost(function(parentGlobal) {
 	
-		host.loadModule('jsstd');
-		host.print(456, '\n' );
-	});
+		host.stdout('this.parent:', this.parent);
 
-	hout.host.print(123, '\n' );
-
-}
-
-	collectGarbage();
-
-	print('ok', '\n' );
-
-throw 0;
-
-
-!function() {
-
-	let h = new Host(function(parentGlobal) {
-	
 		global.host.stdout('withNewHost\n');
 
 		var loadModule = host.loadModule;
@@ -55,11 +37,11 @@ throw 0;
 			global.host.stdout('onEnterFrame: ', frame.script.getOffsetLine(frame.offset), '\n');
 		}
 
-		parentGlobal.test = host;
+		parentGlobal.test = this;
 
 	}, global);
 
-}();
+}
 
 	
 	host.stdout(global.test+'!\n');
@@ -79,6 +61,48 @@ throw 0;
 
 
 throw 0;
+
+
+{
+
+	global.bar = 123;
+
+	let sHost = new SubHost(function(pGlobal) {
+
+		host.stdout(pGlobal.bar, '\n' );
+
+		this.foo = 789;
+	
+		host.loadModule('jsstd');
+		host.print(456, '\n' );
+
+		global.innerFct = function() {
+
+			return this.abc;
+
+		}
+
+
+	}, global);
+
+	sHost.host.print(sHost.foo, '\n' );
+
+	sHost.abc = 'property on the outer object';
+
+
+
+	print( sHost.innerFct(), '\n' );
+
+}
+
+	collectGarbage();
+
+	print('ok', '\n' );
+
+throw 0;
+
+
+
 
 
 	/// compartment destroy callback test

@@ -870,9 +870,9 @@ public:
 				ASSERT(strlen(className) > 0);
 				ASSERT(strlen(className) < 64);
 
-				const jl::ProtoCache::Item* cpc = jl::Host::getJLHost(cx).getCachedClassProto(className);
+				const jl::ClassInfo* cpc = jl::Host::getJLHost(cx).getCachedClassInfo(className);
 
-				//const ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), className);
+				//const ClassProtoCache *cpc = JL_GetCachedClassInfo(JL_GetHostPrivate(cx), className);
 
 				JL_CHKM( cpc != NULL, E_CLASS, E_NAME(className), E_NOTFOUND );
 				JS::RootedObject newObj(cx, jl::newObjectWithGivenProto(cx, cpc->clasp, cpc->proto));

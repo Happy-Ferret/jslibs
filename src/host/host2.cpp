@@ -759,17 +759,46 @@ ModuleManager::addLocalModule(JSContext *cx, const char *moduleName, ModuleInitF
 //////////////////////////////////////////////////////////////////////////////
 // Global
 
+
+// Global reserved slot 0 : outer object
+
+const js::Class Global::_globalClass_lazy = {
+	NAME_GLOBAL_CLASS,
+	JSCLASS_HAS_PRIVATE | JSCLASS_GLOBAL_FLAGS_WITH_SLOTS(1) | JSCLASS_NEW_RESOLVE,
+	JS_PropertyStub, JS_DeletePropertyStub,
+	JS_PropertyStub, JS_StrictPropertyStub,
+	Global::_lazyEnumerate, (JSResolveOp)Global::_lazyResolve,
+	JS_ConvertStub, nullptr,
+    nullptr, nullptr, nullptr,
+	JS_GlobalObjectTraceHook,
+	JS_NULL_CLASS_SPEC,
+	{ _outerObject }
+};
+
+const js::Class Global::_globalClass = {
+	NAME_GLOBAL_CLASS,
+	JSCLASS_HAS_PRIVATE | JSCLASS_GLOBAL_FLAGS_WITH_SLOTS(1),
+	JS_PropertyStub, JS_DeletePropertyStub,
+	JS_PropertyStub, JS_StrictPropertyStub,
+	JS_EnumerateStub, JS_ResolveStub,
+	JS_ConvertStub, nullptr,
+    nullptr, nullptr, nullptr,
+	JS_GlobalObjectTraceHook,
+	JS_NULL_CLASS_SPEC,
+	{ _outerObject }
+};
+
 bool
-Global::_lazy_enumerate(JSContext *cx, JS::HandleObject obj) {
+Global::_lazyEnumerate(JSContext *cx, JS::HandleObject obj) {
 
 	return JS_EnumerateStandardClasses(cx, obj);
 }
 
 bool
-Global::_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleObject objp) {
+Global::_lazyResolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::MutableHandleObject objp) {
 
 	bool resolved;
-	if (!JS_ResolveStandardClass(cx, obj, id, &resolved))
+	if ( !JS_ResolveStandardClass(cx, obj, id, &resolved) )
 		return false;
 	if (resolved)
 		objp.set(obj);
@@ -779,7 +808,7 @@ Global::_lazy_resolve(JSContext *cx, JS::HandleObject obj, JS::HandleId id, JS::
 }
 
 JSObject *
-Global::outerObject(JSContext *cx, JS::HandleObject obj) {
+Global::_outerObject(JSContext *cx, JS::HandleObject obj) {
 
 	JS::AutoCheckCannotGC nogc;
 
@@ -790,41 +819,19 @@ Global::outerObject(JSContext *cx, JS::HandleObject obj) {
 	Global *global = static_cast<Global*>( js::GetObjectPrivate(globObj) );
 	ASSERT( global );
 
-	if ( global->outerObject() )
-		return global->outerObject();
+	JS::RootedObject outerObj(cx, global->outerObject(cx));
+
+	if ( outerObj )
+		return outerObj;
 	else
 		return obj;
 }
 
-const js::Class Global::_globalClass_lazy = {
-	NAME_GLOBAL_CLASS,
-	JSCLASS_HAS_PRIVATE | JSCLASS_GLOBAL_FLAGS_WITH_SLOTS(0) | JSCLASS_NEW_RESOLVE,
-	JS_PropertyStub, JS_DeletePropertyStub,
-	JS_PropertyStub, JS_StrictPropertyStub,
-	Global::_lazy_enumerate, (JSResolveOp)Global::_lazy_resolve,
-	JS_ConvertStub, nullptr,
-    nullptr, nullptr, nullptr,
-	JS_GlobalObjectTraceHook,
-	JS_NULL_CLASS_SPEC,
-	{ outerObject }
-};
-
-const js::Class Global::_globalClass = {
-	NAME_GLOBAL_CLASS,
-	JSCLASS_HAS_PRIVATE | JSCLASS_GLOBAL_FLAGS_WITH_SLOTS(0),
-	JS_PropertyStub, JS_DeletePropertyStub,
-	JS_PropertyStub, JS_StrictPropertyStub,
-	JS_EnumerateStub, JS_ResolveStub,
-	JS_ConvertStub, nullptr,
-    nullptr, nullptr, nullptr,
-	JS_GlobalObjectTraceHook,
-	JS_NULL_CLASS_SPEC,
-	{ outerObject }
-};
-
 
 Global::Global( JSContext *cx, bool lazyStandardClasses ) :
-_globalObject( cx ), _outerObject( cx ) {
+	_globalObject( cx ),
+	_objectProto( cx )
+{
 
 	JS::CompartmentOptions compartmentOptions;
 	compartmentOptions
@@ -846,6 +853,15 @@ _globalObject( cx ), _outerObject( cx ) {
 		#ifdef JS_HAS_CTYPES
 		JL_CHK( JS_InitCTypesClass(cx, _globalObject) );
 		#endif
+
+		_objectProto.set( JS_GetObjectPrototype(cx, _globalObject) );
+		ASSERT( _objectProto );
+
+		_objectClasp = JL_GetClass(_objectProto);
+		ASSERT( _objectClasp );
+
+		// global functions & properties
+		JL_CHKM( JS_DefineProperty(cx, _globalObject, JLID_NAME_CSTR(cx, global), _globalObject, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
 
 		JS_FireOnNewGlobalObject(cx, _globalObject);
 
@@ -1067,11 +1083,96 @@ bad:
 
 namespace pv {
 
-BEGIN_CLASS( HostOut )
+BEGIN_CLASS( SubHost )
+
+	DEFINE_CONSTRUCTOR() {
+
+		JL_DEFINE_ARGS;
+		JL_DEFINE_CONSTRUCTOR_OBJ;
+
+		JL_ASSERT_ARGC_RANGE(1, 2);
+		JL_ASSERT_ARG_IS_CALLABLE(1);
+
+		{ 
+
+			JS::RootedObject subHost(cx, JL_OBJ);
+
+			jl::Global *global = new jl::Global(cx);
+			JL_ASSERT_ALLOC( global );
+			JL_CHK( *global );
+
+			JS::RootedObject globalObject(cx, global->globalObject());
+
+			JS::RootedObject wrappedGlobalObject(cx, global->globalObject());
+			JL_CHK( JS_WrapObject(cx, &wrappedGlobalObject) );
+
+			// store inner object in hostOut object
+			js::SetReservedSlot(subHost, 0, JS::ObjectValue(*wrappedGlobalObject));
+			ASSERT( js::UncheckedUnwrap(JS_ObjectToInnerObject(cx, subHost)) == global->globalObject() ); // just check inner
+
+			StdIO &parentIO = jl::Host::getJLHost(cx).stdIO();
+
+			{
+
+				JSAutoCompartment ac(cx, globalObject);
+
+				jl::Host *host = new jl::Host(cx, global, parentIO);
+				JL_ASSERT_ALLOC( host );
+				JL_CHK( *host ); // validity
+
+				JL_SetPrivate(subHost, host); // ???
+
+				JL_CHK( JS_WrapObject(cx, &subHost) );
+
+
+		// ???
+				// store outer object in global object
+				//global->setOuterObject(subHost);
+				//ASSERT( JS_ObjectToOuterObject(cx, globalObject) == subHost ); // check outer
+		
+
+				JS::RootedObject hostMainFctObj(cx, JL_ARG(1).toObjectOrNull());
+
+				JL_CHK( JL_TranscodeFunction(cx, &hostMainFctObj, globalObject) );
+
+				JS::RootedValue arg(cx);
+				if ( JL_ARG_ISDEF(2) ) {
+				
+					arg.set( JL_ARG(2) );
+					JL_CHK( JS_WrapValue(cx, &arg) );
+				}
+
+				JL_CHK( jl::callNoRval(cx, globalObject, hostMainFctObj, arg) );
+
+			}
+
+		}
+
+		return true;
+		JL_BAD;
+	}
+
+	DEFINE_FINALIZE() {
+
+		void *pv = JL_GetPrivateFromFinalize(obj);
+		if ( pv ) {
+
+			jl::Host *host = static_cast<jl::Host*>(pv);
+			ASSERT( host );
+			ASSERT( *host );
+
+			jl::Global &global = host->global();
+			ASSERT( global );
+
+			delete host;
+			delete &global;
+		}
+	}
+
 
 	DEFINE_NEW_RESOLVE() {
-	
-		JS::RootedValue inner(cx, js::GetReservedSlot(js::UncheckedUnwrap(obj), 0));
+
+		JS::RootedValue inner(cx, js::GetReservedSlot(obj, 0));
 		if ( inner.isObject() )
 			objp.set(&inner.toObject());
 		return true;
@@ -1082,24 +1183,10 @@ BEGIN_CLASS( HostOut )
 		return js::GetReservedSlot(obj, 0).toObjectOrNull();
 	}
 
-	DEFINE_FINALIZE() {
-
-
-		???
-
-		void *pv = JL_GetPrivateFromFinalize(obj);
-	}
-
-	DEFINE_CONSTRUCTOR() {
-
-		JL_DEFINE_ARGS;
-		JL_DEFINE_CONSTRUCTOR_OBJ;
-		return true;
-	}
 
 CONFIGURE_CLASS
 
-	HAS_CONSTRUCTOR;
+	HAS_CONSTRUCTOR_ARGC(2)
 	HAS_FINALIZE;
 	HAS_PRIVATE;
 	HAS_NEW_RESOLVE
@@ -1112,169 +1199,6 @@ END_CLASS
 
 
 BEGIN_CLASS( Host )
-
-/*
-DEFINE_FINALIZE() {
-
-	//void *pv = JL_GetPrivateFromFinalize(obj);
-
-	obj = js::UncheckedUnwrap(obj);
-
-	void *pv = JS_GetPrivate(obj);
-	if ( pv ) {
-
-		jl::Host &host = *static_cast<jl::Host*>(pv);
-		ASSERT( host );
-
-		jl::Global &global = host.global();
-		ASSERT( global );
-
-		delete &host;
-		delete &global;
-	}
-}
-*/
-
-
-/*
-DEFINE_CONSTRUCTOR() {
-
-	JL_DEFINE_ARGS;
-	
-	if ( JL_ARGC == 0 ) {
-
-		JL_DEFINE_CONSTRUCTOR_OBJ;
-		return true;
-	}
-
-	JL_ASSERT_ARGC_RANGE(1, 2);
-	JL_ASSERT_ARG_IS_CALLABLE(1);
-
-	jl::Global &global = *new jl::Global(cx);
-	JL_CHK( global );
-
-	jl::Host &host = *new jl::Host(cx, global, jl::Host::getJLHost(cx).stdIO());
-	JL_CHK( host );
-
-	JL_SetPrivate(host.hostObject(), &host); // Host object is hold by the JS Host instance
-
-	{
-
-		JS::RootedObject globalObject(cx, global.globalObject());
-		JSAutoCompartment ac(cx, globalObject);
-
-		JS::RootedObject hostMainFctObj(cx, JL_ARG(1).toObjectOrNull());
-
-		uint32_t length;
-		void *scriptData = JS_EncodeInterpretedFunction(cx, hostMainFctObj, &length);
-		JL_CHK( scriptData );
-		JL_CHK( length );
-		hostMainFctObj.set( JS_DecodeInterpretedFunction(cx, scriptData, length, nullptr) );
-		js_free(scriptData);
-		JL_CHK( hostMainFctObj );
-
-		hostMainFctObj.set( JS_CloneFunctionObject(cx, hostMainFctObj, globalObject) );
-		JL_CHK( hostMainFctObj );
-
-		JS::RootedValue arg(cx, JL_SARG(2));
-		JL_CHK( JS_WrapValue(cx, &arg) );
-		JL_CHK( jl::callNoRval(cx, globalObject, hostMainFctObj, arg) );
-
-	}
-
-
-	
-	{
-
-		JS::RootedObject newHostObject(cx, host.hostObject());
-		JS_WrapObject(cx, &newHostObject);
-		args.setThis(newHostObject);
-
-		
-		ASSERT( JS_GetPrivate(js::UncheckedUnwrap(newHostObject)) == &host );
-
-		//jl::setProperty(cx, global.globalObject(), "xxx", newHostObject);
-
-		//JS_ObjectToInnerObject
-
-	}
-
-	return true;
-	JL_BAD;
-}
-*/
-
-/**doc
-$TOC_MEMBER $INAME
- $BOOL $INAME $READONLY
-**/
-DEFINE_FUNCTION( spawn ) {
-
-	JL_DEFINE_ARGS;
-
-	JL_ASSERT_ARGC_RANGE(1, 2);
-	JL_ASSERT_ARG_IS_CALLABLE(1);
-
-	{ 
-
-		//JS::RootedObject hostOut(cx, jl::Host::getJLHost(cx).newJLObject(cx, "HostOut"));
-
-		const ProtoCache::Item *item = jl::Host::getJLHost(cx).getCachedClassProto("HostOut");
-
-		JS::RootedObject ctor(cx, JS_GetConstructor(cx, item->proto));
-
-		JS::RootedObject hostOut(cx, JS_New(cx, ctor, JS::HandleValueArray::empty()));
-
-
-
-		StdIO &parentIO = jl::Host::getJLHost(cx).stdIO();
-	
-		jl::Global &global = *new jl::Global(cx);
-		JL_CHK( global );
-
-
-		JL_RVAL.setObjectOrNull( hostOut );
-		JL_CHK( hostOut );
-
-		JS::RootedObject globalObject(cx, global.globalObject());
-
-		JS::RootedObject wrappedGlobalObject(cx, global.globalObject());
-		JL_CHK( JS_WrapObject(cx, &wrappedGlobalObject) );
-		js::SetReservedSlot(hostOut, 0, JS::ObjectValue(*wrappedGlobalObject));
-		ASSERT( js::UncheckedUnwrap(JS_ObjectToInnerObject(cx, hostOut)) == global.globalObject() ); // check inner
-
-
-		jl::Host &host = *new jl::Host(cx, global, parentIO);
-		JL_CHK( host );
-
-		JL_SetPrivate(hostOut, &host);
-
-
-		{
-
-			JSAutoCompartment ac(cx, globalObject);
-
-			JL_CHK( JS_WrapObject(cx, &hostOut) );
-
-			global.setOuterObject(hostOut);
-			ASSERT( JS_ObjectToOuterObject(cx, globalObject) == hostOut ); // check outer
-		
-
-			JS::RootedObject hostMainFctObj(cx, JL_ARG(1).toObjectOrNull());
-
-			JL_CHK( JL_TranscodeFunction(cx, &hostMainFctObj, globalObject) );
-
-			JS::RootedValue arg(cx, JL_SARG(2));
-			JL_CHK( JS_WrapValue(cx, &arg) );
-			JL_CHK( jl::callNoRval(cx, globalObject, hostMainFctObj, arg) );
-
-		}
-
-	}	
-
-	return true;
-	JL_BAD;
-}
 
 
 /**doc
@@ -1290,6 +1214,7 @@ DEFINE_PROPERTY_GETTER( unsafeMode ) {
 	JL_BAD;
 }
 
+
 /**doc
 $TOC_MEMBER $INAME
 $BOOL $INAME $READONLY
@@ -1302,6 +1227,7 @@ DEFINE_PROPERTY_GETTER(jsVersion) {
 	return true;
 	JL_BAD;
 }
+
 
 /**doc
 $TOC_MEMBER $INAME
@@ -1570,7 +1496,7 @@ CONFIGURE_CLASS
 	REVISION(jl::SvnRevToInt("$Revision$"))
 
 	BEGIN_FUNCTION_SPEC
-		FUNCTION_ARGC(spawn, 2)
+
 		FUNCTION_ARGC(loadModule, 1)
 
 		// note: we have to support: var prevStderr = host.stderr; host.stderr = function(txt) { file.Write(txt); prevStderr(txt) };
@@ -1657,7 +1583,7 @@ Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 // copy-paste from /js/src/jscntxt.cpp (js::PrintError)
 //	 ---8<---
 
-		if (!report) {
+	if (!report) {
 		fprintf(file, "%s\n", message);
 		fflush(file);
 		return;
@@ -1782,8 +1708,8 @@ Host::~Host() {
 	EventHostDestroy ev(_hostRuntime, *this);
 	notify(ev);
 
-	ASSERT( JS_GetCompartmentPrivate( _global.compartment() ) == this );
-	JS_SetCompartmentPrivate( _global.compartment(), nullptr );
+	ASSERT( JS_GetCompartmentPrivate( _global->compartment() ) == this );
+	JS_SetCompartmentPrivate( _global->compartment(), nullptr );
 
 	if ( _interruptObserverItem )
 		_hostRuntime.removeObserver(_interruptObserverItem);
@@ -1796,14 +1722,13 @@ Host::~Host() {
 }
 
 
-Host::Host( JSContext *cx, Global &glob, StdIO &hostStdIO ) :
+Host::Host( JSContext *cx, Global *global, StdIO &hostStdIO ) :
 _hostRuntime(HostRuntime::getJLRuntime(cx)),
-_global(glob),
+_global(global),
 _moduleManager(),
 _errorManager(),
 _compatId(JL_HOST_VERSIONID),
 _hostStdIO(hostStdIO),
-_objectProto(cx),
 _hostObject(cx),
 _ids(),
 _interruptObserverItem(nullptr) {
@@ -1811,14 +1736,15 @@ _interruptObserverItem(nullptr) {
 //	JL_CHKM(_global, E_GLOBAL, E_INVALID);
 
 	ASSERT(cx);
+	ASSERT(_global);
 
 	_ids.constructAll(cx);
 
 	ASSERT( !JSID_IS_ZERO(_ids.get(0)) );
 	ASSERT( !JSID_IS_ZERO(_ids.get(LAST_JSID-1)) );
 
-	ASSERT( JS_GetCompartmentPrivate( glob.compartment() ) == nullptr );
-	JS_SetCompartmentPrivate( glob.compartment(), this );
+	ASSERT( JS_GetCompartmentPrivate( _global->compartment() ) == nullptr );
+	JS_SetCompartmentPrivate( _global->compartment(), this );
 
 
 	JS::RuntimeOptionsRef(cx)
@@ -1829,41 +1755,27 @@ _interruptObserverItem(nullptr) {
 
 	{
 
-		JS::RootedObject globalObj(cx, _global.globalObject());
+		JS::RootedObject globalObj(cx, _global->globalObject());
+		ASSERT( globalObj );
+
 		JSAutoCompartment ac(cx, globalObj);
 
-		JL_ASSERT( globalObj, E_GLOBAL, E_NOTFOUND ); // "Global object not found."
+		//JL_ASSERT( globalObj, E_GLOBAL, E_NOTFOUND ); // "Global object not found."
 
-		_objectProto.set( JS_GetObjectPrototype(cx, globalObj) );
-		ASSERT( _objectProto );
-
-		_objectClasp = JL_GetClass(_objectProto);
-		ASSERT( _objectClasp );
-
-		IFDEBUG( bool found; ASSERT( JS_HasPropertyById(cx, globalObj, JLID(cx, global), &found) && !found ) );
-
-		// global functions & properties
-		JL_CHKM( JS_DefinePropertyById(cx, globalObj, JLID(cx, global), globalObj, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
-
-
-		JL_CHK( jl::InitClass(cx, globalObj, pv::HostOut::classSpec ) );
-		
+		// register outer object ( see new SubHost() )
+		JL_CHK( jl::InitClass( cx, globalObj, pv::SubHost::classSpec ) );
 
 		// var host = new Host();
-		const ProtoCache::Item *hostItem = jl::InitClass(cx, globalObj, pv::Host::classSpec );
+		const ClassInfo *hostItem = jl::InitClass( cx, globalObj, pv::Host::classSpec );
 		JL_CHK( hostItem );
 
 		//_hostObject.set( JS_New(cx, hostConstructor, JS::HandleValueArray::empty()) );
 		_hostObject.set( JS_NewObjectWithGivenProto(cx, hostItem->clasp, hostItem->proto, JS::NullPtr()) );
 		JL_CHK( _hostObject );
 
-		// JL_SetPrivate( _hostObject, this ); <- Host object is hold by the caller, do not store it
-
-		//JL_CHK( jl::setProperty(cx, globalObj, JLID(cx, host), _hostObject) );
-		JL_CHK( JS_DefinePropertyById(cx, globalObj, JLID(cx, host), _hostObject, JSPROP_READONLY | JSPROP_PERMANENT) );
-
 		JL_CHK( moduleManager().addLocalModule(cx, "jslang", jslangModuleInit, globalObj) );
 
+		JL_CHK( JS_DefinePropertyById(cx, globalObj, JLID(cx, host), _hostObject, JSPROP_READONLY | JSPROP_PERMANENT) );
 	}
 	
 

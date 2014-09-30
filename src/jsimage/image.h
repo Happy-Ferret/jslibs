@@ -22,14 +22,14 @@ ALWAYS_INLINE JSClass* JL_ImageJSClass( JSContext *cx ) {
 
 	static JSClass *clasp = NULL; // it's safe to use static keyword because JSClass do not depend on the rt or cx.
 	if (unlikely( clasp == NULL ))
-		clasp = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Image")->clasp;
+		clasp = JL_GetCachedClassInfo(JL_GetHostPrivate(cx), "Image")->clasp;
 	return clasp;
 }
 
 
 inline JSObject* NewImage( JSContext *cx, int width, int height, int channels, void *data ) {
 
-	const ClassProtoCache *cpc = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Image");
+	const ClassProtoCache *cpc = JL_GetCachedClassInfo(JL_GetHostPrivate(cx), "Image");
 	JSObject *image = jl::newObjectWithGivenProto(cx, cpc->clasp, cpc->proto);
 	if ( image == NULL )
 		return NULL;

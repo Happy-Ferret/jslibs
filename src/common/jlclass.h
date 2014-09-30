@@ -149,7 +149,7 @@ bad:
 	return nullptr;
 }
 
-INLINE const ProtoCache::Item * FASTCALL
+INLINE const ClassInfo * FASTCALL
 InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 
 	ASSERT( cs->clasp.name && cs->clasp.name[0] ); // Invalid class name.
@@ -174,7 +174,7 @@ InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 	ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(proto) == NULL );
 
 
-	const ProtoCache::Item *item = host.addCachedClassProto(cx, cs->clasp.name, &cs->clasp, proto);
+	const ClassInfo *item = host.addCachedClassInfo(cx, cs->clasp.name, &cs->clasp, proto);
 	JL_CHKM( item, E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 
 	ctor.set( cs->constructor ? JL_GetConstructor(cx, proto) : proto );

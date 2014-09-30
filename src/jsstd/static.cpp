@@ -850,7 +850,7 @@ bool SandboxMaxOperationCallback(JSContext *cx) {
 		return pv->prevInterruptCallback(cx);
 
 	jl::AutoSaveInterruptCallback aic(JL_GetRuntime(cx), NULL);
-	const jl::ProtoCache::Item* cpc = jl::Host::getJLHost(cx).getCachedClassProto(JL_CLASS_NAME(OperationLimit));
+	const jl::ClassInfo* cpc = jl::Host::getJLHost(cx).getCachedClassInfo(JL_CLASS_NAME(OperationLimit));
 	ASSERT( cpc );
 	
 	JSAutoCompartment ac(cx, cpc->proto);

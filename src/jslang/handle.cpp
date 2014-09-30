@@ -236,7 +236,7 @@ NewHandle2(JSContext *cx, jsval *rval) {
 
 //	uint32_t handleType = Type;
 
-	const ClassProtoCache *classProtoCache = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Handle2");
+	const ClassProtoCache *classProtoCache = JL_GetCachedClassInfo(JL_GetHostPrivate(cx), "Handle2");
 	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME("Handle2"), E_NOTFOUND );
 
 	JSObject *handleObj;

@@ -339,7 +339,7 @@ struct Class {
 
 			ASSERT_IF( clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(proto) == NULL );
 
-			JL_CHKM( host.addCachedClassProto(cx, clasp.name, &clasp, proto), E_CLASS, E_NAME(clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
+			JL_CHKM( host.addCachedClassInfo(cx, clasp.name, &clasp, proto), E_CLASS, E_NAME(clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 
 			ASSERT( host.getCachedClasp(clasp.name) == &clasp );
 			ASSERT( host.getCachedProto(clasp.name) == proto );

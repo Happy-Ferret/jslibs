@@ -72,8 +72,8 @@ DEFINE_FINALIZE() {
 
 		ASSERT( jl::HostRuntime::getJLRuntime( fop->runtime() ).isEnding()); // (TBD) to be tested !
 
-		//JL_RemoveCachedClassProto(jl::Host::getJLHost(fop->runtime()), JL_THIS_CLASS_NAME);
-		//jl::Host::getJLHost(fop->runtime()).removeCachedClassProto(JL_THIS_CLASS_NAME);
+		//JL_RemoveCachedClassInfo(jl::Host::getJLHost(fop->runtime()), JL_THIS_CLASS_NAME);
+		//jl::Host::getJLHost(fop->runtime()).removeCachedClassInfo(JL_THIS_CLASS_NAME);
 
 		return;
 	}
@@ -85,7 +85,7 @@ DEFINE_FINALIZE() {
 
 	//beware: prototype may be finalized before the object
 	//if (JL_GetCachedProto(jl::Host::getJLHost(fop->runtime()), JL_THIS_CLASS_NAME) != NULL) { // add to the pool if the pool is still alive !
-	//if (jl::Host::getJLHost(fop->runtime()).hasCachedClassProto(JL_THIS_CLASS_NAME)) { // add to the pool if the pool is still alive !
+	//if (jl::Host::getJLHost(fop->runtime()).hasCachedClassInfo(JL_THIS_CLASS_NAME)) { // add to the pool if the pool is still alive !
 	if ( !jl::HostRuntime::getJLRuntime( fop->runtime() ).isEnding() ) {
 
 		if ( /*JL_IsHostEnding(cx) ||*/ !jl::PoolPush(&matrixPool, pv->mat) ) // if the runtime is shutting down, there is no more need to fill the pool.

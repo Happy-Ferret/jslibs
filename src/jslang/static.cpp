@@ -1965,7 +1965,7 @@ DEFINE_FUNCTION( jslangTest ) {
 
 	size_t a = JLGetEIP();
 
-	tmp = JL_GetCachedClassProto(JL_GetHostPrivate(cx), "Handle");
+	tmp = JL_GetCachedClassInfo(JL_GetHostPrivate(cx), "Handle");
 	
 	a = JLGetEIP() - a;
 	

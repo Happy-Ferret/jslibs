@@ -356,6 +356,8 @@ JL_freeop(JSFreeOp *, void *p) {
 ALWAYS_INLINE bool FASTCALL
 JL_TranscodeFunction( JSContext *cx, JS::MutableHandleObject fctObj, JS::HandleObject parent, JSPrincipals *originPrincipals = nullptr ) { 
 
+	// hello, I noticed that the filename and the lineNumber of a function is lost after calling JS_CloneFunctionObject, is it possible to set them afterward ?
+
 	uint32_t length;
 	void *scriptData = JS_EncodeInterpretedFunction(cx, fctObj, &length);
 	if ( !scriptData || !length )

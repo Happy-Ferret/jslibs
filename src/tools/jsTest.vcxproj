@@ -38,6 +38,12 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">
+    <IntDir>$(jslibsIntDir)_jsTest</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OPT|Win32'">
+    <IntDir>$(jslibsIntDir)_jsTest</IntDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DBG|Win32'">
     <BuildLog />
     <ClCompile>
