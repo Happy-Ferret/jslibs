@@ -153,7 +153,7 @@ INLINE const ClassInfo * FASTCALL
 InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 
 	ASSERT( cs->clasp.name && cs->clasp.name[0] ); // Invalid class name.
-	jl::Host &host = jl::Host::getJLHost(cx);
+	jl::Global *glob = jl::Global::getGlobal(cx);
 
 	JS::RootedObject parentProto(cx);
 	JS::RootedObject ctor(cx);
@@ -162,7 +162,7 @@ InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 	if ( cs->parentProtoName ) {
 
 		ASSERT( cs->parentProtoName[0] );
-		parentProto.set( host.getCachedProto(cs->parentProtoName) );
+		parentProto.set( glob->getCachedProto(cs->parentProtoName) );
 		JL_CHKM( parentProto != nullptr, E_STR(cs->parentProtoName), E_STR("prototype"), E_NOTFOUND );
 	}
 
@@ -174,7 +174,7 @@ InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 	ASSERT_IF( cs->clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(proto) == NULL );
 
 
-	const ClassInfo *item = host.addCachedClassInfo(cx, cs->clasp.name, &cs->clasp, proto);
+	const ClassInfo *item = glob->addCachedClassInfo(cx, cs->clasp.name, &cs->clasp, proto);
 	JL_CHKM( item, E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 
 	ctor.set( cs->constructor ? JL_GetConstructor(cx, proto) : proto );
@@ -211,8 +211,8 @@ InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 	if ( cs->init )
 		JL_CHK( cs->init(cx, cs, proto, ctor) );
 
-	ASSERT( host.getCachedClasp(cs->clasp.name) == &cs->clasp );
-	ASSERT( host.getCachedProto(cs->clasp.name) == proto );
+	ASSERT( glob->getCachedClasp(cs->clasp.name) == &cs->clasp );
+	ASSERT( glob->getCachedProto(cs->clasp.name) == proto );
 	
 	return item;
 bad:
@@ -319,8 +319,8 @@ JL_END_NAMESPACE
 
 #define JL_THIS_CLASS_REVISION (classSpec->sourceId)
 
-#define JL_CLASS_PROTOTYPE(cx, CLASSNAME) (jl::Host::getJLHost(cx).getCachedProto(CLASSNAME::className) /*JL_GetCachedProto(JL_GetHostPrivate(cx), CLASSNAME::className)*/)
-#define JL_THIS_CLASS_PROTOTYPE (jl::Host::getJLHost(cx).getCachedProto(className) /*JL_GetCachedProto(JL_GetHostPrivate(cx), className)*/)
+#define JL_CLASS_PROTOTYPE(cx, CLASSNAME) (jl::Global::getGlobal(cx)->getCachedProto(CLASSNAME::className) /*JL_GetCachedProto(JL_GetHostPrivate(cx), CLASSNAME::className)*/)
+#define JL_THIS_CLASS_PROTOTYPE (jl::Global::getGlobal(cx)->getCachedProto(className) /*JL_GetCachedProto(JL_GetHostPrivate(cx), className)*/)
 
 #define _NULL NULL // because in _##getter and _##setter, getter or setter can be NULL.
 

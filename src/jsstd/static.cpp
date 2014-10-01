@@ -850,7 +850,7 @@ bool SandboxMaxOperationCallback(JSContext *cx) {
 		return pv->prevInterruptCallback(cx);
 
 	jl::AutoSaveInterruptCallback aic(JL_GetRuntime(cx), NULL);
-	const jl::ClassInfo* cpc = jl::Host::getJLHost(cx).getCachedClassInfo(JL_CLASS_NAME(OperationLimit));
+	const jl::ClassInfo* cpc = jl::Global::getGlobal(cx)->getCachedClassInfo(JL_CLASS_NAME(OperationLimit));
 	ASSERT( cpc );
 	
 	JSAutoCompartment ac(cx, cpc->proto);
@@ -918,9 +918,15 @@ DEFINE_FUNCTION( sandboxEval ) {
 		JL_CHK( globalObj != NULL );
 
 		{
+			/*
 			void *compartmentPv = JS_GetCompartmentPrivate(js::GetObjectCompartment(JL_OBJ)); // give Host reference to the new compartment
 			JSAutoCompartment ac(cx, globalObj);
 			JS_SetCompartmentPrivate(js::GetObjectCompartment(globalObj), compartmentPv);
+			*/
+
+ASSERT( false ); // reference to the Host is lost because the globalObj is not a jslibs Global object !
+
+
 
 			if ( !JL_SARG(2).isUndefined() ) {
 

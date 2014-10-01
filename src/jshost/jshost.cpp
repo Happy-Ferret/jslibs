@@ -528,19 +528,19 @@ _tmain( int argc, TCHAR* argv[] ) {
 			.setWerror(args.warningsToErrors)
 		;
 
-
-		jl::Global global(cx);
-		JL_CHK( global );
-
-		HostStdIO hostIO;
-		jl::Host host(cx, &global, hostIO);
-		JL_CHK( host );
-
 		JL_CHKM( initInterrupt(), E_HOST, E_INTERNAL );
 
 		{
+			jl::Global global(cx);
+			JL_CHK( global );
+
 			JS::RootedObject globalObject(cx, global.globalObject());
 			JSAutoCompartment ac(cx, globalObject);
+
+			HostStdIO hostIO;
+			jl::Host host(cx, &global, hostIO);
+			JL_CHK( host );
+
 			JS::RootedValue rval(cx);
 
 			// https://developer.mozilla.org/en/SpiderMonkey/JSAPI_Reference/JS_GetPropertyAttributes
@@ -622,6 +622,7 @@ _tmain( int argc, TCHAR* argv[] ) {
 
 					JS::RootedValue pex(cx);
 					// save the exception because jl::getPrimitive may throw
+					// use JS::AutoSaveExceptionState ase(cx); instead ?
 					JS::RootedValue ex(cx);
 					JS_GetPendingException(cx, &ex);
 					JS_ClearPendingException(cx);

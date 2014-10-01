@@ -130,7 +130,7 @@ bool GCCallTrace(JSContext *cx, JSGCStatus status) {
 
 DEFINE_FUNCTION( registerDumpHeap ) {
 
-	struct DumpHeap : jl::Observer<jl::EventBeforeDestroyRuntime> {
+	struct DumpHeap : jl::Observer<const jl::EventBeforeDestroyRuntime> {
 
 		jl::HostRuntime &_hostRuntime;
 		DumpHeap( jl::HostRuntime &hostRuntime )

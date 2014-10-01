@@ -250,8 +250,9 @@ inline QueueCell *SearchFirstData( Queue *queue, void *data ) {
 
 template <class T, template<class> class A = DefaultAlloc>
 class NOVTABLE Queue1 {
-
 public:
+	typedef T Type;
+
 	class Item {
 	public:
 		Item *prev;

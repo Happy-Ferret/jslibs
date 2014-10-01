@@ -15,13 +15,10 @@
 #pragma once
   
 /*
-          runtime ----- runtimePrivate <- HostRuntime
-             |                               ^    ^
-             |                               |    |
-  compartment/global <-------------------- Global |
-             |                                 ^  |
-             |                                 |  |
-             +--------- compartmentPrivate <- JLHost
+summary:
+	runtime.private = HostRuntime
+	globalObject.private = Global( cx )
+	compartment.private = Host( cx, Global )
 
 
   JS_SetRuntimePrivate
@@ -253,11 +250,12 @@ public:
 		return _list.AddEnd(observer);
 	}
 
-	void
+	Observer<EventType>* 
 	removeObserver( ListItem *item ) {
 
-		delete item->data;
+		Observer<EventType> *tmp = item->data;
 		_list.RemoveItem(item);
+		return tmp;
 	}
 
 	// returns false on the first observer that returns false (error)
@@ -500,17 +498,10 @@ static const size_t defaultNativeStackQuota = 2 * 128 * sizeof(size_t) * 1024;
 static const size_t defaultNativeStackQuota = 128 * sizeof(size_t) * 1024; // 512KB
 #endif
 
-/*
-enum HostRuntimeEvents {
-	BEFORE_DESTROY_RUNTIME,
-	AFTER_DESTROY_RUNTIME,
-	DESTRUCT_HOSTRUNTIME,
-	DESTROY_COMPARTMENT,
-	INTERRUPT,
-};
-*/
 
 struct EventBeforeDestroyRuntime {
+	HostRuntime &hrt;
+	EventBeforeDestroyRuntime(HostRuntime &hrt) : hrt(hrt) {}
 };
 
 struct EventAfterDestroyRuntime {
@@ -520,6 +511,8 @@ struct EventDestroyHostRuntime {
 };
 
 struct EventDestroyCompartment {
+	JSCompartment *compartment;
+	EventDestroyCompartment(JSCompartment *compartment) : compartment(compartment) {}
 };
 
 struct EventInterrupt {
@@ -527,43 +520,34 @@ struct EventInterrupt {
 	EventInterrupt(JSContext *cx) : cx(cx) {}
 };
 
+
+#define USING1(CLASS, A) using CLASS::A;
+#define USING2(CLASS, A, B) USING1(CLASS, A) USING1(CLASS, B)
+#define USING3(CLASS, A, B, C) USING2(CLASS, A, B) USING1(CLASS, C)
+#define USING4(CLASS, A, B, C, D) USING3(CLASS, A, B, C) USING1(CLASS, D)
+
+
 class DLLAPI HostRuntime :
 	public Valid,
-	public Observable<EventBeforeDestroyRuntime>,
-	public Observable<EventAfterDestroyRuntime>,
-	public Observable<EventDestroyHostRuntime>,
-	public Observable<EventDestroyCompartment>,
-	public Observable<EventInterrupt>,
+	public Observable<const EventBeforeDestroyRuntime>,
+	public Observable<const EventAfterDestroyRuntime>,
+	public Observable<const EventDestroyHostRuntime>,
+	public Observable<const EventDestroyCompartment>,
+	public Observable<const EventInterrupt>,
 	public jl::CppAllocators
 {
 public:
-	using Observable<EventBeforeDestroyRuntime>::addObserver;
-	using Observable<EventBeforeDestroyRuntime>::removeObserver;
-	using Observable<EventBeforeDestroyRuntime>::notify;
+	USING3( Observable<const EventBeforeDestroyRuntime>, addObserver, removeObserver, notify )
+	USING3( Observable<const EventAfterDestroyRuntime>, addObserver, removeObserver, notify )
+	USING3( Observable<const EventDestroyHostRuntime>, addObserver, removeObserver, notify )
+	USING3( Observable<const EventDestroyCompartment>, addObserver, removeObserver, notify )
+	USING3( Observable<const EventInterrupt>, addObserver, removeObserver, notify )
 
-	using Observable<EventAfterDestroyRuntime>::addObserver;
-	using Observable<EventAfterDestroyRuntime>::removeObserver;
-	using Observable<EventAfterDestroyRuntime>::notify;
-
-	using Observable<EventDestroyHostRuntime>::addObserver;
-	using Observable<EventDestroyHostRuntime>::removeObserver;
-	using Observable<EventDestroyHostRuntime>::notify;
-
-	using Observable<EventDestroyCompartment>::addObserver;
-	using Observable<EventDestroyCompartment>::removeObserver;
-	using Observable<EventDestroyCompartment>::notify;
-
-	using Observable<EventInterrupt>::addObserver;
-	using Observable<EventInterrupt>::removeObserver;
-	using Observable<EventInterrupt>::notify;
 private:
 
-	JSRuntime *rt;
-
+	JSRuntime *_rt;
 	Allocators _allocators;
-
 	WatchDog _watchDog;
-
 	bool _isEnding;
 	bool _skipCleanup;
 	bool _unsafeMode;
@@ -580,7 +564,7 @@ private:
 		ASSERT( !JS_IsRunning(iter) );
 		if ( JS_IsInRequest(rt) )
 			JS_EndRequest(iter);
-		JS_DestroyContext(iter);
+		JS_DestroyContextNoGC(iter);
 	}
 
 public:
@@ -616,7 +600,6 @@ public:
 	static HostRuntime&
 	getJLRuntime( JSRuntime *rt ) {
 
-		//return static_cast<Host*>(JL_GetRuntimePrivate(rt))->hostRuntime();
 		HostRuntime* hostRuntime = static_cast<HostRuntime*>(JL_GetRuntimePrivate(rt));
 		ASSERT( hostRuntime );
 		ASSERT( *hostRuntime );
@@ -633,27 +616,18 @@ public:
 
 	~HostRuntime();
 
-	HostRuntime(Allocators allocators/* = StdAllocators()*/, bool unsafeMode = false, uint32_t maxbytes = JS::DefaultHeapMaxBytes, size_t nativeStackQuota = defaultNativeStackQuota);
+	HostRuntime(Allocators allocators/* = StdAllocators()*/, bool unsafeMode = false, uint32_t maxbytes = JS::DefaultHeapMaxBytes, size_t nativeStackQuota = defaultNativeStackQuota, JSRuntime *parentRuntime = nullptr );
 
-	JSRuntime *&
+	JSRuntime *
 	runtime() {
 		
 		ASSERT( *this );
-		return rt;
+		return _rt;
 	}
 	
 	JSContext *
-	createContext();
+	createContext() const;
 
-
-/*
-	JSContext *&
-	context() {
-
-		ASSERT( *this );
-		return cx;
-	}
-*/
 
 	ALWAYS_INLINE const Allocators &
 	allocators() const {
@@ -1215,6 +1189,8 @@ public:
 */
 };
 
+#define SLOT_GLOBAL_OUTEROBJECT 0 // outer object
+#define SLOT_GLOBAL_HOSTOBJECT 1 // host object
 
 class DLLAPI Global :
 	public Valid,
@@ -1242,6 +1218,8 @@ class DLLAPI Global :
 	JS::PersistentRootedObject _objectProto;
 	const JSClass *_objectClasp;
 
+	ProtoCache _classProtoCache;
+	StaticArray< JS::PersistentRootedId, LAST_JSID > _ids;
 
 private:
 	Global( const Global & );
@@ -1256,10 +1234,12 @@ public:
 		return static_cast<Global*>(js::GetObjectPrivate(currentGlobal));
 	}
 
-	Global( JSContext *cx, bool lazyStandardClasses = true );
+	Global( JSContext *cx, bool lazyStandardClasses = true, bool loadStandardOnly = false );
 
 	~Global() {
 		
+		_ids.destructAll();
+
 		JL_SetPrivate(_globalObject, nullptr);
 
 		IFDEBUG( invalidate() );
@@ -1307,96 +1287,6 @@ public:
 		return jl::newObjectWithGivenProto(cx, _objectClasp, _objectProto); // JL_GetGlobal(cx)
 	}
 
-};
-
-
-struct Host;
-
-struct EventHostDestroy {
-	HostRuntime &hostRuntime;
-	Host &host;
-	EventHostDestroy(HostRuntime &hostRuntime, Host &host) : hostRuntime(hostRuntime), host(host) {}
-};
-
-
-class DLLAPI Host :
-	public Valid,
-	public Observable<EventHostDestroy>,
-	public jl::CppAllocators
-{
-
-	HostRuntime &_hostRuntime;
-	Global *_global;
-	ModuleManager _moduleManager;
-
-	JS::PersistentRootedObject _hostObject;
-	StdIO &_hostStdIO;
-	const uint32_t _compatId; // used to ensure compatibility between host and modules. see JL_HOST_VERSIONID macro.
-	ProtoCache _classProtoCache;
-	StaticArray< JS::PersistentRootedId, LAST_JSID > _ids;
-	ErrorManager _errorManager;
-	Observable<EventInterrupt>::ListItem *_interruptObserverItem;
-
-
-//	static void
-//	errorReporterBasic( JSContext *cx, const char *message, JSErrorReport *report );
-
-	static void
-	errorReporter( JSContext *cx, const char *message, JSErrorReport *report );
-
-	bool
-	hostStderrWrite( JSContext *cx, const TCHAR *message, size_t length );
-
-	INLINE NEVER_INLINE void FASTCALL
-	fillPrivateJsidSlow( JSContext *cx, JS::PersistentRootedId &id, const jschar *name ) {
-
-		id.set(stringToJsid(cx, name));
-	}
-
-private:
-	Host( const Host & );
-	Host & operator ==( const Host & );
-public:
-	~Host();
-
-	Host( JSContext *cx, Global *global, StdIO &hostStdIO );
-
-	// init the host for jslibs usage (modules, errors, ...)
-	
-	ALWAYS_INLINE bool
-	checkCompatId(uint32_t compatId) const {
-
-		return compatId != 0 && _compatId == compatId;
-	}
-
-	ALWAYS_INLINE Global &
-	global() const {
-			
-		return *_global;
-	}
-
-	ALWAYS_INLINE StdIO &
-	stdIO() const {
-
-		return _hostStdIO;
-	}
-
-	bool
-	setHostArguments( JSContext *cx, TCHAR **hostArgv, size_t hostArgc );
-
-	bool
-	setHostPath( JSContext *cx, const TCHAR *hostPath );
-
-	bool
-	setHostName( JSContext *cx, const TCHAR *hostName );
-
-
-	JS::HandleObject
-	hostObject() const {
-
-		return JS::HandleObject::fromMarkedLocation(_hostObject.address());
-	}
-
 
 	ALWAYS_INLINE JSObject *
 	newJLObject( JSContext *cx, const char *className ) const {
@@ -1407,37 +1297,6 @@ public:
 		else
 			return NULL;
 	}
-
-
-	// modules
-	
-	ALWAYS_INLINE ModuleManager&
-	moduleManager() {
-
-		return _moduleManager;
-	}
-
-	ALWAYS_INLINE ErrorManager&
-	errorManager() {
-
-		return _errorManager;
-	}
-
-/*
-	// alloc
-
-	ALWAYS_INLINE void
-	getAllocators( jl_malloc_t &mallocRef, jl_calloc_t &callocRef, jl_memalign_t &memalignRef, jl_realloc_t &reallocRef, jl_msize_t &msizeRef, jl_free_t &freeRef ) {
-	
-		const Allocators &alloc = _hostRuntime.allocators();
-		mallocRef = alloc.malloc;
-		callocRef = alloc.calloc;
-		memalignRef = alloc.memalign;
-		reallocRef = alloc.realloc;
-		msizeRef = alloc.msize;
-		freeRef = alloc.free;
-	}
-*/
 
 	// CachedClassProto
 
@@ -1481,7 +1340,16 @@ public:
 		_classProtoCache.remove(className);
 	}
 
+
 	// ids
+private:
+	INLINE NEVER_INLINE void FASTCALL
+	fillPrivateJsidSlow( JSContext *cx, JS::PersistentRootedId &id, const jschar *name ) {
+
+		id.set(stringToJsid(cx, name));
+	}
+
+public:
 	ALWAYS_INLINE JS::HandleId
 	getId( JSContext *cx, int index, const jschar *name ) {
 
@@ -1493,6 +1361,127 @@ public:
 		}
 		return JS::HandleId::fromMarkedLocation(&id.get());
 	}
+
+
+};
+
+
+struct Host;
+
+struct EventHostDestroy {
+	HostRuntime &hostRuntime;
+	Host &host;
+	EventHostDestroy(HostRuntime &hostRuntime, Host &host) : hostRuntime(hostRuntime), host(host) {}
+};
+
+
+class DLLAPI Host :
+	public Valid,
+	public Observable<const EventHostDestroy>,
+	public Observer<const EventInterrupt>,
+	public jl::CppAllocators
+{
+
+	HostRuntime &_hostRuntime;
+	Global *_global;
+	ModuleManager _moduleManager;
+
+	JS::PersistentRootedObject _hostObject;
+	StdIO &_hostStdIO;
+	const uint32_t _compatId; // used to ensure compatibility between host and modules. see JL_HOST_VERSIONID macro.
+	ErrorManager _errorManager;
+	Observable<const EventInterrupt>::ListItem *_interruptObserverItem;
+
+
+//	static void
+//	errorReporterBasic( JSContext *cx, const char *message, JSErrorReport *report );
+
+	static void
+	errorReporter( JSContext *cx, const char *message, JSErrorReport *report );
+
+	bool
+	hostStderrWrite( JSContext *cx, const TCHAR *message, size_t length );
+
+	bool
+	operator()( const EventInterrupt &ev );
+
+private:
+	Host( const Host & );
+	Host & operator ==( const Host & );
+public:
+	~Host();
+
+	Host( JSContext *cx, Global *global, StdIO &hostStdIO );
+
+	// init the host for jslibs usage (modules, errors, ...)
+	
+	ALWAYS_INLINE bool
+	checkCompatId(uint32_t compatId) const {
+
+		return compatId != 0 && _compatId == compatId;
+	}
+
+	ALWAYS_INLINE Global &
+	global() const {
+
+		//ASSERT( _global = JS_GetGlobalForObject(cx, _hostObject) );
+		ASSERT( _global );
+		ASSERT( *_global );
+		return *_global;
+	}
+
+	ALWAYS_INLINE StdIO &
+	stdIO() const {
+
+		return _hostStdIO;
+	}
+
+	bool
+	setHostArguments( JSContext *cx, TCHAR **hostArgv, size_t hostArgc );
+
+	bool
+	setHostPath( JSContext *cx, const TCHAR *hostPath );
+
+	bool
+	setHostName( JSContext *cx, const TCHAR *hostName );
+
+
+	JS::HandleObject
+	hostObject() const {
+
+		return JS::HandleObject::fromMarkedLocation(_hostObject.address());
+	}
+
+
+	// modules
+	
+	ALWAYS_INLINE ModuleManager&
+	moduleManager() {
+
+		return _moduleManager;
+	}
+
+	ALWAYS_INLINE ErrorManager&
+	errorManager() {
+
+		return _errorManager;
+	}
+
+/*
+	// alloc
+
+	ALWAYS_INLINE void
+	getAllocators( jl_malloc_t &mallocRef, jl_calloc_t &callocRef, jl_memalign_t &memalignRef, jl_realloc_t &reallocRef, jl_msize_t &msizeRef, jl_free_t &freeRef ) {
+	
+		const Allocators &alloc = _hostRuntime.allocators();
+		mallocRef = alloc.malloc;
+		callocRef = alloc.calloc;
+		memalignRef = alloc.memalign;
+		reallocRef = alloc.realloc;
+		msizeRef = alloc.msize;
+		freeRef = alloc.free;
+	}
+*/
 
 
 // static
@@ -1515,35 +1504,23 @@ public:
 	}
 */
 
-	static ALWAYS_INLINE bool
-	hasJLHost( JSContext *cx ) {
-	
-		ASSERT( cx );
-		return JS_GetCompartmentPrivate(js::GetContextCompartment(cx)) != nullptr;
-	}
-
-	static ALWAYS_INLINE Host&
-	getJLHost( JS::HandleObject obj ) {
-
-		ASSERT( obj );
-		JSCompartment *objectCompartment = js::GetObjectCompartment(obj);
-		ASSERT( objectCompartment );
-		Host* pHost = static_cast<Host*>(JS_GetCompartmentPrivate(objectCompartment));
-		ASSERT( pHost );
-		ASSERT( *pHost );
-		return *pHost;
-	}
 
 	static ALWAYS_INLINE Host&
 	getJLHost( JSContext *cx ) {
-
 		ASSERT( cx );
-		JSCompartment *currentCompartment = js::GetContextCompartment(cx);
-		ASSERT( currentCompartment );
-		Host* pHost = static_cast<Host*>(JS_GetCompartmentPrivate(currentCompartment));
+		
+		//JSCompartment *currentCompartment = js::GetContextCompartment(cx); // see also js::GetObjectCompartment(obj)
+		//ASSERT( currentCompartment );
+		//Host* pHost = static_cast<Host*>(JS_GetCompartmentPrivate(currentCompartment));
+
+		const JS::Value &hostSlot = js::GetReservedSlot(JL_GetGlobal(cx), SLOT_GLOBAL_HOSTOBJECT);
+		ASSERT( hostSlot.isObject() );
+		Host* pHost = static_cast<Host*>(js::GetObjectPrivate(hostSlot.toObjectOrNull()));
+
 		ASSERT( pHost );
 		ASSERT( *pHost );
 		return *pHost;
+
 	}
 };
 
@@ -1569,7 +1546,7 @@ JL_END_NAMESPACE
 #define JLID_NAME_CSTR(cx, name) (#name)
 #endif // DEBUG
 
-#define JLID(cx, name) (jl::Host::getJLHost(cx).getId(cx, JLID_##name, L(#name)))
+#define JLID(cx, name) (jl::Global::getGlobal(cx)->getId(cx, JLID_##name, L(#name)))
 
 // eg:
 //   jsid cfg = JLID(cx, fileName); const char *name = JLID_NAME(fileName);
@@ -1589,6 +1566,6 @@ JL_NewObj( JSContext *cx ) {
 ALWAYS_INLINE JSObject* FASTCALL
 JL_NewJslibsObject( JSContext *cx, const char *className ) {
 
-	return jl::Host::getJLHost(cx).newJLObject(cx, className);
+	return jl::Global::getGlobal(cx)->newJLObject(cx, className);
 }
 

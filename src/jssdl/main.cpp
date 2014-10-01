@@ -501,7 +501,7 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	StartVideo();
 
 
-	struct ReleaseModule : jl::Observer<jl::EventAfterDestroyRuntime> {
+	struct ReleaseModule : jl::Observer<const jl::EventAfterDestroyRuntime> {
 		bool operator()( EventType &ev ) {
 		
 			EndVideo();

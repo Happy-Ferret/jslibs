@@ -12,44 +12,44 @@ var loadModule = host.loadModule;
 loadModule('jsstd');
 
 host.interruptInterval = 1;
-host.onInterrupt = () => { host.collectGarbage(true, 1) };
+host.onInterrupt = () => host.collectGarbage(true, 1);
 
+	{
 
-{
-
-	let h = new SubHost(function(parentGlobal) {
+		let h = new SubHost(function(parentGlobal) {
 	
-		host.stdout('this.parent:', this.parent);
+			var loadModule = host.loadModule;
+			loadModule('jsstd');
 
-		global.host.stdout('withNewHost\n');
+			print('in SubHost\n');
 
-		var loadModule = host.loadModule;
-		loadModule('jsstd');
+			print('this.parent:', this.parent, '\n');
 
-		loadModule('jsio');
+			loadModule('jsio');
 
-		loadModule('jsdebug');
-		var debug = new Debugger;
+			loadModule('jsdebug');
+			var debug = new Debugger;
 
-		debug.addDebuggee(parentGlobal);
-		debug.onEnterFrame = function(frame) {
+			debug.addDebuggee(parentGlobal);
+			debug.onEnterFrame = function(frame) {
 
-			global.host.stdout('onEnterFrame: ', frame.script.getOffsetLine(frame.offset), '\n');
-		}
+				global.host.stdout('onEnterFrame: ', frame.script.getOffsetLine(frame.offset), '\n');
+			}
 
-		parentGlobal.test = this;
+			parentGlobal.test123 = this;
 
-	}, global);
+		}, global);
 
-}
+		host.stdout('quit debugger scope!\n');
 
-	
-	host.stdout(global.test+'!\n');
-
-	host.stdout('quit debugger scope!\n');
-
+	}
 
 	collectGarbage();
+	
+	host.stdout('property set in SubHost: ', global.test123+'!\n');
+
+
+
 
 	function testb() {}
 	function testa() {

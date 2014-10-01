@@ -31,7 +31,7 @@ $MODULE_FOOTER
 **/
 
 
-struct OnHostDestroyed : public jl::Observer<jl::EventHostDestroy> {
+struct OnHostDestroyed : public jl::Observer<const jl::EventHostDestroy> {
 	
 	bool operator()( EventType &ev ) {
 

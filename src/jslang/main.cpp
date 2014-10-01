@@ -36,7 +36,7 @@ $MODULE_FOOTER
 **/
 
 
-class ReleaseModule : public jl::Observer<jl::EventAfterDestroyRuntime> {
+class ReleaseModule : public jl::Observer<const jl::EventAfterDestroyRuntime> {
 	ModulePrivate *_mpv;
 public:
 	

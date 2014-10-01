@@ -41,7 +41,7 @@ $MODULE_HEADER
 $MODULE_FOOTER
 **/
 
-struct ReleaseModule : jl::Observer<jl::EventAfterDestroyRuntime> {
+struct ReleaseModule : jl::Observer<const jl::EventAfterDestroyRuntime> {
 	jl::HostRuntime &_hostRuntime;
 	JsioPrivate *_mpv;
 	

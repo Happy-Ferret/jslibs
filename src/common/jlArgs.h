@@ -283,7 +283,7 @@ JL_END_NAMESPACE
 
 #define JL_DEFINE_CONSTRUCTOR_OBJ \
 	JL_MACRO_BEGIN \
-	args.constructThis(JL_THIS_CLASS, jl::Host::getJLHost(cx).getCachedProto(JL_THIS_CLASS_NAME)); \
+	args.constructThis(JL_THIS_CLASS, jl::Global::getGlobal(cx)->getCachedProto(JL_THIS_CLASS_NAME)); \
 	JL_MACRO_END
 
 

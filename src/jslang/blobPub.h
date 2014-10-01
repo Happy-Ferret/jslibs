@@ -71,7 +71,7 @@ rules:
 INLINE bool
 BlobCreate( JSContext *cx, void *ownData, int32_t size, OUT JS::MutableHandleValue rval ) {
 
-	const jl::ClassInfo *classProtoCache = jl::Host::getJLHost(cx).getCachedClassInfo("Blob");
+	const jl::ClassInfo *classProtoCache = jl::Global::getGlobal(cx)->getCachedClassInfo("Blob");
 	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME( "Blob" ), E_NOTFOUND );
 
 	{

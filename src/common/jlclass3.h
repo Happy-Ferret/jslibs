@@ -321,12 +321,12 @@ struct Class {
 			//HostPrivate *hpv;
 			//hpv = JL_GetHostPrivate(cx);
 
-			jl::Host &host = jl::Host::getJLHost(cx);
+			jl::Global *glob = jl::Global::getGlobal(cx);
 
 			JS::RootedObject parentProto(cx);
 			if ( parentProtoName != NULL ) {
 
-				parentProto = host.getCachedProto(parentProtoName);  //JL_GetCachedProto(hpv, parentProtoName);
+				parentProto = glob->getCachedProto(parentProtoName);  //JL_GetCachedProto(hpv, parentProtoName);
 				JL_CHKM( parentProto != NULL, E_STR(parentProtoName), E_STR("prototype"), E_NOTFOUND );
 			}
 
@@ -339,10 +339,10 @@ struct Class {
 
 			ASSERT_IF( clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(proto) == NULL );
 
-			JL_CHKM( host.addCachedClassInfo(cx, clasp.name, &clasp, proto), E_CLASS, E_NAME(clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
+			JL_CHKM( glob->addCachedClassInfo(cx, clasp.name, &clasp, proto), E_CLASS, E_NAME(clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
 
-			ASSERT( host.getCachedClasp(clasp.name) == &clasp );
-			ASSERT( host.getCachedProto(clasp.name) == proto );
+			ASSERT( glob->getCachedClasp(clasp.name) == &clasp );
+			ASSERT( glob->getCachedProto(clasp.name) == proto );
 
 			ctor = constructor ? JL_GetConstructor(cx, proto) : proto;
 		}

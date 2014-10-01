@@ -129,16 +129,16 @@ int CALLBACK WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 	{
 
 		HostRuntime hostRuntime(allocators, true); // HOST_STACK_SIZE / 2
-		JSContext *cx = hostRuntime.context();
+		JSContext *cx = hostRuntime.createContext();
 
-		jl::Global global(hostRuntime);
+		jl::Global global(cx);
 		JL_CHK( global );
 
-		jl::Host host(global, hostIO);
-		JL_CHK( host );
-
 		{
-			JSAutoCompartment ac(global.hostRuntime().context(), global.globalObject());
+			JSAutoCompartment ac(cx, global.globalObject());
+
+			jl::Host host(cx, &global, hostIO);
+			JL_CHK( host );
 
 			TCHAR moduleName[PATH_MAX];
 			TCHAR tmp[PATH_MAX];
@@ -152,14 +152,14 @@ int CALLBACK WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 			TCHAR *name = jl::strrchr( tmp, TEXT( PATH_SEPARATOR ) );
 			JL_CHK( name );
 			name += 1;
-			JL_CHK( host.setHostName(name) );
+			JL_CHK( host.setHostName(cx, name) );
 			*name = TEXT( '\0' );
-			JL_CHK( host.setHostPath(tmp) );
+			JL_CHK( host.setHostPath(cx, tmp) );
 
 			LPTSTR *szArglist;
 			int nArgs;
 			szArglist = jl::CommandLineToArgvW(::GetCommandLineW(), &nArgs);
-			host.setHostArguments(szArglist, nArgs);
+			host.setHostArguments(cx, szArglist, nArgs);
 			::free(szArglist);
 
 			{

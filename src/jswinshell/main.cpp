@@ -53,7 +53,7 @@ bool ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	JL_ASSERT( SUCCEEDED(hr), E_NAME("COM"), E_INIT );
 
 
-	struct ReleaseModule : jl::Callback {
+	struct ReleaseModule : jl::Observer<const jl::EventAfterDestroyRuntime> {
 		bool operator()( EventType &ev ) {
 		
 			// Closes the COM library on the current thread, unloads all DLLs loaded by the thread, frees any other resources that the thread maintains, and forces all RPC connections on the thread to close.
@@ -62,7 +62,7 @@ bool ModuleInit(JSContext *cx, JS::HandleObject obj) {
 		}
 	};
 
-	jl::HostRuntime::getJLRuntime(cx).addListener(jl::EventId::AFTER_DESTROY_RUNTIME, new ReleaseModule()); // frees mpv after rt and cx has been destroyed
+	jl::HostRuntime::getJLRuntime(cx).addObserver(new ReleaseModule); // frees mpv after rt and cx has been destroyed
 
 
 	INIT_CLASS( ComVariant );
