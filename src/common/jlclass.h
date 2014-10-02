@@ -112,6 +112,7 @@ DefineConstValues(JSContext *cx, JS::HandleObject obj, ConstValueSpec *cs) {
 	JL_BAD;
 }
 
+
 INLINE JSObject* FASTCALL
 InitStatic( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 
@@ -149,15 +150,18 @@ bad:
 	return nullptr;
 }
 
+
 INLINE const ClassInfo * FASTCALL
 InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 
 	ASSERT( cs->clasp.name && cs->clasp.name[0] ); // Invalid class name.
-	jl::Global *glob = jl::Global::getGlobal(cx);
 
 	JS::RootedObject parentProto(cx);
 	JS::RootedObject ctor(cx);
 	JS::RootedObject proto(cx);
+	jl::Global *glob = jl::Global::getGlobal(cx);
+
+	JL_CHKM( glob, E_GLOBAL, E_NOTINIT );
 
 	if ( cs->parentProtoName ) {
 
@@ -175,7 +179,7 @@ InitClass( JSContext *cx, JS::HandleObject obj, ClassSpec *cs ) {
 
 
 	const ClassInfo *item = glob->addCachedClassInfo(cx, cs->clasp.name, &cs->clasp, proto);
-	JL_CHKM( item, E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
+	JL_CHKM( item, E_CLASS, E_NAME(cs->clasp.name), E_INIT, E_COMMENT("ClassInfoCache") );
 
 	ctor.set( cs->constructor ? JL_GetConstructor(cx, proto) : proto );
 
@@ -219,12 +223,14 @@ bad:
 	return nullptr;
 }
 
+
 INLINE bool
 InvalidConstructor(JSContext *cx, unsigned, JS::Value *) {
 
 	JL_ERR( E_CLASS, E_NOTCONSTRUCT );
 	JL_BAD;
 }
+
 
 INLINE bool
 DefaultInstanceof(JSContext *cx, IN JS::HandleObject obj, IN JS::HandleValue v, OUT bool *bp) {

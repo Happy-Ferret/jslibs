@@ -531,31 +531,36 @@ public:
 		length = ITEM_COUNT
 	};
 
+	enum ConstructorSelector {
+		constructContent
+	};
+
 	StaticArray() {
 	}
 
-	StaticArray(bool construct) {
+	StaticArray(ConstructorSelector) {
 
 		constructAll();
 	}
 
 	template <typename P1>
-	StaticArray(bool construct, P1 p1) {
-
+	StaticArray(ConstructorSelector, P1 p1) {
+		
 		constructAll(p1);
 	}
 
 	template <typename P1, typename P2>
-	StaticArray(bool construct, P1 p1, P2 p2) {
+	StaticArray(ConstructorSelector, P1 p1, P2 p2) {
 
 		constructAll(p1, p2);
 	}
 
 	template <typename P1, typename P2, typename P3>
-	StaticArray(bool construct, P1 p1, P2 p2, P3 p3) {
+	StaticArray(ConstructorSelector, P1 p1, P2 p2, P3 p3) {
 
 		constructAll(p1, p2, p3);
 	}
+
 
 	T&
 	get(size_t slotIndex) {

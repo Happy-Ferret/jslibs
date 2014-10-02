@@ -147,11 +147,11 @@ HandleCreate( JSContext *cx, T *data, OUT JS::MutableHandleValue handleVal ) {
 
 	jl::Global *glob = jl::Global::getGlobal(cx);
 	ASSERT( glob && *glob );
-	const jl::ClassInfo *classProtoCache = glob->getCachedClassInfo("Handle");
-	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME("Handle"), E_NOTFOUND );
+	const jl::ClassInfo *ci = glob->getCachedClassInfo("Handle");
+	JL_ASSERT( ci != NULL, E_CLASS, E_NAME("Handle"), E_NOTFOUND );
 
 	{
-		JS::RootedObject handleObj(cx, jl::newObjectWithGivenProto(cx, classProtoCache->clasp, classProtoCache->proto));
+		JS::RootedObject handleObj(cx, jl::newObjectWithGivenProto(cx, ci->clasp, ci->proto));
 		JL_ASSERT_ALLOC( handleObj );
 		handleVal.setObject(*handleObj);
 		HandlePrivate *pv = data;

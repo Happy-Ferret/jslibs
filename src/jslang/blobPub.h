@@ -71,15 +71,15 @@ rules:
 INLINE bool
 BlobCreate( JSContext *cx, void *ownData, int32_t size, OUT JS::MutableHandleValue rval ) {
 
-	const jl::ClassInfo *classProtoCache = jl::Global::getGlobal(cx)->getCachedClassInfo("Blob");
-	JL_ASSERT( classProtoCache != NULL, E_CLASS, E_NAME( "Blob" ), E_NOTFOUND );
+	const jl::ClassInfo *ci = jl::Global::getGlobal(cx)->getCachedClassInfo("Blob");
+	JL_ASSERT( ci != NULL, E_CLASS, E_NAME( "Blob" ), E_NOTFOUND );
 
 	{
 
 		ASSERT_IF( ownData == nullptr, size == 0 );
 
-		JS::RootedObject blobObj( cx, jl::newObjectWithGivenProto( cx, classProtoCache->clasp, classProtoCache->proto ) );
-		//JS::RootedObject blobObj(cx, jl::construct(cx, classProtoCache->proto));
+		JS::RootedObject blobObj( cx, jl::newObjectWithGivenProto( cx, ci->clasp, ci->proto ) );
+		//JS::RootedObject blobObj(cx, jl::construct(cx, ci->proto));
 
 		JL_ASSERT_ALLOC( blobObj );
 

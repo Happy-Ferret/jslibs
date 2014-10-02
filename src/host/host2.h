@@ -798,7 +798,7 @@ public:
 
 // does not support more than (1<<MAX_CLASS_PROTO_CACHE_BIT)-1 proto.
 
-class DLLAPI ProtoCache {
+class DLLAPI ClassInfoCache {
 
 	const JSClass*
 	removedSlotClasp() const {
@@ -822,7 +822,7 @@ public:
 		}
 	}
 
-	~ProtoCache() {
+	~ClassInfoCache() {
 
 		// destruct only items that has been constructed.
 		for ( int i = 0; i < items.length; ++i ) {
@@ -834,7 +834,7 @@ public:
 		}
 	}
 
-	ProtoCache() {
+	ClassInfoCache() {
 
 		// set all slots as 'unused' (aka. NULL) and let them unconstructed.
 		for ( int i = 0; i < items.length; ++i ) {
@@ -1192,14 +1192,32 @@ public:
 #define SLOT_GLOBAL_OUTEROBJECT 0 // outer object
 #define SLOT_GLOBAL_HOSTOBJECT 1 // host object
 
+struct EventGlobalFinalize {
+	JSRuntime *rt;
+	EventGlobalFinalize(JSRuntime *rt) : rt(rt) {}
+};
+
+
 class DLLAPI Global :
+	public jl::CppAllocators,
 	public Valid,
-	public jl::CppAllocators
+	public Observable<const EventGlobalFinalize>
 {
 
-	// global object
 	// doc: For full ECMAScript standard compliance, obj should be of a JSClass that has the JSCLASS_GLOBAL_FLAGS flag.
 	// note: global_class is a global variable, but this is not an issue even if several runtimes share the same JSClass.
+
+	JS::PersistentRootedObject _globalObject;
+
+	JS::PersistentRootedObject _objectProto;
+	const JSClass *_objectClasp;
+
+	ClassInfoCache _classInfoCache;
+	StaticArray< JS::PersistentRootedId, LAST_JSID > _ids;
+
+// static
+	static const js::Class _globalClass;
+	static const js::Class _globalClass_lazy;
 
 	static bool
 	_lazyEnumerate(JSContext *cx, JS::HandleObject obj);
@@ -1209,17 +1227,10 @@ class DLLAPI Global :
 
 	static JSObject *
 	_outerObject(JSContext *cx, JS::HandleObject obj);
+	
+	static void
+	_finalize(JSFreeOp *fop, JSObject *obj);
 
-	static const js::Class _globalClass;
-	static const js::Class _globalClass_lazy;
-
-	JS::PersistentRootedObject _globalObject;
-
-	JS::PersistentRootedObject _objectProto;
-	const JSClass *_objectClasp;
-
-	ProtoCache _classProtoCache;
-	StaticArray< JS::PersistentRootedId, LAST_JSID > _ids;
 
 private:
 	Global( const Global & );
@@ -1243,7 +1254,6 @@ public:
 		JL_SetPrivate(_globalObject, nullptr);
 
 		IFDEBUG( invalidate() );
-		IFDEBUG( _globalObject.set(nullptr); );
 	}
 
 	JSObject *
@@ -1291,25 +1301,24 @@ public:
 	ALWAYS_INLINE JSObject *
 	newJLObject( JSContext *cx, const char *className ) const {
 
-		const ClassInfo *cpc = _classProtoCache.get(className);
-		if ( cpc != NULL )
-			return jl::newObjectWithGivenProto(cx, cpc->clasp, cpc->proto);
-		else
-			return NULL;
+		const ClassInfo *ci = _classInfoCache.get(className);
+		//JL_CHKM( ci, 
+		return ci ? jl::newObjectWithGivenProto(cx, ci->clasp, ci->proto) : nullptr;
 	}
 
-	// CachedClassProto
+
+	// ClassInfoCache
 
 	const ClassInfo *
 	addCachedClassInfo( JSContext *cx, const char *className, const JSClass * const clasp, IN JS::HandleObject proto ) {
 
-		return _classProtoCache.add(cx, className, clasp, proto);
+		return _classInfoCache.add(cx, className, clasp, proto);
 	}
 
 	ALWAYS_INLINE const ClassInfo *
 	getCachedClassInfo( IN const char *className ) const {
 
-		return _classProtoCache.get(className);
+		return _classInfoCache.get(className);
 	}
 
 	ALWAYS_INLINE const JS::HandleObject
@@ -1331,13 +1340,13 @@ public:
 	ALWAYS_INLINE bool
 	hasCachedClassInfo(IN const char *className) const {
 
-		return _classProtoCache.get(className) != NULL;
+		return _classInfoCache.get(className) != NULL;
 	}
 
 	ALWAYS_INLINE void
 	removeCachedClassInfo(IN const char *className) {
 		
-		_classProtoCache.remove(className);
+		_classInfoCache.remove(className);
 	}
 
 
@@ -1376,10 +1385,10 @@ struct EventHostDestroy {
 
 
 class DLLAPI Host :
+	public jl::CppAllocators,
 	public Valid,
 	public Observable<const EventHostDestroy>,
-	public Observer<const EventInterrupt>,
-	public jl::CppAllocators
+	public Observer<const EventInterrupt>
 {
 
 	HostRuntime &_hostRuntime;
@@ -1391,6 +1400,7 @@ class DLLAPI Host :
 	const uint32_t _compatId; // used to ensure compatibility between host and modules. see JL_HOST_VERSIONID macro.
 	ErrorManager _errorManager;
 	Observable<const EventInterrupt>::ListItem *_interruptObserverItem;
+
 
 
 //	static void

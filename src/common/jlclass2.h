@@ -254,7 +254,7 @@ namespace jl2 { //JL_BEGIN_NAMESPACE
 				JL_ASSERT( proto != NULL, E_CLASS, E_NAME(clasp.name), E_CREATE ); //RTE
 				ASSERT_IF( clasp.flags & JSCLASS_HAS_PRIVATE, JL_GetPrivate(proto) == NULL );
 
-				JL_CHKM( JL_CacheClassInfo(hpv, clasp.name, &clasp, proto), E_CLASS, E_NAME(clasp.name), E_INIT, E_COMMENT("CacheClassProto") );
+				JL_CHKM( JL_CacheClassInfo(hpv, clasp.name, &clasp, proto), E_CLASS, E_NAME(clasp.name), E_INIT, E_COMMENT("ClassInfoCache") );
 
 				if ( constructor ) {
 

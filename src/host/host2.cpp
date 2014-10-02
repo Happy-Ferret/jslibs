@@ -758,8 +758,8 @@ const js::Class Global::_globalClass_lazy = {
 	JSCLASS_HAS_PRIVATE | JSCLASS_GLOBAL_FLAGS_WITH_SLOTS(2) | JSCLASS_NEW_RESOLVE,
 	JS_PropertyStub, JS_DeletePropertyStub,
 	JS_PropertyStub, JS_StrictPropertyStub,
-	Global::_lazyEnumerate, (JSResolveOp)Global::_lazyResolve,
-	JS_ConvertStub, nullptr,
+	_lazyEnumerate, (JSResolveOp)_lazyResolve,
+	JS_ConvertStub, (js::FinalizeOp)_finalize,
     nullptr, nullptr, nullptr,
 	JS_GlobalObjectTraceHook,
 	JS_NULL_CLASS_SPEC,
@@ -772,7 +772,7 @@ const js::Class Global::_globalClass = {
 	JS_PropertyStub, JS_DeletePropertyStub,
 	JS_PropertyStub, JS_StrictPropertyStub,
 	JS_EnumerateStub, JS_ResolveStub,
-	JS_ConvertStub, nullptr,
+	JS_ConvertStub, (js::FinalizeOp)_finalize,
     nullptr, nullptr, nullptr,
 	JS_GlobalObjectTraceHook,
 	JS_NULL_CLASS_SPEC,
@@ -818,11 +818,24 @@ Global::_outerObject(JSContext *cx, JS::HandleObject obj) {
 		return obj;
 }
 
+void
+Global::_finalize(JSFreeOp *fop, JSObject *obj) {
+
+	Global *glob = static_cast<Global*>(js::GetObjectPrivate(obj));
+
+	// see ~Global()
+
+	if ( glob )
+		glob->notify( jl::EventGlobalFinalize(fop->runtime()) );
+
+
+}
+
 
 Global::Global( JSContext *cx, bool lazyStandardClasses, bool loadStandardOnly ) :
 	_globalObject( cx ),
 	_objectProto( cx ),
-	_ids(true, cx)
+	_ids(_ids.constructContent, cx)
 {
 
 	//_ids.constructAll(cx);
@@ -1121,8 +1134,7 @@ BEGIN_CLASS( SubHost )
 				JL_CHK( *host ); // validity
 
 				
-//				JL_SetPrivate(subHost, host); // ???
-
+				JL_SetPrivate(subHost, host); // ???
 
 				JL_CHK( JS_WrapObject(cx, &subHost) );
 
@@ -1146,6 +1158,22 @@ BEGIN_CLASS( SubHost )
 
 			}
 
+
+			//EventGlobalFinalize
+
+			struct GlobalFinalizeObserver : jl::Observer<const EventGlobalFinalize> {
+
+				bool operator()(const EventType &ev) {
+
+					
+
+					return true;
+				}
+			};
+
+			global->addObserver(new GlobalFinalizeObserver);
+
+
 		}
 
 		return true;
@@ -1153,7 +1181,11 @@ BEGIN_CLASS( SubHost )
 	}
 
 	DEFINE_FINALIZE() {
+/*
 
+-> Global.finalize ?
+
+*/
 		void *pv = JL_GetPrivateFromFinalize(obj);
 		if ( pv ) {
 
@@ -1168,6 +1200,7 @@ BEGIN_CLASS( SubHost )
 			delete host;
 			delete &global;
 		}
+
 	}
 
 
@@ -1772,8 +1805,11 @@ Host::Host( JSContext *cx, Global *global, StdIO &hostStdIO ) :
 		_hostObject.set( JS_NewObjectWithGivenProto(cx, hostItem->clasp, hostItem->proto, JS::NullPtr()) );
 		JL_CHK( _hostObject );
 
+		//JS_GetParent( _hostObject );
+
+
 		JL_SetPrivate( _hostObject, this );
-//		ASSERT( js::GetReservedSlot(globalObj, SLOT_GLOBAL_HOSTOBJECT).isUndefined() );
+		ASSERT( js::GetReservedSlot(globalObj, SLOT_GLOBAL_HOSTOBJECT).isUndefined() );
 		js::SetReservedSlot(globalObj, SLOT_GLOBAL_HOSTOBJECT, JS::ObjectValue(*_hostObject)); // <-- loop: required in jl::InitClass ...
 
 		JL_CHK( moduleManager().addLocalModule(cx, "jslang", jslangModuleInit, globalObj) );
