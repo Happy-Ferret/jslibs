@@ -87,7 +87,7 @@ BEGIN_CLASS( SVG ) // Start the definition of the class. It defines some symbols
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	if ( jl::Host::getJLHost(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getJLHost(fop->runtime())->canSkipCleanup ) // see HostRuntime::skipCleanup()
 		return;
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
@@ -722,7 +722,7 @@ DEFINE_PROPERTY(images) {
 	JL_CHK( JL_GetReservedSlot( JL_OBJ, SLOT_IMAGES_OBJECT, vp) );
 	if ( JSVAL_IS_VOID( *vp ) ) {
 
-		*vp = OBJECT_TO_JSVAL( JL_NewObj(cx) );
+		*vp = OBJECT_TO_JSVAL( jl::newObject(cx) );
 		JL_CHK( JL_SetReservedSlot( JL_OBJ, SLOT_IMAGES_OBJECT, *vp) );
 	}
 	return true;

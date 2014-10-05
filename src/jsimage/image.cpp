@@ -20,7 +20,7 @@ BEGIN_CLASS( Image )
 
 DEFINE_FINALIZE() {
 
-	if ( jl::Host::getJLHost(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getJLHost(fop->runtime())->canSkipCleanup ) // see HostRuntime::skipCleanup()
 		return;
 
 	void *data = JL_GetPrivate(obj);

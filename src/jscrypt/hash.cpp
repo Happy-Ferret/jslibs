@@ -418,14 +418,14 @@ DEFINE_PROPERTY_GETTER( list ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	JS::RootedObject list(cx, JL_NewObj(cx));
+	JS::RootedObject list(cx, jl::newObject(cx));
 	JS::RootedValue value(cx);
 	JL_ASSERT_ALLOC( list );
 	int i;
 	LTC_MUTEX_LOCK(&ltc_hash_mutex);
 	for ( i=0; hash_is_valid(i) == CRYPT_OK; i++ ) {
 
-		JS::RootedObject desc(cx, JL_NewObj(cx));
+		JS::RootedObject desc(cx, jl::newObject(cx));
 		JL_CHK( jl::setProperty(cx, list, hash_descriptor[i].name, desc) );
 		JL_CHK( jl::setProperty(cx, desc, "hashSize", hash_descriptor[i].hashsize) );
 		JL_CHK( jl::setProperty(cx, desc, "blockSize", hash_descriptor[i].blocksize) );

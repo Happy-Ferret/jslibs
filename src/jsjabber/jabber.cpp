@@ -45,7 +45,7 @@ DECLARE_CLASS( Jabber )
 
 bool JidToJsval( JSContext *cx, const JID *jid, jsval *rval ) {
 
-	JSObject *jidObj = JL_NewObj(cx);
+	JSObject *jidObj = jl::newObject(cx);
 	*rval = OBJECT_TO_JSVAL(jidObj);
 	JL_CHK( jl::setProperty(cx, jidObj, "bare", jid->bare().c_str()) );
 	JL_CHK( jl::setProperty(cx, jidObj, "full", jid->full().c_str()) );
@@ -99,7 +99,7 @@ private:
 			return false;
 		}
 
-		JSObject *infoObj = JL_NewObj(_cx);
+		JSObject *infoObj = jl::newObject(_cx);
 		jl::setProperty(_cx, _obj, "chain", info.chain);
 		jl::setProperty(_cx, _obj, "issuer", info.issuer.c_str());
 		jl::setProperty(_cx, _obj, "server", info.server.c_str());

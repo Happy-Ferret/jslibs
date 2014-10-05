@@ -17,6 +17,8 @@
 
 #include "jlplatform.h"
 
+// see also __declspec( thread ) int tls_i = 1; (win32) and __thread int tls_i; (linux)
+
 extern volatile int32_t _modulePrivateCount;
 extern JLTLSKey _modulePrivateKey;
 

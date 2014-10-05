@@ -747,7 +747,7 @@ DEFINE_FUNCTION( _jsapiTests ) {
 	///////////////////////////////////////////////////////////////
 	// check JL_JsvalToJsid -> JL_JsidToJsval
 	//
-	JS::RootedObject o(cx, JL_NewObj(cx));
+	JS::RootedObject o(cx, jl::newObject(cx));
 	JS::RootedId id(cx);
 	JS::RootedValue s(cx);
 	s.setObject(*o);

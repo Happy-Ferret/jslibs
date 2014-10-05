@@ -4167,6 +4167,20 @@ ALWAYS_INLINE void* JLTLSGet( JLTLSKey key ) {
 }
 
 
+//Windows:
+//	TlsAlloc(): allocate memory for tls data
+//	TlsFree(): free the memory of tls data
+//	TlsSetValue(): set tls' value
+//	TlsGetValue(): get tls' value
+//	Please refer to MSDN for detailed information.
+//
+//LInux with GCC:
+//	pthread_key_create(): create the tls data
+//	pthread_key_delete(): destory the tls data
+//	pthread_getspecific(): get tls' value
+//	pthread_setspecific(): set tls' value
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // dynamic libraries
 //

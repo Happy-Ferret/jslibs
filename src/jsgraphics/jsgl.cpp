@@ -4726,7 +4726,7 @@ DEFINE_FUNCTION( getUniformInfo ) {
 	glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &activeUniform);  OGL_ERR_CHK;
 
 	{
-		JS::RootedObject info(cx, JL_NewObj(cx));
+		JS::RootedObject info(cx, jl::newObject(cx));
 		JL_ASSERT_ALLOC( info );
 		JL_RVAL.setObject(*info);
 
@@ -4752,7 +4752,7 @@ DEFINE_FUNCTION( getUniformInfo ) {
 			if ( location == -1 )
 				continue;
 
-			JS::RootedObject obj(cx, JL_NewObj(cx));
+			JS::RootedObject obj(cx, jl::newObject(cx));
 			JL_ASSERT_ALLOC( obj );
 			tmp.setObject(*obj);
 			JL_CHK( JS_SetProperty(cx, info, name, tmp) );

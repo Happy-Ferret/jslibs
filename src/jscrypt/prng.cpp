@@ -319,7 +319,7 @@ DEFINE_PROPERTY_GETTER( list ) {
 
 	JL_DEFINE_PROP_ARGS;
 
-	JS::RootedObject listObj(cx, JL_NewObj(cx));
+	JS::RootedObject listObj(cx, jl::newObject(cx));
 	JS::RootedValue value(cx);
 	JL_ASSERT_ALLOC( listObj );
 	int i;

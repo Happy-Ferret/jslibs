@@ -322,7 +322,7 @@ DEFINE_FUNCTION( functionList ) {
 	IDispatch *disp = (IDispatch*)JL_GetPrivate(JL_ARG(1));
 	JL_ASSERT_OBJECT_STATE( disp, JL_THIS_CLASS_NAME );
 
-	JL_RVAL.setObjectOrNull(JL_NewObj(cx));
+	JL_RVAL.setObjectOrNull(jl::newObject(cx));
 	JL_ASSERT_ALLOC( !JL_RVAL.isNull() );
 
 	HRESULT hr;

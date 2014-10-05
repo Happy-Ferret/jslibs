@@ -36,7 +36,7 @@ static const moduleId_t FREE_MODULE_SLOT = 0;
 #define NAME_GLOBAL_FUNCTION_UNLOAD_MODULE "unloadModule"
 
 
-#define JL_HOST_VERSIONID (uint32_t((jl::SvnRevToInt("$Revision: 3524 $") << 16) | (sizeof(jl::Host) & 0xFFFF)))
+#define JL_HOST_VERSIONID (uint32_t((jl::SvnRevToInt("$Revision: 3524 $") << 16) | ((sizeof(jl::HostRuntime)^sizeof(jl::Global)^sizeof(jl::Host)) & 0xFFFF)))
 
 #define JL_MAX_CLASS_PROTO_CACHE_BIT (9)
 
@@ -1209,9 +1209,6 @@ class DLLAPI Global :
 
 	JS::PersistentRootedObject _globalObject;
 
-	JS::PersistentRootedObject _objectProto;
-	const JSClass *_objectClasp;
-
 	ClassInfoCache _classInfoCache;
 	StaticArray< JS::PersistentRootedId, LAST_JSID > _ids;
 
@@ -1256,8 +1253,8 @@ public:
 		IFDEBUG( invalidate() );
 	}
 
-	JSObject *
-	globalObject() const {
+	JS::PersistentRootedObject &
+	globalObject() {
 
 		ASSERT( *this );
 		return _globalObject;		
@@ -1265,7 +1262,7 @@ public:
 
 
 	JSObject *
-	outerObject( JSContext *cx ) const {
+	outerObject( JSContext *cx ) {
 
 		ASSERT( *this );
 		JS::AutoCheckCannotGC nogc;
@@ -1286,15 +1283,9 @@ public:
 
 
 	JSCompartment *
-	compartment() const {
+	compartment() {
 
 		 return js::GetObjectCompartment(globalObject());
-	}
-
-	ALWAYS_INLINE JSObject *
-	newObject(JSContext *cx) const {
-
-		return jl::newObjectWithGivenProto(cx, _objectClasp, _objectProto); // JL_GetGlobal(cx)
 	}
 
 
@@ -1423,6 +1414,9 @@ public:
 
 	Host( JSContext *cx, Global *global, StdIO &hostStdIO );
 
+	bool
+	release();
+
 	// init the host for jslibs usage (modules, errors, ...)
 	
 	ALWAYS_INLINE bool
@@ -1435,8 +1429,7 @@ public:
 	global() const {
 
 		//ASSERT( _global = JS_GetGlobalForObject(cx, _hostObject) );
-		ASSERT( _global );
-		ASSERT( *_global );
+		ASSERT( _global && *_global );
 		return *_global;
 	}
 
@@ -1456,10 +1449,10 @@ public:
 	setHostName( JSContext *cx, const TCHAR *hostName );
 
 
-	JS::HandleObject
-	hostObject() const {
+	JS::PersistentRootedObject &
+	hostObject() {
 
-		return JS::HandleObject::fromMarkedLocation(_hostObject.address());
+		return _hostObject;
 	}
 
 
@@ -1517,6 +1510,7 @@ public:
 
 	static ALWAYS_INLINE Host&
 	getJLHost( JSContext *cx ) {
+
 		ASSERT( cx );
 		
 		//JSCompartment *currentCompartment = js::GetContextCompartment(cx); // see also js::GetObjectCompartment(obj)
@@ -1560,22 +1554,3 @@ JL_END_NAMESPACE
 
 // eg:
 //   jsid cfg = JLID(cx, fileName); const char *name = JLID_NAME(fileName);
-
-
-//////////////////////////////////////////////////////////////////////////////
-// the following helper functions depends on the host object
-
-
-ALWAYS_INLINE JSObject* FASTCALL
-JL_NewObj( JSContext *cx ) {
-
-	return jl::Global::getGlobal(cx)->newObject(cx);
-}
-
-
-ALWAYS_INLINE JSObject* FASTCALL
-JL_NewJslibsObject( JSContext *cx, const char *className ) {
-
-	return jl::Global::getGlobal(cx)->newJLObject(cx, className);
-}
-

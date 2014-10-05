@@ -448,7 +448,7 @@ DEFINE_FINALIZE() {
 //	if ( obj == JL_THIS_CLASS_PROTOTYPE )
 //		return;
 
-	if ( jl::Host::getJLHost(fop->runtime())->canSkipCleanup ) // do not cleanup in unsafe mode.
+	if ( jl::Host::getJLHost(fop->runtime())->canSkipCleanup ) // do not cleanup in unsafe mode.  // see HostRuntime::skipCleanup()
 		return;
 
 	TextureStruct *tex = (TextureStruct *)JL_GetPrivate(obj);

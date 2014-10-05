@@ -42,7 +42,7 @@ JL_NewImageObject( IN JSContext *cx, IN T width, IN T height, IN U channels, IN 
 	//uint8_t *data;
 	jl::BufBase buffer;
 	JS::RootedValue dataVal(cx);
-	JS::RootedObject imageObj(cx, JL_NewObj(cx));
+	JS::RootedObject imageObj(cx, jl::newObject(cx));
 
 	JL_ASSERT_ALLOC( imageObj );
 	vp.setObject(*imageObj);
@@ -72,7 +72,7 @@ JL_NewImageObjectOwner( IN JSContext *cx, IN uint8_t* buffer, IN T width, IN T h
 	ASSERT_IF( buffer != NULL, jl_msize(buffer) >= (size_t)(width * height * channels) );
 
 	JS::RootedValue dataVal(cx);
-	JS::RootedObject imageObj(cx, JL_NewObj(cx));
+	JS::RootedObject imageObj(cx, jl::newObject(cx));
 
 	JL_ASSERT_ALLOC( imageObj );
 	vp.setObject(*imageObj);

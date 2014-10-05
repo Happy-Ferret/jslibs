@@ -495,7 +495,7 @@ DEFINE_FUNCTION( getList ) {
 
 	JL_IGNORE( argc );
 
-	JSObject *iterator = JL_NewObj(cx);
+	JSObject *iterator = jl::newObject(cx);
 	JS_DefineFunctionById(cx, iterator, JLID(cx, next), getListNext, 0, 0); // JSPROP_PERMANENT | JSPROP_READONLY
 	jl::setProperty(cx, iterator, 
 

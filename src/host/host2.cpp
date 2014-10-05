@@ -551,6 +551,8 @@ HostRuntime::HostRuntime( Allocators allocators, bool unsafeMode, uint32_t maxby
 	ASSERT( JL_GetRuntimePrivate(_rt) == nullptr );
 	JL_SetRuntimePrivate(_rt, this);
 
+	// we can assume that when destroyCompartmentCallback is called, there is no more gcthing or referenced gc thing in this compartment.
+
 	JS_SetDestroyCompartmentCallback(_rt, destroyCompartmentCallback);
 	JS_SetDestroyZoneCallback(_rt, destroyZoneCallback);
 	
@@ -823,18 +825,16 @@ Global::_finalize(JSFreeOp *fop, JSObject *obj) {
 
 	Global *glob = static_cast<Global*>(js::GetObjectPrivate(obj));
 
-	// see ~Global()
+	if ( glob ) {
 
-	if ( glob )
 		glob->notify( jl::EventGlobalFinalize(fop->runtime()) );
-
-
+		delete glob;
+	}
 }
 
 
 Global::Global( JSContext *cx, bool lazyStandardClasses, bool loadStandardOnly ) :
 	_globalObject( cx ),
-	_objectProto( cx ),
 	_ids(_ids.constructContent, cx)
 {
 
@@ -866,12 +866,6 @@ Global::Global( JSContext *cx, bool lazyStandardClasses, bool loadStandardOnly )
 			JL_CHK( JS_InitCTypesClass(cx, _globalObject) );
 			#endif
 		}
-
-		_objectProto.set( JS_GetObjectPrototype(cx, _globalObject) );
-		ASSERT( _objectProto );
-
-		_objectClasp = JL_GetClass(_objectProto);
-		ASSERT( _objectClasp );
 
 		// global functions & properties
 		JL_CHKM( JS_DefineProperty(cx, _globalObject, JLID_NAME_CSTR(cx, global), _globalObject, JSPROP_READONLY | JSPROP_PERMANENT), E_PROP, E_CREATE );
@@ -1180,12 +1174,39 @@ BEGIN_CLASS( SubHost )
 		JL_BAD;
 	}
 
+
+	/**doc
+	$TOC_MEMBER $INAME
+	 $INAME()
+	**/
+	DEFINE_FUNCTION( release ) {
+
+		JL_DEFINE_ARGS;
+		JL_RVAL.setUndefined();
+
+		//Global *glob = static_cast<Global *>( js::GetObjectPrivate(js::GetGlobalForObjectCrossCompartment(JS_ObjectToInnerObject(cx, JL_OBJ))) );
+		//delete glob;
+
+		jl::Host *host = static_cast<jl::Host *>(JL_GetPrivate(JL_OBJ));
+		jl::Global *glob = &host->global();
+
+		host->release();
+
+		//delete glob;
+		glob->globalObject().set(nullptr);
+
+		return true;
+		JL_BAD;
+	}
+
+
+
 	DEFINE_FINALIZE() {
 /*
 
 -> Global.finalize ?
-
 */
+
 		void *pv = JL_GetPrivateFromFinalize(obj);
 		if ( pv ) {
 
@@ -1197,8 +1218,8 @@ BEGIN_CLASS( SubHost )
 			ASSERT( &global );
 			ASSERT( global );
 
-			delete host;
-			delete &global;
+//			delete host;
+//			delete &global;
 		}
 
 	}
@@ -1227,12 +1248,28 @@ CONFIGURE_CLASS
 	HAS_RESERVED_SLOTS(1)
 	HAS_INNER_OBJECT
 
+	BEGIN_FUNCTION_SPEC
+		FUNCTION(release)
+	END_FUNCTION_SPEC
+
 END_CLASS
 
 
 
 
 BEGIN_CLASS( Host )
+
+
+
+DEFINE_FINALIZE() {
+
+	void *pv = JL_GetPrivateFromFinalize(obj);
+	if ( pv ) {
+
+		jl::Host *host = static_cast<jl::Host*>(pv);
+		delete host;
+	}
+}
 
 
 /**doc
@@ -1522,7 +1559,7 @@ DEFINE_FUNCTION( collectGarbage ) {
 CONFIGURE_CLASS
 
 	HAS_PRIVATE
-	//HAS_FINALIZE
+	HAS_FINALIZE
 
 	//HAS_CONSTRUCTOR
 	IS_UNCONSTRUCTIBLE
@@ -1737,14 +1774,13 @@ bad:
 
 
 
+bool
+Host::release() {
 
-Host::~Host() {
-
-	notify(EventHostDestroy(_hostRuntime, *this));
-
-	//	ASSERT( JS_GetCompartmentPrivate( _global->compartment() ) == this );
-	//	JS_SetCompartmentPrivate( _global->compartment(), nullptr );
+	ASSERT( _global && *_global );
 	js::SetReservedSlot(_global->globalObject(), SLOT_GLOBAL_HOSTOBJECT, JS::UndefinedValue());
+
+	ASSERT( JL_GetPrivate(hostObject()) );
 
 	if ( _interruptObserverItem ) {
 
@@ -1753,6 +1789,20 @@ Host::~Host() {
 	}
 
 	JL_SetPrivate(hostObject(), nullptr);
+	hostObject().set(nullptr);
+
+	return true;
+}
+
+
+Host::~Host() {
+
+	notify(EventHostDestroy(_hostRuntime, *this));
+
+	release();
+
+	//	ASSERT( JS_GetCompartmentPrivate( _global->compartment() ) == this );
+	//	JS_SetCompartmentPrivate( _global->compartment(), nullptr );
 
 	IFDEBUG( invalidate() );
 }

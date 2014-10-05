@@ -722,7 +722,7 @@ DEFINE_PROPERTY_GETTER( info ) {
 		fileInfoObj = &vp.toObject();
 	} else {
 
-		fileInfoObj = JL_NewObj(cx);
+		fileInfoObj = jl::newObject(cx);
 		JL_ASSERT_ALLOC(fileInfoObj);
 		vp.setObject( *fileInfoObj );
 	}

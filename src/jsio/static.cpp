@@ -1114,7 +1114,7 @@ DEFINE_FUNCTION( jsioTest ) {
 
 
 /*
-	JSObject *o = JL_NewObj(cx);
+	JSObject *o = jl::newObject(cx);
 
 
 	

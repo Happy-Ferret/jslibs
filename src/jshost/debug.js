@@ -41,6 +41,7 @@ host.onInterrupt = () => host.collectGarbage(true, 1);
 		}, global);
 
 		host.stdout('quit debugger scope!\n');
+		h.release();
 
 	}
 

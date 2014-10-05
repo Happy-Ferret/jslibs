@@ -382,7 +382,7 @@ DEFINE_FUNCTION( row ) {
 	columnCount = sqlite3_data_count(pStmt); // This routine returns 0 if pStmt is an SQL statement that does not return data (for example an UPDATE).
 
 	{
-	JS::RootedObject row(cx, namedRows ? JL_NewObj(cx) : JS_NewArrayObject(cx, columnCount)); // If length is 0, JS_NewArrayObject creates an array object of length 0 and ignores vector.
+	JS::RootedObject row(cx, namedRows ? jl::newObject(cx) : JS_NewArrayObject(cx, columnCount)); // If length is 0, JS_NewArrayObject creates an array object of length 0 and ignores vector.
 	JL_ASSERT_ALLOC( row );
 	JL_RVAL.setObject(*row); // now, row is protectef fom GC ??
 
@@ -426,7 +426,7 @@ DEFINE_FUNCTION( next ) { // for details, see Row() function thet is the base of
 	if ( JL_RVAL.isFalse() ) // means SQLITE_DONE
 		return JS_ThrowStopIteration(cx);
 
-	JS::RootedObject row(cx, JL_NewObj(cx));
+	JS::RootedObject row(cx, jl::newObject(cx));
 	JL_ASSERT_ALLOC( row );
 	JL_RVAL.setObject(*row);
 	int columnCount;
@@ -565,7 +565,7 @@ DEFINE_PROPERTY_GETTER( columnIndexes ) {
 	
 	{
 
-	JS::RootedObject columnIndexes(cx, JL_NewObj(cx));
+	JS::RootedObject columnIndexes(cx, jl::newObject(cx));
 	JL_ASSERT_ALLOC( columnIndexes );
 	vp.setObject(*columnIndexes);
 	int columnCount;
@@ -663,7 +663,7 @@ DEFINE_FUNCTION( stdIteratorNext ) {
 
 	{
 
-		JS::RootedObject item(cx, JL_NewObj(cx));
+		JS::RootedObject item(cx, jl::newObject(cx));
 		JS::RootedObject resultObj(cx, &result.toObject());
 		JS::RootedValue row(cx);
 		JL_ASSERT_ALLOC( item );
@@ -710,7 +710,7 @@ DEFINE_STD_ITERATOR() {
 
 	JL_DEFINE_ARGS;
 
-	JS::RootedObject itObj(cx, JL_NewObj(cx));
+	JS::RootedObject itObj(cx, jl::newObject(cx));
 	JL_ASSERT_ALLOC( itObj );
 	JL_CHK( JS_DefineFunctionById(cx, itObj, JLID(cx, next), _stdIteratorNext, 0, 0) );
 	JL_CHK( JS_DefinePropertyById(cx, itObj, JLID(cx, source), JL_OBJVAL, NULL, NULL, 0) );

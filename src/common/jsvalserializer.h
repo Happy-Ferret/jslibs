@@ -474,7 +474,8 @@ public:
 
 						// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
 
-						serializerWrapper = JL_NewJslibsObject(cx, "Serializer");
+						//serializerWrapper = JL_NewJslibsObject(cx, "Serializer");
+						serializerWrapper = jl::Global::getGlobal(cx)->newJLObject(cx, "Serializer");
 						JL_ASSERT_ALLOC( serializerWrapper );
 						arg.setObject(*serializerWrapper);
 						JL_SetPrivate(serializerWrapper, this);
@@ -821,7 +822,7 @@ public:
 			}
 			case JLSTObject: {
 
-				JS::RootedObject obj(cx, JL_NewObj(cx));
+				JS::RootedObject obj(cx, jl::newObject(cx));
 				JL_ASSERT_ALLOC( obj );
 				val.setObject(*obj);
 				SerializerObjectOwnProperties sop(cx, obj);
@@ -884,7 +885,8 @@ public:
 				if ( !_unserializerObj ) {
 
 					// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
-					unserializerWrapper = JL_NewJslibsObject(cx, "Unserializer");
+					//unserializerWrapper = JL_NewJslibsObject(cx, "Unserializer");
+					unserializerWrapper = jl::Global::getGlobal(cx)->newJLObject(cx, "Unserializer");
 					JL_CHK( unserializerWrapper );
 					JL_SetPrivate( unserializerWrapper, this);
 					arg.setObject(*unserializerWrapper);
@@ -915,7 +917,8 @@ public:
 				if ( !_unserializerObj ) {
 
 					// (TBD) enhance this by creating an API (eg. serializerPub.h ?)
-					unserializerWrapper = JL_NewJslibsObject(cx, "Unserializer");
+					//unserializerWrapper = JL_NewJslibsObject(cx, "Unserializer");
+					unserializerWrapper = jl::Global::getGlobal(cx)->newJLObject(cx, "Unserializer");
 					JL_CHK( unserializerWrapper );
 					JL_SetPrivate(unserializerWrapper, this);
 					arg_1.setObject(*unserializerWrapper);

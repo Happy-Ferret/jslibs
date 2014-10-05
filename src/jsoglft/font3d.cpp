@@ -73,7 +73,7 @@ BEGIN_CLASS( Font3D ) // Start the definition of the class. It defines some symb
 
 DEFINE_FINALIZE() { // called when the Garbage Collector is running if there are no remaing references to this object.
 
-	if ( jl::Host::getJLHost(fop->runtime())->canSkipCleanup )
+	if ( jl::Host::getJLHost(fop->runtime())->canSkipCleanup ) // see HostRuntime::skipCleanup()
 		return;
 
 	Private *pv = (Private*)JL_GetPrivate(obj);
@@ -135,7 +135,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JSObject *fontObj = &JL_ARG(1).toObject();
 
-	JL_ASSERT_INSTANCE( fontObj, jl::Host::getJLHost(cx).getCachedClasp("Font") );
+	JL_ASSERT_INSTANCE( fontObj, jl::Host::getJLHost(cx).getCachedClasp("Font") ); // use Global instead
 
 	FT_Face ftface = GetJsfontPrivate(cx, fontObj)->face;
 	JL_ASSERT_OBJECT_STATE( ftface, JL_GetClassName(fontObj) );
