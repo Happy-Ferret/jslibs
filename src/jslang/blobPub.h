@@ -53,7 +53,7 @@ BlobJSClass( JSContext *cx ) {
 	// it's safe to use static keyword because JSClass do not depend on the rt or cx.
 	static const JSClass *clasp = NULL;
 	if (unlikely( clasp == NULL ))
-		clasp = jl::Host::getJLHost(cx).getCachedClasp("Blob");
+		clasp = jl::Host::getJLHost(cx)->getCachedClasp("Blob");
 	return clasp;
 }
 */

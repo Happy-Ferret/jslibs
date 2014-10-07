@@ -9,39 +9,58 @@ var loadModule = host.loadModule;
 //jslangTest();
 //loadModule('jssound');
 
-loadModule('jsstd');
+//loadModule('jsstd');
+
+loadModule('jsdebug');
+registerDumpHeap()
+
+
+
 
 host.interruptInterval = 1;
 host.onInterrupt = () => host.collectGarbage(true, 1);
 
+
 	{
 
-		let h = new SubHost(function(parentGlobal) {
-	
-			var loadModule = host.loadModule;
-			loadModule('jsstd');
+		let h = new SubHost(function() {})
+	//	h.release();
 
-			print('in SubHost\n');
+	}
 
-			print('this.parent:', this.parent, '\n');
+	//collectGarbage();
 
-			loadModule('jsio');
+throw 0;
 
-			loadModule('jsdebug');
-			var debug = new Debugger;
 
-			debug.addDebuggee(parentGlobal);
-			debug.onEnterFrame = function(frame) {
 
-				global.host.stdout('onEnterFrame: ', frame.script.getOffsetLine(frame.offset), '\n');
-			}
+	{
 
-			parentGlobal.test123 = this;
+	let h = new SubHost(function(parentGlobal) {
+/*	
+		var loadModule = host.loadModule;
+		loadModule('jsstd');
 
-		}, global);
+		print('in SubHost\n');
 
-		host.stdout('quit debugger scope!\n');
-		h.release();
+		print('this.parent:', this.parent, '\n');
+
+		loadModule('jsio');
+
+		loadModule('jsdebug');
+		var debug = new Debugger;
+		debug.addDebuggee(parentGlobal);
+		debug.onEnterFrame = function(frame) {
+
+			global.host.stdout('onEnterFrame: ', frame.script.getOffsetLine(frame.offset), '\n');
+		}
+
+		parentGlobal.test123 = this;
+*/
+	}, global);
+
+	host.stdout('quit debugger scope!\n');
+	h.release();
 
 	}
 

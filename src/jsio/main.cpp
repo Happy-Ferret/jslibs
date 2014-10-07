@@ -78,7 +78,7 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 //	JLDisableThreadNotifications();
 
-	JL_ASSERT(jl::Host::getJLHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
+	JL_ASSERT(jl::Host::getJLHost(cx)->checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 
 	//ASSERT( !PR_Initialized() ); // is already initialized by the JS engine 
 
@@ -98,7 +98,7 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 	JsioPrivate *mpv;
 	mpv = (JsioPrivate*)jl_calloc(sizeof(JsioPrivate), 1);
 	JL_ASSERT_ALLOC( mpv );
-	jl::Host::getJLHost(cx).moduleManager().modulePrivate(moduleId()) = mpv;
+	jl::Host::getJLHost(cx)->moduleManager().modulePrivate(moduleId()) = mpv;
 
 	jl::HostRuntime &hostRuntime = jl::HostRuntime::getJLRuntime(cx);
 	hostRuntime.addObserver(new ReleaseModule(hostRuntime, mpv)); // frees mpv after rt and cx has been destroyed

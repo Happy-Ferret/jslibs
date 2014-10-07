@@ -69,7 +69,7 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
  
 	JLDisableThreadNotifications();
 
-	JL_ASSERT(jl::Host::getJLHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
+	JL_ASSERT(jl::Host::getJLHost(cx)->checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 
 	//JL_CHKM( sqlite3_config(SQLITE_CONFIG_SINGLETHREAD) == SQLITE_OK, "Unable to set the threading mode to Single-thread." ); // see SQLITE_THREADSAFE=0 define
 	//JL_CHKM( sqlite3_config(SQLITE_CONFIG_SINGLETHREAD) == SQLITE_OK, "Unable to set the threading mode to Single-thread." ); // see SQLITE_THREADSAFE=0 define

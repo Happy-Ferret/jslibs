@@ -88,7 +88,7 @@ enum {
 #define JL_ERR( ... ) \
 JL_MACRO_BEGIN \
 		static const jl::ErrorManager::ErrArg args[] = { jl::ErrorManager::ErrArg() , ##__VA_ARGS__ , JL__REPORT_END_ARG }; \
-		jl::Host::getJLHost(cx).errorManager().report( cx, false, COUNTOF(args)-1, args+1 ); \
+		jl::Host::getJLHost(cx)->errorManager().report( cx, false, COUNTOF(args)-1, args+1 ); \
 		goto bad; \
 	JL_MACRO_END
 
@@ -97,7 +97,7 @@ JL_MACRO_BEGIN \
 	JL_MACRO_BEGIN \
 		if ( JL_IS_SAFE ) { \
 			static const jl::ErrorManager::ErrArg args[] = { jl::ErrorManager::ErrArg() , ##__VA_ARGS__ , JL__REPORT_END_ARG }; \
-			if ( !jl::Host::getJLHost(cx).errorManager().report( cx, true, COUNTOF(args)-1, args+1 ) ) \
+			if ( !jl::Host::getJLHost(cx)->errorManager().report( cx, true, COUNTOF(args)-1, args+1 ) ) \
 				goto bad; \
 		} \
 	JL_MACRO_END

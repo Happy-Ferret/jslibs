@@ -78,7 +78,7 @@ bool
 jslangModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	ModulePrivate *mpv = (ModulePrivate*)jl_calloc(sizeof(ModulePrivate), 1);
-	jl::Host::getJLHost(cx).moduleManager().modulePrivate(localModuleId(jslangModuleInit)) = mpv;
+	jl::Host::getJLHost(cx)->moduleManager().modulePrivate(localModuleId(jslangModuleInit)) = mpv;
 	mpv->processEventSignalEventSem = JLSemaphoreCreate(0);
 
 	jl::HostRuntime &hostRuntime = jl::HostRuntime::getJLRuntime(cx);

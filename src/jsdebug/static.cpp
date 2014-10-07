@@ -24,7 +24,7 @@ int _puts(JSContext *cx, const char *str) {
 
 	JS::RootedValue stdoutFunction(cx);
 
-	JL_CHK( JS_GetPropertyById(cx, jl::Host::getJLHost(cx).hostObject(), JLID(cx, stdout), &stdoutFunction) );
+	JL_CHK( JS_GetPropertyById(cx, jl::Host::getJLHost(cx)->hostObject(), JLID(cx, stdout), &stdoutFunction) );
 
 	if ( jl::isCallable(cx, stdoutFunction) ) {
 

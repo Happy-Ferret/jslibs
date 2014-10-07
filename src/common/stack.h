@@ -183,7 +183,7 @@ inline void StackFree( void **stack ) {
 
 
 template <class T, template<class> class A = DefaultAlloc>
-class NOVTABLE Stack {
+class Stack {
 
 	struct Item {
 		T data;

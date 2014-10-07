@@ -444,7 +444,7 @@ HostRuntime::errorReporterBasic( JSContext *cx, const char *message, JSErrorRepo
 	buf.cat( L("\n") );
 
 	jl::BufString tmpErrTxt( buf.toString(), buf.length() );
-	Host::getJLHost( cx ).stdIO().error( tmpErrTxt );
+	Host::getJLHost(cx)->stdIO().error( tmpErrTxt );
 }
 
 void
@@ -480,7 +480,7 @@ HostRuntime::~HostRuntime() {
 				return;
 			destroy();
 		}
-	} adr(_rt);
+	} autoDestructRuntime(_rt);
 
 
 	ASSERT( _isEnding == false );
@@ -498,7 +498,7 @@ HostRuntime::~HostRuntime() {
 	st = notify(EventBeforeDestroyRuntime(*this));
 	ASSERT( st ); // , E_HOST, E_INTERNAL, E_NAME("BEFORE_DESTROY_RUNTIME") );
 
-	adr.destroy();
+	autoDestructRuntime.destroy();
 
 	st = notify(EventAfterDestroyRuntime());
 	ASSERT( st ); // , E_HOST, E_INTERNAL, E_NAME("AFTER_DESTROY_RUNTIME")
@@ -823,8 +823,7 @@ Global::_outerObject(JSContext *cx, JS::HandleObject obj) {
 void
 Global::_finalize(JSFreeOp *fop, JSObject *obj) {
 
-	Global *glob = static_cast<Global*>(js::GetObjectPrivate(obj));
-
+	Global *glob = static_cast<Global*>( js::GetObjectPrivate(obj) );
 	if ( glob ) {
 
 		glob->notify( jl::EventGlobalFinalize(fop->runtime()) );
@@ -846,11 +845,12 @@ Global::Global( JSContext *cx, bool lazyStandardClasses, bool loadStandardOnly )
 	compartmentOptions
 		.setVersion(JSVERSION_LATEST)
 	;
-
+	
 	_globalObject.set( JS_NewGlobalObject(cx, js::Jsvalify(lazyStandardClasses ? &_globalClass_lazy : &_globalClass), nullptr, JS::DontFireOnNewGlobalHook, compartmentOptions) );
 	JL_CHK( _globalObject ); // "unable to create the global object." );
 	ASSERT( JS_IsGlobalObject(_globalObject) );
 
+	ASSERT( !js::IsCrossCompartmentWrapper(_globalObject) );
 	JL_SetPrivate( _globalObject, this );
 
 	{
@@ -1092,6 +1092,12 @@ namespace pv {
 
 BEGIN_CLASS( SubHost )
 
+	enum {
+		SLOT_INNER_GLOBAL,
+		_SLOT_COUNT
+	};
+
+
 	DEFINE_CONSTRUCTOR() {
 
 		JL_DEFINE_ARGS;
@@ -1107,6 +1113,7 @@ BEGIN_CLASS( SubHost )
 			jl::Global *global = new jl::Global(cx);
 			JL_ASSERT_ALLOC( global );
 			JL_CHK( *global );
+			IFDEBUG( global->__name = "subHost global" );
 
 			JS::RootedObject globalObject(cx, global->globalObject());
 
@@ -1114,10 +1121,10 @@ BEGIN_CLASS( SubHost )
 			JL_CHK( JS_WrapObject(cx, &wrappedGlobalObject) );
 
 			// store inner object in hostOut object
-			js::SetReservedSlot(subHost, 0, JS::ObjectValue(*wrappedGlobalObject));
+			js::SetReservedSlot(subHost, SLOT_INNER_GLOBAL, JS::ObjectValue(*wrappedGlobalObject));
 			ASSERT( js::UncheckedUnwrap(JS_ObjectToInnerObject(cx, subHost)) == global->globalObject() ); // just check inner
 
-			StdIO &parentIO = jl::Host::getJLHost(cx).stdIO();
+			StdIO &parentIO = jl::Host::getJLHost(cx)->stdIO();
 
 			{
 
@@ -1126,16 +1133,14 @@ BEGIN_CLASS( SubHost )
 				jl::Host *host = new jl::Host(cx, global, parentIO);
 				JL_ASSERT_ALLOC( host );
 				JL_CHK( *host ); // validity
+				IFDEBUG( host->__name = "subHost host" );
 
-				
-				JL_SetPrivate(subHost, host); // ???
 
+			// ???
 				JL_CHK( JS_WrapObject(cx, &subHost) );
-
-		// ???
-				// store outer object in global object
-				//global->setOuterObject(subHost);
-				//ASSERT( JS_ObjectToOuterObject(cx, globalObject) == subHost ); // check outer
+				//// store outer object in global object
+				global->setOuterObject(subHost);
+				ASSERT( JS_ObjectToOuterObject(cx, globalObject) == subHost ); // check outer
 
 				JS::RootedObject hostMainFctObj(cx, JL_ARG(1).toObjectOrNull());
 
@@ -1153,21 +1158,35 @@ BEGIN_CLASS( SubHost )
 			}
 
 
-			//EventGlobalFinalize
+			struct HostRuntimeDestruction :
+				public jl::CppAllocators,
+				jl::Observer<const EventBeforeDestroyRuntime>				
+			{
+				JS::PersistentRootedObject subHost;
 
-			struct GlobalFinalizeObserver : jl::Observer<const EventGlobalFinalize> {
+				HostRuntimeDestruction(JSContext *cx, JS::HandleObject subHost) : subHost(cx, subHost) {}
 
 				bool operator()(const EventType &ev) {
 
-					
+					// remove link inner->outer
+					JS::RootedValue innerVal(ev.hrt.runtime());
+					JL_CHK( JL_GetReservedSlot(subHost, SLOT_INNER_GLOBAL, &innerVal) );
+					{
+					JS::RootedObject innerObj(ev.hrt.runtime(), js::UncheckedUnwrap(innerVal.toObjectOrNull()));
+					ASSERT( innerObj );
+					JL_CHK( JL_SetReservedSlot(innerObj, 0, JS::NullHandleValue) );
 
+					// remove link outer->inner
+					JL_CHK( JL_SetReservedSlot(subHost, SLOT_INNER_GLOBAL, JS::NullHandleValue) );
+
+					subHost.set(nullptr);
+					}
 					return true;
+					JL_BAD;
 				}
 			};
 
-			global->addObserver(new GlobalFinalizeObserver);
-
-
+			HostRuntime::getJLRuntime(cx).addObserver(new HostRuntimeDestruction(cx, JL_OBJ));
 		}
 
 		return true;
@@ -1184,50 +1203,48 @@ BEGIN_CLASS( SubHost )
 		JL_DEFINE_ARGS;
 		JL_RVAL.setUndefined();
 
-		//Global *glob = static_cast<Global *>( js::GetObjectPrivate(js::GetGlobalForObjectCrossCompartment(JS_ObjectToInnerObject(cx, JL_OBJ))) );
-		//delete glob;
+		ASSERT( js::IsCrossCompartmentWrapper(JS_ObjectToInnerObject(cx, JL_OBJ)) );
 
-		jl::Host *host = static_cast<jl::Host *>(JL_GetPrivate(JL_OBJ));
-		jl::Global *glob = &host->global();
+		JS::RootedObject innerGlobalObj(cx, js::UncheckedUnwrap(JS_ObjectToInnerObject(cx, JL_OBJ)));
+		ASSERT( innerGlobalObj );
 
-		host->release();
+		jl::Global *glob = static_cast<jl::Global*>(JL_GetPrivate(innerGlobalObj));
+		ASSERT( glob && *glob );
 
-		//delete glob;
-		glob->globalObject().set(nullptr);
+		JS::RootedValue innerHostVal(cx);
+		JL_CHK( JS_GetPropertyById(cx, JL_OBJ, JLID(cx, host), &innerHostVal) );
 
+		{
+
+			ASSERT( js::IsCrossCompartmentWrapper(innerHostVal.toObjectOrNull()) );
+
+			JS::RootedObject innerHostObj(cx, js::UncheckedUnwrap(innerHostVal.toObjectOrNull()));
+			ASSERT( innerHostObj );
+
+			jl::Host *host = static_cast<jl::Host*>(JL_GetPrivate(innerHostObj));
+			ASSERT( host && *host );
+
+			if ( !host->isReleased() )
+				host->release();
+
+			if ( !glob->isReleased() )
+				glob->release();
+		}
+
+		JL_CHK( JL_SetReservedSlot(JL_OBJ, SLOT_INNER_GLOBAL, JS::NullHandleValue) );
 		return true;
 		JL_BAD;
 	}
 
 
-
 	DEFINE_FINALIZE() {
-/*
-
--> Global.finalize ?
-*/
-
-		void *pv = JL_GetPrivateFromFinalize(obj);
-		if ( pv ) {
-
-			jl::Host *host = static_cast<jl::Host*>(pv);
-			ASSERT( host );
-			ASSERT( *host );
-
-			jl::Global &global = host->global();
-			ASSERT( &global );
-			ASSERT( global );
-
-//			delete host;
-//			delete &global;
-		}
 
 	}
 
 
 	DEFINE_NEW_RESOLVE() {
 
-		JS::RootedValue inner(cx, js::GetReservedSlot(obj, 0));
+		JS::RootedValue inner(cx, js::GetReservedSlot(obj, SLOT_INNER_GLOBAL));
 		if ( inner.isObject() )
 			objp.set(&inner.toObject());
 		return true;
@@ -1235,7 +1252,7 @@ BEGIN_CLASS( SubHost )
 
 	INNER_OBJECT() {
 
-		return js::GetReservedSlot(obj, 0).toObjectOrNull();
+		return js::GetReservedSlot(obj, SLOT_INNER_GLOBAL).toObjectOrNull();
 	}
 
 
@@ -1245,7 +1262,7 @@ CONFIGURE_CLASS
 	HAS_FINALIZE;
 	HAS_PRIVATE;
 	HAS_NEW_RESOLVE
-	HAS_RESERVED_SLOTS(1)
+	HAS_RESERVED_SLOTS(_SLOT_COUNT)
 	HAS_INNER_OBJECT
 
 	BEGIN_FUNCTION_SPEC
@@ -1260,13 +1277,11 @@ END_CLASS
 BEGIN_CLASS( Host )
 
 
-
 DEFINE_FINALIZE() {
 
-	void *pv = JL_GetPrivateFromFinalize(obj);
-	if ( pv ) {
+	jl::Host *host = static_cast<jl::Host*>(JL_GetPrivateFromFinalize(obj));
+	if ( host ) {
 
-		jl::Host *host = static_cast<jl::Host*>(pv);
 		delete host;
 	}
 }
@@ -1325,7 +1340,7 @@ DEFINE_PROPERTY_GETTER( errorMessages ) {
 
 	JL_DEFINE_PROP_ARGS;
 	JS::RootedObject messagesObj(cx);
-	JL_CHK( jl::Host::getJLHost( cx ).errorManager().exportMessages( cx, &messagesObj ) );
+	JL_CHK( jl::Host::getJLHost(cx)->errorManager().exportMessages( cx, &messagesObj ) );
 	JL_RVAL.setObject(*messagesObj);
 	return true;
 	JL_BAD;
@@ -1342,7 +1357,7 @@ DEFINE_PROPERTY_SETTER( errorMessages ) {
 	JL_ASSERT_IS_OBJECT_OR_NULL(JL_RVAL, "error messages");
 	{
 		JS::RootedObject messagesObj(cx, JL_RVAL.toObjectOrNull());
-		JL_CHK( jl::Host::getJLHost( cx ).errorManager().importMessages( cx, messagesObj ) );
+		JL_CHK( jl::Host::getJLHost(cx)->errorManager().importMessages( cx, messagesObj ) );
 	}
 	JL_CHK( jl::StoreProperty(cx, obj, id, vp, false) );
 	return true;
@@ -1389,11 +1404,11 @@ DEFINE_FUNCTION( stdout ) {
 	JL_DEFINE_ARGS;
 	JL_RVAL.setUndefined();
 	jl::StrData str(cx);
-	jl::Host &host = jl::Host::getJLHost( cx );
+	jl::Host *host = jl::Host::getJLHost(cx);
 	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( jl::getValue( cx, JL_ARGV[i], &str ) );
-		int status = host.stdIO().output(str);
+		int status = host->stdIO().output(str);
 		JL_ASSERT_WARN( status >= 0, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stdout"), E_WRITE );
 	}
 	return true;
@@ -1410,11 +1425,11 @@ DEFINE_FUNCTION( stderr ) {
 	JL_DEFINE_ARGS;
 	JL_RVAL.setUndefined();
 	jl::StrData str(cx);
-	jl::Host &host = jl::Host::getJLHost( cx );
+	jl::Host *host = jl::Host::getJLHost(cx);
 	for ( unsigned i = 0; i < argc; ++i ) {
 
 		JL_CHK( jl::getValue( cx, JL_ARGV[i], &str ) );
-		int status = host.stdIO().error(str);
+		int status = host->stdIO().error(str);
 		JL_ASSERT_WARN( status >= 0, E_HOST, E_INTERNAL, E_SEP, E_COMMENT("stderr"), E_WRITE );
 	}
 	return true;
@@ -1428,7 +1443,7 @@ $TOC_MEMBER $INAME
 DEFINE_FUNCTION( stdin ) {
 
 	JL_DEFINE_ARGS;
-	jl::Host &host = jl::Host::getJLHost( cx );
+	jl::Host *host = jl::Host::getJLHost(cx);
 
 /*
 	char buffer[8192];
@@ -1461,7 +1476,7 @@ DEFINE_FUNCTION( stdin ) {
 */
 
 	jl::BufString buf;
-	int status = host.stdIO().input( buf );
+	int status = host->stdIO().input( buf );
 	JL_ASSERT_WARN( status >= 0, E_HOST, E_INTERNAL, E_SEP, E_COMMENT( "stdin" ), E_READ );
 	JL_CHK( BlobCreate( cx, buf, JL_RVAL ) );
 
@@ -1493,7 +1508,7 @@ DEFINE_FUNCTION( loadModule ) {
 		// MAC OSX: 	'@executable_path' ??
 	}
 
-	JL_CHK( jl::Host::getJLHost(cx).moduleManager().loadModule(cx, libFileName, JL_OBJ, JL_RVAL) );
+	JL_CHK( jl::Host::getJLHost(cx)->moduleManager().loadModule(cx, libFileName, JL_OBJ, JL_RVAL) );
 	return true;
 	JL_BAD;
 }
@@ -1732,10 +1747,10 @@ Host::errorReporter(JSContext *cx, const char *message, JSErrorReport *report) {
 
 	jl::BufString tmpErrTxt(jl::constPtr(buffer), buf - buffer -1, true);
 
-	Host &host = Host::getJLHost(cx);
-	if ( &host ) {
+	Host *host = Host::getJLHost(cx);
+	if ( host ) {
 
-		host.hostStderrWrite( cx, tmpErrTxt, tmpErrTxt.length() );
+		host->hostStderrWrite( cx, tmpErrTxt, tmpErrTxt.length() );
 	} else {
 
 		jl::fputs(tmpErrTxt.toWStrZ(JS::AutoCheckCannotGC()), stderr);
@@ -1774,13 +1789,45 @@ bad:
 
 
 
+
+
+Host*
+Host::getJLHost( JSContext *cx ) {
+
+/*
+	ASSERT( cx );
+
+	const JS::Value &hostSlot = js::GetReservedSlot(JL_GetGlobal(cx), SLOT_GLOBAL_HOSTOBJECT);
+	ASSERT( hostSlot.isObject() );
+	Host* pHost = static_cast<Host*>(js::GetObjectPrivate(hostSlot.toObjectOrNull()));
+
+	ASSERT( pHost );
+	ASSERT( *pHost );
+	return *pHost;
+*/
+
+	JS::RootedObject globalObj(cx, JL_GetGlobal(cx));
+	JS::RootedValue hostVal(cx);
+
+	JL_CHK( JS_GetPropertyById(cx, globalObj, Global::getGlobal(globalObj)->getId(cx, JLID_host, L"host"), &hostVal) );
+	ASSERT( hostVal.isObject() );
+	Host* pHost = static_cast<Host*>(js::GetObjectPrivate(&hostVal.toObject()));
+
+	ASSERT( pHost );
+	ASSERT( *pHost );
+	return pHost;
+	JL_BADVAL(nullptr);
+}
+
+
 bool
 Host::release() {
 
 	ASSERT( _global && *_global );
-	js::SetReservedSlot(_global->globalObject(), SLOT_GLOBAL_HOSTOBJECT, JS::UndefinedValue());
+	
+	ASSERT( _global->globalObject() );
 
-	ASSERT( JL_GetPrivate(hostObject()) );
+	ASSERT( js::GetGlobalForObjectCrossCompartment(hostObject()) == _global->globalObject() );
 
 	if ( _interruptObserverItem ) {
 
@@ -1788,8 +1835,9 @@ Host::release() {
 		ASSERT( st );
 	}
 
-	JL_SetPrivate(hostObject(), nullptr);
-	hostObject().set(nullptr);
+	hostObject().set(nullptr); // unroot
+
+	// release() must not reset private else finalise will not delete the object
 
 	return true;
 }
@@ -1799,10 +1847,11 @@ Host::~Host() {
 
 	notify(EventHostDestroy(_hostRuntime, *this));
 
-	release();
+	if ( !isReleased() ) {
 
-	//	ASSERT( JS_GetCompartmentPrivate( _global->compartment() ) == this );
-	//	JS_SetCompartmentPrivate( _global->compartment(), nullptr );
+		JL_SetPrivate(hostObject(), nullptr);
+		release();
+	}
 
 	IFDEBUG( invalidate() );
 }
@@ -1824,10 +1873,6 @@ Host::Host( JSContext *cx, Global *global, StdIO &hostStdIO ) :
 	ASSERT(cx);
 	ASSERT(_global);
 	ASSERT( js::GetContextCompartment(cx) == _global->compartment() ); // ensure that the host is created in the right compartment
-
-	// ???
-	//ASSERT( JS_GetCompartmentPrivate( _global->compartment() ) == nullptr );
-	//JS_SetCompartmentPrivate( _global->compartment(), this );
 
 	JS::RuntimeOptionsRef(cx)
 		.setExtraWarnings( !HostRuntime::getJLRuntime(cx).unsafeMode() )
@@ -1855,45 +1900,53 @@ Host::Host( JSContext *cx, Global *global, StdIO &hostStdIO ) :
 		_hostObject.set( JS_NewObjectWithGivenProto(cx, hostItem->clasp, hostItem->proto, JS::NullPtr()) );
 		JL_CHK( _hostObject );
 
-		//JS_GetParent( _hostObject );
-
-
+		ASSERT( !js::IsCrossCompartmentWrapper(_hostObject) );
 		JL_SetPrivate( _hostObject, this );
-		ASSERT( js::GetReservedSlot(globalObj, SLOT_GLOBAL_HOSTOBJECT).isUndefined() );
-		js::SetReservedSlot(globalObj, SLOT_GLOBAL_HOSTOBJECT, JS::ObjectValue(*_hostObject)); // <-- loop: required in jl::InitClass ...
+
+		JL_CHK( JS_DefinePropertyById(cx, globalObj, JLID(cx, host), _hostObject, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 		JL_CHK( moduleManager().addLocalModule(cx, "jslang", jslangModuleInit, globalObj) );
-		JL_CHK( JS_DefinePropertyById(cx, globalObj, JLID(cx, host), _hostObject, JSPROP_READONLY | JSPROP_PERMANENT) );
 
 	}
 
+
+	struct InterruptObserver :
+		public Observer<const EventInterrupt>
+	{
+		Host *host;
+
+		InterruptObserver( Host *host ) : host(host) {}
+
+		bool
+		operator()( const EventInterrupt &ev ) {
+
+			JSContext *cx = ev.cx;
+			JS::AutoSaveExceptionState ase(cx);
+			JSAutoCompartment ac(cx, host->hostObject());
+			JS::RootedValue fctVal(cx);
+			JL_CHK( JS_GetProperty(cx, host->hostObject(), "onInterrupt", &fctVal) );
+			if ( jl::isCallable(cx, fctVal) ) {
+
+				JSAutoCompartment ac(cx, &fctVal.toObject());
+				JS::RootedValue rval(cx);
+				JL_CHK( JS_CallFunctionValue(cx, JS::NullPtr(), fctVal, JS::HandleValueArray::empty(), &rval) );
+			}
+			return true;
+		bad:
+			 // error is reported, but do not stop events fireing. 
+			return JS_ReportPendingException(cx); // This can only fail due to oom.
+		}
+	};
+
+
 	// listen for engine Interrupt events through operator()(const EventInterrupt &)
-	_interruptObserverItem = _hostRuntime.addObserver(this); 
+	_interruptObserverItem = _hostRuntime.addObserver(new InterruptObserver(this)); 
+
+	ASSERT( JS_GetGlobalForObject(cx, hostObject()) == _global->globalObject() );
 
 	return;
 bad:
 	invalidate();
-}
-
-
-bool
-Host::operator()( const EventInterrupt &ev ) {
-
-	JSContext *cx = ev.cx;
-	JS::AutoSaveExceptionState ase(cx);
-	JSAutoCompartment ac(cx, hostObject());
-	JS::RootedValue fctVal(cx);
-	JL_CHK( JS_GetProperty(cx, hostObject(), "onInterrupt", &fctVal) );
-	if ( jl::isCallable(cx, fctVal) ) {
-
-		JSAutoCompartment ac(cx, &fctVal.toObject());
-		JS::RootedValue rval(cx);
-		JL_CHK( JS_CallFunctionValue(cx, JS::NullPtr(), fctVal, JS::HandleValueArray::empty(), &rval) );
-	}
-	return true;
-bad:
-	 // error is reported, but do not stop events fireing. 
-	return JS_ReportPendingException(cx); // This can only fail due to oom.
 }
 
 
@@ -1923,6 +1976,5 @@ Host::setHostName( JSContext *cx, const TCHAR *hostName ) {
 	return true;
 	JL_BAD;
 }
-
 
 JL_END_NAMESPACE

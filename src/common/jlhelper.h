@@ -65,7 +65,7 @@ js_DateGetSeconds(JSObject* obj);
 
 
 /*
-class NOVTABLE JSAllocators {
+class JSAllocators {
 public:
 	ALWAYS_INLINE void* 
 	operator new(size_t size) NOTHROW {
@@ -225,6 +225,7 @@ JL_SetPrivate( IN JS::HandleObject obj, void *data ) {
 
 	ASSERT( JS_IsNative(obj) );
 	ASSERT( JL_HasPrivate(obj) );
+//	ASSERT( !js::IsCrossCompartmentWrapper(obj) );
 	JS_SetPrivate(obj, data);
 }
 
@@ -719,6 +720,16 @@ stringToJsid( JSContext *cx, const jschar *wstr ) {
 	//ASSERT( JSID_IS_STRING(id) );
 	//return id;
 	JS::RootedString jsstr(cx, JS_InternUCString(cx, wstr));
+	ASSERT( jsstr );
+	return stringToJsid(cx, jsstr);
+}
+
+
+ALWAYS_INLINE jsid FASTCALL
+stringToJsid( JSContext *cx, const jschar *wstr, size_t len ) {
+
+	ASSERT( wstr != NULL );
+	JS::RootedString jsstr(cx, JS_InternUCStringN(cx, wstr, len));
 	ASSERT( jsstr );
 	return stringToJsid(cx, jsstr);
 }

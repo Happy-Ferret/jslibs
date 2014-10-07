@@ -626,7 +626,7 @@ DEFINE_FUNCTION( print ) {
 	// print() => host->stdout() => JSDefaultStdoutFunction() => pv->hostStdOut()
 
 	JS::RootedValue fval(cx);
-	JL_CHK( JS_GetPropertyById(cx, jl::Host::getJLHost(cx).hostObject(), JLID(cx, stdout), &fval) );
+	JL_CHK( JS_GetPropertyById(cx, jl::Host::getJLHost(cx)->hostObject(), JLID(cx, stdout), &fval) );
 	JL_RVAL.setUndefined();
 	if (likely( jl::isCallable(cx, fval) )) {
 

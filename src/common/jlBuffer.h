@@ -780,7 +780,7 @@ public:
 
 
 
-class BufBase : public jl::CppAllocators {
+class BufBase : virtual public jl::CppAllocators {
 public:
 	enum InitializationType { Uninitialized = 1 };
 	typedef uint8_t* Type;

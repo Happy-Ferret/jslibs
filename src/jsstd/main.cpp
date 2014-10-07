@@ -28,7 +28,10 @@ $FILE_TOC
 $MODULE_FOOTER
 **/
 
-class ReleaseModule : public jl::Observer<const jl::EventAfterDestroyRuntime> {
+class ReleaseModule :
+	virtual public jl::CppAllocators,
+	public jl::Observer<const jl::EventAfterDestroyRuntime>
+{
 	jl::HostRuntime &_hostRuntime;
 	ModulePrivate *_mpv;
 public:
@@ -51,12 +54,11 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	JLDisableThreadNotifications();
 
-	JL_ASSERT(jl::Host::getJLHost(cx).checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
-
+	JL_ASSERT(jl::Host::getJLHost(cx)->checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 	ModulePrivate *mpv;
 	mpv = (ModulePrivate*)jl_malloc(sizeof(ModulePrivate));
 	JL_ASSERT_ALLOC( mpv );
-	jl::Host::getJLHost(cx).moduleManager().modulePrivate(moduleId()) = mpv;
+	jl::Host::getJLHost(cx)->moduleManager().modulePrivate(moduleId()) = mpv;
 
 	jl::HostRuntime &hostRuntime = jl::HostRuntime::getJLRuntime(cx);
 

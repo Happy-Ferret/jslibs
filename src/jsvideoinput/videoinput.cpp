@@ -66,7 +66,7 @@ DEFINE_CONSTRUCTOR() {
 	JL_DEFINE_CONSTRUCTOR_OBJ;
 	JL_ASSERT_ARGC_RANGE(1,5);
 
-	pv = new Private( jl::Host::getJLHost( cx ).moduleManager().modulePrivateT<videoInput*>( moduleId() ) );
+	pv = new Private( jl::Host::getJLHost(cx)->moduleManager().modulePrivateT<videoInput*>( moduleId() ) );
 	JL_ASSERT_ALLOC( pv );
 	pv->deviceID = -1; // invalid device
 

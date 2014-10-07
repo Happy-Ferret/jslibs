@@ -178,60 +178,11 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 // Event system
 
-/*
-
-template <class EVENT>
-class Observer {
-public:
-	virtual ~Observer() {}
-	virtual bool operator ()(EVENT &ev) = 0;
-};
-
-template <class EVENT>
-class Observable {
-	std::list<Observer<EVENT>*> _observers;
-public:
-	typedef typename std::list<Observer<EVENT>*>::iterator It;
-
-	Observable() {}
-	virtual ~Observable() {}
-	void addObserver(Observer<EVENT> *observer) {
-
-		_observers.push_back(observer);
-
-		_observers.back();
-
-
-	}
-	void removeObserver(Observer<EVENT> *observer) {
-
-
-		_observers.
-
-
-		_observers.remove(observer);
-	}
-	
-	bool notify(EVENT &ev) {
-
-		std::list<Observer<EVENT>*>::iterator it;
-		for (it = _observers.begin(); it != _observers.end(); it++)
-			if ( (**it)(ev) )
-				return false;
-		return true;
-	}
-};
-
-*/
-
-
-
-
 template <class EVENT>
 class Observer {
 public:
 	typedef EVENT EventType;
-	virtual ~Observer() {}
+	virtual ~Observer() {} // Virtual destructors are useful when you can delete an instance of a derived class through a pointer to base class.
 	virtual bool operator ()(EventType &ev) = 0;
 };
 
@@ -243,6 +194,12 @@ class Observable {
 	List _list;
 public:
 	typedef typename List::Item ListItem;
+
+	~Observable() {
+
+		while ( _list )
+			delete _list.Pop();
+	}
 
 	ListItem *
 	addObserver( Observer<EventType>* observer ) {
@@ -286,8 +243,14 @@ public:
 	Allocators() {
 	}
 
-	Allocators( jl_malloc_t malloc, jl_calloc_t calloc, jl_memalign_t memalign, jl_realloc_t realloc, jl_msize_t msize, jl_free_t free )
-	: malloc(malloc), calloc(calloc), memalign(memalign), realloc(realloc), msize(msize), free(free) {
+	Allocators( jl_malloc_t malloc, jl_calloc_t calloc, jl_memalign_t memalign, jl_realloc_t realloc, jl_msize_t msize, jl_free_t free ) :
+		malloc(malloc),
+		calloc(calloc),
+		memalign(memalign),
+		realloc(realloc),
+		msize(msize),
+		free(free)
+	{
 	}
 };
 
@@ -295,8 +258,9 @@ public:
 
 class StdAllocators : public Allocators {
 public:
-	StdAllocators()
-	: Allocators(::malloc, ::calloc, ::memalign, ::realloc, ::msize, ::free) {
+	StdAllocators() :
+		Allocators(::malloc, ::calloc, ::memalign, ::realloc, ::msize, ::free)
+	{
 	}
 };
 
@@ -502,6 +466,7 @@ static const size_t defaultNativeStackQuota = 128 * sizeof(size_t) * 1024; // 51
 struct EventBeforeDestroyRuntime {
 	HostRuntime &hrt;
 	EventBeforeDestroyRuntime(HostRuntime &hrt) : hrt(hrt) {}
+	virtual ~EventBeforeDestroyRuntime() {}
 };
 
 struct EventAfterDestroyRuntime {
@@ -528,13 +493,13 @@ struct EventInterrupt {
 
 
 class DLLAPI HostRuntime :
+	virtual public jl::CppAllocators,
 	public Valid,
 	public Observable<const EventBeforeDestroyRuntime>,
 	public Observable<const EventAfterDestroyRuntime>,
 	public Observable<const EventDestroyHostRuntime>,
 	public Observable<const EventDestroyCompartment>,
-	public Observable<const EventInterrupt>,
-	public jl::CppAllocators
+	public Observable<const EventInterrupt>
 {
 public:
 	USING3( Observable<const EventBeforeDestroyRuntime>, addObserver, removeObserver, notify )
@@ -1189,8 +1154,7 @@ public:
 */
 };
 
-#define SLOT_GLOBAL_OUTEROBJECT 0 // outer object
-#define SLOT_GLOBAL_HOSTOBJECT 1 // host object
+
 
 struct EventGlobalFinalize {
 	JSRuntime *rt;
@@ -1199,7 +1163,7 @@ struct EventGlobalFinalize {
 
 
 class DLLAPI Global :
-	public jl::CppAllocators,
+	virtual public jl::CppAllocators,
 	public Valid,
 	public Observable<const EventGlobalFinalize>
 {
@@ -1234,6 +1198,8 @@ private:
 	Global & operator ==( const Global & );
 public:
 
+	IFDEBUG( const char *__name );
+
 	static Global *
 	getGlobal( JSContext *cx ) {
 
@@ -1242,16 +1208,50 @@ public:
 		return static_cast<Global*>(js::GetObjectPrivate(currentGlobal));
 	}
 
-	Global( JSContext *cx, bool lazyStandardClasses = true, bool loadStandardOnly = false );
+	static Global *
+	getGlobal( JSObject *obj ) {
+
+		ASSERT( obj );
+		ASSERT( JS_IsGlobalObject(obj) );
+		return static_cast<Global*>(js::GetObjectPrivate(obj));
+	}
+
+
+	bool
+	isReleased() {
+
+		return globalObject() == nullptr;
+	}
+
+
+	// make the object ready for being GC by clean all references to GC things
+	bool
+	release() {
+
+		_classInfoCache.removeAll();
+		setOuterObject(JS::NullPtr());
+		globalObject().set(nullptr); // unroot
+
+		// release() must not reset private else finalise will not delete the object
+
+		return true;
+	}
+
 
 	~Global() {
-		
-		_ids.destructAll();
 
-		JL_SetPrivate(_globalObject, nullptr);
+		if ( !isReleased() ) {
+			
+			JL_SetPrivate(globalObject(), nullptr);
+			release();
+		}
+		_ids.destructAll();
 
 		IFDEBUG( invalidate() );
 	}
+
+	Global( JSContext *cx, bool lazyStandardClasses = true, bool loadStandardOnly = false );
+
 
 	JS::PersistentRootedObject &
 	globalObject() {
@@ -1277,8 +1277,8 @@ public:
 	setOuterObject( JS::HandleObject outerObj ) {
 
 		ASSERT( *this );
-		ASSERT( outerObj );
-		js::SetReservedSlot(globalObject(), 0, JS::ObjectValue(*outerObj));
+		ASSERT( globalObject() );
+		js::SetReservedSlot(globalObject(), 0, JS::ObjectOrNullValue(outerObj));
 	}
 
 
@@ -1342,12 +1342,6 @@ public:
 
 
 	// ids
-private:
-	INLINE NEVER_INLINE void FASTCALL
-	fillPrivateJsidSlow( JSContext *cx, JS::PersistentRootedId &id, const jschar *name ) {
-
-		id.set(stringToJsid(cx, name));
-	}
 
 public:
 	ALWAYS_INLINE JS::HandleId
@@ -1357,7 +1351,7 @@ public:
 		ASSERT( !JSID_IS_ZERO(id) );
 		if ( JSID_IS_VOID(id) ) {
 
-			fillPrivateJsidSlow(cx, id, name);
+			id.set(stringToJsid(cx, name));
 		}
 		return JS::HandleId::fromMarkedLocation(&id.get());
 	}
@@ -1376,10 +1370,9 @@ struct EventHostDestroy {
 
 
 class DLLAPI Host :
-	public jl::CppAllocators,
+	virtual public jl::CppAllocators,
 	public Valid,
-	public Observable<const EventHostDestroy>,
-	public Observer<const EventInterrupt>
+	public Observable<const EventHostDestroy>
 {
 
 	HostRuntime &_hostRuntime;
@@ -1406,13 +1399,30 @@ class DLLAPI Host :
 	bool
 	operator()( const EventInterrupt &ev );
 
+
+public:
+	
+	// static
+	
+	static Host*
+	getJLHost( JSContext *cx );
+
+
 private:
 	Host( const Host & );
 	Host & operator ==( const Host & );
 public:
+	IFDEBUG( const char *__name );
+
 	~Host();
 
 	Host( JSContext *cx, Global *global, StdIO &hostStdIO );
+
+	bool
+	isReleased() {
+
+		return hostObject() == nullptr;
+	}
 
 	bool
 	release();
@@ -1425,12 +1435,12 @@ public:
 		return compatId != 0 && _compatId == compatId;
 	}
 
-	ALWAYS_INLINE Global &
+	ALWAYS_INLINE Global*
 	global() const {
 
 		//ASSERT( _global = JS_GetGlobalForObject(cx, _hostObject) );
 		ASSERT( _global && *_global );
-		return *_global;
+		return _global;
 	}
 
 	ALWAYS_INLINE StdIO &
@@ -1486,46 +1496,6 @@ public:
 	}
 */
 
-
-// static
-
-public:
-
-/*
-	// (TBD) remove:
-	static ALWAYS_INLINE Host&
-	getHost( JSRuntime *rt ) {
-
-		return *static_cast<Host*>(JL_GetRuntimePrivate(rt));
-	}
-
-	// (TBD) remove:
-	static ALWAYS_INLINE Host&
-	getHost( JSContext *cx ) {
-
-		return getHost(JL_GetRuntime(cx));
-	}
-*/
-
-
-	static ALWAYS_INLINE Host&
-	getJLHost( JSContext *cx ) {
-
-		ASSERT( cx );
-		
-		//JSCompartment *currentCompartment = js::GetContextCompartment(cx); // see also js::GetObjectCompartment(obj)
-		//ASSERT( currentCompartment );
-		//Host* pHost = static_cast<Host*>(JS_GetCompartmentPrivate(currentCompartment));
-
-		const JS::Value &hostSlot = js::GetReservedSlot(JL_GetGlobal(cx), SLOT_GLOBAL_HOSTOBJECT);
-		ASSERT( hostSlot.isObject() );
-		Host* pHost = static_cast<Host*>(js::GetObjectPrivate(hostSlot.toObjectOrNull()));
-
-		ASSERT( pHost );
-		ASSERT( *pHost );
-		return *pHost;
-
-	}
 };
 
 

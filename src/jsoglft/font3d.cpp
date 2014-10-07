@@ -135,7 +135,7 @@ DEFINE_CONSTRUCTOR() {
 
 	JSObject *fontObj = &JL_ARG(1).toObject();
 
-	JL_ASSERT_INSTANCE( fontObj, jl::Host::getJLHost(cx).getCachedClasp("Font") ); // use Global instead
+	JL_ASSERT_INSTANCE( fontObj, jl::Host::getJLHost(cx)->getCachedClasp("Font") ); // use Global instead
 
 	FT_Face ftface = GetJsfontPrivate(cx, fontObj)->face;
 	JL_ASSERT_OBJECT_STATE( ftface, JL_GetClassName(fontObj) );

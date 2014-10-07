@@ -198,7 +198,7 @@ strdup(const char * src) {
 ///////////////////////////////////////////////////////////////////////////////
 // memory management
 
-class NOVTABLE CppNoAlloc {
+class CppNoAlloc {
 	void* operator new(size_t);
 	void* operator new[](size_t);
 	void operator delete(void *, size_t);
@@ -206,7 +206,7 @@ class NOVTABLE CppNoAlloc {
 };
 
 
-class NOVTABLE CppAllocators {
+class CppAllocators {
 public:
 	ALWAYS_INLINE void* 
 	operator new(size_t size) NOTHROW {
@@ -235,7 +235,7 @@ public:
 
 
 template <class T>
-class NOVTABLE DefaultAlloc {
+class DefaultAlloc {
 public:
 	ALWAYS_INLINE void
 	Free(void *ptr) {
@@ -252,7 +252,7 @@ public:
 
 
 template <class T, const size_t PREALLOC = 0, const bool SYNC = false>
-class NOVTABLE PreservAlloc {
+class PreservAlloc {
 
 	void *_last;
 	uint32_t _count;
@@ -352,26 +352,26 @@ public:
 };
 
 template <class T>
-class NOVTABLE PreservAllocNone : public PreservAlloc<T, 0> {};
+class PreservAllocNone : public PreservAlloc<T, 0> {};
 
 template <class T>
-class NOVTABLE PreservAllocNone_threadsafe : public PreservAlloc<T, 0, true> {};
+class PreservAllocNone_threadsafe : public PreservAlloc<T, 0, true> {};
 
 
 template <class T>
-class NOVTABLE PreservAllocSmall : public PreservAlloc<T, 256> {};
+class PreservAllocSmall : public PreservAlloc<T, 256> {};
 
 template <class T>
-class NOVTABLE PreservAllocMedium : public PreservAlloc<T, 4096> {};
+class PreservAllocMedium : public PreservAlloc<T, 4096> {};
 
 template <class T>
-class NOVTABLE PreservAllocBig : public PreservAlloc<T, 65536> {};
+class PreservAllocBig : public PreservAlloc<T, 65536> {};
 
 
 
 
 template <class T, const size_t PREALLOC_SIZE = 1024>
-class NOVTABLE StaticAlloc {
+class StaticAlloc {
 
 	void *_last;
 	uint8_t *_preallocEnd;
@@ -428,13 +428,13 @@ public:
 
 
 template <class T>
-class NOVTABLE StaticAllocSmall : public StaticAlloc<T, 256> {};
+class StaticAllocSmall : public StaticAlloc<T, 256> {};
 
 template <class T>
-class NOVTABLE StaticAllocMedium : public StaticAlloc<T, 4096> {};
+class StaticAllocMedium : public StaticAlloc<T, 4096> {};
 
 template <class T>
-class NOVTABLE StaticAllocBig : public StaticAlloc<T, 65536> {};
+class StaticAllocBig : public StaticAlloc<T, 65536> {};
 
 
 JL_END_NAMESPACE

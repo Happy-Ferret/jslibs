@@ -50,13 +50,13 @@ ModuleInit(JSContext *cx, JS::HandleObject obj) {
 
 	JLDisableThreadNotifications();
 
-	jl::Host &host = jl::Host::getJLHost(cx);
+	jl::Host *host = jl::Host::getJLHost(cx);
 
-	JL_ASSERT(host.checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
+	JL_ASSERT(host->checkCompatId(JL_HOST_VERSIONID), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 
 	INIT_STATIC();
 
-	host.addObserver(new OnHostDestroyed); // frees mpv after rt and cx has been destroyed
+	host->addObserver(new OnHostDestroyed); // frees mpv after rt and cx has been destroyed
 
 	return true;
 	JL_BAD;

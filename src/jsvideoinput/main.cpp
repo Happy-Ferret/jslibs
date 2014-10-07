@@ -26,7 +26,7 @@ ModuleInit( JSContext *cx, JS::HandleObject obj ) {
 
 	JLDisableThreadNotifications();
 
-	JL_ASSERT( jl::Host::getJLHost( cx ).checkCompatId( JL_HOST_VERSIONID ), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
+	JL_ASSERT( jl::Host::getJLHost(cx)->checkCompatId( JL_HOST_VERSIONID ), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 
 //	JL_ASSERT( vi == NULL, E_LIB, E_STR("videoinput"), E_INIT ); // "Invalid case: videoInput already initialized'"
 
@@ -34,7 +34,7 @@ ModuleInit( JSContext *cx, JS::HandleObject obj ) {
 	videoInput::setVerbose(false);
 	videoInput *vi = new videoInput();
 	JL_ASSERT_ALLOC( vi );
-	jl::Host::getJLHost( cx ).moduleManager().modulePrivateT<videoInput*>( moduleId() ) = vi;
+	jl::Host::getJLHost(cx)->moduleManager().modulePrivateT<videoInput*>( moduleId() ) = vi;
 
 		
 	struct ReleaseModule : jl::Callback {

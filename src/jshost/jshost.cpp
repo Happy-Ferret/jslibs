@@ -533,6 +533,7 @@ _tmain( int argc, TCHAR* argv[] ) {
 		{
 			jl::Global global(cx);
 			JL_CHK( global );
+			IFDEBUG( global.__name = "main global" );
 
 			JS::RootedObject globalObject(cx, global.globalObject());
 			JSAutoCompartment ac(cx, globalObject);
@@ -540,6 +541,7 @@ _tmain( int argc, TCHAR* argv[] ) {
 			HostStdIO hostIO;
 			jl::Host host(cx, &global, hostIO);
 			JL_CHK( host );
+			IFDEBUG( host.__name = "main host" );
 
 			JS::RootedValue rval(cx);
 

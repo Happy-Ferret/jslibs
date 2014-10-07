@@ -47,7 +47,7 @@ ModuleInit( JSContext *cx, JS::HandleObject obj ) {
 
 	JLDisableThreadNotifications();
 
-	JL_ASSERT( jl::Host::getJLHost( cx ).checkCompatId( JL_HOST_VERSIONID ), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
+	JL_ASSERT( jl::Host::getJLHost(cx)->checkCompatId( JL_HOST_VERSIONID ), E_MODULE, E_NOTCOMPATIBLE, E_HOST );
 
 /* * *
 	soubok  02/09/2008 00:12:41           
