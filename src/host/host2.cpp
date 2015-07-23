@@ -507,7 +507,7 @@ HostRuntime::~HostRuntime() {
 	ASSERT( st ); // , E_HOST, E_INTERNAL, E_NAME("DESTRUCT_HOSTRUNTIME")
 
 bad:
-	IFDEBUG( invalidate() );
+	IFDEBUG( invalidate() ); // !?
 }
 
 
